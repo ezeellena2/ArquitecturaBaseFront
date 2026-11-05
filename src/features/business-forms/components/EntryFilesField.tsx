@@ -6,7 +6,7 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Input } from "@/shared/ui/input";
 import { CloseIcon, DocumentIcon, PlusIcon } from "@/shared/ui/icons";
-import type { FormEntryQuestion } from "../api/entries";
+import type { FormEntryKeptFile, FormEntryQuestion } from "../api/entries";
 import { entryFileProblem, type EntryFileProblem } from "../entryForm";
 
 interface Props {
@@ -18,6 +18,9 @@ interface Props {
   invalid?: boolean;
   describedBy?: string;
   disabled?: boolean;
+  /** While correcting (CW10-A): the files of the replaced response that stay; removing one leaves it out of the correction. */
+  kept?: readonly FormEntryKeptFile[];
+  onKeptChange?: (kept: FormEntryKeptFile[]) => void;
 }
 
 const photoAccept = "image/jpeg,image/png";
@@ -27,7 +30,7 @@ const documentAccept = "application/pdf,application/msword,application/vnd.ms-ex
  * Photos and documents (CW4). They travel with the send; nothing is uploaded before it, so removing one needs no
  * confirmation. Type, size and count are checked here and the server checks the content again.
  */
-export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id, invalid, describedBy, disabled }: Props) {
+export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id, invalid, describedBy, disabled, kept = [], onKeptChange }: Props) {
   const { t, i18n } = useTranslation("formEntries");
   const mobile = useMediaQuery("(width < 640px)");
   const photo = question.type === "photo";
@@ -38,7 +41,7 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
   const [dragging, setDragging] = useState(false);
   const previews = useMemo(() => photo ? files.map(file => URL.createObjectURL(file)) : [], [files, photo]);
   useEffect(() => () => previews.forEach(url => URL.revokeObjectURL(url)), [previews]);
-  const full = files.length >= max;
+  const full = files.length + kept.length >= max;
   const megabytes = (size: number) => (size / 1024 / 1024).toLocaleString(i18n.language, { maximumFractionDigits: 1 });
   const describe = (file: File) => {
     const kind = file.type === "application/pdf" ? "PDF" : file.type.startsWith("image/") ? file.type.slice(6).toUpperCase().replace("JPEG", "JPG")
@@ -49,7 +52,7 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
     const accepted = [...files];
     const rejected: typeof problems = [];
     for (const file of candidates) {
-      const problem = entryFileProblem(question, accepted, file, maxFileSizeMiB);
+      const problem = entryFileProblem(question, [...kept, ...accepted], file, maxFileSizeMiB);
       if (problem) rejected.push({ name: file.name, problem, size: file.size });
       else accepted.push(file);
     }
@@ -66,7 +69,14 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
   const messages = problems.length ? <ul className="flex flex-col gap-1 text-sm text-[var(--color-danger-700)]" aria-live="polite">{problems.map((item, index) => <li key={index}>{
     item.problem === "size" ? t("files.size", { name: item.name, size: megabytes(item.size), max: maxFileSizeMiB })
       : item.problem === "count" ? t("files.count", { name: item.name, max }) : t("files." + item.problem, { name: item.name })}</li>)}</ul> : null;
-  const counter = files.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("files.counter", { count: files.length, max })}</p> : null;
+  const counter = files.length + kept.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("files.counter", { count: files.length + kept.length, max })}</p> : null;
+  const sizeText = (size: number) => size < 1024 * 1024 ? t("files.size_kb", { size: Math.max(1, Math.round(size / 1024)) }) : t("files.size_mb", { size: megabytes(size) });
+  // The files of the replaced response go first, by name and size, with «Quitar»: they are on the server, not in this browser.
+  const keptRows = kept.length ? <div className="flex flex-col gap-2">{kept.map(file => <div key={file.fileId} data-kept-file className="relative flex items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-border)] py-2 pr-9 pl-3">
+    <DocumentIcon className="size-5 shrink-0"/><div className="min-w-0"><p className="truncate text-sm">{file.name}</p><p className="text-xs text-[var(--color-content-muted)]">{t("files.kept", { size: sizeText(file.size) })}</p></div>
+    <span className="absolute top-1 right-1"><IconButton variant="destructive-outline" size="icon-sm" label={t("files.remove", { name: file.name })} disabled={disabled}
+      onClick={() => { setProblems([]); onKeptChange?.(kept.filter(item => item.fileId !== file.fileId)); }}><CloseIcon className="size-3.5"/></IconButton></span>
+  </div>)}</div> : null;
   const removeButton = (file: File, index: number, large = false) => large
     ? <Button type="button" variant="destructive-outline" size="touch" disabled={disabled} onClick={() => remove(index)}>{t("files.removeShort")}</Button>
     : <span className="absolute top-1 right-1"><IconButton variant="destructive-outline" size="icon-sm" label={t("files.remove", { name: file.name })} disabled={disabled} onClick={() => remove(index)}><CloseIcon className="size-3.5"/></IconButton></span>;
@@ -74,6 +84,7 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
   if (mobile) {
     return <div className="flex flex-col gap-3">
       {inputs}
+      {keptRows}
       {photo ? files.map((file, index) => <figure key={file.name + index} className="flex flex-col gap-2">
         <img src={previews[index]} alt={file.name} className="max-h-64 w-full rounded-[var(--radius-control)] border border-[var(--color-border)] object-cover"/>
         <figcaption className="flex items-center justify-between gap-2 text-sm"><span className="truncate">{file.name}</span>{removeButton(file, index, true)}</figcaption>
@@ -96,7 +107,8 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
     onClick={() => picker.current?.click()}>{photo ? max > 1 ? t("files.choosePhotos") : t("files.choosePhoto") : t("files.chooseFiles")}</Button>;
   return <div className="flex flex-col gap-2" onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop} onPaste={onPaste}>
     {inputs}
-    {files.length === 0 ? <div className={"flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-dashed px-4 py-5 text-sm " + (dragging ? "border-[var(--color-brand-500)] bg-[var(--color-brand-50)]" : "border-[var(--color-input)]")}>
+    {keptRows}
+    {files.length === 0 && !full ? <div className={"flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-dashed px-4 py-5 text-sm " + (dragging ? "border-[var(--color-brand-500)] bg-[var(--color-brand-50)]" : "border-[var(--color-input)]")}>
       <span className="text-[var(--color-content-muted)]">{photo ? t("files.dropPhotos") : t("files.dropFiles")}</span>{choose}
     </div> : photo ? <div className="flex flex-wrap items-start gap-2">
       {files.map((file, index) => <figure key={file.name + index} className="relative flex w-24 flex-col gap-1">

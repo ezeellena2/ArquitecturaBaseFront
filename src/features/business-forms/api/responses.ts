@@ -119,8 +119,10 @@ const row = z.strictObject({
   submittedAtUtc: utc,
   actor: author,
   channel: z.string(),
-  state: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]),
+  state: z.enum(["Received", "PendingApproval", "Approved", "Rejected", "Voided"]),
   hasPdf: z.boolean(),
+  // Only on a correction (CW10-A): the row says «Corregida» next to its number.
+  corrected: z.literal(true).optional(),
   cells: z.array(responseCellSchema),
 });
 function page<T extends z.ZodType>(item: T) {
@@ -232,6 +234,18 @@ export const responseDetailSchema = z.strictObject({
       actor: author.nullable(),
     }),
   ),
+  // A correction (CW10-A): who and why, and how the version it replaced had ended.
+  correction: z.strictObject({
+    previousRecordId: guid, atUtc: utc, by: author, reason: z.string().min(1),
+    previousState: z.enum(["Received", "PendingApproval", "Approved", "Rejected", "Voided"]),
+    previousDecidedAtUtc: utc.nullable(), previousDecidedBy: author.nullable(), previousPdfAtUtc: utc.nullable(),
+  }).optional(),
+  // A version that a correction replaced: the one that stands for it now.
+  replacedBy: z.strictObject({ recordId: guid, atUtc: utc }).optional(),
+  // A voided response (CW11-A): who, when and why.
+  void: z.strictObject({ atUtc: utc, by: author, reason: z.string().min(1) }).optional(),
+  // Whether whoever reads it may correct or void it now (decision 8); the server checks again.
+  canAmend: z.literal(true).optional(),
 });
 export type ResponseSheet = z.infer<typeof responseSheetSchema>;
 export type ResponseRow = ResponseSheet["records"]["items"][number];

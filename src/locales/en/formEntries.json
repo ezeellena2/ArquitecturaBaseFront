@@ -97,7 +97,8 @@
     "maxReached": "You reached the maximum of {{max}}.",
     "size_kb": "{{size}} KB",
     "size_mb": "{{size}} MB",
-    "removeShort": "Remove"
+    "removeShort": "Remove",
+    "kept": "Already attached · {{size}}"
   },
   "send": {
     "sending": "Sending… {{percent}}%",
@@ -127,5 +128,22 @@
     "yes": "Yes",
     "no": "No",
     "none": "—"
+  },
+  "correction": {
+    "title": "Correct {{number}}",
+    "label": "Correct {{number}} of {{name}}",
+    "before": "Before: {{value}}",
+    "beforeEmpty": "Before: no answer",
+    "reason": "Reason for the correction",
+    "reasonRequired": "Write the reason.",
+    "reasonTooLong": "The reason can have up to 500 characters.",
+    "save": "Save correction",
+    "saving": "Saving… {{percent}} %",
+    "saved": "{{number}} was corrected",
+    "closeTitle": "Discard the correction?",
+    "closeDescription": "What you changed is not saved.",
+    "closeConfirm": "Discard",
+    "unavailable": "This response can no longer be corrected.",
+    "loadFailed": "The response could not be opened to correct it."
   }
 }

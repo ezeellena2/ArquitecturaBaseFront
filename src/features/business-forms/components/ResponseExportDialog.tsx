@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/ui/dialog";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
@@ -48,6 +49,7 @@ export function ResponseExportDialog({
 }) {
   const { t } = useTranslation("forms");
   const [selection, setSelection] = useState("all");
+  const [includeVoided, setIncludeVoided] = useState(false);
   const [pending, setPending] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const columnsGroup = useRef<HTMLDivElement | null>(null);
@@ -75,6 +77,8 @@ export function ResponseExportDialog({
               ? visible.map((column) => column.fieldId)
               : null,
           catalogFields: selection === "visible" ? visibleCatalogFields : null,
+          // The voided go only when asked (CW11-A); unchecked, the body stays as it always was.
+          ...(includeVoided && !filter.state ? { includeVoided: true } : {}),
         },
         { signal: current.signal },
       );
@@ -147,6 +151,8 @@ export function ResponseExportDialog({
           ]}
         />
         </div>
+        {/* Voided responses stay out of the file unless they are asked for (CW11-A); with «Estado: Anulada» they are all there is. */}
+        {filter.state ? null : <CheckboxField label={t("responses.includeVoided")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
         <p className="break-words text-sm">
           {prefix}-{new Date().toISOString().slice(0, 10).replaceAll("-", "")}
           .xlsx

@@ -4,23 +4,29 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
 import type { FormEntry, FormEntrySubmitted } from "../api/entries";
-import { carryEntryDraft, entryQuestionId, initialEntryDraft, validateEntry, type EntryDraft, type EntryProblem } from "../entryForm";
+import { carryEntryDraft, entryDraftKey, entryQuestionId, initialEntryDraft, validateEntry, type EntryDraft, type EntryProblem } from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
 
 export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
 
+/** How a correction sends (CW10-A), with its own progress; without it the editor sends a new response. */
+export interface EntrySubmission { submit: (entry: FormEntry, draft: EntryDraft) => Promise<FormEntrySubmitted>; progress: number | null; sending: boolean }
+
 /**
  * The owner of one response being loaded (page or panel): its draft, the problems shown after the first try and then
- * live, the server's per-question errors and the conflicts that stop the send. Nothing leaves this owner.
+ * live, the server's per-question errors and the conflicts that stop the send. Nothing leaves this owner. A correction
+ * starts from the response as it was (`initial`) and is dirty only once something differs from it.
  */
-export function useEntryEditor(formId: string, entry: FormEntry | undefined, owner: string, initial?: EntryDraft) {
+export function useEntryEditor(formId: string, entry: FormEntry | undefined, owner: string, initial?: EntryDraft,
+  options?: { submission?: EntrySubmission; correcting?: boolean }) {
   const { t } = useTranslation("formEntries");
   const [state, setState] = useState<{ entry: FormEntry; draft: EntryDraft } | null>(null);
   const [attempted, setAttempted] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const [conflict, setConflict] = useState<EntryConflict | null>(null);
   const [reveal, setReveal] = useState(0);
-  const { submit, progress, sending } = useFormEntrySubmit(formId);
+  const own = useFormEntrySubmit(formId);
+  const { submit, progress, sending } = options?.submission ?? own;
   // A new reading of the entry (another version after «Pasar a la versión nueva») keeps the answers that still apply.
   if (entry && state?.entry !== entry) {
     setState({ entry, draft: state ? carryEntryDraft(state.entry, state.draft, entry) : initial ?? initialEntryDraft(entry) });
@@ -38,7 +44,8 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   if (attempted) for (const [fieldId, problem] of Object.entries(problems)) errors[fieldId] = problemMessage(problem, fieldId);
   Object.assign(errors, serverErrors);
   const missing = entry?.questions.find(question => question.catalog?.issue === "Forms.Record.RecipientDataMissing");
-  const dirty = !!draft && (Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
+  const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
+    : Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
     || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entry?.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id));
 
   const change = (next: EntryDraft) => {

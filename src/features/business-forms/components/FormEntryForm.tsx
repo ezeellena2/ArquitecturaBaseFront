@@ -12,7 +12,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { FormEntry, FormEntryQuestion } from "../api/entries";
-import { clearDependentChoices, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
+import { clearDependentChoices, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileCount, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, type EntryDraft, type EntryZone } from "../entryForm";
 import { EntryCatalogField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
 
@@ -27,6 +27,8 @@ interface Props {
   disabled?: boolean;
   /** Grows with each send that found something to correct: the folded zones that hold it open again. */
   reveal?: number;
+  /** While correcting (CW10-A): what each changed question had before, shown under its control. */
+  before?: Readonly<Record<string, string>>;
 }
 
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
@@ -38,7 +40,7 @@ const boxColumnsClass = { 1: "columns-1", 2: "columns-2", 3: "columns-3" } as co
  * The questions of the active version in the editor's order, each with the control and width of its type (CW12, CW16).
  * A catalog that cannot be used by whoever loads stays disabled; the page says why above.
  */
-export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled, reveal = 0 }: Props) {
+export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled, reveal = 0, before }: Props) {
   const { t } = useTranslation("formEntries");
   const [folded, setFolded] = useState<Readonly<Record<string, boolean>>>({});
   const [revealed, setRevealed] = useState(reveal);
@@ -69,13 +71,13 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   // Number and date stay narrow (CW12): in the panel, except on the phone; on the page, within their cell, and across in one column.
   const narrowClass = layout === "panel" ? "w-full sm:w-37.5" : columns === 1 ? undefined : "w-full max-w-37.5";
   const question = (item: FormEntryQuestion) => <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
-    narrowClass={narrowClass} boxColumns={boxColumns}/>;
+    narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]}/>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
   // Folded, a zone says how many questions were answered; the files zone says what was attached, as CW16 draws it.
   const summary = (items: FormEntryQuestion[]) => {
     if (!items.every(isFile)) return answered(items);
-    const count = (type: FormEntryQuestion["type"]) => items.filter(item => item.type === type).reduce((sum, item) => sum + (draft.files[item.fieldId]?.length ?? 0), 0);
+    const count = (type: FormEntryQuestion["type"]) => items.filter(item => item.type === type).reduce((sum, item) => sum + entryFileCount(item, draft), 0);
     const parts = [count("photo") ? t("sent.photos", { count: count("photo") }) : null, count("document") ? t("sent.files", { count: count("document") }) : null].filter(Boolean);
     return parts.length ? parts.join(" · ") : answered(items);
   };
@@ -89,7 +91,16 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   </CollapsibleSection>)}</div>;
 }
 
-function EntryQuestion({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns }: {
+function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { before?: string }) {
+  const { t } = useTranslation("formEntries");
+  const { before, ...control } = props;
+  // While correcting, what the question had before goes under it in grey (CW10-A). The control keeps its place in the tree
+  // when the line appears, so it keeps the focus and what is being typed.
+  return <div className="flex flex-col gap-1"><EntryQuestionControl {...control}/>
+    {before === undefined ? null : <p className="text-xs text-[var(--color-content-muted)]">{before === "" ? t("correction.beforeEmpty") : t("correction.before", { value: before })}</p>}</div>;
+}
+
+function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
@@ -141,7 +152,8 @@ function EntryQuestion({ entry, question, draft, onChange, error, disabled, narr
       }}/>);
   }
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
-    invalid={!!error} describedBy={describedBy} disabled={disabled}
+    invalid={!!error} describedBy={describedBy} disabled={disabled} kept={draft.kept?.[question.fieldId]}
+    onKeptChange={kept => onChange({ ...draft, kept: { ...draft.kept, [question.fieldId]: kept } })}
     onChange={files => onChange({ ...draft, files: { ...draft.files, [question.fieldId]: files } })}/>, false);
   // Up to five options in a row however long they are, and those that do not fit wrap; more, a dropdown list (AR1-A).
   if (question.type === "choice" && !entryChoiceInRow(question)) return field(<NativeSelect value={draft.choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}

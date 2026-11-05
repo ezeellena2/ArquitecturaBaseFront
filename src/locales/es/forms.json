@@ -868,6 +868,7 @@
     "export": "Exportar a Excel",
     "exportTitle": "Exportar respuestas a Excel",
     "exportColumns": "Columnas a exportar",
+    "includeVoided": "Incluir las anuladas",
     "allColumns_one": "Todas las preguntas ({{count}} columna)",
     "allColumns_other": "Todas las preguntas ({{count}} columnas)",
     "visibleColumns_one": "Solo las visibles ({{count}} columna)",
@@ -1060,13 +1061,15 @@
     "taskStates": {
       "Open": "Por aprobar",
       "Approved": "Aprobada",
-      "Rejected": "Rechazada"
+      "Rejected": "Rechazada",
+      "Closed": "Cerrada"
     },
     "states": {
       "Received": "Recibida",
       "PendingApproval": "Por aprobar",
       "Approved": "Aprobada",
-      "Rejected": "Rechazada"
+      "Rejected": "Rechazada",
+      "Voided": "Anulada"
     },
     "state": "Estado",
     "allStates": "Todos los estados"
@@ -1108,6 +1111,28 @@
   },
   "detail": {
     "openFull": "Abrir en pantalla completa",
+    "correct": "Corregir",
+    "moreActions": "Más acciones",
+    "void": "Anular",
+    "corrected": "Corregida",
+    "replaced": "Reemplazada",
+    "correctedBy": "{{name}} · «{{reason}}»",
+    "voidedBy": "{{name}} · «{{reason}}»",
+    "viewPrevious": "Ver la versión anterior",
+    "viewPreviousWithPdf": "Ver la versión anterior y su PDF",
+    "previousPdf": "PDF del {{date}}",
+    "pendingAgain": "Por aprobar otra vez",
+    "newPdfOnApproval": "el PDF nuevo sale al aprobarla",
+    "previousVersion": "Versión anterior",
+    "replacedNotice": "Versión anterior de {{number}}: la reemplazó la corrección del {{date}}.",
+    "viewCurrent": "Ver la actual",
+    "voidTitle": "¿Anular {{number}}?",
+    "voidDescription": "{{number}} queda en la planilla como anulada, con su número; deja de contar y no sale en el Excel.",
+    "voidReason": "Motivo",
+    "voidConfirm": "Anular respuesta",
+    "voiding": "Anulando…",
+    "voided": "Se anuló {{number}}",
+    "voidFailed": "No se pudo anular {{number}}",
     "backToResponses": "Volver a las respuestas",
     "expandAnswer": "Expandir respuesta",
     "collapseAnswer": "Plegar respuesta",

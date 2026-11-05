@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { PrivateFormFilesScopeProvider } from "@/shared/hooks/PrivateFormFilesScope";
@@ -17,12 +17,16 @@ import { useResponseDetailState } from "../hooks/useResponseDetailState";
 import { ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ResponseDetailContent } from "../components/ResponseDetailContent";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
+import { ResponseAmendActions } from "../components/ResponseAmendActions";
+import { VoidResponseDialog } from "../components/VoidResponseDialog";
 
 function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
   return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
 }
-export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed = true, retainPreviousForm = false }: {
+export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed = true, retainPreviousForm = false, onCorrect, onVoided }: {
   formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm?: boolean;
+  /** «Corregir» opens the correction next to the sheet (CW10-A); «Anular» voids it and the owner reads the sheet again (CW11-A). */
+  onCorrect?: (recordId: string) => void; onVoided?: () => void;
 }) {
   const mobile = useMediaQuery("(width < 640px)");
   const navigate = useNavigate();
@@ -40,19 +44,25 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
     workspace.prepareFull(recordId);
     navigate(responseFullPath(formId, recordId, location.search), { replace: true });
   }, [mobile, navigate, formId, recordId, location.search, workspace]);
-  return mobile ? null : <QuickResponseDetail formId={formId} recordId={recordId} navigation={navigation} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed} retainPreviousForm={retainPreviousForm}/>;
+  return mobile ? null : <QuickResponseDetail formId={formId} recordId={recordId} navigation={navigation} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed} retainPreviousForm={retainPreviousForm}
+    onCorrect={onCorrect} onVoided={onVoided}/>;
 }
-function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed, retainPreviousForm }: {
+function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed, retainPreviousForm, onCorrect, onVoided }: {
   formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm: boolean;
+  onCorrect?: (recordId: string) => void; onVoided?: () => void;
 }) {
   const { t } = useTranslation("forms");
   const location = useLocation();
   const workspace = useResponseWorkspace(formId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy, navigationError: navigation.error, retryNavigation: navigation.onRetry, retainPreviousForm });
   const { detail, workflow, data, current, downloads, unavailable, fileScope, allowed, loadingTarget, loading } = state;
+  const [voiding, setVoiding] = useState<string | null>(null);
   if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
-  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
+  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
+    {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge> : null}</>} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
+    {/* «Corregir» and «⋯ › Anular» for whoever may change it now (CW10-A, CW11-A); the server says so in canAmend. */}
+    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => onCorrect(recordId)} onVoid={() => setVoiding(recordId)}/> : null}
     {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A). */}
     <IconButton label={t("detail.openFull")} asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -67,5 +77,7 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
     {current?.documents.length ? <ResponseDocumentDownloads compact documents={current.documents} downloads={downloads}/> : null}
   </>}>
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
+    {voiding === recordId ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} onClose={() => setVoiding(null)}
+      onVoided={() => { setVoiding(null); onVoided?.(); }}/> : null}
   </ResponsePanelFrame></ResponsePanelFilesScope>;
 }

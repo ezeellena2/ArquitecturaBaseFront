@@ -178,3 +178,16 @@ it.each([[["formrecords.read", "formrecords.create"]], [["formrecords.create"]]]
   expect(await within(items[3]).findByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
   expect(items[4]).toHaveAttribute("aria-current", "page");
 });
+
+// Correcting also hangs from the form's sheet, like the full view it opens from (CW10-A).
+it("hangs «Corregir» from its form's sheet", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrecords.amend"] })));
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/respuestas/record-id/corregir"]}>
+    <Breadcrumbs/><ChildScreen leaf="Corregir VIS-000024" parent="Registrar visita"/>
+  </MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita", "Corregir VIS-000024"]);
+  expect(await within(items[3]).findByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
+  expect(items[4]).toHaveAttribute("aria-current", "page");
+  expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+});

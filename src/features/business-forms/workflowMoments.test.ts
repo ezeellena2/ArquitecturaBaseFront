@@ -13,7 +13,7 @@ function task(overrides: Partial<NonNullable<ResponseWorkflow["task"]>> = {}): N
 }
 
 it.each([ ["Open", "pending"], ["Approved", "completed"], ["Rejected", "rejected"] ] as const)("presents the observed approval %s as %s", (state, expected) => {
-  expect(workflowMomentState({ kind: "approval", key: "approval", task: task({ state }) })).toBe(expected);
+  expect(workflowMomentState({ kind: "approval", key: "approval", task: task({ state }), again: false })).toBe(expected);
 });
 it.each([ ["Waiting", "pending"], ["Running", "pending"], ["Failed", "failed"], ["Uncertain", "uncertain"], ["Completed", "completed"] ] as const)("presents observed action %s as %s", (state, expected) => {
   const actions = [action("effect", { state })];
@@ -40,7 +40,7 @@ it("groups observed receiving effects and represents a real approval task only o
   expect(composeWorkflowMoments(response, workflow)).toEqual([
     expect.objectContaining({ kind: "received" }),
     { kind: "effects", key: "effects:Received", event: "Received", actions: [notice], completedCount: 1, totalCount: 1 },
-    { kind: "approval", key: "approval:" + approval.id, task: approval },
+    { kind: "approval", key: "approval:" + approval.id, task: approval, again: false },
   ]);
 });
 
@@ -107,4 +107,40 @@ it("keeps a second matching approval rule failure even when the first request op
   const moments = composeWorkflowMoments(response, workflow);
   expect(moments[1]).toMatchObject({ kind: "effects", actions: [failed], completedCount: 0, totalCount: 1 });
   expect(moments[2]).toMatchObject({ kind: "approval", task: approval });
+});
+
+it("tells how the replaced version had ended, who corrected it and that it waits for approval again (CW10-A)", () => {
+  const response = { ...record(), correction: { previousRecordId: "previous", atUtc: time("05"), by: { userId: "ana", displayName: "Ana Pérez" }, reason: "Lote equivocado",
+    previousState: "Approved" as const, previousDecidedAtUtc: time("02"), previousDecidedBy: { userId: "laura", displayName: "Laura Ríos" }, previousPdfAtUtc: time("02") } };
+  const workflow = { ...responseWorkflowFixture(response.id), recordState: "PendingApproval" as const, task: task(), actions: [] };
+
+  const moments = composeWorkflowMoments(response, workflow);
+
+  expect(moments.map(moment => moment.kind)).toEqual(["received", "previousDecision", "corrected", "approval"]);
+  expect(moments[1]).toMatchObject({ state: "Approved", by: { displayName: "Laura Ríos" }, pdfAtUtc: time("02") });
+  expect(moments[3]).toMatchObject({ again: true });
+  expect(workflowMomentState(moments[2])).toBe("completed");
+});
+
+it("leaves out the task a correction or a void closed and tells the void at the end (CW11-A)", () => {
+  const response = { ...record(), void: { atUtc: time("06"), by: { userId: "ana", displayName: "Ana Pérez" }, reason: "Cargada dos veces" } };
+  const workflow = { ...responseWorkflowFixture(response.id), recordState: "Voided" as const, task: task({ state: "Closed", revision: 2 }), actions: [] };
+
+  const moments = composeWorkflowMoments(response, workflow);
+
+  expect(moments.map(moment => moment.kind)).toEqual(["received", "voided"]);
+  expect(moments[1]).toMatchObject({ reason: "Cargada dos veces" });
+  expect(workflowMomentState(moments[1])).toBe("rejected");
+  expect(composeWorkflowMoments(response).map(moment => moment.kind)).toEqual(["received", "voided"]);
+});
+
+it("does not say «otra vez» when the replaced version had not been approved", () => {
+  const response = { ...record(), correction: { previousRecordId: "previous", atUtc: time("05"), by: { userId: "ana", displayName: null }, reason: "Dato",
+    previousState: "PendingApproval" as const, previousDecidedAtUtc: null, previousDecidedBy: null, previousPdfAtUtc: null } };
+  const workflow = { ...responseWorkflowFixture(response.id), recordState: "PendingApproval" as const, task: task(), actions: [] };
+
+  const moments = composeWorkflowMoments(response, workflow);
+
+  expect(moments.map(moment => moment.kind)).toEqual(["received", "corrected", "approval"]);
+  expect(moments[2]).toMatchObject({ again: false });
 });

@@ -97,7 +97,8 @@
     "maxReached": "Llegaste al máximo de {{max}}.",
     "size_kb": "{{size}} KB",
     "size_mb": "{{size}} MB",
-    "removeShort": "Quitar"
+    "removeShort": "Quitar",
+    "kept": "Ya cargado · {{size}}"
   },
   "send": {
     "sending": "Enviando… {{percent}} %",
@@ -127,5 +128,22 @@
     "yes": "Sí",
     "no": "No",
     "none": "—"
+  },
+  "correction": {
+    "title": "Corregir {{number}}",
+    "label": "Corregir {{number}} de {{name}}",
+    "before": "Antes: {{value}}",
+    "beforeEmpty": "Antes: sin respuesta",
+    "reason": "Motivo de la corrección",
+    "reasonRequired": "Escribí el motivo.",
+    "reasonTooLong": "El motivo puede tener hasta 500 caracteres.",
+    "save": "Guardar corrección",
+    "saving": "Guardando… {{percent}} %",
+    "saved": "Se corrigió {{number}}",
+    "closeTitle": "¿Descartar la corrección?",
+    "closeDescription": "Lo que cambiaste no se guarda.",
+    "closeConfirm": "Descartar",
+    "unavailable": "Esta respuesta ya no se puede corregir.",
+    "loadFailed": "No se pudo abrir la respuesta para corregirla."
   }
 }

@@ -1,4 +1,4 @@
-import type { FormEntry, FormEntryAnswer, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
+import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
 
 /**
  * What the person has loaded, by question: typed values, the chosen options (with the title they saw) and the files.
@@ -8,6 +8,8 @@ export interface EntryDraft {
   values: Record<string, string>;
   choices: Record<string, FormEntryOption[]>;
   files: Record<string, File[]>;
+  /** While correcting (CW10-A): the files of the replaced response that stay, by question. */
+  kept?: Record<string, FormEntryKeptFile[]>;
 }
 export type EntryProblem = "required" | "choose" | "chooseAtLeast" | "chooseAtMost" | "number" | "date" | "maxLength" | "filesAtLeast" | "filesAtMost";
 export type EntryFileProblem = "photoType" | "documentType" | "size" | "count";
@@ -86,7 +88,7 @@ export function entryRows(questions: readonly FormEntryQuestion[], columns: 1 | 
 
 /** Whether a question already has something loaded: what the band of a folded zone counts. */
 export function entryAnswered(question: FormEntryQuestion, draft: EntryDraft): boolean {
-  if (isFile(question)) return (draft.files[question.fieldId]?.length ?? 0) > 0;
+  if (isFile(question)) return entryFileCount(question, draft) > 0;
   if (isList(question)) return (draft.choices[question.fieldId]?.length ?? 0) > 0;
   return (draft.values[question.fieldId] ?? "") !== "";
 }
@@ -139,9 +141,14 @@ export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<strin
   return problems;
 }
 
+/** The files a question carries: the new ones and, in a correction, those of the replaced response that stay. */
+export function entryFileCount(question: FormEntryQuestion, draft: EntryDraft): number {
+  return (draft.files[question.fieldId]?.length ?? 0) + (draft.kept?.[question.fieldId]?.length ?? 0);
+}
+
 function questionProblem(question: FormEntryQuestion, draft: EntryDraft): EntryProblem | null {
   if (isFile(question)) {
-    const count = draft.files[question.fieldId]?.length ?? 0;
+    const count = entryFileCount(question, draft);
     if (count < (question.files?.minFiles ?? 0)) return "filesAtLeast";
     return count > (question.files?.maxFiles ?? 0) ? "filesAtMost" : null;
   }
@@ -189,7 +196,10 @@ export function carryEntryDraft(previous: FormEntry, draft: EntryDraft, next: Fo
   for (const question of next.questions) {
     const before = previous.questions.find(value => value.fieldId === question.fieldId);
     if (before?.type !== question.type) continue;
-    if (isFile(question)) { if (draft.files[question.fieldId]) carried.files[question.fieldId] = draft.files[question.fieldId]; }
+    if (isFile(question)) {
+      if (draft.files[question.fieldId]) carried.files[question.fieldId] = draft.files[question.fieldId];
+      if (draft.kept?.[question.fieldId]) carried.kept = { ...carried.kept, [question.fieldId]: draft.kept[question.fieldId] };
+    }
     else if (isList(question)) { if (draft.choices[question.fieldId]) carried.choices[question.fieldId] = draft.choices[question.fieldId]; }
     else if (draft.values[question.fieldId] !== undefined) carried.values[question.fieldId] = draft.values[question.fieldId];
   }
@@ -202,7 +212,7 @@ export function keepForNextEntry(draft: EntryDraft): EntryDraft {
 }
 
 /** Type, size and count are checked before sending; the server checks the content again. */
-export function entryFileProblem(question: FormEntryQuestion, current: readonly File[], file: File, maxFileSizeMiB: number): EntryFileProblem | null {
+export function entryFileProblem(question: FormEntryQuestion, current: readonly unknown[], file: File, maxFileSizeMiB: number): EntryFileProblem | null {
   if (!(question.type === "photo" ? photoTypes : documentTypes).includes(file.type)) return question.type === "photo" ? "photoType" : "documentType";
   if (file.size > maxFileSizeMiB * 1024 * 1024) return "size";
   return current.length >= (question.files?.maxFiles ?? 0) ? "count" : null;
@@ -212,4 +222,59 @@ export function entryFileProblem(question: FormEntryQuestion, current: readonly 
 export function entrySignature(entry: FormEntry, draft: EntryDraft): string {
   const send = toEntrySend(entry, draft, "00000000-0000-4000-8000-000000000000");
   return JSON.stringify([send.versionId, send.answers, send.files.map(({ fieldId, file }) => [fieldId, file.name, file.size, file.type, file.lastModified])]);
+}
+
+/**
+ * The draft a correction starts from (CW10-A): the response as it was, in the active version. A decimal is shown in the
+ * menu's format, as the person would type it; the files of the response stay unless they are removed.
+ */
+export function correctionDraft(correction: FormEntryCorrection, language: string): EntryDraft {
+  const draft: EntryDraft = { values: {}, choices: {}, files: {}, kept: {} };
+  for (const answer of correction.answers) {
+    const question = correction.entry.questions.find(item => item.fieldId === answer.fieldId);
+    if (!question) continue;
+    if (question.catalog) draft.choices[question.fieldId] = answer.options ?? [];
+    else if (isList(question)) draft.choices[question.fieldId] = (answer.choiceIds ?? (answer.value ? [answer.value] : []))
+      .flatMap(id => question.options?.filter(option => option.id === id).map(option => ({ id: option.id, title: option.label, description: null })) ?? []);
+    else if (answer.value !== null) draft.values[question.fieldId] = question.type === "decimal" && language.startsWith("es") ? answer.value.replace(".", ",") : answer.value;
+  }
+  for (const file of correction.files) draft.kept![file.fieldId] = [...draft.kept![file.fieldId] ?? [], file];
+  return draft;
+}
+
+/** The ids of the files of the replaced response that stay in the correction. */
+export function keptFileIds(draft: EntryDraft): string[] {
+  return Object.values(draft.kept ?? {}).flat().map(file => file.fileId);
+}
+
+/** How a question's answer reads, for «Antes: …»: the text, the number as typed, the date, Sí or No, or the options chosen. */
+export function entryAnswerText(question: FormEntryQuestion, draft: EntryDraft, words: { yes: string; no: string; date: (iso: string) => string }): string {
+  if (isFile(question)) return (draft.kept?.[question.fieldId] ?? []).map(file => file.name).concat((draft.files[question.fieldId] ?? []).map(file => file.name)).join(", ");
+  if (isList(question)) return (draft.choices[question.fieldId] ?? []).map(option => option.title).join(", ");
+  const value = draft.values[question.fieldId] ?? "";
+  if (question.type === "boolean") return value === "true" ? words.yes : value === "false" ? words.no : "";
+  return question.type === "date" && value ? words.date(value) : value;
+}
+
+/** What each changed question had before the correction (CW10-A), by question; an unchanged one says nothing. */
+export function correctionBefore(entry: FormEntry, initial: EntryDraft, draft: EntryDraft, words: Parameters<typeof entryAnswerText>[2]): Record<string, string> {
+  const before: Record<string, string> = {};
+  for (const question of entry.questions) {
+    const was = entryAnswerText(question, initial, words);
+    if (was !== entryAnswerText(question, draft, words)) before[question.fieldId] = was;
+  }
+  return before;
+}
+
+/** What a correction carries: the same signature repeats its request, so a retry neither duplicates nor takes another number. */
+export function correctionSignature(entry: FormEntry, draft: EntryDraft, reason: string): string {
+  return JSON.stringify([entrySignature(entry, draft), keptFileIds(draft).sort(), reason.trim()]);
+}
+
+/** What a draft holds, to tell whether a correction changed anything: values, chosen ids, files and the files that stay. */
+export function entryDraftKey(draft: EntryDraft): string {
+  const sorted = <T,>(record: Record<string, T>) => Object.entries(record).sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify([sorted(draft.values).filter(([, value]) => value !== ""), sorted(draft.choices).map(([id, options]) => [id, options.map(option => option.id)]).filter(([, ids]) => ids.length),
+    sorted(draft.files).map(([id, files]) => [id, files.map(file => [file.name, file.size, file.lastModified])]).filter(([, files]) => files.length),
+    sorted(draft.kept ?? {}).map(([id, files]) => [id, files.map(file => file.fileId)])]);
 }

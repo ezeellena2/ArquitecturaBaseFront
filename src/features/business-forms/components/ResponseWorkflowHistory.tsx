@@ -125,7 +125,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
   for (const moment of composeWorkflowMoments(record, data)) {
     if (moment.kind === "received") bands.push({ key: "Received", title: t("detail.events.Received"), groups: moment.history.map(event => [recordRow(event)]) });
     else if (moment.kind === "approval") bands.push({ key: "approval", title: t("detail.approvalBand"), groups: approvalRows(moment.task).map(row => [row]) });
-    else {
+    // The correction and the void are told in the moments above the tabs (CW10-A, CW11-A); the activity keeps the actions.
+    else if (moment.kind === "effects") {
       const groups = moment.actions.map(actionRows);
       const band = bands.find(item => item.key === moment.event);
       if (band) band.groups.push(...groups); else bands.push({ key: moment.event, title: t("detail.events." + moment.event), groups });

@@ -868,6 +868,7 @@
     "export": "Export to Excel",
     "exportTitle": "Export responses to Excel",
     "exportColumns": "Columns to export",
+    "includeVoided": "Include voided responses",
     "allColumns_one": "All questions ({{count}} column)",
     "allColumns_other": "All questions ({{count}} columns)",
     "visibleColumns_one": "Visible only ({{count}} column)",
@@ -1060,13 +1061,15 @@
     "taskStates": {
       "Open": "To approve",
       "Approved": "Approved",
-      "Rejected": "Rejected"
+      "Rejected": "Rejected",
+      "Closed": "Closed"
     },
     "states": {
       "Received": "Received",
       "PendingApproval": "To approve",
       "Approved": "Approved",
-      "Rejected": "Rejected"
+      "Rejected": "Rejected",
+      "Voided": "Voided"
     },
     "state": "State",
     "allStates": "All states"
@@ -1108,6 +1111,28 @@
   },
   "detail": {
     "openFull": "Open in full view",
+    "correct": "Correct",
+    "moreActions": "More actions",
+    "void": "Void",
+    "corrected": "Corrected",
+    "replaced": "Replaced",
+    "correctedBy": "{{name}} · “{{reason}}”",
+    "voidedBy": "{{name}} · “{{reason}}”",
+    "viewPrevious": "See the previous version",
+    "viewPreviousWithPdf": "See the previous version and its PDF",
+    "previousPdf": "PDF of {{date}}",
+    "pendingAgain": "To approve again",
+    "newPdfOnApproval": "the new PDF comes out when approved",
+    "previousVersion": "Previous version",
+    "replacedNotice": "Previous version of {{number}}: the correction of {{date}} replaced it.",
+    "viewCurrent": "See the current one",
+    "voidTitle": "Void {{number}}?",
+    "voidDescription": "{{number}} stays in the sheet as voided, with its number; it no longer counts and is left out of the Excel.",
+    "voidReason": "Reason",
+    "voidConfirm": "Void response",
+    "voiding": "Voiding…",
+    "voided": "{{number}} was voided",
+    "voidFailed": "{{number}} could not be voided",
     "backToResponses": "Back to responses",
     "expandAnswer": "Expand response",
     "collapseAnswer": "Collapse response",

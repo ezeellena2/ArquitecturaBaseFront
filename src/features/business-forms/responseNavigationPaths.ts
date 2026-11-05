@@ -14,6 +14,10 @@ function withPublicSearch(path: string, search: string, keys: readonly string[])
 export function responseFullPath(formId: string, recordId: string, search: string): string {
   return withPublicSearch("/formularios/" + encodeURIComponent(formId) + "/respuestas/" + encodeURIComponent(recordId) + "/completa", search, fullKeys);
 }
+/** The page that corrects a response (CW10-A), from the full view or on the phone. */
+export function responseCorrectionPath(formId: string, recordId: string): string {
+  return "/formularios/" + encodeURIComponent(formId) + "/respuestas/" + encodeURIComponent(recordId) + "/corregir";
+}
 export function responseSheetPath(formId: string, search: string): string {
   return withPublicSearch("/formularios/" + encodeURIComponent(formId) + "/respuestas", search, sheetKeys);
 }

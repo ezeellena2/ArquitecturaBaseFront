@@ -49,7 +49,7 @@ export interface ResponseCondition {
   operator: string;
   values?: readonly string[] | null;
 }
-export type ResponseState = "Received" | "PendingApproval" | "Approved" | "Rejected";
+export type ResponseState = "Received" | "PendingApproval" | "Approved" | "Rejected" | "Voided";
 export interface ResponseFilter {
   state?: ResponseState | null;
   /** Only what was loaded in the app (true) or only what arrived through a channel (false). */

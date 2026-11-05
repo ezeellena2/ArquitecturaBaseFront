@@ -40,12 +40,13 @@ import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
 import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
-import { responseFullPath } from "../responseNavigationPaths";
+import { responseCorrectionPath, responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
 import { ResponseFiltersMenu } from "../components/ResponseFiltersMenu";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
 import { FormEntryPanel } from "../components/FormEntryPanel";
+import { FormEntryCorrectionPanel } from "../components/FormEntryCorrectionPanel";
 export function FormResponsesPage() {
   const { formId = "" } = useParams();
   const { t, i18n } = useTranslation(["forms", "formEntries"]);
@@ -58,6 +59,8 @@ export function FormResponsesPage() {
   const matchedRecord = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
   const recordId = adding ? undefined : matchedRecord;
   const [savedRecord, setSavedRecord] = useState<string | undefined>();
+  // The response being corrected next to the sheet, where D2 was (CW10-A); it lives only here.
+  const [correcting, setCorrecting] = useState<string | null>(null);
   const navigate = useNavigate();
   const update = useQueryUpdate();
   const client = useQueryClient();
@@ -149,14 +152,14 @@ export function FormResponsesPage() {
       header: t("responses.number"),
       sortable: true,
       cell: (row) => (
-        <Link
+        <><Link
           data-response-id={row.id}
           to={recordPath(row.id)}
           onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { rememberSheet(row.id); if (row.id === recordId) setFocusRequest(value => value + 1); } }}
           className="font-medium text-[var(--color-brand-700)] underline"
         >
           {row.number}
-        </Link>
+        </Link>{/* A correction says so next to its number (CW10-A). */}{row.corrected ? <Badge variant="outline" className="ml-2">{t("detail.corrected")}</Badge> : null}</>
       ),
     },
     {
@@ -183,7 +186,7 @@ export function FormResponsesPage() {
       cell: (row) => <span className="inline-flex items-center gap-1.5">{row.channel === "phone" ? <PublicWhatsAppIcon aria-hidden="true" className="size-4 shrink-0" /> : null}
         {row.channel === "app" ? t("formEntries:sheet.channels.app") : row.channel === "phone" ? t("responses.whatsapp") : "—"}</span>,
     },
-    ...(data?.hasApproval ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
+    ...(data?.hasApproval || route.query.state === "Voided" ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
@@ -221,7 +224,8 @@ export function FormResponsesPage() {
           <option value="true">{t("formEntries:sheet.channels.app")}</option>
           <option value="false">{t("responses.whatsapp")}</option>
         </NativeSelect></div>
-        {data?.hasApproval ? <div className="w-full sm:w-44"><NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{(["Received", "PendingApproval", "Approved", "Rejected"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect></div> : null}
+        {/* Voided responses only show with «Estado: Anulada» (CW11-A); the approval states, when the form asks for approval. */}
+        <div className="w-full sm:w-44"><NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{([...data?.hasApproval ? ["Received", "PendingApproval", "Approved", "Rejected"] as const : [], "Voided"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect></div>
         <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} names={route.names} disabled={!data} onApply={route.setFilter}/>
         <div className="sm:ml-auto">
           <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
@@ -344,7 +348,12 @@ export function FormResponsesPage() {
       onClose={() => navigate({ pathname: "/formularios/" + formId + "/respuestas", search: route.params.toString() })}
       onSaved={id => { setSavedRecord(id); readAgain(); }}/> : null}
     {adding && mobile ? <Navigate to={"/formularios/" + formId + "/cargar"} state={{ from: "sheet" }} replace/> : null}
-    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
+    {recordId && correcting === recordId && !mobile ? <FormEntryCorrectionPanel key={scope.owner + ":" + recordId} formId={formId} recordId={recordId}
+      number={data?.records.items.find(row => row.id === recordId)?.number ?? ""} onClose={() => setCorrecting(null)}
+      onSaved={id => { setCorrecting(null); readAgain(); navigate({ pathname: "/formularios/" + formId + "/respuestas/" + id, search: route.params.toString() }); }}/> : null}
+    {recordId && !(correcting === recordId && !mobile) ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId}
+      onCorrect={id => mobile ? navigate(responseCorrectionPath(formId, id), { state: { from: "sheet" } }) : setCorrecting(id)}
+      onVoided={() => { readAgain(); update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); }} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
     </div>
   );
 }

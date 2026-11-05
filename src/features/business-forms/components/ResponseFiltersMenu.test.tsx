@@ -256,9 +256,27 @@ it("exports the same selected state without adding a state facet or another filt
   server.use(http.post("/api/forms/definitions/:id/records/export", async ({ request }) => { body = await request.json(); return new HttpResponse(new Uint8Array([80, 75]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=visits.xlsx" } }); }));
   function Export() { const cooldown = useCountdown(0); return <ResponseExportDialog formId={responseFormId} prefix="VIS" filter={selected} total={2} ready cooldown={cooldown} columns={[]} visible={[]} filterLabels={["Estado: Aprobada"]} onClose={vi.fn()} onForbidden={vi.fn()}/>; }
   await act(async () => { renderWithProviders(<Export/>); });
+  // With a state chosen, that state already says whether the voided go.
+  expect(screen.queryByRole("checkbox", { name: "Incluir las anuladas" })).not.toBeInTheDocument();
   await userEvent.click(await screen.findByRole("button", { name: "Exportar a Excel" }));
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
   expect(body).toEqual({ filter: selected, columns: null, catalogFields: null });
+});
+
+// CW11-A: the Excel leaves the voided out unless «Incluir las anuladas», unchecked at first, asks for them.
+it("adds the voided responses to the Excel only when they are asked for", async () => {
+  setup();
+  let body: unknown;
+  server.use(http.post("/api/forms/definitions/:id/records/export", async ({ request }) => { body = await request.json(); return new HttpResponse(new Uint8Array([80, 75]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=visits.xlsx" } }); }));
+  const all: ResponseQuery = { page: 1, pageSize: 20 };
+  function Export() { const cooldown = useCountdown(0); return <ResponseExportDialog formId={responseFormId} prefix="VIS" filter={all} total={2} ready cooldown={cooldown} columns={[]} visible={[]} filterLabels={[]} onClose={vi.fn()} onForbidden={vi.fn()}/>; }
+  await act(async () => { renderWithProviders(<Export/>); });
+  const include = await screen.findByRole("checkbox", { name: "Incluir las anuladas" });
+  expect(include).not.toBeChecked();
+  await userEvent.click(include);
+  await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
+  await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
+  expect(body).toEqual({ filter: all, columns: null, catalogFields: null, includeVoided: true });
 });
 
 // The export says once what always goes in the (i) next to «Columnas a exportar», and its button waits with «Exportando…».

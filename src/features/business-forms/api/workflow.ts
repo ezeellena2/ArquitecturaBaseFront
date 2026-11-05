@@ -8,8 +8,8 @@ const utc = z.iso.datetime();
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const recipient = z.strictObject({ user: author, channelId: z.string().min(1).nullable(), state: z.enum(recipientStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canReview: z.boolean(), canRetry: z.boolean(), deliveredAtUtc: utc.nullable(), readAtUtc: utc.nullable(), review: z.strictObject({ wasSent: z.boolean(), reviewedAtUtc: utc, reviewedBy: author }).nullable() });
 const workflow = z.strictObject({
-  recordId: guid, recordState: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]), ruleRevision: z.number().int().positive().nullable(),
-  task: z.strictObject({ id: guid, roleId: guid, roleName: z.string().nullable(), requestedAtUtc: utc, decidedAtUtc: utc.nullable(), decidedBy: author.nullable(), reason: z.string().nullable(), revision: z.number().int().positive(), state: z.enum(["Open", "Approved", "Rejected"]) }).nullable(),
+  recordId: guid, recordState: z.enum(["Received", "PendingApproval", "Approved", "Rejected", "Voided"]), ruleRevision: z.number().int().positive().nullable(),
+  task: z.strictObject({ id: guid, roleId: guid, roleName: z.string().nullable(), requestedAtUtc: utc, decidedAtUtc: utc.nullable(), decidedBy: author.nullable(), reason: z.string().nullable(), revision: z.number().int().positive(), state: z.enum(["Open", "Approved", "Rejected", "Closed"]) }).nullable(),
   actions: z.array(z.strictObject({ id: guid, ruleId: guid, kind: z.enum(ruleActionKinds), event: z.enum(ruleEvents), order: z.number().int().nonnegative(), revision: z.number().int().nonnegative(), state: z.enum(actionStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canConsult: z.boolean(), canRetry: z.boolean(), recipients: z.array(recipient), createdAtUtc: utc, updatedAtUtc: utc, completedAtUtc: utc.nullable() })),
   documents: z.array(z.strictObject({ id: guid, runId: guid, culture: z.enum(["es", "en"]), name: z.string(), size: z.number().int().positive(), createdAtUtc: utc })),
 });

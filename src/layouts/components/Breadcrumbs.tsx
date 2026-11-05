@@ -39,7 +39,8 @@ export function Breadcrumbs() {
   const parent = useCurrentBreadcrumbParent();
   const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
-  const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(\/completa)?)?$)/.exec(pathname);
+  // The full view and the correction of a response hang from its form's sheet (DC1, CW10-A).
+  const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(\/completa|\/corregir)?)?$)/.exec(pathname);
   if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[3]} leaf={leaf} parent={parent} />;
   const entryPath = /^\/formularios\/([^/]+)\/cargar$/.exec(pathname);
   if (entryPath) return <EntryBreadcrumbs formId={entryPath[1]} leaf={leaf} parent={parent} />;

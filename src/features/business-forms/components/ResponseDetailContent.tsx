@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
@@ -13,6 +13,7 @@ import type { ResponseDetail } from "../api/responses";
 import type { ResponseWorkflow } from "../api/workflow";
 import type { ResponseDetailState } from "../hooks/useResponseDetailState";
 import { composeWorkflowMoments, workflowMomentState } from "../workflowMoments";
+import { responseFullPath } from "../responseNavigationPaths";
 import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
 import { ResponseDocumentActions, ResponseDocuments } from "./ResponseDocuments";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
@@ -79,12 +80,22 @@ export function ResponseMoments({ data, current, own, timeZoneId, onActivity, de
       const completed = moment.kind === "effects" ? t("detail.actionsCompleted", { completed: moment.completedCount, count: moment.totalCount }) : null;
       return <li key={moment.key} data-moment-state={state} className={"relative border-l-2 py-1 pl-7 " + (state === "pending" ? "border-[var(--color-warning)] bg-[var(--color-warning-50)]" : "border-[var(--color-border)]")}>
         <Icon className={"absolute top-1.5 left-1 size-4 " + iconTone}/>
-        {moment.kind === "received" ? <>{heading(t("responses.received"), date(moment.atUtc))}{loadedBy ? who(loadedBy) : null}</> : moment.kind === "effects" ? <>
+        {moment.kind === "received" ? <>{heading(t("responses.received"), date(moment.atUtc))}{loadedBy ? who(loadedBy) : null}</>
+        : moment.kind === "previousDecision" ? <>{heading(t("approvals.taskStates." + moment.state), date(moment.atUtc))}
+          {own && !moment.pdfAtUtc ? null : who([...own ? [] : [moment.by?.displayName ?? unknown], ...moment.pdfAtUtc ? [t("detail.previousPdf", { date: date(moment.pdfAtUtc) })] : []].join(" · "))}</>
+        // Who corrected and why, and the version it replaced, as it was (CW10-A).
+        : moment.kind === "corrected" ? <>{heading(t("detail.corrected"), date(moment.correction.atUtc))}
+          {who(own ? "«" + moment.correction.reason + "»" : t("detail.correctedBy", { name: moment.correction.by.displayName ?? unknown, reason: moment.correction.reason }))}
+          <Link to={responseFullPath(data.definitionId, moment.correction.previousRecordId, "")} className="text-xs text-[var(--color-brand-700)] underline">
+            {t(moment.correction.previousPdfAtUtc ? "detail.viewPreviousWithPdf" : "detail.viewPrevious")}</Link></>
+        : moment.kind === "voided" ? <>{heading(t("approvals.states.Voided"), date(moment.atUtc))}
+          {who(own ? "«" + moment.reason + "»" : t("detail.voidedBy", { name: moment.by.displayName ?? unknown, reason: moment.reason }))}</>
+        : moment.kind === "effects" ? <>
           {heading(t("detail.events." + moment.event), onActivity ? <Button variant="link" size="inline" onClick={onActivity}>{completed}</Button> : completed)}
           {who(moment.actions.map(action => t("rules.actions." + action.kind)).join(" · "))}
           {moment.actions.some(action => action.state === "Failed" || action.state === "Uncertain" || action.recipients.some(recipient => recipient.state === "Failed" || recipient.state === "Uncertain")) ? who(t("detail.issues")) : null}</> : <>
-          {heading(t("approvals.taskStates." + moment.task.state), moment.task.state === "Open" ? <ActionTooltip label={date(moment.task.requestedAtUtc)}><time dateTime={moment.task.requestedAtUtc} tabIndex={0}>{formatRelativeTime(moment.task.requestedAtUtc, i18n.language)}</time></ActionTooltip> : moment.task.decidedAtUtc && !panel ? date(moment.task.decidedAtUtc) : null, "approval-moment-" + moment.task.id)}
-          {panel ?? <>{own ? null : who([moment.task.roleName ?? unknown, ...(moment.task.state !== "Open" ? [moment.task.decidedBy?.displayName ?? unknown] : [])].join(" · "))}{moment.task.reason ? <p className="mt-1 text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
+          {heading(moment.again ? t("detail.pendingAgain") : t("approvals.taskStates." + moment.task.state), moment.task.state === "Open" ? <ActionTooltip label={date(moment.task.requestedAtUtc)}><time dateTime={moment.task.requestedAtUtc} tabIndex={0}>{formatRelativeTime(moment.task.requestedAtUtc, i18n.language)}</time></ActionTooltip> : moment.task.decidedAtUtc && !panel ? date(moment.task.decidedAtUtc) : null, "approval-moment-" + moment.task.id)}
+          {panel ?? <>{moment.again ? who(t("detail.newPdfOnApproval")) : own ? null : who([moment.task.roleName ?? unknown, ...(moment.task.state !== "Open" ? [moment.task.decidedBy?.displayName ?? unknown] : [])].join(" · "))}{moment.task.reason ? <p className="mt-1 text-sm whitespace-pre-wrap">{moment.task.reason}</p> : null}</>}
         </>}
       </li>; })}
   </ol>;
