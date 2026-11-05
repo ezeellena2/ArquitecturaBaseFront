@@ -250,6 +250,60 @@ Diferencias con el dibujo:
   dibujada.
 - Las condiciones van en el orden de sus campos, como las demás, y no en el orden en que se agregaron.
 
+## Corregir y anular, Etapa 3 — 2026-11-05
+
+Lo guardado no se edita: «Corregir» guarda otra respuesta que reemplaza a la anterior con el mismo número (**CW10-A**) y
+«Anular» la deja con su número, marcada «Anulada» (**CW11-A**), venga de WhatsApp o de la app. Las acciones aparecen sólo
+cuando el servidor dice que esa persona puede cambiarla ahora (`canAmend`): quien la cargó mientras nadie la decidió, o
+cualquiera con «Corregir y anular respuestas». La regla está en
+[formularios](../../../ArquitecturaBase/docs/features/formularios.md#corregir-y-anular--etapa-3-2026-11-05).
+
+- **Las acciones.** «Corregir» (con el lápiz) y «⋯ Más acciones» van en la fila del título de la vista rápida (D2) y de la
+  pantalla completa (DC1), junto a los demás íconos (TL3-A), también en la planilla de lo propio. «⋯» tiene un solo ítem,
+  «Anular», en rojo.
+- **Corregir, en la computadora,** abre el panel «Corregir TEST-000002» donde estaba D2, del ancho del panel de carga, con la
+  respuesta como estaba llevada a la versión activa: las mismas zonas y anchos de la carga (AR1-A), y debajo de cada pregunta
+  que cambió, en gris, «Antes: 1250,5» («Antes: sin respuesta» si no tenía). Los archivos que ya estaban se ven como renglones
+  «Ya cargado · 86 KB» con «Quitar», y se suman otros como en la carga, dentro de los mismos topes. Al final, después de una
+  línea, «Motivo de la corrección *». Abajo, «Cancelar» y «Guardar corrección», que muestra el avance al subir archivos.
+  Cerrar con cambios pregunta «¿Descartar la corrección?»; sin cambios, cierra. Sin motivo, «Escribí el motivo.» y el foco va
+  ahí. Las listas de catálogo son las de quien la cargó.
+- **Corregir desde DC1 y en el celular** abre su página, `/formularios/:formId/respuestas/:recordId/corregir`, con el mismo
+  contenido; en el celular, «Guardar corrección» queda fijo abajo, del tamaño táctil. Si la respuesta ya no se puede corregir,
+  lo dice («Esta respuesta ya no se puede corregir.») con «Ver la actual».
+- **Después de corregir,** el aviso dice «Se corrigió TEST-000002», la planilla se relee y D2 abre la corrección. La fila lleva
+  «Corregida» junto al número; el detalle, «Corregida» junto al estado y el momento «Corregida» con «Ana Pérez · «motivo»» y
+  «Ver la versión anterior» («… y su PDF» si la anterior tenía uno). Si estaba aprobada, antes va «Aprobada» con quién la
+  aprobó y «PDF del …», y después «Por aprobar otra vez» con «el PDF nuevo sale al aprobarla».
+- **La versión anterior** se lee en la pantalla completa como estaba, con «Reemplazada» en lugar del estado, «Versión anterior»
+  en las migas y el aviso «Versión anterior de TEST-000002: la reemplazó la corrección del …» con «Ver la actual». No tiene
+  acciones.
+- **Anular** pide confirmar en «¿Anular TEST-000002?», que explica que queda en la planilla como anulada, con su número, deja
+  de contar y no sale en el Excel; «Motivo *» es obligatorio y el botón es «Anular respuesta», en rojo. Al anular, el aviso
+  dice «Se anuló TEST-000002», D2 se cierra y la fila sale de la planilla; desde DC1 vuelve a la planilla.
+- **Ver las anuladas.** «Estado» suma «Anulada» y se muestra siempre: con la aprobación, junto a los demás estados; sin ella,
+  sólo con «Anulada». Con ese filtro las anuladas vuelven, con la columna «Estado», y su detalle dice «Anulada» y el momento
+  «Anulada» con «Ana Pérez · «motivo»», sin acciones.
+- **El Excel** suma «Incluir las anuladas», sin marcar, debajo de las columnas; con un estado elegido no aparece, porque el
+  estado ya dice cuáles van.
+- **En el chat de WhatsApp,** la tarjeta de la respuesta conserva lo que llegó y suma al pie, en gris y con el ícono de
+  información, «Después se corrigió: APL-000124 quedó reemplazada por su corrección» o «Después se anuló APL-000124».
+
+Diferencias con el dibujo:
+
+- «⋯» tiene sólo «Anular». El tablero dibujó también «Descargar el PDF», pero el PDF ya se baja desde los íconos del título
+  (TL3-A) y desde la actividad, así que el menú no lo repite.
+- «Corregir» y «⋯» van en la fila del título, con los íconos, y no debajo como en el dibujo (TL3-A).
+- El panel de la corrección conserva las zonas «Datos» y «Fotos y documentos» de la carga (AR1-A), con los archivos que ya
+  estaban; el tablero sólo dibujó los datos.
+- «Anulada» está en el desplegable «Estado» de siempre (PL1-A y PL2-A), en lugar de un «Más filtros».
+- Las migas de la versión anterior terminan en «Formularios / Informe de entregas / Versión anterior», sin el número como
+  nivel aparte, como las de la pantalla completa: el número está en el título. Las de la página de corrección terminan en
+  «Corregir TEST-000002».
+- La marca del chat no tiene tablero: es un renglón al pie de la tarjeta que ya existía, que dice qué pasó después con lo
+  que llegó.
+- El cuadro «Quién puede corregir y anular» y los círculos naranjas son notas del tablero, no pantallas.
+
 ## Títulos de sección, CW15-B — 2026-11-05
 
 El autor ordena un formulario largo con títulos entre las preguntas, como dibuja **CW15-B** («Cada sección en su zona»): la app

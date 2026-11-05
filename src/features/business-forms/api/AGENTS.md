@@ -66,6 +66,7 @@ Familias:
 
 ### Carga desde la app
 
+- Corregir y anular: `entries.ts` abre una corrección (`fetchFormEntryCorrection`), la guarda en multipart con `reason` y `keptFileIds` (`submitFormEntryCorrection`) y anula con su motivo (`voidFormRecord`). `responses.ts` lee `corrected` en la fila y `correction`, `replacedBy`, `void` y `canAmend` en el detalle, opcionales porque el servidor los omite cuando no aplican; `workflow.ts` suma el estado `Voided` y la tarea `Closed`. `entriesAmendmentHttpContract.test.ts` consume los nueve cuerpos de corregir y anular de la cohorte de la carga.
 - `entries.ts` lee la versión activa para cargar, una página de 50 opciones de una pregunta de catálogo (con búsqueda) y envía la respuesta en multipart con `api.upload`, que informa el avance de la subida: `requestId`, `versionId`, `answers` en JSON y cada archivo con su `fileFieldIds`. Los guards son `strictObject` y un cuerpo fuera del contrato falla sin conservar lo que traía. `Forms.Entry.VersionChanged` y `Forms.Entry.Unavailable` llegan como `ApiError` 409. La cohorte es `entries` (`forms-entries-http`), del productor `FormEntryHttpTests`.
 
 ### Tests de contrato
