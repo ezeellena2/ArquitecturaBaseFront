@@ -1,32 +1,6 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormApprovalHttpTests and FormApprovalContinuationHttpTests and FormResponseHttpTests and FormApprovalContinuationFixture and FormPublishedVersionFixture and FormApprovalContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormApprovalHttpTests.cs",
@@ -53,94 +27,98 @@
       "sha256": "ac2c5fedffaac7f26a69ebd09075f340adf0c88812a3e54c410817e012a209b3"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "FormApprovalHttpTests and FormApprovalContinuationHttpTests and FormResponseHttpTests and FormApprovalContinuationFixture and FormPublishedVersionFixture and FormApprovalContractCapture",
+  "schemaVersion": 1,
+  "artifactSet": "approvals",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 1309,
+      "sha256": "c20f6ba424b9ec9243fc4bf174c52a355e629251fa65cd8658d7446f9da90a3c",
       "name": "approval-continuation-closed-en.json",
-      "sha256": "4bb554d64539d96cd2e826688417452ccf79b6f8bb74c2c1de1d2a38aa095ed7"
+      "length": 1309
     },
     {
-      "length": 1315,
+      "sha256": "fc9efc62dbf49c4ce056e2be31d985e854a27692ebaf9de1b8ebd83ab1d2708f",
       "name": "approval-continuation-closed-es.json",
-      "sha256": "55cb9a8229a2d89a561cb251b6ea2d6d036308524ff1110da3749bd622bebb1f"
+      "length": 1315
     },
     {
-      "length": 738,
+      "sha256": "6d7fe80c5e474c19b3392c8c025e6860734a612945dc22b91c1686055b833f68",
       "name": "approval-continuation-next-en.json",
-      "sha256": "8e8c6285bf3f8621bb31aab15974722ec29c3a0de69b90ff26c6ea524b41c1b0"
+      "length": 738
     },
     {
-      "length": 741,
+      "sha256": "9cce7124c94ba6e4c17a6594234fa5b4f732c456122b1908187c90f0ed18017b",
       "name": "approval-continuation-next-es.json",
-      "sha256": "3692dd4a974f241e2caedd22d4c23884629e4aead1df2f5ef74faa4efd08e45e"
+      "length": 741
     },
     {
-      "length": 742,
+      "sha256": "ab72c0db09f4400bd9f8fcb2021f6c227640e27d419672870a5dc7a68262bb99",
       "name": "approval-continuation-previous-en.json",
-      "sha256": "c3c80a13daedfab4180702c43dc2207ca4727c18e9e7d036f8968a91e2a6db4b"
+      "length": 742
     },
     {
-      "length": 745,
+      "sha256": "e8072b6301a8cadcaaf1ccb3f662d2e67954cc855a94ca640da3f1d54e3f0aab",
       "name": "approval-continuation-previous-es.json",
-      "sha256": "7c3479486532b5f64da5dffe29d89ee9efce6c40d97898429561f530fd3ac85e"
+      "length": 745
     },
     {
-      "length": 271,
+      "sha256": "a66a526a9a1a4d255c51f3a313ef31af888b588ac113557076e7c4e2bcd8d1da",
       "name": "conflict-approved-es.json",
-      "sha256": "db9f353c998d8bedc315e4c6789d1cf759a768dc8412cbf439ddf81637d18850"
+      "length": 271
     },
     {
-      "length": 271,
+      "sha256": "84e7f4cf5dba78a52d6a3670c905c6cbb0516445e5aab02680d62161a68de836",
       "name": "conflict-rejected-es.json",
-      "sha256": "0049c7f020ffc881c0645cc0139ae8c058f7219c72adb9990cfda254acf1a470"
+      "length": 271
     },
     {
-      "length": 11,
+      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661",
       "name": "count-es.json",
-      "sha256": "6aea6dfe6561984cdc5c54ead84d47d2cf29e48253ae282aef237404adad4661"
+      "length": 11
     },
     {
-      "length": 266,
+      "sha256": "c00e2f368fd3c28caa53dad6a371083741d6d344d73aec6ac50e045c4c493085",
       "name": "decision-approved-es.json",
-      "sha256": "b2e7491894a066df007979f03c3dc08e073545de3829c6a0fe825f14ee9a9c29"
+      "length": 264
     },
     {
-      "length": 285,
+      "sha256": "c862b7729eeff7e8e1b05d7713fe5acbf57bd9c17752a412586953c14727a44b",
       "name": "decision-rejected-es.json",
-      "sha256": "9a23740bc7fb81a6e0db8d35bbdfcae4c7df7613492c4f07d2c6384a4911c7d4"
+      "length": 283
     },
     {
-      "length": 648,
+      "sha256": "76a16336effd5d49ae31c4fc2664aaaded64aaafce1b8f487cf747359e60832f",
       "name": "inbox-en.json",
-      "sha256": "e9116fa6b7dea20a50709fcccdf1a94578223587df7cfcf38f514fadb9778a27"
+      "length": 648
     },
     {
-      "length": 651,
+      "sha256": "9191ef6bb1539ef69ded9d379c565c7e24942829ca3d6b8f18e852234411f690",
       "name": "inbox-es.json",
-      "sha256": "05cbcecd0d10aed09ee57059fbf94907df96a45e776e3f84f9f3e2194f8a8bda"
+      "length": 651
     },
     {
-      "length": 265,
+      "sha256": "6bf09f0883f92b3d20e50d81852b598afe445b359a0b9cb8ca7e7dfb52cf372d",
       "name": "own-response-es.json",
-      "sha256": "721c5c3513e0e047250ddabe67b538439bea4452fcf254127cad4ea233ec5f47"
+      "length": 265
     },
     {
-      "length": 651,
+      "sha256": "22b24b3040adbaf57afca06c31dae9fbdf722797597c4badc5d7fd42eeca69b2",
       "name": "task-approved-es.json",
-      "sha256": "e85b8b45c5472d240259af0b2a1439ae03a48352b64a8aca97b767dae563ef7b"
+      "length": 649
     },
     {
-      "length": 550,
+      "sha256": "c0391a6e0e095d5efb3d90999149891178f4602d04ca496190179aa2cbecfa12",
       "name": "task-open-es.json",
-      "sha256": "c51b5bcf23a19fbcd3e8bb50f8de636205d61ad0c04455597f20ffde8fa93759"
+      "length": 550
     },
     {
-      "length": 670,
+      "sha256": "376b9dcf3fc14d3a6417bbcb5a2b2b92b9457f7d3075e8755fc7b664b6bef248",
       "name": "task-rejected-es.json",
-      "sha256": "0de33608390d37c1ed7691364f89f182a755a3b83304f0384aadefcd57617dbe"
+      "length": 668
     }
-  ],
-  "artifactSet": "approvals",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Ya hay un formulario con ese nombre.","traceId":"00-9614373b3f9ba11479bc898d64aea0b5-80d364224e9867d9-01","code":"Forms.Definition.NameTaken","errors":{"name":["Ya hay un formulario con ese nombre."]}}

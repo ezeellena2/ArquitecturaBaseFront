@@ -1,66 +1,44 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "WhatsAppFormFilesIntegrationTests",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
       "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "WhatsAppFormFilesIntegrationTests",
+  "schemaVersion": 1,
+  "artifactSet": "form-files",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 1824,
+      "sha256": "ed4500a39264c1ffa1fa349b40cfac2d560294838cb4b6f65f39aef29b4a295c",
       "name": "draft-created.json",
-      "sha256": "4a830ff0c811efb82cb810dbbcbf180701151e979d577fa0778f4b7a792f4e80"
+      "length": 1824
     },
     {
-      "length": 2770,
+      "sha256": "55584304df0ce233f000c871f3985052cdd085ba943f288a7c8e40665b7030c1",
       "name": "reply-completed.json",
-      "sha256": "293a1b4ed2f02daa2e5cdd53ca5771d0522047afb07b0777e7cdddd925a6633f"
+      "length": 2770
     },
     {
-      "length": 1935,
+      "sha256": "59278e21ea8bdbd5dabb2c9336ee778a9102297f5df06b678d070aa1be6302a8",
       "name": "reply-downloading.json",
-      "sha256": "2ce9ff1a99d48fb2a42ddbd8ac30887611d505239469ed2a5e5626f06057a0ad"
+      "length": 1935
     },
     {
-      "length": 2770,
+      "sha256": "55584304df0ce233f000c871f3985052cdd085ba943f288a7c8e40665b7030c1",
       "name": "reply-reloaded.json",
-      "sha256": "293a1b4ed2f02daa2e5cdd53ca5771d0522047afb07b0777e7cdddd925a6633f"
+      "length": 2770
     },
     {
-      "length": 1828,
+      "sha256": "e1d8e313e07fa1b60d333c769ff23ae7d86ec8c4356b7f1945f09095f6355c39",
       "name": "reply-without-read.json",
-      "sha256": "81ffd9be9e197b5d8a2fe2a91a978034b999a1d971092d9b61f336351076d639"
+      "length": 1828
     }
-  ],
-  "artifactSet": "form-files",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

@@ -16,8 +16,8 @@ it("qualifies all multiple-choice capture names and producer sources from the jo
   const definitions = httpCohort("forms").verify();
   const responses = httpCohort("responses").verify();
   const pdf = httpCohort("pdf").verify();
-  // 64 with the four recipient maximums (fixed and per person, es/en) that recipientPreviewHttpContract consumes.
-  expect(definitions.captures).toHaveLength(64);
+  // 67: the four recipient maximums (fixed and per person, es/en) that recipientPreviewHttpContract consumes and the three rows bodies.
+  expect(definitions.captures).toHaveLength(67);
   expect(responses.captures).toHaveLength(55);
   expect(pdf.captures).toHaveLength(32);
   expect(definitions.captures.map(item => item.name)).toEqual(expect.arrayContaining([

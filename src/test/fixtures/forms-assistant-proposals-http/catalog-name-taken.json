@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Ya hay un catálogo con ese nombre.","traceId":"00-6a8c392b55afa6d4c19a145049a6bc78-ce8b90debfb24f90-01","code":"Forms.Catalog.NameTaken","errors":{"name":["Ya hay un catálogo con ese nombre."]}}

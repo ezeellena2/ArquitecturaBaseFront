@@ -1,32 +1,6 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs",
@@ -37,154 +11,158 @@
       "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
+  "schemaVersion": 1,
+  "artifactSet": "person-data",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 264,
+      "sha256": "e752926264639968c159c87ea5736ed93b9d51b0cfc2414967f0429aa4ba5a4f",
       "name": "attribute-conflict-en.json",
-      "sha256": "034eead48337de7e70d8790523f4625b0cd88b115796e039772f0009780437f3"
+      "length": 264
     },
     {
-      "length": 271,
+      "sha256": "0377cefb85f5a8b7243fc0331b8882ed384ea25d622d0f144e997f8094386d5a",
       "name": "attribute-conflict-es.json",
-      "sha256": "3b2eb04613c398b21630abf3ff3049f93cd7d6c73089637c3846f2c14872f2ec"
+      "length": 271
     },
     {
-      "length": 288,
+      "sha256": "9949d1d5fcfdd6d5b525cdf96f590cbdd26360a927474d83fe2bea1c0cdf34d0",
       "name": "attribute-created-en.json",
-      "sha256": "d2471fffeb1cd1f2620ddf3a400165173d3f7a3ff6c9a917e6e2ff7273a0c281"
+      "length": 288
     },
     {
-      "length": 231,
+      "sha256": "a7eb9733b34f5bfbb379a597308b4dcde916adebb11431b1a8d7115fba1941ff",
       "name": "attribute-created-english-original-en.json",
-      "sha256": "aac18f782b612a80e7e6a7722e7c9a041e2162314374a93e7ae27651042a9605"
+      "length": 231
     },
     {
-      "length": 288,
+      "sha256": "e9dbf5dac65c7a83e45ab15458eb4a8d73a622fe5600f6034c8f354ae2a12dc6",
       "name": "attribute-created-es.json",
-      "sha256": "7c44f069de99dfe933953980f2b63051d770ece550f1119482943bab410b378a"
+      "length": 288
     },
     {
-      "length": 313,
+      "sha256": "8d71b92a9640ac58c1b228b2af9cd905a253b9fff3a74a12f49bfc78f6bc298e",
       "name": "attribute-updated-en.json",
-      "sha256": "6412706f9a23cb2ca75042469ce7a820c6f672508d2a525f08bca462e99a6a0a"
+      "length": 313
     },
     {
-      "length": 313,
+      "sha256": "2cd5138ebc56227edbb536ed31318afbe1b485d95a9e871fd06f5230ed67a522",
       "name": "attribute-updated-es.json",
-      "sha256": "1d17b69469d24903da42af890744894d9e3deea76a41a6164c0ec0e745e8d297"
+      "length": 313
     },
     {
-      "length": 430,
+      "sha256": "57e5674f9c4da3b6f7a79fcf4088d0e841f33d3aa5bb557435300e057be2ec75",
       "name": "attribute-value-removal-confirmation-en.json",
-      "sha256": "e1efb907c6298715a657b9fa5c6b9fb185e7483a1cfb78f5d1cb38e006fbaca5"
+      "length": 430
     },
     {
-      "length": 454,
+      "sha256": "6ef295d6d7837968da91f65904635743c961380f34d568bfa7808bdbe1cf5f36",
       "name": "attribute-value-removal-confirmation-es.json",
-      "sha256": "c22f25e302b8f43318350aad71b0614c0b3a9f44b81c77a581b62f3afd06e022"
+      "length": 454
     },
     {
-      "length": 1903,
+      "sha256": "01eb8e0e1ba94cadba76737c5c70ef16f181c4d6aff99aaa242a4795451a8c6f",
       "name": "attributes-en.json",
-      "sha256": "c85addc1cc11d15f70ae11439d422c3576fcf064c989e955aa3f53a56e5aa237"
+      "length": 2168
     },
     {
-      "length": 2168,
+      "sha256": "ad2f5860bcda45309c7bf73fdc86e80acdb279492ebb0742709cd82188e47779",
       "name": "attributes-es.json",
-      "sha256": "713d1d9c412d19570ed294d6a65057a282f654405a98c9454bcb7c4d68ccfa1b"
+      "length": 1903
     },
     {
-      "length": 259,
+      "sha256": "6bb7699f17dc45bab98ea497ef072a873a19aa7a93ad4b18d736ecc68aee43f6",
       "name": "conflict-en.json",
-      "sha256": "f0d420f791c6b98c36a07738ac1510440d103449778d6d7ad27e4c58852684b2"
+      "length": 259
     },
     {
-      "length": 271,
+      "sha256": "b5ce6d33c9f1772db301be9e09f10e4df14741af6da2cefaa540f17ce914b4bf",
       "name": "conflict-es.json",
-      "sha256": "bac7ddf7f6b6f9ceea61dbdb344de373aa19b847452ee455cb251493c934047f"
+      "length": 271
     },
     {
-      "length": 247,
+      "sha256": "ef5cbb05fae2bd250db2269b7d9a952ba2517c5a5946d37fd4fd485c6c721ceb",
       "name": "forbidden-en.json",
-      "sha256": "959278d9d055ba985d604cf48b548651614f0b5c3749737266f9118c705daeee"
+      "length": 247
     },
     {
-      "length": 249,
+      "sha256": "04967db6c047619f9df892b71f7e9e48e8d116d47f84d16a2ca2cfbef9e8faae",
       "name": "forbidden-es.json",
-      "sha256": "5f48fb05f9b7996946b96ce5895f79a0fb8b7cc887b7d11ba4c729be2cb32a7a"
+      "length": 249
     },
     {
-      "length": 356,
+      "sha256": "5ca071042adb9f20240c68d196053f37da8142fad9d8ca71e8968ed5f93b3a2e",
       "name": "invalid-value-en.json",
-      "sha256": "2f8947c3a5c300317504a6eb0b100e80c18776c19e172a1098fa257859780c81"
+      "length": 356
     },
     {
-      "length": 346,
+      "sha256": "c234397b363872c2b96a581b838b927191900284a069df633d319c8bbbf44cb6",
       "name": "invalid-value-es.json",
-      "sha256": "fd416ef8925c1a6e3aae7826e5d689a8e7819d9e63e2a02ce4a63f9a8a9eecc6"
+      "length": 346
     },
     {
-      "length": 704,
+      "sha256": "4454d321faf31609a7ad555cb86cec86659a9880f3ff6a9e47afef46f0550f2c",
       "name": "people-en.json",
-      "sha256": "8fe6c91d7e0590be5807dd90ff571f0ba3782ad59a9f37be112c31e2d2167bc1"
+      "length": 769
     },
     {
-      "length": 768,
+      "sha256": "ff7025606d610d91cceb9cb2dc98d961866ec38c70eafd46fb8a74412f4885d1",
       "name": "people-es.json",
-      "sha256": "dcf99de2cbc7b23969d1cc1cf8aac42ff3ded1b397da200c2f776aefb58ab463"
+      "length": 703
     },
     {
-      "length": 77,
+      "sha256": "a6a01505e46dc208b1c32d200f7e0f4f9f2519c1726266d1f47e85a028f4f482",
       "name": "person-data-empty-en.json",
-      "sha256": "6c901a2e23dcda816f489850affa52b93a18a07938d127db8accb2dd3073f338"
+      "length": 77
     },
     {
-      "length": 77,
+      "sha256": "f26bfa1a8e7ba8052b1d2ae584cc3fe1fb005c26a1e1e19d8e27fd3dc5f0f2d4",
       "name": "person-data-empty-es.json",
-      "sha256": "abe86b388793cd84d353f110b53fdc6bd970b2a2d2489a9ef542d10a06a867cf"
+      "length": 77
     },
     {
-      "length": 178,
+      "sha256": "ae77aebf08b1d4359225cf065c194007c6d28ff458f94f8ded3c01f92190e686",
       "name": "person-data-en.json",
-      "sha256": "605532c36026250348a5b8aab5894b95c82ec2691a9435c68cd3d630c211f661"
+      "length": 178
     },
     {
-      "length": 177,
+      "sha256": "6434fb693e95d1bddf70c358cfceed6e69063ef2ad76f411b52ef3c1d6faa78d",
       "name": "person-data-es.json",
-      "sha256": "a88019ec897432889f52b333024476ef6b8e57366769a8c5b30453708744ceff"
+      "length": 177
     },
     {
-      "length": 178,
+      "sha256": "ae77aebf08b1d4359225cf065c194007c6d28ff458f94f8ded3c01f92190e686",
       "name": "person-data-saved-en.json",
-      "sha256": "605532c36026250348a5b8aab5894b95c82ec2691a9435c68cd3d630c211f661"
+      "length": 178
     },
     {
-      "length": 177,
+      "sha256": "6434fb693e95d1bddf70c358cfceed6e69063ef2ad76f411b52ef3c1d6faa78d",
       "name": "person-data-saved-es.json",
-      "sha256": "a88019ec897432889f52b333024476ef6b8e57366769a8c5b30453708744ceff"
+      "length": 177
     },
     {
-      "length": 224,
+      "sha256": "1614b99a59e7c0b953ea95a31995b04bd3a95e4fea11c647cd348dc49e55fe51",
       "name": "person-options-en.json",
-      "sha256": "1dcf0fc7959dd86fcaac4472154ac7b34ebe478f0bc3617be37592c0afa38818"
+      "length": 224
     },
     {
-      "length": 221,
+      "sha256": "41bbc313bc197e465b97df96be5fbce07dc31992a3abdf34b06a8da4704f6fbf",
       "name": "person-options-es.json",
-      "sha256": "9afe420f1222cdc4cb0b9d2cb7633b70dfc26cf1452b66084699f9e4c4a0019a"
+      "length": 221
     },
     {
-      "length": 292,
+      "sha256": "b8a41e428cd6e73a94179af3f354d1f472bdefa7c24b1e3379190895d97f19a3",
       "name": "source-in-use-en.json",
-      "sha256": "43236b33e14786e5814e90cd9e1310578d0923351521cb08ac267b91704c9ffd"
+      "length": 292
     },
     {
-      "length": 305,
+      "sha256": "92185f41f9610b929922cae5777a0bb41d44ade8251fc51d04c4a08d0cfa2875",
       "name": "source-in-use-es.json",
-      "sha256": "ae8af09487b79e2cfbbcb419695b5c75e0a7d5005787c4758766517e5d7171f2"
+      "length": 305
     }
-  ],
-  "artifactSet": "person-data",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

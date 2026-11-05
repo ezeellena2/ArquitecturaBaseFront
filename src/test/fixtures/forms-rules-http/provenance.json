@@ -1,32 +1,6 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormRuleHttpTests and FormRuleContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
@@ -37,59 +11,63 @@
       "sha256": "948dcf1f6abc3594e7ccc768cdee707eb48024f481e578df9249690dd24fa4f4"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "FormRuleHttpTests and FormRuleContractCapture",
+  "schemaVersion": 1,
+  "artifactSet": "rules",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 281,
+      "sha256": "5c49c8adfb69b22585ed74e5fa6a005a0e7cec144221976b0e195c5060ea525f",
       "name": "conflict-es.json",
-      "sha256": "dfa9b2f21447f7309aabee7eadfe92e8db6c5f185936c7eeaa528c2078369715"
+      "length": 281
     },
     {
-      "length": 537,
+      "sha256": "647ab239346a58cbc65e3a96e55e86d9f43d54fd29f3451ee5f2a44fe3db58ab",
       "name": "current-reference-es.json",
-      "sha256": "53bc520c65613d0100c91a5acd25a5823a7467c85b11648f4e70e7f14ea1acb1"
+      "length": 535
     },
     {
-      "length": 146,
+      "sha256": "90bcdcffa36e62352b4dcdcb4558a83d30ff6343b9e3ddd446d037e3bcac8ef9",
       "name": "empty-es.json",
-      "sha256": "a8198bebd4a531ba79701a7296d481cf5df967e786289a15aa8d34851a18d3f7"
+      "length": 146
     },
     {
-      "length": 377,
+      "sha256": "58913f8e96d37b489d6c6533380236d1229452a3afdaf8c9f60b5b5ff3bd71fb",
       "name": "history-es.json",
-      "sha256": "dea5af7f7913d3e0237f68231ce3233a04153e180f17d74ca8ee9e171eaaa490"
+      "length": 375
     },
     {
-      "length": 47887,
+      "sha256": "c1e3844e2c68f67d636122fabe8c0b6778a3176e7176e55260e0c47b7475cdda",
       "name": "options-en.json",
-      "sha256": "3fbbad4f5685be04ea7ea1c90838bcd494447c53a0a4f0109d340226ebae15e3"
+      "length": 19795
     },
     {
-      "length": 47887,
+      "sha256": "c1e3844e2c68f67d636122fabe8c0b6778a3176e7176e55260e0c47b7475cdda",
       "name": "options-es.json",
-      "sha256": "3fbbad4f5685be04ea7ea1c90838bcd494447c53a0a4f0109d340226ebae15e3"
+      "length": 19795
     },
     {
-      "length": 537,
+      "sha256": "0312c4184ddbebf39ac66e8fde955d07f6fbac6a8e9a2e228b2303c5ea351039",
       "name": "revision-es.json",
-      "sha256": "9ae55b2b80890119472a7d019a9aa35279dd043e6afd23ac37e386782ce266fb"
+      "length": 535
     },
     {
-      "length": 338,
+      "sha256": "d2d776139187fcc15c3a72f344ed3a59f8af19841bdf90fddd62751cf9717149",
       "name": "role-unavailable-es.json",
-      "sha256": "74961ca36c952bce1d776fda31d449e7da7263a94231f0cd26b9c7ba905a05d7"
+      "length": 338
     },
     {
-      "length": 533,
+      "sha256": "401f92956bbe82fee98659a8b5b89fae58ba0e03db81fc7fcba333b4989faba5",
       "name": "saved-es.json",
-      "sha256": "44fdbf42e648f04b867f974a7083dc28a643dde6a5a18268b8ada0283a55fdff"
+      "length": 531
     },
     {
-      "length": 533,
+      "sha256": "3308cd6d1cfef50407054d0952a96a01b9c4f7bbeca852e8d1d5f057c3492259",
       "name": "saved-reference-es.json",
-      "sha256": "ae294cc6232b7c639d506d427c3ae7f62581a473461df986b87f7e6ad10be406"
+      "length": 531
     }
-  ],
-  "artifactSet": "rules",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

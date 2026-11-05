@@ -21,6 +21,7 @@ const cohorts = {
   suggestions: ["forms-suggestions-http", "FORMS_SUGGESTIONS_HTTP_CONTRACT_INPUT", "suggestions"],
   suggestionDetails: ["forms-suggestion-detail-http", "FORMS_SUGGESTION_DETAILS_HTTP_CONTRACT_INPUT", "suggestion-details"],
   catalogProposals: ["forms-catalog-proposals-http", "FORMS_CATALOG_PROPOSALS_HTTP_CONTRACT_INPUT", "catalog-proposals"],
+  assistantProposals: ["forms-assistant-proposals-http", "FORMS_ASSISTANT_PROPOSALS_HTTP_CONTRACT_INPUT", "assistant-proposals"],
   workflow: ["forms-workflow-http", "FORMS_WORKFLOW_HTTP_CONTRACT_INPUT", "workflow"],
   approvals: ["forms-approvals-http", "FORMS_APPROVALS_HTTP_CONTRACT_INPUT", "approvals"],
   pdf: ["forms-pdf-http", "FORMS_PDF_HTTP_CONTRACT_INPUT", "pdf"],

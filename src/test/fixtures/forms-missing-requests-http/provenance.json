@@ -1,32 +1,6 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
@@ -41,39 +15,43 @@
       "sha256": "ac43105aebde8ea4e6a90ca0fd88a8e2fa1b84317e7ba45a3fee631a52169dfe"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
+  "schemaVersion": 1,
+  "artifactSet": "missing-requests",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 275,
+      "sha256": "ae9dd8417b24ceedc304434cc1ef93016a008574a2e7515948e5b45e49cd9e7d",
       "name": "conflict.json",
-      "sha256": "b1ff2ce9bcef638c142e0ccd5b2524863c3180b279da5988ddac9a16fb6a14b8"
+      "length": 275
     },
     {
-      "length": 570,
+      "sha256": "ef4818fa6e98c59d3f03cd10b39bdf2519caa4a0f45e33ea8aa86462c81b2e86",
       "name": "discarded-en.json",
-      "sha256": "40185c371cea7429fb94ccc80fc06ea0a0efb101201bc43e73e3d330fdb3c018"
+      "length": 570
     },
     {
-      "length": 576,
+      "sha256": "ba6f192bb0627889a41ff13127ce4512f25bb8a468442c3ed8e384f79064f072",
       "name": "discarded-es.json",
-      "sha256": "e75d5a90237025c8d35e3ab3229f36ebb168bc8390d4199d358a4547b2098ed2"
+      "length": 576
     },
     {
-      "length": 249,
+      "sha256": "589608d3e2c212603953f057f36d3c2bb20c9d35f957f25a86b9677b0a85183a",
       "name": "forbidden.json",
-      "sha256": "082ff124b94a88328ae698ef676ea490b1d070b182b532b582d726c37aa8f52f"
+      "length": 249
     },
     {
-      "length": 461,
+      "sha256": "5791971b6c19e2157ded5ec08051b821f45213eaca5d517a40bd6af9263ebe3f",
       "name": "pending-en.json",
-      "sha256": "66cb6fde6ba6f6b59a6ea1054f6b901351826698a92dc324d6ed0979b377bd20"
+      "length": 461
     },
     {
-      "length": 467,
+      "sha256": "9b72ff4557cb03ffa45a4ee2b0463805ce30239fa709d0ccc1d30ff9658fc84a",
       "name": "pending-es.json",
-      "sha256": "09c23c64dfd93236e461d368f52df50b4b3a60ac932d12e70345dc6576067df2"
+      "length": 467
     }
-  ],
-  "artifactSet": "missing-requests",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }

@@ -1,32 +1,6 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormMultipleChoiceReadHttpTests and FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormPublishedVersionFixture and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormPdfContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
+  "runId": "20261105-025538-52858ed37e4a43aa95bcaca51943c6de",
+  "repositoryHead": "351483fb78384645c8e86e261561d899ed93dd74",
   "sources": [
     {
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMultipleChoiceReadHttpTests.cs",
@@ -73,169 +47,173 @@
       "sha256": "82d63ed19e609c6bd132626b422bd77d8eabc8534f6fcbead43946f090f8ba66"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "producer": "FormMultipleChoiceReadHttpTests and FormPdfHttpTests and FormWorkflowEndToEndHttpTests and FormResponseHttpTests and FormPublishedVersionFixture and FormRecordCaptureIntegrationTests and FormActionRecoveryIntegrationTests and FormDraftDurabilityTests and FormPdfRendererFixture and CapturingFormActionChannel and FormPdfContractCapture",
+  "schemaVersion": 1,
+  "artifactSet": "pdf",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "generatedAtUtc": "2026-11-05T03:45:18.4765819Z",
   "captures": [
     {
-      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
       "name": "default-es.http.json",
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+      "length": 113
     },
     {
-      "length": 434,
+      "sha256": "f57a5e01d954eb8b2dc049bb9ae071243a7dd9bcd2d0b37e01679537665cacbe",
       "name": "default-es.json",
-      "sha256": "a704b9f8586f6cfe4b2ba5068473a64eef31151a5acac45634e6dc8220a8ea4a"
+      "length": 434
     },
     {
-      "length": 113,
+      "sha256": "0f8f73cb726d462e5f9a15bd0d8036b3226eff91d528cafaffc83e5435040c5b",
       "name": "design-en.http.json",
-      "sha256": "0f8f73cb726d462e5f9a15bd0d8036b3226eff91d528cafaffc83e5435040c5b"
+      "length": 113
     },
     {
-      "length": 430,
+      "sha256": "d9ec258f76fc80119a661762ece59b303ced935426da6f532df1875ff4572b8e",
       "name": "design-en.json",
-      "sha256": "4490781505c2f06296851c212f551932650041eb08d9e37e4d482bf50dbc5bfa"
+      "length": 428
     },
     {
-      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
       "name": "design-es.http.json",
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+      "length": 113
     },
     {
-      "length": 430,
+      "sha256": "d9ec258f76fc80119a661762ece59b303ced935426da6f532df1875ff4572b8e",
       "name": "design-es.json",
-      "sha256": "4490781505c2f06296851c212f551932650041eb08d9e37e4d482bf50dbc5bfa"
+      "length": 428
     },
     {
-      "length": 239,
+      "sha256": "27d224a14a649ab3fdba6497ad34de17c9ae52f768d611e48fb278eb5d8b276e",
       "name": "document-es.http.json",
-      "sha256": "1aca6d8fe2bfece62bd3a699fadc159f55722ad5378e545e7f8dfd5ff04fac09"
+      "length": 239
     },
     {
-      "length": 92730,
+      "sha256": "a015884a7ecb70ccb097679abdebc1178489d61994c34230ffb8a7f9b62c6e64",
       "name": "document-es.pdf",
-      "sha256": "80451d1c16241392d0758e2e61c021afcd64b707b2aaf2b65a0a773ceb90a3b4"
+      "length": 92698
     },
     {
-      "length": 126,
+      "sha256": "649dd22ba8604d082006a51379393dac4a4edbd077ceb1087a2005ca0df11aeb",
       "name": "document-mismatch-en.http.json",
-      "sha256": "649dd22ba8604d082006a51379393dac4a4edbd077ceb1087a2005ca0df11aeb"
+      "length": 126
     },
     {
-      "length": 233,
+      "sha256": "cba485973b537b1decd7ac291d5b540f5d09330af8f7dffe08049d138f1aa530",
       "name": "document-mismatch-en.json",
-      "sha256": "993bc3403fdae34354770d2dc575b1cbf130cb6bc07f381ff3bb28f0ec8bdf9e"
+      "length": 233
     },
     {
-      "length": 235,
+      "sha256": "cbb782892b76381baadbb6a6948e5518cda6413e0d6a06193bd29763d43be133",
       "name": "e2e-approved-notice-fallback-es.http.json",
-      "sha256": "5bf1b288e09bf9b5c37fc9c51b3c13a4638d36fdf993ec8955df04d5a2fba3c6"
+      "length": 235
     },
     {
-      "length": 96787,
+      "sha256": "d6e5d598a7f79c25d76b2826e0fbbc223c226a650011c4e9ad2e8b082d408c02",
       "name": "e2e-approved-notice-fallback-es.pdf",
-      "sha256": "89fe2467700a71593be17b998ead91d6649c984ca6f859dc82c7cc50f6f4aea3"
+      "length": 96759
     },
     {
-      "length": 227,
+      "sha256": "a8448e054598a49b8e6753652561de43ac168c29f5272d2f53b815d42f2ade4a",
       "name": "e2e-catalog-original-item-en.http.json",
-      "sha256": "562b8ac5e170fd3c21fb718360a7bdc9079a6c99559f45290485a54b42d8da51"
+      "length": 227
     },
     {
-      "length": 96751,
+      "sha256": "b24642c56fb457db2417cc8d3b37bbf3f9ac41baa7742be7ef23078779aebec2",
       "name": "e2e-catalog-original-item-en.pdf",
-      "sha256": "d63b7a376c3ce339aea66870319fe76ca34771d176340f68fc8a9ffee3c7db12"
+      "length": 96705
     },
     {
-      "length": 227,
+      "sha256": "0e974f6fd3d1ff8d55e95a04564c2c5d081fc3e271986156ee4aa6dd39bf1ebb",
       "name": "e2e-english-en.http.json",
-      "sha256": "68f6392e18604826e6052eea3e24d812e9a168b2238fcb73c8eef85c21f8f98f"
+      "length": 227
     },
     {
-      "length": 96748,
+      "sha256": "355e0b8384b95802c3f9480939c4109367fb278c8912c3e7816837dfc23f4d38",
       "name": "e2e-english-en.pdf",
-      "sha256": "7ab15c72803701de92c93e6b157f5f68919548207060196feee6f8145a52ea8e"
+      "length": 96702
     },
     {
-      "length": 235,
+      "sha256": "8bfe424f65e48768e75b44541d9d4cc07cdeec2bd7a1c78d2c58293e62ad4747",
       "name": "e2e-footer-fallback-es.http.json",
-      "sha256": "c8db7fbfd0d6e4eb0425dd01628406351eb564d3e8b544eaee818a3f53d12b7c"
+      "length": 235
     },
     {
-      "length": 96742,
+      "sha256": "54baf464da41ef84a007bf22c40b0306418501e3d2af6b4afb735fa6fb44919a",
       "name": "e2e-footer-fallback-es.pdf",
-      "sha256": "c58589768e1efb9bb7a2fe73da80d8eff65a94802c01a5fe2f8e38bed99415a0"
+      "length": 96693
     },
     {
-      "length": 113,
+      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750",
       "name": "issued-es.http.json",
-      "sha256": "aec9618682e8e24900746d2c493272f3482efedaf852549ad548dfea46c2f750"
+      "length": 113
     },
     {
-      "length": 1462,
+      "sha256": "4990de49b0a1c349c3d141888b0aa6fd27245c29aa6c251b88e956ab975149ca",
       "name": "issued-es.json",
-      "sha256": "fa47d19a901788257a47830fcfcab1c98825e4ba2216c6de33e64cbc780ed6ad"
+      "length": 1444
     },
     {
-      "length": 97,
+      "sha256": "b5ff815d0ea39d7da3687080248f7c88bd25f21635a1dd345d6a78be46e57c27",
       "name": "multi-preview-en.http.json",
-      "sha256": "b5ff815d0ea39d7da3687080248f7c88bd25f21635a1dd345d6a78be46e57c27"
+      "length": 97
     },
     {
-      "length": 92418,
+      "sha256": "277d5a7d11f142d442bc17614693811a814508a5134cab5f79dccb392ef93075",
       "name": "multi-preview-en.pdf",
-      "sha256": "95ec9a933311fd1f779329dc1d25fa1c096104daff919d8c2da9d28c1292b529"
+      "length": 92432
     },
     {
-      "length": 97,
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
       "name": "multi-preview-es.http.json",
-      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557"
+      "length": 97
     },
     {
-      "length": 92448,
+      "sha256": "030d40b0546a9f62d0ff8c5902b391dfc8f13c75725e3bc6a7bae6f33d6ac96b",
       "name": "multi-preview-es.pdf",
-      "sha256": "da2c2dda6d53dd66f0cb678fe7781356e27cde45fa0b177d0f40346b6573a6dd"
+      "length": 92449
     },
     {
-      "length": 97,
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
       "name": "preview-en-fallback.http.json",
-      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557"
+      "length": 97
     },
     {
-      "length": 92709,
+      "sha256": "e7972119e381a06ca0ffbf916b5b93fe8e0ec5733de4e2a77de69febcedf702b",
       "name": "preview-en-fallback.pdf",
-      "sha256": "4972eca2cbd7d910e87c48171595254ba9a0afab39002fae07f7f9ee813859de"
+      "length": 92639
     },
     {
-      "length": 97,
+      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557",
       "name": "preview-es.http.json",
-      "sha256": "d73962a35603542c87c6c2890b9a75ee7a9d071637b562d9bbafce7e0fc8b557"
+      "length": 97
     },
     {
-      "length": 92709,
+      "sha256": "e7972119e381a06ca0ffbf916b5b93fe8e0ec5733de4e2a77de69febcedf702b",
       "name": "preview-es.pdf",
-      "sha256": "4972eca2cbd7d910e87c48171595254ba9a0afab39002fae07f7f9ee813859de"
+      "length": 92639
     },
     {
-      "length": 126,
+      "sha256": "df56339c416f718077082192ac83ee75ab57a0ceae71a070c2dde1539fa6c336",
       "name": "revision-conflict-es.http.json",
-      "sha256": "df56339c416f718077082192ac83ee75ab57a0ceae71a070c2dde1539fa6c336"
+      "length": 126
     },
     {
-      "length": 257,
+      "sha256": "bae3c1b8a7c7b9f11f6e0e101536c77155150853323bf40520c880a5642506dd",
       "name": "revision-conflict-es.json",
-      "sha256": "7ab0709309aede302fc6ba1384fa038d0d0342d81d9c9342a0f143989716126a"
+      "length": 257
     },
     {
-      "length": 113,
+      "sha256": "f79512e1dc5cfd52944722535d3494161d30e73731264cccf471ac1d997f3252",
       "name": "saved-es.http.json",
-      "sha256": "f79512e1dc5cfd52944722535d3494161d30e73731264cccf471ac1d997f3252"
+      "length": 113
     },
     {
-      "length": 430,
+      "sha256": "d9ec258f76fc80119a661762ece59b303ced935426da6f532df1875ff4572b8e",
       "name": "saved-es.json",
-      "sha256": "4490781505c2f06296851c212f551932650041eb08d9e37e4d482bf50dbc5bfa"
+      "length": 428
     }
-  ],
-  "artifactSet": "pdf",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  ]
 }
