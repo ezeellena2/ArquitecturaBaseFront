@@ -7,6 +7,7 @@ import { approvalTaskFixture } from "../approvalFixtures";
 import { responseFormId, responseRecordId, responseSecondId, responseWorkflowFixture } from "../responseFixtures";
 import { createResponseVisualFixtures } from "./responseFixtures";
 import { samplePdf } from "./pdfFixtures";
+import { createFormAmendmentFixtures } from "./formAmendmentFixtures";
 
 const id = (n: number) => "0199a0c0-0000-7000-8000-" + String(n).padStart(12, "0");
 export const responseFullFixtureIds = { form: responseFormId, first: responseRecordId, second: responseSecondId, document: id(380), pdfRun: id(390) };
@@ -67,7 +68,7 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         canConsult: false, canRetry: false, recipients: [], createdAtUtc: "2026-10-16T14:00:00Z", updatedAtUtc: document.createdAtUtc, completedAtUtc: document.createdAtUtc },
     ], documents: [document],
   });
-  return { permissions: decideOnly ? ["formapprovals.decide"] : readDecide ? ["formrecords.read", "formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, queries, document,
+  const fixtures = { permissions: decideOnly ? ["formapprovals.decide"] : readDecide ? ["formrecords.read", "formapprovals.decide"] : ["formrecords.read", "whatsapp.read"], calls, queries, document,
     async handle(request: Request): Promise<Response | null> {
       const url = new URL(request.url), path = url.pathname;
       if (!path.startsWith("/api/forms/")) return null;
@@ -149,4 +150,6 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
       return base.handle(request);
     },
   };
+  // CW10-A and CW11-A: correcting and voiding over the same sheet, D2 and DC1.
+  return scenario.startsWith("responses-full-amend") ? { ...fixtures, ...createFormAmendmentFixtures(language, scenario, fixtures) } : fixtures;
 }

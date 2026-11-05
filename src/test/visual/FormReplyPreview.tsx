@@ -37,6 +37,9 @@ export function FormReplyPreview() {
         {bubble("readonly", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000003", values: null }} />)}
         {bubble("long-number", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VISLONGNAME1-9223372036854775807", values: null }} />)}
         {bubble("removed", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000004", values: allowed ? rows : null, messageRemoved: true }} />)}
+        {/* CW10-A and CW11-A: what arrived stays as it was and the card says it was corrected or voided later. */}
+        {bubble("corrected", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000005", values: allowed ? rows.slice(0, 2) : null, amendment: "Replaced" }} />)}
+        {bubble("voided", <FormReplyCard reply={{ state: "Completed", name, recordNumber: "VIS-000006", values: allowed ? rows.slice(0, 2) : null, amendment: "Voided" }} />)}
         {Array.from({length: 15}, (_, n) => bubble("following"+n, <p>{en ? "Following message" : "Mensaje siguiente"} {n+1}</p>))}
       </MessageHistory>
     </div>
