@@ -27,12 +27,12 @@ it("reads the active version with the only option the filters leave and the miss
   }
 });
 
-it("reads the app origin in the sheet, the detail and the overview of who only completes forms", () => {
+it("reads the app origin in the sheet, the detail and the overview of who only completes forms, with their own entries", () => {
   for (const culture of ["es", "en"]) {
     expect(responseSheetSchema.parse(cohort.json(`sheet-app-${culture}.json`)).records.items[0].channel).toBe("app");
     expect(responseDetailSchema.parse(cohort.json(`detail-app-${culture}.json`)).origin?.channelId).toBe("app");
     const overview = readFormOverview(cohort.json(`overview-create-${culture}.json`));
-    // Who only completes forms sees their own count and last entry (CW6-C), never the approvals.
+    // Whoever only completes forms counts their own responses and sees their last one (CW6-C).
     expect(overview.forms.items[0]).toMatchObject({ responseCount: 1, lastResponse: { state: "Received" }, pendingApprovalCount: null });
   }
 });
