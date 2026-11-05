@@ -1,134 +1,126 @@
 {
-  "repositoryHead": "a7ae921b51c55f564afa81f01edd0c824bceaccd",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "schemaVersion": 1,
-  "producer": "FormEntryHttpTests and FormRecipientScenario and FormEntryContractCapture",
-  "sourceState": [
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/ExplicitRouteInventoryTests.WhatsApp.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowProfileUpgradeTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowQueueCorruptionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowReconciliationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFlowWorkerTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormAccountTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormActionHttpTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormDispatchFailureTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendRejectionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSessionVersionTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormsEligibilityTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppTestModule.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/Persistence/MigrationsTests.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantIsolationScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantLatencyScenario.cs",
-    " M tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
-    "?? tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMigrationsTests.cs"
-  ],
-  "runId": "20261104-134046-a9c46a4208ef470ba38f5fbb81ef6917",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryHttpTests.cs",
-      "sha256": "4bf8b9df9ee0d25c0e706fc845f59be318b0d2cff411fe3b523b0f6d22ca1041"
+      "sha256": "f0734dcb578c26ab00c3cbbb9cb7175cedea93af8de382af6beb635fcf47a1ed",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRecipientScenario.cs",
-      "sha256": "fa152b125c8ef79714284695dab48b17a04daac71f15cb1b3a12a9f51f237c88"
+      "sha256": "030606baf538f16da30223d34b4b61157e24d67e59aebd1c965323e39068a1b4",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryDependentListHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormEntryContractCapture.cs",
-      "sha256": "5a337f8b59039de9da865356a3faf2900bd02bf679f5dce7e7e5b4904917cecd"
+      "sha256": "fa152b125c8ef79714284695dab48b17a04daac71f15cb1b3a12a9f51f237c88",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRecipientScenario.cs"
+    },
+    {
+      "sha256": "d21cf9ffebb7537923a5e4bd6660931dd600df1b63fe9eade85a4ed13e5f28b7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormEntryContractCapture.cs"
     }
   ],
-  "generatedAtUtc": "2026-11-04T14:40:21.7626552Z",
+  "runId": "20261104-231314-6e1b095e070641faae401d513c2013a3",
+  "generatedAtUtc": "2026-11-05T00:03:57.5855000Z",
+  "artifactSet": "entries",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [],
   "captures": [
     {
-      "length": 1625,
       "name": "detail-app-en.json",
-      "sha256": "2bd76a0590b6733d6ca47108096d989c531f3450c825c5a3e3deab63fc1ec4e9"
+      "sha256": "3dc72b7c3e9169c6abdc4e2997ad9bda714ad829995d0094574dd217e2ca5b5a",
+      "length": 1625
     },
     {
-      "length": 1619,
       "name": "detail-app-es.json",
-      "sha256": "f4a7330a424915f5efba2dfb42fc0d604acfa93b26000f8311e90e559548defa"
+      "sha256": "b915c2fbb9436e1dd74439dfff123a742a135460378573bfd7730d261dc078d5",
+      "length": 1619
     },
     {
-      "length": 562,
+      "name": "entry-depends-es.json",
+      "sha256": "45737e9d9246fff2a21d65303e0b511850c2664a9457564e8136cdf3432c32a4",
+      "length": 768
+    },
+    {
       "name": "entry-en.json",
-      "sha256": "8c1df852a1f597c0259774174d3d3d83ff81efba1c30b2b4a02aa90fdcfec6ed"
+      "sha256": "568c677edb4533027523b1eab021768af8f816592c44ff8127930788de881860",
+      "length": 562
     },
     {
-      "length": 557,
       "name": "entry-es.json",
-      "sha256": "770fda8460efa36ae655178d461b2ffc06a5799838fd55656d56449df7697029"
+      "sha256": "8538b334a87b5d7e134a2d2de3abb0c9a00c44202cdaaac3522be208d39ab380",
+      "length": 557
     },
     {
-      "length": 519,
       "name": "entry-missing-data-en.json",
-      "sha256": "55bb7821a67f02c7ec3436aab63c5ff6b3ff7ba51902b972c2892f3b2185bf18"
+      "sha256": "ed8073ae2a888e7c28c42488d2882860ca9e65c456484a5f6e632ad885edabb2",
+      "length": 519
     },
     {
-      "length": 514,
       "name": "entry-missing-data-es.json",
-      "sha256": "3a4c7a4c15a864d99792ac5e5b6d2685d310e968673b23a037ee5bee6baaf296"
+      "sha256": "b579103248ec3d8750a6431c2d82c883cb83a4f061d4d46e29186c61c0149ebb",
+      "length": 514
     },
     {
-      "length": 458,
       "name": "option-unavailable-es.json",
-      "sha256": "1ac608dae7d3f9aa1c851970efd5b37dbabbdaa149b616ca504e4b3e7c6d0727"
+      "sha256": "65c0011e8489bd1ad4800602d1895ff90563e89b28812c71e33f3a90d577fc1d",
+      "length": 458
     },
     {
-      "length": 181,
+      "name": "options-depends-es.json",
+      "sha256": "07e6f0346fa0aaa2cdf0526c1ee9c0bf6c2b0e86a543cd17f973606c84dae160",
+      "length": 300
+    },
+    {
       "name": "options-en.json",
-      "sha256": "8db84383980abc9003f54a5e5e62106833ae6b4227bf0d77eafcaa8ca7917abc"
+      "sha256": "8fe01a11cec1217ea5c1ca4b8beff9fa52acc5d0b7c866c6ffb21cc4466ad376",
+      "length": 181
     },
     {
-      "length": 181,
       "name": "options-es.json",
-      "sha256": "e23a4cc6908c3021870f54289e7cdfca8d5f20b48fb4b9425042572f2a15422e"
+      "sha256": "daf062b10642e2ccc356c695aaf827470dd1bb98307912eed5860de4262d9e81",
+      "length": 181
     },
     {
-      "length": 371,
       "name": "overview-create-en.json",
-      "sha256": "5988f97ffc6b8d074f33510333dc2c17b920b1a1cd9d6de1ed151fe3fc290d59"
+      "sha256": "3e2580fc2b8b88576a607dba5f4cf705e017755b3be1086db8a0f8518c91f71e",
+      "length": 497
     },
     {
-      "length": 365,
       "name": "overview-create-es.json",
-      "sha256": "eb6e1fa940d848c17fef4f8eba5f524f746a2c80e3bfe71b3c7bc942a129cca8"
+      "sha256": "86add2f5623a636c4c757ac615d03f401cd838cf934068b807bc7677fa8483e8",
+      "length": 491
     },
     {
-      "length": 1823,
       "name": "sheet-app-en.json",
-      "sha256": "49978d1a4ef41179c760ce8a8b0c995749c5c41bdec35735555c4e7dd0fb8472"
+      "sha256": "1f65bcc996571c03ca65daa187ed66a8ec1b96b45380387541fab5a065fa7e5d",
+      "length": 1823
     },
     {
-      "length": 1817,
       "name": "sheet-app-es.json",
-      "sha256": "ce4354300f2ff79dfcede9adf5356b182bfd37d891dffbca7323c4dfb5773329"
+      "sha256": "fc33409c65dd8167336d6ec65daa938de04684dce5c02e7d50bfdd7c8fa0bf6c",
+      "length": 1817
     },
     {
-      "length": 139,
       "name": "submitted-en.json",
-      "sha256": "c6aab5be38bb702cfac9587289eaf4e781a0931c3bfbca42202f5a1200ea4fb4"
+      "sha256": "75d54b94833551bc078dbabeb1896a58ccc82ed1c2b0a76164733b0bb6de0c6f",
+      "length": 139
     },
     {
-      "length": 139,
       "name": "submitted-es.json",
-      "sha256": "ebc44bfe48cdd02c8fdd9b2cda1c4971d3c20414d6ddffad7be23e070d426fba"
+      "sha256": "c4987b7b179295346c9b3eb287c6cd9175e3d7e652839e834b5a073bb6dbc2ab",
+      "length": 139
     },
     {
-      "length": 261,
       "name": "unavailable-es.json",
-      "sha256": "bf8a039c04ddbe82fa554eb7f5c5d4e96eef8a967cc8882a1668825c13018ccd"
+      "sha256": "74672d14e1c0e61714970226fa4886f213246c7108c18ef2df01807f660d7d73",
+      "length": 261
     },
     {
-      "length": 257,
       "name": "version-changed-es.json",
-      "sha256": "b81870bc3355f00b62769c9db64f1bd6e69cc7de48cb55e91689ebaed7b6268b"
+      "sha256": "6bcc62376693831ece19a26d4df80e2f8d82c1c054486c2b7ae23332335c1f78",
+      "length": 257
     }
   ],
-  "artifactSet": "entries",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files"
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "repositoryHead": "e2ec8fbdaa571ac91f63e3baefa60a8a861e0a2f",
+  "producer": "FormEntryHttpTests and FormEntryDependentListHttpTests and FormRecipientScenario and FormEntryContractCapture"
 }

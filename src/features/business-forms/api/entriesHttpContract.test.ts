@@ -32,7 +32,8 @@ it("reads the app origin in the sheet, the detail and the overview of who only c
     expect(responseSheetSchema.parse(cohort.json(`sheet-app-${culture}.json`)).records.items[0].channel).toBe("app");
     expect(responseDetailSchema.parse(cohort.json(`detail-app-${culture}.json`)).origin?.channelId).toBe("app");
     const overview = readFormOverview(cohort.json(`overview-create-${culture}.json`));
-    expect(overview.forms.items[0]).toMatchObject({ responseCount: null, lastResponse: null, pendingApprovalCount: null });
+    // Who only completes forms sees their own count and last entry (CW6-C), never the approvals.
+    expect(overview.forms.items[0]).toMatchObject({ responseCount: 1, lastResponse: { state: "Received" }, pendingApprovalCount: null });
   }
 });
 
