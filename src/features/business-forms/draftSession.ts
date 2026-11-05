@@ -1,7 +1,7 @@
 import { copyCatalogQuestionSource, normalizeCatalogQuestionSource, sameCatalogQuestionSource } from "./catalogQuestionSource";
 import type {
-  CanonicalQuestion, DraftEditorValue, DraftQuestion, DraftQuestionSource, DraftWriteBody, FormDefinitionSnapshot,
-  FormDraftSaveResult, FormIdentityMap,
+  CanonicalQuestion, DraftEditorValue, DraftQuestion, DraftQuestionSource, DraftSection, DraftWriteBody, FormDefinitionSnapshot,
+  FormDraftSaveResult, FormIdentityMap, FormSection,
 } from "./model";
 
 export interface DraftEditorScope { readonly actorId: string; readonly editorId: string }
@@ -49,9 +49,14 @@ export function startDraftSession(scope: DraftEditorScope, value: DraftEditorVal
   return { scope: snapshot(scope), value: baseline, baseline, confirmed: null, identityMap: null, currentRevision: null, pending: null, phase: "Editing" };
 }
 
+// A title has no identity on the server: in the editor it gets a local one, kept by its place when a save confirms it (CW15-B).
+const editorSections = (sections: readonly FormSection[] | undefined, localId: (index: number) => string): { sections?: readonly DraftSection[] } =>
+  sections?.length ? { sections: sections.map((section, index) => ({ ...section, localId: localId(index) })) } : {};
+
 export function openDraftSession(scope: DraftEditorScope, definition: FormDefinitionSnapshot): DraftSession {
+  const { sections, ...draft } = definition.draft;
   const value: DraftEditorValue = { name: definition.name, prefix: definition.prefix, offerWhen: definition.offerWhen,
-    draft: { ...definition.draft, fields: definition.draft.fields.map(field => editorQuestion(field, field.fieldId, id => id)) } };
+    draft: { ...draft, fields: definition.draft.fields.map(field => editorQuestion(field, field.fieldId, id => id)), ...editorSections(sections, index => `section-${index}`) } };
   return { ...startDraftSession(scope, value), confirmed: snapshot(definition), currentRevision: definition.revision };
 }
 
@@ -145,11 +150,14 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     handles.set(saved.fieldId, { localId: field.localId, options });
   }
   if (choiceCount !== choiceMap.size) return null;
+  const sent = attempt.body.draft.sections ?? [];
+  const { sections: savedSections, ...savedDraft } = result.definition.draft;
+  if ((savedSections ?? []).length !== sent.length || (savedSections ?? []).some((section, index) => section.start !== sent[index]!.start)) return null;
   return { name: result.definition.name, prefix: result.definition.prefix, offerWhen: result.definition.offerWhen, draft: {
-    ...result.definition.draft, fields: canonical.map(field => {
+    ...savedDraft, fields: canonical.map(field => {
       const handle = handles.get(field.fieldId)!;
       return editorQuestion(field, handle.localId, id => handle.options.get(id)!);
-    }),
+    }), ...editorSections(savedSections, index => sent[index]!.localId),
   } };
 }
 

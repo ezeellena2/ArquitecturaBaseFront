@@ -1,5 +1,5 @@
 import { localizedValue, questionEditorType, type DraftReview, type DraftReviewRow } from "./editorModel";
-import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCatalogMatch, FormCulture, LocalizedText } from "./model";
+import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCatalogMatch, FormCulture, LocalizedText } from "./model";
 
 // A cell of the draft review (board LR2-A, 2026-11-03): a text as written, a translation, a text in grey when the version
 // lacks it, a numbered list, or a catalog datum that the screen reads when it shows it.
@@ -97,6 +97,15 @@ export function draftReviewLines(review: DraftReview, row: DraftReviewRow, { cul
     return { kind: "none" };
   };
   const { current, mine } = row;
+  // The section titles in order, each marked when its text or its place differs from the other version's (CW15-B).
+  if (row.kind === "sections") {
+    const titles = (side: "current" | "mine"): ReviewValue => {
+      const own = row[side] as readonly DraftSection[], other = row[side === "mine" ? "current" : "mine"] as readonly DraftSection[];
+      return own.length ? { kind: "list", items: own.map((section, index) => ({ value: text(localizedValue(section.title, culture, sides[side].draft.culture)),
+        moved: other[index]?.start !== section.start || JSON.stringify(other[index]?.title) !== JSON.stringify(section.title) })) } : { kind: "none" };
+    };
+    return [{ key: "value", before: titles("current"), after: titles("mine") }];
+  }
   if (Array.isArray(current) || Array.isArray(mine)) {
     const list = (side: "current" | "mine"): ReviewValue => {
       const ids = row[side] as readonly string[], other = row[side === "mine" ? "current" : "mine"] as readonly string[];

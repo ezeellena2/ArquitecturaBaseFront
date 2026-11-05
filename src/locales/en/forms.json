@@ -154,6 +154,7 @@
     "formIssue": "The form",
     "goToQuestion": "Go to the question",
     "goToText": "Go to the text",
+    "goToTitle": "Go to the title",
     "expired": "The check expired.",
     "checkAgain": "Check again",
     "inProgress": "A publication is already in progress for this form.",
@@ -207,6 +208,7 @@
     "completeCulture": "Complete {{language}}",
     "missingQuestion": "{{name}} · question",
     "missingHelp": "{{name}} · help",
+    "missingSection": "{{name}} · title",
     "missingChoice": "{{name}} · option “{{option}}”",
     "cultureAdded": "{{language}} is added.",
     "cultureRemoved": "It will no longer be published.",
@@ -1353,6 +1355,15 @@
     "noPending": "No responses to approve.",
     "noDeactivated": "No deactivated forms",
     "pendingNavigation": "{{position}} of {{count}} to approve"
+  },
+  "sections": {
+    "all": "Section titles",
+    "add": "Add title",
+    "type": "Section title",
+    "title": "Title",
+    "view": "View title {{name}}",
+    "issue": "Review this title",
+    "limit": "You can add up to {{count}} titles. Remove one to add another."
   },
   "rows": {
     "name": "Name",

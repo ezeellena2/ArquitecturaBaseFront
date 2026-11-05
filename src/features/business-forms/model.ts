@@ -58,17 +58,22 @@ export type CanonicalQuestion = QuestionContent<CanonicalChoice, LocalizedText |
   readonly fieldId: string;
   readonly key: string;
 };
-export interface FormDraft<TQuestion> {
+// A section title (CW15-B) is not a question: `start` is how many questions go before it. In the editor it also has a local
+// identity of its own, which never travels.
+export interface FormSection { readonly start: number; readonly title: LocalizedText }
+export interface DraftSection extends FormSection { readonly localId: string }
+export interface FormDraft<TQuestion, TSection = FormSection> {
   readonly format: 1;
   readonly culture: FormCulture;
   readonly submitLabel: LocalizedText;
   readonly fields: readonly TQuestion[];
+  readonly sections?: readonly TSection[];
 }
 export interface DraftEditorValue {
   readonly offerWhen: string | null;
   readonly name: LocalizedText;
   readonly prefix: string;
-  readonly draft: FormDraft<DraftQuestion>;
+  readonly draft: FormDraft<DraftQuestion, DraftSection>;
 }
 export interface FormDefinitionSnapshot {
   readonly offerWhen: string | null;

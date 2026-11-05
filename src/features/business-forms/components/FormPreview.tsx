@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -10,6 +10,7 @@ import { PhonePreview } from "@/shared/ui/PhonePreview";
 import { Button } from "@/shared/ui/button";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { previewScreens } from "../rowsQuestions";
+import { titlesByFirstQuestion } from "../sectionTitles";
 import { Banner } from "@/shared/ui/Banner";
 import { missingFormTexts } from "../editorModel";
 import type { CatalogQuestionPreview, DraftEditorValue, FormCulture } from "../model";
@@ -45,6 +46,14 @@ export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion
   const blockName = current.kind === "fields" ? "" : text(current.block.label) || content("rows.defaultName");
   const title = current.kind === "row" ? content("rows.previewTitle", { name: blockName, row: 1 }) : current.kind === "ask" ? blockName : text(value.name) || content("new");
   const rowQuestion = current.kind === "ask" ? content("rows.addRow") : current.kind === "row" && current.asks ? content("rows.addAnotherRow") : null;
+  // CW15-B: a section title is the subtitle right before its first question, as in WhatsApp; a section that starts with the
+  // block has it atop the block's first screen.
+  const titles = titlesByFirstQuestion(value.draft.fields, value.draft.sections);
+  const subtitle = (localId: string) => {
+    const section = titles.get(localId);
+    return section ? <h3 key={"title:" + section.localId} className="text-base font-semibold">{text(section.title) || content("sections.title")}</h3> : null;
+  };
+  const blockSubtitle = current.kind === "ask" || current.kind === "row" && !screens.some(item => item.kind === "ask") ? subtitle(current.block.localId) : null;
   // What the preview is (illustrative, one language, sends and saves nothing) goes in the (i) of its heading, and how photos
   // and documents split the screens in the (i) of its position: no notes under the phone.
   return <section aria-label={t("preview")} className="flex min-w-0 flex-col gap-3">
@@ -52,7 +61,8 @@ export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion
     {screens.length > 1 ? <div className="flex items-center gap-1"><p lang={previewCulture} className="text-sm text-[var(--color-content-muted)]">{content("files.previewScreen", position)}</p><span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: t("files.previewScreen", position) })} text={t("files.screenHint")} /></span></div> : null}
     {missing ? <Banner>{t("previewFallback", { count: missing, requested: t("cultureNamesInText." + culture), actual: t("cultureNamesInText." + previewCulture) })}</Banner> : null}
     <div lang={previewCulture}><PhonePreview title={title}>
-      {(current.kind === "ask" ? [] : current.questions).map(q => {
+      {blockSubtitle}
+      {(current.kind === "ask" ? [] : current.questions).map(q => <Fragment key={q.localId}>{subtitle(q.localId)}{(() => {
         const label = text(q.label) || content("question");
         const answer = answers[q.localId] ?? "";
         const setAnswer = (next: string) => setAnswers(previous => ({ ...previous, [q.localId]: next }));
@@ -85,7 +95,7 @@ export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion
             : q.type === "longText" ? <Textarea required={q.required} maxLength={q.maxLength ?? 600} value={answer} onChange={e => setAnswer(e.target.value)} />
               : <Input type={q.type === "date" ? "date" : "text"} maxLength={q.type === "shortText" ? q.maxLength ?? 80 : undefined} inputMode={q.type === "decimal" ? "decimal" : undefined} required={q.required} value={answer} onChange={e => setAnswer(e.target.value)} />}
         </FormField>;
-      })}
+      })()}</Fragment>)}
       {rowQuestion ? <div className="flex flex-col gap-1.5"><p className="text-sm font-medium">{rowQuestion} *</p><RadioGroupField label={rowQuestion} value={answers["rows:" + current.kind]} onValueChange={next => setAnswers(previous => ({ ...previous, ["rows:" + current.kind]: next }))} options={[{ value: "true", label: content("yes") }, { value: "false", label: content("no") }]} /></div> : null}
       <div className="mt-auto flex flex-col gap-2">{screen > 0 ? <Button type="button" variant="outline" onClick={() => setSelectedScreen(screen - 1)}>{content("files.previousScreen")}</Button> : null}<Button type="button" disabled={lastScreen} onClick={() => setSelectedScreen(screen + 1)}>{lastScreen ? text(value.draft.submitLabel) || content("submitLabel") : content("files.continue")}</Button></div>
     </PhonePreview></div>

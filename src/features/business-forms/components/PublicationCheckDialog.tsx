@@ -97,13 +97,16 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   const monolingual = value.draft.culture === scope.culture && !hasFormTexts(value, scope.culture === "es" ? "en" : "es");
   const questionOf = (fieldId: string | null) => value.draft.fields.find(q => !!q.fieldId && q.fieldId.toLowerCase() === fieldId?.toLowerCase());
   const questionName = (fieldId: string | null) => { const question = questionOf(fieldId); return question ? localizedValue(question.label, scope.culture, value.draft.culture) : null; };
+  // A section title (CW15-B) is named by its place in the saved draft the check read.
+  const sectionOf = (path: string) => { const match = /^draft\.sections\[(\d+)\]/.exec(path); return match ? value.draft.sections?.[Number(match[1])] : undefined; };
+  const sectionName = (path: string) => { const section = sectionOf(path); return section ? localizedValue(section.title, scope.culture, value.draft.culture) || t("sections.title") : null; };
   const choiceName = (issue: PublicationIssue) => {
     const question = questionOf(issue.fieldId);
     const option = question && (question.type === "choice" || question.type === "multiChoice") && !question.source ? question.options.find(choice => choice.choiceId === issue.choiceId) : undefined;
     return option ? localizedValue(option.label, scope.culture, value.draft.culture) : null;
   };
   const issueName = (issue: PublicationIssue) => {
-    const name = questionName(issue.fieldId)
+    const name = questionName(issue.fieldId) ?? sectionName(issue.path)
       ?? (issue.path.startsWith("name") ? t("name") : issue.path.startsWith("draft.submitLabel") ? t("submitLabel") : issue.channelId || issue.path === "channel" ? t("publication.channelIssue") : t("publication.formIssue"));
     // NI1-A (2026-11-03): a problem names its language only when it is not the menu's.
     return issue.culture && issue.culture !== scope.culture ? t("localizedChange", { name, language: t("cultures." + issue.culture) }) : name;
@@ -116,6 +119,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   };
   const missingTextName = (issue: PublicationIssue) => {
     const name = questionName(issue.fieldId);
+    const section = name ? null : sectionName(issue.path);
+    if (section) return t("publication.missingSection", { name: section });
     if (!name) return t(issue.path.startsWith("name") ? "name" : "submitLabel");
     const option = choiceName(issue);
     return option ? t("publication.missingChoice", { name, option }) : t(issue.path.includes(".help") ? "publication.missingHelp" : "publication.missingQuestion", { name });
@@ -133,8 +138,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     const first = missingIn(culture)[0];
     return first && culture === scope.culture && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onCompleteTranslation(first); }}>{t("publication.completeCulture", { language: t("cultureNamesInText." + culture) })}</Button> : null;
   };
-  const goTo = (issue: PublicationIssue) => issue.fieldId || issue.path.startsWith("name.") || issue.path.startsWith("draft.submitLabel.")
-    ? <Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(issue.fieldId ? "publication.goToQuestion" : "publication.goToText")}</Button> : null;
+  const goTo = (issue: PublicationIssue) => issue.fieldId || issue.path.startsWith("name.") || issue.path.startsWith("draft.submitLabel.") || sectionOf(issue.path)
+    ? <Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(issue.fieldId ? "publication.goToQuestion" : sectionOf(issue.path) ? "publication.goToTitle" : "publication.goToText")}</Button> : null;
   const warningDetails = (warning: PublicationWarning) => {
     switch (warning.code) {
       case "Forms.Publication.OptionsPerRecipientHigh":

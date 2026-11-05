@@ -40,10 +40,13 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     || value.key !== `field_${value.fieldId.replaceAll("-", "").toLowerCase()}`) context.addIssue({ code: "custom", message: "Invalid configuration." });
 });
 const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision, offerWhen: z.string().min(1).max(1000).refine(value => value === value.trim()).nullable(),
-  draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(41) }),
+  draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(41),
+    // Section titles (CW15-B): omitted without them; each says how many questions go before it.
+    sections: z.array(z.strictObject({ start: z.number().int().min(0).max(41), title: text })).min(1).max(40).optional() }),
 }).superRefine((value, context) => {
   const { culture, fields, submitLabel } = value.draft;
-  const labels = [value.name, submitLabel, ...fields.flatMap(item => [item.label, ...(item.options ?? []).map(option => option.label)])];
+  const sections = value.draft.sections ?? [];
+  const labels = [value.name, submitLabel, ...fields.flatMap(item => [item.label, ...(item.options ?? []).map(option => option.label)]), ...sections.map(section => section.title)];
   const choices = fields.flatMap(item => (item.options ?? []).map(option => option.choiceId));
   // One block at most, not counted among the forty questions, with the questions of its rows right after it.
   const block = fields.findIndex(item => item.type === "group");
@@ -52,7 +55,9 @@ const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string()
   if (labels.some(label => !label[culture]?.trim() || Object.values(label).some(item => item !== "" && !item.trim()))
     || new Set(fields.map(item => item.fieldId)).size !== fields.length || new Set(choices).size !== choices.length
     || fields.filter(item => item.type !== "group").length > 40 || fields.filter(item => item.type === "group").length > 1
-    || fields.some((item, index) => item.repeated && (block < 0 || index <= block || index >= end))) {
+    || fields.some((item, index) => item.repeated && (block < 0 || index <= block || index >= end))
+    || sections.some((section, index) => section.start > fields.length || section.start < (sections[index - 1]?.start ?? 0)
+      || block >= 0 && section.start > block && section.start < end)) {
     context.addIssue({ code: "custom", message: "Invalid draft." });
   }
 });

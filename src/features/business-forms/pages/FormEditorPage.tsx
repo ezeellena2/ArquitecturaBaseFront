@@ -46,11 +46,13 @@ import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { localizedIssue, localizedIssueMessage, publicationFieldIssues } from "../validationPaths";
 import { localizedValue, missingFormTexts, newQuestion, suggestedPrefix } from "../editorModel";
-import { addRowQuestion, markRepeated, moveInRows, moveTopLevel, questionCount, questionNumbers, removeBlock, rowsBlock } from "../rowsQuestions";
+import { moveInRows, questionCount, questionNumbers, rowsBlock } from "../rowsQuestions";
+import { addRowQuestionWithTitles, addSectionTitle, listEntries, listPosition, markRepeatedWithTitles, moveListEntry, removeQuestionWithTitles } from "../sectionTitles";
+import { SectionTitleEditor } from "../components/SectionTitleEditor";
 import { formActorKey, formDetailKey, useFormDefinition, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormDraftEditor } from "../hooks/useFormDraftEditor";
 import type { FormDeactivation, FormDetail, FormPublicationCheck } from "../api/response";
-import type { CatalogQuestionPreview, DraftEditorValue, DraftQuestion, FormDefinitionSnapshot } from "../model";
+import type { CatalogQuestionPreview, DraftEditorValue, DraftQuestion, DraftSection, FormDefinitionSnapshot } from "../model";
 
 import { missingFormInitial } from "../missingFormSeed";
 
@@ -167,6 +169,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const reviewReturnFocus = useRef<HTMLElement | null>(null);
   const saveButton = useRef<HTMLButtonElement>(null);
   const addQuestionButton = useRef<HTMLButtonElement>(null);
+  const addTitleButton = useRef<HTMLButtonElement>(null);
   const removalFocus = useRef<HTMLElement | null>(null);
   const active = useRef(true);
   const readCurrent = useRef(editor.readCurrent);
@@ -177,7 +180,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   // Once a question is drawn, focuses the control `control` picks inside it.
   const focusQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => requestAnimationFrame(() => {
     if (!active.current) return;
-    control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === localId))?.focus();
+    control([...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id], [data-section-local-id]") ?? [])].find(element => (element.dataset.questionLocalId ?? element.dataset.sectionLocalId) === localId))?.focus();
   }), []);
   const revealQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => { setExpanded(localId); focusQuestion(localId, control); }, [focusQuestion]);
   // The question opened on arrival takes the focus on its catalog control. While the catalog cannot be chosen (its list is still loading)
@@ -221,13 +224,14 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     if (!editor.issue) { dismissNotification(feedbackId); return; }
     const issue = editor.issue;
     const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|offerWhen|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
-      || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path) || /\.source(?:\.|$)/.test(field.path)).map(field => field.path) ?? [];
+      || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path) || /\.source(?:\.|$)/.test(field.path)
+      || !!field.sectionLocalId).map(field => field.path) ?? [];
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
     if (issue.kind === "validation" && visiblePaths.length) {
       const first = issue.fields?.find(field => visiblePaths.includes(field.path));
       requestAnimationFrame(() => {
         if (!active.current) return;
-        if (first?.fieldLocalId) setExpanded(first.fieldLocalId);
+        if (first?.fieldLocalId ?? first?.sectionLocalId) setExpanded(first.fieldLocalId ?? first.sectionLocalId!);
         requestAnimationFrame(() => host.current?.querySelector<HTMLElement>("[aria-invalid='true']")?.focus());
       });
     }
@@ -275,7 +279,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   const publicationLabel = publication.phase === "Accepting" ? "publication.accepting" : publication.phase === "Unconfirmed" || publicationState === "Uncertain" ? "publication.unconfirmed" : publicationState ? publicationLabelKey(publicationState) : null;
-  const firstInvalid = editor.issue?.fields?.find(issue => issue.fieldLocalId)?.fieldLocalId;
+  const firstInvalid = editor.issue?.fields?.find(issue => issue.fieldLocalId ?? issue.sectionLocalId);
+  const firstInvalidId = firstInvalid?.fieldLocalId ?? firstInvalid?.sectionLocalId;
   const change = (next: DraftEditorValue) => { dismissNotification(feedbackId); setLocatedIssue(null); editor.change(next); };
   const openPublication = (returnFocus: HTMLElement | null) => { publicationReturnFocus.current = returnFocus; setLocatedIssue(null); publication.resetRejected(); setPublicationOpen(true); };
   const leave = () => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/formularios"); } };
@@ -290,6 +295,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }
   function locatePublicationIssue(issue: FormPublicationCheck["issues"][number]) {
     setPublicationOpen(false);
+    const section = publicationFieldIssues(value!, [issue])[0]?.sectionLocalId;
+    if (section) { revealQuestion(section, container => container?.querySelector<HTMLElement>('[data-section-control="title"]')); return; }
     const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
     if (!question) {
       requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLInputElement>(issue.path.startsWith("name") ? '[data-form-text="name"]' : '[data-form-text="submitLabel"]')?.focus(); });
@@ -318,13 +325,23 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     if (readOnly) return;
     const fields = value!.draft.fields;
     const index = fields.findIndex(q => q.localId === localId);
-    // The block's trash removes it with its questions (removeBlock); the focus goes to what follows them.
+    // The block's trash removes it with its questions; the focus goes to what follows them. Titles stay where they were.
     const block = fields[index]?.type === "group" ? rowsBlock(fields) : null;
     const neighbor = fields[block ? block.end : index + 1] ?? fields[index - 1];
     const row = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id]") ?? [])].find(element => element.dataset.questionLocalId === neighbor?.localId);
     removalFocus.current = row?.querySelector<HTMLButtonElement>('[data-question-action="edit"]') ?? addQuestionButton.current;
-    change({ ...value!, draft: { ...value!.draft, fields: block ? removeBlock(fields) : fields.filter(q => q.localId !== localId) } });
+    change({ ...value!, draft: { ...value!.draft, ...removeQuestionWithTitles(fields, value!.draft.sections ?? [], localId) } });
     if (!removeId) requestAnimationFrame(() => removalFocus.current?.focus());
+  }
+  // A title goes without asking, like a file: nothing is lost that another «Agregar título» does not bring back.
+  function removeTitle(localId: string) {
+    if (readOnly) return;
+    const sections = value!.draft.sections ?? [];
+    const neighbor = [...(host.current?.querySelectorAll<HTMLElement>("[data-question-local-id], [data-section-local-id]") ?? [])];
+    const at = neighbor.findIndex(element => element.dataset.sectionLocalId === localId);
+    const next = neighbor[at + 1] ?? neighbor[at - 1];
+    change({ ...value!, draft: { ...value!.draft, sections: sections.filter(section => section.localId !== localId) } });
+    requestAnimationFrame(() => (next?.querySelector<HTMLButtonElement>('[data-question-action="edit"], [data-section-action="edit"]') ?? addTitleButton.current)?.focus());
   }
   return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
@@ -363,28 +380,38 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
           </div>
           <div className="sm:col-span-2"><FormField label={t("offerWhen")} help={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div>
         </div></Surface>
-        <Surface title={t("questions")} actions={<>{maximumFiles(value.draft.fields) > 0 ? <span className="text-xs text-[var(--color-content-muted)]">{t("files.budget", { total: maximumFiles(value.draft.fields) })}</span> : null}<span className="text-xs text-[var(--color-content-muted)]">{t("publication.questions", { count: questionCount(value.draft.fields) })}</span>{!readOnly ? <DisabledReason reason={questionCount(value.draft.fields) >= 40 ? t("questionLimit", { count: 40 }) : null}><Button ref={addQuestionButton} type="button" variant="outline" disabled={questionCount(value.draft.fields) >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></DisabledReason> : null}</>}>
-          {value.draft.fields.length === 0 ? <EmptyState embedded title={t("emptyQuestions")} /> : null}
+        <Surface title={t("questions")} actions={<>{maximumFiles(value.draft.fields) > 0 ? <span className="text-xs text-[var(--color-content-muted)]">{t("files.budget", { total: maximumFiles(value.draft.fields) })}</span> : null}<span className="text-xs text-[var(--color-content-muted)]">{t("publication.questions", { count: questionCount(value.draft.fields) })}</span>{!readOnly ? <DisabledReason reason={(value.draft.sections?.length ?? 0) >= 40 ? t("sections.limit", { count: 40 }) : null}><Button ref={addTitleButton} type="button" variant="outline" disabled={(value.draft.sections?.length ?? 0) >= 40} onClick={() => { const localId = crypto.randomUUID(); change({ ...value, draft: { ...value.draft, sections: addSectionTitle(value.draft.fields, value.draft.sections ?? [], value.draft.culture, localId) } }); setExpanded(localId); }}>{t("sections.add")}</Button></DisabledReason> : null}{!readOnly ? <DisabledReason reason={questionCount(value.draft.fields) >= 40 ? t("questionLimit", { count: 40 }) : null}><Button ref={addQuestionButton} type="button" variant="outline" disabled={questionCount(value.draft.fields) >= 40} onClick={() => { const q = newQuestion("shortText", value.draft.culture, crypto.randomUUID()); change({ ...value, draft: { ...value.draft, fields: [...value.draft.fields, q] } }); setExpanded(q.localId); }}>{t("addQuestion")}</Button></DisabledReason> : null}</>}>
+          {value.draft.fields.length === 0 && !value.draft.sections?.length ? <EmptyState embedded title={t("emptyQuestions")} /> : null}
           {(() => {
             // RG1-A: the block is one more item of the list, with its questions in a box under it, numbered 5.1, 5.2…
+            // CW15-B: the section titles are rows of the same list, between the questions; ↑ ↓ move along the whole list.
             const fields = value.draft.fields;
+            const sections = value.draft.sections ?? [];
             const numbers = questionNumbers(fields);
             const block = rowsBlock(fields);
             const inBlock = (index: number) => block !== null && index > block.index && index < block.end;
-            const topLevel = fields.filter((_, index) => !inBlock(index));
             const full = questionCount(fields) >= 40;
             const markQuestion = (q: DraftQuestion, repeated: boolean) => {
               const localId = crypto.randomUUID();
-              change({ ...value, draft: { ...value.draft, fields: markRepeated(fields, q.localId, repeated, value.draft.culture, t("rows.defaultName"),
+              change({ ...value, draft: { ...value.draft, ...markRepeatedWithTitles(fields, sections, q.localId, repeated, value.draft.culture, t("rows.defaultName"),
                 { question: () => localId, choice: () => crypto.randomUUID(), block: () => crypto.randomUUID() }) } });
               setExpanded(q.fieldId ? localId : q.localId);
             };
-            const editorFor = (q: DraftQuestion, index: number) => <QuestionEditor key={q.localId} questions={fields} catalogScope={scope} definitionId={session.confirmed?.id ?? null} previewCulture={contentCulture !== value.draft.culture && missingFormTexts(value, contentCulture) ? value.draft.culture : contentCulture} onPreviewChange={observeCatalogPreview} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} question={q} number={numbers[index]} position={inBlock(index) ? index - block!.index : topLevel.indexOf(q) + 1} total={inBlock(index) ? block!.end - block!.index - 1 : topLevel.length} blockExists={block !== null} rowCount={q.type === "group" && block ? block.end - block.index - 1 : 0} onRepeatedChange={readOnly ? undefined : repeated => markQuestion(q, repeated)} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalid === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, fields: inBlock(index) ? moveInRows(fields, q.localId, delta) : moveTopLevel(fields, q.localId, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />;
-            return fields.map((q, index) => inBlock(index) ? null : q.type === "group" && block ? <Fragment key={q.localId}>{editorFor(q, index)}
-              <div className="mx-4 mb-3 overflow-hidden rounded-md border border-[var(--color-border)]">
-                <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--color-surface-muted)] px-3 py-2"><p className="text-sm font-medium">{t("rows.band")}</p>{!readOnly ? <DisabledReason reason={full ? t("questionLimit", { count: 40 }) : null}><Button type="button" variant="outline" size="sm" disabled={full} onClick={() => { const localId = crypto.randomUUID(); change({ ...value, draft: { ...value.draft, fields: addRowQuestion(fields, value.draft.culture, localId) } }); setExpanded(localId); }}>{t("addQuestion")}</Button></DisabledReason> : null}</div>
-                {fields.slice(block.index + 1, block.end).map((child, offset) => editorFor(child, block.index + 1 + offset))}
-              </div></Fragment> : editorFor(q, index));
+            const editorFor = (q: DraftQuestion, index: number) => <QuestionEditor key={q.localId} questions={fields} catalogScope={scope} definitionId={session.confirmed?.id ?? null} previewCulture={contentCulture !== value.draft.culture && missingFormTexts(value, contentCulture) ? value.draft.culture : contentCulture} onPreviewChange={observeCatalogPreview} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} question={q} number={numbers[index]} position={inBlock(index) ? index - block!.index : listPosition(fields, sections, q.localId).position} total={inBlock(index) ? block!.end - block!.index - 1 : listPosition(fields, sections, q.localId).total} blockExists={block !== null} rowCount={q.type === "group" && block ? block.end - block.index - 1 : 0} onRepeatedChange={readOnly ? undefined : repeated => markQuestion(q, repeated)} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalidId === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, ...inBlock(index) ? { fields: moveInRows(fields, q.localId, delta) } : moveListEntry(fields, sections, q.localId, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />;
+            const titleFor = (section: DraftSection) => <SectionTitleEditor key={section.localId} section={section} {...listPosition(fields, sections, section.localId)} culture={contentCulture} original={value.draft.culture}
+              expanded={expanded === section.localId || expanded === null && firstInvalidId === section.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.sectionLocalId === section.localId)}
+              onChange={next => change({ ...value, draft: { ...value.draft, sections: sections.map(item => item.localId === section.localId ? next : item) } })}
+              onExpand={open => setExpanded(open ? section.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, ...moveListEntry(fields, sections, section.localId, delta) } })} onRemove={() => removeTitle(section.localId)} />;
+            return listEntries(fields, sections).map(entry => {
+              if (entry.kind === "title") return titleFor(entry.section);
+              const q = entry.questions[0]!;
+              const index = fields.indexOf(q);
+              return q.type === "group" && block ? <Fragment key={q.localId}>{editorFor(q, index)}
+                <div className="mx-4 mb-3 overflow-hidden rounded-md border border-[var(--color-border)]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--color-surface-muted)] px-3 py-2"><p className="text-sm font-medium">{t("rows.band")}</p>{!readOnly ? <DisabledReason reason={full ? t("questionLimit", { count: 40 }) : null}><Button type="button" variant="outline" size="sm" disabled={full} onClick={() => { const localId = crypto.randomUUID(); change({ ...value, draft: { ...value.draft, ...addRowQuestionWithTitles(fields, sections, value.draft.culture, localId) } }); setExpanded(localId); }}>{t("addQuestion")}</Button></DisabledReason> : null}</div>
+                  {fields.slice(block.index + 1, block.end).map((child, offset) => editorFor(child, block.index + 1 + offset))}
+                </div></Fragment> : editorFor(q, index);
+            });
           })()}
           {errorFor("draft.fields") ? <p role="alert" className="p-4 text-sm text-[var(--color-danger)]">{errorFor("draft.fields")}</p> : null}
 

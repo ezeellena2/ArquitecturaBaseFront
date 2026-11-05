@@ -55,13 +55,19 @@ export function indexedValidationIssues(items: readonly { readonly localId: stri
   });
 }
 
-export interface DraftFieldIssue { readonly path: string; readonly messages: readonly string[]; readonly fieldLocalId?: string; readonly choiceLocalId?: string }
+export interface DraftFieldIssue { readonly path: string; readonly messages: readonly string[]; readonly fieldLocalId?: string; readonly choiceLocalId?: string; readonly sectionLocalId?: string }
+// A section title (CW15-B) is named by its place in the list sent or checked.
+function sectionIssue(sections: readonly { readonly localId: string }[] | undefined, path: string, segments: readonly (string | number)[], messages: readonly string[]): DraftFieldIssue[] {
+  const section = segments[0] === "draft" && segments[1] === "sections" && typeof segments[2] === "number" ? sections?.[segments[2]] : undefined;
+  return section ? [{ path, messages: [...messages], sectionLocalId: section.localId }] : [];
+}
 export function draftFieldIssues(body: DraftWriteBody, errors: Record<string, string[]> | undefined): readonly DraftFieldIssue[] {
   return Object.entries(errors ?? {}).flatMap(([path, messages]): DraftFieldIssue[] => {
     const segments = parseValidationPath(path);
     if (!segments) return [];
     if (segments[0] === "name" || segments[0] === "prefix" || segments[0] === "offerWhen" || segments[0] === "draft" && segments.length <= 2) return [{ path, messages: [...messages] }];
     if (segments[0] === "draft" && segments[1] === "submitLabel") return [{ path, messages: [...messages] }];
+    if (segments[0] === "draft" && segments[1] === "sections") return sectionIssue(body.draft.sections, path, segments, messages);
     const index = segments[2];
     const field = segments[0] === "draft" && segments[1] === "fields" && typeof index === "number" ? body.draft.fields[index] : undefined;
     if (!field) return [];
@@ -77,6 +83,8 @@ export function draftFieldIssues(body: DraftWriteBody, errors: Record<string, st
 // Publication diagnostics describe a fixed version: never attach them by an index in a newer draft.
 export function publicationFieldIssues(value: DraftEditorValue, issues: readonly { fieldId: string | null; choiceId: string | null; path: string; culture: "es" | "en" | null; message: string }[]): readonly DraftFieldIssue[] {
   return issues.flatMap((issue): DraftFieldIssue[] => {
+    // A title's problem comes from the check of this same saved draft, so its place still names it.
+    if (!issue.fieldId && issue.path.startsWith("draft.sections[")) return sectionIssue(value.draft.sections, issue.path, parseValidationPath(issue.path) ?? [], [issue.message]);
     if (!issue.fieldId) return /^(name|draft\.submitLabel)(\.(es|en))?$/.test(issue.path) ? [{ path: issue.path, messages: [issue.message] }] : [];
     const question = value.draft.fields.find(q => q.fieldId === issue.fieldId);
     if (!question) return [];

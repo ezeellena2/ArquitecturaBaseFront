@@ -154,6 +154,7 @@
     "formIssue": "El formulario",
     "goToQuestion": "Ir a la pregunta",
     "goToText": "Ir al texto",
+    "goToTitle": "Ir al título",
     "expired": "La comprobación venció.",
     "checkAgain": "Volver a comprobar",
     "inProgress": "Ya hay una publicación en curso para este formulario.",
@@ -207,6 +208,7 @@
     "completeCulture": "Completar el {{language}}",
     "missingQuestion": "{{name}} · la pregunta",
     "missingHelp": "{{name}} · la ayuda",
+    "missingSection": "{{name}} · el título",
     "missingChoice": "{{name}} · la opción «{{option}}»",
     "cultureAdded": "Se suma el {{language}}.",
     "cultureRemoved": "Deja de publicarse.",
@@ -1353,6 +1355,15 @@
     "noPending": "No hay respuestas por aprobar.",
     "noDeactivated": "No hay formularios dados de baja",
     "pendingNavigation": "{{position}} de {{count}} por aprobar"
+  },
+  "sections": {
+    "all": "Títulos de sección",
+    "add": "Agregar título",
+    "type": "Título de sección",
+    "title": "Título",
+    "view": "Ver título {{name}}",
+    "issue": "Revisá este título",
+    "limit": "Podés agregar hasta {{count}} títulos. Quitá uno para agregar otro."
   },
   "rows": {
     "name": "Nombre",

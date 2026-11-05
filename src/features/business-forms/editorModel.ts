@@ -1,6 +1,6 @@
 import { normalizeCatalogQuestionSource } from "./catalogQuestionSource";
 import { openDraftSession } from "./draftSession";
-import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
+import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
 
 export const localizedValue = (text: LocalizedText | Readonly<Record<string, string | null>> | null, culture: FormCulture, original: FormCulture) => text?.[culture]?.trim() ? text[culture]! : text?.[original] ?? "";
 type ContentTexts = Readonly<Record<string, string | null | undefined>> | null | undefined;
@@ -52,9 +52,11 @@ export function questionTexts(question: DraftQuestion) {
     ...(question.help && Object.values(question.help).some(text => !!text?.trim()) ? [question.help] : [])];
 }
 export const missingQuestionTexts = (question: DraftQuestion, culture: FormCulture) => questionTexts(question).filter(map => !map[culture]?.trim()).length;
-export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) => [value.name, value.draft.submitLabel, ...value.draft.fields.flatMap(questionTexts)].filter(map => !map[culture]?.trim()).length;
+// The texts of the form in a language: name, final button, each question's and each section title's (CW15-B).
+const formTexts = (value: DraftEditorValue) => [value.name, value.draft.submitLabel, ...value.draft.fields.flatMap(questionTexts), ...(value.draft.sections ?? []).map(section => section.title)];
+export const missingFormTexts = (value: DraftEditorValue, culture: FormCulture) => formTexts(value).filter(map => !map[culture]?.trim()).length;
 // NI2-C (2026-11-03): a translation nobody started has no text of the form in that language.
-export const hasFormTexts = (value: DraftEditorValue, culture: FormCulture) => [value.name, value.draft.submitLabel, ...value.draft.fields.flatMap(questionTexts)].some(map => !!map[culture]?.trim());
+export const hasFormTexts = (value: DraftEditorValue, culture: FormCulture) => formTexts(value).some(map => !!map[culture]?.trim());
 
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
@@ -63,13 +65,13 @@ const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
-  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder";
+  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections";
   readonly parentId?: string;
   readonly optionId?: string;
   readonly culture?: FormCulture;
   readonly property?: "label" | "help";
-  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | null;
-  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | null;
+  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | null;
+  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | null;
   readonly canKeep: boolean;
 }
 export interface DraftReview { readonly mine: DraftEditorValue; readonly current: DraftEditorValue; readonly definition: FormDefinitionSnapshot; readonly rows: readonly DraftReviewRow[] }
@@ -111,6 +113,9 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
   }
   const myOrder = mine.draft.fields.map(fieldIdentity); const savedOrder = saved.draft.fields.map(fieldIdentity);
   if (!equal(myOrder, savedOrder)) rows.push({ id: "order", kind: "order", mine: myOrder, current: savedOrder, canKeep: true });
+  // The section titles (CW15-B) have no identity: they are compared, and kept, as a whole.
+  const sectionList = (value: DraftEditorValue) => (value.draft.sections ?? []).map(({ start, title }) => ({ start, title }));
+  if (!equal(sectionList(mine), sectionList(saved))) rows.push({ id: "sections", kind: "sections", mine: mine.draft.sections ?? [], current: saved.draft.sections ?? [], canKeep: true });
   return { mine, current: saved, definition, rows };
 }
 function withText(map: EditableTexts, culture: FormCulture, value: string | null): Record<string, string> {
@@ -167,5 +172,8 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
   const order = choices.order === "mine" ? review.mine : review.current;
   const keys = [...new Set([...order.draft.fields.map(fieldIdentity), ...fields.keys()])];
   result.draft = { ...result.draft, fields: keys.flatMap(id => fields.has(id) ? [fields.get(id)!] : []) };
+  // The chosen titles stay within the questions that remain.
+  const titles = (choices.sections === "mine" ? review.mine : review.current).draft.sections ?? [];
+  result.draft = { ...result.draft, sections: titles.length ? titles.map(section => ({ ...section, start: Math.min(section.start, result.draft.fields.length) })) : undefined };
   return result;
 }
