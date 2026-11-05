@@ -96,6 +96,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const dialog = page.getByRole("dialog", { name: text(language, "¿Anular TEST-000002?", "Void TEST-000002?"), exact: true });
     await expect(dialog.getByText(text(language, "TEST-000002 queda en la planilla como anulada, con su número; deja de contar y no sale en el Excel.",
       "TEST-000002 stays in the sheet as voided, with its number; it no longer counts and is left out of the Excel."), { exact: true })).toBeVisible();
+    // Without a reason it does not void and says why, also from the full view, where the texts of loading are not loaded yet.
+    await dialog.getByRole("button", { name: text(language, "Anular respuesta", "Void response"), exact: true }).click();
+    await expect(dialog.getByText(text(language, "Escribí el motivo.", "Write the reason."), { exact: true })).toBeVisible();
     await dialog.getByLabel(new RegExp("^" + text(language, "Motivo", "Reason"))).fill(text(language, "Cargada dos veces: es la misma que TEST-000001.", "Loaded twice: it is the same as TEST-000001."));
     await noPageScroll(page, width);
     await capture(page, "cw11-dialog" + suffix);

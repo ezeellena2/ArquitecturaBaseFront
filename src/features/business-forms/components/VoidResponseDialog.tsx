@@ -18,7 +18,8 @@ const maxReason = 500;
 export function VoidResponseDialog({ formId, recordId, number, owner, onClose, onVoided }: {
   formId: string; recordId: string; number: string; owner: string; onClose: () => void; onVoided: () => void;
 }) {
-  const { t } = useTranslation("forms");
+  // The reason's messages are those of the correction, in «formEntries»: loaded here too, also from the full view.
+  const { t } = useTranslation(["forms", "formEntries"]);
   const id = useId();
   const [reason, setReason] = useState("");
   const [attempted, setAttempted] = useState(false);
