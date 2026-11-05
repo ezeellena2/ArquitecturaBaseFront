@@ -310,7 +310,9 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
       }
       return request.method === "POST" ? json("visual-created", 201) : new Response(null, { status: 204 });
     }
-    if (path === "/api/me") return json(profile);
+    // A scene holds the profile from its first request (`visualProfileHold`, set by an init script) to measure the
+    // shell while the session and its permissions load.
+    if (path === "/api/me") { await (globalThis as { visualProfileHold?: Promise<void> }).visualProfileHold; return json(profile); }
     if (path === "/api/me/whatsapp") return json(scenario === "profile-chat-linked" ? { state: "Linked", noticesUntilUtc: "2026-11-04T00:40:00Z" } : { state: "NotLinked", noticesUntilUtc: null });
     if (path === "/account/login-methods") return json({ registrationOpen: scenario !== "landing", google: true, whatsapp: true, whatsappCountries: ["AR", "UY"], whatsappNumber: "15551632662" });
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario === "assistant-proposal" || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [] });

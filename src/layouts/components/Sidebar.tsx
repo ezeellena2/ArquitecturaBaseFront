@@ -170,7 +170,7 @@ function NavItems({
   return items.map((item) => (
     <li key={isBranch(item) ? item.labelKey : item.to}>
       {pending && dependsOnPermissions(item) ? (
-        <Skeleton aria-hidden="true" className="h-9 rounded-[var(--radius-control)]" />
+        <Skeleton aria-hidden="true" className="h-7.5 rounded-[var(--radius-control)]" />
       ) : isBranch(item) ? (
         <NavBranch
           labelKey={item.labelKey}
@@ -504,7 +504,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                       {isPending && dependsOnPermissions(item) ? (
                         <Skeleton
                           aria-hidden="true"
-                          className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-9")}
+                          className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-7.5")}
                         />
                       ) : isBranch(item) ? (
                         <NavBranch
@@ -533,7 +533,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
           {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide", "formrecords.create"]) ? (
             <div className="mt-2 border-t border-[var(--color-border)] pt-2">
-              {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
+              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "h-9" : "h-7.5"} /> : isMobile ? (
                 <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate}/>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
@@ -544,7 +544,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           {/* WhatsApp se separa de Inicio con la misma línea que Administración. */}
           {whatsappItems.length > 0 ? (
             <div className="mt-2 border-t border-[var(--color-border)] pt-2">
-              {isPending ? <Skeleton aria-hidden="true" className="h-9" /> : isMobile ? (
+              {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "h-9" : "h-7.5"} /> : isMobile ? (
                 <ul><li><NavBranch labelKey={whatsapp.labelKey} icon={whatsapp.icon} items={whatsappItems} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={whatsapp.icon} label={t(whatsapp.labelKey)} open={openPanel === "whatsapp"} collapsed={iconsOnly} panelId={panelId}
@@ -566,7 +566,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               {adminPending ? (
                 <Skeleton
                   aria-hidden="true"
-                  className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-9 w-full")}
+                  className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-10" : "h-7.5 w-full")}
                 />
               ) : isMobile ? (
                 <ul className="flex flex-col gap-1">
@@ -682,7 +682,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 /// mismo renglón: debajo no se agrega nada que desaparezca al llegar el número y suba al resto del panel.
 function FormsOverviewLink({onNavigate}:{onNavigate?:()=>void}) {
  const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
- if(isPending)return <Skeleton className="h-9"/>;
+ if(isPending)return <div className="mb-2"><Skeleton aria-hidden="true" className="h-7.5"/></div>;
  if(!has(["formrecords.read","formapprovals.decide","formrecords.create"]))return null;
  const pending=overview?.pending===true;
  const count=has("formapprovals.decide")&&!pending?overview?.count:undefined;

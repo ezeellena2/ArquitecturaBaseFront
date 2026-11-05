@@ -319,6 +319,10 @@
   .subnavigation-surface {
     --color-surface: var(--color-subnav-surface);
     --color-surface-muted: var(--color-subnav-hover);
+    /* `--accent` se resuelve donde se declara: el de :root es el tono apagado de la página, casi igual a este panel,
+       y sus bloques de carga no se veían. Acá es un tinte del texto sobre lo que haya detrás: sobre el panel queda
+       como su hover y sobre el renglón señalado, que ya tiene ese tono, se ve más oscuro. */
+    --accent: color-mix(in srgb, var(--color-content) 8%, transparent);
   }
 
   .topbar-surface {
