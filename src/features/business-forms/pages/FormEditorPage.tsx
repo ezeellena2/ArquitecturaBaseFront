@@ -33,7 +33,8 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { QuestionEditor } from "../components/QuestionEditor";
 import { FormPreview } from "../components/FormPreview";
 import { OfficialFormPreview } from "../components/OfficialFormPreview";
-import { PublicationProgress } from "../components/PublicationProgress";
+import { PublicationActions, PublicationProblems } from "../components/PublicationProgress";
+import { usePublicationProgress } from "../hooks/usePublicationProgress";
 import { publicationLabelKey } from "../publicationPresentation";
 import { useFormPublication } from "../hooks/useFormPublication";
 import { useFormOverviewScope } from "../hooks/useFormOverview";
@@ -114,6 +115,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const canPublish = scope.permissions.includes("formtemplates.publish") && (!("definition" in initial) || initial.capabilities.canPublish);
   const deactivated = !!lifecycle?.deactivatedAtUtc;
   const projection = "definition" in initial ? initial.publication : undefined;
+  // EP1-A (2026-11-06): the header's label says the state of the publication; nothing under it repeats it.
+  const progress = usePublicationProgress(publication, `forms:publication:${editor.session?.scope.editorId}`, projection);
   const { resume } = publication;
   useEffect(() => { if ("definition" in initial && initial.capabilities.canPublish) void resume(initial.definition.id, initial.publication); }, [initial, resume]);
   const refreshedState = useRef<string | null>(null);
@@ -207,6 +210,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const dirty = !!session && JSON.stringify(session.value) !== JSON.stringify(session.baseline);
   const frozen = !!session && session.phase !== "Editing";
   const publicationPending = ["Accepting", "Unconfirmed"].includes(publication.phase);
+  // A publication still going on, or whose acceptance is unconfirmed, keeps Publish off until it is resolved.
+  const publicationBlocks = publicationPending || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "");
   const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
@@ -346,13 +351,15 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <DisabledReason reason={saveEnabled ? waitReason : null}><Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!saveEnabled || cooldown.isRunning} pending={saving} onClick={() => void operate(editor.save)}>{t(saving ? "saving" : "save")}</Button></DisabledReason> : null}
-    {canPublish && session.confirmed ? <Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || ["Accepting", "Unconfirmed"].includes(publication.phase) || publication.phase === "Accepted" && !["Published", "Failed"].includes(publication.status?.state ?? "")} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button> : null}
+    {canPublish && session.confirmed ? <PublicationActions publication={publication} progress={progress} onReplay={() => void publication.replay()} /> : null}
+    {/* While a publication goes on, Publish says why it is off; its other reasons (saving, a review) stay silent. */}
+    {canPublish && session.confirmed ? <DisabledReason reason={publicationBlocks ? progress.publishReason : null}><Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || publicationBlocks} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : "publication.title")}</Button></DisabledReason> : null}
     {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={canPublish} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => openPublication(lifecycleAction.current)} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
   </>}>
     <div className="flex flex-col gap-4">
     {lifecycle ? <FormLifecycleNotice lifecycle={lifecycle} timeZoneId={timeZoneId} /> : null}
-    {!deactivated || publication.phase === "Accepting" || publication.phase === "Unconfirmed" || (publicationVersion ?? 0) > (projection?.activeVersion?.versionNumber ?? 0) ? <PublicationProgress publication={publication} projection={projection} feedbackId={`forms:publication:${session.scope.editorId}`} onReplay={() => void publication.replay()} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} /> : null}
+    <PublicationProblems progress={progress} value={value} culture={contentCulture} onGoToIssue={goToPublicationIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} />
     {/* An unconfirmed save and a pending review are states of the flow: their own surface, titled, with the actions in its band. */}
     {session.phase === "Unconfirmed" || replaying ? <Surface title={t("uncertain")} padded actions={<>
       <DisabledReason reason={editor.busy || editor.issue?.kind === "expired" ? null : waitReason}><Button type="button" variant="outline" disabled={editor.busy || cooldown.isRunning || editor.issue?.kind === "expired"} pending={recovering} onClick={() => void operate(editor.recover)}>{t(recovering ? "recovering" : "recover")}</Button></DisabledReason>

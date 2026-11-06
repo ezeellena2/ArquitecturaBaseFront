@@ -150,6 +150,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const origin = new URL(baseURL!).origin;
     page.on("request", request => { if (new URL(request.url()).origin !== origin) external.push(request.url()); });
     await page.setViewportSize({ width, height: 900 });
+    // The app consults the publication on its own, every 30 seconds without a hint from the server: the clock moves it on.
+    await page.clock.install();
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-progress&lang=${language}`);
     const trigger = page.getByRole("button", { name: es ? "Publicar en WhatsApp" : "Publish on WhatsApp", exact: true });
     await trigger.click();
@@ -167,25 +169,25 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.screenshot({ path: `test-results/forms-publication-confirm-${language}-${width}.png`, fullPage: true });
     await publish.click();
-    await expect(page.getByRole("heading", { name: es ? "Publicando · versión 1" : "Publishing · version 1", exact: true })).toBeVisible();
+    // EP1-A (2026-11-06): the label of the header says the state; nothing under it repeats it.
+    await expect(page.getByText(es ? "Publicando · versión 1" : "Publishing · version 1", { exact: true })).toBeVisible();
     await expect(page.locator("[data-sonner-toast][data-type=success]")).toContainText(es ? "Publicación aceptada · versión 1" : "Publication accepted · version 1");
     await expect(page.getByRole("heading", { name: es ? "Publicado · versión 1" : "Published · version 1", exact: true })).toHaveCount(0);
     const name = page.getByRole("textbox", { name: es ? "Nombre" : "Name", exact: true });
     await name.fill(es ? "Mi borrador siguiente" : "My next draft");
     await expect(page.getByRole("textbox", { name: es ? "Prefijo de numeración" : "Numbering prefix", exact: true })).toHaveAttribute("readonly", "");
-    const consult = page.getByRole("button", { name: es ? "Consultar publicación" : "Check publication", exact: true });
-    await consult.click();
-    await expect(page.getByText(es ? "Enviada a WhatsApp; esperando confirmación" : "Sent to WhatsApp; awaiting confirmation", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: es ? "Consultar publicación" : "Check publication", exact: true })).toHaveCount(0);
+    await expect(page.getByText(es ? /Enviada a WhatsApp|sigue activa/ : /Sent to WhatsApp|remains active/)).toHaveCount(0);
+    await expect(trigger).toHaveAccessibleDescription(es ? "Ya hay una publicación en curso para este formulario." : "A publication is already in progress for this form.");
+    await page.clock.runFor(30_000);
+    await expect(page.getByText(es ? "Publicando · versión 1" : "Publishing · version 1", { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const progress = await page.getByRole("region", { name: es ? "Publicando · versión 1" : "Publishing · version 1", exact: true }).boundingBox();
-    expect(progress!.x).toBeGreaterThanOrEqual(0);
-    expect(progress!.x + progress!.width).toBeLessThanOrEqual(width);
     const action = await trigger.boundingBox();
     expect(action!.x).toBeGreaterThanOrEqual(0);
     expect(action!.x + action!.width).toBeLessThanOrEqual(width);
     await page.screenshot({ path: `test-results/forms-publication-progress-${language}-${width}.png`, fullPage: true });
-    await consult.click();
-    await expect(page.getByRole("heading", { name: es ? "Publicado · versión 1" : "Published · version 1", exact: true })).toBeVisible();
+    await page.clock.runFor(30_000);
+    await expect(page.getByText(es ? "Publicado · versión 1" : "Published · version 1", { exact: true })).toBeVisible();
     await expect(name).toHaveValue(es ? "Mi borrador siguiente" : "My next draft");
     expect(external).toEqual([]);
   });
@@ -243,7 +245,7 @@ test("uncertain publication keeps one UUID and replays only the same body after 
   const dialog = page.getByRole("dialog", { name: "Publicar la versión 1 en WhatsApp", exact: true });
   await expect(dialog.getByRole("button", { name: "Publicar versión 1", exact: true })).toBeEnabled();
   await dialog.getByRole("button", { name: "Publicar versión 1", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Publicación sin confirmar", exact: true })).toBeVisible();
+  await expect(page.getByText("Publicación sin confirmar", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Repetir el mismo intento", exact: true })).toHaveCount(0);
   await page.getByRole("textbox", { name: "Nombre", exact: true }).fill("Borrador posterior");
   await page.getByRole("button", { name: "Consultar publicación", exact: true }).click();
@@ -253,7 +255,7 @@ test("uncertain publication keeps one UUID and replays only the same body after 
   await page.screenshot({ path: "test-results/forms-publication-uncertain-es-320.png", fullPage: true });
   await expect(replay).toBeEnabled({ timeout: 10000 });
   await replay.click();
-  await expect(page.getByRole("heading", { name: "Publicando · versión 1", exact: true })).toBeVisible();
+  await expect(page.getByText("Publicando · versión 1", { exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Nombre", exact: true })).toHaveValue("Borrador posterior");
   await expect.poll(attempts).toHaveLength(2);
   const sent = await attempts();

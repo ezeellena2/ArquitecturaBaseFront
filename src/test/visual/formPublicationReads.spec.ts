@@ -13,24 +13,28 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`test-results/forms-budget-located-${lang}-${width}.png`,fullPage:true});
  });
 
- test(`uncertain publication shows one review warning ${lang} at ${width}px`,async({page})=>{
+ // EP1-A (2026-11-06): the label says it is unconfirmed; why Publish is off is its reason, and consulting goes in the header.
+ test(`uncertain publication says why Publish is off and offers consulting ${lang} at ${width}px`,async({page})=>{
  const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-uncertain-reload&lang=${lang}`);
- // Preparación del editor independiente del estado de publicación y del aviso esperado.
  await page.getByRole("heading",{name:es?"Registrar visita":"Register visit",level:1,exact:true}).waitFor({state:"visible"});
- const panel=page.getByRole("region",{name:es?"Publicación sin confirmar":"Publication unconfirmed",exact:true});const hint=es?"Esta publicación necesita revisión. No inicies otra para intentar resolverla.":"This publication needs review. Do not start another one to try to resolve it.";
- await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);await expect(panel.getByRole("listitem").first()).toHaveText(es?"Aceptada":"Accepted");
- const consult=panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true});await expect(consult).toBeEnabled();await consult.click();await expect(panel.getByText(hint,{exact:true})).toHaveCount(1);
- await expect(page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true})).toBeDisabled();await expect(panel.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
+ const hint=es?"Esta publicación necesita revisión. No inicies otra para intentar resolverla.":"This publication needs review. Do not start another one to try to resolve it.";
+ await expect(page.getByText(es?"Publicación sin confirmar":"Publication unconfirmed",{exact:true})).toBeVisible();
+ const publish=page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true});await expect(publish).toBeDisabled();await expect(publish).toHaveAccessibleDescription(hint);
+ await expect(page.getByText(hint,{exact:true})).not.toBeVisible();await expect(page.getByText(es?"Aceptada":"Accepted",{exact:true})).toHaveCount(0);
+ const consult=page.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true});await expect(consult).toBeEnabled();await consult.click();await expect(publish).toHaveAccessibleDescription(hint);
+ await expect(page.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await page.screenshot({path:`test-results/forms-publication-review-${lang}-${width}.png`,fullPage:true});
  });
  test(`failed publication recovers translated diagnostics ${lang} at ${width}px`,async({page})=>{
  const es=lang==="es";await page.setViewportSize({width,height:900});await page.goto(`/src/test/visual/index.html?screen=/formularios/${fixtureFormId}&scenario=forms-publication-failed-reload&lang=${lang}`);
- const panel=page.getByRole("region",{name:es?"No se pudo publicar · versión 1":"Could not publish · version 1",exact:true});
+ // EP1-A (2026-11-06): the label says it did not go through; its problems go in «Problemas», with the rows of the check.
+ await expect(page.getByText(es?"No se pudo publicar · versión 1":"Could not publish · version 1",{exact:true})).toBeVisible();
+ const panel=page.getByRole("region",{name:es?"Problemas":"Problems",exact:true});
  await expect(panel.getByText(es?"WhatsApp rechazó la validación del formulario.":"WhatsApp rejected the form validation.",{exact:true})).toHaveCount(1);
  // NI1-A (2026-11-03): the diagnostic is in English, so it names its language only with the menu in Spanish.
- if(es)await expect(panel.getByText("Inglés",{exact:true})).toBeVisible();else await expect(panel.getByText("English",{exact:true})).toHaveCount(0);
- await expect(panel.getByText(es?"Pendiente de confirmación de WhatsApp":"Awaiting WhatsApp confirmation",{exact:true})).toHaveCount(0);
- await expect(panel.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true})).toBeEnabled();
+ await expect(panel.getByText(es?"El canal de publicación · Inglés":"The publication channel",{exact:true})).toBeVisible();
+ await expect(page.getByText(es?"Pendiente de confirmación de WhatsApp":"Awaiting WhatsApp confirmation",{exact:true})).toHaveCount(0);
+ await expect(page.getByRole("button",{name:es?"Consultar publicación":"Check publication",exact:true})).toHaveCount(0);
  await expect(page.getByRole("button",{name:es?"Publicar en WhatsApp":"Publish on WhatsApp",exact:true})).toBeEnabled();
  await expect(page.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

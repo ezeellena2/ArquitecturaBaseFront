@@ -1,116 +1,188 @@
 import { notify } from "@/shared/ui/notifications";
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { ApiError } from "@/shared/api/ApiError";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { fixtureDefinition } from "@/test/visual/formFixtures";
+import { openDraftSession } from "../draftSession";
+import { localizedValue } from "../editorModel";
 import type { useFormPublication } from "../hooks/useFormPublication";
-import { PublicationProgress } from "./PublicationProgress";
+import type { FormPublicationCheck } from "../api/response";
+import { usePublicationProgress } from "../hooks/usePublicationProgress";
+import { PublicationActions, PublicationProblems } from "./PublicationProgress";
 vi.mock("@/shared/ui/notifications", () => ({ notify: vi.fn(), dismissNotification: vi.fn() }));
 beforeEach(async () => { await i18n.changeLanguage("es"); vi.mocked(notify).mockClear(); });
-const reviewHint="Esta publicación necesita revisión. No inicies otra para intentar resolverla.";
-function session(state:"Uncertain"|"Publishing"):ReturnType<typeof useFormPublication>{return {phase:"Accepted",receipt:null,status:{requestId:"request",operationId:"operation",definitionId:"definition",versionId:"version",versionNumber:2,draftRevision:3,acceptedAtUtc:"2026-10-10T12:00:00Z",state,stage:"Validate",updatedAtUtc:"2026-10-10T12:00:00Z",nextCheckAtUtc:null,canRetry:false,requiresReview:true,issues:[],cultures:["es","en"]},error:null,busy:false,aggregate:null,canReplay:false,confirmed:true,startedHere:false,accept:vi.fn(),consult:vi.fn(),replay:vi.fn(),resetRejected:vi.fn(),resume:vi.fn()};}
-it("shows one review warning for an uncertain confirmed publication and preserves consultation without replay",async()=>{const publication=session("Uncertain");const onReplay=vi.fn();await act(async()=>{renderWithProviders(<PublicationProgress publication={publication} feedbackId="uncertain-review" onReplay={onReplay} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);expect(screen.getByText("Aceptada")).toBeInTheDocument();expect(screen.getByText("Pendiente de confirmación de WhatsApp")).toBeInTheDocument();await userEvent.click(screen.getByRole("button",{name:"Consultar publicación"}));expect(publication.consult).toHaveBeenCalledOnce();expect(screen.queryByRole("button",{name:"Repetir el mismo pedido"})).not.toBeInTheDocument();expect(onReplay).not.toHaveBeenCalled();});
-it("retains the separate review warning when the main status describes another publication state",async()=>{await act(async()=>{renderWithProviders(<PublicationProgress publication={session("Publishing")} feedbackId="publishing-review" onReplay={vi.fn()} />);});expect(screen.getAllByText(reviewHint)).toHaveLength(1);});
 
-// NI2-C (2026-11-03): published only in the menu language, it does not name it.
-it("announces a newly published operation once, without naming the menu language alone", async () => {
-  const original = session("Publishing");
-  const status = { ...original.status!, state: "Published" as const, requiresReview: false, cultures: ["es" as const] };
-  const receipt = { ...status, state: "Accepted" as const, recoveryPath: "/api/forms/definitions/definition/publications/request" };
-  const publication = { ...original, status, receipt, startedHere: true };
-  const view = renderWithProviders(<PublicationProgress publication={original} feedbackId="published-language" onReplay={vi.fn()} />);
-  expect(screen.getByRole("status")).toBeInTheDocument();
-  view.rerender(<PublicationProgress publication={publication} feedbackId="published-language" onReplay={vi.fn()} />);
-  await act(async () => {});
-  expect(screen.getByRole("heading", { name: "Publicado · versión 2" })).toBeInTheDocument();
-  expect(screen.queryByText(/^En WhatsApp, en/)).not.toBeInTheDocument();
-  expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  expect(notify).toHaveBeenCalledOnce();
-  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2." }));
-  vi.mocked(notify).mockClear();
-  view.rerender(<PublicationProgress publication={{ ...publication }} feedbackId="published-language" onReplay={vi.fn()} />);
-  expect(notify).not.toHaveBeenCalled();
-});
-it("does not announce an existing published version while opening the editor", async () => {
-  vi.mocked(notify).mockClear();
-  const original = session("Publishing");
-  renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Published", requiresReview: false } }} feedbackId="existing-published" onReplay={vi.fn()} />);
-  await act(async () => {});
-  expect(notify).not.toHaveBeenCalled();
+type Publication = ReturnType<typeof useFormPublication>;
+type Issue = FormPublicationCheck["issues"][number];
+const definition = fixtureDefinition();
+const value = openDraftSession({ actorId: "actor", editorId: "editor" }, definition).value;
+const reviewHint = "Esta publicación necesita revisión. No inicies otra para intentar resolverla.";
+const unconfirmedHint = "Todavía no sabemos si la publicación fue aceptada. Consultá el intento antes de volver a enviarlo.";
+const inProgress = "Ya hay una publicación en curso para este formulario.";
+function session(state: "Uncertain" | "Publishing" | "Published" | "Failed", changes: Partial<Publication> = {}): Publication {
+  return { phase: "Accepted", receipt: null, status: { requestId: "request", operationId: "operation", definitionId: "definition", versionId: "version", versionNumber: 2, draftRevision: 3,
+    acceptedAtUtc: "2026-10-10T12:00:00Z", state, stage: "Validate", updatedAtUtc: "2026-10-10T12:00:00Z", nextCheckAtUtc: null, canRetry: false, requiresReview: state === "Uncertain",
+    issues: [], cultures: ["es", "en"] }, error: null, busy: false, aggregate: null, startedHere: false, canReplay: false, confirmed: true,
+    accept: vi.fn(), consult: vi.fn(), replay: vi.fn(), resetRejected: vi.fn(), resume: vi.fn(), ...changes } as Publication;
+}
+// The editor's header and body, as FormEditorPage composes them: why Publish is off, the actions and «Problemas».
+function Editor({ publication, onReplay = vi.fn(), onGoToIssue = vi.fn() }: { publication: Publication; onReplay?: () => void; onGoToIssue?: (issue: Issue) => void }) {
+  const progress = usePublicationProgress(publication, "publication-test");
+  return <div data-testid="editor">
+    <header aria-label="Encabezado"><p data-testid="publish-reason">{progress.publishReason ?? ""}</p><PublicationActions publication={publication} progress={progress} onReplay={onReplay} /></header>
+    <PublicationProblems progress={progress} value={value} culture="es" onGoToIssue={onGoToIssue} canLocateIssue={issue => !!issue.fieldId} />
+  </div>;
+}
+async function mount(publication: Publication, props: Partial<Parameters<typeof Editor>[0]> = {}) {
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<Editor publication={publication} {...props} />); });
+  return view;
+}
+const header = () => screen.getByRole("banner", { name: "Encabezado" });
+const editor = () => within(screen.getByTestId("editor"));
+
+// EP1-A (2026-11-06): the state is the label of the header; nothing under it repeats it.
+describe("Chosen publication board EP1-A", () => {
+  it("says nothing under the header while a publication is accepted, goes on or is published", async () => {
+    const view = await mount({ ...session("Publishing"), phase: "Accepting", status: null, confirmed: false, busy: true });
+    for (const publication of [session("Publishing"), session("Published"), { ...session("Published"), phase: "Idle" as const, status: null, confirmed: false }]) {
+      view.rerender(<Editor publication={publication} />);
+      expect(editor().queryByRole("region")).not.toBeInTheDocument();
+      expect(editor().queryByRole("heading")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Aceptada|Enviada a WhatsApp|sigue activa|En WhatsApp, en|Lista para mandar/)).not.toBeInTheDocument();
+      expect(within(header()).queryByRole("button")).not.toBeInTheDocument();
+    }
+  });
+
+  it("says why «Publicar en WhatsApp» is off while a publication goes on", async () => {
+    const reason = () => screen.getByTestId("publish-reason");
+    const view = await mount({ ...session("Publishing"), phase: "Accepting", status: null, confirmed: false });
+    expect(reason()).toHaveTextContent(inProgress);
+    view.rerender(<Editor publication={session("Publishing", { status: { ...session("Publishing").status!, requiresReview: false } })} />);
+    expect(reason()).toHaveTextContent(inProgress);
+    view.rerender(<Editor publication={{ ...session("Publishing"), phase: "Unconfirmed" }} />);
+    expect(reason()).toHaveTextContent(unconfirmedHint);
+    view.rerender(<Editor publication={session("Uncertain")} />);
+    expect(reason()).toHaveTextContent(reviewHint);
+    view.rerender(<Editor publication={session("Publishing", { status: { ...session("Publishing").status!, requiresReview: true } })} />);
+    expect(reason()).toHaveTextContent(reviewHint);
+    view.rerender(<Editor publication={{ ...session("Publishing"), error: new ApiError(403, { code: "Auth.Forbidden" }) }} />);
+    expect(reason()).toHaveTextContent("Ya no tenés permiso para publicar.");
+  });
+
+  it("offers «Consultar publicación» in the header only when consulting is the way forward", async () => {
+    const consult = () => within(header()).queryByRole("button", { name: "Consultar publicación" });
+    const view = await mount({ ...session("Publishing"), phase: "Unconfirmed" });
+    expect(consult()).toBeInTheDocument();
+    view.rerender(<Editor publication={session("Uncertain")} />);
+    expect(consult()).toBeInTheDocument();
+    // A failed consultation stops the automatic one: consulting again is the way forward.
+    view.rerender(<Editor publication={session("Publishing", { error: new ApiError(500, { code: "General.Unexpected" }) })} />);
+    expect(consult()).toBeInTheDocument();
+    view.rerender(<Editor publication={session("Publishing")} />);
+    expect(consult()).not.toBeInTheDocument();
+    view.rerender(<Editor publication={session("Failed")} />);
+    expect(consult()).not.toBeInTheDocument();
+    view.rerender(<Editor publication={{ ...session("Publishing"), phase: "Unconfirmed", error: new ApiError(403, { code: "Auth.Forbidden" }) }} />);
+    expect(consult()).not.toBeInTheDocument();
+  });
+
+  it("keeps «Consultar publicación» in sight, with its ring, while it consults after a failed consultation", async () => {
+    const failed = session("Publishing", { error: new ApiError(500, { code: "General.Unexpected" }) });
+    const view = await mount(failed);
+    await userEvent.click(within(header()).getByRole("button", { name: "Consultar publicación" }));
+    expect(failed.consult).toHaveBeenCalledOnce();
+    view.rerender(<Editor publication={{ ...failed, error: null, busy: true }} />);
+    const consulting = within(header()).getByRole("button", { name: "Consultando…" });
+    expect(consulting).toHaveAttribute("aria-busy", "true");
+    view.rerender(<Editor publication={{ ...failed, error: null, busy: false }} />);
+    expect(within(header()).queryByRole("button", { name: /Consultar publicación|Consultando…/ })).not.toBeInTheDocument();
+  });
+
+  it("says «Consultando…» with its ring while it consults, and replaying waits", async () => {
+    await mount({ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, busy: true });
+    const consulting = within(header()).getByRole("button", { name: "Consultando…" });
+    expect(consulting).toBeDisabled();
+    expect(consulting).toHaveAttribute("aria-busy", "true");
+    expect(within(header()).getByRole("button", { name: "Repetir el mismo intento" })).toBeDisabled();
+  });
+
+  it("explains the wait of a 429 as the reason of consulting and replaying", async () => {
+    const wait = "Esperá 30 segundos para volver a intentar.";
+    const onReplay = vi.fn();
+    await mount({ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, error: new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 }) }, { onReplay });
+    for (const name of ["Consultar publicación", "Repetir el mismo intento"]) {
+      const button = within(header()).getByRole("button", { name });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAccessibleDescription(wait);
+    }
+    for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+    expect(onReplay).not.toHaveBeenCalled();
+  });
+
+  it("lists the problems of a publication that did not go through in «Problemas», like the check", async () => {
+    const question = definition.draft.fields[0]!;
+    const name = localizedValue(question.label, "es", definition.draft.culture);
+    const onGoToIssue = vi.fn();
+    const issue = (culture: "es" | "en", path: string, fieldId: string | null, message: string): Issue => ({ channelId: "phone", fieldId, choiceId: null, path, code: "WhatsApp.Flow.ValidationFailed", message, limit: null, culture });
+    await mount(session("Failed", { status: { ...session("Failed").status!, issues: [issue("es", "draft.fields[0].label.es", question.fieldId, "WhatsApp no acepta la pregunta."), issue("en", "name.en", null, "The name is long.")] } }), { onGoToIssue });
+    const problems = screen.getByRole("region", { name: "Problemas" });
+    expect(within(problems).getByText(name)).toBeInTheDocument();
+    expect(within(problems).getByText("WhatsApp no acepta la pregunta.")).toBeInTheDocument();
+    // NI1-A (2026-11-03): only the other language is named.
+    expect(within(problems).getByText("Nombre · Inglés")).toBeInTheDocument();
+    expect(within(problems).queryByText(/Español/)).not.toBeInTheDocument();
+    expect(within(problems).getByRole("button", { name: "Más información sobre Problemas" })).toBeInTheDocument();
+    await userEvent.click(within(problems).getByRole("button", { name: "Ir a la pregunta" }));
+    expect(onGoToIssue).toHaveBeenCalledWith(expect.objectContaining({ fieldId: question.fieldId }));
+    expect(within(problems).getAllByRole("button", { name: /^Ir a/ })).toHaveLength(1);
+  });
+
+  it("shows no zone for a publication that did not go through without problems", async () => {
+    await mount(session("Failed"));
+    expect(editor().queryByRole("region")).not.toBeInTheDocument();
+  });
 });
 
-it("announces a local publication confirmed by GET after the acceptance response was lost", async () => {
-  vi.mocked(notify).mockClear();
-  const original = session("Publishing");
-  renderWithProviders(<PublicationProgress publication={{ ...original, startedHere: true, receipt: null, status: { ...original.status!, state: "Published", requiresReview: false, cultures: ["en"] } }} feedbackId="recovered-publication" onReplay={vi.fn()} />);
-  await act(async () => {});
-  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2, en inglés." }));
-});
+describe("Publication notices", () => {
+  // NI2-C (2026-11-03): published only in the menu language, it does not name it.
+  it("announces a newly published operation once, without naming the menu language alone", async () => {
+    const original = session("Publishing");
+    const status = { ...original.status!, state: "Published" as const, requiresReview: false, cultures: ["es" as const] };
+    const view = await mount(original);
+    view.rerender(<Editor publication={{ ...original, status, startedHere: true }} />);
+    await act(async () => {});
+    expect(notify).toHaveBeenCalledOnce();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2." }));
+    vi.mocked(notify).mockClear();
+    view.rerender(<Editor publication={{ ...original, status: { ...status }, startedHere: true }} />);
+    expect(notify).not.toHaveBeenCalled();
+  });
 
-it("keeps the published English UI state static and announces the result only once", async () => {
-  await i18n.changeLanguage("en");
-  const original = session("Publishing");
-  renderWithProviders(<PublicationProgress publication={{ ...original, startedHere: true, status: { ...original.status!, state: "Published", requiresReview: false } }} feedbackId="published-en" onReplay={vi.fn()} />);
-  await act(async () => {});
-  expect(screen.getByText("On WhatsApp, in Spanish and English").closest('[role="status"], [role="alert"], [aria-live]')).toBeNull();
-  expect(screen.getByRole("heading", { name: "Published · version 2" })).toBeInTheDocument();
-  expect(notify).toHaveBeenCalledOnce();
-});
+  it("does not announce an existing published version while opening the editor", async () => {
+    await mount(session("Published"));
+    expect(notify).not.toHaveBeenCalled();
+  });
 
-// NI1-A (2026-11-03): a problem of a publication that did not go through names its language only when it is the other one.
-it("names the language of a publication problem only when it is not the menu's", async () => {
-  const original = session("Publishing");
-  const issue = (culture: "es" | "en", message: string) => ({ channelId: "phone", fieldId: null, choiceId: null, path: "name." + culture, code: "WhatsApp.Flow.TextTooLong", message, limit: 20, culture });
-  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Failed", requiresReview: false, issues: [issue("es", "El nombre es largo."), issue("en", "The name is long.")] } }} feedbackId="rejected-issues" onReplay={vi.fn()} />); });
-  expect(screen.getByText("El nombre es largo.")).toBeInTheDocument();
-  expect(screen.queryByText("Español")).not.toBeInTheDocument();
-  expect(screen.getByText("Inglés")).toBeInTheDocument();
-});
+  it("announces a local publication confirmed by GET after the acceptance response was lost", async () => {
+    await mount(session("Published", { startedHere: true, status: { ...session("Published").status!, requiresReview: false, cultures: ["en"] } }));
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Publicamos la versión 2, en inglés." }));
+  });
 
-// The inventory of legends (P16 to P19, 2026-11-01): the title and the steps say the state; no paragraph repeats it.
-it("announces «Aceptando publicación…» as the status, without a paragraph under it", async () => {
-  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...session("Publishing"), phase: "Accepting", status: null, confirmed: false, busy: true }} feedbackId="accepting" onReplay={vi.fn()} />); });
-  expect(screen.getByRole("heading", { name: "Aceptando publicación…" })).toBeInTheDocument();
-  expect(screen.getByRole("status")).toHaveTextContent(/^Aceptando publicación…$/);
-  expect(screen.queryByText(/Estamos confirmando la versión/)).not.toBeInTheDocument();
-});
-it("announces the steps of a publication in progress, without a paragraph that repeats them", async () => {
-  const original = session("Publishing");
-  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, requiresReview: false } }} feedbackId="publishing" onReplay={vi.fn()} />); });
-  expect(screen.getByRole("status")).toHaveTextContent(/Aceptada.*Enviada a WhatsApp; esperando confirmación/);
-  expect(screen.queryByText(/Podés seguir editando el borrador/)).not.toBeInTheDocument();
-});
-it("says nothing more than the title for a version published without languages or one that failed", async () => {
-  const original = session("Publishing");
-  const view = renderWithProviders(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Published", requiresReview: false, cultures: [] } }} feedbackId="published-plain" onReplay={vi.fn()} />);
-  await act(async () => {});
-  expect(screen.getByRole("heading", { name: "Publicado · versión 2" })).toBeInTheDocument();
-  expect(screen.queryByText(/está publicada y lista para mandar/)).not.toBeInTheDocument();
-  view.rerender(<PublicationProgress publication={{ ...original, status: { ...original.status!, state: "Failed", requiresReview: false } }} feedbackId="published-plain" onReplay={vi.fn()} />);
-  expect(screen.getByRole("heading", { name: "No se pudo publicar · versión 2" })).toBeInTheDocument();
-  expect(screen.queryByText(/no se activó/)).not.toBeInTheDocument();
-});
-// While it consults, the button says so with its ring (LC1-A), also during the periodic consultation.
-it("says «Consultando…» with its ring while it consults, and replaying waits", async () => {
-  await act(async () => { renderWithProviders(<PublicationProgress publication={{ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, busy: true }} feedbackId="consulting" onReplay={vi.fn()} />); });
-  const consulting = screen.getByRole("button", { name: "Consultando…" });
-  expect(consulting).toBeDisabled();
-  expect(consulting).toHaveAttribute("aria-busy", "true");
-  expect(screen.getByRole("button", { name: "Repetir el mismo intento" })).toBeDisabled();
-});
+  it("announces a publication started here that did not go through, once", async () => {
+    const view = await mount(session("Failed", { startedHere: true }));
+    expect(notify).toHaveBeenCalledOnce();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: "No pudimos publicar la versión 2." }));
+    vi.mocked(notify).mockClear();
+    view.rerender(<Editor publication={session("Failed", { startedHere: true })} />);
+    expect(notify).not.toHaveBeenCalled();
+  });
 
-// Consulting and replaying act on the whole publication: they go in the header of its surface, and the wait of a 429 is their reason.
-it("puts consult and replay in the header of the publication and explains the wait as their reason", async () => {
-  const wait = "Esperá 30 segundos para volver a intentar.";
-  const publication = { ...session("Publishing"), phase: "Unconfirmed" as const, canReplay: true, error: new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 }) };
-  await act(async () => { renderWithProviders(<PublicationProgress publication={publication} feedbackId="publication-wait" onReplay={vi.fn()} />); });
-  const band = within(screen.getByRole("region", { name: "Publicación sin confirmar" })).getByRole("heading", { name: "Publicación sin confirmar" }).parentElement!;
-  for (const name of ["Consultar publicación", "Repetir el mismo intento"]) {
-    const button = within(band).getByRole("button", { name });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAccessibleDescription(wait);
-  }
-  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+  it("does not announce a failure that was already there when the editor opened", async () => {
+    await mount(session("Failed"));
+    expect(notify).not.toHaveBeenCalled();
+  });
 });
