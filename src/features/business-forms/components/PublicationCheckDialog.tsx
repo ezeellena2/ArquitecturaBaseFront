@@ -12,7 +12,6 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
-import { AlertCircleIcon, AlertTriangleIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { hasFormTexts, localizedValue } from "../editorModel";
 import { questionCount } from "../rowsQuestions";
@@ -20,12 +19,10 @@ import { useFormPublicationCheck } from "../hooks/useFormPublicationCheck";
 import type { FormReadScope } from "../hooks/useFormQueries";
 import type { DraftEditorValue } from "../model";
 import type { FormPublicationCheck } from "../api/response";
-import { publicationIssueText } from "../publicationPresentation";
+import { publicationIssueNames } from "../publicationPresentation";
+import { Finding, findingRows as rows, type PublicationIssue } from "./PublicationFindings";
 
-type PublicationIssue = FormPublicationCheck["issues"][number];
 type PublicationWarning = FormPublicationCheck["warnings"][number];
-// Rows with a line between them, as in «Campos de…».
-const rows = "flex flex-col divide-y divide-[var(--color-border)] [&>*]:px-4 [&>*]:py-3";
 const muted = "text-[var(--color-content-muted)]";
 
 // A row of «Qué se publica»: the label on the left from 640 px and on top below, like a `CatalogRow`.
@@ -34,16 +31,6 @@ function SummaryRow({ label, children }: { label: string; children: ReactNode })
     <dt className="text-sm font-medium sm:flex sm:min-h-[var(--height-control)] sm:items-center">{label}</dt>
     <dd className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:min-h-[var(--height-control)]">{children}</dd>
   </div>;
-}
-// What stops the publication or is worth reviewing: what it is, the concrete detail and where to fix it, at the right from
-// 640 px and under the text below.
-function Finding({ tone, title, action, children }: { tone: "danger" | "warning"; title: string | null; action?: ReactNode; children: ReactNode }) {
-  const Icon = tone === "danger" ? AlertCircleIcon : AlertTriangleIcon;
-  return <li className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
-    <Icon aria-hidden="true" className={cn("mt-0.5 size-4 shrink-0", tone === "danger" ? "text-[var(--color-danger)]" : "text-[var(--color-warning-700)]")} />
-    <div className="flex min-w-0 flex-col gap-0.5 text-sm">{title ? <p className="font-medium">{title}</p> : null}{children}</div>
-    {action ? <div className="col-start-2 sm:col-start-auto">{action}</div> : null}
-  </li>;
 }
 // A text with its (i) right after the last word, also when the line wraps.
 function WithHelp({ label, help, children }: { label: string; help: string; children: ReactNode }) {
@@ -95,28 +82,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   // NI2-C (2026-11-03): written in the menu language, with no translation started, the form says nothing about languages,
   // not even while checking.
   const monolingual = value.draft.culture === scope.culture && !hasFormTexts(value, scope.culture === "es" ? "en" : "es");
-  const questionOf = (fieldId: string | null) => value.draft.fields.find(q => !!q.fieldId && q.fieldId.toLowerCase() === fieldId?.toLowerCase());
-  const questionName = (fieldId: string | null) => { const question = questionOf(fieldId); return question ? localizedValue(question.label, scope.culture, value.draft.culture) : null; };
-  // A section title (CW15-B) is named by its place in the saved draft the check read.
-  const sectionOf = (path: string) => { const match = /^draft\.sections\[(\d+)\]/.exec(path); return match ? value.draft.sections?.[Number(match[1])] : undefined; };
-  const sectionName = (path: string) => { const section = sectionOf(path); return section ? localizedValue(section.title, scope.culture, value.draft.culture) || t("sections.title") : null; };
-  const choiceName = (issue: PublicationIssue) => {
-    const question = questionOf(issue.fieldId);
-    const option = question && (question.type === "choice" || question.type === "multiChoice") && !question.source ? question.options.find(choice => choice.choiceId === issue.choiceId) : undefined;
-    return option ? localizedValue(option.label, scope.culture, value.draft.culture) : null;
-  };
-  const issueName = (issue: PublicationIssue) => {
-    const name = questionName(issue.fieldId) ?? sectionName(issue.path)
-      ?? (issue.path.startsWith("name") ? t("name") : issue.path.startsWith("draft.submitLabel") ? t("submitLabel") : issue.channelId || issue.path === "channel" ? t("publication.channelIssue") : t("publication.formIssue"));
-    // NI1-A (2026-11-03): a problem names its language only when it is not the menu's.
-    return issue.culture && issue.culture !== scope.culture ? t("localizedChange", { name, language: t("cultures." + issue.culture) }) : name;
-  };
-  // A text over its limit says how long it is, and which text when it is not the title (the limit comes in the issue).
-  const issueDetail = (issue: PublicationIssue) => {
-    const text = issue.code === "WhatsApp.Flow.TextTooLong" && issue.limit !== null ? publicationIssueText(issue, value) : null;
-    if (!text) return issue.message;
-    return t(text.part === "help" ? "publication.helpTooLong" : text.part === "option" ? "publication.optionTooLong" : "publication.textTooLong", { limit: issue.limit, length: text.length, option: choiceName(issue) });
-  };
+  const { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail } = publicationIssueNames(value, scope.culture, t);
   const missingTextName = (issue: PublicationIssue) => {
     const name = questionName(issue.fieldId);
     const section = name ? null : sectionName(issue.path);
