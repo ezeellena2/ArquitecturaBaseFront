@@ -998,9 +998,12 @@ barra horizontal. En el lienzo provisorio [Formularios desde la app](https://cla
     app. La página de Meta conserva su armado y se achica entera para entrar (`EmbeddedPreview` con `frame`): sin
     barras y sin cortes, también a 390 y 320 px.
   - La vista va en el modo interactivo de Meta (`interactive=true`), que exige decir dónde arranca: `flow_action=navigate`
-    con la primera pantalla, `FORM`, como los mensajes que abren un formulario. «Continuar» avanza y se elige y escribe como
-    en el celular; es sólo una vista. «Abrir en otra pestaña» abre la misma vista. Sin el panel de acciones (`debug`), que
+    con la primera pantalla, como los mensajes que abren un formulario. «Continuar» avanza y se elige y escribe como en el
+    celular; es sólo una vista. «Abrir en otra pestaña» abre la misma vista. Sin el panel de acciones (`debug`), que
     muestra nombres técnicos y JSON.
+  - Las listas de un catálogo traen opciones de ejemplo, porque Meta no las tiene hasta que un mensaje se las manda: las
+    primeras 20 de cada lista, en su orden y en el idioma de la vista, sin los filtros por persona ni por otra respuesta
+    (los fijos siguen); una lista de personas, la que vería quien mira. El backend arma el enlace y el front lo usa tal cual.
   - Mientras carga, vence o falla, la región conserva la medida del marco: el diálogo no salta. Siguen igual el idioma
     sin selector, la espera como motivo y la ausencia de notas.
   - La CSP de la Api suma `https://business.facebook.com` a `frame-src`; antes el marco sólo se veía en desarrollo.

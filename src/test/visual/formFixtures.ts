@@ -282,7 +282,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (request.method === "GET" && path.endsWith("/preview")) {
      const selected=url.searchParams.get("culture");
      if(!officialPreview || selected!=="es"&&selected!=="en")return json({code:"WhatsApp.Flow.PreviewUnavailable"},409);
-     return json({url:"https://www.facebook.com/whatsapp/flows/preview/fixture?culture="+selected,expiresAtUtc:new Date(Date.now()+6000).toISOString()});
+     return json({url:"https://www.facebook.com/whatsapp/flows/preview/fixture?culture="+selected+"&interactive=true&flow_action=navigate",expiresAtUtc:new Date(Date.now()+6000).toISOString()});
     }
     if (request.method === "GET" && path.startsWith("/api/forms/draft-changes/")) {
       if (scenario === "forms-expired") return json({ code: "Forms.Draft.ChangeExpired" }, 410);

@@ -52,8 +52,8 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await expect(page.frameLocator("iframe").getByRole("heading",{name:title[lang],exact:true})).toBeVisible();expect(cultures).toEqual([lang]);
  await expect(dialog.getByRole("button",{name:/^(Español|Inglés|Spanish|English)\b/})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
- // VO1-A (2026-11-06): Meta's page keeps its 430 × 800 layout, in its interactive mode, and the frame scales whole to fit the
- // dialog, which fits the window: nothing cut and no scroll bars.
+ // VO1-A (2026-11-06): Meta's page keeps its 430 × 800 layout, in the interactive mode the backend's link asks for, and the frame
+ // scales whole to fit the dialog, which fits the window: nothing cut and no scroll bars.
  const frame=dialog.locator("iframe");expect(new URL((await frame.getAttribute("src"))!).searchParams.get("interactive")).toBe("true");
  const layout=await frame.evaluate((element:HTMLIFrameElement)=>({width:element.offsetWidth,height:element.offsetHeight,scale:new DOMMatrix(getComputedStyle(element).transform).a}));
  expect(layout.width).toBe(430);expect(layout.height).toBe(800);expect(layout.scale).toBeGreaterThan(0.5);expect(layout.scale).toBeLessThanOrEqual(1);

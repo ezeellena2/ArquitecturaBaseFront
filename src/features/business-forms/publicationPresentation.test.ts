@@ -1,7 +1,7 @@
 import {describe,expect,it} from "vitest";
 import {fixtureDefinition} from "@/test/visual/formFixtures";
 import {openDraftSession} from "./draftSession";
-import {interactivePreviewUrl,publicationIssueText,uniquePublicationIssues} from "./publicationPresentation";
+import {publicationIssueText,uniquePublicationIssues} from "./publicationPresentation";
 const issue={channelId:"WhatsApp",code:"WhatsApp.Flow.ValidationFailed",path:"channel",fieldId:null,choiceId:null,culture:"en" as const,message:"WhatsApp rejected this form.",limit:null};
 describe("Publication diagnostics",()=>{it("collapses repeated channel rejection while retaining distinct culture, reason and field",()=>{const differentCulture={...issue,culture:"es" as const};const differentReason={...issue,code:"Other"};const differentField={...issue,fieldId:"01990000-0000-7000-8000-000000000010"};expect(uniquePublicationIssues([issue,issue,differentCulture,issue,differentReason,differentField])).toEqual([issue,differentCulture,differentReason,differentField]);});});
 
@@ -26,25 +26,5 @@ describe("The text a publication issue points at", () => {
   it("finds nothing without a language or for a question that is not in the draft", () => {
     expect(publicationIssueText(at("draft.fields[2].label", amount!.fieldId, null, null), value)).toBeNull();
     expect(publicationIssueText(at("draft.fields[9].label.es", "01990000-0000-7000-8000-000000000099"), value)).toBeNull();
-  });
-});
-
-// VO1-A (2026-11-06): Meta's official preview runs in its interactive mode, so «Continuar» moves on as on the phone; without the
-// actions panel (`debug`), which shows technical names and JSON.
-describe("The official preview link", () => {
-  // Meta's interactive mode refuses to start without knowing where: the first screen of every Flow the app compiles is FORM.
-  it("asks Meta for its interactive mode, starting at the first screen, and keeps the rest of the link", () => {
-    const link = interactivePreviewUrl("https://business.facebook.com/wa/manage/flows/123/preview/?token=abc");
-    const preview = new URL(link);
-    expect(preview.origin + preview.pathname).toBe("https://business.facebook.com/wa/manage/flows/123/preview/");
-    expect(preview.searchParams.get("token")).toBe("abc");
-    expect(preview.searchParams.get("interactive")).toBe("true");
-    expect(preview.searchParams.get("flow_action")).toBe("navigate");
-    expect(JSON.parse(preview.searchParams.get("flow_action_payload")!)).toEqual({ screen: "FORM" });
-    expect(link).toContain("flow_action_payload=%7B%22screen%22%3A%22FORM%22%7D");
-    expect(preview.searchParams.has("debug")).toBe(false);
-  });
-  it("does not repeat the mode when the link already has it", () => {
-    expect(new URL(interactivePreviewUrl("https://business.facebook.com/wa/manage/flows/123/preview/?token=abc&interactive=true")).searchParams.getAll("interactive")).toEqual(["true"]);
   });
 });

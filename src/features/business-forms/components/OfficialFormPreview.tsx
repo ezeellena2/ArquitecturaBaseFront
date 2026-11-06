@@ -12,7 +12,6 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormPreview } from "../api/forms";
 import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
-import { interactivePreviewUrl } from "../publicationPresentation";
 
 // VO1-A (2026-11-06): Meta lays its official preview out for a 430 × 800 frame, the size its documentation embeds. The dialog gives
 // it that room in rem (26.875 × 50 at 16 px), so on the desktop scale it shrinks with the rest of the app, and the page scales
@@ -77,7 +76,9 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
   useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
-  const view = live ? interactivePreviewUrl(live.url) : null;
+  // VO1-A (2026-11-06): the backend gives the link ready to be gone through (Meta's interactive mode, from the Flow's first screen and
+  // with sample options of each list): the frame and «Abrir en otra pestaña» use it as it comes.
+  const view = live?.url ?? null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
     {/* The dialog is as tall as Meta's frame and its title and footer (8rem), or the window, and as wide as the frame. */}
     <DialogContent className="flex h-[min(58rem,calc(100svh-2rem))] w-[28.875rem] flex-col overflow-hidden sm:max-w-[calc(100%-2rem)]" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
