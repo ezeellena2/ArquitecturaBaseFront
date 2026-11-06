@@ -25,7 +25,7 @@ it("refreshes confirmed lifecycle and overview even when its private draft canno
  await waitFor(()=>expect(overview).toHaveBeenCalledOnce());
  expect(observer.getCurrentResult().data).toMatchObject({forms:{totalCount:1},filterCounts:{active:1,deactivated:0}});
  const trigger=screen.getByRole("button",{name:"Acciones del formulario"});act(()=>trigger.focus());await userEvent.keyboard("{Enter}");await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitem",{name:/Dar de baja/}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));
- await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(await screen.findByText(/Dado de baja por/)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(await screen.findByText(/Lo dio de baja /)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");
  await waitFor(()=>expect(overview).toHaveBeenCalledTimes(2));
  expect(observer.getCurrentResult().data).toMatchObject({forms:{items:[],totalCount:0},filterCounts:{active:0,deactivated:1}});
 });

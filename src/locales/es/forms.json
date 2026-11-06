@@ -1295,7 +1295,7 @@
     "state": "Dado de baja · versión {{version}}",
     "stateWithoutVersion": "Dado de baja",
     "reactivating": "Reactivando con una versión nueva…",
-    "deactivatedBy": "Dado de baja por {{author}} el {{date}}.",
+    "deactivatedBy": "Lo dio de baja {{author}} el {{date}}.",
     "keepsWorkflow": "Los PDF, las aprobaciones pendientes y las acciones de reglas se conservan.",
     "loading": "Consultando el impacto…",
     "whatStops": "Qué deja de pasar",

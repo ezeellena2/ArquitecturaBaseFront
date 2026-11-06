@@ -1295,7 +1295,7 @@
     "state": "Deactivated · version {{version}}",
     "stateWithoutVersion": "Deactivated",
     "reactivating": "Reactivating with a new version…",
-    "deactivatedBy": "Deactivated by {{author}} on {{date}}.",
+    "deactivatedBy": "{{author}} deactivated it on {{date}}.",
     "keepsWorkflow": "PDFs, pending approvals and rule actions are kept.",
     "loading": "Checking the impact…",
     "whatStops": "What stops",

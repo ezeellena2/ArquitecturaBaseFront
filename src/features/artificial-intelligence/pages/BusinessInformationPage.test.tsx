@@ -252,6 +252,23 @@ describe("business information editor", () => {
     expect(writes).toHaveLength(1);
     expect(field()).toHaveValue("Shop Updated");
   });
+  // EP1-A (2026-11-06): the header says «Guardado por revisar»; nothing under it repeats it. Checking goes next to Save, and what the
+  // zone explained is the reason of Save, off.
+  it("checks an uncertain save from the header, with the reason on Save and no zone that repeats it", async () => {
+    server.use(http.put("/api/ai/business-information", async ({ request }) => { writes.push(await request.json() as BusinessSaveRequest); return HttpResponse.error(); }),
+      http.get("/api/ai/business-information/changes/:id", () => HttpResponse.json({ code: "Ai.BusinessInformation.ChangeNotFound" }, { status: 404 })));
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    const check = await screen.findByRole("button", { name: "Revisar guardado" });
+    const header = check.closest("header")!;
+    expect(header).toHaveTextContent("Guardado por revisar");
+    expect(screen.queryByRole("region", { name: "Guardado por revisar" })).not.toBeInTheDocument();
+    expect(save()).toHaveAccessibleDescription("Tus cambios se conservan. Primero consultá el resultado de este guardado.");
+    await userEvent.click(check);
+    expect(await within(header).findByRole("button", { name: "Reintentar el mismo guardado" })).toBeEnabled();
+    expect(save()).toHaveAccessibleDescription("No encontramos el comprobante. Esto no demuestra que el guardado haya fallado. Podés consultar otra vez o reintentar exactamente el mismo pedido.");
+  });
   it("a missing receipt keeps the draft locked and explicit retry preserves the identical request", async () => {
     server.use(http.put("/api/ai/business-information", async ({ request }) => { writes.push(await request.json() as BusinessSaveRequest); return HttpResponse.error(); }),
       http.get("/api/ai/business-information/changes/:id", () => HttpResponse.json({ code: "Ai.BusinessInformation.ChangeNotFound" }, { status: 404 })));

@@ -41,7 +41,7 @@ it("reads incoming suggestion impact before deactivating and keeps its unsaved d
  await userEvent.click(within(dialog).getByRole("button", { name: "Dar de baja" }));
  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  expect(screen.getByLabelText("Nombre")).toHaveValue("Registrar visita sin guardar");
- expect(screen.getByText(/Dado de baja por/)).toBeVisible();
+ expect(screen.getByText(/Lo dio de baja /)).toBeVisible();
  expect(screen.getByRole("button", { name: "Reactivar" })).toBeEnabled();
  await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
  await waitFor(() => expect(store.writes).toHaveLength(1));
@@ -64,7 +64,7 @@ it("reactivates through the normal saved draft check and keeps the form deactiva
  const dialog = await screen.findByRole("dialog", { name: "Reactivar «Registrar visita»" });
  await userEvent.click(await within(dialog).findByRole("button", { name: "Reactivar con la versión 2" }));
  await waitFor(() => expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/publications"))).toHaveLength(1));
- expect(screen.getByText(/Dado de baja por/)).toBeVisible();
+ expect(screen.getByText(/Lo dio de baja /)).toBeVisible();
  expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
  expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/deactivation"))).toHaveLength(0);
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());
@@ -102,7 +102,7 @@ it("opens row reactivation in the existing editor without accepting automaticall
  const reopened=await screen.findByRole("dialog",{name:"Reactivar «Registrar visita»"});
  await userEvent.click(await within(reopened).findByRole("button",{name:"Reactivar con la versión 2"}));
  await screen.findByRole("button",{name:"Consultar publicación"});
- expect(screen.getByText(/Dado de baja por/)).toBeVisible();
+ expect(screen.getByText(/Lo dio de baja /)).toBeVisible();
 });
 
 it("waits for the current deactivated detail before consuming a row intent when an active detail was cached",async()=>{
@@ -183,7 +183,7 @@ it("refreshes observed deactivation without adopting its revision or losing an u
  const store=setup();const writes=vi.fn();
  server.use(http.post("/api/forms/definitions/:id/deactivation",async({request})=>{await store.handle(request);return HttpResponse.error();}),http.put("/api/forms/definitions/:id/draft",async({request})=>{writes(await request.clone().json());return store.handle(request);}));
  renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" privado");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));
- await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(screen.getByText(/Dado de baja por/)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
+ await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(screen.getByText(/Lo dio de baja /)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
  await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));await waitFor(()=>expect(writes).toHaveBeenCalledOnce());expect(writes).toHaveBeenCalledWith(expect.objectContaining({expectedRevision:1,name:expect.objectContaining({es:"Registrar visita privado"})}));expect(await screen.findByRole("button",{name:"Revisar"})).toBeVisible();
 });
 it("routes a deactivation revision conflict to explicit draft review without replacing private edits",async()=>{

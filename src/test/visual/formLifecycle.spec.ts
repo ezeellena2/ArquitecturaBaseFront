@@ -56,7 +56,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
    await page.goto("/src/test/visual/index.html?screen=/formularios/"+fixtureFormId+"&scenario="+scenario+"&lang="+language);
    await expect(page.getByRole("heading",{level:1,name:es?"Registrar visita":"Register visit",exact:true})).toBeVisible();
    if(state==="editor") {
-    await expect(page.getByText(es?/Dado de baja por/:/Deactivated by/)).toBeVisible();
+    await expect(page.getByText(es?/Lo dio de baja /:/ deactivated it on /)).toBeVisible();
     await expect(page.getByText(es?/se deprecan cuando venzan los envíos abiertos/:/they will be deprecated when open sends expire/)).toBeVisible();
     const {menu}=await openMenu(page,es);
     await expect(menu.getByRole("menuitem",{name:es?/Eliminar/:/Delete/})).toHaveCount(0);

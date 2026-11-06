@@ -32,7 +32,7 @@ for(const language of ["es","en"] as const)it("keeps NeedsAttention visible as a
 // The notice says who deactivated it and when; that it is not offered and what is kept are not notes (2026-10-31).
 it("says only who deactivated the form and when",()=>{
  renderWithProviders(<FormLifecycleNotice lifecycle={fixtureLifecycle(1,{deactivatedAtUtc:"2026-10-20T12:00:00Z",deprecationState:null,deprecatedAtUtc:null})} timeZoneId="America/Argentina/Buenos_Aires"/>);
- expect(screen.getByText(/^Dado de baja por/)).toBeInTheDocument();
+ expect(screen.getByText(/^Lo dio de baja /)).toBeInTheDocument();
  expect(screen.queryByText("No se manda desde el chat y el asistente no lo ofrece.")).not.toBeInTheDocument();
  expect(screen.queryByText("Los PDF, las aprobaciones pendientes y las acciones de reglas se conservan.")).not.toBeInTheDocument();
 });

@@ -9,6 +9,7 @@ import { formatDateOnly } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -60,18 +61,24 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
   }
   // El estado es el del objeto (sólo lectura o un guardado por revisar): Guardar habilitado ya dice que hay cambios. Cada
   // espera se ve en el botón que se tocó: revisar o reintentar no ponen «Guardando…» en Guardar.
+  // EP1-A (2026-11-06): what the header says is not repeated under it. With «Guardado por revisar» in the header, checking the save
+  // (and retrying the same request, when its receipt is missing) goes next to Save, and what the zone explained is the reason of
+  // Save, off. Reviewing a conflict keeps its zone, with the comparison.
+  const saveReason = editor.recovery === "missing" ? t("missingReceipt") : editor.recovery === "uncertain" ? t("uncertainHint") : null;
   return <Page title={t("title")} status={!canManage || uncertain ? <span className="text-xs text-[var(--color-content-muted)]">{t(!canManage ? "readonly" : "pending")}</span> : undefined}
-    actions={canManage ? <><Button variant="outline" disabled={!editor.changed || locked} onClick={() => setDiscarding(true)}>{t("discard")}</Button>
-      <Button disabled={!editor.changed || locked} pending={editor.working === "save"} onClick={() => void editor.save()}>{t(editor.working === "save" ? "saving" : "save")}</Button></> : undefined}>
+    actions={canManage ? <>
+      {uncertain ? <Button variant="outline" disabled={editor.busy} pending={editor.working === "recover"} onClick={() => void editor.recover()}>{t(editor.working === "recover" ? "verifying" : "verify")}</Button> : null}
+      {editor.recovery === "missing" ? <Button variant="outline" disabled={editor.busy} pending={editor.working === "retry"} onClick={() => void editor.save(true)}>{t(editor.working === "retry" ? "saving" : "retrySame")}</Button> : null}
+      <Button variant="outline" disabled={!editor.changed || locked} onClick={() => setDiscarding(true)}>{t("discard")}</Button>
+      <DisabledReason reason={saveReason}><Button disabled={!editor.changed || locked} pending={editor.working === "save"} onClick={() => void editor.save()}>{t(editor.working === "save" ? "saving" : "save")}</Button></DisabledReason></> : undefined}>
     <div className="flex flex-col gap-5">
-      {/* El cuerpo explica el estado del guardado; revisar, reintentar y elegir van en la banda, cada uno con su espera. */}
-      {editor.recovery !== "none" ? <Surface title={t(editor.recovery === "conflict" ? "reviewTitle" : "pending")} padded actions={<>
-        <Button variant="outline" disabled={editor.busy} pending={editor.working === "recover"} onClick={() => void editor.recover()}>{t(editor.working === "recover" ? "verifying" : editor.recovery === "conflict" ? "review" : "verify")}</Button>
-        {editor.recovery === "missing" ? <Button disabled={editor.busy} pending={editor.working === "retry"} onClick={() => void editor.save(true)}>{t(editor.working === "retry" ? "saving" : "retrySame")}</Button> : null}
+      {/* A conflict is reviewed in its zone: what changed, and reviewing and choosing in the band, each with its wait. */}
+      {editor.recovery === "conflict" ? <Surface title={t("reviewTitle")} padded actions={<>
+        <Button variant="outline" disabled={editor.busy} pending={editor.working === "recover"} onClick={() => void editor.recover()}>{t(editor.working === "recover" ? "verifying" : "review")}</Button>
         {editor.review ? <><Button variant="outline" disabled={editor.busy} onClick={() => editor.acceptReview(false)}>{t("useCurrent")}</Button>
           <Button disabled={editor.busy} onClick={() => editor.acceptReview(true)}>{t("keepMine")}</Button></> : null}
       </>}>
-        <p className="max-w-3xl text-sm">{t(editor.recovery === "conflict" ? "conflictMessage" : editor.recovery === "missing" ? "missingReceipt" : "uncertainHint")}</p>
+        <p className="max-w-3xl text-sm">{t("conflictMessage")}</p>
         {editor.review ? <ComparisonTable columns={{ identity: [{ key: "field", header: t("changes") }], label: t("field"), before: t("current"), after: t("mine") }}
           groups={reviewGroups.map(group => ({ key: group.field, identity: [t(group.field === "details.location" ? "locationSection" : group.field === "details.openingHours" ? "hoursSection" : group.field === "details.faq" ? "answers" : group.field)],
             lines: group.lines.map(line => ({ key: line.key, label: line.label, before: reviewValue(line.before, !line.label), after: reviewValue(line.after, !line.label) })) }))} /> : null}
