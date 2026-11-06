@@ -981,6 +981,12 @@ barra horizontal. En el lienzo provisorio [Formularios desde la app](https://cla
     sólo la etiqueta y el aviso.
   - Se van los pasos, «La versión 1 publicada sigue activa.» (queda en el listado) y «En WhatsApp, en …», que nombra el
     aviso al publicar. La confirmación de salida con una publicación sin confirmar no cambia.
+  - Una reactivación publica una versión nueva: mientras avanza, sin confirmar o si no salió, la etiqueta dice ese estado en
+    lugar de «Dado de baja · versión N»; quién lo dio de baja sigue en su aviso.
+  - Al abrir el editor se confirma la última publicación por su enlace: si ya había terminado, «Publicar en WhatsApp» queda
+    apagado sin motivo hasta la respuesta, como antes. «Repetir el mismo intento» no hace aparecer «Consultando…».
+  - Cuando «Consultar publicación» deja de hacer falta, el foco pasa a «Publicar en WhatsApp» (a su motivo, si está apagado)
+    o a las acciones del formulario. La etiqueta anuncia sus cambios a los lectores de pantalla, como lo hacía la zona.
   - Descartó EP1-B, una línea amarilla debajo del encabezado cuando hay que hacer algo: repetía «sin confirmar».
   - La regla vale para toda la app ([fundamento visual](visual-baseline.md#el-estado-una-vez--2026-11-06)): lo que dice el
     encabezado no se repite debajo. Cambiaron también Información del negocio, la propuesta de un catálogo y el aviso de
