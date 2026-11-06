@@ -91,9 +91,9 @@ inglés, con las traducciones cargadas en el editor (D5, variante E). Desde el 2
 | --- | --- |
 | [P1 · Publicar la versión 1](evidence/formularios-whatsapp/e2-p1-publicar.png) | Confirmación de la primera publicación: «Qué incluye», «Qué queda fijo» (las preguntas de la versión y el prefijo) y «Qué va a pasar». Aceptar no es publicar. Desde el 2026-11-01 la reemplaza [PU1-A](#publicar-en-whatsapp-pu1-a--2026-11-01). |
 | [P1 · Antes de publicar](evidence/formularios-whatsapp/e2-p1-antes.png) | Variantes del diálogo: comprobando, cambios sin guardar, pregunta que WhatsApp no podría mostrar, versión siguiente con sus diferencias, comprobación vencida, cambios de otra persona, publicación en curso y cuenta de WhatsApp no lista. |
-| [P2 · Publicando](evidence/formularios-whatsapp/e2-p2-publicando.png) | El avance en palabras (Aceptada, Enviada a WhatsApp, WhatsApp la revisa, Lista para mandar), la versión anterior en uso y el borrador editable mientras tanto. |
-| [P2 · Cómo termina](evidence/formularios-whatsapp/e2-p2-resultado.png) | Publicada, rechazada por una pregunta, falla general con «Reintentar», sin confirmar, necesita revisión y cómo se ve en el listado. «Consultar publicación» y «Repetir el mismo intento» van en el encabezado de su superficie, con la espera como su ayuda y sin texto debajo (decisión del 2026-10-23). |
-| [P3 · Vista previa oficial](evidence/formularios-whatsapp/e2-p3-vista.png) | Vista orientativa frente a la oficial de WhatsApp: selector Borrador / Versión N, carga, vencida y no se puede mostrar, con «Abrir vista oficial». |
+| [P2 · Publicando](evidence/formularios-whatsapp/e2-p2-publicando.png) | El avance en palabras (Aceptada, Enviada a WhatsApp, WhatsApp la revisa, Lista para mandar), la versión anterior en uso y el borrador editable mientras tanto. Desde el 2026-11-06 lo reemplaza [EP1-A](#el-estado-de-la-publicación-y-la-vista-oficial-ep1-a-y-vo1-a--2026-11-06): sin zona, el estado es la etiqueta del encabezado. |
+| [P2 · Cómo termina](evidence/formularios-whatsapp/e2-p2-resultado.png) | Publicada, rechazada por una pregunta, falla general con «Reintentar», sin confirmar, necesita revisión y cómo se ve en el listado. «Consultar publicación» y «Repetir el mismo intento» van en el encabezado de su superficie, con la espera como su ayuda y sin texto debajo (decisión del 2026-10-23). Desde el 2026-11-06, con [EP1-A](#el-estado-de-la-publicación-y-la-vista-oficial-ep1-a-y-vo1-a--2026-11-06), van en el encabezado de la pantalla y sólo cuando hacen falta. |
+| [P3 · Vista previa oficial](evidence/formularios-whatsapp/e2-p3-vista.png) | Vista orientativa frente a la oficial de WhatsApp: selector Borrador / Versión N, carga, vencida y no se puede mostrar, con «Abrir vista oficial». Desde el 2026-11-06, [VO1-A](#el-estado-de-la-publicación-y-la-vista-oficial-ep1-a-y-vo1-a--2026-11-06): el diálogo a la medida de la vista de Meta, que se recorre. |
 
 Incremento 3 de la Etapa 1, mandar un formulario desde el chat (2026-10-10). Variantes de e1-2 y e1-3, con los textos y
 estados que ya usa el chat (`src/locales/*/whatsapp.json`):
@@ -353,7 +353,8 @@ Las respuestas de la Etapa 1 ya se guardan con su versión y su número: cuando 
   inglés del listado y el editor, y los estados del diálogo de envío. Se dibujan en el mismo lienzo cuando la etapa llegue a esa pantalla;
   mientras tanto valen los patrones de la plantilla de listados y el [contrato de mensajes](../guides/mensajes-y-estados.md).
 - **Vista oficial de Meta.** Sus estados están en P3; la CSP del iframe y el comportamiento real en el navegador se
-  prueban en el piloto, como dice el resumen de su etapa.
+  prueban en el piloto, como dice el resumen de su etapa. Desde VO1-A (2026-11-06) la CSP de la Api permite el marco de
+  `business.facebook.com`: hasta entonces sólo se veía en desarrollo, donde Vite sirve la página sin esa política.
 
 ## Correspondencia con `shared/ui`
 
@@ -605,7 +606,7 @@ pasar» y queda sólo el prefijo que se fija.
   publicación en curso o la publicación no disponible. Se va la nota del pie.
 - Mientras comprueba, el botón dice «Comprobando…» con su aro (LC1-A) y «Qué se publica» se arma con un esqueleto.
 - Después de aceptar, la superficie de la publicación dice el estado con su título y sus pasos, sin el párrafo que lo
-  repetía (aceptando, publicando, publicado, fallido); «Consultar publicación» dice «Consultando…» con su aro, también en
+  repetía (aceptando, publicando, publicado, fallido; desde el 2026-11-06 la reemplaza [EP1-A](#el-estado-de-la-publicación-y-la-vista-oficial-ep1-a-y-vo1-a--2026-11-06), sin superficie); «Consultar publicación» dice «Consultando…» con su aro, también en
   la confirmación de salida con una publicación sin confirmar, que espera la respuesta abierta.
 
 Las escenas `forms.spec` («publication check with a problem and a warning», es/en a 1440, 390 y 320 px) y
@@ -955,3 +956,50 @@ RT1-B (un botón «Reintentar a N personas» en el renglón del aviso) y RT0 (de
 
 La escena `formWorkflow.spec` recorre el reintento de Marcos Gil, con Ana Pérez ya avisada, en es/en a 1440, 390 y 320
 px.
+
+## El estado de la publicación y la vista oficial: EP1-A y VO1-A — 2026-11-06
+
+Publicando en WhatsApp el formulario de prueba de renglones, el usuario marcó que la zona «Publicando · versión N»
+(«Aceptada», «Enviada a WhatsApp; esperando confirmación», «La versión 1 publicada sigue activa.» y «Consultar
+publicación») repetía la etiqueta del encabezado, y que la vista oficial no entraba en su diálogo: quedaba cortada y con
+barra horizontal. En el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas EP1 y VO1 (versión 89), eligió:
+
+- **EP1-A, sin zona de publicación.** La etiqueta del encabezado dice el estado; abajo empieza el editor. EP1-0 revisó
+  caso por caso qué agregaba la zona: algo más que la etiqueta sólo hace falta cuando hay que actuar o corregir.
+  - «Publicar en WhatsApp» apagado dice por qué (`DisabledReason`): «Ya hay una publicación en curso para este
+    formulario.», «Todavía no sabemos si la publicación fue aceptada…», «Esta publicación necesita revisión…» o «Ya no
+    tenés permiso para publicar.». Sus otros motivos (guardando, una revisión) siguen sin texto.
+  - «Consultar publicación» va en el encabezado, antes de «Publicar en WhatsApp», sólo sin confirmar, en revisión o
+    después de una consulta que falló, cuando la automática se detiene; mientras se publica, la app consulta sola. Dice
+    «Consultando…» con su aro y no desaparece mientras consulta. «Repetir el mismo intento» se suma cuando WhatsApp no
+    recibió el intento. La espera de un 429 (o la pausa tras un 404 sin confirmar) es su motivo.
+  - Los avisos, abajo a la derecha: «Publicación aceptada · versión N», «Publicamos la versión N.» (con los dos idiomas,
+    «…, en español y en inglés.», NI2-C) y, nuevo, «No pudimos publicar la versión N.», los dos últimos sólo para una
+    publicación empezada en este editor. Una consulta que falla avisa como antes, sin repetirlo debajo.
+  - Una publicación que no salió con problemas los muestra en «Problemas», con las filas del diálogo de publicar (PU1-A):
+    la pregunta o el texto, con su idioma sólo si es el otro (NI1-A), el detalle y «Ir a la pregunta». Sin problemas,
+    sólo la etiqueta y el aviso.
+  - Se van los pasos, «La versión 1 publicada sigue activa.» (queda en el listado) y «En WhatsApp, en …», que nombra el
+    aviso al publicar. La confirmación de salida con una publicación sin confirmar no cambia.
+  - Descartó EP1-B, una línea amarilla debajo del encabezado cuando hay que hacer algo: repetía «sin confirmar».
+  - La regla vale para toda la app ([fundamento visual](visual-baseline.md#el-estado-una-vez--2026-11-06)): lo que dice el
+    encabezado no se repite debajo. Cambiaron también Información del negocio, la propuesta de un catálogo y el aviso de
+    un formulario dado de baja.
+- **VO1-A, la vista oficial a la medida de Meta, que se recorre.** Meta arma su vista para un marco de 430 × 800 (el que
+  usa su documentación para embeberla) y el diálogo le daba 426 × 360.
+  - El diálogo es tan alto como el marco más su título y su pie, o la ventana, y tan ancho como el marco. El marco va en
+    rem (26,875 × 50, o sea 430 × 800 a 16 px): en escritorio, con la raíz al 75 %, se ve con la misma densidad que la
+    app. La página de Meta conserva su armado y se achica entera para entrar (`EmbeddedPreview` con `frame`): sin
+    barras y sin cortes, también a 390 y 320 px.
+  - La vista va en el modo interactivo de Meta (`interactive=true`): «Continuar» avanza y se elige y escribe como en el
+    celular; es sólo una vista. «Abrir en otra pestaña» abre la misma vista. Sin el panel de acciones (`debug`), que
+    muestra nombres técnicos y JSON.
+  - Mientras carga, vence o falla, la región conserva la medida del marco: el diálogo no salta. Siguen igual el idioma
+    sin selector, la espera como motivo y la ausencia de notas.
+  - La CSP de la Api suma `https://business.facebook.com` a `frame-src`; antes el marco sólo se veía en desarrollo.
+  - Descartó VO1-B (el panel de acciones de Meta al lado) y VO1-C (otra pestaña, sin diálogo).
+
+Las escenas `forms.spec` (la publicación avanza sola con el reloj de la prueba, sin «Consultar publicación» y con el
+motivo de «Publicar en WhatsApp»; el intento sin confirmar con «Consultar publicación» y «Repetir el mismo intento» en
+el encabezado) y `formPublicationReads.spec` (en revisión, con el motivo; una publicación que no salió, con «Problemas»;
+la vista oficial interactiva a 430 × 800, achicada dentro del diálogo y del viewport) lo recorren a 1440, 390 y 320 px.

@@ -32,6 +32,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 - Aceptar congela otro UUID, cuerpo y ticket. El 202 confirma la aceptación y el prefijo, no la publicación ni el borrador. Un 400 o un 409 de `rejectedCodes` es rechazo definitivo; `RevisionConflict` y `DraftMustBeSaved` llevan a la revisión del borrador.
 - El estado se consulta por la ruta reconstruida con el UUID propio. Sólo ese GET se repite solo, según `nextCheckAtUtc` (entre 1 s y 5 min; 30 s sin dato), y se detiene en Published, Failed o Uncertain. Uncertain consulta sin otra aceptación. Un 404 `Forms.Publication.NotFound` de un intento sin confirmar habilita sólo la repetición explícita del mismo UUID, cuerpo y ticket.
 - `resume` retoma la operación propia de la proyección sólo si su `recoveryPath` coincide, sin reconstruir cuerpo ni habilitar repetición; el doble montaje reanuda ese mismo GET. Se descartan otra versión u operación, un estado que retrocede desde Published y una respuesta más vieja.
+- `usePublicationProgress` (EP1-A, 2026-11-06) es lo que rodea a la etiqueta del encabezado: los avisos del resultado de una operación propia (publicada o no), el error de una consulta, la espera de un 429 o la pausa tras un 404 sin confirmar, el motivo de «Publicar en WhatsApp» apagado y si «Consultar publicación» es lo que sigue (sin confirmar, en revisión o tras una consulta fallida, y mientras esa consulta dura).
 - Published sale del estado confirmado o de la versión activa de la proyección, nunca del borrador, que sigue editable.
 
 ### Catálogos

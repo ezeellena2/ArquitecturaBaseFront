@@ -105,6 +105,10 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Un bloque de carga se distingue de la superficie donde está** (2026-11-05), como en la página. En el panel claro
   del menú y en el avatar de la barra superior, donde el tono apagado de la página no se distinguía, es un tinte del
   texto sobre lo que tenga detrás: se ve sobre la superficie y sobre el renglón señalado.
+- **El estado, una vez** ([EP1-A, 2026-11-06](#el-estado-una-vez--2026-11-06)): lo que dice la etiqueta del encabezado no
+  se repite debajo. Una zona aparece sólo si aporta algo que la etiqueta no dice (qué corregir, quién y cuándo) y su
+  título no la repite; la acción que destraba ese estado va con las acciones del encabezado, y por qué la principal está
+  apagada, en su motivo (`DisabledReason`).
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se
@@ -165,8 +169,8 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
 - Título de la pantalla abierta y su acción primaria a la derecha.
 - Pantalla hija: `backTo`, caja de 24 px con flecha de 14 px, tooltip, sin borde permanente y nombre accesible que dice
   a dónde vuelve. `status` acompaña al título sin formar parte del nombre y muestra solo el estado del objeto, como
-  «Activo» o «Dado de baja». No muestra «Cambios sin guardar» ni números de revisión: que Guardar esté habilitado ya
-  dice que hay cambios. Una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado.
+  «Activo» o «Dado de baja», que no se repite debajo ([EP1-A](#el-estado-una-vez--2026-11-06)). No muestra «Cambios sin
+  guardar» ni números de revisión: que Guardar esté habilitado ya dice que hay cambios. Una prueba de arquitectura impide que un locale vuelva a ofrecer ese estado.
 - Migas en la barra superior, tres niveles (`Inicio / Gestión de usuarios / Usuarios`); una ruta hija suma la hoja
   (`… / Roles y permisos / Soporte`) con `useBreadcrumbLeaf`. Hasta que la pone, el padre queda último sin marcar como actual.
 
@@ -369,8 +373,10 @@ revisión pendiente como motivo. Recorridos:
 ### Información del negocio
 
 - `/configuracion/negocio`, con menú, permisos, editor y persistencia propios; Guardar persiste con revisión y comprobante.
-- `Page` muestra solo «Sólo lectura» o «Guardado por revisar», sin estado del borrador; revisar, reintentar y elegir van
-  en el encabezado de la superficie de recuperación. Horarios y demás datos se marcan al intentar guardar y después en
+- `Page` muestra solo «Sólo lectura» o «Guardado por revisar», sin estado del borrador. Con «Guardado por revisar»,
+  «Revisar guardado» y «Reintentar el mismo guardado» van en el encabezado de la pantalla y lo que explicaba la zona es
+  el motivo de «Guardar» apagado (EP1-A, 2026-11-06); la revisión de un conflicto conserva su superficie, con la
+  comparación y elegir en su banda. Horarios y demás datos se marcan al intentar guardar y después en
   vivo; Confirmar de una fecha especial queda habilitado y valida al tocarlo solo lo que trae esa fecha: el horario
   semanal se marca al guardar, en su campo.
 - «Agregar franja» va siempre debajo de las franjas del día (y de la fecha especial), como botón de texto; con cuatro se
@@ -864,7 +870,7 @@ los [principios](#principios-del-sistema) y en las [premisas](../guides/premisas
 | Dónde | Con el idioma del menú | Con el otro idioma | En el código |
 | --- | --- | --- | --- |
 | Editor: la etiqueta de una pregunta con problemas | «Revisá esta pregunta» | «Revisá esta pregunta · Inglés», si todos sus problemas son del otro | `QuestionEditor` |
-| Publicar: «Problemas» y los de una publicación no aceptada | El nombre de la pregunta o del texto, sin idioma | «Gasoil consumido (litros) · Inglés»; debajo del problema rechazado, «Inglés» | `PublicationCheckDialog`, `PublicationProgress` |
+| Publicar: «Problemas», también los de una publicación que no salió | El nombre de la pregunta o del texto, sin idioma | «Gasoil consumido (litros) · Inglés», con las mismas filas en el diálogo y en el editor (EP1-A, 2026-11-06) | `PublicationCheckDialog`, `PublicationProblems` |
 | Revisión de los cambios de otra persona | «Nombre» | «Nombre · Inglés» | `DraftReview` |
 | Catálogo y pregunta de catálogo: el largo en «En WhatsApp» | «1 opción supera los 30 caracteres del título.» | «En inglés: 1 opción supera…» | `CatalogPresentationSection` |
 | Vista previa del PDF y copia fija de una respuesta | Sin renglón | «Contenido en inglés»; si falta la traducción, «No está completo el inglés. La vista previa usa todo el contenido en español.», en minúscula | `FormPdfPreview` |
@@ -916,3 +922,27 @@ pueden salir los avisos, 24 horas después del último mensaje de la persona. Vi
 y confirmarlo con el mismo número ([WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md)).
 
 La escena `profile` recorre las tres zonas a 1440, 390 y 320 en es/en con referencias nuevas `profile-chat-{es,en}-{1440,390,320}`: el chat sin vincular con «Vincular», el estado de cada medio en la misma columna y en el renglón de su valor en escritorio, «Desvincular» en rojo y nada que desplace de costado. Cambiaron tres referencias, revisadas y por esta decisión: `profile-1440` y `profile-320` (las zonas apiladas, «Agregar número» y el último ingreso como renglón) y `appearance-dark-table`, que abre «Editar usuario» con los renglones compartidos. Las de Configuración no cambian: a 320 los campos ya ocupaban todo el ancho.
+
+## El estado, una vez — 2026-11-06
+
+Publicando en WhatsApp, el usuario marcó que la zona «Publicando · versión N» del editor repetía la etiqueta del
+encabezado: «con el encabezado alcanza». En el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila EP1, eligió
+la **EP1-A**: sin zona, el estado es la etiqueta, y lo que hay que hacer va en el encabezado. Descartó EP1-B, una línea
+amarilla debajo cuando hay que actuar. La regla quedó en los [principios](#principios-del-sistema) y se buscaron en toda
+la app las zonas que repetían la etiqueta de su pantalla
+([detalle de formularios](formularios-whatsapp.md#el-estado-de-la-publicación-y-la-vista-oficial-ep1-a-y-vo1-a--2026-11-06)).
+
+| Dónde | La etiqueta dice | Debajo, antes | Ahora | En el código |
+| --- | --- | --- | --- | --- |
+| Editor de formularios: la publicación | «Publicando · versión 2», «Publicación sin confirmar», «No se pudo publicar · versión 2» | La zona con el mismo título, los pasos, «La versión 1 publicada sigue activa.», «En WhatsApp, en …» y «Consultar publicación» | Nada mientras va bien. «Consultar publicación» y «Repetir el mismo intento» en el encabezado cuando hacen falta; «Publicar en WhatsApp» apagado dice por qué; una publicación que no salió con problemas muestra «Problemas», como el diálogo de publicar | `usePublicationProgress`, `PublicationActions`, `PublicationProblems` |
+| Información del negocio | «Guardado por revisar» | La zona «Guardado por revisar» con su explicación y «Revisar guardado» | «Revisar guardado» y «Reintentar el mismo guardado» en el encabezado; la explicación es el motivo de «Guardar» | `BusinessInformationPage` |
+| Un catálogo con una propuesta del asistente | «Propuesta del asistente» | «**Propuesta del asistente.** La pidió Ana Gómez por WhatsApp el …» | «La pidió Ana Gómez por WhatsApp el …»; aprobada o descartada, la etiqueta es la del catálogo y el aviso sigue diciendo cómo terminó | `CatalogEditorPage`, `CatalogFiltersEditorPage` |
+| Un formulario dado de baja | «Dado de baja · versión 3» | «Dado de baja por Ana Gómez el …» | «Lo dio de baja Ana Gómez el …» | `FormLifecycleNotice` |
+
+No cambian, porque no repiten la etiqueta: el «Guardado sin confirmar» del propio editor (el encabezado muestra la
+publicación, no el guardado), el chat en modo asistente (el aviso ocupa el lugar del cuadro de texto y lleva la acción) y
+el certificado de ARCA por vencer (dice por qué y cuándo).
+
+Las pruebas `PublicationProgress`, `FormsPage`, `BusinessInformationPage`, `CatalogManualProposal` y `FormLifecycleNotice`
+fijan cada caso; las escenas `forms.spec`, `formPublicationReads.spec`, `formLifecycle.spec` y `catalogManualProposal.spec`
+los muestran.
