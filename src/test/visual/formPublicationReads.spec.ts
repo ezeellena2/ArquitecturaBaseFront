@@ -52,6 +52,16 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await expect(page.frameLocator("iframe").getByRole("heading",{name:title[lang],exact:true})).toBeVisible();expect(cultures).toEqual([lang]);
  await expect(dialog.getByRole("button",{name:/^(Español|Inglés|Spanish|English)\b/})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+ // VO1-A (2026-11-06): Meta's page keeps its 430 × 800 layout, in its interactive mode, and the frame scales whole to fit the
+ // dialog, which fits the window: nothing cut and no scroll bars.
+ const frame=dialog.locator("iframe");expect(new URL((await frame.getAttribute("src"))!).searchParams.get("interactive")).toBe("true");
+ const layout=await frame.evaluate((element:HTMLIFrameElement)=>({width:element.offsetWidth,height:element.offsetHeight,scale:new DOMMatrix(getComputedStyle(element).transform).a}));
+ expect(layout.width).toBe(430);expect(layout.height).toBe(800);expect(layout.scale).toBeGreaterThan(0.5);expect(layout.scale).toBeLessThanOrEqual(1);
+ const box=(await frame.locator("..").boundingBox())!;const bounds=(await dialog.boundingBox())!;
+ expect(box.width).toBeCloseTo(430*layout.scale,0);expect(box.height).toBeCloseTo(800*layout.scale,0);
+ expect(box.x).toBeGreaterThanOrEqual(bounds.x);expect(box.x+box.width).toBeLessThanOrEqual(bounds.x+bounds.width);expect(box.y+box.height).toBeLessThanOrEqual(bounds.y+bounds.height);
+ expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width);expect(bounds.y).toBeGreaterThanOrEqual(0);expect(bounds.y+bounds.height).toBeLessThanOrEqual(900);
+ expect(await dialog.evaluate(element=>element.scrollHeight<=element.clientHeight&&element.scrollWidth<=element.clientWidth)).toBe(true);
  await page.screenshot({path:`test-results/forms-official-preview-${lang}-${width}.png`,fullPage:true});
  await expect(dialog.locator("iframe")).toHaveCount(0,{timeout:8000});await expect(dialog.getByRole("link")).toHaveCount(0);expect(cultures).toEqual([lang]);
  await dialog.getByRole("button",{name:es?"Volver a pedir la vista":"Request a new preview",exact:true}).click();await expect(dialog.locator("iframe")).toBeVisible();await expect.poll(()=>cultures.length).toBe(2);expect(cultures).toEqual([lang,lang]);

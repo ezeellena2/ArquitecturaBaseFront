@@ -12,6 +12,12 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormPreview } from "../api/forms";
 import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
+import { interactivePreviewUrl } from "../publicationPresentation";
+
+// VO1-A (2026-11-06): Meta lays its official preview out for a 430 × 800 frame, the size its documentation embeds. The dialog gives
+// it that room in rem (26.875 × 50 at 16 px), so on the desktop scale it shrinks with the rest of the app, and the page scales
+// whole to fit a shorter or narrower window.
+const META_FRAME = { width: 430, height: 800 } as const;
 
 // Meta's page takes a moment to draw after its URL arrives: until the frame loads, the region says it is loading. The listener
 // is attached before the browser paints, so a load cannot be missed.
@@ -25,9 +31,9 @@ function OfficialFrame({ url, title, loading }: { url: string; title: string; lo
     frame.addEventListener("load", done);
     return () => frame.removeEventListener("load", done);
   }, [url]);
-  return <div ref={host} className="relative">
-    {loaded === url ? null : <div role="status" className="absolute inset-0 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-surface)]"><Spinner decorative /><p>{loading}</p></div>}
-    <EmbeddedPreview url={url} title={title} />
+  return <div ref={host} className="relative flex min-h-0 flex-1 flex-col">
+    {loaded === url ? null : <div role="status" className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[var(--radius-control)] bg-[var(--color-surface)]"><Spinner decorative /><p>{loading}</p></div>}
+    <EmbeddedPreview url={url} title={title} frame={META_FRAME} className="min-h-0 flex-1" />
   </div>;
 }
 
@@ -71,12 +77,17 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
   useEffect(()=>{const timer=window.setInterval(()=>setNow(Date.now()),1000);return()=>window.clearInterval(timer);},[]);
   if (preview && Date.parse(preview.expiresAtUtc)<=now) {setPreview(null);setExpired(true);}
   const live = preview && Date.parse(preview.expiresAtUtc)>now ? preview : null;
+  const view = live ? interactivePreviewUrl(live.url) : null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
-    <DialogContent className="sm:max-w-150" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
+    {/* The dialog is as tall as Meta's frame and its title and footer (8rem), or the window, and as wide as the frame. */}
+    <DialogContent className="flex h-[min(58rem,calc(100svh-2rem))] w-[28.875rem] flex-col overflow-hidden sm:max-w-[calc(100%-2rem)]" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
       <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle></DialogHeader>
-      {busy ? <div role="status" className="flex min-h-60 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : live ? <OfficialFrame url={live.url} title={t("publication.previewFrame")} loading={t("publication.previewLoading")} /> : <p className="min-h-32 text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
+      {/* While it loads, expires or fails, the region keeps the room of the frame: the dialog does not jump when the view arrives. */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {busy ? <div role="status" className="flex flex-1 items-center justify-center gap-2"><Spinner /><p>{t("publication.previewLoading")}</p></div> : view ? <OfficialFrame url={view} title={t("publication.previewFrame")} loading={t("publication.previewLoading")} /> : <p className="flex flex-1 items-center justify-center text-center text-sm text-[var(--color-content-muted)]">{t(denied?"publication.previewNoPermission":expired?"publication.previewExpired":failed?"publication.previewUnavailable":"publication.previewChoose")}</p>}
+      </div>
       <DialogFooter><Button variant="outline" onClick={onClose}>{t("common:actions.close")}</Button>
-        {live ? <Button asChild variant="outline"><a href={live.url} target="_blank" rel="noopener noreferrer">{t("publication.previewOpen")}</a></Button> : null}
+        {view ? <Button asChild variant="outline"><a href={view} target="_blank" rel="noopener noreferrer">{t("publication.previewOpen")}</a></Button> : null}
         {!denied ? <DisabledReason reason={!busy&&now<waitUntil?t("wait",{count:Math.ceil((waitUntil-now)/1000)}):null} className="max-sm:*:flex-1"><Button disabled={busy||now<waitUntil} onClick={()=>void load(culture)}>{t(expired||live?"publication.previewRenew":"publication.previewLoad")}</Button></DisabledReason> : null}
       </DialogFooter>
     </DialogContent>

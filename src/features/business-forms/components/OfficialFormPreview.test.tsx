@@ -35,7 +35,7 @@ describe("Official preview dialog",()=>{
   expect(fetchFormPreview).toHaveBeenCalledTimes(1);
   expect(fetchFormPreview).toHaveBeenCalledWith("d","v","en",expect.any(AbortSignal));
  });
- it("loads once on opening and keeps the private URL out of QueryCache",async()=>{vi.mocked(fetchFormPreview).mockResolvedValue({url,expiresAtUtc:"2099-10-10T12:00:00Z"});renderPreview();const frame=await screen.findByTitle("Vista oficial del formulario en WhatsApp");expect(frame).toHaveAttribute("sandbox","allow-scripts allow-same-origin allow-forms");expect(frame).toHaveAttribute("referrerpolicy","no-referrer");expect(fetchFormPreview).toHaveBeenCalledTimes(1);expect(fetchFormPreview).toHaveBeenLastCalledWith("d","v","es",expect.any(AbortSignal));expect(screen.getByRole("link",{name:"Abrir en otra pestaña"})).toHaveAttribute("href",url);expect(JSON.stringify(queryClient.getQueryCache().getAll())).not.toContain("fictional-private-url");});
+ it("loads once on opening and keeps the private URL out of QueryCache",async()=>{vi.mocked(fetchFormPreview).mockResolvedValue({url,expiresAtUtc:"2099-10-10T12:00:00Z"});renderPreview();const frame=await screen.findByTitle("Vista oficial del formulario en WhatsApp");expect(frame).toHaveAttribute("sandbox","allow-scripts allow-same-origin allow-forms");expect(frame).toHaveAttribute("referrerpolicy","no-referrer");expect(fetchFormPreview).toHaveBeenCalledTimes(1);expect(fetchFormPreview).toHaveBeenLastCalledWith("d","v","es",expect.any(AbortSignal));expect(screen.getByRole("link",{name:"Abrir en otra pestaña"})).toHaveAttribute("href",url+"?interactive=true");expect(JSON.stringify(queryClient.getQueryCache().getAll())).not.toContain("fictional-private-url");});
  it("removes expired frame and link without automatically renewing the URL",async()=>{vi.useFakeTimers();vi.mocked(fetchFormPreview).mockImplementation(async()=>({url,expiresAtUtc:new Date(Date.now()+2000).toISOString()}));renderPreview();await act(()=>vi.advanceTimersByTimeAsync(0));expect(screen.getByTitle("Vista oficial del formulario en WhatsApp")).toBeInTheDocument();await act(()=>vi.advanceTimersByTimeAsync(3000));expect(screen.queryByTitle("Vista oficial del formulario en WhatsApp")).not.toBeInTheDocument();expect(screen.queryByRole("link",{name:"Abrir en otra pestaña"})).not.toBeInTheDocument();expect(fetchFormPreview).toHaveBeenCalledTimes(1);fireEvent.click(screen.getByRole("button",{name:"Volver a pedir la vista"}));await act(()=>vi.advanceTimersByTimeAsync(0));expect(fetchFormPreview).toHaveBeenCalledTimes(2);});
  it("hides renewal after a forbidden preview response",async()=>{vi.mocked(fetchFormPreview).mockRejectedValue(new ApiError(403,{code:"General.Forbidden"}));renderPreview();await screen.findByText("Ya no tenés permiso para ver esta vista previa.");expect(screen.queryByRole("button",{name:"Cargar vista"})).not.toBeInTheDocument();expect(screen.queryByRole("link")).not.toBeInTheDocument();});
  it("discards a response from a withdrawn culture even when abort is ignored",async()=>{
@@ -91,4 +91,18 @@ it("says the official view is loading until its frame loads, without notes",asyn
  fireEvent.load(frame);
  await waitFor(()=>expect(screen.queryByText("Cargando la vista de WhatsApp…")).not.toBeInTheDocument());
  expect(frame).toBeInTheDocument();
+});
+
+// VO1-A (2026-11-06): the dialog takes the size Meta lays its preview out for (430 × 800) and the page scales whole to fit; it runs
+// in Meta's interactive mode, also in another tab.
+it("shows Meta's preview in its interactive mode, at the size Meta lays it out for", async () => {
+ vi.mocked(fetchFormPreview).mockResolvedValue({url,expiresAtUtc:"2099-10-10T12:00:00Z"});
+ renderPreview();
+ const frame = await screen.findByTitle("Vista oficial del formulario en WhatsApp");
+ const shown = new URL(frame.getAttribute("src")!);
+ expect(shown.searchParams.get("interactive")).toBe("true");
+ expect(shown.searchParams.has("debug")).toBe(false);
+ expect(frame).toHaveStyle({ width: "430px", height: "800px" });
+ const other = screen.getByRole("link", { name: "Abrir en otra pestaña" });
+ expect(new URL(other.getAttribute("href")!).searchParams.get("interactive")).toBe("true");
 });
