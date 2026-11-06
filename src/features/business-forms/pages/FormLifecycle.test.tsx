@@ -65,6 +65,9 @@ it("reactivates through the normal saved draft check and keeps the form deactiva
  await userEvent.click(await within(dialog).findByRole("button", { name: "Reactivar con la versión 2" }));
  await waitFor(() => expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/publications"))).toHaveLength(1));
  expect(screen.getByText(/Lo dio de baja /)).toBeVisible();
+ // EP1-A (2026-11-06): reactivating publishes a new version, and the label says so while it goes on.
+ expect(await screen.findByText("Publicando · versión 2", { exact: true })).toBeVisible();
+ expect(screen.queryByText("Dado de baja · versión 1", { exact: true })).not.toBeInTheDocument();
  expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
  expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/deactivation"))).toHaveLength(0);
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());
@@ -103,6 +106,7 @@ it("opens row reactivation in the existing editor without accepting automaticall
  await userEvent.click(await within(reopened).findByRole("button",{name:"Reactivar con la versión 2"}));
  await screen.findByRole("button",{name:"Consultar publicación"});
  expect(screen.getByText(/Lo dio de baja /)).toBeVisible();
+ expect(screen.getByText("Publicación sin confirmar",{exact:true})).toBeVisible();
 });
 
 it("waits for the current deactivated detail before consuming a row intent when an active detail was cached",async()=>{

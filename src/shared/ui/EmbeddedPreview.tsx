@@ -30,8 +30,10 @@ function FittedPreview({ url, title, sandbox, frame, className }: { url: string;
     return () => observer.disconnect();
   }, [frame.width, frame.height]);
   return <div ref={room} className={cn("flex min-h-0 min-w-0 items-center justify-center overflow-hidden", className)}>
-    <div className="shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-[var(--color-surface)] ring-1 ring-[var(--color-border)]" style={{ width: frame.width * scale, height: frame.height * scale }}>
+    <div className="relative shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-[var(--color-surface)]" style={{ width: frame.width * scale, height: frame.height * scale }}>
       <iframe className="block origin-top-left border-0" style={{ width: frame.width, height: frame.height, transform: `scale(${scale})` }} src={url} title={title} sandbox={sandbox} referrerPolicy="no-referrer" />
+      {/* The edge is drawn over the page, inside the box: a ring outside would be cut by the room when the width is what limits it. */}
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[var(--radius-control)] ring-1 ring-[var(--color-border)] ring-inset" />
     </div>
   </div>;
 }

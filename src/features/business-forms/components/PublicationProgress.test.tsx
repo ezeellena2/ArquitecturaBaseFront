@@ -8,6 +8,7 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
 import { openDraftSession } from "../draftSession";
 import { localizedValue } from "../editorModel";
+import { publicationFieldIssues } from "../validationPaths";
 import type { useFormPublication } from "../hooks/useFormPublication";
 import type { FormPublicationCheck } from "../api/response";
 import { usePublicationProgress } from "../hooks/usePublicationProgress";
@@ -33,7 +34,7 @@ function Editor({ publication, onReplay = vi.fn(), onGoToIssue = vi.fn() }: { pu
   const progress = usePublicationProgress(publication, "publication-test");
   return <div data-testid="editor">
     <header aria-label="Encabezado"><p data-testid="publish-reason">{progress.publishReason ?? ""}</p><PublicationActions publication={publication} progress={progress} onReplay={onReplay} /></header>
-    <PublicationProblems progress={progress} value={value} culture="es" onGoToIssue={onGoToIssue} canLocateIssue={issue => !!issue.fieldId} />
+    <PublicationProblems progress={progress} value={value} culture="es" onGoToIssue={onGoToIssue} canLocateIssue={issue => publicationFieldIssues(value, [issue]).length > 0} />
   </div>;
 }
 async function mount(publication: Publication, props: Partial<Parameters<typeof Editor>[0]> = {}) {
@@ -102,6 +103,26 @@ describe("Chosen publication board EP1-A", () => {
     expect(within(header()).queryByRole("button", { name: /Consultar publicación|Consultando…/ })).not.toBeInTheDocument();
   });
 
+  // Repeating the same attempt is not consulting: the header shows no «Consultando…» while it accepts it again.
+  it("does not say «Consultando…» while it repeats the same attempt", async () => {
+    const unconfirmed = { ...session("Publishing"), phase: "Unconfirmed" as const, canReplay: true };
+    const view = await mount(unconfirmed);
+    expect(within(header()).getByRole("button", { name: "Repetir el mismo intento" })).toBeEnabled();
+    view.rerender(<Editor publication={{ ...unconfirmed, phase: "Accepting", status: null, confirmed: false, busy: true, canReplay: false }} />);
+    expect(within(header()).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  // Opening the editor confirms its last publication by its own link; while that answer comes, a finished one is not «en curso».
+  it("gives Publish no reason while it confirms a finished publication on opening", async () => {
+    const reason = () => screen.getByTestId("publish-reason");
+    const operation = (state: "Published" | "Failed") => ({ requestId: "request", operationId: "operation", definitionId: "definition", versionId: "version", versionNumber: 2, draftRevision: 3,
+      acceptedAtUtc: "2026-10-10T12:00:00Z", state, updatedAtUtc: "2026-10-10T12:00:00Z", requiresReview: false, recoveryPath: "/api/forms/definitions/definition/publications/request" });
+    const view = await mount({ ...session("Published"), status: null, aggregate: operation("Published") as unknown as Publication["aggregate"] });
+    expect(reason()).toBeEmptyDOMElement();
+    view.rerender(<Editor publication={{ ...session("Failed"), status: null, aggregate: operation("Failed") as unknown as Publication["aggregate"] }} />);
+    expect(reason()).toBeEmptyDOMElement();
+  });
+
   it("says «Consultando…» with its ring while it consults, and replaying waits", async () => {
     await mount({ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, busy: true });
     const consulting = within(header()).getByRole("button", { name: "Consultando…" });
@@ -138,7 +159,9 @@ describe("Chosen publication board EP1-A", () => {
     expect(within(problems).getByRole("button", { name: "Más información sobre Problemas" })).toBeInTheDocument();
     await userEvent.click(within(problems).getByRole("button", { name: "Ir a la pregunta" }));
     expect(onGoToIssue).toHaveBeenCalledWith(expect.objectContaining({ fieldId: question.fieldId }));
-    expect(within(problems).getAllByRole("button", { name: /^Ir a/ })).toHaveLength(1);
+    // The name in English is located too, as in the check before publishing.
+    await userEvent.click(within(problems).getByRole("button", { name: "Ir al texto" }));
+    expect(onGoToIssue).toHaveBeenLastCalledWith(expect.objectContaining({ path: "name.en" }));
   });
 
   it("shows no zone for a publication that did not go through without problems", async () => {

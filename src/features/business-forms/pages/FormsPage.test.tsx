@@ -625,6 +625,25 @@ it("marks the affected question and names the language of its error from actual 
   expect(label).toHaveAccessibleDescription("En inglés: " + realFailedStatus.issues[0]!.message);
 });
 
+// Opening the editor confirms the last publication by its own link. A finished one keeps Publish off only until the answer, without
+// saying a publication is in progress; when consulting is no longer needed, the focus moves to Publish.
+it("confirms a finished publication on opening without saying one is in progress, and keeps the focus on Publish", async () => {
+  setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
+  const { definitionId, requestId } = realFailedStatus;
+  let reads = 0;
+  server.use(http.get("/api/forms/definitions/" + definitionId, () => Response.json(realFailedDetail)),
+    http.get("/api/forms/definitions/" + definitionId + "/publications/" + requestId, () => ++reads === 1 ? Response.json({ traceId: "status-read" }, { status: 500 }) : Response.json(realFailedStatus)));
+  renderRouteWithProviders("/formularios/" + definitionId);
+  const consult = await screen.findByRole("button", { name: "Consultar publicación" });
+  const publish = screen.getByRole("button", { name: "Publicar en WhatsApp" });
+  expect(publish).toBeDisabled();
+  expect(publish).not.toHaveAccessibleDescription(/en curso/);
+  await userEvent.click(consult);
+  await waitFor(() => expect(screen.queryByRole("button", { name: /Consultar publicación|Consultando…/ })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("button", { name: "Publicar en WhatsApp" })).toHaveFocus());
+  expect(reads).toBe(2);
+});
+
 it("preserves unsaved text and focus when a detail refresh fails", async () => {
   setup();
   renderRouteWithProviders("/formularios/" + fixtureFormId);

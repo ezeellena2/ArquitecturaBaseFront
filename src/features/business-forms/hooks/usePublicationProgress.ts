@@ -53,13 +53,16 @@ export function usePublicationProgress(publication: Publication, feedbackId: str
   const requiresReview = publication.status?.requiresReview ?? publication.aggregate?.requiresReview ?? projection?.currentOperation?.requiresReview ?? false;
   const unconfirmed = publication.phase === "Unconfirmed";
   const needsConsulting = !forbidden && (unconfirmed || publication.phase === "Accepted" && (state === "Uncertain" || !!publication.error));
-  // Consulting clears the error that asked for it: the button stays in sight, with its ring, until the answer arrives.
+  // Consulting clears the error that asked for it: the button stays in sight, with its ring, until the answer arrives. Repeating the
+  // same attempt is not consulting: while it is accepted again, the button goes.
   const [consultShown, setConsultShown] = useState(false);
-  const canConsult = needsConsulting || consultShown && publication.busy;
+  const canConsult = needsConsulting || consultShown && publication.busy && publication.phase !== "Accepting";
   if (canConsult !== consultShown) setConsultShown(canConsult);
+  // A finished publication confirmed on opening (its state known, its answer still coming) keeps Publish off without a reason.
+  const confirming = publication.phase === "Accepted" && !publication.status && (state === "Published" || state === "Failed");
   // Why «Publicar en WhatsApp» is off while a publication goes on, as its reason; the editor's own reasons stay silent, as before.
   const publishReason = forbidden ? t("publication.noPermission") : unconfirmed ? t("publication.unconfirmedHint")
-    : state === "Uncertain" || requiresReview ? t("publication.reviewHint") : t("publication.inProgress");
+    : state === "Uncertain" || requiresReview ? t("publication.reviewHint") : confirming ? null : t("publication.inProgress");
   return {
     state, version, canConsult, publishReason,
     cooling: cooldown.isRunning,

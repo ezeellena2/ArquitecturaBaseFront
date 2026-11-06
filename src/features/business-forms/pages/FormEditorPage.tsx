@@ -161,6 +161,16 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const [deletionOpen, setDeletionOpen] = useState(false);
   // A blocking problem located from the check stays under its field, with its language, until the next change, save or check.
   const [locatedIssue, setLocatedIssue] = useState<FormPublicationCheck["issues"][number] | null>(null);
+  // When consulting is no longer needed its button goes, and the focus it had moves to Publish (to its reason, while it is off) or to
+  // the form's actions, never to the page.
+  const consultWasShown = useRef(false);
+  useEffect(() => {
+    if (consultWasShown.current && !progress.canConsult && document.activeElement === document.body) {
+      const publish = publicationAction.current;
+      (publish && !publish.matches(":disabled") ? publish : publish?.closest<HTMLElement>("[tabindex='0']") ?? lifecycleAction.current)?.focus();
+    }
+    consultWasShown.current = progress.canConsult;
+  }, [progress.canConsult]);
   useEffect(() => {
     const error = publication.error;
     if (error instanceof ApiError && ["Forms.Draft.RevisionConflict", "Forms.Publication.DraftMustBeSaved"].includes(error.code ?? "")) {
@@ -284,6 +294,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const publicationState = publication.status?.state ?? publication.receipt?.state ?? publication.aggregate?.state ?? projection?.currentOperation?.state ?? (projection?.activeVersion ? "Published" : undefined);
   const publicationVersion = publication.status?.versionNumber ?? publication.receipt?.versionNumber ?? publication.aggregate?.versionNumber ?? projection?.currentOperation?.versionNumber ?? projection?.activeVersion?.versionNumber;
   const publicationLabel = publication.phase === "Accepting" ? "publication.accepting" : publication.phase === "Unconfirmed" || publicationState === "Uncertain" ? "publication.unconfirmed" : publicationState ? publicationLabelKey(publicationState) : null;
+  // A reactivation publishes a new version: while it goes on, or if it did not go through, the label says so instead of «Dado de baja»,
+  // the only place that says it (EP1-A). Who deactivated it stays in its notice.
+  const lifecycleLabel = deactivated && !publicationPending && (publicationVersion ?? 0) <= (projection?.activeVersion?.versionNumber ?? 0);
   const firstInvalid = editor.issue?.fields?.find(issue => issue.fieldLocalId ?? issue.sectionLocalId);
   const firstInvalidId = firstInvalid?.fieldLocalId ?? firstInvalid?.sectionLocalId;
   const change = (next: DraftEditorValue) => { dismissNotification(feedbackId); setLocatedIssue(null); editor.change(next); };
@@ -348,7 +361,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     change({ ...value!, draft: { ...value!.draft, sections: sections.filter(section => section.localId !== localId) } });
     requestAnimationFrame(() => (next?.querySelector<HTMLButtonElement>('[data-question-action="edit"], [data-section-action="edit"]') ?? addTitleButton.current)?.focus());
   }
-  return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<Badge variant="outline" className={deactivated ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{deactivated ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge>} actions={<>
+  return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<span aria-live="polite"><Badge variant="outline" className={lifecycleLabel ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{lifecycleLabel ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge></span>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <DisabledReason reason={saveEnabled ? waitReason : null}><Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!saveEnabled || cooldown.isRunning} pending={saving} onClick={() => void operate(editor.save)}>{t(saving ? "saving" : "save")}</Button></DisabledReason> : null}
     {canPublish && session.confirmed ? <PublicationActions publication={publication} progress={progress} onReplay={() => void publication.replay()} /> : null}
