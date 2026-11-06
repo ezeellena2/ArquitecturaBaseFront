@@ -63,10 +63,13 @@ export function publicationIssueNames(value: DraftEditorValue, culture: FormCult
  return { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail };
 }
 
-// VO1-A (2026-11-06): Meta's official preview runs in its interactive mode, so «Continuar» moves on as on the phone. Without its
-// actions panel (`debug`), which shows technical names and JSON.
+// VO1-A (2026-11-06): Meta's official preview runs in its interactive mode, so «Continuar» moves on as on the phone. That mode
+// refuses to start without knowing where: the first screen of every Flow the app compiles is FORM (WhatsAppFlowScreenBuilder in the
+// backend), where the messages that open a form start too. Without its actions panel (`debug`), which shows technical names and JSON.
 export function interactivePreviewUrl(url: string) {
  const preview = new URL(url);
  preview.searchParams.set("interactive", "true");
+ preview.searchParams.set("flow_action", "navigate");
+ preview.searchParams.set("flow_action_payload", JSON.stringify({ screen: "FORM" }));
  return preview.toString();
 }

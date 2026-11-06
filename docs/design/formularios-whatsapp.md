@@ -997,8 +997,9 @@ barra horizontal. En el lienzo provisorio [Formularios desde la app](https://cla
     rem (26,875 × 50, o sea 430 × 800 a 16 px): en escritorio, con la raíz al 75 %, se ve con la misma densidad que la
     app. La página de Meta conserva su armado y se achica entera para entrar (`EmbeddedPreview` con `frame`): sin
     barras y sin cortes, también a 390 y 320 px.
-  - La vista va en el modo interactivo de Meta (`interactive=true`): «Continuar» avanza y se elige y escribe como en el
-    celular; es sólo una vista. «Abrir en otra pestaña» abre la misma vista. Sin el panel de acciones (`debug`), que
+  - La vista va en el modo interactivo de Meta (`interactive=true`), que exige decir dónde arranca: `flow_action=navigate`
+    con la primera pantalla, `FORM`, como los mensajes que abren un formulario. «Continuar» avanza y se elige y escribe como
+    en el celular; es sólo una vista. «Abrir en otra pestaña» abre la misma vista. Sin el panel de acciones (`debug`), que
     muestra nombres técnicos y JSON.
   - Mientras carga, vence o falla, la región conserva la medida del marco: el diálogo no salta. Siguen igual el idioma
     sin selector, la espera como motivo y la ausencia de notas.
