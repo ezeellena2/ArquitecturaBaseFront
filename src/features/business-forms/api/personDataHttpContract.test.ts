@@ -8,9 +8,9 @@ import { fetchPersonAttributes, fetchPersonAttributeOptions, fetchPersonData, fe
 // Raw bodies from the joint backend export are read unchanged.
 const cohort = httpCohort("personData");
 const names = ["attribute-created", "person-options", "person-data-empty", "person-data-saved", "person-data", "people", "conflict", "invalid-value", "attribute-updated", "attributes", "forbidden", "source-in-use", "attribute-value-removal-confirmation", "attribute-conflict"];
-it("qualifies all 29 person data captures and their actual HTTP producer", () => {
+it("qualifies all 30 person data captures and their actual HTTP producer", () => {
   const provenance = cohort.verify();
-  expect(provenance.captures.map(item => item.name).sort()).toEqual([...["es", "en"].flatMap(culture => names.map(name => name + "-" + culture + ".json")), "attribute-created-english-original-en.json"].sort());
+  expect(provenance.captures.map(item => item.name).sort()).toEqual([...["es", "en"].flatMap(culture => names.map(name => name + "-" + culture + ".json")), "attribute-created-english-original-en.json", "attributes-english-original-es.json"].sort());
   expect(provenance.sources.some(source => source.path.endsWith("/FormPersonDataHttpTests.cs"))).toBe(true);
   expect(provenance.sources.some(source => source.path.endsWith("/FormPersonDataContractCapture.cs"))).toBe(true);
 });
@@ -18,8 +18,9 @@ it("reads an attribute created with the menu in English with only its original n
   const created = readPersonAttribute(cohort.json("attribute-created-english-original-en.json"));
   expect(created).toMatchObject({ originalCulture: "en", name: { en: "Branch" }, type: "Text", revision: 1, usedBy: [] });
   expect(Object.keys(created.name)).toEqual(["en"]);
-  // The producer then translated it with the menu in Spanish: the list carries both names and keeps the English original.
-  const listed = readPersonAttributes(cohort.json("attributes-es.json")).items.find(item => item.id === created.id);
+  // The producer then translated it with the menu in Spanish and read the list in the same test: it carries both names
+  // and keeps the English original. The list of another test holds whatever the shared database has at that moment.
+  const listed = readPersonAttributes(cohort.json("attributes-english-original-es.json")).items.find(item => item.id === created.id);
   expect(listed).toMatchObject({ originalCulture: "en", name: { en: "Branch", es: "Sucursal" }, revision: 2 });
 });
 for (const culture of ["es", "en"]) {

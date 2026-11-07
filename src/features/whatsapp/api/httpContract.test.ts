@@ -107,7 +107,7 @@ it.each(originalPresentationCaptures)("consumes real %s maps from an English acc
     requestId: captured.requestId, definitionId: selected.definitionId, versionId: selected.versionId,
     expectedModeRevision: history.contact.modeRevision, expectedRecipientContextRevision: choices.recipientContextRevision!, message: null,
   }, captured.operatorUserId, contactId);
-  expect(receipt).toMatchObject({ body: "Completá este formulario.", kind: "Flow", origin: "Conversation", form: { culture: "es", definitionId: selected.definitionId, versionId: selected.versionId } });
+  expect(receipt).toMatchObject({ body: "Completá el formulario «Formulario original».", kind: "Flow", origin: "Conversation", form: { culture: "es", definitionId: selected.definitionId, versionId: selected.versionId } });
   expect(receipt.form?.name).toStrictEqual(expectedName);
   const flows = buildTimeline(history.messages, history.outgoing).filter(item => item.kind === "Flow");
   expect(flows).toHaveLength(1);

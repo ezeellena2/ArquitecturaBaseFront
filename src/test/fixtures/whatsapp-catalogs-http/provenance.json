@@ -1,197 +1,233 @@
 {
-  "artifactSet": "whatsapp-catalogs",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
-  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
   "sourceState": [
-    " M ../../../AGENTS.md",
-    " M ../../../docs/architecture/backend.md",
-    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
-    " M ../../../docs/guides/configurar-arca.md",
-    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
-    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
-    " M ../../../docs/plans/README.md",
-    "?? ../../../docs/features/arca.md",
-    "?? ../../../docs/guides/quitar-arca.md"
+    " M ../../../docs/features/formularios.md",
+    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
+    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
+    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
+    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
   ],
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
-  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
+  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
   "sources": [
     {
-      "sha256": "4a27c603639efb6d83e2c7a19b4ca7892372f2e4b82a3d6ebf7d81889798688a",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
+      "sha256": "4a27c603639efb6d83e2c7a19b4ca7892372f2e4b82a3d6ebf7d81889798688a"
     },
     {
-      "sha256": "94d53bb588a60e9ac399b050d7837b1017c72d389e58f170ab7517b8d7236be6",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppCatalogRecipientSendingTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppCatalogRecipientSendingTests.cs",
+      "sha256": "94d53bb588a60e9ac399b050d7837b1017c72d389e58f170ab7517b8d7236be6"
     },
     {
-      "sha256": "8c13c3a072c95e42529455d3d18921064810a323685cb8f9cb7f4520d728295e",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
+      "sha256": "8c13c3a072c95e42529455d3d18921064810a323685cb8f9cb7f4520d728295e"
     },
     {
-      "sha256": "246157ed69db9e2031f5703a3f06c9baab1df9283ff8e4e1303cda045e339996",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
+      "sha256": "28e847f67453e754cbf2f78db3056fa233d3197b41b0965fb9b331ed6e5ee046"
     },
     {
-      "sha256": "955af86c8a0306de1e59f988178349f2f3cc52d83bf434cd99dc06364a61df8d",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs",
+      "sha256": "f8d809829e4c4a6e80e254487df828d3507c27b6d93e8ba3d26beb3613f1f2da"
     },
     {
-      "sha256": "66e9ccf73c85b8866cc9e29ad316ac5c1e9f6d52dc229ad2338c7db58f99c159",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingWhatsAppCloudClient.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingWhatsAppCloudClient.cs",
+      "sha256": "66e9ccf73c85b8866cc9e29ad316ac5c1e9f6d52dc229ad2338c7db58f99c159"
     },
     {
-      "sha256": "7e20bb358b2d93e4dc89931059fa4033693e3632c4713d7667d1aaf7832a5a6c",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/IStructuredFormPublicationDriver.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/IStructuredFormPublicationDriver.cs",
+      "sha256": "7e20bb358b2d93e4dc89931059fa4033693e3632c4713d7667d1aaf7832a5a6c"
     },
     {
-      "sha256": "c859de6b05211d7e0e50cd7f8c26010bf0ac2a4d38c16c601fad477b24488912",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/StructuredFormPublicationDriver.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/StructuredFormPublicationDriver.cs",
+      "sha256": "c859de6b05211d7e0e50cd7f8c26010bf0ac2a4d38c16c601fad477b24488912"
     }
   ],
   "captures": [
     {
-      "length": 527,
-      "sha256": "748009202ef8ce30b97033c1177db5c7e67946fc717d10c363d8f1e0bc6d9afa",
-      "name": "en/choices.json"
+      "name": "en/choices.json",
+      "sha256": "d1dd2ce2659b47f9d42bbf9bc5500443eabdf83e22150a4dc87d8c2bfd43b85a",
+      "length": 527
     },
     {
-      "length": 349,
-      "sha256": "4d25a7aa7a77449980868483a191c92643ee34968983e0e54bcbe57bdc9466ed",
-      "name": "en/preparation-recipient-data-missing.json"
+      "name": "en/preparation-recipient-data-missing.json",
+      "sha256": "1bcad3d8a9a1dd65f01efb1bc373edfd1e93f0e9c4d813eee8ce00ccc6ce3813",
+      "length": 349
     },
     {
-      "length": 245,
-      "sha256": "a880422659b4f5b67370f5958734933d84198586172a18617e79e6740ee2c56b",
-      "name": "en/preparation.json"
+      "name": "en/preparation.json",
+      "sha256": "308e9ca16046fb7164fa69f09529f322a5fa0d7c98e182f32a1d45fe12dcd971",
+      "length": 245
     },
     {
-      "length": 5881,
-      "sha256": "91f092f52f301a55abc8411713b4d61bbc797ef4d08ab7c714c8495a1c963b95",
-      "name": "en/reply-all-states.json"
+      "name": "en/reply-all-states.json",
+      "sha256": "61d242084b40d6dbde1037c9deca662527eca029d7732fcf1ed6157a59b64c67",
+      "length": 5881
     },
     {
-      "length": 3080,
-      "sha256": "a8580caf57e8204a353605241f5a1941955a56757cc570b6f52df7f25e1a515b",
-      "name": "en/reply-completed.json"
+      "name": "en/reply-completed.json",
+      "sha256": "671f1ef2af97eb25097ad4003316e68f59cbd93a6064e1046c45f8b52f7d16ea",
+      "length": 3080
     },
     {
-      "length": 2411,
-      "sha256": "592aefc9ca26d6087453be42b1acf4a643f5d294d4e81d358d51c936c62e610e",
-      "name": "en/reply-inbox-read.json"
+      "name": "en/reply-inbox-read.json",
+      "sha256": "3ef12a46804f81e5e87b51d8861135f5a7c87b35112a0adbcea3959e37d61be3",
+      "length": 28288
     },
     {
-      "length": 2411,
-      "sha256": "592aefc9ca26d6087453be42b1acf4a643f5d294d4e81d358d51c936c62e610e",
-      "name": "en/reply-inbox-without-read.json"
+      "name": "en/reply-inbox-without-read.json",
+      "sha256": "3ef12a46804f81e5e87b51d8861135f5a7c87b35112a0adbcea3959e37d61be3",
+      "length": 28288
     },
     {
-      "length": 1914,
-      "sha256": "8fe5f7cfa10a2defed2fb64299f48dbf438db04b29a34ce6b8db895572287399",
-      "name": "en/reply-latest-page.json"
+      "name": "en/reply-latest-page.json",
+      "sha256": "e6593273a9f43c19948df301eb1d43d8b0a00766287112cfbe2d7b22a0f9959e",
+      "length": 1914
     },
     {
-      "length": 1965,
-      "sha256": "5bf6d3c5f6d65b8f23cb6c65c740c0c31a3216bca11608a43cd6de5bdaf7a0c9",
-      "name": "en/reply-older-page.json"
+      "name": "en/reply-older-page.json",
+      "sha256": "9a5ee2de9c745f6ea2d90473cee33946f0751205dd67bede7f62d4b8f220aee7",
+      "length": 1965
     },
     {
-      "length": 1862,
-      "sha256": "c08d27c4bedf1fe9b683d321787a058450bbeb36a31d6d29eba5f61285ca8a01",
-      "name": "en/reply-pending.json"
+      "name": "en/reply-pending.json",
+      "sha256": "5d55b8f7cfa279ea14171f569671059bae454055376a753b3e4639dee092b806",
+      "length": 1862
     },
     {
-      "length": 4310,
-      "sha256": "fbd6a11ed6672dd19070a8b598fbf0bf562fd663e676857e4152319323318f0e",
-      "name": "en/reply-rejected.json"
+      "name": "en/reply-rejected.json",
+      "sha256": "185a5eb1514c7768e7b9066adfba4a4387bb1235bfd0662bb24d1d4008736afe",
+      "length": 4310
     },
     {
-      "length": 3080,
-      "sha256": "a8580caf57e8204a353605241f5a1941955a56757cc570b6f52df7f25e1a515b",
-      "name": "en/reply-reloaded.json"
+      "name": "en/reply-reloaded.json",
+      "sha256": "671f1ef2af97eb25097ad4003316e68f59cbd93a6064e1046c45f8b52f7d16ea",
+      "length": 3080
     },
     {
-      "length": 4802,
-      "sha256": "33b892974565c6faa76f3ee4c9fc6a3f95e0c98acc97688c42507b002d8d3599",
-      "name": "en/reply-unrecognized.json"
+      "name": "en/reply-unrecognized.json",
+      "sha256": "ce434d41dfb260aeef953acbd3d16ccbf149ab2f042afa13fc90edfac2f70d72",
+      "length": 4802
     },
     {
-      "length": 1733,
-      "sha256": "7a642e36522751827877dc9498a737305339279e31131e79e680d89efc99b6b4",
-      "name": "en/reply-without-read.json"
+      "name": "en/reply-without-read.json",
+      "sha256": "e29b0c861ee6937fbedc39f837caac28e9a4ea2c563cd11fb22700e41727cf29",
+      "length": 1733
     },
     {
-      "length": 527,
-      "sha256": "641d87b577167fff631ff817250de62b422a19be91e000ca86aa15eabfba40cd",
-      "name": "es/choices.json"
+      "name": "es/choices.json",
+      "sha256": "e34752e2676df98f946a0dd5352925336af910716e473e2c8641e5cc60172bd8",
+      "length": 527
     },
     {
-      "length": 350,
-      "sha256": "ba84982d881a26bc7f37d0b59aab655b50c139292a5f435524ab5eb57cf2d249",
-      "name": "es/preparation-recipient-data-missing.json"
+      "name": "es/preparation-recipient-data-missing.json",
+      "sha256": "585caf2171fbc23443689f40810498765a464a8580d3ee570670c18a32197cbd",
+      "length": 350
     },
     {
-      "length": 245,
-      "sha256": "b3b20b0ab5325688d7b8300533120bb45fd1053c0e8e05b1d8fee9f9b7065d4a",
-      "name": "es/preparation.json"
+      "name": "es/preparation.json",
+      "sha256": "6088a3364329aa2bc2d859874f659068f9c0661ef4eded778c4353b888617901",
+      "length": 245
     },
     {
-      "length": 5911,
-      "sha256": "e72ce626c6d178fbc54ef8052ed61980636b8be96c4979b74befd1f6691f812b",
-      "name": "es/reply-all-states.json"
+      "name": "es/reply-all-states.json",
+      "sha256": "9ae15a5d2d4d7ce3d3cc4e0d1072784c66c7bf19957f04a95fb261b41990b8a0",
+      "length": 5911
     },
     {
-      "length": 3104,
-      "sha256": "89dca4b565c8f6ac9a6cd8d1cb2f0c0a2e19f7d0b3ae6da6397f2f3009896b87",
-      "name": "es/reply-completed.json"
+      "name": "es/reply-completed.json",
+      "sha256": "927397847c5b8616888dca8943b1da2d74290e79b02e051ee1a57d82a6ca736d",
+      "length": 3104
     },
     {
-      "length": 2775,
-      "sha256": "815ba9c4ceac6f542de2cb0ed4fb310535082d777dc93000b115a0d567bfcefc",
-      "name": "es/reply-inbox-read.json"
+      "name": "es/reply-inbox-read.json",
+      "sha256": "2e1203694988991a46e42fac52e61ed1698f9eba0d3eb0a7eda0210292a2c22b",
+      "length": 29005
     },
     {
-      "length": 2775,
-      "sha256": "815ba9c4ceac6f542de2cb0ed4fb310535082d777dc93000b115a0d567bfcefc",
-      "name": "es/reply-inbox-without-read.json"
+      "name": "es/reply-inbox-without-read.json",
+      "sha256": "2e1203694988991a46e42fac52e61ed1698f9eba0d3eb0a7eda0210292a2c22b",
+      "length": 29005
     },
     {
-      "length": 1925,
-      "sha256": "722aeeb3ea6a0c9a4e20022f633344b114804e2d16ea6d5fa0c915f380711bb2",
-      "name": "es/reply-latest-page.json"
+      "name": "es/reply-latest-page.json",
+      "sha256": "e9444367a7f9c39511a0590c350da7a1d2e1f7aced7676f20f4ec74a0c793c29",
+      "length": 1925
     },
     {
-      "length": 1982,
-      "sha256": "ef4be6feddff1880828b48909bd5c6f40577c2caabc91e51f5dcd05d6e26b9b9",
-      "name": "es/reply-older-page.json"
+      "name": "es/reply-older-page.json",
+      "sha256": "38c463b55114737280936f36fa2733602dca4761ed96b8936d50ac8b5a41e5e4",
+      "length": 1982
     },
     {
-      "length": 1873,
-      "sha256": "07231698576b6377f7570c2644568ab87c7841d610ab833dcc69126cd3510288",
-      "name": "es/reply-pending.json"
+      "name": "es/reply-pending.json",
+      "sha256": "b7b3f15b23368af40b7b2349910f18524e4dac2263acd94bf62574fc79c0f831",
+      "length": 1873
     },
     {
-      "length": 4340,
-      "sha256": "645ad494d7e50fd9821726e5a51fbaa557f09fd15d9e38efad1bb01f9cfec716",
-      "name": "es/reply-rejected.json"
+      "name": "es/reply-rejected.json",
+      "sha256": "29727b90c84278742cacc106dc1ead86dbc95c94658dfb44734824ed3921345c",
+      "length": 4340
     },
     {
-      "length": 3104,
-      "sha256": "89dca4b565c8f6ac9a6cd8d1cb2f0c0a2e19f7d0b3ae6da6397f2f3009896b87",
-      "name": "es/reply-reloaded.json"
+      "name": "es/reply-reloaded.json",
+      "sha256": "927397847c5b8616888dca8943b1da2d74290e79b02e051ee1a57d82a6ca736d",
+      "length": 3104
     },
     {
-      "length": 4832,
-      "sha256": "375df65155492b362cc2fa65b71dd98fe95aac7e4e9adcbf338e07447c845e42",
-      "name": "es/reply-unrecognized.json"
+      "name": "es/reply-unrecognized.json",
+      "sha256": "ca93818fd94af28d3a9f72351fc3ef327ee687a2b4a1b9ca06cd0a13b959c2d4",
+      "length": 4832
     },
     {
-      "length": 1750,
-      "sha256": "14bc389c0c353855643c84072b1e78d954b4a0627f0cff1c0176c06783a4745e",
-      "name": "es/reply-without-read.json"
+      "name": "es/reply-without-read.json",
+      "sha256": "91b2e50942ff19c51c20fb18bd3d5a4535a046fd0d7465c7233bf681bd5d7234",
+      "length": 1750
     }
   ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "whatsapp-catalogs",
+  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
+  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
 }

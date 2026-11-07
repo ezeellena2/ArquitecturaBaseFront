@@ -1,75 +1,111 @@
 {
-  "artifactSet": "ai-assistant",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
-  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
   "sourceState": [
-    " M ../../../AGENTS.md",
-    " M ../../../docs/architecture/backend.md",
-    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
-    " M ../../../docs/guides/configurar-arca.md",
-    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
-    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
-    " M ../../../docs/plans/README.md",
-    "?? ../../../docs/features/arca.md",
-    "?? ../../../docs/guides/quitar-arca.md"
+    " M ../../../docs/features/formularios.md",
+    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
+    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
+    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
+    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
   ],
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
-  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
+  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
   "sources": [
     {
-      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs",
+      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08"
     },
     {
-      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs",
+      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4"
     },
     {
-      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs",
+      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f"
     },
     {
-      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs",
+      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544"
     },
     {
-      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730",
-      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs"
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs",
+      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730"
     }
   ],
   "captures": [
     {
-      "length": 565,
+      "name": "bootstrap.json",
       "sha256": "aba4c6c25f87e85682a200a408acef4e61e2aa2e0f47069525404658cf3aa297",
-      "name": "bootstrap.json"
+      "length": 565
     },
     {
-      "length": 728,
-      "sha256": "d4ee3d8957fbd0125a0f21b654d19a77ad7d94583f08ce31759e75b46a0e60b3",
-      "name": "canceled.json"
+      "name": "canceled.json",
+      "sha256": "906cde815006b51fe3a09eb1a1e1fba08408569cdb7cedada170f60f6b0fa71d",
+      "length": 728
     },
     {
-      "length": 288,
-      "sha256": "22376eeffcd93d1898719ff86871177a39bc1d201def121b04edc11d4ad14aa9",
-      "name": "submitted.json"
+      "name": "submitted.json",
+      "sha256": "f08ebcafb47c6b3a216d0947f7b92cb6ee20f0470435b4e0705447ce25a09695",
+      "length": 288
     },
     {
-      "length": 997,
-      "sha256": "83193c36b1dabde81ed2d72fbff3338a49ca2294db186ca734a662b7c27299e9",
-      "name": "turn-completed.json"
+      "name": "turn-completed.json",
+      "sha256": "ea1fffd21341a1e84cbd95edf9d339f7c558eab5f763197521aec5c0f7449d2c",
+      "length": 997
     },
     {
-      "length": 524,
-      "sha256": "2dc35c024826c9178d3566e9c72a5d336c79ffb876226705005b7f352c20bfbf",
-      "name": "turn-pending.json"
+      "name": "turn-pending.json",
+      "sha256": "3f3bf782cfb2f1013c99d52695f5e4718c884196453fe3f0acc8cdab3cadd14d",
+      "length": 524
     },
     {
-      "length": 1098,
-      "sha256": "fcfb85a94a2ee0e83fff5932ac4f4bfbe07af353fa0cb4cc4ed78833fa9b860d",
-      "name": "turns.json"
+      "name": "turns.json",
+      "sha256": "9ce903bd935c4cef5c940ee2b1a17dc212a756e6ed118c3aaf60a668a899cf26",
+      "length": 1098
     }
   ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "ai-assistant",
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
+  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
 }

@@ -1,178 +1,219 @@
 {
-  "artifactSet": "person-data",
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
-  "runId": "20261105-163047-ab708e9312af4abf8dc572675380a37f",
+  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
   "sourceState": [
-    " M ../../../AGENTS.md",
-    " M ../../../docs/architecture/backend.md",
-    " M ../../../docs/architecture/premisas-de-la-plantilla.md",
-    " M ../../../docs/guides/configurar-arca.md",
-    " M ../../../docs/plans/2026-10-31-arca-formularios-estandar.md",
-    " M ../../../docs/plans/2026-11-03-arca-etapa-1-conexion.md",
-    " M ../../../docs/plans/README.md",
-    "?? ../../../docs/features/arca.md",
-    "?? ../../../docs/guides/quitar-arca.md"
+    " M ../../../docs/features/formularios.md",
+    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
+    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
+    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
+    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
+    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
+    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
+    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
+    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
+    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
   ],
-  "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-05T17:44:29.9308997Z",
-  "repositoryHead": "0f35321e686e7ef2b397bd5de09c0dccc55d806c",
+  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
   "sources": [
     {
-      "sha256": "6516f867693b62dc5d81b9f448d607fbc94b05fe7626bec4d2df5f5661ff856a",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs",
+      "sha256": "71f95b6d6085975d02b8af72ff5f91a1b08de74e307c7db2ac97f3c80509601d"
     },
     {
-      "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs",
+      "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664"
     }
   ],
   "captures": [
     {
-      "length": 264,
-      "sha256": "63355f5c6899fdca6c73bde4a702515131386e3db8fb4129b8aecb3384b1fdce",
-      "name": "attribute-conflict-en.json"
+      "name": "attribute-conflict-en.json",
+      "sha256": "c185c39ecc326e6d9af993dffe5c5d3e0b8ccb71436b04a1997fb583bafd94e4",
+      "length": 264
     },
     {
-      "length": 271,
-      "sha256": "60191f24fa964ad03d54129d3642401f19d4dcade15b21c59bb403621ab4e912",
-      "name": "attribute-conflict-es.json"
+      "name": "attribute-conflict-es.json",
+      "sha256": "c91a938258af9068d5819f82581a922db9e4db02a9cb8f62e4fcca5df441ffcd",
+      "length": 271
     },
     {
-      "length": 288,
-      "sha256": "497a37b9d9190c0434f6c9cb79ce42d0c21e5dba407514227f7c26acf1af0599",
-      "name": "attribute-created-en.json"
+      "name": "attribute-created-en.json",
+      "sha256": "56d1b7973bfd4743826c149e145308b0caaf83591e580901b110727e6e04b962",
+      "length": 288
     },
     {
-      "length": 231,
-      "sha256": "ff9e354a8f273dbf67e13d1561bfd004183822647baef9447f412ece2fc7cbe4",
-      "name": "attribute-created-english-original-en.json"
+      "name": "attribute-created-english-original-en.json",
+      "sha256": "89cb286d00cee69a74de459d80e4af247efba8571140fef4bfb3f3901e2f5237",
+      "length": 231
     },
     {
-      "length": 288,
-      "sha256": "1f10fad7963ea7e4cb065364a251c213835aaab44ec423c925d8d88385098c5c",
-      "name": "attribute-created-es.json"
+      "name": "attribute-created-es.json",
+      "sha256": "7740925daf0e62ed2eba503a52834d0b87defab4a5361471ac7fae6a7c740ade",
+      "length": 288
     },
     {
-      "length": 313,
-      "sha256": "f9fb3f4f07fa969f3078bee6bd290c8c64cd695608f084079162a8ce5b2d2ee9",
-      "name": "attribute-updated-en.json"
+      "name": "attribute-updated-en.json",
+      "sha256": "891a08535c1426539ef9277206b20f25765754891a44f632ddaf92fd7aa31351",
+      "length": 313
     },
     {
-      "length": 313,
-      "sha256": "8e814a8df236ae049f0ad029c9f188fa9e14ec2d2c9026d76d3bb873bf71dcb9",
-      "name": "attribute-updated-es.json"
+      "name": "attribute-updated-es.json",
+      "sha256": "1e508459ec0162d6415f7bd8fa8e46fa8d9604bd48e3051b0a37acd24ac09596",
+      "length": 313
     },
     {
-      "length": 430,
-      "sha256": "b1b5287cb4e2f8c61db99741cb8af979050dc79d7d5fa0f7da2973c42ec62cdf",
-      "name": "attribute-value-removal-confirmation-en.json"
+      "name": "attribute-value-removal-confirmation-en.json",
+      "sha256": "5b77f8fda3b75c6b243a20461c96d106db49ef850592b5cb8cae918b58c404c0",
+      "length": 430
     },
     {
-      "length": 454,
-      "sha256": "2f656e0352d1029837dc0dd8b31788dca36df3e5f5a61b87c341334727fdd21f",
-      "name": "attribute-value-removal-confirmation-es.json"
+      "name": "attribute-value-removal-confirmation-es.json",
+      "sha256": "efdaa31f1cf453db3afee8f756fc5c27a6d8a244ab2b5d84257c468bbacdeb3c",
+      "length": 454
     },
     {
-      "length": 2168,
-      "sha256": "fce971e52427b29da59fb4106cb6351e7c0e14f498db249a1cf6d88e9dafdd15",
-      "name": "attributes-en.json"
+      "name": "attributes-en.json",
+      "sha256": "545ba5a11d6f5514ddd14bf6eaede694780db992398d4b50b113a6867899f7a4",
+      "length": 1903
     },
     {
-      "length": 1903,
-      "sha256": "3289639afbf5deb9fc9df041acfe3ad11acb5a09fe1a534b0dc85243adb3cce4",
-      "name": "attributes-es.json"
+      "name": "attributes-english-original-es.json",
+      "sha256": "21bb02affa11085b9b8a099f0881e2d1b4f6b0dc0320eac98e7983afe7035a0d",
+      "length": 507
     },
     {
-      "length": 259,
-      "sha256": "4fc0733a04a394b974c89857e345255a72a6da20a42466eae87730fa4580db7a",
-      "name": "conflict-en.json"
+      "name": "attributes-es.json",
+      "sha256": "b4d1c4c0abb076307f1a2bd78c516155ed34047c7179472ee2a8422011d24423",
+      "length": 2168
     },
     {
-      "length": 271,
-      "sha256": "9c7d2cd0f083b2ddbe90a87b98ace1a7a8726ddeaf646b22e8ce67355fa766c5",
-      "name": "conflict-es.json"
+      "name": "conflict-en.json",
+      "sha256": "d4a609ceb497c81c1fb4acaa677aac14ae82b8b6f111925c63d921e3e771fc2a",
+      "length": 259
     },
     {
-      "length": 247,
-      "sha256": "9975dab29b4ddbadb81e6a8eaac2d1cb332dafd648f235699b04ce9a61d8a6e3",
-      "name": "forbidden-en.json"
+      "name": "conflict-es.json",
+      "sha256": "f51ae01e4d436f0babafe756dceff660fa4019a2ec69029769a9b7237f8e347f",
+      "length": 271
     },
     {
-      "length": 249,
-      "sha256": "902d283a6d5ec2af18ba54d955228d652ccdb8dfdf67222b3605a83ec3d7bef6",
-      "name": "forbidden-es.json"
+      "name": "forbidden-en.json",
+      "sha256": "7de54f8a111dd00e0386fa638866445699362ee2e07291153ba59329d0d1f08f",
+      "length": 247
     },
     {
-      "length": 356,
-      "sha256": "4d292d83f22fb222bab0b0bb13b34647dc6ae91ecffd00139435b538830a28c7",
-      "name": "invalid-value-en.json"
+      "name": "forbidden-es.json",
+      "sha256": "fc804f3c21d7594a474308d3cd91f25f2f7b24e72b0a95c88dc62c3b3aaf2e4d",
+      "length": 249
     },
     {
-      "length": 346,
-      "sha256": "f69d703b32b71b31e8210ca04023bffaa62da34a09ff6a7675358ceb8dc66bb1",
-      "name": "invalid-value-es.json"
+      "name": "invalid-value-en.json",
+      "sha256": "12f720bb3f097f63270e4aa79ea576654b248c7658cf92eeeb62765513e315c8",
+      "length": 356
     },
     {
-      "length": 769,
-      "sha256": "9ac0f84dc7fd099051961921be4930a741238f931f5e86e2d48af636e70243f3",
-      "name": "people-en.json"
+      "name": "invalid-value-es.json",
+      "sha256": "663e9e4cea91be692a423529a44915d0c96a079543a139bb09b455eb5aaffc37",
+      "length": 346
     },
     {
-      "length": 703,
-      "sha256": "5328f733e4f73b191d7773821e009e9d89580cad00756972e16478f31103cae3",
-      "name": "people-es.json"
+      "name": "people-en.json",
+      "sha256": "44288737c6e8fd644d810e289deb54fa421c1f961deee541b6e3c0a4ca8b4829",
+      "length": 704
     },
     {
-      "length": 77,
-      "sha256": "5ccd8bfe4074af7f655734f90d5e3eaada0bdf83433ad5631e5caea09294364f",
-      "name": "person-data-empty-en.json"
+      "name": "people-es.json",
+      "sha256": "a649904b5024fa6b4976756ecfd1a5402c2eafe28204e0dc872bbd037048a501",
+      "length": 768
     },
     {
-      "length": 77,
-      "sha256": "36076eab4d07d29d21847d50c4713d333c209aebf0604ecbc17389a88eae04a1",
-      "name": "person-data-empty-es.json"
+      "name": "person-data-empty-en.json",
+      "sha256": "c3d39e36f467216f147ef5dc4e62038d86f10e39919ab760dc8ec5ce58d1ea4e",
+      "length": 77
     },
     {
-      "length": 178,
-      "sha256": "f12fab22d658d7298b733bb5a48981712494fb1a8b9c28d87e218fae8c279190",
-      "name": "person-data-en.json"
+      "name": "person-data-empty-es.json",
+      "sha256": "6ae466fe8903253ba605775191d3253e2dba41982fae5668d02bd610c0874b31",
+      "length": 77
     },
     {
-      "length": 177,
-      "sha256": "fcd86e56a8bcf63f75ac73022654c5a9a4217db1178f19b2d7f27f66adb9f03d",
-      "name": "person-data-es.json"
+      "name": "person-data-en.json",
+      "sha256": "2de4127995a77c9f88734be34be472e8ae1acd3364ed6ec6815b1100e65c69c9",
+      "length": 178
     },
     {
-      "length": 178,
-      "sha256": "f12fab22d658d7298b733bb5a48981712494fb1a8b9c28d87e218fae8c279190",
-      "name": "person-data-saved-en.json"
+      "name": "person-data-es.json",
+      "sha256": "7d5aa4e926b5ffe7d96ecf035ed9cd97f361313a787b59bd3926192631a1651f",
+      "length": 177
     },
     {
-      "length": 177,
-      "sha256": "fcd86e56a8bcf63f75ac73022654c5a9a4217db1178f19b2d7f27f66adb9f03d",
-      "name": "person-data-saved-es.json"
+      "name": "person-data-saved-en.json",
+      "sha256": "2de4127995a77c9f88734be34be472e8ae1acd3364ed6ec6815b1100e65c69c9",
+      "length": 178
     },
     {
-      "length": 224,
-      "sha256": "235d295b2ce25664a397ecdf3a75a14802982a5ec25c0b96a95727f002d5bcdc",
-      "name": "person-options-en.json"
+      "name": "person-data-saved-es.json",
+      "sha256": "7d5aa4e926b5ffe7d96ecf035ed9cd97f361313a787b59bd3926192631a1651f",
+      "length": 177
     },
     {
-      "length": 221,
-      "sha256": "c9eaef9bb1e87b14db76d68630489cec738adc60efc22eb5ebf2966b8ca016df",
-      "name": "person-options-es.json"
+      "name": "person-options-en.json",
+      "sha256": "289a629380b84c9eea29843798ad1b1c3b1047c6705b718395150c0dd10e2c76",
+      "length": 224
     },
     {
-      "length": 292,
-      "sha256": "528fb3d4dd883cd5ade8ec015d70ee0da91661e616d636f319d9be4f1a975d68",
-      "name": "source-in-use-en.json"
+      "name": "person-options-es.json",
+      "sha256": "38b5091aab1798a75ec862aeb57aac544e4a21f011a314d5cf90e44c73a0ebbf",
+      "length": 221
     },
     {
-      "length": 305,
-      "sha256": "cd36e085a1dc9f574aad12aaf061b6fc7da7432d6fad36d103dc3bd82d49308c",
-      "name": "source-in-use-es.json"
+      "name": "source-in-use-en.json",
+      "sha256": "b3bbcf2ec7ac3c659e79185d70a6b07d59549388e531d361ab203f0e411ec5d3",
+      "length": 292
+    },
+    {
+      "name": "source-in-use-es.json",
+      "sha256": "f04f5922f7844cfaf79e75e65aaf8dac0562956a2b24d3b5b60fc75d889604f0",
+      "length": 305
     }
   ],
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "artifactSet": "person-data",
+  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
+  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
 }
