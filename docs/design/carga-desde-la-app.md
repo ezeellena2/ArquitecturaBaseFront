@@ -59,10 +59,12 @@ dibujadas las preguntas en CW2-A y CW2-B.
    | Ocupa | Tipos de pregunta |
    | --- | --- |
    | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 80, elegir una y elegir de un catálogo (una o varias) |
-   | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto y documento |
+   | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto, documento y el bloque de renglones |
 
    Son los dos anchos de [AR1-A](#dos-anchos-ar1-a--2026-11-02) (2026-11-02): las dos columnas que tenían el catálogo, las
-   opciones en fila y el texto corto de hasta 80 pasaron a una.
+   opciones en fila y el texto corto de hasta 80 pasaron a una. El bloque de renglones (RG2-A, 2026-11-07) es una tabla con
+   un ítem por fila donde la zona tiene columnas y un recuadro por ítem en una columna (el panel y el celular), como dice su
+   [diseño](renglones-en-formularios.md).
 
 4. **Controles por tipo (CW12 y AR1-A).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una
    columna; en el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una,
@@ -190,7 +192,8 @@ programada el mismo día.
 - **Marcada, el formulario sigue.** Al enviar, el aviso común dice el número («Se guardó REC-000123.») y el formulario queda
   con las respuestas para la siguiente, sin pasar por «Enviada»; el foco vuelve a la primera pregunta. Sin marcar, se ve
   «Enviada», como hoy (CW5).
-- **Los archivos no se mantienen,** como en el panel: las fotos y los documentos arrancan vacíos.
+- **Los archivos no se mantienen,** como en el panel: las fotos y los documentos arrancan vacíos. Los ítems del bloque de
+  renglones, sí, en su orden (RG2-A).
 - **No se recuerda:** vale mientras se carga. Al volver a entrar, la casilla arranca sin marcar y el formulario, vacío. Cada
   envío arma un pedido nuevo, así que no repite el número del anterior, y salir con algo cargado sigue pidiendo confirmación.
   Programándolo apareció que, con las mismas respuestas mantenidas y sin archivos, el envío siguiente repetía el pedido del
