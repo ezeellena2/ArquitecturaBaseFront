@@ -149,6 +149,8 @@ Al programar cada etapa se reescribe lo que hoy dice lo contrario:
     preguntas del bloque;
   - el [detalle](formularios-whatsapp.md#textos-largos-el-detalle-y-las-reglas-tl1-a-y-tl2-a--2026-11-02) suma los
     renglones;
+  - estos tres, con el chat y el diseño del PDF, quedaron programados en la Etapa 3 (2026-11-07): ver
+    [el bloque en la lectura](formularios-whatsapp.md#el-bloque-de-renglones-en-la-lectura-rg4-a--2026-11-07);
   - [«Publicar»](formularios-whatsapp.md#publicar-en-whatsapp-pu1-a--2026-11-01) suma «Pasan a renglones», el bloque vacío
     y el aviso del máximo;
   - las [reglas en pasos](formularios-whatsapp.md#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03) y el

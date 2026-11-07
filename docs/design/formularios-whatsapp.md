@@ -1036,3 +1036,19 @@ Es sólo texto: el diálogo no cambia de forma.
 
 `WhatsAppForms.test.tsx` y `ChatLanguageLoading.test.tsx` lo recorren con los dos idiomas, el original y una preparación
 que tarda; `chatForms.spec` comprueba el texto en inglés.
+
+## El bloque de renglones en la lectura (RG4-A) — 2026-11-07
+
+Lo que el tablero RG4-A no fijaba se resolvió con lo más simple que cumple las reglas vigentes:
+
+- **La planilla.** Una fila por respuesta. La columna del bloque dice la cantidad de ítems en gris y el primer valor
+  respondido de cada uno, en una línea cortada con «…» («3 · GLIFOSATO 64%, …»); no se ordena por ella.
+- **«Filtros» con PL1-A y PL2-A.** Las preguntas del bloque van con sangría bajo su nombre, que no se elige (`FilterPanel`
+  con `group`), y su panel dice «En algún ítem de Artículos» en gris bajo el nombre (`note`). El chip dice la pregunta.
+- **La vista rápida (D2, TL1-A).** Cada ítem con su número y su primera respuesta en negro, y las demás alineadas debajo con
+  su pregunta en gris, como los campos de una opción de catálogo.
+- **La pantalla completa (DC1).** Una tabla en la columna del valor, con el número del ítem a la derecha y sin encabezado
+  visible («Ítem» para lectores de pantalla), una columna por pregunta y los números a la derecha; en el celular se
+  desplaza de costado dentro de su caja.
+- **El diseño del PDF.** Lista el bloque con su nombre y no sus preguntas.
+- **La tarjeta del chat.** El nombre del bloque y un ítem por línea, sin lo que quedó sin respuesta, como «Así llega».
