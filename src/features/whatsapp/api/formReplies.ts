@@ -18,17 +18,25 @@ const fileList = z.array(file).max(10).refine(files=>new Set(files.map(f=>f.file
 export type FormReplyFile = z.infer<typeof file>;
 const choice = z.strictObject({ choiceId: guid, label: text, catalogId:guid.optional(), catalogName:text.optional(), detail:z.string().nullable().optional(), value: z.string().min(1).max(64).optional(), valueType: z.enum(["Integer", "Decimal", "Date"]).optional() })
     .refine(value=>(value.catalogId===undefined)===(value.catalogName===undefined) && (value.detail===undefined||value.catalogId!==undefined) && (value.value===undefined)===(value.valueType===undefined));
-const value = z.discriminatedUnion('type', [
-  z.strictObject({...field,type:z.literal("photo"),value:fileList.refine(files=>files.every(f=>f.hasThumbnail && (f.contentType==="image/jpeg"||f.contentType==="image/png")))}),
-  z.strictObject({...field,type:z.literal("document"),value:fileList.refine(files=>files.every(f=>!f.hasThumbnail))}),
+// The answers that can go in an item of a block of rows (RG1-A), as they come apart.
+const scalars = [
   z.strictObject({ ...field, type: z.literal('shortText'), value: z.string().nullable() }),
   z.strictObject({ ...field, type: z.literal('longText'), value: z.string().nullable() }),
   z.strictObject({ ...field, type: z.literal('decimal'), value: decimal.nullable() }),
   z.strictObject({ ...field, type: z.literal('date'), value: date.nullable() }),
   z.strictObject({ ...field, type: z.literal('boolean'), value: z.boolean().nullable() }),
   z.strictObject({ ...field, type: z.literal('choice'), value: choice.nullable() }),
+] as const;
+const itemValue = z.discriminatedUnion('type', [...scalars]);
+// An item of the block: every question of the block in its version, in order, with null where it was left empty.
+const item = z.strictObject({ values: z.array(itemValue).min(1).refine(rows => new Set(rows.map(row => row.fieldId)).size === rows.length) });
+const value = z.discriminatedUnion('type', [
+  z.strictObject({...field,type:z.literal("photo"),value:fileList.refine(files=>files.every(f=>f.hasThumbnail && (f.contentType==="image/jpeg"||f.contentType==="image/png")))}),
+  z.strictObject({...field,type:z.literal("document"),value:fileList.refine(files=>files.every(f=>!f.hasThumbnail))}),
+  ...scalars,
   z.strictObject({ ...field, type: z.literal('multiChoice'), value: z.array(choice).max(20)
     .refine(choices => new Set(choices.map(choice => choice.choiceId)).size === choices.length).nullable() }),
+  z.strictObject({ ...field, type: z.literal('group'), value: z.array(item) }),
 ]);
 const values = z.array(value).refine(rows => new Set(rows.map(row => row.fieldId)).size === rows.length && new Set(rows.map(row => row.key)).size === rows.length);
 const fileMetadata = { fileCount:z.number().int().nonnegative().optional(), receivedAtUtc:z.iso.datetime().optional() };
@@ -47,6 +55,7 @@ const schema = z.discriminatedUnion('state', [
 ]);
 export type FormReply = z.infer<typeof schema>;
 export type FormReplyValue = z.infer<typeof value>;
+export type FormReplyItemValue = z.infer<typeof itemValue>;
 
 export function readFormReply(input: unknown, canReadValues: boolean): FormReply | null {
   // Do not inspect or retain unauthorized values, even if that private payload is malformed.

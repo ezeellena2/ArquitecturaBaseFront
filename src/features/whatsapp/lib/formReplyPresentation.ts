@@ -12,6 +12,7 @@ function answer(row: FormReplyValue): FormReplyDisplayValue {
   if (row.type === 'boolean') return { type: 'boolean', value: row.value };
   if (row.type === 'multiChoice') return { type: 'multiChoice', value: row.value?.map(choice => ({ label: choice.label, catalogName: choice.catalogName, detail: choice.detail })) ?? null };
   if (row.type === 'choice') return { type: 'choice', value: row.value?.label ?? null, catalogName:row.value?.catalogName, detail:row.value?.detail };
+  if (row.type === 'group') return { type: 'group', value: row.value.map(item => item.values.map(answer)) };
   return { type: row.type, value: row.value };
 }
 export function toFormReplyPresentation(reply: FormReply | null): FormReplyPresentation | null {

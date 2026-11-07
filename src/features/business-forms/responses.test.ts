@@ -8,6 +8,7 @@ import {
   responseValueText,
   selectedResponseChoices,
   responseFiles,
+  responseRowsSummary,
   visibleResponseColumns,
   type ResponseColumn,
   type ResponseCell,
@@ -259,4 +260,30 @@ it("splits a rule condition into its question, its words and its values", () => 
     { key: "notes", question: "Notes", clauses: [{ words: "rules.conditionWords.answered", values: "" }] },
     { key: "gone", question: "", clauses: [{ words: "rules.conditionWords.in", values: "old" }] },
   ]);
+});
+describe("a block of rows", () => {
+  const answered = (fieldId: string, value: string): ResponseCell => ({ fieldId, type: "shortText", state: "Answered", value });
+  it("sums its items and takes the first asked question of each one, without the unanswered ones", () => {
+    const first = answered("item", "GLIFOSATO 64%");
+    const third = answered("item", "UREA GRANULADA");
+    const cell: ResponseCell = { fieldId: "block", type: "group", state: "Answered", value: [
+      { cells: [first, answered("quantity", "200")] },
+      { cells: [{ fieldId: "item", type: "shortText", state: "Unanswered", value: null }, answered("quantity", "7")] },
+      { cells: [{ fieldId: "old", type: "shortText", state: "NotAsked", value: null }, third] },
+    ] };
+
+    expect(responseRowsSummary(cell)).toEqual({ count: 3, firsts: [first, third] });
+    expect(responseRowsSummary({ ...cell, state: "Unanswered", value: [] })).toBeNull();
+    expect(responseRowsSummary(answered("text", "Sólo texto"))).toBeNull();
+  });
+  it("normalizes and names a condition on a question of the block like any other", () => {
+    const columns: ResponseColumn[] = [{ fieldId: "block", type: "group", label: "Artículos", introducedInVersion: 1, options: [],
+      questions: [{ fieldId: "quantity", type: "decimal", label: "Cantidad", introducedInVersion: 1, options: [] }] }];
+    const t = (key: string) => ({ "responses.from": "desde" } as Record<string, string>)[key] ?? key;
+
+    expect(normalizeResponseQuery({ page: 1, pageSize: 20, conditions: [{ fieldId: "quantity", operator: "gte", values: ["12,5"] }] }, columns)?.conditions)
+      .toEqual([{ fieldId: "quantity", operator: "gte", values: ["12.5"] }]);
+    expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "quantity", operator: "gte", values: ["200"] }] }, columns, t, "es"))
+      .toEqual([{ key: "quantity", label: "Cantidad: desde 200" }]);
+  });
 });

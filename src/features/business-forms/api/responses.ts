@@ -15,7 +15,10 @@ const type = z.enum([
   "multiChoice",
   "photo",
   "document",
+  "group",
 ]);
+// The questions that go in a block of rows (RG1-A): never a file, a multiple choice or another block.
+const rowType = z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice"]);
 const author = z.strictObject({
   userId: guid,
   displayName: z.string().nullable(),
@@ -82,14 +85,8 @@ function validResponseValue(kind: z.infer<typeof type>, input: z.infer<typeof va
   if (kind === "photo" || kind === "document") return fileList.safeParse(input).success;
   return typeof input === "string";
 }
-export const responseCellSchema = z
-  .strictObject({
-    fieldId: guid,
-    type,
-    state: z.enum(["NotAsked", "Unanswered", "Answered"]),
-    value,
-  })
-  .superRefine((cell, ctx) => {
+const cellState = z.enum(["NotAsked", "Unanswered", "Answered"]);
+function checkCell(cell: { type: z.infer<typeof type>; state: z.infer<typeof cellState>; value: unknown }, ctx: z.RefinementCtx) {
     if (cell.type === "multiChoice") {
       const choices = choiceList.safeParse(cell.value);
       const valid = cell.state === "NotAsked" ? cell.value === null
@@ -99,18 +96,46 @@ export const responseCellSchema = z
       return;
     }
     if (cell.state !== "Answered") return;
-    if (!validResponseValue(cell.type, cell.value))
+    if (!validResponseValue(cell.type, cell.value as z.infer<typeof value>))
       ctx.addIssue({ code: "custom", message: "Invalid response value." });
+}
+// An item of a block in the sheet: one cell per question of the block's column, in its order.
+const itemCellSchema = z.strictObject({ fieldId: guid, type: rowType, state: cellState, value }).superRefine(checkCell);
+const items = z.array(z.strictObject({ cells: z.array(itemCellSchema) }));
+export const responseCellSchema = z
+  .strictObject({
+    fieldId: guid,
+    type,
+    state: cellState,
+    value: z.union([value, items]),
+  })
+  .superRefine((cell, ctx) => {
+    if (cell.type === "group") {
+      const parsed = items.safeParse(cell.value);
+      const valid = cell.state === "NotAsked" ? cell.value === null
+        : cell.state === "Unanswered" ? cell.value === null || parsed.success && parsed.data.length === 0
+          : parsed.success && parsed.data.length > 0;
+      if (!valid) ctx.addIssue({ code: "custom", message: "Invalid block of rows state." });
+      return;
+    }
+    checkCell(cell, ctx);
   });
-const column = z.strictObject({
+const columnShape = {
   fieldId: guid,
-  type,
   label: z.string(),
   introducedInVersion: z.number().int().positive(),
   valueType: z.enum(catalogValueTypes).exclude(["Text"]).optional(),
   options: z.array(z.strictObject({ id: guid, label: z.string() })),
   fields: catalogColumnFields.optional(),
-}).refine(column => column.valueType === undefined && column.fields === undefined || column.type === "choice" || column.type === "multiChoice");
+};
+const typedOnlyInChoices = (column: { type: string; valueType?: string; fields?: unknown }) =>
+  column.valueType === undefined && column.fields === undefined || column.type === "choice" || column.type === "multiChoice";
+const questionColumn = z.strictObject({ ...columnShape, type: rowType }).refine(typedOnlyInChoices);
+// A block of rows has one column with its questions inside (RG4-A); they come only there.
+const column = z.strictObject({ ...columnShape, type, questions: z.array(questionColumn).min(1).optional() })
+  .refine(column => typedOnlyInChoices(column) && (column.type === "group") === (column.questions !== undefined)
+    && (column.type !== "group" || column.options.length === 0)
+    && new Set(column.questions?.map(question => question.fieldId)).size === (column.questions?.length ?? 0));
 const row = z.strictObject({
   id: guid,
   versionId: guid,
@@ -153,6 +178,12 @@ export const responseSheetSchema = z
     const columns = new Map(
       sheet.columns.map((column) => [column.fieldId, column.type]),
     );
+    const questions = new Map(sheet.columns.map(column => [column.fieldId, column.questions ?? []]));
+    // Each item of a block has one cell per question of its column, in its order and with its type.
+    const itemsMatch = (cell: z.infer<typeof responseCellSchema>) => cell.type !== "group" || cell.value === null
+      || (cell.value as z.infer<typeof items>).every(item => item.cells.length === questions.get(cell.fieldId)?.length
+        && item.cells.every((itemCell, index) => questions.get(cell.fieldId)?.[index]?.fieldId === itemCell.fieldId
+          && questions.get(cell.fieldId)?.[index]?.type === itemCell.type));
     const valid =
       columns.size === sheet.columns.length &&
       sheet.records.items.every(
@@ -165,7 +196,7 @@ export const responseSheetSchema = z
           record.cells.length === columns.size &&
           new Set(record.cells.map((cell) => cell.fieldId)).size ===
             columns.size &&
-          record.cells.every((cell) => columns.get(cell.fieldId) === cell.type),
+          record.cells.every((cell) => columns.get(cell.fieldId) === cell.type && itemsMatch(cell)),
       );
     if (!valid)
       context.addIssue({
@@ -206,8 +237,14 @@ const origin = z.strictObject({
   conversationId: guid.nullable(),
   maskedAddress: z.string().nullable(),
 });
-const historicalValue = z.strictObject({ fieldId: guid, key: z.string(), type, label: z.string(), value })
+// An item of a block in the detail: every question of the block in its version, with null where it was left empty.
+const itemValue = z.strictObject({ fieldId: guid, key: z.string(), type: rowType, label: z.string(), value })
   .refine(row => row.value === null || validResponseValue(row.type, row.value));
+const detailItems = z.array(z.strictObject({ values: z.array(itemValue).min(1)
+  .refine(values => new Set(values.map(item => item.fieldId)).size === values.length) }));
+const historicalValue = z.strictObject({ fieldId: guid, key: z.string(), type, label: z.string(), value: z.union([value, detailItems]) })
+  .refine(row => row.type === "group" ? detailItems.safeParse(row.value).success
+    : row.value === null || validResponseValue(row.type, row.value as z.infer<typeof value>));
 const assistance = z.strictObject({
  senderKind: z.enum(["Manual", "Assistant"]), operator: author.nullable(), reason: z.string().nullable(),
  values: z.array(z.strictObject({ proposed: historicalValue, included: z.boolean(), changed: z.boolean(), mapped: z.boolean() })),

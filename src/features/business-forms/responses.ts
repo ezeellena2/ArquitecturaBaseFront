@@ -12,7 +12,8 @@ export type ResponseType =
   | "choice"
   | "multiChoice"
   | "photo"
-  | "document";
+  | "document"
+  | "group";
 export interface ResponseCatalogField { readonly fieldId: string; readonly key: string; readonly label: string; readonly type: CatalogFieldType; readonly role: "data" | "filter" }
 export interface ResponseCapturedCatalogField extends Omit<ResponseCatalogField, "key"> { readonly value: string; readonly text?: string }
 export interface ResponseCatalogFieldSelection { readonly questionId: string; readonly fieldId: string }
@@ -27,8 +28,14 @@ export interface ResponseChoice {
   valueType?: Exclude<CatalogValueType, "Text">;
   fields?: readonly ResponseCapturedCatalogField[];
 }
+/** An item of a block of rows in the sheet: one cell per question of the block's column, in its order. */
+export interface ResponseItemCells { readonly cells: readonly ResponseCell[] }
+/** An item of a block of rows in the detail: every question of the block in its version, with null where it was left empty. */
+export interface ResponseItemValues {
+  readonly values: readonly { readonly fieldId: string; readonly key: string; readonly type: ResponseType; readonly label: string; readonly value: ResponseValue }[];
+}
 export type ResponseValue =
-  string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | null;
+  string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | readonly ResponseItemCells[] | readonly ResponseItemValues[] | null;
 export interface ResponseCell {
   fieldId: string;
   type: ResponseType;
@@ -43,6 +50,22 @@ export interface ResponseColumn {
   valueType?: Exclude<CatalogValueType, "Text">;
   options: { id: string; label: string }[];
   fields?: readonly ResponseCatalogField[];
+  /** The questions of a block of rows; only on its column. */
+  questions?: readonly ResponseColumn[];
+}
+/** Every question that a condition can name: the columns and the questions of a block, which filter by any item. */
+export function responseQuestionColumns(columns: readonly ResponseColumn[]): readonly ResponseColumn[] {
+  return columns.flatMap(column => [column, ...(column.questions ?? [])]);
+}
+/**
+ * «3 · GLIFOSATO 64%, …» (RG4-A): how many items a block has and the first asked question of each one, without the items that
+ * left it unanswered. Only for a block with items: otherwise the cell reads like any other.
+ */
+export function responseRowsSummary(cell: ResponseCell): { readonly count: number; readonly firsts: readonly ResponseCell[] } | null {
+  if (cell.type !== "group" || cell.state !== "Answered" || !Array.isArray(cell.value)) return null;
+  const items = (cell.value as readonly object[]).filter((item): item is ResponseItemCells => "cells" in item);
+  return { count: items.length, firsts: items.map(item => item.cells.find(itemCell => itemCell.state !== "NotAsked"))
+    .filter((first): first is ResponseCell => first?.state === "Answered") };
 }
 export interface ResponseCondition {
   fieldId: string;
@@ -72,8 +95,9 @@ export function normalizeResponseQuery(
   columns: readonly ResponseColumn[],
 ): ResponseQuery | null {
   const conditions: ResponseCondition[] = [];
+  const questions = responseQuestionColumns(columns);
   for (const condition of query.conditions ?? []) {
-    const type = columns.find(column => column.fieldId === condition.fieldId)?.type;
+    const type = questions.find(column => column.fieldId === condition.fieldId)?.type;
     const values = condition.values?.map(value => value.trim());
     if (type === "decimal" && values?.some(value => !/^[-+]?\d+([.,]\d+)?$/.test(value))) return null;
     if (condition.operator === "contains" && values?.every(value => !value)) continue;
@@ -200,8 +224,9 @@ function conditionValues(values: readonly string[] | null | undefined, column: R
  * values apart, so the summary can mark the question and the value. Several values of one choice read «Visita o Llamada».
  */
 export function ruleConditionSummaries(conditions: readonly ResponseCondition[], columns: readonly ResponseColumn[], t: Translate, language: string) {
+  const questions = responseQuestionColumns(columns);
   return [...new Set(conditions.map(item => item.fieldId))].map(fieldId => {
-    const column = columns.find(item => item.fieldId === fieldId);
+    const column = questions.find(item => item.fieldId === fieldId);
     return { key: fieldId, question: column?.label ?? "", clauses: conditions.filter(item => item.fieldId === fieldId).map(item => {
       const values = conditionValues(item.values, column, t, language);
       return { words: t("rules.conditionWords." + item.operator), values: values.join(item.operator === "in" ? " " + t("rules.conditionWords.or") + " " : ", ") };
@@ -213,8 +238,9 @@ export function ruleConditionSummaries(conditions: readonly ResponseCondition[],
 export function responseFilterLabels(query: ResponseQuery, columns: readonly ResponseColumn[], t: Translate, language: string, zone = "UTC", versions: readonly { id: string; number: number }[] = [], names: Readonly<Record<string, string>> = {}) {
   const labels: { key: string; label: string }[] = [];
   const day = (valueUtc: string) => { const date = calendarDateInZone(valueUtc, zone); return formatTypedValue("date", date, language) ?? date; };
+  const questions = responseQuestionColumns(columns);
   for (const fieldId of new Set(query.conditions?.map(item => item.fieldId) ?? [])) {
-    const column = columns.find(item => item.fieldId === fieldId);
+    const column = questions.find(item => item.fieldId === fieldId);
     const parts = query.conditions?.filter(item => item.fieldId === fieldId).map(item => {
       const values = conditionValues(item.values, column, t, language, names).join(", ");
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];

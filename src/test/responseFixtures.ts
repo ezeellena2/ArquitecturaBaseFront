@@ -2,6 +2,18 @@ import type {
   ResponseSheet,
   ResponseDetail,
 } from "@/features/business-forms/api/responses";
+type DetailValue = ResponseDetail["values"][number]["value"];
+type SheetCell = ResponseSheet["records"]["items"][number]["cells"][number];
+/** A cell of the sheet as the detail brings it: a block turns its items of cells into items with the questions its version had. */
+export function detailValue(cell: SheetCell, columns: ResponseSheet["columns"]): DetailValue {
+  if (cell.type !== "group" || !Array.isArray(cell.value)) return cell.value as DetailValue;
+  const questions = columns.find(column => column.fieldId === cell.fieldId)?.questions ?? [];
+  return (cell.value as { cells: { fieldId: string; type: "shortText" | "longText" | "decimal" | "date" | "boolean" | "choice"; state: string; value: unknown }[] }[])
+    .map(item => ({ values: item.cells.filter(itemCell => itemCell.state !== "NotAsked").map(itemCell => ({
+      fieldId: itemCell.fieldId, key: "field_" + itemCell.fieldId.replaceAll("-", ""), type: itemCell.type,
+      label: questions.find(question => question.fieldId === itemCell.fieldId)?.label ?? "",
+      value: itemCell.state === "Answered" ? itemCell.value : null })) })) as DetailValue;
+}
 export const responseFormId = "0199a0c0-0000-7000-8000-000000000010";
 export const responseRecordId = "0199a0c0-0000-7000-8000-000000000011";
 export const responseSecondId = "0199a0c0-0000-7000-8000-000000000012";
@@ -139,7 +151,7 @@ export function responseDetailFixture(
         type: cell.type,
         label: sheet.columns.find((column) => column.fieldId === cell.fieldId)!
           .label,
-        value: cell.value,
+        value: detailValue(cell, sheet.columns),
       })),
     history: [
       { kind: "Sent", atUtc: "2026-10-16T11:59:00Z", actor },

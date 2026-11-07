@@ -3,6 +3,7 @@ import {
   responseDetailFixture,
   responseWorkflowFixture,
   responseFormId,
+  detailValue,
 } from "../responseFixtures";
 import type {
   ResponseDetail,
@@ -373,7 +374,7 @@ export function createResponseVisualFixtures(
               label: sheet.columns.find(
                 (column) => column.fieldId === cell.fieldId,
               )!.label,
-              value: cell.value,
+              value: detailValue(cell, sheet.columns),
             })),
         };
         if (scenario === "responses-assisted") {

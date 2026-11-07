@@ -8,11 +8,14 @@ export type FormReplyDisplayValue =
   | { readonly type: "choice"; readonly value: string | null; readonly catalogName?: string; readonly detail?: string | null }
   | { readonly type: "multiChoice"; readonly value: readonly { readonly label: string; readonly catalogName?: string; readonly detail?: string | null }[] | null }
   | { readonly type: "decimal" | "date"; readonly value: string | null }
-  | { readonly type: "boolean"; readonly value: boolean | null };
+  | { readonly type: "boolean"; readonly value: boolean | null }
+  // A block of rows: each item with the answers of its questions, in order (RG4-A).
+  | { readonly type: "group"; readonly value: readonly (readonly FormReplyDisplayValue[])[] };
 
 export function formatFormReplyValue(answer: FormReplyDisplayValue, language: string,
   labels: { readonly missing: string; readonly yes: string; readonly no: string }): string | null {
   if (answer.type==="photo"||answer.type==="document") return "";
+  if (answer.type === "group") return answer.value.length ? "" : labels.missing;
   if (answer.value === null) return labels.missing;
   if (answer.type === "multiChoice") return answer.value.length ? answer.value.map(choice => choice.label).join(", ") : labels.missing;
   switch (answer.type) {
@@ -21,6 +24,13 @@ export function formatFormReplyValue(answer: FormReplyDisplayValue, language: st
     case "boolean": return formatYesNo(answer.value, labels);
     default: return typeof answer.value === "string" ? answer.value : null;
   }
+}
+
+/** An item of a block in one line: its answers in the order of the questions, without the unanswered ones («GLIFOSATO 64% · 200 · Sí»). */
+export function formatFormReplyItem(answers: readonly FormReplyDisplayValue[], language: string,
+  labels: { readonly missing: string; readonly yes: string; readonly no: string }): string {
+  return answers.filter(answer => answer.value !== null)
+    .map(answer => formatFormReplyValue(answer, language, labels)).filter((text): text is string => !!text).join(" · ");
 }
 
 // Authorized historical rows, independent of HTTP fields or a current catalog lookup.

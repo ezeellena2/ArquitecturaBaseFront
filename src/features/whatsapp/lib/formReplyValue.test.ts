@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatFormReplyValue } from "./formReplyValue";
+import { formatFormReplyItem, formatFormReplyValue } from "./formReplyValue";
 
 const es = { missing: "Sin respuesta", yes: "Sí", no: "No" };
 const en = { missing: "No answer", yes: "Yes", no: "No" };
@@ -38,4 +38,11 @@ it("joins historical multi-choice labels in order and presents an empty selectio
 
 it("shows an omitted multi answer as unanswered without converting it to an empty list", () => {
   expect(formatFormReplyValue({ type: "multiChoice", value: null }, "en", en)).toBe("No answer");
+});
+describe("an item of a block in the reply", () => {
+  it("reads in one line, in the order of its questions, without the unanswered ones", () => {
+    expect(formatFormReplyItem([{ type: "choice", value: "GLIFOSATO 64%" }, { type: "decimal", value: "200" },
+      { type: "shortText", value: null }, { type: "boolean", value: true }], "es", es)).toBe("GLIFOSATO 64% · 200 · Sí");
+    expect(formatFormReplyItem([{ type: "decimal", value: "1500.5" }, { type: "boolean", value: false }], "en", en)).toBe("1,500.5 · No");
+  });
 });
