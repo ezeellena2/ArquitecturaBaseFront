@@ -22,7 +22,7 @@ for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) 
     await expectRightAligned(table.getByRole("cell", { name: "1", exact: true }));
     await expectRightAligned(table.getByRole("columnheader", { name: es ? "Cantidad" : "Quantity", exact: true }));
     // The problem of a cell goes under its row, with the name of its question.
-    await expect(errors.getByText(es ? "Cantidad: completá esta respuesta." : "Quantity: complete this answer.", { exact: true })).toBeVisible();
+    await expect(errors.getByText(es ? "Cantidad: completá esta respuesta." : "Quantity: fill in this answer.", { exact: true })).toBeVisible();
     await expect(page.getByRole("region", { name: variants.cards, exact: true }).getByRole("heading", { name: es ? "Ítem 2" : "Item 2", exact: true })).toBeVisible();
     // A table that does not fit scrolls sideways inside its box, never the page.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

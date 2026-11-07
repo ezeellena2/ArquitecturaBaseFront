@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryCorrection, FormEntryQuestion } from "./api/entries";
 import {
-  addEntryItem, carryEntryDraft, clearDependentChoices, correctionDraft, entryBlock, entryDependencyAnswers, entryDraftKey, entryQuestionSpan,
-  entrySignature, entryZones, initialEntryDraft, keepForNextEntry, moveEntryItem, removeEntryItem, toEntrySend, validateEntry, type EntryDraft,
+  addEntryItem, carryEntryDraft, clearDependentChoices, correctionDraft, entryBlock, entryDependencyAnswers, entryDraftKey, entryItemsLoaded,
+  entryProblemKeys, entryProblemQuestion, entryQuestionSpan, entrySignature, entryZones, initialEntryDraft, keepForNextEntry, moveEntryItem,
+  removeEntryItem, toEntrySend, validateEntry, type EntryDraft,
 } from "./entryForm";
 
 const ids = {
@@ -79,6 +80,26 @@ describe("loading the items of a block", () => {
     expect(validateEntry(entry, draft)).toEqual({ [`${ids.block}.1.${ids.quantity}`]: "number" });
     expect(validateEntry(entry, missing)).toEqual({ [ids.block]: "rowsAtLeast", [`${ids.block}.0.${ids.item}`]: "choose", [`${ids.block}.0.${ids.quantity}`]: "required" });
     expect(validateEntry(blockEntry(0, 1), { ...draft, rows: { [ids.block]: [...items(draft), ...items(draft)] } })[ids.block]).toBe("rowsAtMost");
+  });
+
+  it("lists the problems in the order of the form and says which question each one names", () => {
+    const entry = blockEntry();
+    const draft = filled(entry, { item: glifo, quantity: "1" }, { item: urea, quantity: "2" });
+
+    expect(entryProblemKeys(entry, draft)).toEqual([ids.supplier, ids.block,
+      `${ids.block}.0.${ids.item}`, `${ids.block}.0.${ids.quantity}`, `${ids.block}.0.${ids.unit}`,
+      `${ids.block}.1.${ids.item}`, `${ids.block}.1.${ids.quantity}`, `${ids.block}.1.${ids.unit}`]);
+    expect(entryProblemQuestion(entry, `${ids.block}.1.${ids.quantity}`)).toEqual({ question: entry.questions[3], group: entry.questions[1], row: 1 });
+    expect(entryProblemQuestion(entry, ids.block)).toEqual({ question: entry.questions[1] });
+    expect(entryProblemQuestion(entry, "00000000-0000-4000-8000-0000000000ff")).toBeNull();
+  });
+
+  it("tells an item with something loaded from one with only what came chosen", () => {
+    const empty = initialEntryDraft(blockEntry(1, 3, true));
+
+    expect(entryItemsLoaded(blockEntry(1, 3, true), empty)).toBe(false);
+    expect(entryItemsLoaded(blockEntry(), { ...empty, rows: { [ids.block]: [{ ...items(empty)[0], values: { [ids.quantity]: "3" }, choices: {} }] } })).toBe(true);
+    expect(entryItemsLoaded(blockEntry(1, 3, true), { ...empty, rows: { [ids.block]: [{ ...items(empty)[0], choices: { [ids.item]: [urea] } }] } })).toBe(true);
   });
 
   it("sends the block with its items, each with its answers in the order of the questions", () => {

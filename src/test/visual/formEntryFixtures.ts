@@ -55,12 +55,31 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       { fieldId: fields.confirmed, type: "boolean", label: en ? "Confirmed" : "Confirmado", help: null, required: false, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.detail, type: "shortText", label: en ? "Optional detail" : "Detalle opcional", help: null, required: false, maxLength: 120, options: null, selection: null, files: null, catalog: null },
     ] };
-  const entries = new Map([[sowing.definitionId, sowing], [sheetEntry.definitionId, sheetEntry]]);
+  // RG2-A: «Recepción de insumos» with the block «Artículos», on the page (`entries-rows`) and next to the sheet (`responses-app-rows`).
+  const rows = scenario === "entries-rows" || scenario === "responses-app-rows";
+  const block = { supplier: id(624), remito: id(625), items: id(626), article: id(627), quantity: id(628), unit: id(629), state: id(630), notes: id(631) };
+  const articles: FormEntryOption[] = ["GLIFOSATO 64%", "ATRAZINA 50%", "UREA GRANULADA - 46-00-00", "2,4-D AMINA 60%"].map((title, index) => ({ id: id(830 + index), title, description: null }));
+  const reception = (definitionId: string, versionId: string): FormEntry => ({ definitionId, versionId, versionNumber: 4, prefix: "INS", name: en ? "Supplies reception" : "Recepción de insumos",
+    culture: language, submitLabel: en ? "Send" : "Enviar", maxFileSizeMiB: 25, questions: [
+      { fieldId: block.supplier, type: "shortText", label: en ? "Supplier" : "Proveedor", help: null, required: true, maxLength: 80, options: null, selection: null, files: null, catalog: null },
+      { fieldId: block.remito, type: "shortText", label: en ? "Delivery note No." : "N° de remito", help: null, required: true, maxLength: 30, options: null, selection: null, files: null, catalog: null },
+      { fieldId: block.items, type: "group", label: en ? "Articles" : "Artículos", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null,
+        rows: { minRows: 1, maxRows: 20 } },
+      { fieldId: block.article, type: "choice", label: en ? "Article" : "Artículo", help: null, required: true, maxLength: null, options: null, selection: null, files: null,
+        catalog: { onlyOption: null, issue: null, missingData: null }, repeated: true },
+      { fieldId: block.quantity, type: "decimal", label: en ? "Quantity" : "Cantidad", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null, repeated: true },
+      { fieldId: block.unit, type: "choice", label: en ? "Unit" : "Unidad", help: null, required: true, maxLength: null, selection: null, files: null, catalog: null, repeated: true,
+        options: (en ? ["Liters", "Kilos"] : ["Litros", "Kilos"]).map((label, index) => ({ id: id(840 + index), label })) },
+      { fieldId: block.state, type: "boolean", label: en ? "Arrived in good condition?" : "¿Llegó en buen estado?", help: null, required: false, maxLength: null, options: null, selection: null, files: null, catalog: null, repeated: true },
+      { fieldId: block.notes, type: "longText", label: en ? "Notes" : "Observaciones", help: null, required: false, maxLength: 600, options: null, selection: null, files: null, catalog: null, repeated: true },
+    ] });
+  const entries = new Map(rows ? [[sowing.definitionId, reception(sowing.definitionId, id(604))], [sheetEntry.definitionId, reception(sheetEntry.definitionId, id(605))]]
+    : [[sowing.definitionId, sowing], [sheetEntry.definitionId, sheetEntry]]);
   const createOnly = scenario === "entries-create-only";
   const names = en ? ["Sowing", "Rain", "Application", "Harvest", "Previous survey"] : ["Siembra", "Lluvia", "Aplicación", "Cosecha", "Relevamiento anterior"];
   // Whoever only completes forms counts their own and sees their last one (CW9).
   const counts = createOnly ? [9, 86, 12, 0, 3] : [12, 321, 125, 0, 4];
-  const rows: FormOverviewRow[] = names.map((name, index) => ({ id: index === 0 ? sowing.definitionId : id(640 + index), name, prefix: ["SIE", "LLU", "APL", "COS", "REL"][index],
+  const overviewRows: FormOverviewRow[] = names.map((name, index) => ({ id: index === 0 ? sowing.definitionId : id(640 + index), name, prefix: ["SIE", "LLU", "APL", "COS", "REL"][index],
     deactivatedAtUtc: index === 4 ? "2026-10-20T15:00:00Z" : null, pendingApprovalCount: null,
     responseCount: counts[index],
     lastResponse: index === 3 ? null : { id: id(660 + index), number: ["SIE", "LLU", "APL", "COS", "REL"][index] + "-" + String(counts[index]).padStart(6, "0"),
@@ -74,9 +93,9 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       calls.push({ method: request.method, path: url.pathname });
       if (url.pathname === "/api/forms/overview" && scenario.startsWith("entries")) {
         const state = url.searchParams.get("state") ?? "Active";
-        const selected = rows.filter(row => createOnly ? row.deactivatedAtUtc === null : (state === "Deactivated") === (row.deactivatedAtUtc !== null));
+        const selected = overviewRows.filter(row => createOnly ? row.deactivatedAtUtc === null : (state === "Deactivated") === (row.deactivatedAtUtc !== null));
         const body: FormOverview = { forms: { items: selected, page: 1, pageSize: 20, totalCount: selected.length, totalPages: 1, hasPrevious: false, hasNext: false },
-          filterCounts: { active: rows.filter(row => row.deactivatedAtUtc === null).length, deactivated: createOnly ? 0 : 1, deactivatedPending: null } };
+          filterCounts: { active: overviewRows.filter(row => row.deactivatedAtUtc === null).length, deactivated: createOnly ? 0 : 1, deactivatedPending: null } };
         return Response.json(body);
       }
       const match = /^\/api\/forms\/entries\/([^/]+)(?:\/versions\/[^/]+\/questions\/([^/]+)\/options)?$/.exec(url.pathname);
@@ -85,7 +104,7 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       if (!entry) return Response.json({ code: "Forms.Definition.NotFound" }, { status: 404 });
       if (match[2]) {
         const chosenFarm = farms.find(option => option.id === url.searchParams.get(`answers[${farm}]`))?.title;
-        const source = match[2] === fields.seed ? seeds : match[2] === farm ? farms : dependent ? lots.filter(lot => lot.description === chosenFarm) : lots;
+        const source = match[2] === fields.seed ? seeds : match[2] === farm ? farms : match[2] === block.article ? articles : dependent ? lots.filter(lot => lot.description === chosenFarm) : lots;
         const search = (url.searchParams.get("search") ?? "").toLocaleLowerCase(language);
         const matching = source.filter(option => (option.title + " " + (option.description ?? "")).toLocaleLowerCase(language).includes(search));
         const page = Number(url.searchParams.get("page") ?? 1);

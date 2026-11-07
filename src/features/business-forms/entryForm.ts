@@ -236,6 +236,37 @@ export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<strin
   return problems;
 }
 
+/**
+ * The keys of the problems in the order of the form, so the first one takes the focus: each question and, for the block, its
+ * own problem and then the questions of each item.
+ */
+export function entryProblemKeys(entry: FormEntry, draft: EntryDraft): string[] {
+  const block = entryBlock(entry);
+  return entry.questions.flatMap(question => question.repeated ? []
+    : question.type === "group" && block ? [question.fieldId, ...itemsOf(draft, question.fieldId).flatMap((_, row) =>
+      block.questions.map(inner => entryItemPath(question.fieldId, row, inner.fieldId)))]
+    : [question.fieldId]);
+}
+
+/** The question a problem's key names and, for one of an item, its block and its place; null for a key of another version. */
+export function entryProblemQuestion(entry: FormEntry, key: string): { question: FormEntryQuestion; group?: FormEntryQuestion; row?: number } | null {
+  const [blockId, row, fieldId] = key.split(".");
+  if (fieldId === undefined) {
+    const question = entry.questions.find(item => item.fieldId === key);
+    return question ? { question } : null;
+  }
+  const group = entry.questions.find(item => item.fieldId === blockId), question = entry.questions.find(item => item.fieldId === fieldId);
+  return group && question ? { question, group, row: Number(row) } : null;
+}
+
+/** Whether an item holds something besides the only option the filters leave: leaving with it asks first. */
+export function entryItemsLoaded(entry: FormEntry, draft: EntryDraft): boolean {
+  const block = entryBlock(entry);
+  return !!block && itemsOf(draft, block.group.fieldId).some(item => Object.values(item.values).some(value => value !== "")
+    || Object.entries(item.choices).some(([fieldId, chosen]) => chosen.length > 0
+      && block.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id));
+}
+
 /** The files a question carries: the new ones and, in a correction, those of the replaced response that stay. */
 export function entryFileCount(question: FormEntryQuestion, draft: EntryDraft): number {
   return (draft.files[question.fieldId]?.length ?? 0) + (draft.kept?.[question.fieldId]?.length ?? 0);

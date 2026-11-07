@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { formatDateOnly, formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { CheckIcon } from "@/shared/ui/icons";
 import { Surface } from "@/shared/ui/Surface";
-import type { FormEntry, FormEntryQuestion, FormEntrySubmitted } from "../api/entries";
-import type { EntryDraft } from "../entryForm";
+import type { FormEntry, FormEntryOption, FormEntryQuestion, FormEntrySubmitted } from "../api/entries";
+import { entryBlock, type EntryDraft } from "../entryForm";
 
 /**
  * After sending (CW5): what was sent, read from what the person loaded. Whoever only completes forms cannot read the
@@ -14,20 +14,30 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
   entry: FormEntry; draft: EntryDraft; result: FormEntrySubmitted; timeZone?: string; actions: ReactNode;
 }) {
   const { t, i18n } = useTranslation("formEntries");
-  const shown = (question: FormEntryQuestion): string => {
+  const block = entryBlock(entry);
+  // An answer of the response or of an item of the block, which holds its own values and options.
+  const text = (question: FormEntryQuestion, values: Record<string, string> = draft.values, choices: Record<string, FormEntryOption[]> = draft.choices): string => {
     if (question.type === "photo" || question.type === "document") {
       const count = draft.files[question.fieldId]?.length ?? 0;
       return count ? t(question.type === "photo" ? "sent.photos" : "sent.files", { count }) : t("sent.none");
     }
     if (question.type === "choice" || question.type === "multiChoice") {
-      const chosen = draft.choices[question.fieldId] ?? [];
+      const chosen = choices[question.fieldId] ?? [];
       return chosen.length ? chosen.map(option => option.title).join("; ") : t("sent.none");
     }
-    const value = draft.values[question.fieldId] ?? "";
+    const value = values[question.fieldId] ?? "";
     if (!value) return t("sent.none");
     if (question.type === "date") return formatDateOnly(value, i18n.language, "numeric") ?? value;
     if (question.type === "boolean") return t(value === "true" ? "sent.yes" : "sent.no");
     return value;
+  };
+  // The block reads as in the sheet (RG4-A): how many items, in grey, and the first answer of each.
+  const shown = (question: FormEntryQuestion): ReactNode => {
+    if (question.type !== "group") return text(question);
+    const items = draft.rows?.[question.fieldId] ?? [], first = block?.questions[0];
+    if (!items.length) return t("sent.none");
+    const firsts = first ? items.map(item => text(first, item.values, item.choices)).filter(value => value !== t("sent.none")) : [];
+    return <><span className="text-[var(--color-content-muted)]">{items.length} ·</span> {firsts.join(", ") || t("sent.none")}</>;
   };
   return <Surface title={t("sent.title")} actions={actions}>
     <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--color-border)] px-4 py-3 text-sm">
@@ -36,7 +46,7 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
       <span className="text-[var(--color-content-muted)]">{t("sent.version", { name: entry.name, version: entry.versionNumber })}</span>
     </p>
     <dl className="divide-y divide-[var(--color-border)]">
-      {entry.questions.map(question => <div key={question.fieldId} className="grid gap-1 px-4 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-4">
+      {entry.questions.filter(question => !question.repeated).map(question => <div key={question.fieldId} className="grid gap-1 px-4 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-4">
         <dt className="text-[var(--color-content-muted)]">{question.label}</dt>
         <dd className="min-w-0 break-words">{shown(question)}</dd>
       </div>)}

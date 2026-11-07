@@ -18,6 +18,8 @@ interface Props {
   chosen: readonly FormEntryOption[];
   onChange: (chosen: FormEntryOption[]) => void;
   id: string;
+  /** The name of the field when no label is in sight, as in a cell of the table of items («Ítem 2 · Artículo»). */
+  label?: string;
   invalid?: boolean;
   describedBy?: string;
   disabled?: boolean;
@@ -58,7 +60,7 @@ function ListState({ loading, failed, empty, search, onRetry }: { loading: boole
   return null;
 }
 
-function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
+function DesktopCatalogField({ entry, question, chosen, onChange, id, label, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
   const { t } = useTranslation("formEntries");
   const multiple = question.type === "multiChoice";
   const max = question.selection?.maxSelected ?? 1;
@@ -73,7 +75,7 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, invalid, d
     search={list.debounced} onRetry={() => void list.options.refetch()}/>;
   const field = <div className="flex min-w-0 items-center gap-2">
     <div className="min-w-0 flex-1">
-      <Autocomplete id={id} aria-label={question.label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
+      <Autocomplete id={id} aria-label={label ?? question.label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
         placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : multiple || !single ? t("catalog.search", { label: question.label }) : undefined}
         value={typing || multiple ? list.search : single?.title ?? ""} multiple={multiple}
         onFocus={() => setOpened(true)} onClick={() => setOpened(true)}

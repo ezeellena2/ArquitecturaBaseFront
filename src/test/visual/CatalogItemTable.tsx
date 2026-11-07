@@ -42,7 +42,7 @@ export function CatalogItemTable() {
       required: "Completá esta respuesta.", option: "Elegí una opción." }
     : { article: "Article", quantity: "Quantity", unit: "Unit", state: "Arrived in good condition?", notes: "Notes", block: "Articles", yes: "Yes", no: "No",
       choose: "Choose…", liters: "Liters", kilos: "Kilos", empty: "Items · empty", full: "Items · at the maximum", errors: "Items · with errors", cards: "Items · in one column",
-      required: "Complete this answer.", option: "Choose an option." };
+      required: "Fill in this answer.", option: "Choose an option." };
   const columns: ItemTableColumn[] = [
     { key: "article", label: text.article, required: true, className: "min-w-48" },
     { key: "quantity", label: text.quantity, required: true, numeric: true, className: "w-28" },

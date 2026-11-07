@@ -44,6 +44,8 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 
 `formRows` (RG1-A, RG6-A y RG9-A) recorre sin golden, en es/en a 1440, 390 y 320, el bloque de renglones del editor (`forms-rows`): su fila con el recuadro de sus preguntas 3.1, 3.2…, su editor con mínimo y máximo, y una pregunta del bloque con «Se carga varias veces» marcada y foto, documento y «Renglones» apagados con su motivo.
 
+`formEntryRows` (RG2-A) recorre sin golden, en es/en a 1440, 390 y 320, la carga de «Recepción de insumos» con el bloque «Artículos» (`entries-rows`): en escritorio la tabla, con su línea entre columnas, «Agregar ítem» que lleva el foco al ítem nuevo y los errores bajo cada fila; en el celular los recuadros, con «Agregar ítem» al pie y Enviar fijo abajo; y a 1440 el panel junto a la planilla (`responses-app-rows`), en recuadros y con el número angosto. Sus capturas van a `test-results`.
+
 `itemTable` (RG2-A) recorre sin golden, en es/en a 1440, 390 y 320, las dos piezas de la carga de ítems en el catálogo (`?scenario=item-table`): la tabla vacía, con el máximo y con errores (la línea entre columnas, los números a la derecha y el problema bajo su fila, sin desplazar la página) y los recuadros en una columna; sus capturas van a `test-results`.
 
 IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320.

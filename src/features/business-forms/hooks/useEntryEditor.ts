@@ -4,7 +4,10 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
 import type { FormEntry, FormEntrySubmitted } from "../api/entries";
-import { carryEntryDraft, entryDraftKey, entryQuestionId, initialEntryDraft, validateEntry, type EntryDraft, type EntryProblem } from "../entryForm";
+import {
+  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, initialEntryDraft, validateEntry,
+  type EntryDraft, type EntryProblem,
+} from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
 
 export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
@@ -19,7 +22,7 @@ export interface EntrySubmission { submit: (entry: FormEntry, draft: EntryDraft)
  */
 export function useEntryEditor(formId: string, entry: FormEntry | undefined, owner: string, initial?: EntryDraft,
   options?: { submission?: EntrySubmission; correcting?: boolean }) {
-  const { t } = useTranslation("formEntries");
+  const { t } = useTranslation(["formEntries", "common"]);
   const [state, setState] = useState<{ entry: FormEntry; draft: EntryDraft } | null>(null);
   const [attempted, setAttempted] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -34,10 +37,12 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   }
   const draft = state && state.entry === entry ? state.draft : null;
   const problems = entry && draft ? validateEntry(entry, draft) : {};
-  const problemMessage = useCallback((problem: EntryProblem, fieldId: string): string => {
-    const question = entry?.questions.find(item => item.fieldId === fieldId);
+  // A problem of an item names the question of the block; one of the block, how many items it takes.
+  const problemMessage = useCallback((problem: EntryProblem, key: string): string => {
+    const question = entry ? entryProblemQuestion(entry, key)?.question : undefined;
     const count = problem === "chooseAtLeast" ? question?.selection?.minSelected : problem === "chooseAtMost" ? question?.selection?.maxSelected
-      : problem === "maxLength" ? question?.maxLength : problem === "filesAtLeast" ? question?.files?.minFiles : problem === "filesAtMost" ? question?.files?.maxFiles : undefined;
+      : problem === "maxLength" ? question?.maxLength : problem === "filesAtLeast" ? question?.files?.minFiles : problem === "filesAtMost" ? question?.files?.maxFiles
+      : problem === "rowsAtLeast" ? question?.rows?.minRows : problem === "rowsAtMost" ? question?.rows?.maxRows : undefined;
     return t("problems." + problem, { count: count ?? 0 });
   }, [entry, t]);
   const errors: Record<string, string> = {};
@@ -46,18 +51,28 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const missing = entry?.questions.find(question => question.catalog?.issue === "Forms.Record.RecipientDataMissing");
   const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
     : Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
-    || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entry?.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id));
+    || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entry?.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id)
+    || !!entry && entryItemsLoaded(entry, draft));
 
   const change = (next: EntryDraft) => {
     if (!entry) return;
-    // A changed answer is a new send: the server's error on that question no longer applies.
-    setServerErrors(current => Object.fromEntries(Object.entries(current).filter(([fieldId]) =>
-      JSON.stringify(next.values[fieldId]) === JSON.stringify(draft?.values[fieldId]) && next.choices[fieldId] === draft?.choices[fieldId] && next.files[fieldId] === draft?.files[fieldId])));
+    // A changed answer is a new send: the server's error on that question no longer applies. In the block, an error stays while
+    // its item keeps its place and that answer; the block's own, while it keeps as many items.
+    setServerErrors(current => Object.fromEntries(Object.entries(current).filter(([key]) => {
+      const [blockId, row, fieldId] = key.split(".");
+      if (fieldId !== undefined) {
+        const before = draft?.rows?.[blockId]?.[Number(row)], after = next.rows?.[blockId]?.[Number(row)];
+        return !!before && before.key === after?.key && before.values[fieldId] === after.values[fieldId] && before.choices[fieldId] === after.choices[fieldId];
+      }
+      if (next.rows?.[key] || draft?.rows?.[key]) return next.rows?.[key]?.length === draft?.rows?.[key]?.length;
+      return JSON.stringify(next.values[key]) === JSON.stringify(draft?.values[key]) && next.choices[key] === draft?.choices[key] && next.files[key] === draft?.files[key];
+    })));
     setState({ entry, draft: next });
   };
-  const focus = (fieldId: string) => window.requestAnimationFrame(() => {
-    const container = document.querySelector<HTMLElement>(`[data-entry-question="${fieldId}"]`);
-    const target = document.getElementById(entryQuestionId(fieldId)) ?? container?.querySelector<HTMLElement>("input,textarea,button,[role=radio]");
+  // The key of a problem: a question, the block (its «Agregar ítem») or a question of an item (`entryItemPath`).
+  const focus = (key: string) => window.requestAnimationFrame(() => {
+    const container = document.querySelector<HTMLElement>(`[data-entry-question="${key}"]`);
+    const target = document.getElementById(entryQuestionId(key)) ?? container?.querySelector<HTMLElement>("input,textarea,button,[role=radio]");
     target?.focus();
   });
 
@@ -65,8 +80,8 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const send = async (): Promise<FormEntrySubmitted | null> => {
     if (!entry || !draft || sending || conflict) return null;
     setAttempted(true);
-    const first = entry.questions.find(question => problems[question.fieldId]);
-    if (first) { setReveal(value => value + 1); focus(first.fieldId); return null; }
+    const first = entryProblemKeys(entry, draft).find(key => problems[key]);
+    if (first) { setReveal(value => value + 1); focus(first); return null; }
     try {
       const result = await submit(entry, draft);
       setServerErrors({});
@@ -78,19 +93,23 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
       else if (error.status === 403) setConflict("forbidden");
       else if (error.status === 404) setConflict("missing");
       else if (error.status === 400 && error.errors) {
+        // The path of an item («answers.<block>.<n>.<question>») is the key of its problem, as the form counts them.
         const fields: Record<string, string> = {};
         for (const [path, messages] of Object.entries(error.errors)) {
           if (!path.startsWith("answers.")) continue;
-          const fieldId = path.slice("answers.".length);
-          const chosen = draft.choices[fieldId]?.[0];
-          fields[fieldId] = error.code === "Forms.Record.CatalogItemInactive" && chosen ? t("catalog.unavailable", { title: chosen.title }) : messages[0] ?? "";
+          const key = path.slice("answers.".length), [blockId, row, fieldId] = key.split(".");
+          const chosen = (fieldId === undefined ? draft.choices[key] : draft.rows?.[blockId]?.[Number(row)]?.choices[fieldId])?.[0];
+          fields[key] = error.code === "Forms.Record.CatalogItemInactive" && chosen ? t("catalog.unavailable", { title: chosen.title }) : messages[0] ?? "";
         }
         setServerErrors(fields);
         setReveal(value => value + 1);
-        const question = entry.questions.find(item => fields[item.fieldId]);
-        if (question) {
-          notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: t("send.review", { label: question.label }) });
-          focus(question.fieldId);
+        const first = entryProblemKeys(entry, draft).find(key => fields[key]);
+        const target = first ? entryProblemQuestion(entry, first) : null;
+        if (first && target) {
+          const label = target.group
+            ? `${target.group.label} · ${t("common:itemTable.cell", { number: (target.row ?? 0) + 1, label: target.question.label })}` : target.question.label;
+          notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: t("send.review", { label }) });
+          focus(first);
         } else notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: error.detail ?? undefined });
       } else {
         const feedback = errorFeedback(error);

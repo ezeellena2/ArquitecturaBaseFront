@@ -52,7 +52,11 @@
     "filesAtLeast_one": "Agregá al menos un archivo.",
     "filesAtLeast_other": "Agregá al menos {{count}} archivos.",
     "filesAtMost_one": "Hasta {{count}} archivo.",
-    "filesAtMost_other": "Hasta {{count}} archivos."
+    "filesAtMost_other": "Hasta {{count}} archivos.",
+    "rowsAtLeast_one": "Agregá al menos {{count}} ítem.",
+    "rowsAtLeast_other": "Agregá al menos {{count}} ítems.",
+    "rowsAtMost_one": "Hasta {{count}} ítem.",
+    "rowsAtMost_other": "Hasta {{count}} ítems."
   },
   "catalog": {
     "search": "Buscar en {{label}}",
