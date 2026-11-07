@@ -93,7 +93,7 @@ it("says the official view is loading until its frame loads, without notes",asyn
  expect(frame).toBeInTheDocument();
 });
 
-// VO1-A (2026-11-06): the dialog takes the size Meta lays its preview out for (430 × 800) and the page scales whole to fit. The backend
+// VO1-A (2026-11-06): the dialog takes the size Meta lays its interactive preview out for (480 × 840) and the page scales whole to fit. The backend
 // gives the link ready to be gone through (Meta's interactive mode, with sample options of each list): it is used as it comes, also
 // in another tab, so nothing the backend put in it is lost.
 it("shows Meta's preview as the backend gives it, at the size Meta lays it out for", async () => {
@@ -102,6 +102,6 @@ it("shows Meta's preview as the backend gives it, at the size Meta lays it out f
  renderPreview();
  const frame = await screen.findByTitle("Vista oficial del formulario en WhatsApp");
  expect(frame.getAttribute("src")).toBe(interactive);
- expect(frame).toHaveStyle({ width: "430px", height: "800px" });
+ expect(frame).toHaveStyle({ width: "480px", height: "840px" });
  expect(screen.getByRole("link", { name: "Abrir en otra pestaña" }).getAttribute("href")).toBe(interactive);
 });

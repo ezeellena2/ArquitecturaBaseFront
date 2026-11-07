@@ -13,10 +13,11 @@ import { fetchFormPreview } from "../api/forms";
 import { ExpiredFormPreview, type readFormPreview } from "../api/response";
 import type { FormCulture } from "../model";
 
-// VO1-A (2026-11-06): Meta lays its official preview out for a 430 × 800 frame, the size its documentation embeds. The dialog gives
-// it that room in rem (26.875 × 50 at 16 px), so on the desktop scale it shrinks with the rest of the app, and the page scales
+// VO1-A (2026-11-06): in its interactive mode Meta's page adds a «Vista previa» panel with its own buttons, and below 480 × 840
+// (measured on the real page) it shows scroll bars; the 430 × 800 of its documentation is for the plain preview. The dialog gives
+// it that room in rem (30 × 52.5 at 16 px), so on the desktop scale it shrinks with the rest of the app, and the page scales
 // whole to fit a shorter or narrower window.
-const META_FRAME = { width: 430, height: 800 } as const;
+const META_FRAME = { width: 480, height: 840 } as const;
 
 // Meta's page takes a moment to draw after its URL arrives: until the frame loads, the region says it is loading. The listener
 // is attached before the browser paints, so a load cannot be missed.
@@ -81,7 +82,7 @@ export function OfficialFormPreview({ definitionId, versionId, versionNumber, cu
   const view = live?.url ?? null;
   return <Dialog open onOpenChange={open=>{if(!open)onClose();}}>
     {/* The dialog is as tall as Meta's frame and its title and footer (8rem), or the window, and as wide as the frame. */}
-    <DialogContent className="flex h-[min(58rem,calc(100svh-2rem))] w-[28.875rem] flex-col overflow-hidden sm:max-w-[calc(100%-2rem)]" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
+    <DialogContent className="flex h-[min(60.5rem,calc(100svh-2rem))] w-[32rem] flex-col overflow-hidden sm:max-w-[calc(100%-2rem)]" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
       <DialogHeader><DialogTitle>{t("publication.previewTitle",{version:versionNumber})}</DialogTitle></DialogHeader>
       {/* While it loads, expires or fails, the region keeps the room of the frame: the dialog does not jump when the view arrives. */}
       <div className="flex min-h-0 flex-1 flex-col">

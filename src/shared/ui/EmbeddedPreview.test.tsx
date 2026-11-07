@@ -13,7 +13,7 @@ describe("EmbeddedPreview", () => {
     expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
   });
 
-  // VO1-A (2026-11-06): a page laid out for a fixed frame (Meta's official preview, 430 × 800) keeps that layout and scales whole to
+  // VO1-A (2026-11-06): a page laid out for a fixed frame (like Meta's official preview) keeps that layout and scales whole to
   // the room it is given, never cut and without scroll bars.
   it("keeps a fixed frame's layout and scales it whole to its room", () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(322.5);

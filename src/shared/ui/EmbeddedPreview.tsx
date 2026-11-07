@@ -4,7 +4,7 @@ import { cn } from "@/shared/lib/utils";
 type Frame = { readonly width: number; readonly height: number };
 
 // Read-only preview; the owner validates the URL and supplies an accessible title.
-// With `frame`, the page keeps the size its site lays it out for (Meta's official preview: 430 × 800 CSS px) and scales whole to the
+// With `frame`, the page keeps the size its site lays it out for (Meta's interactive official preview: 480 × 840 CSS px) and scales whole to the
 // room its owner gives it: never cut and without scroll bars (VO1-A, 2026-11-06).
 export function EmbeddedPreview({ url, title, kind = "external", className, frame }: { url: string; title: string; kind?: "external" | "pdf"; className?: string; frame?: Frame }) {
   const sandbox = kind === "pdf" ? undefined : "allow-scripts allow-same-origin allow-forms";

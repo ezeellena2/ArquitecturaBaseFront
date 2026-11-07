@@ -991,10 +991,12 @@ barra horizontal. En el lienzo provisorio [Formularios desde la app](https://cla
   - La regla vale para toda la app ([fundamento visual](visual-baseline.md#el-estado-una-vez--2026-11-06)): lo que dice el
     encabezado no se repite debajo. Cambiaron también Información del negocio, la propuesta de un catálogo y el aviso de
     un formulario dado de baja.
-- **VO1-A, la vista oficial a la medida de Meta, que se recorre.** Meta arma su vista para un marco de 430 × 800 (el que
-  usa su documentación para embeberla) y el diálogo le daba 426 × 360.
+- **VO1-A, la vista oficial a la medida de Meta, que se recorre.** Meta arma su vista común para un marco de 430 × 800
+  (el que usa su documentación para embeberla) y el diálogo le daba 426 × 360. En el modo interactivo su página suma el
+  panel «Vista previa» con sus botones y necesita 480 × 840: con menos muestra sus propias barras (medido en la página real
+  el 2026-11-06, cuando el usuario pidió ver el celular entero sin desplazarse).
   - El diálogo es tan alto como el marco más su título y su pie, o la ventana, y tan ancho como el marco. El marco va en
-    rem (26,875 × 50, o sea 430 × 800 a 16 px): en escritorio, con la raíz al 75 %, se ve con la misma densidad que la
+    rem (30 × 52,5, o sea 480 × 840 a 16 px): en escritorio, con la raíz al 75 %, se ve con la misma densidad que la
     app. La página de Meta conserva su armado y se achica entera para entrar (`EmbeddedPreview` con `frame`): sin
     barras y sin cortes, también a 390 y 320 px.
   - La vista va en el modo interactivo de Meta (`interactive=true`), que exige decir dónde arranca: `flow_action=navigate`
@@ -1012,4 +1014,4 @@ barra horizontal. En el lienzo provisorio [Formularios desde la app](https://cla
 Las escenas `forms.spec` (la publicación avanza sola con el reloj de la prueba, sin «Consultar publicación» y con el
 motivo de «Publicar en WhatsApp»; el intento sin confirmar con «Consultar publicación» y «Repetir el mismo intento» en
 el encabezado) y `formPublicationReads.spec` (en revisión, con el motivo; una publicación que no salió, con «Problemas»;
-la vista oficial interactiva a 430 × 800, achicada dentro del diálogo y del viewport) lo recorren a 1440, 390 y 320 px.
+la vista oficial interactiva a 480 × 840, achicada dentro del diálogo y del viewport) lo recorren a 1440, 390 y 320 px.
