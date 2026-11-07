@@ -342,7 +342,7 @@ Por programar. Una pregunta de catálogo pide primero el valor de un campo del m
 opciones con ese valor, como dibujan **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma
 pantalla») y, para las listas dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
 [lienzo provisorio](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en las filas «Formularios · un combo que filtra el
-siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y la prueba con Meta que va antes están en el
+siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y lo que dio la prueba con Meta están en el
 [plan](../../../ArquitecturaBase/docs/plans/2026-11-07-elegir-primero-por-un-campo.md).
 
 - **En el editor,** debajo de «Permitir elegir varias», la casilla «Elegir primero por un campo» (`CheckboxField` con su
@@ -357,8 +357,8 @@ siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y la pru
 - **En los renglones,** el par son dos columnas de la tabla de RG2-A, «Rubro» y la pregunta, y cada renglón elige el suyo; en
   el panel y el celular, los dos combos van en el recuadro del renglón.
 - **En WhatsApp,** en la pantalla de la pregunta o del renglón va primero el desplegable del campo y, al elegir, aparece el
-  de la pregunta con sólo sus opciones, hasta 200 por valor. Depende de la prueba con Meta: si no anda, la pregunta va con la
-  lista entera, como hoy (LD2-B).
+  de la pregunta con sólo sus opciones, hasta 200 por valor. Si el valor cambia, WhatsApp limpia la opción elegida. Se probó
+  con Meta el 2026-11-07, en la vista oficial y en el celular, con los 331 artículos de ejemplo.
 - **Lo que se guarda** es la opción. El valor del campo es un dato de la opción y se ve en «Columnas» de la planilla, como
   los demás campos. Al corregir, el primer combo arranca con el valor de la opción guardada.
 - **Listas dependientes con renglones (LD3-A).** «Respuesta de» dice de dónde sale: en una pregunta del bloque, «Elige de
