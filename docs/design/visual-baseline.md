@@ -946,3 +946,22 @@ el certificado de ARCA por vencer (dice por qué y cuándo).
 Las pruebas `PublicationProgress`, `FormsPage`, `BusinessInformationPage`, `CatalogManualProposal` y `FormLifecycleNotice`
 fijan cada caso; las escenas `forms.spec`, `formPublicationReads.spec`, `formLifecycle.spec` y `catalogManualProposal.spec`
 los muestran.
+
+## Esqueletos de carga — 2026-11-06
+
+Revisando qué pantallas quedaban en blanco, con un aro suelto o saltaban al llegar los datos, el usuario aprobó tres
+cambios en el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas ES1,
+ES2 y ES3. Lo que carga ocupa el lugar y la medida de lo que va a llegar ([principio](#principios-del-sistema), 2026-11-05).
+
+| Tablero | Elección | En el código |
+| --- | --- | --- |
+| ES1 · La primera carga de un listado | **ES1-A**: el aro de LC2-A se conserva, pero dentro de la tabla: el encabezado de siempre y el aro centrado en el alto de ocho renglones, así al llegar las filas no cambia de alto. Descartó ES1-B (renglones esqueleto) y ES1-C (renglones con la línea que corre) | `DataTable` (rama `isLoading`) |
+| ES2 · Cambiar de pantalla | Aprobado: la banda de `Page` ya está con su alto y su borde, el título es un bloque de carga y el cuerpo una zona con tres barras; es el fallback del `Suspense` de las rutas `lazy` y de los permisos pendientes | `PageLoading`, `Page loading`; lo usan `AppLayout` y `ProtectedRoute` |
+| ES3 · Formularios de ajustes | Aprobado: Configuración, Apariencia, Inteligencia artificial e Información del negocio dibujan las zonas de su formulario (barra de título, etiqueta y control) en vez de un bloque de alto fijo; los botones de la banda no se dibujan | `FormSkeleton`, con las zonas que pasa cada pantalla |
+
+No cambia: el aro dentro de un botón (`pending`), un listado que vuelve a leer (LC2-A), el menú ni los chats de WhatsApp;
+vacío y error siguen como estaban. Queda sin tocar el tono del `Skeleton` (`bg-accent`, #f2f5f3 sobre blanco), que se ve
+muy tenue: cambiarlo alcanza a toda la app y no se decidió. Un esqueleto de fila alternada necesitaría el tinte de carga
+(`loading-tint`) y no `bg-accent`, que casi coincide con el tono de la fila.
+
+Las pruebas `DataTable`, `PageLoading` y `FormSkeleton` fijan cada caso.

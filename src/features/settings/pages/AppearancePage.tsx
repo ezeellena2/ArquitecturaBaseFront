@@ -17,7 +17,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { FormSkeleton } from "@/shared/ui/FormSkeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 
@@ -31,7 +31,7 @@ export function AppearancePage() {
   if (initial === undefined && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   if (initial) return <AppearanceEditor initial={initial} />;
-  return <Page title={t("appearance.title")}>{query.isFetching || query.isPending ? <Skeleton className="h-52" />
+  return <Page title={t("appearance.title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 4 }, { rows: 3 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
 }
 

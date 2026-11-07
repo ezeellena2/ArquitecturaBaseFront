@@ -6,6 +6,7 @@ import { usePermissions, type PermissionRequirement } from "./usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { PageLoading } from "@/shared/ui/PageLoading";
 import { Spinner } from "@/shared/ui/Spinner";
 
 /// Exige sesión y, si se pide, un permiso (sección 7.3). Sin sesión manda a /login guardando a dónde iba.
@@ -37,7 +38,7 @@ export function ProtectedRoute({ permission }: { permission?: PermissionRequirem
   // todavía no se consultó (la consulta espera a que haya sesión), así que el permiso sigue sin saberse y la
   // ruta no se abre sola. El resto de la pantalla (sidebar y barra de arriba) ya está dibujado.
   if (isPending) {
-    return <Spinner />;
+    return <PageLoading />;
   }
 
   // Un fallo al consultar el permiso (por ejemplo, un 500 de /api/me) no es lo mismo que no tenerlo: es un

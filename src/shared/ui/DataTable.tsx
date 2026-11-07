@@ -95,11 +95,49 @@ export function DataTable<TRow>({
     );
   }
 
+  const header = (
+    <TableHeader>
+      {/* TableHeader aporta el tono y neutraliza el hover de la banda para todos los listados. */}
+      <TableRow>
+        {columns.map((column) => (
+          <TableHead
+            key={column.id}
+            scope="col"
+            aria-sort={ariaSort(column.id, sort)}
+            numeric={column.numeric}
+            className={column.align === "right" ? "text-right" : undefined}
+          >
+            {column.sortable && onSortChange ? (
+              // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
+              // ordenable se ve de otro tamaño que las demás.
+              <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={cn(headerText, "-mx-2 px-2")}>
+                {column.header}
+              </Button>
+            ) : (
+              column.header
+            )}
+          </TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+  );
+
+  // La primera carga conserva su aro (LC2-A) pero la tabla ya está: el encabezado de siempre y el aro centrado en
+  // el alto de ocho renglones, así al llegar las filas el listado no cambia de alto (tablero ES1-A).
   if (isLoading) {
     return (
-      <div className="flex justify-center p-10">
-        <Spinner />
-      </div>
+      // Presentacional: un marcador de lugar con su aro no es una tabla de datos para el lector de pantalla, que
+      // oye «Cargando…»; la tabla aparece, con su rol, cuando llegan las filas.
+      <Table role="presentation">
+        {header}
+        <TableBody striped={false}>
+          <TableRow className="h-[calc(var(--height-table-row)*8)] hover:bg-transparent">
+            <TableCell colSpan={columns.length} className="text-center">
+              <Spinner />
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     );
   }
 
@@ -109,30 +147,7 @@ export function DataTable<TRow>({
 
   return (
     <Table refreshing={refreshing}>
-      <TableHeader>
-        {/* TableHeader aporta el tono y neutraliza el hover de la banda para todos los listados. */}
-        <TableRow>
-          {columns.map((column) => (
-            <TableHead
-              key={column.id}
-              scope="col"
-              aria-sort={ariaSort(column.id, sort)}
-              numeric={column.numeric}
-              className={column.align === "right" ? "text-right" : undefined}
-            >
-              {column.sortable && onSortChange ? (
-                // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
-                // ordenable se ve de otro tamaño que las demás.
-                <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={cn(headerText, "-mx-2 px-2")}>
-                  {column.header}
-                </Button>
-              ) : (
-                column.header
-              )}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
+      {header}
       <TableBody>
         {rows.map((row) => {
           const key = rowKey(row);

@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { ChevronLeftIcon } from "./icons";
 import { ActionTooltip } from "./ActionTooltip";
 import { InfoTip } from "./InfoTip";
+import { Skeleton } from "./skeleton";
 
 /// El caparazón de una pantalla: el encabezado y el contenido, en ese orden.
 ///
@@ -33,8 +34,12 @@ export function Page({
   help,
   children,
   viewport = false,
+  loading = false,
 }: {
+  /// Con `loading` es el nombre que oye el lector (un único `h1`); a la vista, un bloque de carga ocupa el lugar del título.
   title: string;
+  /// La banda ya está con su alto mientras llega el módulo o los datos de la pantalla (tablero ES2).
+  loading?: boolean;
   backTo?: { to: string; label: string };
   status?: ReactNode;
   actions?: ReactNode;
@@ -59,7 +64,14 @@ export function Page({
             </Link>
             </ActionTooltip>
           ) : null}
-          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-normal text-[var(--color-content)] max-sm:whitespace-normal max-sm:break-words">{title}</h1>
+          {loading ? (
+            <>
+              <h1 className="sr-only">{title}</h1>
+              <Skeleton aria-hidden="true" className="h-6 w-40" />
+            </>
+          ) : (
+            <h1 className="min-w-0 truncate text-2xl font-semibold tracking-normal text-[var(--color-content)] max-sm:whitespace-normal max-sm:break-words">{title}</h1>
+          )}
           {help ? <span className="inline-flex shrink-0 self-center"><InfoTip text={help} label={t("actions.moreInfo", { label: title })} /></span> : null}
           {status ?<span className="flex shrink-0 items-center gap-2 max-sm:basis-full">{status}</span> : null}
         </span>

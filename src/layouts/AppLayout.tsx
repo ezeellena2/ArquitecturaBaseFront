@@ -7,6 +7,7 @@ import { useIsSigningOut } from "@/auth/signOutStatus";
 import { useProfileLanguageSync } from "@/auth/useLanguagePreference";
 import { useLocalStorage } from "@/shared/hooks/useLocalStorage";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
+import { PageLoading } from "@/shared/ui/PageLoading";
 import { Spinner } from "@/shared/ui/Spinner";
 
 type SidebarState = "expanded" | "collapsed";
@@ -81,7 +82,7 @@ export function AppLayout() {
             lo que queda debajo. Sin ese margen, el navegador da por visible un control que la banda tapa entero:
             con Shift+Tab, el foco caía detrás de la banda y `main` no se movía (WCAG 2.4.11). */}
         <main className="relative min-h-0 flex-1 scroll-pt-14 overflow-y-auto print:overflow-visible">
-          <Suspense fallback={<Spinner />}>
+          <Suspense fallback={<PageLoading />}>
             <Outlet />
           </Suspense>
         </main>

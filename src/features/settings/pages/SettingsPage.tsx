@@ -15,7 +15,7 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Page } from "@/shared/ui/Page";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { FormSkeleton } from "@/shared/ui/FormSkeleton";
 import { notify, dismissNotification } from "@/shared/ui/notifications";
 
 export function SettingsPage() {
@@ -29,7 +29,7 @@ export function SettingsPage() {
   }
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   if (initial) return <SettingsEditor initial={initial} />;
-  return <Page title={t("title")}>{query.isFetching || query.isPending ? <Skeleton className="h-24" />
+  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { fields: 1 }, { rows: 2 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
 }
 

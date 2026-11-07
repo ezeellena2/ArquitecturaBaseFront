@@ -168,6 +168,17 @@ describe("DataTable", () => {
     expect(screen.getByRole("status")).toBeInTheDocument();
   });
 
+  it("keeps the header while the first load reserves the room of the rows (ES1-A)", () => {
+    const { container } = renderWithProviders(<DataTable columns={columns} rows={[]} rowKey={(row) => row.id} isLoading />);
+
+    // El encabezado y el aro dentro de la tabla: al llegar las filas el listado no cambia de alto. Mientras tanto no
+    // es una tabla de datos para el lector de pantalla.
+    const table = container.querySelector("table") as HTMLElement;
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    for (const column of columns) expect(within(table).getByText(column.header)).toBeInTheDocument();
+    expect(within(table).getByRole("status")).toBeInTheDocument();
+  });
+
   it("shows the empty state", () => {
     renderWithProviders(<DataTable columns={columns} rows={[]} rowKey={(row) => row.id} emptyTitle="No hay usuarios" />);
 

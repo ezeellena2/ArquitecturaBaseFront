@@ -14,7 +14,7 @@ import { Input } from "@/shared/ui/input";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Page } from "@/shared/ui/Page";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { FormSkeleton } from "@/shared/ui/FormSkeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { aiConnectionQueryKey, fetchAiConnection, type AiConnection, type AiProvider } from "../api/aiConnection";
 import { changeProvider, hasCredential } from "../model";
@@ -31,7 +31,7 @@ export function AiSettingsPage() {
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   // Un cambio de permisos desmonta el editor y elimina sus referencias secretas.
   if (initial) return <AiEditor key={permissions.has("ai.manage") ? "manage" : "read"} initial={query.data ?? initial} canManage={permissions.has("ai.manage")} observedRevision={query.data?.revision ?? initial.revision} />;
-  return <Page title={t("title")}>{query.isFetching || query.isPending ? <Skeleton className="h-24" /> :
+  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { fields: 1 }, { rows: 1 }]} /> :
     <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
 }
 

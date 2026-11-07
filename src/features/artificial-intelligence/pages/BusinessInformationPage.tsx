@@ -14,7 +14,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { FormSkeleton } from "@/shared/ui/FormSkeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { businessInformationQueryKey, fetchBusinessInformation, type BusinessInformation } from "../api/businessInformation";
@@ -33,7 +33,7 @@ export function BusinessInformationPage() {
   if (!initial && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   if (initial) return <BusinessEditor key={permissions.has("ai.business.manage") ? "manage" : "read"} initial={query.data ?? initial} canManage={permissions.has("ai.business.manage")} />;
-  return <Page title={t("title")}>{query.isFetching || query.isPending ? <Skeleton className="h-24" /> :
+  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { rows: 2 }, { fields: 2 }, { rows: 2 }]} /> :
     <EmptyState title={t("unavailableTitle")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("retry")}</Button>} />}</Page>;
 }
 
