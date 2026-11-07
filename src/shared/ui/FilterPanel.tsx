@@ -19,6 +19,10 @@ export interface FilterPanelSection {
   onClear: () => void;
   /** Starts a group after a line, as «Cargó» and «Versión» after the questions of a form. */
   separated?: boolean;
+  /** Goes indented under a name that is not chosen, as the questions of a block of rows under the block (RG4-A). */
+  group?: string;
+  /** A grey line under the name in its pane, as «En algún ítem de Artículos». */
+  note?: string;
 }
 
 /**
@@ -39,11 +43,13 @@ export function FilterPanel({ label, sections, disabled }: { label: string; sect
     <SlidersIcon className="size-4"/>{label}
     {applied ? <>{" "}<span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[length:var(--text-caption)] font-semibold text-white">{applied}</span></> : null}
   </Button>;
-  const list = <ul className="flex flex-col py-1">{sections.map(section => <Fragment key={section.key}>
+  const list = <ul className="flex flex-col py-1">{sections.map((section, index) => <Fragment key={section.key}>
     {section.separated ? <li role="presentation" className="my-1 h-px bg-[var(--color-border)]"/> : null}
+    {section.group && section.group !== sections[index - 1]?.group
+      ? <li className="truncate px-3 pt-2 pb-1 text-[length:var(--text-caption)] font-semibold text-[var(--color-content-muted)]">{section.group}</li> : null}
     <li><button type="button" aria-current={section === current ? "true" : undefined} onClick={() => setSelected(section.key)}
       className={cn("flex min-h-8 w-full items-center gap-2 px-3 py-1.5 text-left text-sm outline-none hover:bg-[var(--color-surface-muted)] focus-visible:ring-2 focus-visible:ring-ring max-sm:min-h-12 max-sm:border-b max-sm:border-[var(--color-border)]",
-        section === current && "bg-[var(--color-brand-50)] shadow-[inset_2px_0_0_var(--color-brand-600)]")}>
+        section.group && "pl-6", section === current && "bg-[var(--color-brand-50)] shadow-[inset_2px_0_0_var(--color-brand-600)]")}>
       <span className={cn("min-w-0 flex-1 truncate", section.applied && "font-semibold")}>{section.label}</span>
       {section.applied ? <>{" "}<span className="size-1.5 shrink-0 rounded-full bg-[var(--color-brand-600)]"><span className="sr-only">{t("filterPanel.applied")}</span></span></> : null}
       <ChevronRightIcon className="size-3.5 shrink-0 text-[var(--color-content-muted)]"/>
@@ -56,6 +62,7 @@ export function FilterPanel({ label, sections, disabled }: { label: string; sect
       <h3 className="min-w-0 flex-1 truncate text-sm font-semibold">{section.label}</h3>
       {section.applied ? <Button type="button" variant="link" size="inline" onClick={section.onClear}>{t("filterPanel.clear")}</Button> : null}
     </div>
+    {section.note ? <p className="-mt-2 text-xs text-[var(--color-content-muted)]">{section.note}</p> : null}
     {section.content}
   </section>;
   if (phone) return <>

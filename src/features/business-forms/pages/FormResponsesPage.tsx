@@ -191,7 +191,7 @@ export function FormResponsesPage() {
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label + (column.introducedInVersion > 1 ? " " + t("responses.sinceVersion", { version: column.introducedInVersion }) : ""),
-      sortable: !catalogField && column.type !== "multiChoice",
+      sortable: !catalogField && column.type !== "multiChoice" && column.type !== "group",
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}

@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { CellText } from "@/shared/ui/CellText";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
-import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
+import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseRowsSummary, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 // The captured fields of an option, aligned under its value (board TL1-A): the field in grey and its value in the text color,
 // with a line that ties them to the value.
@@ -47,6 +47,14 @@ export function ResponseValue({
         )}
       </span>
     );
+  // «3 · GLIFOSATO 64%, …» (RG4-A): how many items in grey and the first value of each, in one line cut with «…».
+  const rows = responseRowsSummary(cell);
+  if (rows) {
+    const firsts = rows.firsts.map(first => typeof first.value === "string" && (first.type === "decimal" || first.type === "date")
+      ? formatTypedValue(first.type, first.value, i18n.language) ?? first.value
+      : responseValueText(first, t("responses.unanswered"), t("responses.yes"), t("responses.no"))).join(", ");
+    return <div className="max-w-64 truncate"><span className="text-[var(--color-content-muted)]">{rows.count}</span>{firsts ? " · " + firsts : null}</div>;
+  }
   const files = responseFiles(cell);
   if (
     (cell.type === "photo" || cell.type === "document") &&

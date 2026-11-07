@@ -802,6 +802,7 @@
     "invalidRange": "Usá cantidades enteras: mínimo de 0 a 10, máximo de 1 a 10 y mínimo no mayor al máximo."
   },
   "responses": {
+    "inSomeItem": "En algún ítem de {{block}}",
     "title": "Respuestas",
     "version": "Versión del formulario",
     "noForms": "Todavía no hay formularios publicados",

@@ -103,9 +103,11 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
     { key: "received", label: t("responses.received"), applied: !!query.receivedFromUtc || !!query.receivedToUtc,
       onClear: () => apply({ receivedFromUtc: undefined, receivedToUtc: undefined }),
       content: <ReceivedRange query={query} zone={zone} onApply={(receivedFromUtc, receivedToUtc) => apply({ receivedFromUtc, receivedToUtc })}/> },
-    ...columns.filter(column => column.type !== "photo" && column.type !== "document").map(column => ({ key: column.fieldId, label: column.label,
-      applied: conditions.some(item => item.fieldId === column.fieldId),
-      onClear: () => apply({ conditions: conditions.filter(item => item.fieldId !== column.fieldId) }), content: question(column) })),
+    // A block of rows is not filtered itself: its questions are, under its name, each by any item (RG4-A).
+    ...columns.flatMap(column => (column.questions ?? [column]).filter(item => item.type !== "photo" && item.type !== "document").map(item => ({
+      key: item.fieldId, label: item.label, applied: conditions.some(condition => condition.fieldId === item.fieldId),
+      ...(column.questions ? { group: column.label, note: t("responses.inSomeItem", { block: column.label }) } : {}),
+      onClear: () => apply({ conditions: conditions.filter(condition => condition.fieldId !== item.fieldId) }), content: question(item) }))),
     // Whoever only loads sees only what they loaded: «Cargó» would always be them (CW6-C).
     ...(scope.ownOnly ? [] : [{ key: "actor", label: t("responses.actor"), separated: true, applied: !!query.actorIds?.length, onClear: () => apply({ actorIds: [] }),
       content: <ResponseFacetControl formId={formId} filter={facetFilter} onReadError={onReadError} dimension="actor" label={t("responses.actor")}

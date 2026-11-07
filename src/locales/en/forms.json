@@ -802,6 +802,7 @@
     "invalidRange": "Use whole counts: minimum 0–10, maximum 1–10, and minimum no greater than maximum."
   },
   "responses": {
+    "inSomeItem": "In any item of {{block}}",
     "title": "Responses",
     "version": "Form version",
     "noForms": "No published forms yet",
