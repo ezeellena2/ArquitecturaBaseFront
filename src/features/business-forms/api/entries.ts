@@ -3,9 +3,11 @@ import { api } from "@/shared/api/httpClient";
 
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const entryOptionSchema = z.strictObject({ id: z.string().uuid(), title: z.string().min(1), description: z.string().min(1).nullable() });
+/** What a question of the block of rows can be: a value of its own in each item. */
+const itemTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 const questionSchema = z.strictObject({
   fieldId: z.string().uuid(),
-  type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document"]),
+  type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group"]),
   label: z.string().min(1),
   help: z.string().min(1).nullable(),
   required: z.boolean(),
@@ -18,19 +20,33 @@ const questionSchema = z.strictObject({
     dependsOn: z.array(z.string().uuid()).min(1).optional() }).nullable(),
   // The title of the section that starts at this question (CW15-B): the page opens a zone with it.
   section: z.string().min(1).max(80).optional(),
+  // The block of rows (RG2-A) says how many items it takes; its questions follow it, marked as repeated.
+  rows: z.strictObject({ minRows: z.number().int().min(0).max(100), maxRows: z.number().int().min(1).max(100) }).optional(),
+  repeated: z.literal(true).optional(),
 }).superRefine((value, context) => {
   const files = value.type === "photo" || value.type === "document";
   const list = value.type === "choice" || value.type === "multiChoice";
   if (files !== (value.files !== null) || (value.type === "multiChoice") !== (value.selection !== null)
     || (!list && (value.options !== null || value.catalog !== null)) || (list && (value.options === null) === (value.catalog === null))
     || (value.catalog?.missingData != null && value.catalog.issue === null) || (value.catalog?.onlyOption != null && value.catalog.issue !== null)
-    || (value.catalog?.dependsOn !== undefined && (value.catalog.onlyOption !== null || value.catalog.issue !== null)))
+    || (value.catalog?.dependsOn !== undefined && (value.catalog.onlyOption !== null || value.catalog.issue !== null))
+    || (value.type === "group") !== (value.rows !== undefined) || (value.type === "group" && value.maxLength !== null)
+    || (value.rows !== undefined && (value.rows.minRows > value.rows.maxRows || value.required !== value.rows.minRows > 0))
+    || (value.repeated && !itemTypes.includes(value.type)))
     context.addIssue({ code: "custom", message: "Invalid entry question." });
 });
 export const formEntrySchema = z.strictObject({
   definitionId: z.string().uuid(), versionId: z.string().uuid(), versionNumber: z.number().int().positive(),
   prefix: z.string().min(1), name: z.string().min(1), culture: z.enum(["es", "en"]), submitLabel: z.string().min(1),
-  maxFileSizeMiB: z.number().int().min(1).max(25), questions: z.array(questionSchema).max(40),
+  maxFileSizeMiB: z.number().int().min(1).max(25), questions: z.array(questionSchema).max(41),
+}).superRefine((value, context) => {
+  // At most one block, which does not count among the 40 questions, followed without gaps by its repeated questions.
+  const groups = value.questions.flatMap((question, index) => question.type === "group" ? [index] : []);
+  let end = groups.length === 1 ? groups[0] + 1 : 0;
+  while (groups.length === 1 && end < value.questions.length && value.questions[end].repeated) end++;
+  if (groups.length > 1 || value.questions.length - groups.length > 40
+    || value.questions.some((question, index) => question.repeated && (groups.length !== 1 || index <= groups[0] || index >= end)))
+    context.addIssue({ code: "custom", message: "Invalid entry block." });
 });
 const optionsPageSchema = z.strictObject({
   items: z.array(entryOptionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(),
@@ -40,11 +56,13 @@ const submittedSchema = z.strictObject({
   recordId: z.string().uuid(), number: z.string().min(1),
   state: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]), submittedAtUtc: z.iso.datetime(),
 });
-// What a correction opens (CW10-A): the active version and the response mapped to it, its answers and its files.
+// What a correction opens (CW10-A): the active version and the response mapped to it, its answers and its files. The block's
+// answer carries its items, each with the answers of its questions as at the top.
+const correctionAnswerSchema = z.strictObject({ fieldId: z.string().uuid(), value: z.string().nullable(), choiceIds: z.array(z.string().uuid()).nullable(),
+  options: z.array(entryOptionSchema).nullable() });
 const correctionSchema = z.strictObject({
   entry: formEntrySchema, recordId: z.string().uuid(), number: z.string().min(1),
-  answers: z.array(z.strictObject({ fieldId: z.string().uuid(), value: z.string().nullable(), choiceIds: z.array(z.string().uuid()).nullable(),
-    options: z.array(entryOptionSchema).nullable() })),
+  answers: z.array(correctionAnswerSchema.extend({ rows: z.array(z.array(correctionAnswerSchema)).optional() })),
   files: z.array(z.strictObject({ fileId: z.string().uuid(), fieldId: z.string().uuid(), name: z.string().min(1), contentType: z.string().min(1),
     size: z.number().int().positive(), hasThumbnail: z.boolean() })),
 });
@@ -55,8 +73,10 @@ export type FormEntryQuestion = FormEntry["questions"][number];
 export type FormEntryOption = z.infer<typeof entryOptionSchema>;
 export type FormEntryOptionsPage = z.infer<typeof optionsPageSchema>;
 export type FormEntrySubmitted = z.infer<typeof submittedSchema>;
-/** A question's answer: its canonical value, or the chosen ids of a multiple choice. */
-export type FormEntryAnswer = { fieldId: string; value: string } | { fieldId: string; choiceIds: string[] };
+/** An answer of an item of the block: the canonical value of one of its questions. */
+export interface FormEntryItemAnswer { fieldId: string; value: string }
+/** A question's answer: its canonical value, the chosen ids of a multiple choice, or the items of the block (RG2-A). */
+export type FormEntryAnswer = FormEntryItemAnswer | { fieldId: string; choiceIds: string[] } | { fieldId: string; rows: FormEntryItemAnswer[][] };
 export interface FormEntrySend { requestId: string; versionId: string; answers: FormEntryAnswer[]; files: { fieldId: string; file: File }[] }
 
 function read<T>(schema: z.ZodType<T>, body: unknown): T {

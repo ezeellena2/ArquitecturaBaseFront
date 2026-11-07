@@ -1,4 +1,4 @@
-import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
+import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
 
 /**
  * What the person has loaded, by question: typed values, the chosen options (with the title they saw) and the files.
@@ -10,8 +10,13 @@ export interface EntryDraft {
   files: Record<string, File[]>;
   /** While correcting (CW10-A): the files of the replaced response that stay, by question. */
   kept?: Record<string, FormEntryKeptFile[]>;
+  /** The items of the block of rows (RG2-A), by the block's question, in order. */
+  rows?: Record<string, EntryItem[]>;
 }
-export type EntryProblem = "required" | "choose" | "chooseAtLeast" | "chooseAtMost" | "number" | "date" | "maxLength" | "filesAtLeast" | "filesAtMost";
+/** An item of the block: a stable key, for the table and the focus, and the values and options of the block's questions. */
+export interface EntryItem { key: string; values: Record<string, string>; choices: Record<string, FormEntryOption[]> }
+export type EntryProblem = "required" | "choose" | "chooseAtLeast" | "chooseAtMost" | "number" | "date" | "maxLength" | "filesAtLeast" | "filesAtMost"
+  | "rowsAtLeast" | "rowsAtMost";
 export type EntryFileProblem = "photoType" | "documentType" | "size" | "count";
 
 const photoTypes = ["image/jpeg", "image/png"];
@@ -23,6 +28,27 @@ const isFile = (question: FormEntryQuestion) => question.type === "photo" || que
 const isList = (question: FormEntryQuestion) => question.type === "choice" || question.type === "multiChoice";
 /** The id of a question's control, so a problem can take the focus to it. */
 export const entryQuestionId = (fieldId: string) => "entry-" + fieldId;
+/** Where a question of an item goes: the key of its problem and the server's path without «answers.». */
+export const entryItemPath = (blockId: string, row: number, fieldId: string) => `${blockId}.${row}.${fieldId}`;
+
+/** The block of rows and its questions, which follow it marked as repeated; null without a block. */
+export function entryBlock(entry: FormEntry): { group: FormEntryQuestion; questions: FormEntryQuestion[] } | null {
+  const index = entry.questions.findIndex(question => question.type === "group");
+  if (index < 0) return null;
+  const questions: FormEntryQuestion[] = [];
+  for (let next = index + 1; next < entry.questions.length && entry.questions[next].repeated; next++) questions.push(entry.questions[next]);
+  return { group: entry.questions[index], questions };
+}
+
+let itemSequence = 0;
+// A new item, with the only option the filters leave already chosen, as a loose question starts.
+function newItem(questions: readonly FormEntryQuestion[]): EntryItem {
+  const choices: Record<string, FormEntryOption[]> = {};
+  for (const question of questions) if (question.catalog?.onlyOption) choices[question.fieldId] = [question.catalog.onlyOption];
+  return { key: "item-" + ++itemSequence, values: {}, choices };
+}
+const itemsOf = (draft: EntryDraft, blockId: string) => draft.rows?.[blockId] ?? [];
+const withItems = (draft: EntryDraft, blockId: string, items: EntryItem[]): EntryDraft => ({ ...draft, rows: { ...draft.rows, [blockId]: items } });
 
 /** A folding zone of the loading page and the questions it holds; the zone of a section title (CW15-B) carries its title. */
 export interface EntryZone { key: string; title?: string; questions: FormEntryQuestion[] }
@@ -35,7 +61,8 @@ export function entryZones(entry: FormEntry): EntryZone[] {
   const zones: EntryZone[] = [{ key: "data", questions: [] }];
   for (const question of entry.questions) {
     if (question.section) zones.push({ key: "section:" + question.fieldId, title: question.section, questions: [] });
-    if (!isFile(question)) zones.at(-1)!.questions.push(question);
+    // The questions of the block are drawn inside it, never loose.
+    if (!isFile(question) && !question.repeated) zones.at(-1)!.questions.push(question);
   }
   const files = entry.questions.filter(isFile);
   return [...zones.filter(zone => zone.questions.length > 0), ...files.length ? [{ key: "files", questions: files }] : []];
@@ -51,7 +78,7 @@ export function entryChoiceInRow(question: FormEntryQuestion): boolean {
  * row. The width comes from its type, never from the author.
  */
 export function entryQuestionSpan(question: FormEntryQuestion): 1 | 3 {
-  if (question.type === "longText" || question.type === "photo" || question.type === "document") return 3;
+  if (question.type === "longText" || question.type === "photo" || question.type === "document" || question.type === "group") return 3;
   if (question.type === "shortText") return question.maxLength !== null && question.maxLength <= 80 ? 1 : 3;
   if (question.type === "multiChoice") return question.catalog ? 1 : 3;
   return 1;
@@ -88,6 +115,8 @@ export function entryRows(questions: readonly FormEntryQuestion[], columns: 1 | 
 
 /** Whether a question already has something loaded: what the band of a folded zone counts. */
 export function entryAnswered(question: FormEntryQuestion, draft: EntryDraft): boolean {
+  if (question.type === "group") return itemsOf(draft, question.fieldId).some(item =>
+    Object.values(item.values).some(value => value !== "") || Object.values(item.choices).some(chosen => chosen.length > 0));
   if (isFile(question)) return entryFileCount(question, draft) > 0;
   if (isList(question)) return (draft.choices[question.fieldId]?.length ?? 0) > 0;
   return (draft.values[question.fieldId] ?? "") !== "";
@@ -98,43 +127,109 @@ export function entryTextRows(question: FormEntryQuestion): number {
   return Math.min(6, Math.max(2, Math.ceil((question.maxLength ?? 600) / 100)));
 }
 
-/** Empty, except the only catalog option the filters leave for the person, which comes chosen. */
+/** Empty, except the only catalog option the filters leave for the person, which comes chosen; the block starts with its minimum of items. */
 export function initialEntryDraft(entry: FormEntry): EntryDraft {
   const choices: Record<string, FormEntryOption[]> = {};
-  for (const question of entry.questions) if (question.catalog?.onlyOption) choices[question.fieldId] = [question.catalog.onlyOption];
-  return { values: {}, choices, files: {} };
+  for (const question of entry.questions) if (question.catalog?.onlyOption && !question.repeated) choices[question.fieldId] = [question.catalog.onlyOption];
+  const draft: EntryDraft = { values: {}, choices, files: {} };
+  const block = entryBlock(entry);
+  if (block) draft.rows = { [block.group.fieldId]: Array.from({ length: block.group.rows?.minRows ?? 0 }, () => newItem(block.questions)) };
+  return draft;
+}
+
+/** «Agregar ítem»: an empty item at the end, while the block takes more. */
+export function addEntryItem(entry: FormEntry, draft: EntryDraft): EntryDraft {
+  const block = entryBlock(entry);
+  if (!block) return draft;
+  const items = itemsOf(draft, block.group.fieldId);
+  return items.length >= (block.group.rows?.maxRows ?? 0) ? draft : withItems(draft, block.group.fieldId, [...items, newItem(block.questions)]);
+}
+
+/** Removes an item while the block keeps its minimum. */
+export function removeEntryItem(entry: FormEntry, draft: EntryDraft, key: string): EntryDraft {
+  const block = entryBlock(entry);
+  if (!block) return draft;
+  const items = itemsOf(draft, block.group.fieldId);
+  return items.length <= (block.group.rows?.minRows ?? 0) || !items.some(item => item.key === key) ? draft
+    : withItems(draft, block.group.fieldId, items.filter(item => item.key !== key));
+}
+
+/** Moves an item one place up (-1) or down (1); at an end it stays. */
+export function moveEntryItem(entry: FormEntry, draft: EntryDraft, key: string, offset: -1 | 1): EntryDraft {
+  const block = entryBlock(entry);
+  if (!block) return draft;
+  const items = [...itemsOf(draft, block.group.fieldId)];
+  const from = items.findIndex(item => item.key === key), to = from + offset;
+  if (from < 0 || to < 0 || to >= items.length) return draft;
+  [items[from], items[to]] = [items[to], items[from]];
+  return withItems(draft, block.group.fieldId, items);
+}
+
+/** Changes what an item holds; the other items stay as they are. */
+export function changeEntryItem(entry: FormEntry, draft: EntryDraft, key: string, change: (item: EntryItem) => EntryItem): EntryDraft {
+  const block = entryBlock(entry);
+  if (!block) return draft;
+  return withItems(draft, block.group.fieldId, itemsOf(draft, block.group.fieldId).map(item => item.key === key ? change(item) : item));
 }
 
 /**
  * The options a list that depends on other answers waits for (CW7): the option chosen in each of those questions, by its id,
- * or null while one is missing. A list that depends on nothing waits for nothing.
+ * or null while one is missing. A list that depends on nothing waits for nothing. In the block (LD3-A), a question of the
+ * block takes the answer of its own item and one outside the block, the answer outside.
  */
-export function entryDependencyAnswers(question: FormEntryQuestion, draft: EntryDraft): Record<string, string> | null {
+export function entryDependencyAnswers(question: FormEntryQuestion, draft: EntryDraft, item?: EntryItem): Record<string, string> | null {
   const answers: Record<string, string> = {};
   for (const fieldId of question.catalog?.dependsOn ?? []) {
-    const chosen = draft.choices[fieldId]?.[0];
+    const chosen = (item?.choices[fieldId] ?? draft.choices[fieldId])?.[0];
     if (!chosen) return null;
     answers[fieldId] = chosen.id;
   }
   return answers;
 }
 
-/** Another option in a question clears the lists that depend on it, and theirs in turn: what they offered was for the other one. */
-export function clearDependentChoices(entry: FormEntry, draft: EntryDraft, fieldId: string): EntryDraft {
+/**
+ * Another option in a question clears the lists that depend on it, and theirs in turn: what they offered was for the other one.
+ * A question of an item clears only in that item; one outside the block also clears the lists of the block in every item.
+ */
+export function clearDependentChoices(entry: FormEntry, draft: EntryDraft, fieldId: string, itemKey?: string): EntryDraft {
   const cleared = new Set<string>(), pending = [fieldId];
   while (pending.length) {
     const changed = pending.pop()!;
     for (const question of entry.questions)
       if (question.catalog?.dependsOn?.includes(changed) && !cleared.has(question.fieldId)) { cleared.add(question.fieldId); pending.push(question.fieldId); }
   }
-  if (![...cleared].some(id => draft.choices[id])) return draft;
-  return { ...draft, choices: Object.fromEntries(Object.entries(draft.choices).filter(([id]) => !cleared.has(id))) };
+  const keep = (choices: Record<string, FormEntryOption[]>) => Object.fromEntries(Object.entries(choices).filter(([id]) => !cleared.has(id)));
+  const block = entryBlock(entry);
+  const items = block ? itemsOf(draft, block.group.fieldId) : [];
+  const touched = items.filter(item => (itemKey === undefined || item.key === itemKey) && [...cleared].some(id => item.choices[id]));
+  const outside = itemKey === undefined && [...cleared].some(id => draft.choices[id]);
+  if (!outside && touched.length === 0) return draft;
+  const next = outside ? { ...draft, choices: keep(draft.choices) } : draft;
+  return touched.length === 0 || !block ? next
+    : withItems(next, block.group.fieldId, items.map(item => touched.includes(item) ? { ...item, choices: keep(item.choices) } : item));
 }
 
-/** Each question's first problem, in the order of the form; an empty object can be sent. */
+/**
+ * Each question's first problem, in the order of the form; an empty object can be sent. The block says when it has fewer or
+ * more items than it takes, and each question of an item goes under its path (`entryItemPath`).
+ */
 export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<string, EntryProblem> {
   const problems: Record<string, EntryProblem> = {};
+  const block = entryBlock(entry);
   for (const question of entry.questions) {
+    if (question.repeated) continue;
+    if (question.type === "group" && block) {
+      const items = itemsOf(draft, question.fieldId);
+      if (items.length < (question.rows?.minRows ?? 0)) problems[question.fieldId] = "rowsAtLeast";
+      else if (items.length > (question.rows?.maxRows ?? 0)) problems[question.fieldId] = "rowsAtMost";
+      items.forEach((item, row) => {
+        for (const inner of block.questions) {
+          const problem = questionProblem(inner, { values: item.values, choices: item.choices, files: {} });
+          if (problem) problems[entryItemPath(question.fieldId, row, inner.fieldId)] = problem;
+        }
+      });
+      continue;
+    }
     const problem = questionProblem(question, draft);
     if (problem) problems[question.fieldId] = problem;
   }
@@ -166,11 +261,31 @@ function questionProblem(question: FormEntryQuestion, draft: EntryDraft): EntryP
   return null;
 }
 
-/** The send: canonical values (a decimal with a dot), the chosen ids and each file with the question it answers. */
+// The canonical answer of a question with a single value: the chosen id or the value as typed, with a decimal written with a dot.
+function singleAnswer(question: FormEntryQuestion, values: Record<string, string>, choices: Record<string, FormEntryOption[]>): FormEntryItemAnswer | null {
+  if (question.type === "choice") {
+    const chosen = choices[question.fieldId]?.[0];
+    return chosen ? { fieldId: question.fieldId, value: chosen.id } : null;
+  }
+  const value = values[question.fieldId] ?? "";
+  return value === "" ? null : { fieldId: question.fieldId, value: question.type === "decimal" ? value.trim().replace(",", ".") : value };
+}
+
+/**
+ * The send: canonical values (a decimal with a dot), the chosen ids and each file with the question it answers. The block goes
+ * with its items, even none, each with the answers of its questions in their order.
+ */
 export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: string): FormEntrySend {
   const answers: FormEntryAnswer[] = [];
   const files: FormEntrySend["files"] = [];
+  const block = entryBlock(entry);
   for (const question of entry.questions) {
+    if (question.repeated) continue;
+    if (question.type === "group") {
+      answers.push({ fieldId: question.fieldId, rows: itemsOf(draft, question.fieldId)
+        .map(item => (block?.questions ?? []).map(inner => singleAnswer(inner, item.values, item.choices)).filter(answer => answer !== null)) });
+      continue;
+    }
     if (isFile(question)) {
       for (const file of draft.files[question.fieldId] ?? []) files.push({ fieldId: question.fieldId, file });
       continue;
@@ -179,23 +294,21 @@ export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: stri
       answers.push({ fieldId: question.fieldId, choiceIds: (draft.choices[question.fieldId] ?? []).map(option => option.id) });
       continue;
     }
-    if (question.type === "choice") {
-      const chosen = draft.choices[question.fieldId]?.[0];
-      if (chosen) answers.push({ fieldId: question.fieldId, value: chosen.id });
-      continue;
-    }
-    const value = draft.values[question.fieldId] ?? "";
-    if (value !== "") answers.push({ fieldId: question.fieldId, value: question.type === "decimal" ? value.trim().replace(",", ".") : value });
+    const answer = singleAnswer(question, draft.values, draft.choices);
+    if (answer) answers.push(answer);
   }
   return { requestId, versionId: entry.versionId, answers, files };
 }
 
-/** The answers of the questions that stay, with the same type, in the new version; the rest are dropped. */
+/**
+ * The answers of the questions that stay, with the same type, in the new version; the rest are dropped. The items stay while
+ * the block does, with the answers of its questions that stay with the same type.
+ */
 export function carryEntryDraft(previous: FormEntry, draft: EntryDraft, next: FormEntry): EntryDraft {
   const carried: EntryDraft = { values: {}, choices: {}, files: {} };
   for (const question of next.questions) {
     const before = previous.questions.find(value => value.fieldId === question.fieldId);
-    if (before?.type !== question.type) continue;
+    if (before?.type !== question.type || question.repeated || question.type === "group") continue;
     if (isFile(question)) {
       if (draft.files[question.fieldId]) carried.files[question.fieldId] = draft.files[question.fieldId];
       if (draft.kept?.[question.fieldId]) carried.kept = { ...carried.kept, [question.fieldId]: draft.kept[question.fieldId] };
@@ -203,12 +316,21 @@ export function carryEntryDraft(previous: FormEntry, draft: EntryDraft, next: Fo
     else if (isList(question)) { if (draft.choices[question.fieldId]) carried.choices[question.fieldId] = draft.choices[question.fieldId]; }
     else if (draft.values[question.fieldId] !== undefined) carried.values[question.fieldId] = draft.values[question.fieldId];
   }
+  const block = entryBlock(next), earlier = entryBlock(previous);
+  if (block && earlier?.group.fieldId === block.group.fieldId) {
+    const kept = block.questions.filter(question => earlier.questions.some(old => old.fieldId === question.fieldId && old.type === question.type));
+    carried.rows = { [block.group.fieldId]: itemsOf(draft, block.group.fieldId).map(item => ({
+      key: item.key,
+      values: Object.fromEntries(kept.filter(question => item.values[question.fieldId] !== undefined).map(question => [question.fieldId, item.values[question.fieldId]])),
+      choices: Object.fromEntries(kept.filter(question => item.choices[question.fieldId]).map(question => [question.fieldId, item.choices[question.fieldId]])),
+    })) };
+  }
   return carried;
 }
 
-/** «Mantener las respuestas para la siguiente»: everything but the files. */
+/** «Mantener las respuestas para la siguiente»: everything but the files, the items included. */
 export function keepForNextEntry(draft: EntryDraft): EntryDraft {
-  return { values: draft.values, choices: draft.choices, files: {} };
+  return { values: draft.values, choices: draft.choices, files: {}, ...draft.rows ? { rows: draft.rows } : {} };
 }
 
 /** Type, size and count are checked before sending; the server checks the content again. */
@@ -230,16 +352,35 @@ export function entrySignature(entry: FormEntry, draft: EntryDraft): string {
  */
 export function correctionDraft(correction: FormEntryCorrection, language: string): EntryDraft {
   const draft: EntryDraft = { values: {}, choices: {}, files: {}, kept: {} };
+  const block = entryBlock(correction.entry);
   for (const answer of correction.answers) {
     const question = correction.entry.questions.find(item => item.fieldId === answer.fieldId);
-    if (!question) continue;
-    if (question.catalog) draft.choices[question.fieldId] = answer.options ?? [];
-    else if (isList(question)) draft.choices[question.fieldId] = (answer.choiceIds ?? (answer.value ? [answer.value] : []))
-      .flatMap(id => question.options?.filter(option => option.id === id).map(option => ({ id: option.id, title: option.label, description: null })) ?? []);
-    else if (answer.value !== null) draft.values[question.fieldId] = question.type === "decimal" && language.startsWith("es") ? answer.value.replace(".", ",") : answer.value;
+    if (!question || question.repeated) continue;
+    if (question.type === "group" && block) {
+      draft.rows = { [question.fieldId]: (answer.rows ?? []).map(row => {
+        const item = newItem([]);
+        for (const inner of row) {
+          const asked = block.questions.find(value => value.fieldId === inner.fieldId);
+          if (asked) correctionAnswer(asked, inner, item.values, item.choices, language);
+        }
+        return item;
+      }) };
+    }
+    else correctionAnswer(question, answer, draft.values, draft.choices, language);
   }
+  // A block the replaced response did not answer starts, as a new response does, with its minimum of items.
+  if (block && !draft.rows) draft.rows = { [block.group.fieldId]: Array.from({ length: block.group.rows?.minRows ?? 0 }, () => newItem(block.questions)) };
   for (const file of correction.files) draft.kept![file.fieldId] = [...draft.kept![file.fieldId] ?? [], file];
   return draft;
+}
+
+// An answer as it was, in the active version: a catalog keeps the texts it was chosen with and an own option needs to remain.
+function correctionAnswer(question: FormEntryQuestion, answer: FormEntryCorrection["answers"][number], values: Record<string, string>,
+  choices: Record<string, FormEntryOption[]>, language: string) {
+  if (question.catalog) choices[question.fieldId] = answer.options ?? [];
+  else if (isList(question)) choices[question.fieldId] = (answer.choiceIds ?? (answer.value ? [answer.value] : []))
+    .flatMap(id => question.options?.filter(option => option.id === id).map(option => ({ id: option.id, title: option.label, description: null })) ?? []);
+  else if (answer.value !== null) values[question.fieldId] = question.type === "decimal" && language.startsWith("es") ? answer.value.replace(".", ",") : answer.value;
 }
 
 /** The ids of the files of the replaced response that stay in the correction. */
@@ -249,6 +390,8 @@ export function keptFileIds(draft: EntryDraft): string[] {
 
 /** How a question's answer reads, for «Antes: …»: the text, the number as typed, the date, Sí or No, or the options chosen. */
 export function entryAnswerText(question: FormEntryQuestion, draft: EntryDraft, words: { yes: string; no: string; date: (iso: string) => string }): string {
+  // «Antes: …» is not shown inside the block.
+  if (question.type === "group" || question.repeated) return "";
   if (isFile(question)) return (draft.kept?.[question.fieldId] ?? []).map(file => file.name).concat((draft.files[question.fieldId] ?? []).map(file => file.name)).join(", ");
   if (isList(question)) return (draft.choices[question.fieldId] ?? []).map(option => option.title).join(", ");
   const value = draft.values[question.fieldId] ?? "";
@@ -274,7 +417,9 @@ export function correctionSignature(entry: FormEntry, draft: EntryDraft, reason:
 /** What a draft holds, to tell whether a correction changed anything: values, chosen ids, files and the files that stay. */
 export function entryDraftKey(draft: EntryDraft): string {
   const sorted = <T,>(record: Record<string, T>) => Object.entries(record).sort(([a], [b]) => a.localeCompare(b));
-  return JSON.stringify([sorted(draft.values).filter(([, value]) => value !== ""), sorted(draft.choices).map(([id, options]) => [id, options.map(option => option.id)]).filter(([, ids]) => ids.length),
+  const choiceIds = (choices: Record<string, FormEntryOption[]>) => sorted(choices).map(([id, options]) => [id, options.map(option => option.id)]).filter(([, ids]) => ids.length);
+  return JSON.stringify([sorted(draft.values).filter(([, value]) => value !== ""), choiceIds(draft.choices),
     sorted(draft.files).map(([id, files]) => [id, files.map(file => [file.name, file.size, file.lastModified])]).filter(([, files]) => files.length),
-    sorted(draft.kept ?? {}).map(([id, files]) => [id, files.map(file => file.fileId)])]);
+    sorted(draft.kept ?? {}).map(([id, files]) => [id, files.map(file => file.fileId)]),
+    sorted(draft.rows ?? {}).map(([id, items]) => [id, items.map(item => [sorted(item.values).filter(([, value]) => value !== ""), choiceIds(item.choices)])])]);
 }
