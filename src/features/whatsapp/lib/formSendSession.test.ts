@@ -1,5 +1,8 @@
+import { createInstance } from "i18next";
 import { describe, expect, it } from "vitest";
-import { freezeFormMessage, recipientChanged, selectedVersionChanged } from "./formSendSession";
+import es from "@/locales/es/whatsapp.json";
+import en from "@/locales/en/whatsapp.json";
+import { formOpening, freezeFormMessage, recipientChanged, selectedVersionChanged } from "./formSendSession";
 const option = { definitionId: "a", versionId: "v1", versionNumber: 1, prefix: "VIS", name: { en: "Visit" }, questionCount: 2, submitLabel: { en: "Confirm" } };
 const draft = { message: " Original text ", selection: option, recipientCulture: "es" as const, recipientContextRevision: "opaque-1", modeRevision: 7 };
 describe("Form send intent", () => {
@@ -24,4 +27,28 @@ describe("Form send intent", () => {
 
 it("freezes no explicit opening for an unedited default even after choosing a form", () => {
  expect(freezeFormMessage({...draft,touched:true}, "request").message).toBeNull();
+});
+
+// The opening names the chosen form in the language it goes out in, like the server's default (2026-11-07).
+describe("Form opening", () => {
+  async function translate() {
+    const i18n = createInstance();
+    await i18n.init({ lng: "es", resources: { es: { whatsapp: es }, en: { whatsapp: en } }, interpolation: { escapeValue: false } });
+    return i18n.getFixedT(null, "whatsapp");
+  }
+  const chosen = { ...option, name: { es: "Prueba renglones 1", en: "Rows test 1" }, submitLabel: { es: "Enviar", en: "Send" } };
+  it("names the chosen form in the requested language", async () => {
+    const t = await translate();
+    expect(formOpening(t, "es", chosen)).toBe("Completá el formulario «Prueba renglones 1».");
+    expect(formOpening(t, "en", chosen)).toBe("Complete the form “Rows test 1”.");
+  });
+  it("stays generic before a form is chosen", async () => {
+    const t = await translate();
+    expect(formOpening(t, "es")).toBe("Completá este formulario.");
+    expect(formOpening(t, "en")).toBe("Complete this form.");
+  });
+  it("keeps a name with symbols as written", async () => {
+    const t = await translate();
+    expect(formOpening(t, "es", { ...chosen, name: { es: "Altas & bajas <2026>" } })).toBe("Completá el formulario «Altas & bajas <2026>».");
+  });
 });

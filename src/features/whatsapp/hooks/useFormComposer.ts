@@ -7,7 +7,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { chatKey, type Chat, type Outgoing } from "../api/chat";
 import { listChatForms, prepareChatForm, recoverFormMessage, sendFormMessage, type ChatFormOption } from "../api/forms";
 import type { ChatDraft } from "../components/ChatComposer";
-import { freezeFormMessage, recipientChanged, selectedVersionChanged, type FormSendDraft } from "../lib/formSendSession";
+import { formOpening, freezeFormMessage, recipientChanged, selectedVersionChanged, type FormSendDraft } from "../lib/formSendSession";
 import { formMessageIssue } from "../lib/formMessage";
 import { replyDisabledReason } from "../lib/replyAvailability";
 
@@ -98,7 +98,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     if (!open || !presentationCulture || !presentationReady || preparation.isFetching || preparation.isError || !form?.selection || form.attempt) return;
     const selectedKey = form.selection.definitionId + ":" + form.selection.versionId;
     const revision = form.recipientContextRevision;
-    const text = t("forms.defaultMessage", { lng: presentationCulture });
+    const text = formOpening(t, presentationCulture, form.selection);
     if (form.messageEdited || form.message === text) return;
     updateDraft(value => {
       const currentForm = value.form;
@@ -113,12 +113,16 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     if (!canOpen || !eligibility?.recipientCulture || !eligibility.recipientContextRevision) return;
     const culture = eligibility.recipientCulture;
     const revision = eligibility.recipientContextRevision;
-    updateDraft(value => ({...value, form:value.form ? {...value.form,recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision,blocked:recipientChanged(value.form,revision,culture)?"recipientChanged":value.form.blocked} : {message:t("forms.defaultMessage",{lng:culture}),recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision}}));
+    updateDraft(value => ({...value, form:value.form ? {...value.form,recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision,blocked:recipientChanged(value.form,revision,culture)?"recipientChanged":value.form.blocked} : {message:formOpening(t,culture),recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision}}));
     setPage(1); setSearch(""); setOpen(true);
   }
   function choose(option: ChatFormOption) {
     if (!forms.data?.recipientCulture || !forms.data.recipientContextRevision || !mayReadOptions || form?.attempt) return;
-    updateForm(value=>({...value,selection:option,recipientCulture:forms.data!.recipientCulture!,recipientContextRevision:forms.data!.recipientContextRevision!,modeRevision:contact.modeRevision,blocked:undefined,touched:true}));
+    // An opening the operator did not edit names the new choice at once, in the account's language; its preparation may
+    // still move it to the original.
+    const culture = forms.data.recipientCulture;
+    updateForm(value=>({...value,selection:option,recipientCulture:culture,recipientContextRevision:forms.data!.recipientContextRevision!,modeRevision:contact.modeRevision,blocked:undefined,touched:true,
+      message:value.messageEdited?value.message:formOpening(t,culture,option)}));
     setSelectionError(undefined);
   }
   function confirmed(result: Outgoing) {

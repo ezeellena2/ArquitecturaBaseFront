@@ -48,11 +48,11 @@ it("waits for presentation resources when a Spanish account receives a complete 
  await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
  await within(dialog).findByText("Le llega en inglés."); await waitFor(()=>expect(finish).toBeTypeOf("function"));
  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
- expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá este formulario.");
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).not.toHaveAccessibleDescription();
  await act(async()=>{finish!(null,en);});
  await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
- expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete this form.");
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);
  expect(screen.getByLabelText("Respuesta al cliente")).toBe(ordinary); expect(ordinary).toHaveValue("Borrador del chat");
 });

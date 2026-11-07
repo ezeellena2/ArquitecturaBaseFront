@@ -102,7 +102,7 @@ estados que ya usa el chat (`src/locales/*/whatsapp.json`):
 | --- | --- |
 | [C1 · ¿Puede recibir un formulario?](evidence/formularios-whatsapp/e3-c1-cuenta.png) | Encabezado y botón según la cuenta vinculada: con correo, sin correo, sin vínculo, inactiva, sin formularios para esa persona y sin permiso de responder. El motivo del botón deshabilitado es su ayuda al pasar el mouse o con el foco (`DisabledReason`), sin texto debajo (decisión del 2026-10-23); la espera de un 429 es, igual, la ayuda de los controles que apaga: el primario del pie, el Reintentar de la lista o de la preparación, la búsqueda, las tarjetas de formularios y la paginación, «Consultar envío» junto al botón y «No, gracias» y «Revisar y enviar» de la sugerencia del asistente. |
 | [C2 · Elegir el formulario](evidence/formularios-whatsapp/e3-c2-elegir.png) | Diálogo con búsqueda y paginado, el idioma en que le llega, el mensaje y los estados de la lista. |
-| [C3 · El mensaje y los dos botones](evidence/formularios-whatsapp/e3-c3-mensaje.png) | Mensaje obligatorio de hasta 1024 caracteres; «Abrir formulario» («Open form» en inglés) y el botón final del formulario. Desde el 2026-11-01 el campo lleva «*» y la diferencia entre los dos botones va en la (i) de «Mensaje que lo acompaña», no debajo ([leyendas y carga](visual-baseline.md#leyendas-y-carga--2026-11-01)). |
+| [C3 · El mensaje y los dos botones](evidence/formularios-whatsapp/e3-c3-mensaje.png) | Mensaje obligatorio de hasta 1024 caracteres; «Abrir formulario» («Open form» en inglés) y el botón final del formulario. Desde el 2026-11-01 el campo lleva «*» y la diferencia entre los dos botones va en la (i) de «Mensaje que lo acompaña», no debajo ([leyendas y carga](visual-baseline.md#leyendas-y-carga--2026-11-01)). Desde el 2026-11-07 el campo propone «Completá el formulario «nombre».» con el formulario elegido ([el mensaje nombra el formulario](#el-mensaje-nombra-el-formulario--2026-11-07)). |
 | [C4 · Si algo cambia con el diálogo abierto](evidence/formularios-whatsapp/e3-c4-cambios.png) | Ventana cerrada, permiso revocado, fuera de atención manual, otro envío, vínculo cambiado y formulario no disponible, sin perder lo escrito. Desde el 2026-11-01 el motivo es el tooltip de «Enviar formulario» apagado (`DisabledReason`), no un párrafo sobre el pie; «Cambió la cuenta vinculada…», que pide cerrar y actualizar, va en un aviso rojo. |
 | [C5 · Después de enviar](evidence/formularios-whatsapp/e3-c5-estado.png) | Guardando, en cola, leído, no se pudo enviar, envío sin confirmar con «Ya revisé el WhatsApp» y pedido sin confirmar con «Consultar envío». |
 
@@ -1015,3 +1015,24 @@ Las escenas `forms.spec` (la publicación avanza sola con el reloj de la prueba,
 motivo de «Publicar en WhatsApp»; el intento sin confirmar con «Consultar publicación» y «Repetir el mismo intento» en
 el encabezado) y `formPublicationReads.spec` (en revisión, con el motivo; una publicación que no salió, con «Problemas»;
 la vista oficial interactiva a 480 × 840, achicada dentro del diálogo y del viewport) lo recorren a 1440, 390 y 320 px.
+
+## El mensaje nombra el formulario — 2026-11-07
+
+Probando «Enviar formulario» desde el chat, el usuario pidió que el mensaje por defecto fuera «el título del formulario
+elegido más algo más». Entre tres textos con la vista de lo que llega por WhatsApp eligió el primero; descartó el título
+solo en la primera línea, con «Completá este formulario.» debajo, y «Te mando el formulario «…» para que lo completes.».
+Es sólo texto: el diálogo no cambia de forma.
+
+- **Lo que llega.** «Completá el formulario «Prueba renglones 1».» («Complete the form “Rows test 1”.»), con el nombre del
+  formulario en el idioma en que le llega a la persona: el de su cuenta si el formulario lo tiene completo y, si no, el
+  original, como «Abrir formulario». Un mensaje sin editar viaja como `message: null` y el servidor arma el mismo texto
+  ([regla funcional](../../../ArquitecturaBase/docs/features/whatsapp.md#envío-durable-de-formularios)).
+- **En el diálogo.** Antes de elegir, el campo dice «Completá este formulario.». Al elegir un formulario lo nombra enseguida,
+  en el idioma de la cuenta, y cuando llega la preparación pasa al idioma del envío si es otro. Elegir otro formulario
+  cambia el nombre; lo que escribió el operador no se toca nunca, aunque nombre a otro formulario.
+- **El asistente.** Sus ofertas, las sugerencias que se aceptan en Atención manual y las de «Qué sugerir después» dicen
+  «Te preparé el formulario «Prueba renglones 1» para que lo completes.».
+- **El tope.** El nombre tiene hasta 120 caracteres, así que el texto entra siempre en los 1024 del mensaje.
+
+`WhatsAppForms.test.tsx` y `ChatLanguageLoading.test.tsx` lo recorren con los dos idiomas, el original y una preparación
+que tarda; `chatForms.spec` comprueba el texto en inglés.

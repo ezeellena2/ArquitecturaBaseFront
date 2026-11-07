@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ChatFormOption, RecipientCulture } from "../api/forms";
 
 export interface FormMessageRequest { requestId: string; definitionId: string; versionId: string; expectedModeRevision: number; expectedRecipientContextRevision: string; message: string | null }
@@ -13,6 +14,11 @@ export function formOptionKey(option: ChatFormOption) { return option.definition
 
 export function formOptionName(option: ChatFormOption, culture: RecipientCulture): string {
   return option.name[culture]?.trim() ? option.name[culture]! : option.name[culture === "es" ? "en" : "es"]!;
+}
+
+/** The opening above «Abrir formulario», like the server's default: it names the chosen form; before choosing, it is generic. */
+export function formOpening(t: TFunction<"whatsapp">, culture: RecipientCulture, option?: ChatFormOption): string {
+  return option ? t("forms.defaultMessage", { lng: culture, name: formOptionName(option, culture) }) : t("forms.defaultMessageUnselected", { lng: culture });
 }
 
 /** The question whose list depends on another answer, in the recipient's language when it has it: the form cannot be sent. */
