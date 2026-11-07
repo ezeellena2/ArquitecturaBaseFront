@@ -91,6 +91,21 @@ export function createResponseVisualFixtures(
       },
     ),
   );
+  // RG4-A: a block of rows, with three items in the newest response and none in the others.
+  if (scenario === "responses-rows") {
+    const question = (n: number, type: "choice" | "decimal" | "longText", label: string) => ({ fieldId: id(n), type, label, introducedInVersion: 1, options: [] });
+    sheet.columns.push({ ...question(80, "choice", en ? "Items" : "Artículos"), type: "group",
+      questions: [question(81, "choice", en ? "Item" : "Artículo"), question(82, "decimal", en ? "Quantity" : "Cantidad"), question(83, "longText", en ? "Note" : "Observación")] });
+    const item = (label: string, quantity: string, note: string | null) => ({ cells: [
+      { fieldId: id(81), type: "choice" as const, state: "Answered" as const, value: { choiceId: id(84), label } },
+      { fieldId: id(82), type: "decimal" as const, state: "Answered" as const, value: quantity },
+      note === null ? { fieldId: id(83), type: "longText" as const, state: "Unanswered" as const, value: null }
+        : { fieldId: id(83), type: "longText" as const, state: "Answered" as const, value: note }] });
+    sheet.records.items.forEach((row, index) => row.cells.push(index === 0
+      ? { fieldId: id(80), type: "group", state: "Answered", value: [item("GLIFOSATO 64%", "200", en ? "No damage" : "Sin daños"),
+        item("ATRAZINA 50%", "150.5", null), item("UREA GRANULADA", "1000", null)] }
+      : { fieldId: id(80), type: "group", state: "Unanswered", value: [] }));
+  }
   if (scenario === "responses-type-change") {
     sheet.columns[0].introducedInVersion = 2;
     sheet.columns.push({
