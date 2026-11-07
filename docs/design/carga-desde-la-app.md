@@ -250,6 +250,9 @@ Diferencias con el dibujo:
   dibujada.
 - Las condiciones van en el orden de sus campos, como las demás, y no en el orden en que se agregaron.
 
+Con renglones, de qué renglón sale la respuesta lo decide LD3-A, en
+[elegir primero por un campo](#elegir-primero-por-un-campo-ld1-a-a-ld3-a--2026-11-07).
+
 ## Corregir y anular, Etapa 3 — 2026-11-05
 
 Lo guardado no se edita: «Corregir» guarda otra respuesta que reemplaza a la anterior con el mismo número (**CW10-A**) y
@@ -332,3 +335,41 @@ Diferencias con el dibujo:
   título lleva ↑ ↓, lápiz y tacho como una pregunta.
 - La primera zona del dibujo se llama «Lote» porque el formulario arranca con ese título; sin un título al principio, lo de
   antes del primero queda en «Datos».
+
+## Elegir primero por un campo, LD1-A a LD3-A — 2026-11-07
+
+Por programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las
+opciones con ese valor, como dibujan **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma
+pantalla») y, para las listas dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
+[lienzo provisorio](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en las filas «Formularios · un combo que filtra el
+siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y la prueba con Meta que va antes están en el
+[plan](../../../ArquitecturaBase/docs/plans/2026-11-07-elegir-primero-por-un-campo.md).
+
+- **En el editor,** debajo de «Permitir elegir varias», la casilla «Elegir primero por un campo» (`CheckboxField` con su
+  `InfoTip`) y, marcada, «Campo»: un combo con los campos activos del catálogo de texto u opción de un catálogo, de cualquier
+  papel. Con «Permitir elegir varias» marcada queda apagada con su motivo, y al revés; un catálogo sin esos campos no la
+  muestra. La línea de la pregunta dice «Elegir de un catálogo, primero por Rubro». El resumen de «Qué opciones ve cada
+  persona» cuenta por valor: «Todos ven las mismas 125, en 3 rubros. El más grande tiene 75: entra en el desplegable (200).»
+- **En la app,** la pregunta son dos combos: el del campo, con su nombre de etiqueta («Rubro»), y el de la pregunta. El de la
+  pregunta espera apagado con «Elegí primero «Rubro»»; con el valor elegido trae sólo sus opciones y la cuenta lo nombra:
+  «75 opciones de Herbicidas». Si el valor cambia, la opción elegida se limpia, como en CW7. Si queda un solo valor, viene
+  elegido, y las opciones sin valor van al final, en «Sin rubro». En la grilla, el par ocupa dos columnas.
+- **En los renglones,** el par son dos columnas de la tabla de RG2-A, «Rubro» y la pregunta, y cada renglón elige el suyo; en
+  el panel y el celular, los dos combos van en el recuadro del renglón.
+- **En WhatsApp,** en la pantalla de la pregunta o del renglón va primero el desplegable del campo y, al elegir, aparece el
+  de la pregunta con sólo sus opciones, hasta 200 por valor. Depende de la prueba con Meta: si no anda, la pregunta va con la
+  lista entera, como hoy (LD2-B).
+- **Lo que se guarda** es la opción. El valor del campo es un dato de la opción y se ve en «Columnas» de la planilla, como
+  los demás campos. Al corregir, el primer combo arranca con el valor de la opción guardada.
+- **Listas dependientes con renglones (LD3-A).** «Respuesta de» dice de dónde sale: en una pregunta del bloque, «Elige de
+  Rubros · del mismo renglón» o «Elige de Campos · para todos los renglones»; en una pregunta de afuera, las del bloque salen
+  apagadas con «Está en el bloque», y publicar frena si una quedó así. En la carga, cada renglón usa la respuesta de su mismo
+  renglón, o la de afuera.
+
+Diferencias con el dibujo:
+
+- Donde los tableros dicen «renglón» en un texto de la app («Detalle · renglón 1» en WhatsApp, «Agregar renglón», «4
+  renglones»), vale «ítem», como pide RG12-A en [renglones](renglones-en-formularios.md).
+- El grupo «Sin rubro» y el orden de los valores no se dibujaron: los fija el plan.
+- Los círculos naranjas y el renglón punteado de WhatsApp («Artículos: aparece al elegir el rubro») son notas del tablero,
+  no UI.
