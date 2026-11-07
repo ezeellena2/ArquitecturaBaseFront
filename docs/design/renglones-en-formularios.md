@@ -1,11 +1,13 @@
 # Renglones en los formularios: tableros elegidos
 
-Fecha: **2026-11-04**, con los tableros dibujados del 2026-11-02 al 2026-11-04. Estado: **por programar**. El alcance, el
+Fecha: **2026-11-04**, con los tableros dibujados del 2026-11-02 al 2026-11-04, RG10-D del 2026-11-06 y RG12-A del
+2026-11-07. Estado: **por programar**. El alcance, el
 modelo y las etapas están en el [plan](../../../ArquitecturaBase/docs/plans/2026-11-03-renglones-en-formularios.md); las
 pantallas, los textos y los estados salen de acá.
 
 Origen: el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas
-«Formularios · renglones · 0» a «· 8» (RG0 a RG6 en la versión 55; RG7 y RG8, al final, en las versiones 79 y 82). Se armó aparte porque el
+«Formularios · renglones · 0» a «· 12» (RG0 a RG6 en la versión 55; RG7 y RG8, al final, en las versiones 79 y 82; RG12 en
+la versión 92). Se armó aparte porque el
 [Sistema visual](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) no se abre desde la cuenta de Claude Code: se volvió a
 probar el 2026-11-04 y dio «artifact not found». Los tableros elegidos pasan a ese lienzo cuando se pueda abrir, y mientras
 tanto vale el provisorio. Como el lienzo es privado y puede cambiar fuera de Git, este documento congela lo elegido.
@@ -25,13 +27,18 @@ tanto vale el provisorio. Como el lienzo es privado y puede cambiar fuera de Git
 
 ## Las elecciones
 
-El usuario eligió las recomendadas: RG1-A a RG6-A el 2026-11-03, y RG7-A, RG8-A y RG9-A el 2026-11-04. El 2026-11-06 no eligió ninguna de RG10 y propuso RG10-D, «Agregar bloque», que aprobó sobre su maqueta. Descartó RG1-B, una sección que se
+El usuario eligió las recomendadas: RG1-A a RG6-A el 2026-11-03, y RG7-A, RG8-A y RG9-A el 2026-11-04. El 2026-11-06 no eligió ninguna de RG10 y propuso RG10-D, «Agregar bloque», que aprobó sobre su maqueta. El 2026-11-07 eligió RG12-A: «ítem» en lugar de «renglón» en todos los textos. Descartó RG1-B, una sección que se
 repite, que necesitaba antes los títulos de sección; RG2-B, una tabla de lectura con un diálogo por renglón; RG3-B, una sola
 pantalla de renglón y la lista de lo cargado, con intercambio cifrado con Meta; RG4-B, una fila por renglón en la planilla y
 en el Excel; RG5-B, elegir «algún» o «todos» en cada condición y contar renglones; RG6-B, volver a crear adentro del bloque
 las preguntas que ya existen, y RG6-C, una zona «Carga múltiple» con la lista para marcar; RG7-B, que WhatsApp cargue los
 renglones que entran y publicar avise, y RG7-C, frenar como hoy con 16 KB; RG8-B, la pregunta del mínimo 0 al final de la
-pantalla anterior, y RG8-C, que WhatsApp cargue siempre al menos un renglón. RG0 no tenía opciones.
+pantalla anterior, y RG8-C, que WhatsApp cargue siempre al menos un renglón; RG12-B, el nombre del bloque en la pregunta de
+WhatsApp («¿Agregás más artículos?»), y RG12-C, cómo se llama cada ítem en singular («¿Agregás otro artículo?»). RG0 no tenía
+opciones.
+
+Donde un tablero o esta tabla cita «renglón» en un texto de la app, vale «ítem»: cada texto está en
+[los textos](#los-textos-ítem-en-lugar-de-renglón-rg12-a--2026-11-07).
 
 | Tablero | Qué define |
 | --- | --- |
@@ -44,6 +51,7 @@ pantalla anterior, y RG8-C, que WhatsApp cargue siempre al menos un renglón. RG
 | **RG8-A · Un bloque con mínimo 0 en WhatsApp: «¿Agregás un renglón?» antes del primero** (elegida) | Con un mínimo de 0, el Flow suma antes del primer renglón una pantalla con el nombre del bloque como título («Artículos») y «¿Agregás un renglón?», sí o no, obligatoria: con «Sí» sigue el renglón 1; con «No», lo de después del bloque o «Enviar». Desde el primero, cada renglón termina con «¿Agregás otro renglón?», como en RG3-A, y la flecha de WhatsApp vuelve a esa pantalla para cambiar el «No». Con un mínimo de 1 o más, la pantalla no aparece. En la app no cambia nada: la tabla arranca vacía y «Agregar renglón» suma el primero. |
 | **RG9-A · «Renglones» en el tipo de respuesta, apagada con su motivo después de «·»** (elegida) | «Renglones» es un tipo más, al final del desplegable «Tipo de respuesta» (RG1-A la dibujó en un menú de «Agregar pregunta», que la app no tiene). Con un bloque ya armado queda apagada como «Renglones · Ya hay un bloque de renglones», igual que hoy «Foto · …» y «Documento · …» cuando falta el almacenamiento. En una pregunta del bloque, «Foto» y «Documento» se apagan con «· No se carga varias veces», y «Permitir elegir varias» se apaga con su motivo al pasar el mouse. Descartadas: RG9-B, un botón «Agregar renglones», y RG9-C, «Renglones» sólo mientras no hay un bloque, sin motivo. Desde RG10-D, el desplegable ya no ofrece «Renglones»; lo de foto, documento y «Permitir elegir varias» sigue. |
 | **RG10-D · «Agregar bloque», como una pregunta más** (propuesta y elegida) | En la franja «Preguntas», «Agregar bloque» va al lado de «Agregar pregunta»; «Agregar título» no cambia. El bloque se suma al final de la lista como una pregunta más, abierto: el nombre, que arranca en «Bloque» (también cuando lo crea «Se carga varias veces»), el mínimo y el máximo de renglones, la ayuda y su propio «Agregar pregunta». En la lista dice «Bloque · de 1 a 10 renglones · 3 preguntas», con sus preguntas en el recuadro «Preguntas de cada renglón». Con un bloque ya armado, el botón se apaga y su tooltip dice «Ya hay un bloque de renglones.». «Tipo de respuesta» deja de ofrecer «Renglones». Descartadas: RG10-A, un botón «Agregar renglones»; RG10-B, un solo «Agregar» con menú, y RG10-C, como estaba. |
+| **RG12-A · «Ítem» en lugar de «renglón», en toda la app** (elegida) | La palabra «renglón» sale de todos los textos que ve el usuario y queda «ítem» («item» en inglés): en el editor, al publicar, en WhatsApp y su vista previa, en la carga, en las lecturas y en las reglas. En la lista del editor, «Bloque · de 1 a 10 ítems · 3 preguntas»; con mínimo y máximo iguales, la cantidad («Bloque · 1 ítem · 2 preguntas»), y con mínimo 0, «hasta 10 ítems». El recuadro dice «Preguntas de cada ítem». En WhatsApp, «Artículos · ítem 2» y «¿Agregás otro ítem?»; con mínimo 0, «¿Agregás un ítem?». En la carga, «Agregar ítem» e «Ítem 2». «Ítem» va siempre con «otro» y «un», así que se lee bien con cualquier nombre de bloque, y la pregunta usa 19 de los 30 caracteres que admite Meta. Descartadas: RG12-B, en WhatsApp el nombre del bloque («Artículos · 2», «¿Agregás más artículos?», con el nombre en plural y de hasta 16 caracteres), y RG12-C, «Cada ítem es [un/una] [artículo]» en el editor del bloque («¿Agregás otro artículo?», «Artículo 2»). |
 | **RG4-A · Una fila por respuesta y una hoja por bloque** (elegida) | La planilla sigue con una fila por respuesta. La columna del bloque dice la cantidad, en gris, y los valores de su primera pregunta, en orden y cortados con «…»: «3 · GLIFOSATO 64%, ATRAZINA 50%, UREA GRANULADA…». No se ordena por ella, como «elegir varias», y una respuesta de antes del bloque dice «—». En «Filtros», las preguntas del bloque van debajo de su nombre, con sangría, y cada una filtra por algún renglón («En algún renglón de Artículos»). La vista rápida (D2) muestra el bloque como un dato más: cada renglón con su número y su primer valor en negro, y los demás datos alineados debajo, como los de un catálogo (TL1-A). La pantalla completa (DC1) muestra una tabla en la columna del valor, y el PDF, una tabla con el nombre del bloque como título, que sigue en la página siguiente con su encabezado si no entra. El Excel deja «Respuestas» como hoy, con la cantidad de renglones en la columna del bloque, y suma una hoja con el nombre del bloque: una fila por renglón con N°, Renglón y sus preguntas, con los tipos y la precisión de hoy. |
 | **RG5-A · «Algún renglón con…»** (elegida) | Al elegir en una condición una pregunta del bloque («Artículos › ¿Llegó en buen estado?»), la condición empieza con «Algún renglón con» y se cumple si al menos un renglón la cumple. Varias del mismo bloque buscan un mismo renglón que las cumpla todas: «Algún renglón con Artículo GLIFOSATO 64% y Cantidad desde 100». «Filtros» usa la misma regla, y una respuesta de antes del bloque no cumple ninguna condición sobre sus preguntas, como hoy con una pregunta que no existía. En «Agregar dato» (MD1-A), el bloque es un dato que trae todos sus renglones; sus preguntas no se ofrecen sueltas. En «Así llega» y en el aviso, cada renglón va en una línea, numerado y con sus valores separados por « · » en el orden de las preguntas: «1. GLIFOSATO 64% · 200 · Litros · 4,20 · Sí». La lista de reglas dice «Algún renglón de Artículos con ¿Llegó en buen estado? es No», con la pregunta y el valor en negrita. |
 
@@ -51,10 +59,48 @@ pantalla anterior, y RG8-C, que WhatsApp cargue siempre al menos un renglón. RG
 
 | Etapa del plan | De los tableros |
 | --- | --- |
-| 1 · El bloque en el editor y al publicar | RG1-A y RG6-A enteros; de RG3-A, las pantallas del Flow, «¿Agregás otro renglón?» y el aviso del máximo; RG7-A y RG8-A. La verificación con Meta: las 10 ramas, lo que no se visitó, las opciones de un catálogo en cada pantalla y una respuesta de unos 40 KB. |
+| 1 · El bloque en el editor y al publicar | RG1-A y RG6-A enteros; de RG3-A, las pantallas del Flow, «¿Agregás otro ítem?» y el aviso del máximo; RG7-A, RG8-A, RG10-D y, de RG12-A, los textos del editor, de publicar y de WhatsApp. La verificación con Meta: las 10 ramas, lo que no se visitó, las opciones de un catálogo en cada pantalla y una respuesta de unos 40 KB. |
 | 2 · Cargar renglones | RG2-A entero, en la página, el panel y el celular, con «Mantener»; de RG3-A, la carga por WhatsApp. La prueba física con el remito de tres artículos, desde la app y por WhatsApp. |
 | 3 · Ver los renglones | RG4-A: la columna de la planilla, «Filtros» por algún renglón, la vista rápida, la pantalla completa, el chat de WhatsApp, la hoja del Excel y la tabla del PDF. |
 | 4 · Las reglas | RG5-A: «Algún renglón con…» en el editor y en la evaluación, la lista de reglas y el bloque como dato del mensaje, con «Así llega». |
+
+## Los textos: «ítem» en lugar de «renglón» (RG12-A · 2026-11-07)
+
+Salió en la verificación con Meta: en el celular, el usuario preguntó si «¿Agregás otro renglón?» no tendría que nombrar lo
+que se carga y, mirando la lista del editor («Renglones · de 1 a 1 · 2 preguntas», «Preguntas de cada renglón»), propuso
+«ítem» en lugar de «renglón». Es el tablero RG12-A del lienzo provisorio (versión 92). Vale para todo texto que ve el
+usuario; los documentos y el código siguen diciendo renglón (`rows`).
+
+| Dónde | Decía | Dice | En inglés |
+| --- | --- | --- | --- |
+| La lista del editor, con mínimo y máximo iguales | «Renglones · de 1 a 1 · 2 preguntas» | «Bloque · 1 ítem · 2 preguntas» | «Block · 1 item · 2 questions» |
+| La lista del editor, de 1 a 10 | «Bloque · de 1 a 10 renglones · 3 preguntas» (RG10-D) | «Bloque · de 1 a 10 ítems · 3 preguntas» | «Block · 1 to 10 items · 3 questions» |
+| La lista del editor, con mínimo 0 | «Bloque · de 0 a 10 renglones · 3 preguntas» | «Bloque · hasta 10 ítems · 3 preguntas» | «Block · up to 10 items · 3 questions» |
+| El recuadro del bloque | «Preguntas de cada renglón» | «Preguntas de cada ítem» | «Questions for each item» |
+| El editor del bloque, sobre «Mínimo» y «Máximo» | «Renglones» | «Ítems» | «Items» |
+| El nombre de arranque del bloque | «Renglones» | «Bloque», como en RG10-D | «Block» |
+| La (i) del máximo | «En WhatsApp se cargan hasta 10 renglones; en la app, hasta el máximo.» | «En WhatsApp se cargan hasta 10 ítems; en la app, hasta el máximo.» | «WhatsApp loads up to 10 items; the app, up to the maximum.» |
+| La (i) de «Se carga varias veces» | «Se carga una vez por renglón, en la tabla del bloque.» | «Se carga una vez por ítem, en la tabla del bloque.» | «Loaded once per item, in the block's table.» |
+| «Agregar bloque» apagado | «Ya hay un bloque de renglones.» | «Ya hay un bloque.» | «There is already a block.» |
+| «Permitir elegir varias» apagada | «En el bloque de renglones se elige una sola opción.» | «En un bloque se elige una sola opción.» | «A block picks a single option.» |
+| «Qué se publica» | «Pasan a renglones» | «Pasan al bloque» | «Move into the block» |
+| El aviso del máximo al publicar | «En WhatsApp se cargan hasta 10 renglones; el máximo es 20.» | «En WhatsApp se cargan hasta 10 ítems; el máximo es 20.» | «WhatsApp loads up to 10 items; the maximum is 20.» |
+| El mensaje del aviso que manda el backend | «En WhatsApp se cargan menos renglones que el máximo del bloque.» | «En WhatsApp se cargan menos ítems que el máximo del bloque.» | «WhatsApp loads fewer items than the block maximum.» |
+| WhatsApp y la vista previa: el título de cada pantalla | «Artículos · renglón 2» | «Artículos · ítem 2» | «Articles · item 2» |
+| WhatsApp y la vista previa: al final de cada uno | «¿Agregás otro renglón?» | «¿Agregás otro ítem?» | «Add another item?» |
+| WhatsApp y la vista previa: con mínimo 0, antes del primero | «¿Agregás un renglón?» | «¿Agregás un ítem?» | «Add an item?» |
+| La carga (Etapa 2): el botón al pie | «Agregar renglón» | «Agregar ítem» | «Add item» |
+| La carga: los recuadros del panel y del celular | «Renglón 2» | «Ítem 2» | «Item 2» |
+| La carga: si faltan | «Agregá al menos 1 renglón.» | «Agregá al menos 1 ítem.» | «Add at least 1 item.» |
+| La carga: con el máximo | «Hasta 20 renglones.» | «Hasta 20 ítems.» | «Up to 20 items.» |
+| «Filtros» (Etapa 3) | «En algún renglón de Artículos» | «En algún ítem de Artículos» | «In any item of Articles» |
+| La hoja del Excel | «N°, Renglón y sus preguntas» | «N°, Ítem y sus preguntas» | «No., Item and its questions» |
+| Las reglas (Etapa 4) | «Algún renglón con…», «Si algún renglón de Artículos con…» | «Algún ítem con…», «Si algún ítem de Artículos con…» | «Any item with…», «If any item of Articles with…» |
+
+- La lista elige la forma por el mínimo y el máximo: iguales, la cantidad («1 ítem», «3 ítems»); mínimo 0, «hasta N ítems»;
+  si no, «de N a M ítems». El plural sigue al último número.
+- «Ítem» lleva tilde, y mayúscula sólo al empezar («Ítem 2»).
+- Queda «renglón» en Importar opciones («Cada fila copiada ocupa un renglón…»): ahí es la línea de lo pegado, no el bloque.
 
 ## Lo que se fijó al registrar
 
@@ -79,8 +125,8 @@ opción más simple que cumple el plan:
   («Nombre», «Mínimo» y «Máximo»), y entre los datos de cada pregunta va «Se carga varias veces».
 - **El chat de WhatsApp**, que muestra los valores de una respuesta, pone el bloque con un renglón por línea, como «Así
   llega». Viene del plan, sin tablero.
-- **Los textos son genéricos** («Agregar renglón», «Renglón 2», «¿Agregás otro renglón?»): el bloque no guarda cómo se llama
-  un renglón en singular.
+- **Los textos dicen «ítem»** («Agregar ítem», «Ítem 2», «¿Agregás otro ítem?», RG12-A): el bloque no guarda cómo se llama uno
+  en singular.
 - **El celular, fuera de la carga:** la tabla de la pantalla completa se desplaza de costado dentro de su caja, como las
   demás tablas, y en el editor el recuadro del bloque va a lo ancho, con las mismas acciones.
 - **Las esperas y los errores** siguen el contrato común: agregar, mover y quitar renglones no esperan al servidor; enviar y
