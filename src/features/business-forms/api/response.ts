@@ -13,7 +13,7 @@ const presentationPart = z.union([z.enum(["text", "code", "detail", "value"]), g
 const catalogPresentation = z.strictObject({ title: z.array(presentationPart).min(1).max(24), description: z.array(presentationPart).max(24) });
 const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().min(1).max(300) }), z.strictObject({ fieldId: guid, personAttributeId: guid }),
   z.strictObject({ fieldId: guid, questionId: guid })]);
-export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional() })
+export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional(), groupBy: guid.optional() })
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 const rowQuestionTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group"]),

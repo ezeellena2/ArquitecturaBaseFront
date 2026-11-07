@@ -1,3 +1,4 @@
+import type { CatalogField } from "./api/catalogResponse";
 import type { DraftQuestionSource, FormCatalogMatch, FormQuestionSource } from "./model";
 
 export function copyCatalogQuestionSource(source: FormQuestionSource): FormQuestionSource;
@@ -9,6 +10,7 @@ export function copyCatalogQuestionSource(source: DraftQuestionSource): DraftQue
     ...(source.presentation !== undefined ? {
       presentation: source.presentation ? { title: [...source.presentation.title], description: [...source.presentation.description] } : null,
     } : {}),
+    ...(source.groupBy !== undefined ? { groupBy: source.groupBy } : {}),
   };
 }
 
@@ -20,13 +22,19 @@ export function normalizeCatalogQuestionSource(source: DraftQuestionSource): Dra
     catalog: copied.catalog,
     ...(copied.match?.length ? { match: [...copied.match].sort((left, right) => left.fieldId < right.fieldId ? -1 : left.fieldId > right.fieldId ? 1 : 0) } : {}),
     ...(copied.presentation ? { presentation: copied.presentation } : {}),
+    ...(copied.groupBy ? { groupBy: copied.groupBy } : {}),
   };
+}
+
+/** LD1-A: the fields a question can choose first by: the active ones of text or catalog type, of either role, in catalog order. */
+export function groupByFields(fields: readonly CatalogField[]): readonly CatalogField[] {
+  return fields.filter(field => field.isActive && (field.type === "text" || field.type === "catalog"));
 }
 
 export function sameCatalogQuestionSource(left: DraftQuestionSource | null | undefined, right: DraftQuestionSource | null | undefined): boolean {
   if (!left || !right) return !left && !right;
   const a = normalizeCatalogQuestionSource(left), b = normalizeCatalogQuestionSource(right);
-  if (a.catalog !== b.catalog) return false;
+  if (a.catalog !== b.catalog || (a.groupBy ?? null) !== (b.groupBy ?? null)) return false;
   const aMatches = a.match ?? [], bMatches = b.match ?? [];
   if (aMatches.length !== bMatches.length || aMatches.some((match, index) => {
     const other = bMatches[index]!;

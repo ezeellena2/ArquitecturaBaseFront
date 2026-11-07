@@ -53,6 +53,14 @@ describe("draftReviewLines", () => {
     ]);
   });
 
+  // LD1-A: the field to choose first reads by its name, after «Permitir elegir varias».
+  it("names the field to choose first when only that changed", () => {
+    const mine = editing(question => question.fieldId === "item" && question.type === "choice" && question.source ? { ...question, source: { ...question.source, groupBy: "category" } } : question);
+    expect(lines(mine)).toEqual([
+      { key: "groupBy", label: { kind: "key", key: "catalogQuestion.groupBy.label" }, before: { kind: "none" }, after: { kind: "field", catalogId: catalog, fieldId: "category" } },
+    ]);
+  });
+
   it("without reading catalogs, falls back to the data both versions share rather than an empty change", () => {
     const mine = editing(question => question.fieldId === "item" && question.type === "choice" && question.source
       ? { ...question, source: { ...question.source, presentation: { title: ["text"], description: [] } } } : question);

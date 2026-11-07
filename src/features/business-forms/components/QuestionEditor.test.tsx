@@ -132,6 +132,21 @@ it("retains the field but makes no catalog reads without CatalogsRead", async ()
   expect(reads).toBe(0); expect(screen.queryByText(catalogA)).not.toBeInTheDocument();
 });
 
+// LD1-A (2026-11-07): choosing first by a field is one option, so «Permitir elegir varias» is off with its reason, and the line
+// of the question names the field.
+it("names the field to choose first in the line and keeps choosing several off", async () => {
+  const items = "01990000-0000-7000-8000-0000000000b1", category = "01990000-0000-7000-8000-0000000000b2";
+  const field = { id: category, key: "category", name: { es: "Rubro", en: "Category" }, type: "text", sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: 80, role: "data", position: 1, isActive: true, valuesCount: 3, usedBy: [] };
+  server.use(http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...manualDetail, id: items, key: items.replaceAll("-", ""), name: { es: "Artículos", en: "Items" }, itemsCount: 0, fields: [field] })));
+  const question: DraftQuestion = { localId: "item", fieldId: null, replacesFieldId: null, type: "choice", label: { es: "Artículo" }, help: null, required: false, source: { catalog: items, groupBy: category } };
+  await act(async () => { renderWithProviders(<MemoryRouter><QuestionEditor question={question} position={1} total={1} culture="es" original="es" expanded readOnly={false} issues={[]}
+    catalogScope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} onChange={vi.fn()} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} /></MemoryRouter>); });
+  expect((await screen.findByText(", primero por Rubro")).closest("p")).toHaveTextContent("Elegir de un catálogo, primero por Rubro · Opcional");
+  const multiple = screen.getByRole("checkbox", { name: "Permitir elegir varias" });
+  expect(multiple).toBeDisabled();
+  expect(multiple).toHaveAccessibleDescription("No se combina con «Elegir primero por un campo».");
+});
+
 it("marks untranslated secondary text neutrally and preserves the original reference without validation", async () => {
   const question: DraftQuestion = { ...first, help: { es: "Elegí un cliente." }, options: first.options.map((option,index) => ({ ...option, label: index === 0 ? option.label : { ...option.label, en: "South" } })) };
   const onChange = vi.fn();

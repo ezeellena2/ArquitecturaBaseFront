@@ -338,9 +338,10 @@ Diferencias con el dibujo:
 
 ## Elegir primero por un campo, LD1-A a LD3-A — 2026-11-07
 
-Por programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las
-opciones con ese valor, como dibujan **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma
-pantalla») y, para las listas dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
+El editor quedó programado el 2026-11-07; la carga, los renglones y WhatsApp siguen por programar. Una pregunta de
+catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones con ese valor, como dibujan
+**LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma pantalla») y, para las listas
+dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
 [lienzo provisorio](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en las filas «Formularios · un combo que filtra el
 siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y lo que dio la prueba con Meta están en el
 [plan](../../../ArquitecturaBase/docs/plans/2026-11-07-elegir-primero-por-un-campo.md).
@@ -371,5 +372,8 @@ Diferencias con el dibujo:
 - Donde los tableros dicen «renglón» en un texto de la app («Detalle · renglón 1» en WhatsApp, «Agregar renglón», «4
   renglones»), vale «ítem», como pide RG12-A en [renglones](renglones-en-formularios.md).
 - El grupo «Sin rubro» y el orden de los valores no se dibujaron: los fija el plan.
+- La (i) de la casilla y los motivos de las dos casillas apagadas no se dibujaron: «No se combina con «Permitir elegir
+  varias».» y, en «Permitir elegir varias», «No se combina con «Elegir primero por un campo».». «Campo» ocupa media fila,
+  como «Pregunta» y «Tipo».
 - Los círculos naranjas y el renglón punteado de WhatsApp («Artículos: aparece al elegir el rubro») son notas del tablero,
   no UI.

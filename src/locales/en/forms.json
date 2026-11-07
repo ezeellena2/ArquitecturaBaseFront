@@ -694,6 +694,14 @@
     "changeDescription": "The saved question is replaced with a new one. Previous versions keep their catalog.",
     "changeAction": "Change catalog",
     "noResults": "No catalogs match your search.",
+    "groupBy": {
+      "label": "Choose by a field first",
+      "help": "Whoever fills it in first picks a value of the field, and the list brings only the options with that value. Only the option is saved.",
+      "field": "Field",
+      "notWithMultiple": "It doesn't go with «Allow choosing several».",
+      "multipleOff": "It doesn't go with «Choose by a field first».",
+      "line": ", first by {{field}}"
+    },
     "filter": {
       "title": "Which options each person sees",
       "hint": "Filters are combined and use fields with the filter role. A person’s data, or the answer to an earlier single-choice question, must choose from the same catalog as the field.",

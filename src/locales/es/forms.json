@@ -694,6 +694,14 @@
     "changeDescription": "La pregunta guardada se reemplaza por una nueva. Las versiones anteriores conservan su catálogo.",
     "changeAction": "Cambiar catálogo",
     "noResults": "No hay catálogos que coincidan con la búsqueda.",
+    "groupBy": {
+      "label": "Elegir primero por un campo",
+      "help": "Quien completa elige primero un valor del campo y la lista trae sólo las opciones con ese valor. Se guarda sólo la opción.",
+      "field": "Campo",
+      "notWithMultiple": "No se combina con «Permitir elegir varias».",
+      "multipleOff": "No se combina con «Elegir primero por un campo».",
+      "line": ", primero por {{field}}"
+    },
     "filter": {
       "title": "Qué opciones ve cada persona",
       "hint": "Los filtros se suman y usan los campos de papel «filtro». Un dato de la persona, o la respuesta de una pregunta anterior de elegir una, tiene que elegir del mismo catálogo que el campo.",

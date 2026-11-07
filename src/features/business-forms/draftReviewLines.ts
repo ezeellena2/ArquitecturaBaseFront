@@ -11,7 +11,8 @@ export type ReviewValue =
   | { readonly kind: "list"; readonly items: readonly { readonly value: ReviewValue; readonly moved: boolean }[] }
   | { readonly kind: "catalog"; readonly catalogId: string }
   | { readonly kind: "condition"; readonly catalogId: string; readonly condition: FormCatalogMatch<string | null> }
-  | { readonly kind: "presentation"; readonly catalogId: string; readonly parts: readonly string[] };
+  | { readonly kind: "presentation"; readonly catalogId: string; readonly parts: readonly string[] }
+  | { readonly kind: "field"; readonly catalogId: string; readonly fieldId: string };
 export type ReviewLabel =
   | { readonly kind: "key"; readonly key: string }
   | { readonly kind: "field"; readonly catalogId: string; readonly fieldId: string }
@@ -25,7 +26,7 @@ const count = (value: number | null) => value === null ? { kind: "none" } as con
 const identity = (question: DraftQuestion) => question.fieldId ?? `new:${question.localId}`;
 const choiceIdentity = (choice: DraftChoice) => choice.choiceId ?? `new:${choice.localId}`;
 const order = ["type", "required", "repeated", "help", "catalog", "filter:", "filters", "presentation", "presentation.title", "presentation.description", "options", "multiple",
-  "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength", "rows.minimum", "rows.maximum"];
+  "groupBy", "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength", "rows.minimum", "rows.maximum"];
 const rank = (fact: string) => order.findIndex(item => item.endsWith(":") ? fact.startsWith(item) : fact === item);
 
 // The data of a question with the names of its editor. `whole` adds what only a question that one version lacks needs:
@@ -52,6 +53,8 @@ function questionFacts(question: DraftQuestion, culture: FormCulture, original: 
     }
     if (!source && options.listsOptions) facts.push({ key: "options", label: key("catalogs.items.title"), value: { kind: "list", items: question.options.map(option => ({ value: text(localizedValue(option.label, culture, original)), moved: false })) } });
     facts.push({ key: "multiple", label: key("multiple.allow"), value: key(question.type === "multiChoice" ? "yes" : "no") });
+    // LD1-A: the field to choose first, named by the catalog, below «Permitir elegir varias» as in the editor.
+    if (source?.catalog && source.groupBy && options.catalogs) facts.push({ key: "groupBy", label: key("catalogQuestion.groupBy.label"), value: { kind: "field", catalogId: source.catalog, fieldId: source.groupBy } });
     if (question.type === "multiChoice") facts.push({ key: "selection.minimum", label: key("multiple.minimum"), value: count(question.selection.minSelected) },
       { key: "selection.maximum", label: key("multiple.maximum"), value: count(question.selection.maxSelected) });
   }

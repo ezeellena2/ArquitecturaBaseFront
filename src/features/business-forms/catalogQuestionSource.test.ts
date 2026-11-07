@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { copyCatalogQuestionSource, normalizeCatalogQuestionSource, sameCatalogQuestionSource } from "./catalogQuestionSource";
+import type { CatalogField } from "./api/catalogResponse";
+import { copyCatalogQuestionSource, groupByFields, normalizeCatalogQuestionSource, sameCatalogQuestionSource } from "./catalogQuestionSource";
 import type { DraftQuestionSource, FormQuestionSource } from "./model";
 
 const catalog = "0199f0a1-0000-7000-8000-000000000001";
@@ -92,5 +93,22 @@ describe("catalog question source", () => {
     expect(sameCatalogQuestionSource(source, { catalog, presentation: { title: ["code", "text"], description: [firstField, secondField] } })).toBe(false);
     expect(sameCatalogQuestionSource(source, { catalog, presentation: { title: ["text", "code"], description: [secondField, firstField] } })).toBe(false);
     expect(sameCatalogQuestionSource({ catalog }, { catalog, presentation: { title: ["text"], description: ["detail"] } })).toBe(false);
+  });
+
+  // LD1-A: the field to choose first travels only when there is one, like an own presentation.
+  it("keeps the field to choose first and leaves it out without one", () => {
+    expect(normalizeCatalogQuestionSource({ catalog, groupBy: firstField })).toEqual({ catalog, groupBy: firstField });
+    expect(JSON.stringify(normalizeCatalogQuestionSource({ catalog, groupBy: null }))).toBe(JSON.stringify({ catalog }));
+    expect(copyCatalogQuestionSource({ catalog, groupBy: firstField })).toEqual({ catalog, groupBy: firstField });
+    expect(sameCatalogQuestionSource({ catalog, groupBy: firstField }, { catalog, groupBy: firstField })).toBe(true);
+    expect(sameCatalogQuestionSource({ catalog }, { catalog, groupBy: null })).toBe(true);
+    expect(sameCatalogQuestionSource({ catalog, groupBy: firstField }, { catalog, groupBy: secondField })).toBe(false);
+    expect(sameCatalogQuestionSource({ catalog, groupBy: firstField }, { catalog })).toBe(false);
+  });
+
+  it("chooses first only by an active text or catalog field, of either role and in catalog order", () => {
+    const field = (id: string, type: CatalogField["type"], role: CatalogField["role"], isActive = true) => ({ id, type, role, isActive }) as CatalogField;
+    const fields = [field(firstField, "decimal", "filter"), field(secondField, "text", "data"), field(attribute, "catalog", "filter"), field(catalog, "text", "filter", false)];
+    expect(groupByFields(fields).map(item => item.id)).toEqual([secondField, attribute]);
   });
 });

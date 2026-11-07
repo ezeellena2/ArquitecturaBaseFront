@@ -19,6 +19,7 @@ import { useCatalogDetail, useCatalogItems, useCatalogPresentationCheck } from "
 import { usePersonAttributes } from "../hooks/usePersonData";
 import { useRecipientMaximum, useRecipientPreview, useRecipientSamples } from "../hooks/useRecipientPreview";
 import type { CatalogQuestionPreview, DraftQuestionSource, FormCulture } from "../model";
+import { CatalogGroupBySetting } from "./CatalogGroupBy";
 import { CatalogPresentationSection } from "./CatalogPresentationSection";
 import { CatalogQuestionFilterActions, CatalogQuestionFilterSummary, CatalogQuestionFilters, type AnswerQuestions } from "./CatalogQuestionFilters";
 import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
@@ -116,6 +117,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const dependsOnAnswer = (source.match ?? []).some(match => matchKind(match) === "answer");
   return <div data-question-control="source" className="space-y-4"><CatalogQuestionSelector scope={scope} value={source.catalog ?? ""} selectedName={onSourceChange ? catalog ? administrativeName(catalog.name, scope.culture) : null : undefined} readOnly={readOnly} error={error} onChange={onCatalogChange}/>{children}
     {onSourceChange && source.catalog && canRead ? catalog ? catalog.kind === "Manual" ? <>
+      <CatalogGroupBySetting source={source} fields={fields} type={type} culture={scope.culture} readOnly={readOnly} error={errors.groupBy?.join(" ")} onChange={change}/>
       <CollapsibleSection title={filtersTitle} help={t("catalogQuestion.filter.hint")} open={filtersOpen} onOpenChange={setFiltersOpen} expandLabel={t("catalogQuestion.zones.expand", { name: filtersTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: filtersTitle })}
         summary={<CatalogQuestionFilterSummary source={source} fields={fields} scope={scope} answers={answers}/>} actions={!readOnly ? <CatalogQuestionFilterActions source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} answers={answers} onChange={change}/> : null}>
         <div className="flex flex-col gap-4 p-4"><CatalogQuestionFilters source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} scope={scope} readOnly={readOnly} errors={errors} answers={answers} onChange={change}/>

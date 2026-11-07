@@ -17,15 +17,18 @@ export type FormCatalogMatch<TValue = string> = { readonly fieldId: string } & (
   | { readonly personAttributeId: TValue; readonly value?: never; readonly questionId?: never }
   | { readonly questionId: TValue; readonly value?: never; readonly personAttributeId?: never }
 );
+// LD1-A: `groupBy` is the catalog field whose value is chosen first; the list then brings only the options with that value.
 export interface FormQuestionSource {
   readonly catalog: string;
   readonly match?: readonly FormCatalogMatch[] | null;
   readonly presentation?: FormCatalogPresentation | null;
+  readonly groupBy?: string | null;
 }
 export interface DraftQuestionSource {
   readonly catalog: string | null;
   readonly match?: readonly FormCatalogMatch<string | null>[] | null;
   readonly presentation?: FormCatalogPresentation | null;
+  readonly groupBy?: string | null;
 }
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };

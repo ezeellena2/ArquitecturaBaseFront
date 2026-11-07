@@ -27,6 +27,12 @@ describe("catalog source response contract", () => {
   ])("rejects a null the server omits and a question without its options: %j", invalid => {
     expect(canonicalFormFieldSchema.safeParse(invalid).success).toBe(false);
   });
+  // LD1-A: the field to choose first is a field id, which the server leaves out when there is none.
+  it("reads the field to choose first and rejects a null or a value that is not an id", () => {
+    expect(canonicalFormFieldSchema.parse({ ...field, source: { catalog: id(2), groupBy: id(3) } }).source).toEqual({ catalog: id(2), groupBy: id(3) });
+    for (const groupBy of [null, "rubro", "00000000-0000-0000-0000-000000000000"])
+      expect(canonicalFormFieldSchema.safeParse({ ...field, source: { catalog: id(2), groupBy } }).success).toBe(false);
+  });
 });
 const question = { ...field, type: "choice" as const, localId: "q", replacesFieldId: null, source };
 const checked = { definitionId: id(8), draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated", canAccept: true, acceptanceAvailability: "Available", checkToken: "ticket", checkExpiresAtUtc: "2099-10-10T16:00:00Z", channels: [], cultures: [], issues: [], warnings: [], diff: { baseVersionId: null, added: [], changed: [], removed: [], addedCultures: [], removedCultures: [] } };

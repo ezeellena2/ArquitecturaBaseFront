@@ -577,3 +577,67 @@ it("adds a filter by another answer and lets choose only an earlier single choic
   // It is tried by loading the form: the test with a person is off with that reason, and no maximum is read.
   expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toHaveAccessibleDescription("Depende de otra respuesta: se prueba cargando el formulario.");
 });
+
+// LD1-A (2026-11-07): below «Permitir elegir varias», «Elegir primero por un campo» and, checked, «Campo» with the active text
+// and catalog fields of the catalog, of either role.
+const price = "01990000-0000-7000-8000-0000000000a6", retired = "01990000-0000-7000-8000-0000000000a7";
+const groupFields = [filterField(zone, "zone", "Zona", "catalog", 1), { ...filterField(category, "category", "Rubro", "text", 2), role: "data" },
+  { ...filterField(price, "price", "Precio", "text", 3), type: "decimal", maxLength: null }, { ...filterField(retired, "old_category", "Rubro anterior", "text", 4), isActive: false }];
+function serveGroupCatalog(fields: readonly unknown[] = groupFields) {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: null }));
+  server.use(http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields })));
+}
+const groupQuestion = (source: DraftQuestionSource, onSourceChange = vi.fn(), props: { type?: "choice" | "multiChoice"; errors?: Record<string, string[]> } = {}) =>
+  <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={source} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange} {...props}><p>Permitir elegir varias</p></CatalogQuestionSettings></MemoryRouter>;
+
+it("chooses first by an active text or catalog field of the catalog, below the multiplicity", async () => {
+  serveGroupCatalog();
+  const onSourceChange = vi.fn();
+  const view = renderWithProviders(groupQuestion({ catalog: maximumCatalog }, onSourceChange));
+  const toggle = await screen.findByRole("checkbox", { name: "Elegir primero por un campo" });
+  expect(screen.getByText("Permitir elegir varias").compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(toggle).not.toBeChecked();
+  expect(screen.queryByRole("combobox", { name: "Campo" })).not.toBeInTheDocument();
+  // Checking it chooses the first field that serves; the field is changed afterwards.
+  await userEvent.click(screen.getByText("Elegir primero por un campo", { exact: true }));
+  expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, groupBy: zone });
+
+  view.rerender(groupQuestion({ catalog: maximumCatalog, groupBy: category }, onSourceChange));
+  expect(screen.getByRole("checkbox", { name: "Elegir primero por un campo" })).toBeChecked();
+  const select = screen.getByRole("combobox", { name: "Campo" });
+  expect(select).toHaveValue(category);
+  expect(within(select).getAllByRole("option").map(option => option.textContent)).toEqual(["Zona", "Rubro"]);
+  await userEvent.selectOptions(select, zone);
+  expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, groupBy: zone });
+  await userEvent.click(screen.getByText("Elegir primero por un campo", { exact: true }));
+  expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog });
+});
+
+it("keeps choosing first off in a question of several, with its reason", async () => {
+  serveGroupCatalog();
+  renderWithProviders(groupQuestion({ catalog: maximumCatalog }, vi.fn(), { type: "multiChoice" }));
+  const toggle = await screen.findByRole("checkbox", { name: "Elegir primero por un campo" });
+  expect(toggle).toBeDisabled();
+  expect(toggle).toHaveAccessibleDescription(/No se combina con «Permitir elegir varias»\./);
+});
+
+it("does not offer choosing first in a catalog without text or catalog fields", async () => {
+  serveGroupCatalog([{ ...filterField(price, "price", "Precio", "text", 1), type: "decimal", maxLength: null }]);
+  renderWithProviders(groupQuestion({ catalog: maximumCatalog }));
+  expect(await screen.findByRole("region", { name: filtersTitle })).toBeInTheDocument();
+  expect(screen.queryByRole("checkbox", { name: "Elegir primero por un campo" })).not.toBeInTheDocument();
+});
+
+it("keeps a field that no longer serves and shows the server error under it", async () => {
+  serveGroupCatalog();
+  const message = "El campo para elegir primero ya no está en el catálogo, está dado de baja o no es de texto ni una opción de un catálogo.";
+  const view = renderWithProviders(groupQuestion({ catalog: maximumCatalog, groupBy: retired }, vi.fn(), { errors: { groupBy: [message] } }));
+  const select = await screen.findByRole("combobox", { name: "Campo" });
+  expect(select).toHaveValue(retired);
+  expect(within(select).getAllByRole("option").map(option => option.textContent)).toEqual(["Rubro anterior", "Zona", "Rubro"]);
+  expect(select).toHaveAccessibleDescription(message);
+  // A field the catalog no longer has is never shown by its id.
+  const missing = "01990000-0000-7000-8000-0000000000a8";
+  view.rerender(groupQuestion({ catalog: maximumCatalog, groupBy: missing }));
+  expect(within(screen.getByRole("combobox", { name: "Campo" })).getAllByRole("option")[0]).toHaveTextContent("Campo no disponible");
+});

@@ -56,6 +56,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       case "catalog": return catalogScope ? <CatalogName scope={catalogScope} id={item.catalogId} /> : null;
       case "condition": return catalogScope ? <CatalogConditionValue scope={catalogScope} catalogId={item.catalogId} condition={item.condition} /> : null;
       case "presentation": return !item.parts.length ? muted("—") : catalogScope ? <CatalogPresentationValue scope={catalogScope} catalogId={item.catalogId} parts={item.parts} /> : null;
+      case "field": return catalogScope ? <CatalogFieldName scope={catalogScope} catalogId={item.catalogId} fieldId={item.fieldId} /> : null;
     }
   }
   function title(row: DraftReviewRow) {
