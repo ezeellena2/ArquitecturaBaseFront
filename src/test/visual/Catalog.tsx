@@ -30,6 +30,7 @@ import { MessageBubble, MessageDateDivider, type MessageDeliveryState } from "@/
 import { MessageHistory } from "@/shared/ui/MessageHistory";
 import { AssistantProposalCard } from "@/shared/ui/assistant/AssistantProposalCard";
 import { AssistantRecorder } from "@/shared/ui/assistant/AssistantRecorder";
+import { CatalogItemTable } from "./CatalogItemTable";
 
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
@@ -37,6 +38,7 @@ export function Catalog() {
   const mobileDialog = new URLSearchParams(location.search).get("scenario") === "mobile-dialog";
   const formPieces = new URLSearchParams(location.search).get("scenario") === "form-controls";
   const tabPieces = new URLSearchParams(location.search).get("scenario") === "tabs";
+  const itemPieces = new URLSearchParams(location.search).get("scenario") === "item-table";
   const [confirm, setConfirm] = useState(false);
   const [recording] = useState(() => new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], { type: "audio/webm" }));
   const [formOpen, setFormOpen] = useState(false);
@@ -138,6 +140,8 @@ export function Catalog() {
           <TabsContent value="pdf"><Button type="button" variant="outline">{english ? "Open PDF" : "Abrir PDF"}</Button></TabsContent>
         </Tabs>
       </Surface> : null}
+      {/* RG2-A (2026-11-07): the table of items and its boxes, empty, at the maximum, with errors and in one column. */}
+      {itemPieces ? <CatalogItemTable /> : null}
       <Surface title={pieces.dialogs} padded actions={<>
         <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
         <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>

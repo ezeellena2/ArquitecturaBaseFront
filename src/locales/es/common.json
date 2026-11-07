@@ -179,5 +179,22 @@
     "back": "Volver a los filtros",
     "clear": "Quitar",
     "done": "Listo"
+  },
+  "itemTable": {
+    "number": "Ítem",
+    "actions": "Acciones",
+    "item": "Ítem {{number}}",
+    "cell": "Ítem {{number}} · {{label}}",
+    "problem": "{{label}}: {{message}}",
+    "up": "Subir el ítem {{number}}",
+    "down": "Bajar el ítem {{number}}",
+    "remove": "Quitar el ítem {{number}}",
+    "removeShort": "Quitar",
+    "add": "Agregar ítem",
+    "moved": "Ahora es el ítem {{number}} de {{count}}.",
+    "atLeast_one": "Al menos {{count}} ítem.",
+    "atLeast_other": "Al menos {{count}} ítems.",
+    "atMost_one": "Hasta {{count}} ítem.",
+    "atMost_other": "Hasta {{count}} ítems."
   }
 }

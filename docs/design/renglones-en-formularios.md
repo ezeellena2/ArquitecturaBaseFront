@@ -93,6 +93,10 @@ usuario; los documentos y el código siguen diciendo renglón (`rows`).
 | La carga: los recuadros del panel y del celular | «Renglón 2» | «Ítem 2» | «Item 2» |
 | La carga: si faltan | «Agregá al menos 1 renglón.» | «Agregá al menos 1 ítem.» | «Add at least 1 item.» |
 | La carga: con el máximo | «Hasta 20 renglones.» | «Hasta 20 ítems.» | «Up to 20 items.» |
+| La carga: el tacho y «Quitar» con el mínimo, sin dibujar | — | «Al menos 1 ítem.» | «At least 1 item.» |
+| La carga: los nombres de ↑ ↓ y del tacho («Subir», «Bajar» y «Quitar» en el tablero) | — | «Subir el ítem 2», «Bajar el ítem 2», «Quitar el ítem 2» | «Move item 2 up», «Move item 2 down», «Remove item 2» |
+| La carga: el nombre de cada celda de la tabla, sin dibujar | — | «Ítem 2 · Cantidad» | «Item 2 · Quantity» |
+| La carga: al mover un ítem, para el lector de pantalla, sin dibujar | — | «Ahora es el ítem 1 de 3.» | «Now item 1 of 3.» |
 | «Filtros» (Etapa 3) | «En algún renglón de Artículos» | «En algún ítem de Artículos» | «In any item of Articles» |
 | La hoja del Excel | «N°, Renglón y sus preguntas» | «N°, Ítem y sus preguntas» | «No., Item and its questions» |
 | Las reglas (Etapa 4) | «Algún renglón con…», «Si algún renglón de Artículos con…» | «Algún ítem con…», «Si algún ítem de Artículos con…» | «Any item with…», «If any item of Articles with…» |

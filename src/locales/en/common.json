@@ -179,5 +179,22 @@
     "back": "Back to filters",
     "clear": "Remove",
     "done": "Done"
+  },
+  "itemTable": {
+    "number": "Item",
+    "actions": "Actions",
+    "item": "Item {{number}}",
+    "cell": "Item {{number}} · {{label}}",
+    "problem": "{{label}}: {{message}}",
+    "up": "Move item {{number}} up",
+    "down": "Move item {{number}} down",
+    "remove": "Remove item {{number}}",
+    "removeShort": "Remove",
+    "add": "Add item",
+    "moved": "Now item {{number}} of {{count}}.",
+    "atLeast_one": "At least {{count}} item.",
+    "atLeast_other": "At least {{count}} items.",
+    "atMost_one": "Up to {{count}} item.",
+    "atMost_other": "Up to {{count}} items."
   }
 }

@@ -124,6 +124,7 @@ además de botones con ícono, tooltips de acciones deshabilitadas (con ícono y
 y un formulario corto en Dialog.
 La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el formulario, el cuerpo se desplaza y el pie conserva sus acciones en móvil.
 Los diálogos de baja, reactivación y eliminación de formularios aplican esta variante en móvil, con el cuerpo desplazable y el pie fuera del scroll.
+La variante `?scenario=item-table` muestra la tabla de ítems de un bloque y sus recuadros (RG2-A): vacía, con el máximo, con errores y en una columna.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.
 
 Preparación en otra instalación:
