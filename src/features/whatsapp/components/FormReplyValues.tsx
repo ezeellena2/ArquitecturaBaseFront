@@ -3,7 +3,7 @@ import { useId, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
-import { formatFormReplyValue, type FormReplyDisplayRow } from "../lib/formReplyValue";
+import { formatFormReplyItem, formatFormReplyValue, type FormReplyDisplayRow } from "../lib/formReplyValue";
 
 export type { FormReplyDisplayRow } from "../lib/formReplyValue";
 
@@ -14,8 +14,8 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, nu
   const { t, i18n } = useTranslation("whatsapp");
   const [expanded, setExpanded] = useState(false);
   const id = useId();
-  const values = rows.map(row => ({ ...row, text: formatFormReplyValue(row.answer, i18n.resolvedLanguage ?? "es",
-    { missing: t("forms.reply.missing"), yes: t("forms.reply.yes"), no: t("forms.reply.no") }) }));
+  const labels = { missing: t("forms.reply.missing"), yes: t("forms.reply.yes"), no: t("forms.reply.no") };
+  const values = rows.map(row => ({ ...row, text: formatFormReplyValue(row.answer, i18n.resolvedLanguage ?? "es", labels) }));
   if (values.some(row => row.text === null)) return <p className="px-3 py-2 text-sm">{t("forms.reply.valuesUnavailable")}</p>;
   if (!values.length) return null;
   const mayFold = values.length > 3 || values.some(row => row.answer.type === "longText" && (row.text!.length > 240 || row.text!.split("\n").length > 3));
@@ -28,7 +28,10 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, nu
     <dl id={id} className="divide-y divide-[var(--color-border)]">
       {shown.map(row => <div key={row.id} className={cn("grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:gap-3",row.answer.type==="photo"||row.answer.type==="document"?"sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]":"sm:grid-cols-2")}>
         <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
-        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
+        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.answer.type === "group" && row.answer.value.length
+          // A block of rows: an item per line, its answers in order and without the unanswered ones (RG4-A).
+          ? <ol aria-label={row.label}>{row.answer.value.map((item, index) => <li key={index}>{`${index + 1}. ${formatFormReplyItem(item, i18n.resolvedLanguage ?? "es", labels)}`}</li>)}</ol>
+          : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
           {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}{row.answer.type === "multiChoice" ? <>
             {[...new Set(row.answer.value?.flatMap(choice => choice.catalogName ? [choice.catalogName] : []) ?? [])].map(name => <p key={name} className="text-xs text-[var(--color-content-muted)]">{name}</p>)}
             {/* Each detail aligned with its choice (rule LR1), like the captured fields of a response (TL1-A), not «Frío: No enfría». */}

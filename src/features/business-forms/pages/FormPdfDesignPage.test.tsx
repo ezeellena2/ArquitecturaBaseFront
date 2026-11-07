@@ -214,3 +214,14 @@ it("explains the receipt in its (i) instead of notes",async()=>{
  for(const note of ["Se completa al aprobarla.","Opcional. Si lo agregás, completá el idioma original.","Los PDF ya armados no cambian: son una copia fija del momento.","El PDF real se arma con los datos y el idioma de cada respuesta."])expect(screen.queryByText(note)).not.toBeInTheDocument();
  expect(screen.queryByText("Las de las preguntas elegidas, chicas y debajo de su pregunta. Sin marcar, solo dice cuántas hay. Los documentos se nombran, no se adjuntan.",{ignore:"script, style, [hidden]"})).not.toBeInTheDocument();
 });
+// Board RG4-A: the design chooses a block of rows whole, by its name; its questions are not listed apart.
+it("lists a block of rows by its name and not its questions, and one an old design chose shows as retired",async()=>{setup();
+  const groupId=crypto.randomUUID(),quantityId=crypto.randomUUID();const key=(id:string)=>"field_"+id.replaceAll("-","");const options=pdfOptionsFixture();const design=pdfDesignFixture();
+  server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({...options,questions:[...options.questions,
+    {fieldId:groupId,key:key(groupId),type:"group",label:{es:"Artículos",en:"Items"},help:null,required:true,maxLength:null,options:null,rows:{minRows:1,maxRows:3}},
+    {fieldId:quantityId,key:key(quantityId),type:"decimal",label:{es:"Cantidad",en:"Quantity"},help:null,required:true,maxLength:null,options:null,repeated:true}]})),
+    http.get("/api/forms/definitions/:id/pdf-design",()=>HttpResponse.json({...design,design:{...design.design,questionIds:[...design.design.questionIds,quantityId]}})));
+  renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
+  expect(await screen.findByRole("checkbox",{name:"Artículos"})).not.toBeChecked();
+  expect(screen.queryByRole("checkbox",{name:"Cantidad"})).not.toBeInTheDocument();
+  expect(screen.getByRole("checkbox",{name:"Pregunta retirada"})).toBeChecked();});

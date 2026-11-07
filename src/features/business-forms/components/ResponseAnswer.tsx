@@ -1,5 +1,7 @@
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 import type { ResponseDetail } from "../api/responses";
+import type { ResponseItemValues } from "../responses";
+import { ResponseRowsList, ResponseRowsTable } from "./ResponseRows";
 import { ResponseValue } from "./ResponseValue";
 import { ResponseAssistance, ResponseAssistanceBadges } from "./ResponseAssistance";
 
@@ -10,5 +12,5 @@ export function ResponseAnswer({ record: data, actor, busy: loadingTarget, photo
   onForbidden: () => void; onError: (error: unknown) => void; layout?: "panel" | "page";
 }) {
   const columns = layout === "page" ? "grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:grid-cols-[11rem_minmax(0,1fr)]" : "grid-cols-[minmax(0,2fr)_minmax(0,3fr)]";
-  return <><dl className="divide-y divide-[var(--color-border)]">{data.values.map(value => <div key={value.fieldId} className={"grid gap-3 py-3 " + columns}><dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{value.label}</dt><dd className="min-w-0 text-sm"><ResponseValue cell={{ ...value, state: value.value === null || Array.isArray(value.value) && value.value.length === 0 ? "Unanswered" : "Answered" }} actor={actor} recordId={data.id} number={data.number} label={value.label} detail viewerFiles={photos} onForbidden={deny} onError={onFileError} detailLink=""/><ResponseAssistanceBadges record={data} fieldId={value.fieldId}/></dd></div>)}</dl><ResponseAssistance key={data.id} record={data} actor={actor} busy={loadingTarget} onForbidden={deny} onError={onFileError}/></>;
+  return <><dl className="divide-y divide-[var(--color-border)]">{data.values.map(value => <div key={value.fieldId} className={"grid gap-3 py-3 " + columns}><dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{value.label}</dt><dd className="min-w-0 text-sm">{value.type === "group" && Array.isArray(value.value) && value.value.length > 0 ? (layout === "page" ? ResponseRowsTable : ResponseRowsList)({ label: value.label, items: value.value as readonly ResponseItemValues[], answer: item => <ResponseValue cell={{ fieldId: item.fieldId, type: item.type, state: item.value === null ? "Unanswered" : "Answered", value: item.value }} actor={actor} recordId={data.id} number={data.number} label={item.label} detail viewerFiles={photos} onForbidden={deny} onError={onFileError} detailLink=""/> }) : <ResponseValue cell={{ ...value, state: value.value === null || Array.isArray(value.value) && value.value.length === 0 ? "Unanswered" : "Answered" }} actor={actor} recordId={data.id} number={data.number} label={value.label} detail viewerFiles={photos} onForbidden={deny} onError={onFileError} detailLink=""/>}<ResponseAssistanceBadges record={data} fieldId={value.fieldId}/></dd></div>)}</dl><ResponseAssistance key={data.id} record={data} actor={actor} busy={loadingTarget} onForbidden={deny} onError={onFileError}/></>;
 }
