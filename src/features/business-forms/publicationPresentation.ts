@@ -56,6 +56,10 @@ export function publicationIssueNames(value: DraftEditorValue, culture: FormCult
  };
  // A text over its limit says how long it is, and which text when it is not the title (the limit comes in the issue).
  const issueDetail = (issue: Issue) => {
+  // RG13-A: a minimum of items that WhatsApp does not load says up to how many it loads and the block's minimum, from the draft.
+  const block = issue.code === "Forms.Publication.MinRowsOverChannelLimit" ? questionOf(issue.fieldId) : undefined;
+  if (block?.type === "group" && block.rows.minRows !== null && issue.limit !== null)
+   return t("publication.minRowsOverChannelLimit", { limit: issue.limit, minimum: block.rows.minRows });
   const text = issue.code === "WhatsApp.Flow.TextTooLong" && issue.limit !== null ? publicationIssueText(issue, value) : null;
   if (!text) return issue.message;
   return t(text.part === "help" ? "publication.helpTooLong" : text.part === "option" ? "publication.optionTooLong" : "publication.textTooLong", { limit: issue.limit, length: text.length, option: choiceName(issue) });

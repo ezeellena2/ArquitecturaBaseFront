@@ -63,9 +63,13 @@ function AnswerQuestion({ scope, choices, current, value, readOnly, onChange, ..
   const names = useCatalogNames(scope, choices.map(choice => choice.catalog));
   const name = (choice: AnswerChoice) => t("catalogQuestion.filter.answerQuestion", { label: choice.label, number: choice.number });
   const catalog = (choice: AnswerChoice) => names[choice.catalog] ? administrativeName(names[choice.catalog], scope.culture) : null;
+  // In a question of the block (LD3-A) the catalog says where the answer comes from: its own item, or the one for all the items.
+  const sameCatalog = (choice: AnswerChoice) => choice.items === "same" ? "catalogQuestion.filter.answerCatalogSameItem"
+    : choice.items === "all" ? "catalogQuestion.filter.answerCatalogAllItems" : "catalogQuestion.filter.answerCatalog";
   const description = (choice: AnswerChoice) => choice.reason === "later" ? t("catalogQuestion.filter.answerLater", { question: current })
     : choice.reason === "multiple" ? t("catalogQuestion.filter.answerMultiple")
-    : catalog(choice) ? t(choice.reason === "otherCatalog" ? "catalogQuestion.filter.answerOtherCatalog" : "catalogQuestion.filter.answerCatalog", { catalog: catalog(choice) }) : null;
+    : choice.reason === "inBlock" ? t("catalogQuestion.filter.answerInBlock")
+    : catalog(choice) ? t(choice.reason === "otherCatalog" ? "catalogQuestion.filter.answerOtherCatalog" : sameCatalog(choice), { catalog: catalog(choice) }) : null;
   const selected = choices.find(choice => choice.id === value);
   const typed = search?.trim().toLocaleLowerCase(scope.culture) ?? "";
   const shown = typed ? choices.filter(choice => name(choice).toLocaleLowerCase(scope.culture).includes(typed)) : choices;

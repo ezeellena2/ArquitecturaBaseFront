@@ -547,9 +547,9 @@ it("adds a filter by another answer and lets choose only an earlier single choic
   server.use(http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json(params.id === zones ? { ...detail(zones, "Manual"), name: { es: "Zonas", en: "Zones" } }
     : { ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields: [filterField(zone, "zone", "Zona", "catalog", 1), filterField(category, "category", "Rubro", "text", 2)] })));
   const answers = { current: "Proveedor", choices: (sourceCatalogId: string | null) => [
-    { id: "q-zone", number: 1, label: "Zona", catalog: zones, reason: sourceCatalogId === zones ? null : "otherCatalog" as const },
-    { id: "q-seed", number: 2, label: "Semilla", catalog: maximumCatalog, reason: "otherCatalog" as const },
-    { id: "q-product", number: 4, label: "Producto", catalog: zones, reason: "later" as const }] };
+    { id: "q-zone", number: "1", label: "Zona", catalog: zones, reason: sourceCatalogId === zones ? null : "otherCatalog" as const },
+    { id: "q-seed", number: "2", label: "Semilla", catalog: maximumCatalog, reason: "otherCatalog" as const },
+    { id: "q-product", number: "4", label: "Producto", catalog: zones, reason: "later" as const }] };
   server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([]))));
   const onSourceChange = vi.fn();
   const view = renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog }} questionId="q" answers={answers} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange}/></MemoryRouter>);
@@ -576,6 +576,29 @@ it("adds a filter by another answer and lets choose only an earlier single choic
   expect(chosen).toHaveBeenLastCalledWith({ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: "q-zone" }] });
   // It is tried by loading the form: the test with a person is off with that reason, and no maximum is read.
   expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toHaveAccessibleDescription("Depende de otra respuesta: se prueba cargando el formulario.");
+});
+
+// LD3-A (2026-11-07): in a question of the block «Respuesta de» says whether the answer is the one of its own item or the one
+// for all the items; in a question outside, those of the block are off with «Está en el bloque».
+it("says where the answer comes from in the block and turns off a question of the block outside it", async () => {
+  serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: "Zona Sur" }));
+  server.use(http.get("/api/forms/catalogs/:id", ({ params }) => HttpResponse.json(params.id === zones ? { ...detail(zones, "Manual"), name: { es: "Zonas", en: "Zones" } }
+    : { ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields: [filterField(zone, "zone", "Zona", "catalog", 1)] })));
+  server.use(http.get("/api/forms/recipient-samples", () => HttpResponse.json(page([]))));
+  const answers = { current: "Artículo", choices: () => [
+    { id: "q-zone", number: "1", label: "Zona", catalog: zones, reason: null, items: "all" as const },
+    { id: "q-area", number: "2.1", label: "Área", catalog: zones, reason: null, items: "same" as const },
+    { id: "q-depot", number: "2.2", label: "Depósito", catalog: zones, reason: "inBlock" as const }] };
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: null }] }} questionId="q" definitionId="definition" answers={answers} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
+  await expand(filtersTitle);
+  const condition = await screen.findByRole("group", { name: "Condición 1" });
+  await userEvent.click(within(condition).getByRole("combobox", { name: "Respuesta de" }));
+
+  await waitFor(() => expect(screen.getByRole("option", { name: /Zona \(pregunta 1\)/ })).toHaveTextContent("Elige de Zonas · para todos los ítems"));
+  expect(screen.getByRole("option", { name: /Área \(pregunta 2\.1\)/ })).toHaveTextContent("Elige de Zonas · del mismo ítem");
+  const depot = screen.getByRole("option", { name: /Depósito \(pregunta 2\.2\)/ });
+  expect(depot).toHaveTextContent("Está en el bloque");
+  expect(depot).toHaveAttribute("aria-disabled", "true");
 });
 
 // LD1-A (2026-11-07): below «Permitir elegir varias», «Elegir primero por un campo» and, checked, «Campo» with the active text

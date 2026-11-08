@@ -95,12 +95,14 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, sections: [{ start: 0, title: { es: "Visita", en: "Visit" } },
       { start: 2, title: { es: "Cobro", en: "Payment" } }, { start: 4, title: { es: "Cierre", en: "Closing" } }] } });
   }
-  // RG1-A: the block of rows «Artículos», with three questions of each row between «Contacto» and «Fecha de visita».
-  if (scenario === "forms-rows") {
+  // RG1-A: the block of rows «Artículos», with three questions of each row between «Contacto» and «Fecha de visita». RG13-A: with a
+  // minimum of 15 items, which WhatsApp does not load, publishing stops.
+  if (scenario === "forms-rows" || scenario === "forms-publication-rows-minimum") {
     const original = definitions.get(fixtureFormId)!;
     const [customer, contact, , date] = original.draft.fields;
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: [customer!, contact!,
-      { fieldId: guid(181), key: key(guid(181)), type: "group", label: { es: "Artículos", en: "Items" }, help: null, required: true, rows: { minRows: 1, maxRows: 20 } },
+      { fieldId: guid(181), key: key(guid(181)), type: "group", label: { es: "Artículos", en: "Items" }, help: null, required: true,
+        rows: { minRows: scenario === "forms-rows" ? 1 : 15, maxRows: 20 } },
       { fieldId: guid(182), key: key(guid(182)), type: "choice", label: { es: "Artículo", en: "Item" }, help: null, required: true, repeated: true,
         options: [{ choiceId: guid(185), label: { es: "Urea granulada", en: "Granular urea" } }, { choiceId: guid(186), label: { es: "Glifosato 64%", en: "Glyphosate 64%" } }] },
       { fieldId: guid(183), key: key(guid(183)), type: "decimal", label: { es: "Cantidad", en: "Quantity" }, help: null, required: true, repeated: true },
@@ -234,12 +236,18 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;
       if (input.expectedRevision !== definition.revision) return json({ code: "Forms.Draft.RevisionConflict" }, 409);
-      // A blocked check brings the compiler's limit in the issue, and a warning that does not stop publishing.
-      const blocked = scenario === "forms-publication-blocked";
+      // A blocked check brings the compiler's limit in the issue, and a warning that does not stop publishing. RG13-A: a minimum of
+      // items over what WhatsApp loads stops it too, with the limit in the issue.
+      const minimum = scenario === "forms-publication-rows-minimum";
+      const blocked = scenario === "forms-publication-blocked" || minimum;
       const amount = definition.draft.fields.findIndex(q => q.type === "decimal");
-      const issues = blocked ? [{ channelId: "phone", fieldId: definition.draft.fields[amount]!.fieldId, choiceId: null, path: "draft.fields[" + amount + "].label." + definition.draft.culture, code: "WhatsApp.Flow.TextTooLong",
+      const group = definition.draft.fields.findIndex(q => q.type === "group");
+      const issues = minimum ? [{ channelId: null, fieldId: definition.draft.fields[group]!.fieldId, choiceId: null, path: "draft.fields[" + group + "].rows",
+        code: "Forms.Publication.MinRowsOverChannelLimit", message: culture === "es" ? "En WhatsApp se cargan menos ítems que el mínimo del bloque." : "WhatsApp loads fewer items than the block minimum.",
+        limit: 10, culture: null }]
+        : blocked ? [{ channelId: "phone", fieldId: definition.draft.fields[amount]!.fieldId, choiceId: null, path: "draft.fields[" + amount + "].label." + definition.draft.culture, code: "WhatsApp.Flow.TextTooLong",
         message: culture === "es" ? "El texto supera el límite del componente. Revisá el texto indicado." : "The text exceeds the component limit. Review the indicated text.", limit: 20, culture: definition.draft.culture }] : [];
-      const warnings = blocked ? [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh",
+      const warnings = blocked && !minimum ? [{ fieldId: definition.draft.fields[0]!.fieldId, path: "draft.fields[0].source.match", code: "Forms.Publication.OptionsPerRecipientHigh",
         message: culture === "es" ? "Revisá el máximo de opciones por persona frente al límite de WhatsApp." : "Review the maximum options per person against the WhatsApp limit.", limit: 200, maximum: 230 }] : [];
       const available = !blocked && (scenario.startsWith("forms-publication") || scenario.startsWith("forms-languages-") || scenario.startsWith("forms-lifecycle"));
       const cultures = fixturePublicationCultures(definition);

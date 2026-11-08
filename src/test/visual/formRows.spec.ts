@@ -5,9 +5,9 @@ import { fixtureFormId } from "./formFixtures";
 // in its texts (RG12-A), without goldens: each capture is compared with its board.
 type Language = "es" | "en";
 const text = (language: Language, es: string, en: string) => language === "es" ? es : en;
-async function open(page: Page, language: Language, width: number) {
+async function open(page: Page, language: Language, width: number, scenario = "forms-rows") {
   await page.setViewportSize({ width, height: 900 });
-  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/formularios/" + fixtureFormId, scenario: "forms-rows", lang: language }));
+  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/formularios/" + fixtureFormId, scenario, lang: language }));
 }
 async function closeMenu(page: Page, language: Language, width: number) {
   if (width >= 768) return;
@@ -59,5 +59,26 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(addBlock).toBeDisabled();
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/rg10-new-block-" + language + "-" + width + ".png", fullPage: true });
+  });
+}
+
+// RG13-A: with a channel, a minimum of items that WhatsApp does not load stops publishing, with the limit and the minimum.
+for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
+  test("RG13-A the minimum that WhatsApp does not load stops publishing " + language + " " + width, async ({ page }) => {
+    await open(page, language, width, "forms-publication-rows-minimum");
+    await expect(page.getByRole("heading", { name: text(language, "Registrar visita", "Register visit"), exact: true })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await closeMenu(page, language, width);
+    await page.getByRole("button", { name: text(language, "Publicar en WhatsApp", "Publish on WhatsApp"), exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: text(language, "Publicar la versión 1 en WhatsApp", "Publish version 1 on WhatsApp"), exact: true });
+    const problems = dialog.getByRole("region", { name: text(language, "Problemas", "Problems"), exact: true });
+    await expect(problems.getByText(text(language, "Artículos", "Items"), { exact: true })).toBeVisible();
+    await expect(problems.getByText(text(language, "En WhatsApp se cargan hasta 10 ítems; el mínimo es 15.", "WhatsApp loads up to 10 items; the minimum is 15."), { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: text(language, "Publicar versión 1", "Publish version 1"), exact: true })).toBeDisabled();
+    await noPageScroll(page, width);
+    await page.screenshot({ path: "test-results/rg13-minimum-" + language + "-" + width + ".png", fullPage: true });
+    // «Ir a la pregunta» closes the dialog to change the minimum in the block.
+    await problems.getByRole("button", { name: text(language, "Ir a la pregunta", "Go to the question"), exact: true }).click();
+    await expect(dialog).toHaveCount(0);
   });
 }

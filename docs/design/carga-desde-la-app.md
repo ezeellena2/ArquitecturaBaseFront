@@ -341,8 +341,8 @@ Diferencias con el dibujo:
 
 ## Elegir primero por un campo, LD1-A a LD3-A — 2026-11-07
 
-El editor y la carga, también en la tabla de ítems, quedaron programados el 2026-11-07; WhatsApp y LD3-A siguen por
-programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones
+El editor y la carga, también en la tabla de ítems, quedaron programados el 2026-11-07, y LD3-A el mismo día, con la Etapa 2
+de renglones; WhatsApp sigue por programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones
 con ese valor, como dibujan
 **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma pantalla») y, para las listas
 dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
