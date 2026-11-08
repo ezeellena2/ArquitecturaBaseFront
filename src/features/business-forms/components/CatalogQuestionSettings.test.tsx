@@ -253,7 +253,7 @@ it.each([
 
 const maximumCatalog = "01990000-0000-7000-8000-0000000000a1", zones = "01990000-0000-7000-8000-0000000000a2", zone = "01990000-0000-7000-8000-0000000000a3", category = "01990000-0000-7000-8000-0000000000a4", attribute = "01990000-0000-7000-8000-0000000000a5";
 const filterField = (id: string, key: string, es: string, type: "catalog" | "text", position: number) => ({ id, key, name: { es, en: es }, type, sourceCatalogId: type === "catalog" ? zones : null, required: false, unique: false, min: null, max: null, maxLength: type === "text" ? 80 : null, role: "filter", position, isActive: true, valuesCount: 3, usedBy: [] });
-type MaximumBody = { source: { match: { personAttributeId?: string }[] } };
+type MaximumBody = { source: { match?: { personAttributeId?: string }[]; groupBy?: string } };
 function serveMaximum(answer: (body: MaximumBody, call: number) => Response | Promise<Response>) {
   const bodies: MaximumBody[] = [];
   server.use(
@@ -319,7 +319,7 @@ it("explains that the filters must be complete to try with a person", async () =
 });
 
 it("tells the maximum per person and that everyone sees the same options with only fixed filters", async () => {
-  const bodies = serveMaximum(body => HttpResponse.json(body.source.match.some(match => match.personAttributeId) ? { maximum: 18, maximumLabel: "Zona Sur" } : { maximum: 180, maximumLabel: null }));
+  const bodies = serveMaximum(body => HttpResponse.json(body.source.match?.some(match => match.personAttributeId) ? { maximum: 18, maximumLabel: "Zona Sur" } : { maximum: 180, maximumLabel: null }));
   const view = renderWithProviders(maximumQuestion("multiChoice", [{ fieldId: zone, personAttributeId: attribute }]));
   expect(await screen.findByText("Como mucho 18 por persona (Zona Sur, la más grande): entra en una pregunta de varias (20).")).toBeInTheDocument();
   view.rerender(maximumQuestion("choice", [{ fieldId: category, value: "Frío" }]));
@@ -634,6 +634,23 @@ it("chooses first by an active text or catalog field of the catalog, below the m
   expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, groupBy: zone });
   await userEvent.click(screen.getByText("Elegir primero por un campo", { exact: true }));
   expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog });
+});
+
+// «Qué opciones ve cada persona» counts by value, because WhatsApp's 200 apply to each value and to the list of values; it needs
+// no filter.
+it("counts the options by value when the question chooses first by a field, even without filters", async () => {
+  const bodies = serveMaximum(body => HttpResponse.json(body.source.match ? { maximum: 460, maximumLabel: "Zona Sur", groups: 230, largestGroup: 2 }
+    : body.source.groupBy === category ? { maximum: 125, maximumLabel: null, groups: 3, largestGroup: 75 } : { maximum: 450, maximumLabel: null, groups: 2, largestGroup: 230 }));
+  const view = renderWithProviders(groupQuestion({ catalog: maximumCatalog, groupBy: category }));
+  const fits = await screen.findByText("Todos ven las mismas 125, en 3 valores de «Rubro». El más grande tiene 75: entra en el desplegable (200).");
+  expect(fits.closest("[role=status]")).toHaveClass("text-[var(--color-success-700)]");
+  view.rerender(groupQuestion({ catalog: maximumCatalog, groupBy: zone }));
+  const exceeds = await screen.findByText("Todos ven las mismas 450, en 2 valores de «Zona». El más grande tiene 230: no entra en el desplegable (200).");
+  expect(exceeds.closest("[role=status]")).toHaveClass("text-[var(--color-warning-700)]");
+  view.rerender(groupQuestion({ catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }], groupBy: category }));
+  expect(await screen.findByText("Como mucho 460 por persona (Zona Sur, la más grande), en 230 valores de «Rubro». Los valores no entran en el desplegable (200).")).toBeInTheDocument();
+  expect(bodies).toEqual([{ source: { catalog: maximumCatalog, groupBy: category } }, { source: { catalog: maximumCatalog, groupBy: zone } },
+    { source: { catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }], groupBy: category } }]);
 });
 
 it("keeps choosing first off in a question of several, with its reason", async () => {

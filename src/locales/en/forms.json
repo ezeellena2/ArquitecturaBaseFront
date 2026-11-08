@@ -773,6 +773,11 @@
       "exceedsMultiple": "does not fit in a multiple-choice question ({{limit}})",
       "fitsChoice": "fits in the drop-down list ({{limit}})",
       "exceedsChoice": "does not fit in the drop-down list ({{limit}})",
+      "sharedByValue": "Everyone sees the same {{count}}, in {{groups}} values of “{{field}}”.",
+      "perPersonByValue": "At most {{count}} per person ({{group}}, the largest), in {{groups}} values of “{{field}}”.",
+      "perPersonUngroupedByValue": "At most {{count}} per person, in {{groups}} values of “{{field}}”.",
+      "largestValue": "The largest has {{largest}}: {{fit}}.",
+      "valuesExceed": "The values do not fit in the drop-down list ({{limit}}).",
       "failed": "We couldn't work out how many options each person sees."
     },
     "review": {

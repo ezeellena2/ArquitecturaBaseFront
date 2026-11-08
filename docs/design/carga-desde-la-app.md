@@ -354,7 +354,8 @@ siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y lo que
   `InfoTip`) y, marcada, «Campo»: un combo con los campos activos del catálogo de texto u opción de un catálogo, de cualquier
   papel. Con «Permitir elegir varias» marcada queda apagada con su motivo, y al revés; un catálogo sin esos campos no la
   muestra. La línea de la pregunta dice «Elegir de un catálogo, primero por Rubro». El resumen de «Qué opciones ve cada
-  persona» cuenta por valor: «Todos ven las mismas 125, en 3 rubros. El más grande tiene 75: entra en el desplegable (200).»
+  persona» cuenta por valor: «Todos ven las mismas 125, en 3 valores de «Rubro». El más grande tiene 75: entra en el desplegable
+  (200).» El nombre del campo no se pasa a plural («en 3 rubros» no sale de cualquier nombre); con un solo valor, la línea de siempre.
 - **En la app,** la pregunta son dos combos: el del campo, con su nombre de etiqueta («Rubro»), y el de la pregunta. El de la
   pregunta espera apagado con «Elegí primero «Rubro»»; con el valor elegido trae sólo sus opciones y la cuenta lo nombra:
   «75 opciones de Herbicidas». Si el valor cambia, la opción elegida se limpia, como en CW7. Si queda un solo valor, viene

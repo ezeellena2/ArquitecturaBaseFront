@@ -65,6 +65,17 @@ it("reads the maximum only for complete filters with the three permissions, with
   rerender({ value: null, actorId: "other" });
   expect(signal.aborted).toBe(true);
 });
+// LD1-A: a question that chooses first by a field has a maximum by value even without filters, and the field travels.
+it("reads the maximum of a question that chooses first by a field even without filters", async () => {
+  const grouped = { maximum: 125, maximumLabel: null, groups: 3, largestGroup: 75 };
+  vi.mocked(fetchRecipientMaximum).mockImplementation(() => Promise.resolve(grouped));
+  const { result, rerender } = mountMaximum({ catalog: "catalog", groupBy: "kind" });
+  await waitFor(() => expect(result.current.result).toEqual(grouped));
+  expect(fetchRecipientMaximum).toHaveBeenCalledExactlyOnceWith({ catalog: "catalog", groupBy: "kind" }, expect.any(AbortSignal));
+  // An incomplete filter still waits, with the field or without it.
+  rerender({ value: { catalog: "catalog", match: [{ fieldId: "zone", value: null }], groupBy: "kind" }, actorId: "actor" });
+  expect(result.current.result).toBeNull();
+});
 it("reads the maximum once, 300 ms after the last filter change, and shows nothing meanwhile", async () => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   vi.mocked(fetchRecipientMaximum).mockReset().mockResolvedValue(shared(3));

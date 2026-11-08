@@ -9,6 +9,14 @@ const body = { type: "choice" as const, source: { catalog: catalogId, match: [{ 
 const preview = { recipient: { id: personId, name: "Juan Gómez", values: [{ attributeId, name: "Zona", text: "Centro" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: optionId, title: "Proveedor", description: null }] };
 const page = { items: [{ id: personId, name: "Juan Gómez" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false };
 afterEach(() => vi.restoreAllMocks());
+it("reads how many values and how many options the largest has, together, for a question that chooses first", () => {
+  const grouped = { maximum: 125, maximumLabel: null, groups: 3, largestGroup: 75 };
+  expect(readRecipientMaximum(grouped)).toEqual(grouped);
+  for (const invalid of [{ maximum: 125, maximumLabel: null, groups: 3 }, { maximum: 125, maximumLabel: null, largestGroup: 75 }, { ...grouped, largestGroup: 126 },
+    { ...grouped, groups: -1 }, { ...grouped, groups: null }])
+    expect(() => readRecipientMaximum(invalid)).toThrow("Unsupported recipient preview response.");
+});
+
 it("reads a closed recipient maximum and rejects extra or null-shaped data", async () => {
   const perPerson = { maximum: 18, maximumLabel: "Zona Sur" }, shared = { maximum: 180, maximumLabel: null };
   expect(readRecipientMaximum(perPerson)).toEqual(perPerson);

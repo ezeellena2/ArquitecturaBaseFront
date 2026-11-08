@@ -773,6 +773,11 @@
       "exceedsMultiple": "no entra en una pregunta de varias ({{limit}})",
       "fitsChoice": "entra en el desplegable ({{limit}})",
       "exceedsChoice": "no entra en el desplegable ({{limit}})",
+      "sharedByValue": "Todos ven las mismas {{count}}, en {{groups}} valores de «{{field}}».",
+      "perPersonByValue": "Como mucho {{count}} por persona ({{group}}, la más grande), en {{groups}} valores de «{{field}}».",
+      "perPersonUngroupedByValue": "Como mucho {{count}} por persona, en {{groups}} valores de «{{field}}».",
+      "largestValue": "El más grande tiene {{largest}}: {{fit}}.",
+      "valuesExceed": "Los valores no entran en el desplegable ({{limit}}).",
       "failed": "No pudimos calcular cuántas opciones ve cada persona."
     },
     "review": {

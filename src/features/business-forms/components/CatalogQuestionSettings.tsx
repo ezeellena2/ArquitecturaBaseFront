@@ -10,6 +10,7 @@ import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
 import { AlertTriangleIcon, CheckIcon } from "@/shared/ui/icons";
 import { cn } from "@/shared/lib/utils";
+import type { RecipientMaximum } from "../api/recipientPreview";
 import { openCatalogField } from "../catalogFields";
 import { catalogOptionPresentation, presentationPartNames } from "../catalogPresentation";
 import { matchKind, normalizeCatalogQuestionSource } from "../catalogQuestionSource";
@@ -26,18 +27,27 @@ import { CatalogQuestionSelector } from "./CatalogQuestionSelector";
 
 // The most options one person can get in the question type: a question of several shows 20, the dropdown 200.
 const maximumLimit = (type: "choice" | "multiChoice") => type === "multiChoice" ? 20 : 200;
+// LD1-A: choosing first by a field, the limit applies to each value and to the list of values, not to the total.
+const fitsMaximum = ({ maximum, groups, largestGroup }: RecipientMaximum, limit: number) =>
+  groups === undefined || largestGroup === undefined ? maximum <= limit : largestGroup <= limit && groups <= limit;
 
 // CE4-A: the most options one person gets from the filters, against the limit of the question type (20 or 200); with only
 // fixed filters everyone sees the same ones. With 0 no one sees any option, which is a warning, not a fit. A failed read
-// offers Retry, disabled during the wait of a 429.
-function RecipientMaximumState({ maximum, type, byPerson }: { maximum: ReturnType<typeof useRecipientMaximum>; type: "choice" | "multiChoice"; byPerson: boolean }) {
+// offers Retry, disabled during the wait of a 429. Choosing first by a field (LD1-A), it counts by value: «Todos ven las mismas
+// 125, en 3 valores de «Rubro». El más grande tiene 75: entra en el desplegable (200).» With one value, its list is the whole
+// offer, which the plain line already tells.
+function RecipientMaximumState({ maximum, type, byPerson, groupName }: { maximum: ReturnType<typeof useRecipientMaximum>; type: "choice" | "multiChoice"; byPerson: boolean; groupName: string | null }) {
   const { t } = useTranslation("forms");
   if (maximum.failed) return <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.maximum.failed")}</p><DisabledReason reason={maximum.canRetry ? null : t("wait", { count: maximum.waitSeconds })}><Button type="button" variant="link" disabled={!maximum.canRetry} onClick={maximum.retry}>{t("common:actions.retry")}</Button></DisabledReason></div>;
   if (maximum.busy) return <p role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative/><span>{t("catalogQuestion.maximum.calculating")}</span></p>;
   if (!maximum.result) return null;
-  const { maximum: count, maximumLabel: group } = maximum.result, limit = maximumLimit(type), fits = count <= limit, ok = count > 0 && fits;
-  const fit = t("catalogQuestion.maximum." + (fits ? "fits" : "exceeds") + (type === "multiChoice" ? "Multiple" : "Choice"), { limit });
-  const text = count === 0 ? t("catalogQuestion.maximum.none") : !byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit });
+  const { maximum: count, maximumLabel: group, groups, largestGroup } = maximum.result, limit = maximumLimit(type), ok = count > 0 && fitsMaximum(maximum.result, limit);
+  const fitOf = (size: number) => t("catalogQuestion.maximum." + (size <= limit ? "fits" : "exceeds") + (type === "multiChoice" ? "Multiple" : "Choice"), { limit });
+  const fit = fitOf(count), byValue = groups !== undefined && largestGroup !== undefined && groups > 1;
+  const values = byValue ? t("catalogQuestion.maximum." + (!byPerson ? "sharedByValue" : group ? "perPersonByValue" : "perPersonUngroupedByValue"),
+    { count, group, groups, field: groupName ?? t("catalogQuestion.filter.unavailable") }) + " " + (groups > limit ? t("catalogQuestion.maximum.valuesExceed", { limit })
+    : t("catalogQuestion.maximum.largestValue", { largest: largestGroup, fit: fitOf(largestGroup) })) : null;
+  const text = count === 0 ? t("catalogQuestion.maximum.none") : values ?? (!byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit }));
   const Icon = ok ? CheckIcon : AlertTriangleIcon;
   return <p role="status" className={cn("flex items-start gap-2 text-sm", ok ? "text-[var(--color-success-700)]" : "text-[var(--color-warning-700)]")}><Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0"/><span>{text}</span></p>;
 }
@@ -78,6 +88,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const sampleStatus = samples.isFetching || search !== null && search !== settled ? t("searching") : samples.data?.items.length === 0 ? t("personData.noPeople") : undefined;
   // The maximum depends only on the filters of a Manual catalog: no person and no saved form; its label is in the menu language.
   const maximum = useRecipientMaximum(scope, catalog?.kind === "Manual" ? source : null, catalog?.revision ?? null);
+  const groupField = source.groupBy ? fields.find(field => field.id === source.groupBy) : undefined;
   const draftFields = useMemo(() => fields.map(field => openCatalogField(field, "en")), [fields]);
   const draftItems = useMemo(() => (items.data?.items ?? []).map(item => ({ localId: item.id, itemId: item.id, label: item.text, detail: item.detail, code: item.code, value: item.value, isActive: item.isActive, position: item.position, fields: item.fields, fieldTexts: item.fieldTexts })), [items.data]);
   const sourceStamp = JSON.stringify(normalizeCatalogQuestionSource(source));
@@ -105,7 +116,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   // What each zone holds that needs a look opens it: its errors and, in the filters, the people data, the test with a person
   // and a maximum that fails or warns; in «En WhatsApp», the length check that fails or warns.
   const issues = (prefix: string) => Object.entries(errors).filter(([path]) => path.startsWith(prefix)).map(([path, messages]) => path + ": " + messages.join(" ")).sort();
-  const warning = maximum.result && (maximum.result.maximum === 0 || maximum.result.maximum > maximumLimit(type)) ? "maximum " + maximum.result.maximum : "";
+  const warning = maximum.result && (maximum.result.maximum === 0 || !fitsMaximum(maximum.result, maximumLimit(type))) ? "maximum " + maximum.result.maximum : "";
   const filtersProblem = [...issues("match"), attributes.isError ? "people data" : "", maximum.failed ? "maximum failed" : warning, preview.error || samples.isError ? "test failed" : "",
     preview.denied || samples.denied ? "test denied" : "", preview.result?.exceedsLimit ? "test exceeds" : ""].filter(Boolean).join("\n");
   const presentationProblem = [...issues("presentation"), own && ownCheck.isError && !ownCheck.isFetching ? "check failed" : "",
@@ -124,7 +135,8 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
         {attributes.isError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.filter.dataFailed")}</p> : null}
         <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : dependsOnAnswer ? t("catalogQuestion.preview.dependsOnAnswer") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Autocomplete value={search ?? preview.person?.name ?? ""} options={(samples.data?.items ?? []).map(person => ({ id: person.id, label: person.name }))} disabled={!preview.available || !preview.complete} status={sampleStatus} aria-label={t("catalogQuestion.preview.asRecipient")} onValueChange={text => { setSearch(text); if (!text) { onPreviewChange?.(questionId, null); preview.select(null); } }} onBlur={() => setSearch(null)} onSelect={id => { const person = samples.data?.items.find(person => person.id === id); if (person) { onPreviewChange?.(questionId, null); preview.select(person); setSearch(null); } }}/></DisabledReason></FormField>
         {preview.busy ? <div role="status" className="flex items-center gap-2"><Spinner/><p className="text-sm">{t("catalogQuestion.preview.loading")}</p></div> : samplesRetrying ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("searching")}</p></div> : preview.denied || samples.denied ? <p role="alert" className="text-sm">{t("catalogQuestion.preview.denied")}</p> : preview.error || samples.isError ? <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.preview.failed")}</p>{offerRetry ? <DisabledReason reason={retryDisabled ? t("wait", { count: retryWait }) : null}><Button type="button" variant="link" disabled={retryDisabled} onClick={() => { if (samples.isError) { setSamplesRetrying(true); void samples.refetch().finally(() => setSamplesRetrying(false)); } else preview.retry(); }}>{t("common:actions.retry")}</Button></DisabledReason> : null}</div> : preview.result ? <div role="status" className="space-y-1"><p className="text-sm font-medium">{t(preview.result.state === "Ready" ? "catalogQuestion.preview.count" : preview.result.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable", { count: preview.result.optionCount })}</p>{preview.result.recipient.values.length ? <DataList items={preview.result.recipient.values.map(value => ({ key: value.attributeId, label: value.name, value: value.text || "—" }))}/> : null}{preview.result.exceedsLimit ? <p className="text-sm text-[var(--color-warning-700)]">{t("catalogQuestion.preview.exceeds", { limit: preview.result.limit })}</p> : null}</div> : null}
-        <RecipientMaximumState maximum={maximum} type={type} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}/></div>
+        <RecipientMaximumState maximum={maximum} type={type} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}
+          groupName={groupField ? administrativeName(groupField.name, scope.culture) : null}/></div>
       </CollapsibleSection>
       <CollapsibleSection title={presentationTitle} open={presentationOpen} onOpenChange={setPresentationOpen} expandLabel={t("catalogQuestion.zones.expand", { name: presentationTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: presentationTitle })} summary={presentationSummary}>
         <div className="flex flex-col gap-4 p-4"><RadioGroupField label={t("catalogQuestion.presentation.mode")} variant="cards" value={own ? "own" : "catalog"} onValueChange={mode => change({ ...source, presentation: mode === "own" ? { title: [...(catalog.presentation?.title ?? ["text"])], description: [...(catalog.presentation?.description ?? ["detail"])] } : null })} options={[{ value: "catalog", disabled: readOnly, label: t("catalogQuestion.presentation.inherit"), description: inherited }, { value: "own", disabled: readOnly, label: t("catalogQuestion.presentation.own") }]}/><CatalogPresentationSection embedded value={source.presentation ?? catalog.presentation} fields={draftFields} items={draftItems} valueType={catalog.valueType} culture={contentCulture} inputCulture="en" readOnly={readOnly || !own} errors={errors} check={check} onChange={presentation => change({ ...source, presentation })}/>

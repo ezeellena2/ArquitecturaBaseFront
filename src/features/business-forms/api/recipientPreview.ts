@@ -17,7 +17,9 @@ const preview = z.strictObject({ recipient, state: z.enum(["Ready", "RecipientDa
   .refine(value => value.state === "Ready" || value.optionCount === 0)
   .refine(value => new Set(value.options.map(option => option.id.toLowerCase())).size === value.options.length && new Set(value.recipient.values.map(value => value.attributeId.toLowerCase())).size === value.recipient.values.length);
 // The most options one person can get from a question's filters; the label names the largest group's person values (null with only fixed filters).
-const maximum = z.strictObject({ maximum: count, maximumLabel: z.string().min(1).nullable() });
+// LD1-A: choosing first by a field, also how many values there are and how many options the largest has, always together.
+const maximum = z.strictObject({ maximum: count, maximumLabel: z.string().min(1).nullable(), groups: count.optional(), largestGroup: count.optional() })
+  .refine(value => (value.groups === undefined) === (value.largestGroup === undefined) && (value.largestGroup ?? 0) <= value.maximum);
 export type RecipientSample = z.infer<typeof sample>;
 export type RecipientPreview = z.infer<typeof preview>;
 export type RecipientMaximum = z.infer<typeof maximum>;
