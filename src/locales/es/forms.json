@@ -921,7 +921,7 @@
     "historyOpen": "Historial",
     "historyBack": "Volver a las revisiones",
     "withPdf": "con el PDF",
-    "conditionWords": { "in": "es", "anyOf": "es alguna de", "gte": "desde", "lte": "hasta", "contains": "contiene", "answered": "tiene respuesta", "unanswered": "no tiene respuesta", "notAsked": "no existía", "and": "y", "or": "o" },
+    "conditionWords": { "in": "es", "anyOf": "es alguna de", "gte": "desde", "lte": "hasta", "contains": "contiene", "answered": "tiene respuesta", "unanswered": "no tiene respuesta", "notAsked": "no existía", "and": "y", "or": "o", "someItemOf": "algún ítem de", "with": "con" },
     "noPermission": "Ya no tenés permiso para administrar las reglas.",
     "conflict": "Las reglas cambiaron. Releé la revisión actual para revisarla.",
     "conflictTitle": "Revisión de las reglas",

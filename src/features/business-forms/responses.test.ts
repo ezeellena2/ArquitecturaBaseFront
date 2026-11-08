@@ -287,3 +287,31 @@ describe("a block of rows", () => {
       .toEqual([{ key: "quantity", label: "Cantidad: desde 200" }]);
   });
 });
+describe("the conditions of a block of rows in a rule", () => {
+  const columns: ResponseColumn[] = [
+    { fieldId: "remito", type: "shortText", label: "Remito", introducedInVersion: 1, options: [] },
+    { fieldId: "items", type: "group", label: "Artículos", introducedInVersion: 1, options: [], questions: [
+      { fieldId: "article", type: "choice", label: "Artículo", introducedInVersion: 1, options: [{ id: "glifo", label: "GLIFOSATO 64%" }] },
+      { fieldId: "quantity", type: "decimal", label: "Cantidad", introducedInVersion: 1, options: [] },
+      { fieldId: "notes", type: "longText", label: "Observaciones", introducedInVersion: 1, options: [] },
+    ] },
+  ];
+  const t = (key: string) => key;
+  const article = { key: "article", question: "Artículo", clauses: [{ words: "rules.conditionWords.in", values: "GLIFOSATO 64%" }] };
+  it("read in one line under the block, since one same item meets them", () => {
+    expect(ruleConditionSummaries([{ fieldId: "article", operator: "in", values: ["glifo"] }], columns, t, "es"))
+      .toEqual([{ key: "items", block: "Artículos", questions: [article] }]);
+  });
+  it("keep that line in the place of the first one, apart from the others, and leave presence apart since it looks at the whole response", () => {
+    expect(ruleConditionSummaries([
+      { fieldId: "article", operator: "in", values: ["glifo"] },
+      { fieldId: "remito", operator: "contains", values: ["0003"] },
+      { fieldId: "quantity", operator: "gte", values: ["100"] },
+      { fieldId: "notes", operator: "answered", values: [] },
+    ], columns, t, "es")).toEqual([
+      { key: "items", block: "Artículos", questions: [article, { key: "quantity", question: "Cantidad", clauses: [{ words: "rules.conditionWords.gte", values: "100" }] }] },
+      { key: "remito", question: "Remito", clauses: [{ words: "rules.conditionWords.contains", values: "0003" }] },
+      { key: "notes", question: "Observaciones", clauses: [{ words: "rules.conditionWords.answered", values: "" }] },
+    ]);
+  });
+});

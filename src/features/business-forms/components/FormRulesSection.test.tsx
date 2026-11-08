@@ -770,3 +770,25 @@ it("shows the original with the names of its data while the message is translate
     expect(screen.getByRole("textbox", { name: "Message" })).toHaveAccessibleDescription(/Original \(Spanish\): Llegó Proveedor: Número$/);
   } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
 });
+
+it("reads the conditions of the block together in one line, in the place of the first, in the rule and its history", async () => {
+  setup();
+  const [remitoId, blockId, goodId, quantityId, historyId] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+  const rule = { ...storedRule(), conditions: [{ fieldId: goodId, operator: "in", values: ["false"] }, { fieldId: remitoId, operator: "contains", values: ["0003"] }, { fieldId: quantityId, operator: "gte", values: ["100"] }] };
+  serveRules([rule]);
+  const field = (fieldId: string, type: string, label: string, extra: object = {}) => ({ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type, label: { es: label }, help: null, required: false, maxLength: type === "shortText" ? 100 : null, options: null, ...extra });
+  server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Recepción" }, originalCulture: "es", questions: [field(remitoId, "shortText", "Remito"),
+    field(blockId, "group", "Artículos", { rows: { minRows: 0, maxRows: 10 } }), field(goodId, "boolean", "¿Llegó en buen estado?", { repeated: true }), field(quantityId, "decimal", "Cantidad", { repeated: true })], conditionChoices: {}, roles: [] })),
+    http.get("/api/forms/definitions/:id/rules/revisions", () => HttpResponse.json({ items: [{ id: historyId, revision: 1, createdAtUtc: "2026-10-17T12:00:00Z", author: null, hasApproval: false, changes: { addedRules: 1, updatedRules: 0, removedRules: 0, orderChanged: false } }], page: 1, pageSize: 10, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })),
+    http.get("/api/forms/definitions/:id/rules/revisions/:revision", () => HttpResponse.json({ ...initial(), id: historyId, revision: 1, createdAtUtc: "2026-10-17T12:00:00Z", rules: [rule] })));
+  renderWithProviders(<FormRulesSection prefix="REC" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  const block = await screen.findByText("Artículos");
+  expect(block.closest("li")).toHaveTextContent(/^Si algún ítem de Artículos con ¿Llegó en buen estado\? es No y Cantidad desde 100$/);
+  expect(screen.getByText("Remito").closest("li")).toHaveTextContent(/^y Remito contiene 0003$/);
+  const history = screen.getByRole("button", { name: "Historial" });
+  await waitFor(() => expect(history).toBeEnabled());
+  await userEvent.click(history);
+  const panel = await screen.findByRole("dialog", { name: "Historial de las reglas" });
+  await userEvent.click(within(panel).getByRole("button", { name: "Revisión 1" }));
+  expect((await within(panel).findByText("Artículos")).closest("li")).toHaveTextContent(/^Si algún ítem de Artículos con ¿Llegó en buen estado\? es No y Cantidad desde 100$/);
+});

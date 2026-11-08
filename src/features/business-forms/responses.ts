@@ -219,19 +219,38 @@ function conditionValues(values: readonly string[] | null | undefined, column: R
   return (values ?? []).map(value => (column?.type === "choice" || column?.type === "multiChoice") ? column.options.find(option => option.id === value)?.label ?? names[value] ?? t("responses.unavailableValue") : column?.type === "boolean" ? formatYesNo(value, { yes: t("responses.yes"), no: t("responses.no") }) ?? value : column?.type === "decimal" || column?.type === "date" ? formatTypedValue(column.type, column.type === "decimal" ? canonicalDecimalCondition(value) : value, language) ?? value : value);
 }
 
+/** A question of a rule's conditions as it reads: its name and, for each condition on it, the words and the values. */
+export interface ConditionQuestionSummary { readonly key: string; readonly question: string; readonly clauses: { readonly words: string; readonly values: string }[] }
+/** The conditions with a value on questions of a block of rows, which one same item meets (RG5-A). */
+export interface ConditionBlockSummary { readonly key: string; readonly block: string; readonly questions: ConditionQuestionSummary[] }
 /**
  * The conditions of a rule as it reads (board TL2-A): «Hectáreas aplicadas desde 50», with the question, the words and the
  * values apart, so the summary can mark the question and the value. Several values of one choice read «Visita o Llamada».
+ * The conditions with a value on questions of a block read in one line, in the place of the first of them (RG5-A): presence
+ * looks at the whole response, so it stays apart.
  */
 export function ruleConditionSummaries(conditions: readonly ResponseCondition[], columns: readonly ResponseColumn[], t: Translate, language: string) {
   const questions = responseQuestionColumns(columns);
-  return [...new Set(conditions.map(item => item.fieldId))].map(fieldId => {
-    const column = questions.find(item => item.fieldId === fieldId);
-    return { key: fieldId, question: column?.label ?? "", clauses: conditions.filter(item => item.fieldId === fieldId).map(item => {
-      const values = conditionValues(item.values, column, t, language);
-      return { words: t("rules.conditionWords." + item.operator), values: values.join(item.operator === "in" ? " " + t("rules.conditionWords.or") + " " : ", ") };
-    }) };
-  });
+  const lines: (ConditionQuestionSummary | ConditionBlockSummary)[] = [];
+  const summary = (fieldId: string): ConditionQuestionSummary => ({ key: fieldId, question: questions.find(item => item.fieldId === fieldId)?.label ?? "", clauses: [] });
+  for (const item of conditions) {
+    const values = conditionValues(item.values, questions.find(column => column.fieldId === item.fieldId), t, language);
+    const clause = { words: t("rules.conditionWords." + item.operator), values: values.join(item.operator === "in" ? " " + t("rules.conditionWords.or") + " " : ", ") };
+    const block = ["answered", "unanswered", "notAsked"].includes(item.operator) ? undefined
+      : columns.find(column => column.questions?.some(question => question.fieldId === item.fieldId));
+    if (!block) {
+      let line = lines.find((candidate): candidate is ConditionQuestionSummary => !("block" in candidate) && candidate.key === item.fieldId);
+      if (!line) lines.push(line = summary(item.fieldId));
+      line.clauses.push(clause);
+      continue;
+    }
+    let line = lines.find((candidate): candidate is ConditionBlockSummary => "block" in candidate && candidate.key === block.fieldId);
+    if (!line) lines.push(line = { key: block.fieldId, block: block.label, questions: [] });
+    let entry = line.questions.find(candidate => candidate.key === item.fieldId);
+    if (!entry) line.questions.push(entry = summary(item.fieldId));
+    entry.clauses.push(clause);
+  }
+  return lines;
 }
 
 /** The chips of the sheet. `names` holds the names remembered when an option or a person was chosen in «Filtros» (PL2-A). */
