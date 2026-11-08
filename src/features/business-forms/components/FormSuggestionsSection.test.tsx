@@ -311,3 +311,18 @@ it("reads a saved suggestion in steps: the form and how, when, if and the data t
   expect(steps[3]).toHaveTextContent(/^Datos que pasan\s*Bultos\s*Número de la respuesta$/);
   expect(within(steps[3]).getByText("Bultos")).not.toHaveTextContent("Número");
 });
+
+it("offers a question of the block in a condition with «Algún ítem con» and only the operators with a value",async()=>{
+  setup();
+  const groupId="0199a0c0-0000-7000-8000-000000000070",quantityId="0199a0c0-0000-7000-8000-000000000080";
+  const withBlock={...source,questions:[...source.questions,{...question(groupId,"Artículos","group"),rows:{minRows:0,maxRows:10}},{...question(quantityId,"Cantidad","decimal"),repeated:true}]};
+  server.use(http.get("/api/forms/definitions/:id/suggestions/options",()=>HttpResponse.json({source:withBlock,destinations:[destination],unavailableDestinations:[],conditionChoices:{}})));
+  renderWithProviders(<FormSuggestionsSection {...props()}/>);
+  await add();
+  await userEvent.click(screen.getByRole("button",{name:"Agregar condición"}));
+  const questionSelect=screen.getByRole("combobox",{name:"Pregunta"});
+  expect(within(questionSelect).getAllByRole("option").map(option=>option.textContent)).toEqual(["Bultos","Artículos › Cantidad"]);
+  await userEvent.selectOptions(questionSelect,quantityId);
+  expect(screen.getByText("Algún ítem con")).toBeVisible();
+  expect(within(screen.getByRole("combobox",{name:"Condición"})).getAllByRole("option").map(option=>option.textContent)).toEqual(["Es igual a","Es mayor o igual a","Es menor o igual a"]);
+});

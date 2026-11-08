@@ -935,6 +935,8 @@
     "ifOptional": "If (optional)",
     "always": "Without a condition, the rule always runs. Conditions use form questions.",
     "question": "Question",
+    "someItem": "Any item with",
+    "blockQuestion": "{{block}} › {{question}}",
     "operator": "Condition",
     "value": "Value",
     "missingQuestion": "Question unavailable",

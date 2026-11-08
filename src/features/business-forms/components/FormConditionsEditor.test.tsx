@@ -35,3 +35,49 @@ it("offers anyOf only for multiple choice and keeps another condition when value
   expect(within(operators[1]!).queryByRole("option", { name: "Eligió alguna de" })).not.toBeInTheDocument();
   expect(screen.getByLabelText("Condiciones confirmadas")).toHaveTextContent('"operator":"anyOf"');
 });
+
+// A block of rows (RG5-A): its questions are chosen in their place, after its name, and the block itself is not.
+const blockColumns: ResponseColumn[] = [
+  { fieldId: "remito", type: "shortText", label: "Remito", options: [], introducedInVersion: 1 },
+  { fieldId: "items", type: "group", label: "Artículos", options: [], introducedInVersion: 1, questions: [
+    { fieldId: "good", type: "boolean", label: "¿Llegó en buen estado?", options: [], introducedInVersion: 1 },
+    { fieldId: "quantity", type: "decimal", label: "Cantidad", options: [], introducedInVersion: 1 },
+  ] },
+];
+function BlockHarness({ columns = blockColumns, initial }: { columns?: ResponseColumn[]; initial: readonly ResponseCondition[] }) {
+  const [conditions, setConditions] = useState<readonly ResponseCondition[]>(initial);
+  return <><FormConditionsEditor conditions={conditions} columns={columns} blocked={false} onChange={setConditions}/>
+    <output aria-label="Condiciones confirmadas">{JSON.stringify(conditions)}</output></>;
+}
+const confirmed = () => JSON.parse(screen.getByLabelText("Condiciones confirmadas").textContent!) as ResponseCondition[];
+it("offers each question of the block after its name and never the block itself", () => {
+  renderWithProviders(<BlockHarness initial={[{ fieldId: "remito", operator: "answered", values: [] }]}/>);
+  expect(within(screen.getByRole("combobox", { name: "Pregunta" })).getAllByRole("option").map(option => option.textContent))
+    .toEqual(["Remito", "Artículos › ¿Llegó en buen estado?", "Artículos › Cantidad"]);
+  expect(screen.queryByText("Algún ítem con")).not.toBeInTheDocument();
+});
+it("starts a condition on a question of the block with «Algún ítem con», its first operator and only the operators with a value", async () => {
+  renderWithProviders(<BlockHarness initial={[{ fieldId: "remito", operator: "answered", values: [] }]}/>);
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "quantity");
+  expect(screen.getByText("Algún ítem con")).toBeVisible();
+  expect(within(screen.getByRole("combobox", { name: "Condición" })).getAllByRole("option").map(option => option.textContent))
+    .toEqual(["Es igual a", "Es mayor o igual a", "Es menor o igual a"]);
+  expect(confirmed()).toEqual([{ fieldId: "quantity", operator: "equals", values: [""] }]);
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "good");
+  expect(screen.getByRole("combobox", { name: "Valor" })).toHaveValue("true");
+  expect(confirmed()).toEqual([{ fieldId: "good", operator: "in", values: ["true"] }]);
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "remito");
+  expect(confirmed()).toEqual([{ fieldId: "remito", operator: "answered", values: [] }]);
+  expect(screen.queryByText("Algún ítem con")).not.toBeInTheDocument();
+});
+it("adds a condition with the first question that can be chosen, also when the block comes first", async () => {
+  renderWithProviders(<BlockHarness columns={[blockColumns[1], blockColumns[0]]} initial={[]}/>);
+  await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
+  expect(confirmed()).toEqual([{ fieldId: "good", operator: "in", values: ["true"] }]);
+});
+it("keeps the rows aligned: with a condition of the block, every other row reserves the place of «Algún ítem con»", () => {
+  renderWithProviders(<BlockHarness initial={[{ fieldId: "good", operator: "in", values: ["false"] }, { fieldId: "remito", operator: "answered", values: [] }]}/>);
+  const prefixes = screen.getAllByText("Algún ítem con");
+  expect(prefixes).toHaveLength(2);
+  expect(prefixes.map(prefix => prefix.getAttribute("aria-hidden"))).toEqual([null, "true"]);
+});

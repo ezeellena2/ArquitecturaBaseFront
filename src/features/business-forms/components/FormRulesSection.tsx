@@ -22,8 +22,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
 import { contentReference, localizedValue, moveItem } from "../editorModel";
-import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, usesMessage, usesRole, withRuleActionKind, type FormRule, type RuleActionKind } from "../rules";
-import type { ResponseColumn } from "../responses";
+import { conditionColumns, newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, ruleActionKinds, ruleEvents, usesMessage, usesRole, withRuleActionKind, type FormRule, type RuleActionKind } from "../rules";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { RevisionHistoryButton, RevisionHistoryPanel } from "./RevisionHistory";
 import { parseRuleMessage, ruleMessageDataLabel, ruleMessageText, type RuleMessageData } from "../ruleMessage";
@@ -96,7 +95,7 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
   const options = query.data?.options;
   // The block of rows has no answer of its own: only its questions can be conditions.
-  const columns: ResponseColumn[] = options?.questions.flatMap(field => field.type === "group" ? [] : [{ fieldId: field.fieldId, type: field.type, label: localizedValue(field.label, culture, options.originalCulture), introducedInVersion: 1, options: options.conditionChoices[field.fieldId] ?? (field.options ?? []).map(option => ({ id: option.choiceId, label: localizedValue(option.label, culture, options.originalCulture) })) }]) ?? [];
+  const columns = options ? conditionColumns(options.questions, options.conditionChoices, culture, options.originalCulture) : [];
   const prepared = prepareRules(rules ?? [], options?.originalCulture ?? "es", columns);
   const conflict = needsReview;
   const blocked = busy || cooldown.isRunning;

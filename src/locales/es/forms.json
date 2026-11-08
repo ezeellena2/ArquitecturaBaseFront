@@ -935,6 +935,8 @@
     "ifOptional": "Si (opcional)",
     "always": "Sin condición, la regla corre siempre. Las condiciones usan las preguntas del formulario.",
     "question": "Pregunta",
+    "someItem": "Algún ítem con",
+    "blockQuestion": "{{block}} › {{question}}",
     "operator": "Condición",
     "value": "Valor",
     "missingQuestion": "Pregunta no disponible",

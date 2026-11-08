@@ -1,5 +1,6 @@
+import { localizedValue } from "./editorModel";
 import type { FormCulture, LocalizedText } from "./model";
-import { normalizeResponseQuery, type ResponseColumn, type ResponseCondition } from "./responses";
+import { normalizeResponseQuery, type ResponseColumn, type ResponseCondition, type ResponseType } from "./responses";
 import { hasMissingRuleData } from "./ruleMessage";
 export const ruleEvents = ["Received", "Approved", "Rejected"] as const;
 export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole"] as const;
@@ -28,6 +29,31 @@ export function fixPdfAttachment(rule: FormRule, index: number): FormRule {
   const later = rule.actions.findIndex((action, position) => position > index && action.kind === "GeneratePdf");
   const others = rule.actions.filter((_, position) => position !== later);
   return { ...rule, actions: [...others.slice(0, index), later >= 0 ? rule.actions[later] : newRuleAction("GeneratePdf"), ...others.slice(index)] };
+}
+/** What the options of rules and suggestions tell of a question: enough to name it in a condition. */
+export interface ConditionQuestion {
+  readonly fieldId: string;
+  readonly type: ResponseType;
+  readonly label: Readonly<Record<string, string>>;
+  readonly options?: readonly { readonly choiceId: string; readonly label: Readonly<Record<string, string>> }[] | null;
+  readonly repeated?: boolean;
+}
+/**
+ * The columns of the conditions of rules and suggestions (RG5-A): a loose question is a column, and the block a `group` column
+ * with its questions, as in the sheet. A question of the block goes with the last block before it, also one retired at the end.
+ */
+export function conditionColumns(questions: readonly ConditionQuestion[], choices: Readonly<Record<string, readonly { id: string; label: string }[]>>,
+  culture: FormCulture, original: FormCulture): ResponseColumn[] {
+  const columns: ResponseColumn[] = [];
+  for (const question of questions) {
+    const column: ResponseColumn = { fieldId: question.fieldId, type: question.type, label: localizedValue(question.label, culture, original), introducedInVersion: 1,
+      options: [...choices[question.fieldId] ?? (question.type === "choice" || question.type === "multiChoice" ? question.options ?? [] : [])
+        .map(option => ({ id: option.choiceId, label: localizedValue(option.label, culture, original) }))] };
+    const block = question.repeated ? columns.findLast(item => item.type === "group") : undefined;
+    if (block) block.questions = [...block.questions ?? [], column];
+    else columns.push(question.type === "group" ? { ...column, options: [], questions: [] } : column);
+  }
+  return columns;
 }
 export function prepareRules(rules: readonly FormRule[], original: FormCulture, columns: readonly ResponseColumn[]) {
   const issues: RuleIssue[] = [];

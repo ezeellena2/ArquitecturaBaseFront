@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, withRuleActionKind } from "./rules";
+import { conditionColumns, newRule, newRuleAction, fixPdfAttachment, pdfAttachmentIssue, prepareRules, ruleFieldErrors, withRuleActionKind } from "./rules";
 import type { ResponseColumn } from "./responses";
 const original = "es";
 const column: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000030", type: "decimal", label: "Importe", introducedInVersion: 1, options: [] };
@@ -116,4 +116,25 @@ it("preserves anyOf and captured multi option IDs when preparing rules", () => {
   const condition = { fieldId: multi.fieldId, operator: "anyOf", values: ["cold"] };
   const rule = { ...newRule(), event: "Approved" as const, conditions: [condition], actions: [newRuleAction("GeneratePdf")] };
   expect(prepareRules([rule], original, [multi])).toMatchObject({ issues: [], rules: [{ conditions: [condition] }] });
+});
+describe("condition columns", () => {
+  const label = (es: string) => ({ es, en: es + " (en)" });
+  it("put the block as a group column with its questions, also one retired at the end, and keep loose questions as columns", () => {
+    const columns = conditionColumns([
+      { fieldId: "remito", type: "shortText", label: label("Remito") },
+      { fieldId: "items", type: "group", label: label("Artículos") },
+      { fieldId: "article", type: "choice", label: label("Artículo"), options: [{ choiceId: "seed", label: label("Semilla") }], repeated: true },
+      { fieldId: "unit", type: "choice", label: label("Unidad"), options: [{ choiceId: "liters", label: label("Litros") }], repeated: true },
+      { fieldId: "notes", type: "longText", label: label("Notas") },
+      // A question of the block retired from the draft comes after the draft's questions: it goes with the last block before it.
+      { fieldId: "good", type: "boolean", label: label("¿Llegó en buen estado?"), repeated: true },
+    ], { article: [{ id: "seed", label: "Semilla del catálogo" }] }, "en", "es");
+
+    expect(columns.map(column => column.fieldId)).toEqual(["remito", "items", "notes"]);
+    expect(columns[1]).toMatchObject({ type: "group", label: "Artículos (en)", options: [] });
+    expect(columns[1].questions?.map(question => question.fieldId)).toEqual(["article", "unit", "good"]);
+    expect(columns[1].questions?.[0].options).toEqual([{ id: "seed", label: "Semilla del catálogo" }]);
+    expect(columns[1].questions?.[1].options).toEqual([{ id: "liters", label: "Litros (en)" }]);
+    expect(columns[0]).toEqual({ fieldId: "remito", type: "shortText", label: "Remito (en)", introducedInVersion: 1, options: [] });
+  });
 });

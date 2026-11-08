@@ -24,7 +24,7 @@ import { dismissNotification,notify } from "@/shared/ui/notifications";
 import { fetchFormSuggestions,fetchSuggestionHistory,fetchSuggestionOptions,fetchSuggestionRevision,saveFormSuggestions,type FormSuggestionSet } from "../api/suggestions";
 import { administrativeName, localizedValue } from "../editorModel";
 import { formScopeKey,usePrivateQueryCleanup,type FormReadScope } from "../hooks/useFormQueries";
-import type { ResponseColumn } from "../responses";
+import { conditionColumns } from "../rules";
 import { mappableSource,mappingTargets,newSuggestion,prepareSuggestions,suggestionFieldErrors,type FormSuggestion,type SuggestionMapping } from "../suggestions";
 import { ConditionLines } from "./ConditionLines";
 import { DataTag } from "./DataTag";
@@ -82,7 +82,7 @@ function SuggestionsEditor({definitionId,definitionRevision,publishedVersionId,s
   const dirty=!!baseline&&suggestions!==null&&JSON.stringify(baseline.suggestions)!==JSON.stringify(suggestions);
   useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
   const options=query.data?.options;
-  const columns:ResponseColumn[]=options?.source.questions.flatMap(question=>question.type==="group"?[]:[{fieldId:question.fieldId,type:question.type,label:localizedValue(question.label,culture,options.source.originalCulture),introducedInVersion:1,options:options.conditionChoices[question.fieldId]??(question.type==="choice"||question.type==="multiChoice"?question.options??[]:[]).map(choice=>({id:choice.choiceId,label:localizedValue(choice.label,culture,options.source.originalCulture)}))}])??[];
+  const columns=options?conditionColumns(options.source.questions,options.conditionChoices,culture,options.source.originalCulture):[];
   const ready=options?prepareSuggestions(suggestions??[],options.source,options.destinations,columns):null;
   const blocked=busy||cooldown.isRunning;
   const change=(next:readonly FormSuggestion[])=>{if(!blocked){setSuggestions(next);setApiErrors({});}};
