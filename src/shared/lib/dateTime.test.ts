@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { formatDateTimeInZone, formatTimeInZone, calendarDateInZone, formatDateOnly } from "./dateTime";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatDateTimeInZone, formatDateInZone, formatTimeInZone, calendarDateInZone, formatDateOnly, formatRelativeTime } from "./dateTime";
 
 describe("formatDateTimeInZone", () => {
   it("shows a UTC instant in the profile's time zone", () => {
@@ -43,5 +43,38 @@ describe("formatDateOnly", () => {
   });
   it.each(["2026-02-29", "2026-04-31", "2026-13-01", "2026-00-01", "2026-10-00", "2026-10-08T00:00:00Z", "2026-1-8", "", "0000-01-01"])("rejects an invalid calendar day %s", value => {
     expect(formatDateOnly(value, "es")).toBeNull();
+  });
+});
+
+// Building an Intl formatter costs about a hundred times more than using one, and a chat history formats several
+// dates per message on every render.
+describe("formatter reuse", () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+  const formatAll = (valueUtc: string) => [
+    formatDateTimeInZone(valueUtc, "pt-BR", "Asia/Tokyo"), formatDateInZone(valueUtc, "pt-BR", "Asia/Tokyo"),
+    formatTimeInZone(valueUtc, "pt-BR", "Asia/Tokyo"), calendarDateInZone(valueUtc, "Asia/Tokyo"),
+    formatDateOnly("2026-10-08", "pt-BR"), formatDateOnly("2026-10-08", "pt-BR", "numeric"),
+    formatRelativeTime(valueUtc, "pt-BR", Date.parse("2026-10-16T12:00:00Z")),
+  ];
+
+  it("builds no new formatter for a language, zone and style already used", () => {
+    formatAll("2026-10-02T12:00:00Z");
+    const dates = vi.spyOn(Intl, "DateTimeFormat");
+    const relative = vi.spyOn(Intl, "RelativeTimeFormat");
+    formatAll("2026-10-03T12:00:00Z");
+    formatAll("2026-10-04T23:30:00Z");
+    expect(dates).not.toHaveBeenCalled();
+    expect(relative).not.toHaveBeenCalled();
+  });
+
+  it("keeps each language and zone with its own formatter", () => {
+    const instant = "2026-10-02T23:30:00Z";
+    expect(formatDateTimeInZone(instant, "es", "America/Argentina/Buenos_Aires")).toBe("2 oct 2026, 20:30");
+    expect(formatDateTimeInZone(instant, "es", "Europe/Madrid")).toBe("3 oct 2026, 1:30");
+    expect(formatDateTimeInZone(instant, "en-US", "America/Argentina/Buenos_Aires")).toBe("Oct 2, 2026, 8:30 PM");
+    expect(formatDateInZone(instant, "es", "Europe/Madrid")).toBe("3 oct 2026");
+    expect(formatTimeInZone(instant, "es", "Europe/Madrid")).toBe("1:30");
+    expect(calendarDateInZone(instant, "America/Argentina/Buenos_Aires")).toBe("2026-10-02");
+    expect(calendarDateInZone(instant, "Europe/Madrid")).toBe("2026-10-03");
   });
 });

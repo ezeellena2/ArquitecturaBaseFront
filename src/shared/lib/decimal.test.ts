@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatExactDecimal } from "./decimal";
 
 describe("formatExactDecimal", () => {
@@ -15,5 +15,15 @@ describe("formatExactDecimal", () => {
   });
   it.each(["", " 1.2 ", "1e3", "NaN", "Infinity", "1,2", "01.2", "+1", "1.", ".2", "1.2private", "--2"])("rejects noncanonical decimal input without returning %s", value => {
     expect(formatExactDecimal(value, "es")).toBeNull();
+  });
+  // A catalog table formats every numeric cell on every render: building two formatters per cell cost about a hundred times more.
+  describe("formatter reuse", () => {
+    afterEach(() => { vi.restoreAllMocks(); });
+    it("builds no new number formatter for a language already used", () => {
+      formatExactDecimal("1.5", "de-CH");
+      const created = vi.spyOn(Intl, "NumberFormat");
+      expect(["2500.25", "-3", "-0.00", "7"].map(value => formatExactDecimal(value, "de-CH"))).toEqual(["2'500.25", "-3", "-0.00", "7"]);
+      expect(created).not.toHaveBeenCalled();
+    });
   });
 });

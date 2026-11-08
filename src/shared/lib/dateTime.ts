@@ -4,25 +4,23 @@
 ///
 /// `timeZone: undefined` deja la del navegador, que es lo correcto mientras el perfil todavía no llegó.
 export function formatDateTimeInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
-    new Date(valueUtc),
-  );
+  return dateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(valueUtc));
 }
 
 /// Fecha sola, para las columnas de un listado: "20 sept 2026". La hora no aporta a la hora de barrer una
 /// tabla con la vista, y ocupa el doble. Vive en este archivo a propósito: un formateador suelto en una
 /// pantalla es lo que hace que las mismas fechas se vean distinto en dos lugares.
 export function formatDateInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeZone }).format(new Date(valueUtc));
+  return dateTimeFormat(language, { dateStyle: "medium", timeZone }).format(new Date(valueUtc));
 }
 
 export function formatTimeInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return new Intl.DateTimeFormat(language, { timeStyle: "short", timeZone }).format(new Date(valueUtc));
+  return dateTimeFormat(language, { timeStyle: "short", timeZone }).format(new Date(valueUtc));
 }
 
 // Stable calendar identity for grouping instants; display labels still use the person's language.
 export function calendarDateInZone(valueUtc: string, timeZone: string | undefined): string {
-  const parts = new Intl.DateTimeFormat("en", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+  const parts = dateTimeFormat("en", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
     .formatToParts(new Date(valueUtc));
   const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)!.value;
   return `${value("year")}-${value("month")}-${value("day")}`;
@@ -33,11 +31,29 @@ export function formatDateOnly(value: string, language: string, style: "medium" 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return null;
   const day = new Date(value + "T00:00:00.000Z");
   if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== value) return null;
-  return new Intl.DateTimeFormat(language, style === "numeric" ? { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" } : { dateStyle: "medium", timeZone: "UTC" }).format(day);
+  return dateTimeFormat(language, style === "numeric" ? { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" } : { dateStyle: "medium", timeZone: "UTC" }).format(day);
 }
 
 export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {
   const seconds = Math.min(0, Math.round((Date.parse(valueUtc) - now) / 1000));
   const [unit, scale]: [Intl.RelativeTimeFormatUnit, number] = Math.abs(seconds) >= 86400 ? ["day",86400] : Math.abs(seconds) >= 3600 ? ["hour",3600] : Math.abs(seconds) >= 60 ? ["minute",60] : ["second",1];
-  return new Intl.RelativeTimeFormat(language, { numeric: "always" }).format(Math.round(seconds / scale), unit);
+  return relativeTimeFormat(language).format(Math.round(seconds / scale), unit);
+}
+
+// Building an Intl formatter costs about a hundred times more than using one (≈0.13 ms against ≈0.002 ms), and a chat
+// history formats several dates per message on every render. Formatters are immutable: each set of options keeps one.
+const dateTimeFormats = new Map<string, Intl.DateTimeFormat>();
+const relativeTimeFormats = new Map<string, Intl.RelativeTimeFormat>();
+
+function dateTimeFormat(language: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = language + JSON.stringify(options);
+  let format = dateTimeFormats.get(key);
+  if (!format) dateTimeFormats.set(key, format = new Intl.DateTimeFormat(language, options));
+  return format;
+}
+
+function relativeTimeFormat(language: string): Intl.RelativeTimeFormat {
+  let format = relativeTimeFormats.get(language);
+  if (!format) relativeTimeFormats.set(language, format = new Intl.RelativeTimeFormat(language, { numeric: "always" }));
+  return format;
 }
