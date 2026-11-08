@@ -91,7 +91,8 @@ dibujadas las preguntas en CW2-A y CW2-B.
   que un reintento tras un corte devuelve el primer número; cualquier cambio arma otro envío.
 - **Los errores se leen donde se corrigen.** Un faltante o un formato marca su pregunta; si una opción se dio de baja entre
   abrir y enviar, su pregunta dice que «Lote 4» ya no está disponible; un corte deja un aviso que pide volver a tocar Enviar.
-  La versión nueva y la baja llegan como aviso arriba, sin perder lo cargado.
+  La versión nueva y la baja llegan como aviso arriba, sin perder lo cargado. Los ítems del bloque de renglones siguen
+  mientras siga el bloque, con las respuestas de sus preguntas que siguen con el mismo tipo (RG2-A).
 - **«Enviada» se arma con lo enviado.** Lo que la persona cargó y el número, estado y hora del envío, sin pedir la respuesta
   guardada. Las migas llevan a la planilla del formulario; para quien sólo completa, la de lo suyo (Etapa 2).
 - **Las migas miden la barra.** En «Nueva respuesta» y en el detalle de una respuesta, con la barra superior de menos de
@@ -269,7 +270,8 @@ cualquiera con «Corregir y anular respuestas». La regla está en
   «Anular», en rojo.
 - **Corregir, en la computadora,** abre el panel «Corregir TEST-000002» donde estaba D2, del ancho del panel de carga, con la
   respuesta como estaba llevada a la versión activa: las mismas zonas y anchos de la carga (AR1-A), y debajo de cada pregunta
-  que cambió, en gris, «Antes: 1250,5» («Antes: sin respuesta» si no tenía). Los archivos que ya estaban se ven como renglones
+  que cambió, en gris, «Antes: 1250,5» («Antes: sin respuesta» si no tenía). El bloque de renglones vuelve con sus ítems en
+  orden y sin «Antes» adentro (RG2-A). Los archivos que ya estaban se ven como renglones
   «Ya cargado · 86 KB» con «Quitar», y se suman otros como en la carga, dentro de los mismos topes. Al final, después de una
   línea, «Motivo de la corrección *». Abajo, «Cancelar» y «Guardar corrección», que muestra el avance al subir archivos.
   Cerrar con cambios pregunta «¿Descartar la corrección?»; sin cambios, cierra. Sin motivo, «Escribí el motivo.» y el foco va
