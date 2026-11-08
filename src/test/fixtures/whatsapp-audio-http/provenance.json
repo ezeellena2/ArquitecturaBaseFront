@@ -1,84 +1,68 @@
 {
-  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
-  "sourceState": [
-    " M ../../../docs/features/formularios.md",
-    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
-    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
-    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
-    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
-  ],
-  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
-      "sha256": "637bea494b142895a3505a692d1c5ad602cf4669572ee412c65357d8d28781d7"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs",
-      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33"
-    }
-  ],
+  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
       "name": "audio-request.json",
-      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
-      "length": 53
+      "length": 53,
+      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed"
     },
     {
       "name": "audio-thread-completed.json",
-      "sha256": "777ca4193e7d0ee2d478357308a5176119d11342017c34a960e8f67a7d3db6be",
-      "length": 979
+      "length": 975,
+      "sha256": "87ad7b1f2acdda578d742f8d6634f12766e4ed0b76ea8a4d8482334ab58d42c3"
     },
     {
       "name": "audio-thread-pending.json",
-      "sha256": "3f2b727a74f35d0d887c352a55d782c3c3c791ef488c2db07b69fa5bd1db0da7",
-      "length": 937
+      "length": 933,
+      "sha256": "c0e85ec01f8371d673b1a338efadfc88cf4ca80c5dfa4dec16337880dba3fbe9"
+    }
+  ],
+  "sourceState": [
+    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
+    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
+    " M ../../../../docs/guides/validar-un-cambio.md",
+    " M ../../../../docs/plans/README.md",
+    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
+    "?? ../../../../docs/features/formularios-borde-http.md",
+    "?? ../../../../docs/features/formularios-persistencia.md",
+    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
+    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
+    "?? ../../../../docs/features/formularios-servicios.md",
+    "?? ../../../../docs/features/whatsapp-servicios.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+  ],
+  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "sources": [
+    {
+      "sha256": "637bea494b142895a3505a692d1c5ad602cf4669572ee412c65357d8d28781d7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs"
+    },
+    {
+      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
     }
   ],
   "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "whatsapp-audio",
-  "producer": "WhatsAppChatTests.Audio and WhatsAppAudioContractCapture",
-  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
+  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
+  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
+  "artifactSet": "whatsapp-audio"
 }

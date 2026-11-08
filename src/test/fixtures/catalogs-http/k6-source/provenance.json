@@ -1,120 +1,104 @@
 {
-  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
-  "sourceState": [
-    " M ../../../docs/features/formularios.md",
-    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
-    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
-    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
-    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
-  ],
-  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs",
-      "sha256": "ec49392c616c66fe43f231108ddee314fcb2578e0c860a0d4600488e2a58a2ad"
-    }
-  ],
+  "producer": "FormPublicationCheckTests",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
       "name": "active-catalog-created.json",
-      "sha256": "d91dfc14e6e626595addf4bff3d9a6b468a8bb61162a3a98c0d81108f1635f46",
-      "length": 790
+      "length": 790,
+      "sha256": "e0693f92c2165e76f96b075dd6e3d6c6f991b39cc22110eb22f15d4f913c80db"
     },
     {
       "name": "active-catalog-list-usage.json",
-      "sha256": "6aae42ce1aefed3a0293c07f2cce3db460f05a442a139a09ab3e858392674c97",
-      "length": 631
+      "length": 631,
+      "sha256": "9c6c01ab2eae2d90fd4cc7a336532afe57cd30d07d8371664b6280ee390c6190"
     },
     {
       "name": "catalog-choice-check-invalid.json",
-      "sha256": "d1098d1e6cfe5c4aef18b5b9b7b38fab79cd2605d3b73614f68407ddfe925d15",
-      "length": 841
+      "length": 841,
+      "sha256": "05233a9d4ef4096c916d18ae7a7fb5d419122ca25acdf242668e462b063ecf22"
     },
     {
       "name": "catalog-choice-check-valid.json",
-      "sha256": "ec9e3407586f5811f67024034b958a5358a307a326bb187e029fabc04464651d",
-      "length": 757
+      "length": 757,
+      "sha256": "49605f005e386bd856f920340a42eb0ec6fe35b6b7cbbe21653cc20f269a2cee"
     },
     {
       "name": "catalog-choice-create-receipt.json",
-      "sha256": "918f96ef53b8b5341e59f02a40fc468c0dbd8e286980bb16906134a6500c85f9",
-      "length": 1539
+      "length": 1541,
+      "sha256": "ec0438ba086f04fcc276c3a752010039252544be643d1c768d0d4e74aed8ba57"
     },
     {
       "name": "catalog-choice-created.json",
-      "sha256": "e308deeb8caa3f7dc2a60bbf7efa9788aba6276c3184ae6639ed1f1377260e40",
-      "length": 1378
+      "length": 1379,
+      "sha256": "17ee54086cda60f516502621133f972dd4fb059b38528bf82de11bf936237af7"
     },
     {
       "name": "catalog-choice-detail.json",
-      "sha256": "664a7fb5a1e78bcdb03118e2816b41a03ccf42a440c6db06117f9052757e7207",
-      "length": 1587
+      "length": 1589,
+      "sha256": "1defecee203c1d29788f3bf37f60a1403942d556aecc61ec895c9fc50c5ba13d"
     },
     {
       "name": "catalog-choice-invalid-created.json",
-      "sha256": "e16456c91db1acd1a6f84f767a79bbeeb554d436e3005cafa057ba000efc24b1",
-      "length": 926
+      "length": 927,
+      "sha256": "f3572536190483aeca21c872747f47a711e318ea72279425f4eb138632762dd3"
     },
     {
       "name": "catalog-choice-reloaded.json",
-      "sha256": "5475602efcb9bf91fa742e024ceeff3d60f432d3e7051846dabbf1cc37852671",
-      "length": 1619
+      "length": 1622,
+      "sha256": "6b0a874c1599006ae48369081f74e4c9909fe26232cef3408b55d8665b27f8c6"
     },
     {
       "name": "catalog-choice-update-receipt.json",
-      "sha256": "66a4a3a1eb55971b5bd0fd63969f3b82d7343f349d584810712b89d6ffadde86",
-      "length": 1522
+      "length": 1524,
+      "sha256": "56292e0aba152bac1b7ad3ed7ddc0242bf3930c5abef2d59cae677b205905ff8"
     },
     {
       "name": "catalog-choice-updated.json",
-      "sha256": "694fffa3b6d01ec3acb8775e7609789879e9e33c4ce166971486819776894c5f",
-      "length": 1361
+      "length": 1362,
+      "sha256": "cb2d503486658c97a040236a8603f637d4b71b93f55d564da47198ba99f4f882"
+    }
+  ],
+  "sourceState": [
+    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
+    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
+    " M ../../../../docs/guides/validar-un-cambio.md",
+    " M ../../../../docs/plans/README.md",
+    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
+    "?? ../../../../docs/features/formularios-borde-http.md",
+    "?? ../../../../docs/features/formularios-persistencia.md",
+    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
+    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
+    "?? ../../../../docs/features/formularios-servicios.md",
+    "?? ../../../../docs/features/whatsapp-servicios.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+  ],
+  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "sources": [
+    {
+      "sha256": "ec49392c616c66fe43f231108ddee314fcb2578e0c860a0d4600488e2a58a2ad",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationCheckTests.cs"
     }
   ],
   "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "catalog-source",
-  "producer": "FormPublicationCheckTests",
-  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
+  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
+  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
+  "artifactSet": "catalog-source"
 }

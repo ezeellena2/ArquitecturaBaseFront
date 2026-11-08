@@ -1,233 +1,217 @@
 {
-  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
-  "sourceState": [
-    " M ../../../docs/features/formularios.md",
-    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
-    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
-    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
-    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
-  ],
-  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs",
-      "sha256": "4a27c603639efb6d83e2c7a19b4ca7892372f2e4b82a3d6ebf7d81889798688a"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppCatalogRecipientSendingTests.cs",
-      "sha256": "94d53bb588a60e9ac399b050d7837b1017c72d389e58f170ab7517b8d7236be6"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs",
-      "sha256": "8c13c3a072c95e42529455d3d18921064810a323685cb8f9cb7f4520d728295e"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs",
-      "sha256": "28e847f67453e754cbf2f78db3056fa233d3197b41b0965fb9b331ed6e5ee046"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs",
-      "sha256": "f8d809829e4c4a6e80e254487df828d3507c27b6d93e8ba3d26beb3613f1f2da"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingWhatsAppCloudClient.cs",
-      "sha256": "66e9ccf73c85b8866cc9e29ad316ac5c1e9f6d52dc229ad2338c7db58f99c159"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/IStructuredFormPublicationDriver.cs",
-      "sha256": "7e20bb358b2d93e4dc89931059fa4033693e3632c4713d7667d1aaf7832a5a6c"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/StructuredFormPublicationDriver.cs",
-      "sha256": "c859de6b05211d7e0e50cd7f8c26010bf0ac2a4d38c16c601fad477b24488912"
-    }
-  ],
+  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
       "name": "en/choices.json",
-      "sha256": "d1dd2ce2659b47f9d42bbf9bc5500443eabdf83e22150a4dc87d8c2bfd43b85a",
-      "length": 527
+      "length": 527,
+      "sha256": "bdf9523236c16b3b7946f7c0b0263a6ab55f2e44274ae8924d5b978e0cd6199d"
     },
     {
       "name": "en/preparation-recipient-data-missing.json",
-      "sha256": "1bcad3d8a9a1dd65f01efb1bc373edfd1e93f0e9c4d813eee8ce00ccc6ce3813",
-      "length": 349
+      "length": 349,
+      "sha256": "c22f1f4a3a32984eb594a4763b55f5c24b77ed450e1928a3f68c07ae6b3563e1"
     },
     {
       "name": "en/preparation.json",
-      "sha256": "308e9ca16046fb7164fa69f09529f322a5fa0d7c98e182f32a1d45fe12dcd971",
-      "length": 245
+      "length": 245,
+      "sha256": "f605463dd17b8cb9b730ca8c4ed189af767a2d8b301dd2d4bd8e10259e26aad1"
     },
     {
       "name": "en/reply-all-states.json",
-      "sha256": "61d242084b40d6dbde1037c9deca662527eca029d7732fcf1ed6157a59b64c67",
-      "length": 5881
+      "length": 5885,
+      "sha256": "967019864d86c8a0d41337d59d4361b146bfba4e3c02e8f44a4dc5eed9b78711"
     },
     {
       "name": "en/reply-completed.json",
-      "sha256": "671f1ef2af97eb25097ad4003316e68f59cbd93a6064e1046c45f8b52f7d16ea",
-      "length": 3080
+      "length": 3084,
+      "sha256": "c57a50460293354aac58b82ca3620a22c3a5c3db03cbcd99960b2cb0984eefbd"
     },
     {
       "name": "en/reply-inbox-read.json",
-      "sha256": "3ef12a46804f81e5e87b51d8861135f5a7c87b35112a0adbcea3959e37d61be3",
-      "length": 28288
+      "length": 12240,
+      "sha256": "e43dd555b1199bdd053038766a0fb1fde0ec6ade4408b72e2b1b9387b4a7e162"
     },
     {
       "name": "en/reply-inbox-without-read.json",
-      "sha256": "3ef12a46804f81e5e87b51d8861135f5a7c87b35112a0adbcea3959e37d61be3",
-      "length": 28288
+      "length": 12240,
+      "sha256": "e43dd555b1199bdd053038766a0fb1fde0ec6ade4408b72e2b1b9387b4a7e162"
     },
     {
       "name": "en/reply-latest-page.json",
-      "sha256": "e6593273a9f43c19948df301eb1d43d8b0a00766287112cfbe2d7b22a0f9959e",
-      "length": 1914
+      "length": 1918,
+      "sha256": "d844216d958aa7d9352994bd8fe96deda811d75d365df16f56d87ed2806f06b2"
     },
     {
       "name": "en/reply-older-page.json",
-      "sha256": "9a5ee2de9c745f6ea2d90473cee33946f0751205dd67bede7f62d4b8f220aee7",
-      "length": 1965
+      "length": 1969,
+      "sha256": "4499e21a35ba19850a45157a96f82da8a8e56705295382eb259eb185d779a127"
     },
     {
       "name": "en/reply-pending.json",
-      "sha256": "5d55b8f7cfa279ea14171f569671059bae454055376a753b3e4639dee092b806",
-      "length": 1862
+      "length": 1866,
+      "sha256": "f2cd3c385acba45995becebc11e1ec62b7f17bf9e7d07c70966bb1233ffdaa6b"
     },
     {
       "name": "en/reply-rejected.json",
-      "sha256": "185a5eb1514c7768e7b9066adfba4a4387bb1235bfd0662bb24d1d4008736afe",
-      "length": 4310
+      "length": 4314,
+      "sha256": "12abd0fbb5de4f707ed5f01d7678608bb0efbf41c8017d2789001be82712574f"
     },
     {
       "name": "en/reply-reloaded.json",
-      "sha256": "671f1ef2af97eb25097ad4003316e68f59cbd93a6064e1046c45f8b52f7d16ea",
-      "length": 3080
+      "length": 3084,
+      "sha256": "c57a50460293354aac58b82ca3620a22c3a5c3db03cbcd99960b2cb0984eefbd"
     },
     {
       "name": "en/reply-unrecognized.json",
-      "sha256": "ce434d41dfb260aeef953acbd3d16ccbf149ab2f042afa13fc90edfac2f70d72",
-      "length": 4802
+      "length": 4806,
+      "sha256": "d90a297f4029ea42c57dc39e86924be082fd7944bf2ba8df313ac55b45b8f265"
     },
     {
       "name": "en/reply-without-read.json",
-      "sha256": "e29b0c861ee6937fbedc39f837caac28e9a4ea2c563cd11fb22700e41727cf29",
-      "length": 1733
+      "length": 1737,
+      "sha256": "79aad1c454704c6b7683cb34c7b4564d813e95e69ef4dff2fc9b85a11c8ca56e"
     },
     {
       "name": "es/choices.json",
-      "sha256": "e34752e2676df98f946a0dd5352925336af910716e473e2c8641e5cc60172bd8",
-      "length": 527
+      "length": 527,
+      "sha256": "33ee30ec938f3d5c1e709b0055ce1497f0bc9d24ffe2a351a2d42795bcd285fe"
     },
     {
       "name": "es/preparation-recipient-data-missing.json",
-      "sha256": "585caf2171fbc23443689f40810498765a464a8580d3ee570670c18a32197cbd",
-      "length": 350
+      "length": 350,
+      "sha256": "533a4ae63f271437a8dc449b64d9a1fe880e2b1e5109c7d2d8fc4fc1f169388c"
     },
     {
       "name": "es/preparation.json",
-      "sha256": "6088a3364329aa2bc2d859874f659068f9c0661ef4eded778c4353b888617901",
-      "length": 245
+      "length": 245,
+      "sha256": "4b8002d8a9c38f410f559f24374d4c773c7bde09b2d59f9568bc7f80f3ab85ba"
     },
     {
       "name": "es/reply-all-states.json",
-      "sha256": "9ae15a5d2d4d7ce3d3cc4e0d1072784c66c7bf19957f04a95fb261b41990b8a0",
-      "length": 5911
+      "length": 5915,
+      "sha256": "888880f64ca269768ddad38d358b604d72cda96f20e3966fbb650918d0e6404d"
     },
     {
       "name": "es/reply-completed.json",
-      "sha256": "927397847c5b8616888dca8943b1da2d74290e79b02e051ee1a57d82a6ca736d",
-      "length": 3104
+      "length": 3108,
+      "sha256": "eb9eb393384f886b93f79082ac85fc3a0d2b31bb1dc3efcc255a437ed75083bd"
     },
     {
       "name": "es/reply-inbox-read.json",
-      "sha256": "2e1203694988991a46e42fac52e61ed1698f9eba0d3eb0a7eda0210292a2c22b",
-      "length": 29005
+      "length": 11986,
+      "sha256": "1fc50c900ef927619f0a38fb8309a32e308631e56f26303c08bea074fe96c3a6"
     },
     {
       "name": "es/reply-inbox-without-read.json",
-      "sha256": "2e1203694988991a46e42fac52e61ed1698f9eba0d3eb0a7eda0210292a2c22b",
-      "length": 29005
+      "length": 11986,
+      "sha256": "1fc50c900ef927619f0a38fb8309a32e308631e56f26303c08bea074fe96c3a6"
     },
     {
       "name": "es/reply-latest-page.json",
-      "sha256": "e9444367a7f9c39511a0590c350da7a1d2e1f7aced7676f20f4ec74a0c793c29",
-      "length": 1925
+      "length": 1929,
+      "sha256": "fce31cd4ff5af3bd41c75b3d1b329e29ccfa098cf85aaf78ec090df4b600da4f"
     },
     {
       "name": "es/reply-older-page.json",
-      "sha256": "38c463b55114737280936f36fa2733602dca4761ed96b8936d50ac8b5a41e5e4",
-      "length": 1982
+      "length": 1986,
+      "sha256": "6e61208ae9c349b441d9a67196cffe8280c7b53a051b2d5fce98ad1c7b6faf2f"
     },
     {
       "name": "es/reply-pending.json",
-      "sha256": "b7b3f15b23368af40b7b2349910f18524e4dac2263acd94bf62574fc79c0f831",
-      "length": 1873
+      "length": 1877,
+      "sha256": "4a34c7d0fcffbe367aae75fa57cfde9fd96e82d7fda4163d228e1a1f5353eea0"
     },
     {
       "name": "es/reply-rejected.json",
-      "sha256": "29727b90c84278742cacc106dc1ead86dbc95c94658dfb44734824ed3921345c",
-      "length": 4340
+      "length": 4344,
+      "sha256": "0f0e7980cd64e73015ff28c4f466fc1bec598ad64b7666ca50f41d6323f0dc47"
     },
     {
       "name": "es/reply-reloaded.json",
-      "sha256": "927397847c5b8616888dca8943b1da2d74290e79b02e051ee1a57d82a6ca736d",
-      "length": 3104
+      "length": 3108,
+      "sha256": "eb9eb393384f886b93f79082ac85fc3a0d2b31bb1dc3efcc255a437ed75083bd"
     },
     {
       "name": "es/reply-unrecognized.json",
-      "sha256": "ca93818fd94af28d3a9f72351fc3ef327ee687a2b4a1b9ca06cd0a13b959c2d4",
-      "length": 4832
+      "length": 4836,
+      "sha256": "afa8cc2cc78ccce4c689646df99c9e7dc292a3fd44f794af732f058a943ee5a5"
     },
     {
       "name": "es/reply-without-read.json",
-      "sha256": "91b2e50942ff19c51c20fb18bd3d5a4535a046fd0d7465c7233bf681bd5d7234",
-      "length": 1750
+      "length": 1754,
+      "sha256": "56eaccd0c3d05ff05e117004dc6082002bd3281e0bfa6b236ceb2c7e44fcab89"
+    }
+  ],
+  "sourceState": [
+    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
+    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
+    " M ../../../../docs/guides/validar-un-cambio.md",
+    " M ../../../../docs/plans/README.md",
+    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
+    "?? ../../../../docs/features/formularios-borde-http.md",
+    "?? ../../../../docs/features/formularios-persistencia.md",
+    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
+    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
+    "?? ../../../../docs/features/formularios-servicios.md",
+    "?? ../../../../docs/features/whatsapp-servicios.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+  ],
+  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "sources": [
+    {
+      "sha256": "4a27c603639efb6d83e2c7a19b4ca7892372f2e4b82a3d6ebf7d81889798688a",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormReplyAppPreviewTests.cs"
+    },
+    {
+      "sha256": "94d53bb588a60e9ac399b050d7837b1017c72d389e58f170ab7517b8d7236be6",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppCatalogRecipientSendingTests.cs"
+    },
+    {
+      "sha256": "8c13c3a072c95e42529455d3d18921064810a323685cb8f9cb7f4520d728295e",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormSendingTests.cs"
+    },
+    {
+      "sha256": "28e847f67453e754cbf2f78db3056fa233d3197b41b0965fb9b331ed6e5ee046",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormHttpContractTests.cs"
+    },
+    {
+      "sha256": "f8d809829e4c4a6e80e254487df828d3507c27b6d93e8ba3d26beb3613f1f2da",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingFlowProvider.cs"
+    },
+    {
+      "sha256": "66e9ccf73c85b8866cc9e29ad316ac5c1e9f6d52dc229ad2338c7db58f99c159",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingWhatsAppCloudClient.cs"
+    },
+    {
+      "sha256": "7e20bb358b2d93e4dc89931059fa4033693e3632c4713d7667d1aaf7832a5a6c",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/IStructuredFormPublicationDriver.cs"
+    },
+    {
+      "sha256": "c859de6b05211d7e0e50cd7f8c26010bf0ac2a4d38c16c601fad477b24488912",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/StructuredFormPublicationDriver.cs"
     }
   ],
   "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "whatsapp-catalogs",
-  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
-  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
+  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
+  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
+  "artifactSet": "whatsapp-catalogs"
 }

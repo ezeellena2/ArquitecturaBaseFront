@@ -1,376 +1,408 @@
 {
-  "runId": "20261107-192901-877bd632a7ea48169691571fc1a07918",
-  "sourceState": [
-    " M ../../../docs/features/formularios.md",
-    " M ../../../docs/plans/2026-11-07-elegir-primero-por-un-campo.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormDraftRequestMapping.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/FormEntryHttpRequests.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/SaveFormDraftHttpRequest.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntriesController.cs",
-    " M ../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/FormEntryCorrectionsController.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/BusinessFormsApplicationRegistration.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Persistence/IFormEntryReader.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Interfaces/Services/IFormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormDraftModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormEntryModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryCatalogPolicy.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormEntryService.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormPublicationGuard.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/FormEntryRequestValidators.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Validation/SaveFormDraftRequestValidator.cs",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx",
-    " M ../../../src/ArquitecturaBase.Application/Resources/Errors.resx",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecord.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/BusinessFormRecordReference.cs",
-    " M ../../../src/ArquitecturaBase.Domain/Modules/BusinessForms/FormPublicationErrors.cs",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/FormEntryReader.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftBudgetTests.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormsTestModule.cs",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/export-responses-http.ps1",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogSourceValidationTests.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormCatalogPreparationFixture.cs",
-    " M ../../../tests/ArquitecturaBase.Application.UnitTests/TestFeatures/Modules/BusinessForms/FormEntryFixture.cs",
-    "?? ../../../docs/plans/2026-11-07-traspaso-multitenant/",
-    "?? ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogGroupPolicy.cs",
-    "?? ../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormEntryGroupByHttpTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormCatalogGroupByPublicationTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormEntryGroupByTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/FormRecordReferenceRowTests.cs",
-    "?? ../../../tests/ArquitecturaBase.Domain.UnitTests/Modules/BusinessForms/FormRecordRowTests.cs"
-  ],
-  "repositoryHead": "30b185717a5d2e654caf5b1b76e50a7b9ffe3459",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFieldsReadHttpTests.cs",
-      "sha256": "b1a58f46c0977612da608411986edeb92519d11af62a9387122beaf6ef6a1590"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMultipleChoiceReadHttpTests.cs",
-      "sha256": "9507dbd726ad90b98ccfff3e0db73d3768907ba0d6bdfebd21d97679ad4a96ea"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseHttpTests.cs",
-      "sha256": "bbb97063055ed4404e4a03e8152a3d39e50e532bbcdeb75a371cd67c1a159a76"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormOverviewHttpTests.cs",
-      "sha256": "8902e323ae056b011978955bb2f686ae86050b3e97bea8d97be5c74baa349629"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRecordNavigationHttpTests.cs",
-      "sha256": "ec900538797fe0a03bba0978d766ba4545bebd7887b62f6e067b526a096295e3"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPublishedVersionFixture.cs",
-      "sha256": "f1975415a9f01c5a64e5b7cde87827918db029d0f012e7b95bc72e66c0f259ca"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseApprovalHttpTests.cs",
-      "sha256": "abe71415cefcb6bea09168c043373be7fb5d5b670640d7962aa0fae53a47ee21"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseStateHttpTests.cs",
-      "sha256": "2dec929d26c88042175b307c083b40e31e3fc20f2cb66f8cc86773f2f8c26455"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs",
-      "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/ResponseContractCapture.cs",
-      "sha256": "d94b67669a391f7c21770a6e6e78435b357f46e837a8cd9d3863ea94e7f653c1"
-    }
-  ],
+  "producer": "FormCatalogFieldsReadHttpTests and FormMultipleChoiceReadHttpTests and FormRowsReadHttpTests and FormRowsCaptureIntegrationTests and FormResponseHttpTests and FormOverviewHttpTests and FormRecordNavigationHttpTests and FormPublishedVersionFixture and FormResponseApprovalHttpTests and FormResponseStateHttpTests and WhatsAppFormFilesIntegrationTests and ResponseContractCapture",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "captures": [
     {
       "name": "approval-sheet-en.json",
-      "sha256": "0f8de1449816b4b103936c1faa99cc47a2ede62c6f5677f671be02483083b78a",
-      "length": 1561
+      "length": 1561,
+      "sha256": "24342389fb979b95a1dff2e171cf58f11c75efffa8016088726f1d588e44c6c1"
     },
     {
       "name": "approval-sheet-es.json",
-      "sha256": "a3106681c9d22573636187502e9d1a92320aa57216f9f7cdded50948b6d7c20e",
-      "length": 1564
+      "length": 1564,
+      "sha256": "52353ca31f43db40b89d58fce70459757079f59e3162b1c1cfa7fea84489f868"
     },
     {
       "name": "counts-es.json",
-      "sha256": "8d2cc9a166f4bf48a382bf4cd86ba068de2819dffd11198068db069ea18fd694",
-      "length": 180
+      "length": 180,
+      "sha256": "8d2cc9a166f4bf48a382bf4cd86ba068de2819dffd11198068db069ea18fd694"
     },
     {
       "name": "detail-es.json",
-      "sha256": "b993049d140a823a8ab975f2721eb0968ec44b8d4207ebb5dfb230257d81cc2b",
-      "length": 1207
+      "length": 1208,
+      "sha256": "51338725cae7f7e736bfd642b98319fe9f7b49f9acb9b6fd7cbe7f6617b99266"
     },
     {
       "name": "export-state-approved-d2.xlsx",
-      "sha256": "02e58dd5b60884a74073b00cda7e8c2c9a5a5ac23620dd42a2869a39fab91fdd",
-      "length": 6805
+      "length": 6805,
+      "sha256": "109d226317b59bafdf76adebf74609da38685f2dc70e5ba2662a51b6fd8bcf03"
     },
     {
       "name": "export-state-pendingapproval-d2.xlsx",
-      "sha256": "d04f641643707811b5d3cedc2038dd55bfeb40a422daab15b61c4f2e8c4cf1ef",
-      "length": 6759
+      "length": 6759,
+      "sha256": "14c216b5f0d9c2f3aed58ca053bf7dce6931ddcdeaeee32f79e5c5b4cdc69f37"
     },
     {
       "name": "export-state-received-d2.xlsx",
-      "sha256": "77ddfc965066bb92fb26f4ab350c9e56237105fa3afda333c2425f0ff10e8d03",
-      "length": 6758
+      "length": 6757,
+      "sha256": "b14d5770856eb83e3030cc78c0ade1d86409b55448ccca5bce49921a0373a05d"
     },
     {
       "name": "export-state-rejected-d2.xlsx",
-      "sha256": "6acc483c39e03814d5fee495045312b709edcbfcab8db095ec6b1e7a74422da1",
-      "length": 6760
+      "length": 6759,
+      "sha256": "414e8e56691d6e5026191f414d06546fdf762bfed12a6c55ca82d085e8efd689"
     },
     {
       "name": "export.xlsx",
-      "sha256": "e7e7e795d5b21f323147164981cce3d1381fb4d0557cbe5b54ae18fc6facbd2e",
-      "length": 6813
+      "length": 6814,
+      "sha256": "8a342764ef9a0be2212072c02c346ac61cd1001ddd6be99f6f13b5a1a1840739"
     },
     {
       "name": "extra-fields-detail-en.json",
-      "sha256": "d10f70cf053bf94dd5febaee6670d359d39a0f47c5b1c560ff2ce7714dd0811b",
-      "length": 2402
+      "length": 2403,
+      "sha256": "a5e3fb611b799358759b5eb703206adbdfd718625e48c4feb8270fbfeb0ff6f6"
     },
     {
       "name": "extra-fields-detail-es.json",
-      "sha256": "d5b6bfbbe2e601c59e8c1258f8555b728f4255a7734a5d03e4f12efb66111fa3",
-      "length": 2429
+      "length": 2430,
+      "sha256": "f6f686d96004ef5205c24dfd083b8ff967c60ab4dcfa1ea1c06c0049a6a82ff2"
     },
     {
       "name": "extra-fields-export-en.xlsx",
-      "sha256": "a564507a298b178e0afa8bf2dfd20b5a4a225e3299d513cdf95eb62f62a8942c",
-      "length": 6842
+      "length": 6842,
+      "sha256": "61c59b8a2bae6f6e95d5ff4147e8a919c7fcad7135e77407cabc5bc895de6283"
     },
     {
       "name": "extra-fields-export-es.xlsx",
-      "sha256": "75ebce26ad48e93816e2e057f6c981b5445c04fcf11fe4160d437e5444d7a4ed",
-      "length": 6847
+      "length": 6847,
+      "sha256": "19b72673ed3b266e87a3e4deceef5000dba0903c2827af9a082cb1c18768ed64"
     },
     {
       "name": "extra-fields-legacy-en.json",
-      "sha256": "a5cce73d5520890229b67a60f8200d8b043301253850489595f9784425685a68",
-      "length": 1502
+      "length": 1503,
+      "sha256": "a1e68b38ed71d69cd2fa37314819632e5c0a59cf8ef7877da4ba491e5e1acfd2"
     },
     {
       "name": "extra-fields-legacy-es.json",
-      "sha256": "386b745fffae24e44cc2f6d8d3b03ef0c86e175cc76a08d16e96653684853734",
-      "length": 1507
+      "length": 1508,
+      "sha256": "4087b9bfb6d9878c252320d1610e6dede43fa0a205b7eb31a41e5f77d500bab5"
     },
     {
       "name": "extra-fields-sheet-en.json",
-      "sha256": "ec3e38c390258fb50cbe60f27d317755f41dd6d79b8f7adf5da3dbd311f5a18d",
-      "length": 5015
+      "length": 5015,
+      "sha256": "c66f3caaf8e344308c23c854a603ea96e689c64706bbfb558cde7bc6009596f4"
     },
     {
       "name": "extra-fields-sheet-es.json",
-      "sha256": "60c40b62e02f2713cfbbf60460bb125c506e96985d65289ae620f87db11a7fb5",
-      "length": 5043
+      "length": 5043,
+      "sha256": "e8a9e54af2a0159fe4d61c07eb30f6fb7185f6da5195a757270c8c0778ac03cd"
     },
     {
       "name": "extra-fields-visible-export-en.xlsx",
-      "sha256": "62fa7af3e057debbb9604294224b5492bf60095d314a9b973209a04545e6983a",
-      "length": 6725
+      "length": 6726,
+      "sha256": "ef2e5e6d53d280b42ac4aab80332fab0e9a6cd6ff6596bed79df696eb81175bd"
     },
     {
       "name": "extra-fields-visible-export-es.xlsx",
-      "sha256": "fcd98d7a6b08bfed8d82834876f7eee07944cd2832590265b2b4768527168fb0",
-      "length": 6731
+      "length": 6731,
+      "sha256": "67557dd57d50ede823953045029052ccb2e66432b94295aeb074c2d551b5a5a5"
     },
     {
       "name": "files-detail-es.json",
-      "sha256": "75a49aef96515fd98f381d3c0857f8ed9efff35f9dca238d5297b1737b63daaa",
-      "length": 1802
+      "length": 1796,
+      "sha256": "3a9e39a7ecec8bcb79db76edb36bf3235c7e8e8c9f0e6bac862306095765beae"
     },
     {
       "name": "files-detail-without-chat-d2-es.json",
-      "sha256": "0f29ade4bdf453cca75bc9f25df4f22b643cf7f85d0559911c25bf701b1f533d",
-      "length": 1768
+      "length": 1762,
+      "sha256": "b874c59ca0c11a810724b207fadf96d86211699d9145a3750473aa31830f859d"
     },
     {
       "name": "files-sheet-es.json",
-      "sha256": "27a9d49afcce11c6e483d078db1f35238275cd86616541acd2708d2d70be02c1",
-      "length": 1611
+      "length": 1611,
+      "sha256": "1a73ba97a12706ff9f1b366a1ff56ab0008d458213a21efb45389380b018bce7"
     },
     {
       "name": "filtered-es.json",
-      "sha256": "ebc98a1bbf3d3b96047480115b0281c3e63d852912c09536c3269bbeb97848fb",
-      "length": 3022
+      "length": 3022,
+      "sha256": "3fc5cd8113b00b45690388c1dd4a025fb796de08fa1f4671996193bb7d1f2acc"
     },
     {
       "name": "multi-counts-en.json",
-      "sha256": "5365605672bb5f6bdc985051af821d7b2e8ee5017a784af90d90fba582ca57a3",
-      "length": 243
+      "length": 243,
+      "sha256": "6e66c3f0230cb3a589d25f59b203120b33271345ee5710e4f3855b124955c4dd"
     },
     {
       "name": "multi-counts-es.json",
-      "sha256": "586d5483d6ed693db9cc0ea11b94f1ee6ca8b6c0370849a94703c7ea2f5774e3",
-      "length": 248
+      "length": 248,
+      "sha256": "548c45834190076bc62a72707084caebdf6f54e94680526e20b79b1b8cb5c657"
     },
     {
       "name": "multi-detail-en.json",
-      "sha256": "f9c04342c4ed7829336c3548b71306742be05e2553c94c9a6ab4d2a51054cc13",
-      "length": 1951
+      "length": 1952,
+      "sha256": "b0bac839051dd479b410a8713c7b6c68caa68a94d2d9df660239236b7c853254"
     },
     {
       "name": "multi-detail-es.json",
-      "sha256": "0108e3b00b661989174422897f42db2b3233849bbebb447cef3078e14715d9ee",
-      "length": 1993
+      "length": 1994,
+      "sha256": "f48f1778f847b1956421223930c4084d02c7a9af0f9147c126acaa05e698b643"
     },
     {
       "name": "multi-export-en.xlsx",
-      "sha256": "4ad6ff76070d7aa4836384ee78338b9d3d38c9d9bb37c4317276b8d3e031532e",
-      "length": 6776
+      "length": 6775,
+      "sha256": "590a3d5b45f131ec3cef45acef48d012de8c84b033ac5ce5c2107ffc0138e1eb"
     },
     {
       "name": "multi-export-es.xlsx",
-      "sha256": "f82e67849489d569b711a79306416b641980abfc1ac6d5648cdeb057493f574a",
-      "length": 6781
+      "length": 6781,
+      "sha256": "0628169583642fb16286eb0cd5c8836cd725abf8d722d2db2ea8753a822e13b7"
     },
     {
       "name": "multi-sheet-en.json",
-      "sha256": "6e738dad040a18b405c5803580863c394fe056404f14ed9a5c50991023f4cdc2",
-      "length": 5615
+      "length": 5615,
+      "sha256": "5aa7b7410b4bede7a5031c5c09cfa57989740e82363b94c990c51d83b6fd1919"
     },
     {
       "name": "multi-sheet-es.json",
-      "sha256": "d9fa2fdeef717188857de38d9aa53b9c9ce41dd14ed1b7b03949abb4e4858f29",
-      "length": 5683
+      "length": 5683,
+      "sha256": "b60c41f8e77a48909c05f17739474d280709022e75e2e689f8e3cd3a35bcad51"
     },
     {
       "name": "overview-combined-en.json",
-      "sha256": "42dd5eeaa53ed42399fde401c6634d6e40589c40caa899011064faef32d45f55",
-      "length": 491
+      "length": 491,
+      "sha256": "03fa95b846865909b5aaeb729568f3dac7e9ea53ae880af9190127b984fca5ef"
     },
     {
       "name": "overview-combined-es.json",
-      "sha256": "2e279a93ef0f47dbde40bd9e927eacc6109ead5f0b1bfa2a913ab4ae300f5235",
-      "length": 494
+      "length": 494,
+      "sha256": "00fa9c0f7d2b29081e40135946e960899998fcd9227d5d27e66ddd5181efe0b5"
     },
     {
       "name": "overview-deactivated-en.json",
-      "sha256": "a52b2deb8c7b2d91316089ae17352b9dfca858f33329e6ef25c9e50e333b3a6b",
-      "length": 511
+      "length": 512,
+      "sha256": "0b6cface6f9729096553e2d519711de15730f5918121112e284d7bd8711b5e45"
     },
     {
       "name": "overview-deactivated-es.json",
-      "sha256": "c6f6ebc2ec93c69a0ad390c124ea9309115c82db1db867b567b56a2ff1efcca5",
-      "length": 514
+      "length": 515,
+      "sha256": "c6112a725c3dae2ccff5ba8ca4e336d5d670bcd55048ec200fae20e5262f1b79"
     },
     {
       "name": "overview-decide-en.json",
-      "sha256": "47b634bf4a7c347509f55b7463d957f40fcd7e64009148e861bc1984af9882c5",
-      "length": 359
+      "length": 359,
+      "sha256": "5fb727b47efa33f9a1ab06e0da7d791e0fe41d8511616950e15ac75bd24f4de2"
     },
     {
       "name": "overview-decide-es.json",
-      "sha256": "e8160954ead42b96412175388183a59d5494a8da7bc295ebedc5ee9e18ba82c7",
-      "length": 362
+      "length": 362,
+      "sha256": "3e9af161e00611ddfd03c39514e95b323c564b5ba4a63d3b74db7ec0920c368c"
     },
     {
       "name": "overview-pending-en.json",
-      "sha256": "b4a95cd2192f70cb9a0ac20ec25d48a41dca5b39a1ae67829da8f18216767c19",
-      "length": 509
+      "length": 510,
+      "sha256": "5a54aa2ae47ada2585ae3a80722335396a45186ae8cf2fb59606fd67a771ff06"
     },
     {
       "name": "overview-pending-es.json",
-      "sha256": "b0c8d3243216a4c269c14066ee949283ae17ab33fc6a7333b70d9f04050f8a7e",
-      "length": 512
+      "length": 513,
+      "sha256": "1ede54720295e2af93964c7292f6bd52448e884291eb5e1c1692c15897dbcbf5"
     },
     {
       "name": "overview-read-en.json",
-      "sha256": "2063b845073fb0f5ffc1c01bae6641292235a03cc71ca0c1efe0bb157f4cb043",
-      "length": 497
+      "length": 497,
+      "sha256": "ffcf4c77f6c2a9c8148a6215cea4e2d4234b39cc245778a7d498854ccdbdf986"
     },
     {
       "name": "overview-read-es.json",
-      "sha256": "88e9b331b9fb85094e3022e79963649a0a30995c5b2116b98a6b6f4a4f50d6f4",
-      "length": 500
+      "length": 500,
+      "sha256": "d81dfc273cd92395d6f3e29521c34c3023499e68dafd876e216095eade9b13f4"
     },
     {
       "name": "record-navigation-first-en.json",
-      "sha256": "d27940be92203312298e6daf09c60f5a3b4e0ebf15b6e7711fe4b19df65c84bd",
-      "length": 146
+      "length": 146,
+      "sha256": "6b3dace0dc7d8235c86a7ab6409a329d9f99687a5608c0b50b83b3ce434a824b"
     },
     {
       "name": "record-navigation-first-es.json",
-      "sha256": "b3acef085ca2d79a5e8f70b67969bda6c1f9596c7a0ed44c0e90b7d05406bfc4",
-      "length": 146
+      "length": 146,
+      "sha256": "11a59a21181d8a068ba8e41fca7378dae97d7f0ba7fcaf4f3cfc88f547d170ad"
     },
     {
       "name": "record-navigation-last-en.json",
-      "sha256": "1538bd73de2541df58fe41a01094f7059e9ab09aa082a675d1d41e4b86a24c46",
-      "length": 147
+      "length": 147,
+      "sha256": "4def1511c23376aca0c33ece7596e3061420052cc6cc92d49865e2725d8a53d2"
     },
     {
       "name": "record-navigation-last-es.json",
-      "sha256": "e8412dfab794ab1f86fb367a24021dd712f5817afa49fa3c01292df72ca31a67",
-      "length": 147
+      "length": 147,
+      "sha256": "dbdf6e5491d64df11cc7d2c749141c72d6ecec9659e8c21a81033da789fca52f"
     },
     {
       "name": "record-navigation-middle-en.json",
-      "sha256": "628670fd19d6695fea8fab4fcb1af616b84dec5f12dfc3531b73a86ca453b935",
-      "length": 180
+      "length": 180,
+      "sha256": "ef71f6a6eff295419db2cc86e67f806e8692e3235d5ee40fc4cbb1f995e12d35"
     },
     {
       "name": "record-navigation-middle-es.json",
-      "sha256": "81f7d814163a78a514c289d565acc76640c64dada716699de4cea211d876b44c",
-      "length": 180
+      "length": 180,
+      "sha256": "8e4809faf5df05d03caa5b1d9ff6f4c1011826438634792d2bd804d782bc0674"
     },
     {
       "name": "record-navigation-singleton-en.json",
-      "sha256": "50f35f9ebfe8eb4c30fe55cefbb065eadd9e207faddf5e2631d51c21a3bfcd04",
-      "length": 111
+      "length": 111,
+      "sha256": "6fed15afdf614af382ebe1f0fc550d55601268b98bed37a3285185bcbecc919b"
     },
     {
       "name": "record-navigation-singleton-es.json",
-      "sha256": "90b44b5f71f61cb3adf188ebb93bff18ff1a52b424a7b4abf260b24d3901728e",
-      "length": 111
+      "length": 111,
+      "sha256": "73475e203bc951972c0893d6aa1e34fe2a3f09f43fc041426a454f6d999c1e30"
+    },
+    {
+      "name": "rows-counts-en.json",
+      "length": 248,
+      "sha256": "31971a54b30180d1e5061f5cb2b95d925fe84dffea3edec7d32db26e7a376ca9"
+    },
+    {
+      "name": "rows-counts-es.json",
+      "length": 253,
+      "sha256": "51063f546b2b807728a2fd773a2cd07c99dc30a641a0e2bbd34282899aede7e9"
+    },
+    {
+      "name": "rows-detail-en.json",
+      "length": 2710,
+      "sha256": "30d3e04991132d6b5c73182b577b26a6861aa37196d6cf4b140bbcd119a88cd2"
+    },
+    {
+      "name": "rows-detail-es.json",
+      "length": 2883,
+      "sha256": "455fff6bc855cfca35ef36dec2176369098f4f0173190d70086bd3f0c56327c5"
+    },
+    {
+      "name": "rows-export-en.xlsx",
+      "length": 7768,
+      "sha256": "1f444315dd6089cd0065b8c994fb889bf040e62e68fc35b9093eadbf45d2625d"
+    },
+    {
+      "name": "rows-export-es.xlsx",
+      "length": 7795,
+      "sha256": "91efcc46725e6b341505af25ea0694ee99098927bc88458f127e139fe36913c5"
+    },
+    {
+      "name": "rows-sheet-en.json",
+      "length": 3405,
+      "sha256": "446b6258de01633e54cf6a6906a2e0a3f350735e893c5e771b27fe267d37e1b1"
+    },
+    {
+      "name": "rows-sheet-es.json",
+      "length": 3542,
+      "sha256": "d5461f47d6bc5e297557c0f316495ba043add3ed5ae62b4a9ec2943a7d21f7e3"
     },
     {
       "name": "sheet-en.json",
-      "sha256": "5147e25923b8316400d52a09629861138d836d76efc0f5edeeb077e3459de682",
-      "length": 15446
+      "length": 15446,
+      "sha256": "678d395945128296fe09ce194b79779b7524213c189578c13f74b4177b3381db"
     },
     {
       "name": "sheet-es.json",
-      "sha256": "c3fd73fc4e34f147df5e770ee6fa20daf7fa538a2df5ae747e99e28691f0a348",
-      "length": 15449
+      "length": 15449,
+      "sha256": "bf39f03cd84a23d9bfe2e44fa4fa47b535717358119943831cca8fcb8617cf4a"
     },
     {
       "name": "state-approved-d2-es.json",
-      "sha256": "7fa9eeebc445b3eed45b2713bd51a084b381698afcdd1ecc936bbbf96c5e4557",
-      "length": 2285
+      "length": 2285,
+      "sha256": "ca1c4bd8fa63607911394264fd4527f7b1a29fb6f709cf076849ac638588f3fb"
     },
     {
       "name": "state-pendingapproval-d2-es.json",
-      "sha256": "e40fd2ce1b796d0484e7de6745d52484a157a6d299f7a4639fb312a6ab8d807f",
-      "length": 1565
+      "length": 1565,
+      "sha256": "fad5fc9e48b99b39817525bdea2fb854ab51a92e6b69b66afaeacf09d9fe1346"
     },
     {
       "name": "state-received-d2-es.json",
-      "sha256": "63a704e8fd3ce524f7fbb087a476b01e7534e0174c39a543e2878529587af43d",
-      "length": 1557
+      "length": 1557,
+      "sha256": "ddadd54894d6edb2b12ab48d235e068ee536c418d585fb7727305c60147916b5"
     },
     {
       "name": "state-rejected-d2-es.json",
-      "sha256": "17b9131ece80f73458e71a060a90b9239ef7ffc4a8273e97889ddccefbf26669",
-      "length": 1558
+      "length": 1558,
+      "sha256": "b941eb14609d9833c5cd041d703e8b704be5655850397d963e7532f81e11d203"
+    }
+  ],
+  "sourceState": [
+    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
+    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
+    " M ../../../../docs/guides/validar-un-cambio.md",
+    " M ../../../../docs/plans/README.md",
+    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
+    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
+    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
+    "?? ../../../../docs/features/formularios-borde-http.md",
+    "?? ../../../../docs/features/formularios-persistencia.md",
+    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
+    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
+    "?? ../../../../docs/features/formularios-servicios.md",
+    "?? ../../../../docs/features/whatsapp-servicios.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
+    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
+    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+  ],
+  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "sources": [
+    {
+      "sha256": "b1a58f46c0977612da608411986edeb92519d11af62a9387122beaf6ef6a1590",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFieldsReadHttpTests.cs"
+    },
+    {
+      "sha256": "9507dbd726ad90b98ccfff3e0db73d3768907ba0d6bdfebd21d97679ad4a96ea",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMultipleChoiceReadHttpTests.cs"
+    },
+    {
+      "sha256": "dcab6bc00c45af2c0dc1f60239235d4e6092b6ccc73f3d74420bc09144749b77",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsReadHttpTests.cs"
+    },
+    {
+      "sha256": "2bca399b5fde774a1a5ecd2379c1d8cb20cd04308be31c0943676e8a87738edd",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsCaptureIntegrationTests.cs"
+    },
+    {
+      "sha256": "4e8d0d5020023265b111551cd3a812b67daa8b178d0ae17be0d237f9b7ead782",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseHttpTests.cs"
+    },
+    {
+      "sha256": "8902e323ae056b011978955bb2f686ae86050b3e97bea8d97be5c74baa349629",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormOverviewHttpTests.cs"
+    },
+    {
+      "sha256": "ec900538797fe0a03bba0978d766ba4545bebd7887b62f6e067b526a096295e3",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRecordNavigationHttpTests.cs"
+    },
+    {
+      "sha256": "f1975415a9f01c5a64e5b7cde87827918db029d0f012e7b95bc72e66c0f259ca",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPublishedVersionFixture.cs"
+    },
+    {
+      "sha256": "abe71415cefcb6bea09168c043373be7fb5d5b670640d7962aa0fae53a47ee21",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseApprovalHttpTests.cs"
+    },
+    {
+      "sha256": "2dec929d26c88042175b307c083b40e31e3fc20f2cb66f8cc86773f2f8c26455",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormResponseStateHttpTests.cs"
+    },
+    {
+      "sha256": "7176b2f78850c34ec8f336a55afb3b9edc37a716db93030394e3cdcc3571f7d7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppFormFilesIntegrationTests.cs"
+    },
+    {
+      "sha256": "d94b67669a391f7c21770a6e6e78435b357f46e837a8cd9d3863ea94e7f653c1",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/ResponseContractCapture.cs"
     }
   ],
   "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
-  "artifactSet": "responses",
-  "producer": "FormCatalogFieldsReadHttpTests and FormMultipleChoiceReadHttpTests and FormResponseHttpTests and FormOverviewHttpTests and FormRecordNavigationHttpTests and FormPublishedVersionFixture and FormResponseApprovalHttpTests and FormResponseStateHttpTests and WhatsAppFormFilesIntegrationTests and ResponseContractCapture",
-  "generatedAtUtc": "2026-11-07T20:20:56.2111079Z"
+  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
+  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
+  "artifactSet": "responses"
 }

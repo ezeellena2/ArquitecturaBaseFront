@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Esa propuesta ya cambió. Usá la última.","traceId":"00-2698b284f4177240529aab5c92c6983d-354a8d9bf84d77a5-01","code":"Forms.Catalog.ProposalReplaced"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Esa propuesta ya cambió. Usá la última.","traceId":"00-0065ac1f60fa19f8cab0cf32e55ec4a3-8da26a07cc7d543b-01","code":"Forms.Catalog.ProposalReplaced"}
