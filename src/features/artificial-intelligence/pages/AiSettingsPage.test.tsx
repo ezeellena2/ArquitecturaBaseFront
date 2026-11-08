@@ -26,6 +26,34 @@ afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); })
 const keyField = () => screen.getByLabelText("Nueva clave de API");
 
 describe("AI settings", () => {
+  it("keeps the whole connection in one zone, in the order it is filled in, with each button beside its value (IA1-A)", async () => {
+    server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "fictional-model", displayName: "Fictional model" }] })));
+    renderRouteWithProviders("/configuracion/ia");
+    const zone = await screen.findByRole("region", { name: "Conexión con el proveedor" });
+    const model = await within(zone).findByRole("combobox", { name: "Modelo" });
+    // Una cosa, una zona: ya no hay una zona por tipo de control.
+    for (const name of ["Proveedor y modelo", "Clave y prueba de conexión", "Disponibilidad"]) expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
+    // El orden en que se completa: los modelos se cargan con la clave, así que la clave va antes que el modelo.
+    const key = within(zone).getByRole("group", { name: "Clave de API" });
+    const order = [within(zone).getByRole("combobox", { name: "Proveedor" }), key, model, within(zone).getByRole("radiogroup", { name: "Disponibilidad de la conexión" })];
+    for (const [index, element] of order.slice(1).entries()) expect(order[index].compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Cada botón en el renglón del dato que toca; quitar va en rojo.
+    expect(within(key).getByText("Configurada")).toBeInTheDocument();
+    expect(within(key).getAllByRole("button").filter(button => !button.getAttribute("aria-label")?.startsWith("Más información")).map(button => button.textContent)).toEqual(["Reemplazar clave", "Quitar clave"]);
+    expect(within(key).getByRole("button", { name: "Quitar clave" })).toHaveAttribute("data-variant", "destructive-outline");
+    expect(model.parentElement).toContainElement(screen.getByRole("button", { name: "Actualizar modelos" }));
+    expect(model.parentElement).toContainElement(screen.getByRole("button", { name: "Ingresar modelo manualmente" }));
+    expect(within(zone).getByText("Disponibilidad")).toBeInTheDocument();
+  });
+  it("replaces the key in its own row and cancels back to the saved one", async () => {
+    renderRouteWithProviders("/configuracion/ia");
+    await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));
+    expect(keyField().parentElement).toContainElement(screen.getByRole("button", { name: "Cancelar reemplazo" }));
+    expect(screen.queryByRole("group", { name: "Clave de API" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar reemplazo" }));
+    expect(within(screen.getByRole("group", { name: "Clave de API" })).getByText("Configurada")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Nueva clave de API")).not.toBeInTheDocument();
+  });
   it("loads saved-key models automatically and tests the selected identifier without saving", async () => {
     const catalogs: unknown[] = [];
     server.use(http.post("/api/ai/connection/models", async ({ request }) => {
@@ -144,6 +172,9 @@ describe("AI settings", () => {
     expect(key).toHaveAttribute("type", "password");
     expect(key).toHaveAttribute("autocomplete", "new-password");
     expect(key).toHaveAttribute("name", "ai-provider-api-key");
+    // La clave va antes que el modelo, con su etiqueta y sin un estado «Sin clave configurada» encima.
+    expect(key.compareDocumentPosition(model) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText("Sin clave configurada")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Probar conexión" })).toBeDisabled();
     expect(writes).toHaveLength(0);
@@ -272,8 +303,9 @@ describe("AI settings", () => {
     const header = screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" }).closest("header") as HTMLElement;
     expect(header.textContent).toBe("Inteligencia artificialSólo lectura");
     expect(screen.queryByText(/Podés consultar esta conexión/)).not.toBeInTheDocument();
-    // Sin el botón de prueba tampoco va su aviso de costo.
-    expect(screen.queryByRole("button", { name: "Más información sobre Clave y prueba de conexión" })).not.toBeInTheDocument();
+    // Sin el botón de prueba tampoco va su aviso de costo, ni los botones de la clave.
+    expect(screen.queryByRole("button", { name: "Más información sobre Conexión con el proveedor" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: "Clave de API" })).queryAllByRole("button").filter(button => !button.getAttribute("aria-label")?.startsWith("Más información"))).toEqual([]);
   });
   it("leaves no legend under the controls and puts what is not obvious in the information icons", async () => {
     renderRouteWithProviders("/configuracion/ia");
@@ -288,8 +320,8 @@ describe("AI settings", () => {
     expect(screen.getByRole("radio", { name: "Pausada" })).not.toHaveAccessibleDescription();
     // Por qué no se ve la clave guardada y que la prueba puede tener costo van en la (i), con su tooltip.
     expect(screen.queryByText("La clave guardada nunca se muestra ni se devuelve al navegador.", { selector: "p" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Más información sobre Clave configurada" })).toHaveAccessibleDescription("La clave guardada nunca se muestra ni se devuelve al navegador.");
-    expect(screen.getByRole("button", { name: "Más información sobre Clave y prueba de conexión" })).toHaveAccessibleDescription("La prueba envía un pedido breve al proveedor y puede tener costo.");
+    expect(screen.getByRole("button", { name: "Más información sobre Clave de API" })).toHaveAccessibleDescription("La clave guardada nunca se muestra ni se devuelve al navegador.");
+    expect(screen.getByRole("button", { name: "Más información sobre Conexión con el proveedor" })).toHaveAccessibleDescription("La prueba envía un pedido breve al proveedor y puede tener costo.");
     await userEvent.click(screen.getByRole("button", { name: "Reemplazar clave" }));
     expect(keyField()).not.toHaveAccessibleDescription();
     expect(screen.queryByText(/Usá una clave de API del proveedor/)).not.toBeInTheDocument();
@@ -388,19 +420,18 @@ describe("AI settings", () => {
   it("reports a connection test through the notification without a status beside the button", async () => {
     const success = vi.spyOn(toast, "success");
     renderRouteWithProviders("/configuracion/ia");
-    const credential = await screen.findByRole("region", { name: "Clave y prueba de conexión" });
-    await userEvent.click(within(credential).getByRole("button", { name: "Probar conexión" }));
+    const zone = await screen.findByRole("region", { name: "Conexión con el proveedor" });
+    await userEvent.click(within(zone).getByRole("button", { name: "Probar conexión" }));
     await waitFor(() => expect(success).toHaveBeenCalledWith("La conexión respondió correctamente.", expect.anything()));
     // El resultado va al Toaster: al lado del botón no queda un estado de la prueba que cambie con cada acción.
     expect(screen.queryByText("Probada para este borrador")).not.toBeInTheDocument();
     expect(screen.queryByText("Sin prueba vigente")).not.toBeInTheDocument();
-    expect(within(credential).queryByRole("status")).not.toBeInTheDocument();
-    // Probar, Reemplazar y Quitar actúan sobre toda la superficie: van al borde derecho de su banda, no en el cuerpo. Las
-    // (i) no son acciones: la del título y la de «Clave configurada» quedan fuera de la cuenta.
-    const band = within(credential).getByRole("heading", { level: 2, name: "Clave y prueba de conexión" }).closest("div") as HTMLElement;
+    // Probar actúa sobre toda la conexión: es la única acción de la banda; Reemplazar y Quitar van en el renglón de la
+    // clave (IA1-A). La (i) del título no es una acción y queda fuera de la cuenta.
+    const band = within(zone).getByRole("heading", { level: 2, name: "Conexión con el proveedor" }).closest("div") as HTMLElement;
+    expect(within(band).queryByRole("status")).not.toBeInTheDocument();
     const actions = (scope: HTMLElement) => within(scope).getAllByRole("button").filter(button => !button.getAttribute("aria-label")?.startsWith("Más información"));
-    expect(actions(credential)).toEqual(actions(band));
-    expect(actions(band).map(button => button.textContent)).toEqual(["Probar conexión", "Reemplazar clave", "Quitar clave"]);
+    expect(actions(band).map(button => button.textContent)).toEqual(["Probar conexión"]);
   });
   it("keeps the AI header without an unsaved status", async () => {
     renderRouteWithProviders("/configuracion/ia");
