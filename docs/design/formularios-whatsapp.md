@@ -1056,5 +1056,6 @@ Lo que el tablero RG4-A no fijaba se resolvió con lo más simple que cumple las
 - **La pantalla completa (DC1).** Una tabla en la columna del valor, con el número del ítem a la derecha y sin encabezado
   visible («Ítem» para lectores de pantalla), una columna por pregunta y los números a la derecha; en el celular se
   desplaza de costado dentro de su caja.
-- **El diseño del PDF.** Lista el bloque con su nombre y no sus preguntas.
+- **El diseño del PDF.** Lista el bloque con su nombre y no sus preguntas. Una pregunta del bloque que un diseño viejo
+  eligió sola aparece como «Pregunta retirada», para poder destildarla.
 - **La tarjeta del chat.** El nombre del bloque y un ítem por línea, sin lo que quedó sin respuesta, como «Así llega».
