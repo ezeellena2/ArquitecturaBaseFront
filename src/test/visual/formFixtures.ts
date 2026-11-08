@@ -12,6 +12,8 @@ import failedEsDetail from "../fixtures/forms-http/failed/detail-es.json" with {
 import failedEnDetail from "../fixtures/forms-http/failed/detail-en.json" with { type: "json" };
 import failedEsStatus from "../fixtures/forms-http/failed/status-es.json" with { type: "json" };
 import failedEnStatus from "../fixtures/forms-http/failed/status-en.json" with { type: "json" };
+import rowsCheck from "../fixtures/forms-http/rows/publication-check.json" with { type: "json" };
+import rowsMovedCheck from "../fixtures/forms-http/rows/publication-check-moved.json" with { type: "json" };
 import { validFileCounts } from "@/features/business-forms/fileQuestions";
 import { validSelectionCounts } from "@/features/business-forms/selectionQuestions";
 import type { FormLifecycle, FormPublicationCheck } from "@/features/business-forms/api/response";
@@ -47,6 +49,24 @@ export function responseBudgetDefinition(culture: FormCulture): FormDefinitionSn
    fieldId, key: key(fieldId), type: "longText", required: true, maxLength: 10000, help: null, label: { es: "Respuesta "+index, en: "Response "+index },
   })) } };
 }
+// RG3-A and RG6-A: the two checks of FormGroupPublicationHttpTests, answered with their bytes (`fixtures.ts` brings them raw). The
+// editor snapshot is a matching test double: the draft of that test, with the ids each check names (the empty block, or the block
+// and the question that moved).
+const rowsChecks = { "forms-publication-rows-http": rowsCheck, "forms-publication-rows-moved-http": rowsMovedCheck };
+export type RowsCheckScenario = keyof typeof rowsChecks;
+const isRowsCheck = (scenario: string): scenario is RowsCheckScenario => Object.hasOwn(rowsChecks, scenario);
+export function rowsCheckDefinition(scenario: RowsCheckScenario): FormDefinitionSnapshot {
+  const checked: { definitionId: string; draftRevision: number; issues: readonly { fieldId: string | null }[]; diff: { added: readonly string[]; movedToRows?: readonly string[] } } = rowsChecks[scenario];
+  const question = (fieldId: string, rest: object) => ({ fieldId, key: key(fieldId), help: null, ...rest }) as CanonicalQuestion;
+  const moved = scenario === "forms-publication-rows-moved-http";
+  const block = moved ? checked.diff.added[0]! : checked.issues[0]!.fieldId!;
+  const name = question(moved ? guid(187) : checked.diff.added.find(id => id !== block)!, { type: "shortText", label: { es: "Nombre", en: "Name" }, help: { es: "Tu nombre", en: "Your name" }, required: false, maxLength: 80 });
+  const items = question(block, { type: "group", label: { es: "Artículos", en: "Items" }, required: true, rows: { minRows: 1, maxRows: moved ? 10 : 20 } });
+  return { ...fixtureDefinition(), id: checked.definitionId, revision: checked.draftRevision, prefixLocked: moved,
+    draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Submit" }, fields: moved
+      ? [name, items, question(checked.diff.movedToRows![0]!, { type: "decimal", label: { es: "Cantidad", en: "Quantity" }, required: false, repeated: true })]
+      : [name, items] } };
+}
 export function wireDefinition(definition: FormDefinitionSnapshot) {
   return { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(q => ({ ...q,
     maxLength: "maxLength" in q ? q.maxLength : null, options: (q.type === "choice" || q.type === "multiChoice") && !q.source ? q.options : null,
@@ -70,7 +90,7 @@ function fixturePublicationCultures(definition: FormDefinitionSnapshot): FormPub
   });
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string) {
+export function createFormFixtureStore(culture: FormCulture = "es", scenario = "", responseBudgetRaw?: string, rowsCheckRaw?: string) {
   const definitions = new Map<string, FormDefinitionSnapshot>();
   if (scenario !== "forms-empty") definitions.set(fixtureFormId, fixtureDefinition(culture, scenario === "forms-prefix"));
   if (scenario === "forms-files") {
@@ -132,6 +152,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   // PU1-A: a number question whose original title is longer than the 20 characters WhatsApp shows.
   if (scenario === "forms-publication-blocked") { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, [d.draft.culture]: d.draft.culture === "es" ? "Importe cobrado al cliente" : "Amount collected from the customer" } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
+  if (isRowsCheck(scenario)) { const rows = rowsCheckDefinition(scenario); definitions.clear(); definitions.set(rows.id, rows); }
   const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId), scenario === "forms-rules-reading");
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
@@ -232,6 +253,10 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
 
     if (request.method === "POST" && path.endsWith("/publication-checks")) {
       if(scenario === "forms-publication-budget-http"){if(!responseBudgetRaw)throw new Error("Missing raw response budget capture.");return new Response(responseBudgetRaw,{status:200,headers:{"Content-Type":"application/json"}});}
+      if (isRowsCheck(scenario)) {
+        if (!rowsCheckRaw) throw new Error("Missing raw rows check capture.");
+        return new Response(rowsCheckRaw, { status: 200, headers: { "Content-Type": "application/json" } });
+      }
       const definition = definitions.get(path.split("/").at(-2)!);
       if (!definition) return json({ code: "Forms.Definition.NotFound" }, 404);
       const input = await request.json() as DraftWriteBody;

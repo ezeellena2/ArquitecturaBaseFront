@@ -10,6 +10,8 @@ import { createResponseVisualFixtures } from "./responseFixtures";
 import { createCatalogFixtureStore } from "./catalogFixtures";
 import budgetEsRaw from "../fixtures/forms-http/budget-http/es.json?raw";
 import budgetEnRaw from "../fixtures/forms-http/budget-http/en.json?raw";
+import rowsCheckRaw from "../fixtures/forms-http/rows/publication-check.json?raw";
+import rowsMovedCheckRaw from "../fixtures/forms-http/rows/publication-check-moved.json?raw";
 import { createChatFormFixtures } from "./chatFormFixtures";
 import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createArcaVisualFixtures } from "./arcaFixtures";
@@ -58,7 +60,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
   const formsScenario = !formOverviewFixture && !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
   const missingRequestFixture=scenario?.startsWith("forms-missing")?createMissingRequestVisualFixtures(language):undefined;
-  const formsFixture = catalogQuestionFixture?.forms ?? (formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw) : undefined);
+  const formsFixture = catalogQuestionFixture?.forms ?? (formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw,
+    scenario === "forms-publication-rows-moved-http" ? rowsMovedCheckRaw : rowsCheckRaw) : undefined);
   if (formsFixture) Object.assign(globalThis, { formsFixture });
   const assistantScenario = scenario?.startsWith("assistant-") ?? false;
   // IA4: a forms page with «Armar con la IA» also answers Home, where the entry leads.

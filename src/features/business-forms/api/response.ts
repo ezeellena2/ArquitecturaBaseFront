@@ -159,7 +159,7 @@ export function readFormPublicationCheck(value: unknown, definitionId: string, e
     return !field || issue.choiceId !== null && (field.type !== "choice" && field.type !== "multiChoice" || !field.options?.some(option => option.choiceId?.toLowerCase() === issue.choiceId?.toLowerCase()));
   })) throw new UnsupportedFormResponse();
   if (checked.warnings.some(warning => !fields.some(field => field.fieldId?.toLowerCase() === warning.fieldId.toLowerCase()))) throw new UnsupportedFormResponse();
-  // «Pasan a renglones» names questions of the block that took the place of published ones.
+  // «Pasan al bloque» names questions of the block that took the place of published ones.
   if (checked.diff.movedToRows?.some(id => !fields.some(field => field.fieldId?.toLowerCase() === id.toLowerCase() && "repeated" in field && field.repeated))) throw new UnsupportedFormResponse();
   const hasTicket = checked.checkToken !== null && checked.checkExpiresAtUtc !== null;
   if (checked.canAccept ? !hasTicket || checked.compatibility !== "LocallyValidated" || checked.acceptanceAvailability !== "Available" || checked.issues.length !== 0 : checked.checkToken !== null || checked.checkExpiresAtUtc !== null) throw new UnsupportedFormResponse();
