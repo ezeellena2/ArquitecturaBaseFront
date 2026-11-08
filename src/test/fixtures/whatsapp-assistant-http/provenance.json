@@ -1,133 +1,105 @@
 {
-  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
+      "sha256": "6ab5a825107ab0332b9dcb6b0c383707d046bf19b6ffc4ff622fb0aa0c27af08",
       "name": "always-send-receipt.json",
-      "length": 793,
-      "sha256": "f4c655999d70942e0dbc519cda4c6e00dd1198e0ca66d1bc7bd3410f8f6ae56c"
+      "length": 790
     },
     {
+      "sha256": "ba25d3513aed9d0410bb9cd2da369ff713e49bfe0df3f758fd1377a5a0fb98b5",
       "name": "send-receipt.json",
-      "length": 785,
-      "sha256": "c49c6d23a296198f9d375c74ebdaeef4ecfed73893b620c2a5450884217012e5"
+      "length": 782
     },
     {
+      "sha256": "260cc379e5741e12f796b9a77e886f86a08810ce2a482a2239724b28e4e21ec0",
       "name": "suggestion-always-ready.json",
-      "length": 507,
-      "sha256": "6a896881cf8f6392b027f84a6faf7e142e3539ac7d07f8c99df2b27298d8416e"
+      "length": 507
     },
     {
+      "sha256": "70a003ad38e97741d924bdb247888d4acfdee0b7c063d209b34abc6c20bdea94",
       "name": "suggestion-blocked.json",
-      "length": 159,
-      "sha256": "3a0fd3b193fba8ee86e1161d342b9a1b2adf67e25292a07389bc160161054865"
+      "length": 159
     },
     {
+      "sha256": "4f3ec95c6abd61076ef72be4e54d2f888641298abfd0b69f5245237f0cf605b4",
       "name": "suggestion-discarded.json",
-      "length": 161,
-      "sha256": "4943373df071e6abe1e9550b092c0331799884ce13f34740e177280012fd2fe2"
+      "length": 161
     },
     {
+      "sha256": "f32a4b585a4ef22b26cdbe8bc262fcbdc60e6d2fc9257f1e13abe0f4dc2dd8d6",
       "name": "suggestion-no-reply.json",
-      "length": 159,
-      "sha256": "2c2ee54df629c674fdfc1181580242571645c11a026c3747dd12517eb820590b"
+      "length": 159
     },
     {
+      "sha256": "7520f642f5c117a08b1f539887c8dcb24ea3ee7f3eaec56ae2a3ceb29a19fdc3",
       "name": "suggestion-pending.json",
-      "length": 159,
-      "sha256": "1751f6350f8dbd2f0f3b53c69873fe8ce92187fc60cd9d9e95d8e63712ceb0cb"
+      "length": 159
     },
     {
+      "sha256": "cfbb029d875fcf5ce4743ca537ddf5c672ef5edc85f16307c60c2807f8bf4951",
       "name": "suggestion-ready.json",
-      "length": 550,
-      "sha256": "96e2e4fc3bf17fa0697004bcb8051c986131a1ca5e0600f701d64e58733a002f"
+      "length": 550
     },
     {
+      "sha256": "1cdbfe3540f5c403a0e3926d78e34a82bd3b6d7907bc525386bd66881cc8dfee",
       "name": "suggestion-sent.json",
-      "length": 957,
-      "sha256": "7088d5db27a0c786ff6ddf666b76125b09ca30c8a32b5af2af98eb9138d6c0da"
+      "length": 954
     },
     {
+      "sha256": "946445c824e6b25f9b320a740ef10f9d2328690a108db2991aa244678efeee9e",
       "name": "thread-always-ready.json",
-      "length": 2672,
-      "sha256": "ad3ee26f2d7363938096572488ad41eda73b0e2e8b84b54b908163a60bb3b340"
+      "length": 2663
     },
     {
+      "sha256": "6e82389127c191c13ee26682f947549be41e2f17ac296e61596e5515ac57e1b8",
       "name": "thread-restricted.json",
-      "length": 2016,
-      "sha256": "5fd17c36b64edd346c0139c0f977fe345b529321df93f6aed6b1ad40820bbb46"
+      "length": 2007
     },
     {
+      "sha256": "ad2df0186dba70963a6e5d5b62b3ba22c047ac26c520294fb54c1a5fc4961947",
       "name": "thread.json",
-      "length": 2200,
-      "sha256": "17713d8d075511f06c5495f16e970c0588311480f36e10fefc79964258790f62"
+      "length": 2191
     }
   ],
   "sourceState": [
-    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
-    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
-    " M ../../../../docs/guides/validar-un-cambio.md",
-    " M ../../../../docs/plans/README.md",
-    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
-    "?? ../../../../docs/features/formularios-borde-http.md",
-    "?? ../../../../docs/features/formularios-persistencia.md",
-    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
-    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
-    "?? ../../../../docs/features/formularios-servicios.md",
-    "?? ../../../../docs/features/whatsapp-servicios.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
   ],
-  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "artifactSet": "whatsapp-assistant",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
   "sources": [
     {
-      "sha256": "b9658b1840b2969e4ce0db4d9887e86478109659bd9550029c348c1a14644bf8",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs",
+      "sha256": "b9658b1840b2969e4ce0db4d9887e86478109659bd9550029c348c1a14644bf8"
     },
     {
-      "sha256": "0bbf3d453d38c7f0b27a903df6ae4b30b91522ff579bb9916148c899b556b5cd",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs",
+      "sha256": "0bbf3d453d38c7f0b27a903df6ae4b30b91522ff579bb9916148c899b556b5cd"
     },
     {
-      "sha256": "11b0bfab995a080cca6a3c5cbbe795b2d396c9166501debaf26df7516be295b6",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+      "sha256": "11b0bfab995a080cca6a3c5cbbe795b2d396c9166501debaf26df7516be295b6"
     },
     {
-      "sha256": "9618c6084fad29b02023a6061043ee1bd270266aa73de1537a2a6ea4b1243652",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs",
+      "sha256": "9618c6084fad29b02023a6061043ee1bd270266aa73de1537a2a6ea4b1243652"
     },
     {
-      "sha256": "7bf33c2708a2e645cf4caa0bb6c0e3290dc0e6edb9a6d459ecfa95b621965568",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs",
+      "sha256": "7bf33c2708a2e645cf4caa0bb6c0e3290dc0e6edb9a6d459ecfa95b621965568"
     },
     {
-      "sha256": "2eadf84805c58785758a696fc55f486cf5e40d31e472c4ca34492103878e217c",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs",
+      "sha256": "2eadf84805c58785758a696fc55f486cf5e40d31e472c4ca34492103878e217c"
     },
     {
-      "sha256": "3d58290f732f5211594c4722d17c66b90029fc8a3b83b56990aaced7ea23695d",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs",
+      "sha256": "3d58290f732f5211594c4722d17c66b90029fc8a3b83b56990aaced7ea23695d"
     }
   ],
-  "schemaVersion": 1,
+  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
-  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
-  "artifactSet": "whatsapp-assistant"
+  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort"
 }

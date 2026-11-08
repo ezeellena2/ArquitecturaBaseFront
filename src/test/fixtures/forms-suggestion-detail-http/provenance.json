@@ -1,63 +1,35 @@
 {
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
+      "sha256": "fc40c85221a6b63e09f2bfb063cb42a4dbbb3018427fd474c2b98a6d1affbc9b",
       "name": "detail-en.json",
-      "length": 2078,
-      "sha256": "b7e5816ed830e63353908e04ad4f95f33ed622761ba918fc7dcbb9b47ae860ec"
+      "length": 2078
     },
     {
+      "sha256": "ab524624eccbb98b328ce7de22ba79c488ffbf51f07d2929c9022b0a3d9c16a9",
       "name": "detail-es.json",
-      "length": 2082,
-      "sha256": "cd32abaa31a1d3a659ec29af324bc37cb60c465d0bf8261ad23ce13cd068dd43"
+      "length": 2082
     }
   ],
   "sourceState": [
-    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
-    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
-    " M ../../../../docs/guides/validar-un-cambio.md",
-    " M ../../../../docs/plans/README.md",
-    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
-    "?? ../../../../docs/features/formularios-borde-http.md",
-    "?? ../../../../docs/features/formularios-persistencia.md",
-    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
-    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
-    "?? ../../../../docs/features/formularios-servicios.md",
-    "?? ../../../../docs/features/whatsapp-servicios.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
   ],
-  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "artifactSet": "suggestion-details",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
   "sources": [
     {
-      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
+      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84"
     },
     {
-      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs",
+      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee"
     }
   ],
-  "schemaVersion": 1,
+  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
-  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
-  "artifactSet": "suggestion-details"
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture"
 }

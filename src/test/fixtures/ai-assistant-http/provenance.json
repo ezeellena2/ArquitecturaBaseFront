@@ -1,95 +1,67 @@
 {
-  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
+      "sha256": "aba4c6c25f87e85682a200a408acef4e61e2aa2e0f47069525404658cf3aa297",
       "name": "bootstrap.json",
-      "length": 565,
-      "sha256": "aba4c6c25f87e85682a200a408acef4e61e2aa2e0f47069525404658cf3aa297"
+      "length": 565
     },
     {
+      "sha256": "fb7d2b04bde4b12a432faf89b62b2913ee37dcc1170e69f751e1f80ff0393726",
       "name": "canceled.json",
-      "length": 737,
-      "sha256": "b0124a120d862fa14ea22d1334cd00d506b706d5e9057f9577a4143c18a67a7e"
+      "length": 737
     },
     {
+      "sha256": "a49e96a19a148638fb7d51655f9b976d6d133cec938e54fbca492969d96263f9",
       "name": "submitted.json",
-      "length": 294,
-      "sha256": "64ce374aeb661a6515ba7fad066017f27cbc014404dc9f7d8dd3a63e7ed7fd40"
+      "length": 294
     },
     {
+      "sha256": "232dee2381acd6f60c8e87fc564ecc001543e1a78b66f78ebbff68a4654fbbab",
       "name": "turn-completed.json",
-      "length": 1006,
-      "sha256": "661e379da4096152e1083388cdce3e04f73743acf3996ff9a3d6924a565949cc"
+      "length": 1006
     },
     {
+      "sha256": "26e9c5f8740dc296200bfb70ca2838ed9784548a7c4b74cc2995d8655efba5bd",
       "name": "turn-pending.json",
-      "length": 530,
-      "sha256": "cae6b8a251277d7089856173f5aa7f285a414a3539a645cbba76fcfedee85027"
+      "length": 530
     },
     {
+      "sha256": "1a2e0d9551c41de92478fcef5a5b610bb4a8a72fd7bac90a5fa94cf7f5d69783",
       "name": "turns.json",
-      "length": 1107,
-      "sha256": "e3e02698d106772c9e0bd759f6773ca6c4c5a5bb8bc474b296457afcf6cc5e54"
+      "length": 1107
     }
   ],
   "sourceState": [
-    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
-    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
-    " M ../../../../docs/guides/validar-un-cambio.md",
-    " M ../../../../docs/plans/README.md",
-    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
-    "?? ../../../../docs/features/formularios-borde-http.md",
-    "?? ../../../../docs/features/formularios-persistencia.md",
-    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
-    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
-    "?? ../../../../docs/features/formularios-servicios.md",
-    "?? ../../../../docs/features/whatsapp-servicios.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
   ],
-  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "artifactSet": "ai-assistant",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
   "sources": [
     {
-      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs",
+      "sha256": "f40367cd7a4b3159caef9681fefa34b57f5ec246ab7234ec449b7fbee9d64a08"
     },
     {
-      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs",
+      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4"
     },
     {
-      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs",
+      "sha256": "d1437ebf116810877abac455df7d77c89dcaf76a5484c4342b01ed8a9da23c0f"
     },
     {
-      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs",
+      "sha256": "928239d73c884ea660e3af23b36f91e9ac14b43e4b5fcae1edd582e341643544"
     },
     {
-      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730",
-      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs"
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs",
+      "sha256": "8224b3254f5bc487acdd3aa423221cf4d6f586f7e2353172e809834b02c8d730"
     }
   ],
-  "schemaVersion": 1,
+  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
-  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
-  "artifactSet": "ai-assistant"
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and AiAssistantResponses"
 }

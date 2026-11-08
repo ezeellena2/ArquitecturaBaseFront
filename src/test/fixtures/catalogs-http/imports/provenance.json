@@ -1,242 +1,214 @@
 {
-  "producer": "FormCatalogImportFieldsHttpTests and FormCatalogImportHttpTests and FormCatalogEndpointsTests and FormCatalogImportContractCapture and FormCatalogImportModels and FormCatalogImportTemplate and Catalogs and Catalogs.en",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
+      "sha256": "7bff37335fb62a74ff09975e1db462275ab1a48b847f7fa4844feeaec93fb69d",
       "name": "en/already-applied.json",
-      "length": 677,
-      "sha256": "e3556b482d8bdbb2d43dc0b73b53e519cd18405850d07a445f616b501aa1b453"
+      "length": 680
     },
     {
+      "sha256": "97f6c966651c6af94160527eb48b253858b89e210db50a1b895c0151884403bb",
       "name": "en/append-preview.json",
-      "length": 713,
-      "sha256": "411475aba7f1bc62c71ebe2b4db212d81eeb177c2e3dced6adb8ee86bf14d9b4"
+      "length": 713
     },
     {
+      "sha256": "c8d7a1d953052d4d018376f21e31a2ddc30a56991458e63ceff657f5b18a67f2",
       "name": "en/applied.json",
-      "length": 827,
-      "sha256": "7546ec9db66357181de89a01826550edb3dcdd4f0803557abc311db5091b3064"
+      "length": 827
     },
     {
+      "sha256": "b688fa413cabb4e17bfb4081f8d11ac0fb85b926b5430c8c4363434200ae9c7b",
       "name": "en/confirmation-required.json",
-      "length": 293,
-      "sha256": "30f823249d5bba5e35f587e32402f59774f1cb6e270337f6605f7922ad6815c6"
+      "length": 293
     },
     {
+      "sha256": "5862348783aafcbb4cc3981871028eabddf030935874abfaa6414a43777c05f0",
       "name": "en/conflict.json",
-      "length": 259,
-      "sha256": "f4b9863745f3895ab13011620be7f0bdd8bf29fd4871ad925d85a8021918a97b"
+      "length": 259
     },
     {
+      "sha256": "4557d0c7b03cf853b422f184581aee22ec208e9abb2fadc0d86c43b9cf54040f",
       "name": "en/empty-preview.json",
-      "length": 640,
-      "sha256": "1aef60f9d71681ac6f4e2c94a539d624c3084b5bb1a65cf4835b446c8b51770b"
+      "length": 640
     },
     {
+      "sha256": "227abb39d2e860b37179110d0fe60abddecf6efaa81d734711724f0afe80097d",
       "name": "en/export.http.json",
-      "length": 297,
-      "sha256": "92c7d10b3f41f0de720cdc7e2ea6addfc7fe5020c74a84ef7c87309ec6281e68"
+      "length": 297
     },
     {
+      "sha256": "de369542d22c8b1f77bedb6cda88c1fae9bfc4b49d22c1681d4c07ff7a0b3407",
       "name": "en/export.xlsx",
-      "length": 6656,
-      "sha256": "1b70a95bc2a5a7c89a79a2abaefc147121c54acbfe193ac1d48f5292aa207187"
+      "length": 6656
     },
     {
+      "sha256": "13e264c3944e375e7c7cb5f2e018f9d5d226b15dd1b6208a270853fb89f09724",
       "name": "en/extra-source-applied.json",
-      "length": 1115,
-      "sha256": "0be59fcdb956e5bb6b0760ac0dfa45f385eec44af4a936f42f71c39150b19645"
+      "length": 1115
     },
     {
+      "sha256": "e1d11e2b4202c29b1397dea97218f8b48cb44750d56d2f28c0c7350e876bb288",
       "name": "en/extra-source-preview.json",
-      "length": 947,
-      "sha256": "dd11b738c5da70885ee89347c1b626d8f620180a497017c93cc5ca2de2369d53"
+      "length": 947
     },
     {
+      "sha256": "13e264c3944e375e7c7cb5f2e018f9d5d226b15dd1b6208a270853fb89f09724",
       "name": "en/extra-source-unchanged.json",
-      "length": 1115,
-      "sha256": "0be59fcdb956e5bb6b0760ac0dfa45f385eec44af4a936f42f71c39150b19645"
+      "length": 1115
     },
     {
+      "sha256": "824f9409ff35b55b2a9e3d0191bc0c66cffc75d9a7c6ab43c5feca4fb6ce1507",
       "name": "en/replace-preview.json",
-      "length": 994,
-      "sha256": "5d9da4c12f78385f57bd00e99fc980ca3505f8c7b12b4b70c0ce68179ff0b140"
+      "length": 994
     },
     {
+      "sha256": "66e64a47cc68669327a0822c3662ce139d07d303658938af4f398df6e298192f",
       "name": "en/round-trip-preview.json",
-      "length": 481,
-      "sha256": "ff335ee2b81fa0e5547e8f70c1336994d79e10e44579d98cdf8b63b1302ebbd6"
+      "length": 481
     },
     {
+      "sha256": "cca06426077e812745dd9af06f34d547d3c16c7762a336b7790770dd30eb5981",
       "name": "en/template.http.json",
-      "length": 323,
-      "sha256": "fb9ced802c60a3c8872db697fe2c8ad24de767eedd70ee2ecef224cc99bf701d"
+      "length": 323
     },
     {
+      "sha256": "70c3ea1c705afb5fe219e7af32a203989858e0dc349e2de48510c594996f832f",
       "name": "en/template.xlsx",
-      "length": 6599,
-      "sha256": "102f2c8c95d6a893863cc8993c2e0b694f297c608711ee3ac7c7b7a8a0cac3db"
+      "length": 6599
     },
     {
+      "sha256": "898344dd5f987a2e823551e17566f00616685de0431ed2b52c2d8583de9e4a47",
       "name": "es/already-applied.json",
-      "length": 685,
-      "sha256": "8a4c37535458ad899d5fe8d54485b533eeda194650488e6617c1f97a45de8c93"
+      "length": 688
     },
     {
+      "sha256": "3a1c40ec4ca90fba4b187c4392481806895b6e8f58bb922f97cd44208830e62b",
       "name": "es/append-preview.json",
-      "length": 666,
-      "sha256": "d1b647fe191c245de01e3b5545b437af3303e78c0b8f359f60d58179324dbdf3"
+      "length": 666
     },
     {
+      "sha256": "636ca00dd88b4fe28f229abb5ba33d2226930a8ab9767bb64c8d2182c3c3dcd3",
       "name": "es/applied.json",
-      "length": 827,
-      "sha256": "0d45833093dc33d759bfeba71d9fc95fe80196d3b046ea9c4be52859743edc16"
+      "length": 827
     },
     {
+      "sha256": "84a6c31521333ebaf939cb7ad22428a67f0d6e0d939b7b5225b933e779ff118f",
       "name": "es/confirmation-required.json",
-      "length": 292,
-      "sha256": "97bd2a785441bad78c2797609df20e3b7ed93843f7afcbfb920e4e53875260da"
+      "length": 292
     },
     {
+      "sha256": "66aed7ecb23bfe54415ab0658950f0870af4e2173d2d1d808d8ad023754cd211",
       "name": "es/conflict.json",
-      "length": 267,
-      "sha256": "ed85550cd12df0a3aff5c71696e3fb8bef9117809c33527924d5665345c1f5a8"
+      "length": 267
     },
     {
+      "sha256": "2fb9ced419bf80a6192e9559962bb6921037cb758488b773c0eea58ccb48ddb7",
       "name": "es/empty-preview.json",
-      "length": 641,
-      "sha256": "4ad2281dc8743d9c1a3816ea406cc40aa7122261dc154bada75488955abb908f"
+      "length": 641
     },
     {
+      "sha256": "352a62b2b915dbda9b13348618676dfb0833ee86bf7847838e91794524d8f543",
       "name": "es/en-original-export.http.json",
-      "length": 335,
-      "sha256": "c94d91b269262c100965de0f02865ca2a0d49a2389ca0664ac0547632431c894"
+      "length": 335
     },
     {
+      "sha256": "15750c00bf13903d996661a3ed189aded2a914d154879868b51049d22cdce30e",
       "name": "es/en-original-export.xlsx",
-      "length": 6611,
-      "sha256": "37d36540bec1851eb30bd5cca0101078c37208e08dcd08edf7c73323d91df754"
+      "length": 6611
     },
     {
+      "sha256": "28265c81e2c94cd42ae3d54e4143b5e1d4e3834673d7076b29721765e59c4ac2",
       "name": "es/en-original-preview.json",
-      "length": 800,
-      "sha256": "6eca32cd999f71587168f9656cb1e357a9c90acb7c7e2e67455caa4a8f3288b2"
+      "length": 800
     },
     {
+      "sha256": "b33e3c83e9c51de733a28aac2be5354adeac53ed02edc9ba27ebb20a8c620ba6",
       "name": "es/export.http.json",
-      "length": 301,
-      "sha256": "f8d4b096a866aa15d1b3b0cc7af72bdbd1cad220ac615df629da63db6ac774b5"
+      "length": 301
     },
     {
+      "sha256": "ff0717bebc0fb7ad00d2eaa0afc77f306c820af57388ec77df0571c478620a28",
       "name": "es/export.xlsx",
-      "length": 6664,
-      "sha256": "2ff3de97b83fa6a0ff65dd70219ff0c584815aa599e1a035a09d61e359715ecb"
+      "length": 6664
     },
     {
+      "sha256": "4f92feb619892dbd1e6901baa8d7e1d7f131a71530da1e958b39d003763f8f7f",
       "name": "es/extra-source-applied.json",
-      "length": 1115,
-      "sha256": "44ac09496ecd5b205f287cd6b29a2a7b204d9fcd5496aabec064984918f375ff"
+      "length": 1115
     },
     {
+      "sha256": "32c5f4a3c082ccffcb8d0c48052d956dad3dc13a6411f3660515cd6e1abb3a5f",
       "name": "es/extra-source-preview.json",
-      "length": 945,
-      "sha256": "66917a0b42a4f540efb039506ae531a928f493277ab3f97415248eb918b4061a"
+      "length": 945
     },
     {
+      "sha256": "4f92feb619892dbd1e6901baa8d7e1d7f131a71530da1e958b39d003763f8f7f",
       "name": "es/extra-source-unchanged.json",
-      "length": 1115,
-      "sha256": "44ac09496ecd5b205f287cd6b29a2a7b204d9fcd5496aabec064984918f375ff"
+      "length": 1115
     },
     {
+      "sha256": "871639697b40389be08690ede2a12b3dfcef49be47e2dbb6151cf11dc6405064",
       "name": "es/replace-preview.json",
-      "length": 1001,
-      "sha256": "86dc619ffb21121044f5244fdd6039eb1a9c4335390a284815b26f4e9b92951e"
+      "length": 1001
     },
     {
+      "sha256": "b0a3ad98232481b15378cef8f9ea46248895aa178b1406f2ad19cd21187b83bb",
       "name": "es/round-trip-preview.json",
-      "length": 482,
-      "sha256": "4a485cb163b110010b46ac1f8adca5e688a0372cd1f5d936c572385b83b2f2fc"
+      "length": 482
     },
     {
+      "sha256": "f7c25f3c6b18364832b6d75348f58622502573b64086faa1abec0092a1bc3487",
       "name": "es/template.http.json",
-      "length": 329,
-      "sha256": "341f1793754af2f0f9a147bc654030240dea69525fcfc9fd005a307db4291e78"
+      "length": 329
     },
     {
+      "sha256": "abab77fb1950dd0e333cffa965f7495ae131665c3e9216a6f7df1bb2fd4986f5",
       "name": "es/template.xlsx",
-      "length": 6616,
-      "sha256": "de2676e48884945a3b8f70fd5cc817de8beb9eeeff3f5b19f11226a282745cad"
+      "length": 6616
     }
   ],
   "sourceState": [
-    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
-    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
-    " M ../../../../docs/guides/validar-un-cambio.md",
-    " M ../../../../docs/plans/README.md",
-    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
-    "?? ../../../../docs/features/formularios-borde-http.md",
-    "?? ../../../../docs/features/formularios-persistencia.md",
-    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
-    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
-    "?? ../../../../docs/features/formularios-servicios.md",
-    "?? ../../../../docs/features/whatsapp-servicios.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
   ],
-  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "artifactSet": "catalog-imports",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
   "sources": [
     {
-      "sha256": "3470b29861316711d7d88939a71a1082249bc076d3ea76d625e7d46c6ef9f6ba",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogImportFieldsHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogImportFieldsHttpTests.cs",
+      "sha256": "3470b29861316711d7d88939a71a1082249bc076d3ea76d625e7d46c6ef9f6ba"
     },
     {
-      "sha256": "36b2656a2437e85ae5ef36b0451632d47a157263e3b8235680668dd2c005243d",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogImportHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogImportHttpTests.cs",
+      "sha256": "36b2656a2437e85ae5ef36b0451632d47a157263e3b8235680668dd2c005243d"
     },
     {
-      "sha256": "c7ec12d843576325de7f45b10504b1980bc1b267def76e0c1fee09fd6b99226c",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogEndpointsTests.cs",
+      "sha256": "c7ec12d843576325de7f45b10504b1980bc1b267def76e0c1fee09fd6b99226c"
     },
     {
-      "sha256": "60f51bb13537d34d510ad94f316cfcbec5b4b7d5f1ef4dfbf9f48a9fcf714f92",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogImportContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogImportContractCapture.cs",
+      "sha256": "60f51bb13537d34d510ad94f316cfcbec5b4b7d5f1ef4dfbf9f48a9fcf714f92"
     },
     {
-      "sha256": "f86f0d7375051646283686c3b29f126bfb70a61d601a65a6935bc8fb61c09128",
-      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormCatalogImportModels.cs"
+      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormCatalogImportModels.cs",
+      "sha256": "f86f0d7375051646283686c3b29f126bfb70a61d601a65a6935bc8fb61c09128"
     },
     {
-      "sha256": "33e075aef290859e1f227b63115d3036d2ae79a637b5ea427a113454fb389ece",
-      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogImportTemplate.cs"
+      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Services/FormCatalogImportTemplate.cs",
+      "sha256": "33e075aef290859e1f227b63115d3036d2ae79a637b5ea427a113454fb389ece"
     },
     {
-      "sha256": "d4781b94540f432c97c7b9ce7036572ddbba729e4a4db2bf297b152fa7f7bf87",
-      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx"
+      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.resx",
+      "sha256": "d4781b94540f432c97c7b9ce7036572ddbba729e4a4db2bf297b152fa7f7bf87"
     },
     {
-      "sha256": "1347810581ace5f3c0ec96781ed06be2e52d0bc4177a7754f292532e12baebc9",
-      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx"
+      "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Resources/Catalogs.en.resx",
+      "sha256": "1347810581ace5f3c0ec96781ed06be2e52d0bc4177a7754f292532e12baebc9"
     }
   ],
-  "schemaVersion": 1,
+  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
-  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
-  "artifactSet": "catalog-imports"
+  "producer": "FormCatalogImportFieldsHttpTests and FormCatalogImportHttpTests and FormCatalogEndpointsTests and FormCatalogImportContractCapture and FormCatalogImportModels and FormCatalogImportTemplate and Catalogs and Catalogs.en"
 }

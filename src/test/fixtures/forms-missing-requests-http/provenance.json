@@ -1,87 +1,59 @@
 {
-  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
+      "sha256": "e634eff5753eaad9f1675990b38755560afba2628afbca7ddd96dbbfae4cedbc",
       "name": "conflict.json",
-      "length": 275,
-      "sha256": "4c75aff314a2afa5a6e5c4449e3ff4287ffcf151a0444ec232c6dccb185dd703"
+      "length": 275
     },
     {
+      "sha256": "6bef65a932be7d8fc17608400f237ee47855fb634a7605c75290599614b3197c",
       "name": "discarded-en.json",
-      "length": 571,
-      "sha256": "f9107becb95b8ca887b886304a436642296bb1f818e5a10581352b3704b181f0"
+      "length": 571
     },
     {
+      "sha256": "c79f1574264a9a4c274e20e12ce7ac2098aace703a1d7551169e65f1f5176b21",
       "name": "discarded-es.json",
-      "length": 577,
-      "sha256": "a064d77b2f90c66cea01e659ba3f00e390a5ba24f768a57f29bf62e45cb1fa03"
+      "length": 577
     },
     {
+      "sha256": "a24a70811299fe36f9fac6c1e5ae904fd37f7239e3c711b43c933e896ab87042",
       "name": "forbidden.json",
-      "length": 249,
-      "sha256": "f7b56a29f36e7924a8d0e6b06bcf2a81f4096df344a49b8e2654ccdc1afe5b6c"
+      "length": 249
     },
     {
+      "sha256": "fa0244814abd5ebd6151313d7ed866f9542491064943465dc48d16a196d9c69e",
       "name": "pending-en.json",
-      "length": 461,
-      "sha256": "bdd24b1a90bab38c14845d4db6e840d62f5104dcc567d65067a4313a00983d54"
+      "length": 461
     },
     {
+      "sha256": "e980cc4454cf17c06811b46f149de04980ac9d4d80c46cde052babd605fb4b2a",
       "name": "pending-es.json",
-      "length": 467,
-      "sha256": "06b04634bb766e51bd8e32a30c57939a38547ce784641ef1db78c539327e4029"
+      "length": 467
     }
   ],
   "sourceState": [
-    " M ../../../../docs/architecture/mapa-de-instrucciones.md",
-    " M ../../../../docs/guides/instrucciones-por-carpeta.md",
-    " M ../../../../docs/guides/validar-un-cambio.md",
-    " M ../../../../docs/plans/README.md",
-    " M ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Application/Modules/WhatsApp/Services/AGENTS.md",
-    " M ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.Application.UnitTests/Modules/BusinessForms/AGENTS.md",
-    " M ../../../../tests/ArquitecturaBase.ArchitectureTests/AGENTS.md",
-    "?? ../../../../docs/features/formularios-borde-http.md",
-    "?? ../../../../docs/features/formularios-persistencia.md",
-    "?? ../../../../docs/features/formularios-pruebas-de-integracion.md",
-    "?? ../../../../docs/features/formularios-pruebas-unitarias.md",
-    "?? ../../../../docs/features/formularios-servicios.md",
-    "?? ../../../../docs/features/whatsapp-servicios.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Contracts/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Api/Modules/BusinessForms/Controllers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Configurations/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Readers/CLAUDE.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/AGENTS.md",
-    "?? ../../../../src/ArquitecturaBase.Infrastructure/Modules/BusinessForms/Persistence/Repositories/CLAUDE.md",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/InstructionChainSizeTests.cs",
-    "?? ../../../../tests/ArquitecturaBase.ArchitectureTests/Support/InstructionChains.cs"
+    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
   ],
-  "repositoryHead": "735add832f40051539af569601f74182e09ec247",
+  "artifactSet": "missing-requests",
+  "schemaVersion": 1,
+  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
   "sources": [
     {
-      "sha256": "d4b782adcd1ae08172d5099e01f89015c7fb89280c8fc6011ce6d0b06002d6d1",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
+      "sha256": "d4b782adcd1ae08172d5099e01f89015c7fb89280c8fc6011ce6d0b06002d6d1"
     },
     {
-      "sha256": "4f5d92230dfc4492f2b47e78f3cbf5003efabf33698ff4be505330771fb12ad5",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs",
+      "sha256": "4f5d92230dfc4492f2b47e78f3cbf5003efabf33698ff4be505330771fb12ad5"
     },
     {
-      "sha256": "ac43105aebde8ea4e6a90ca0fd88a8e2fa1b84317e7ba45a3fee631a52169dfe",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs"
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs",
+      "sha256": "ac43105aebde8ea4e6a90ca0fd88a8e2fa1b84317e7ba45a3fee631a52169dfe"
     }
   ],
-  "schemaVersion": 1,
+  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "generatedAtUtc": "2026-11-08T05:15:58.0639686Z",
-  "runId": "20261108-041646-57f0aa5fdb044bbd863d245aee7eff17",
-  "artifactSet": "missing-requests"
+  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture"
 }
