@@ -27,6 +27,14 @@ function rowIdentity(question: DraftQuestion, repeated: boolean, localId: string
   return { ...rest, ...identity, ...options, ...(repeated ? { repeated: true } : {}) } as DraftQuestion;
 }
 
+// A new block has a name until the author gives it another («Bloque», RG10-D) and starts with 1 to 20 items.
+const newBlock = (culture: FormCulture, name: string, localId: string): DraftQuestion => ({ ...newQuestion("group", culture, localId), label: { [culture]: name } });
+
+/** RG10-D: «Agregar bloque» adds the block at the end of the list, as one more question; a form has only one. */
+export function addBlock(fields: readonly DraftQuestion[], culture: FormCulture, name: string, localId: string): readonly DraftQuestion[] {
+  return rowsBlock(fields) ? fields : [...fields, newBlock(culture, name, localId)];
+}
+
 export interface RowsIdentities { readonly question: () => string; readonly choice: () => string; readonly block: () => string }
 // RG6-A: a marked question joins the end of the block; without one, it creates the block in its place, with a name until
 // the author gives it another. An unmarked one leaves the block and stays right after it.
@@ -40,10 +48,18 @@ export function markRepeated(fields: readonly DraftQuestion[], localId: string, 
   const block = rowsBlock(rest);
   if (!block) {
     if (!repeated) return fields;
-    const created = { ...newQuestion("group", culture, ids.block()), label: { [culture]: blockName } };
-    return [...rest.slice(0, index), created, moved, ...rest.slice(index)];
+    return [...rest.slice(0, index), newBlock(culture, blockName, ids.block()), moved, ...rest.slice(index)];
   }
   return [...rest.slice(0, block.end), moved, ...rest.slice(block.end)];
+}
+
+/** RG12-A: the items of the block in its line of the list, by its minimum and maximum: equal, the amount («1 ítem»); a minimum
+ *  of 0, «hasta 10 ítems»; otherwise «de 1 a 10 ítems». The plural follows the last number (`count`). */
+export function rowsItems({ minRows, maxRows }: { readonly minRows: number | null; readonly maxRows: number | null }) {
+  if (maxRows !== null && minRows === maxRows) return { key: "rows.items", count: maxRows } as const;
+  if (maxRows !== null && minRows === 0) return { key: "rows.itemsUpTo", count: maxRows } as const;
+  // While a bound is being written, what there is; without a maximum, the plural is the general one.
+  return { key: "rows.itemsRange", count: maxRows ?? 0, minimum: minRows ?? "—", maximum: maxRows ?? "—" } as const;
 }
 
 /** «Agregar pregunta» inside the block: a short text, marked, at its end. */
@@ -87,7 +103,7 @@ export type PreviewScreen =
   | { readonly kind: "fields"; readonly questions: readonly DraftQuestion[] }
   | { readonly kind: "ask"; readonly block: BlockQuestion }
   | { readonly kind: "row"; readonly block: BlockQuestion; readonly questions: readonly DraftQuestion[]; readonly asks: boolean };
-/** The preview follows the WhatsApp screens: before the block, «¿Agregás un renglón?» with a minimum of 0, one row as an example and after it. */
+/** The preview follows the WhatsApp screens: before the block, «¿Agregás un ítem?» with a minimum of 0, one item as an example and after it. */
 export function previewScreens(fields: readonly DraftQuestion[]): readonly PreviewScreen[] {
   const block = rowsBlock(fields);
   if (!block) return formScreens(fields).map(questions => ({ kind: "fields", questions }));
@@ -96,7 +112,7 @@ export function previewScreens(fields: readonly DraftQuestion[]): readonly Previ
   const minimum = group.rows.minRows ?? 1;
   const rows = Math.min(whatsAppRows, group.rows.maxRows ?? 1);
   return [...split(fields.slice(0, block.index)), ...(minimum === 0 ? [{ kind: "ask" as const, block: group }] : []),
-    // From the minimum, a row ends with «¿Agregás otro renglón?», except the last one.
+    // From the minimum, an item ends with «¿Agregás otro ítem?», except the last one.
     { kind: "row", block: group, questions: fields.slice(block.index + 1, block.end), asks: Math.max(minimum, 1) <= 1 && rows > 1 },
     ...split(fields.slice(block.end))];
 }
