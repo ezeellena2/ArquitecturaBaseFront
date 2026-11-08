@@ -210,3 +210,34 @@ for (const width of [1440, 390, 320]) {
     expect(saved).toEqual([{ method: "PUT", name: { es: "Clientes", en: "Clients" }, description: { es: "Clientes para las visitas", en: "Customers for visits" }, texts: [{ es: "Pérez", en: "Pérez Bros." }] }]);
   });
 }
+
+// Saving reads the options of the saved revision again (2026-11-07). Meanwhile the block keeps its height, so the screen stays
+// where the person was instead of going back to the top.
+type HeldOptions = { holdItems(): void; releaseItems(): void; waitingItems: boolean };
+test("saving the options of a long Manual catalog keeps the place on the screen", async ({ page }) => {
+  const options = () => page.evaluate(() => (globalThis as unknown as { catalogsFixture: HeldOptions }).catalogsFixture.waitingItems);
+  await page.setViewportSize({ width: 1440, height: 700 });
+  await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId, lang: "es", scenario: "catalogs-manual-long" }));
+  await page.getByRole("heading", { name: "Clientes", exact: true }).waitFor();
+  await page.evaluate(() => document.fonts.ready);
+  const main = page.getByRole("main");
+  const scrollTop = () => main.evaluate(element => element.scrollTop);
+  const pencil = page.getByRole("button", { name: "Editar Cliente 18", exact: true });
+  await pencil.click();
+  const dialog = page.getByRole("dialog", { name: /^Opciones de/ });
+  await dialog.getByRole("textbox", { name: "Código", exact: true }).fill("C18-B");
+  await dialog.getByRole("button", { name: "Listo", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const before = await scrollTop();
+  expect(before).toBeGreaterThan(0);
+  await page.evaluate(() => (globalThis as unknown as { catalogsFixture: HeldOptions }).catalogsFixture.holdItems());
+  // A click where the button is, as with the mouse: Playwright's click first brings the button into view, and a control of the
+  // sticky band moves the screen when it is brought into view.
+  const save = (await page.getByRole("button", { name: "Guardar", exact: true }).boundingBox())!;
+  await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2);
+  await expect.poll(options).toBe(true);
+  expect(await scrollTop()).toBe(before);
+  await page.evaluate(() => (globalThis as unknown as { catalogsFixture: HeldOptions }).catalogsFixture.releaseItems());
+  await expect(pencil).toBeInViewport();
+  expect(await scrollTop()).toBe(before);
+});

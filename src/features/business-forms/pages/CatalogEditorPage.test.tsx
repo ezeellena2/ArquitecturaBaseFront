@@ -328,6 +328,44 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     waiting.forEach(resolve => resolve());
     expect(await screen.findByText("C2")).toBeInTheDocument();
   });
+  // The wait in place of the options shortened the screen and the scroll ended at its top. Until the options of the saved
+  // revision arrive, the blocks that show them keep their height: the presentation with the preview above, and the options.
+  // jsdom does not measure, so each observed block reports the test's height.
+  it("keeps the height of the blocks that show the options while the saved revision loads", async () => {
+    const sizes = new Map<Element, () => void>();
+    vi.stubGlobal("ResizeObserver", class {
+      readonly callback: ResizeObserverCallback;
+      constructor(callback: ResizeObserverCallback) { this.callback = callback; }
+      observe(target: Element) { sizes.set(target, () => this.callback([], this as unknown as ResizeObserver)); }
+      unobserve() {}
+      disconnect() {}
+    });
+    try {
+      setup(); let saved = false; const waiting: (() => void)[] = [];
+      server.use(http.get("/api/forms/catalogs/" + id + "/items", async () => {
+        if (saved) await new Promise<void>(resolve => waiting.push(resolve));
+        return HttpResponse.json({ items: [saved ? { ...option, code: "C2" } : option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false });
+      }), http.put("/api/forms/catalogs/" + id, () => { saved = true; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
+      await mount("/catalogos/" + id); const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Editar Pérez" }));
+      const blocks = [...document.querySelectorAll<HTMLElement>('[data-slot="keep-height"]')];
+      expect(blocks).toHaveLength(2);
+      blocks.forEach((block, index) => {
+        Object.defineProperty(block, "offsetHeight", { configurable: true, get: () => 400 + index * 240 });
+        act(() => sizes.get(block)?.());
+      });
+      const code = screen.getByRole("textbox", { name: "Código" }); await user.clear(code); await pasteText(user, code, "C2");
+      await doneOptions(user);
+      await user.click(screen.getByRole("button", { name: "Guardar" }));
+      await waitFor(() => expect(waiting.length).toBeGreaterThan(0));
+      blocks.forEach((block, index) => expect(block).toHaveStyle({ minHeight: 400 + index * 240 + "px" }));
+      waiting.forEach(resolve => resolve());
+      expect(await screen.findByText("C2")).toBeInTheDocument();
+      blocks.forEach(block => expect(block.style.minHeight).toBe(""));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it("updates the existing item code while keeping its identity and submits only the changed row", async () => {
     setup(); const bodies: unknown[] = []; let savedOption = option;
     server.use(http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [savedOption], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })), http.put("/api/forms/catalogs/" + id, async ({ request }) => { const body = await request.json() as { items: { code: string }[] }; bodies.push(body); savedOption = { ...option, code: body.items[0]!.code }; return HttpResponse.json({ catalog: { ...initial, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));

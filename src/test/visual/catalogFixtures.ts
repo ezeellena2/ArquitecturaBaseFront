@@ -29,6 +29,16 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
         requestedIn: "app" } };
     items = [];
   }
+  // A long Manual catalog (2026-11-07): saving its options must not take the screen back to the top while the options of the
+  // saved revision arrive.
+  if (scenario === "catalogs-manual-long") {
+    items = Array.from({ length: 40 }, (_, index) => ({ value: null, id: "01990000-0000-7000-8000-" + String(800 + index).padStart(12, "0"), code: "C" + (index + 1),
+      text: { es: "Cliente " + (index + 1), en: null }, detail: { es: null, en: null }, position: index + 1, isActive: true, fields: {}, fieldTexts: {} }));
+    catalog = { ...catalog, itemsCount: items.length };
+  }
+  // A scene holds the reads of the options to look at the screen while they arrive, then releases them.
+  let holdingItems = false;
+  const heldItems: (() => void)[] = [];
   let conflict = scenario === "catalogs-conflict";
   let identity = 100;
   const writes: { method: string; body: CreateManualCatalogBody | UpdateManualCatalogBody }[] = [];
@@ -38,7 +48,11 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     const number = Number(params.get("page") ?? 1), size = Number(params.get("pageSize") ?? 20), totalPages = Math.ceil(rows.length / size);
     return { items: rows.slice((number - 1) * size, number * size), page: number, pageSize: size, totalCount: rows.length, totalPages, hasPrevious: number > 1, hasNext: number < totalPages };
   };
-  const store = { writes, reads, async handle(request: Request): Promise<Response> {
+  const store = { writes, reads,
+    holdItems() { holdingItems = true; },
+    releaseItems() { holdingItems = false; heldItems.splice(0).forEach(resolve => resolve()); },
+    get waitingItems() { return heldItems.length > 0; },
+    async handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (scenario === "catalogs-denied") return json({ code: "Authorization.Forbidden" }, 403);
     if (request.method === "POST" || request.method === "PUT") {
@@ -65,6 +79,7 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
       return json({ catalog, itemIdentityMap, fieldIdentityMap: {} }, request.method === "POST" ? 201 : 200);
     }
     reads.push(url.pathname + url.search);
+    if (url.pathname.endsWith("/items") && holdingItems) await new Promise<void>(resolve => heldItems.push(resolve));
     if (url.pathname.endsWith("/items")) return json(page(items.filter(item => !url.searchParams.get("search") || item.text.es?.toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())), url.searchParams));
     if (url.pathname === "/api/forms/catalogs") {
       const matches = (!url.searchParams.get("search") || administrativeName(catalog.name, culture).toLowerCase().includes(url.searchParams.get("search")!.toLowerCase())) && (!url.searchParams.get("state") || url.searchParams.get("state") === (catalog.isActive ? "Active" : "Inactive"));
