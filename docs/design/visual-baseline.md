@@ -72,7 +72,7 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
-(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `FormField beside` y `FormSkeleton stacked` (IA1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`, `Link`, `Bell`, `ExternalLink`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -109,6 +109,11 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
   se repite debajo. Una zona aparece sólo si aporta algo que la etiqueta no dice (qué corregir, quién y cuándo) y su
   título no la repite; la acción que destraba ese estado va con las acciones del encabezado, y por qué la principal está
   apagada, en su motivo (`DisabledReason`).
+- **Una cosa, una zona** ([IA1-A, 2026-11-08](#una-cosa-una-zona--2026-11-08)): lo que se configura y se guarda junto
+  —una conexión, un registro— va en una sola `Surface`: sus campos en el cuerpo, en el orden en que se completan, cada
+  botón al lado del dato que toca y lo que actúa sobre todo el conjunto, en la banda. Se parte en zonas sólo cuando son
+  cosas distintas, que se entienden por separado, o pasos de un recorrido; nunca por tipo de control (los desplegables
+  en una, los botones en otra, las opciones en otra).
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se
@@ -357,12 +362,16 @@ revisión pendiente como motivo. Recorridos:
 
 ### Inteligencia artificial
 
-- `/configuracion/ia`: `Page` con Guardar/Descartar, sin estado del borrador, y tres `Surface` (proveedor/modelo,
-  clave/prueba, disponibilidad). No configura conocimiento del negocio ni respuestas. Capturas `ai-*.png`.
-- Probar conexión, Reemplazar y Quitar clave van en el encabezado de «Clave y prueba de conexión»; el resultado de la
-  prueba va al Toaster, sin estado al lado del botón. La espera de un 429 es el motivo de Cargar modelos y de Probar
-  conexión (`DisabledReason`). «Revisión del guardado» lleva consultar, reintentar y elegir en su encabezado, y su
-  resumen de la configuración actual no muestra el número de revisión.
+- `/configuracion/ia`: `Page` con Guardar/Descartar, sin estado del borrador, y una sola `Surface`, «Conexión con el
+  proveedor» ([IA1-A, 2026-11-08](#una-cosa-una-zona--2026-11-08)): un renglón por dato, con una línea entre renglones,
+  en el orden en que se completa (proveedor, clave, modelo y disponibilidad). No configura conocimiento del negocio ni
+  respuestas. Capturas `ai-*.png`.
+- Probar conexión va en la banda de la zona; el resultado de la prueba va al Toaster, sin estado al lado del botón.
+  Reemplazar y Quitar clave (en rojo) van en el renglón de la clave, junto a «Configurada»; reemplazar abre «Nueva
+  clave de API» ahí mismo, con Cancelar reemplazo al lado. Cargar o Actualizar modelos e Ingresar modelo manualmente van
+  al lado del modelo. La espera de un 429 es el motivo de Cargar modelos y de Probar conexión (`DisabledReason`).
+  «Revisión del guardado» lleva consultar, reintentar y elegir en su encabezado, y su resumen de la configuración actual
+  no muestra el número de revisión.
 - Modelo con `autocomplete="off"` y clave nueva con `autocomplete="new-password"`, con nombres técnicos propios; sin
   configurar, ambos vacíos. Modelos de OpenAI y Anthropic en `NativeSelect`, con Cargar/Actualizar y entrada manual; la
   lista no elige por defecto ni cambia un modelo guardado fuera del catálogo. Probar conexión verifica el ID elegido.
@@ -493,6 +502,7 @@ Sin elección; no se implementan sin ella.
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
+| Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -965,3 +975,41 @@ muy tenue: cambiarlo alcanza a toda la app y no se decidió. Un esqueleto de fil
 (`loading-tint`) y no `bg-accent`, que casi coincide con el tono de la fila.
 
 Las pruebas `DataTable`, `PageLoading` y `FormSkeleton` fijan cada caso.
+
+## Una cosa, una zona — 2026-11-08
+
+Mirando Configuración → Inteligencia artificial, el usuario dijo que no tenía sentido partir en tres zonas («Proveedor y
+modelo», «Clave y prueba de conexión» y «Disponibilidad») lo que es una sola cosa, la conexión con el proveedor, y pidió
+ordenar botones y campos en una sola. En el lienzo aparte [Conexión de IA en una zona](https://claude.ai/artifact/G4pcG9BJMtjhQYCuXLcsPR)
+(el Sistema visual no se abre desde Claude Code) eligió la **IA1-A**, una zona en renglones. Descartó IA1-B (dos
+columnas: más corta, pero con los botones del modelo debajo del desplegable) e IA1-C (renglones de ajustes con la
+etiqueta a la izquierda, que cambiaba «etiqueta arriba» en todos los formularios de ajustes). La regla quedó en los
+[principios](#principios-del-sistema).
+
+| Tablero | Qué define |
+| --- | --- |
+| **IA1-A · Renglones, uno por dato** (elegida) | La zona «Conexión con el proveedor», con «Probar conexión» en la banda y el costo de la prueba en la (i) del título. Un renglón por dato, con una línea entre renglones y la etiqueta arriba, en el orden en que se completa: proveedor, clave, modelo y disponibilidad (los modelos se cargan con la clave). La clave guardada dice «Configurada», con «Reemplazar clave» y «Quitar clave», en rojo, al lado, y por qué no se muestra va en la (i) de «Clave de API». El modelo lleva «Actualizar modelos» e «Ingresar modelo manualmente» al lado del desplegable. Disponible y Pausada, en un renglón. |
+| **IA2 · Estados y recorrido** | Sin configurar: la clave vacía, «Cargar modelos» se habilita al escribirla y «Disponible» queda apagado sin clave. Reemplazar: «Nueva clave de API» en el mismo renglón, con «Cancelar reemplazo» al lado. Probando: el aro en el botón y el resultado en el aviso. La espera de un 429: el motivo en el tooltip. Sólo lectura: sin botones ni la (i) del costo. Cargando: una zona con cuatro renglones. La revisión del guardado no cambia. Nada vive en la URL. |
+
+Las pantallas de Configuración, revisadas:
+
+| Pantalla | Zonas | Qué separan | Queda |
+| --- | --- | --- | --- |
+| Inteligencia artificial | Proveedor y modelo · Clave y prueba de conexión · Disponibilidad | Una sola conexión, partida por tipo de control | Una zona |
+| Configuración general | Preferencias regionales · Listados · Registro de cuentas | Tres ajustes distintos, cada uno se entiende solo | No cambia |
+| Apariencia | Colores del sistema · Vista previa | Lo que se edita y cómo queda | No cambia |
+| Información del negocio | Datos · Ubicación · Horarios · Servicios y políticas · Respuestas | Cinco temas distintos del negocio | No cambia |
+| ARCA | El alta en zonas numeradas (AC1-A) · Empresa, Servicios, Certificado y Punto de venta (AC2-A) | Pasos del alta y piezas con su propia acción | No cambia |
+
+No cuenta como partir una zona que aparece sólo cuando hace falta y dice otra cosa, como «Revisión del guardado» o la
+comparación de un conflicto, ni las zonas de un editor largo que separan temas, como las de un formulario o un catálogo.
+
+Lo que se fijó al programar: el renglón de la clave guardada es un grupo nombrado «Clave de API»; sin clave, el campo
+vacío con su etiqueta reemplaza al texto «Sin clave configurada»; y la etiqueta visible «Disponibilidad» no se lee dos
+veces, porque el grupo de opciones ya se llama «Disponibilidad de la conexión». En el celular, los botones de un renglón
+bajan cuando no entran.
+
+En el código: `FormField beside` pone los botones del valor en el renglón del control y `FormSkeleton stacked`, los campos
+de una zona uno debajo del otro. `AiSettingsPage` fija la zona única, el orden y dónde va cada botón; `FormField` y
+`FormSkeleton`, las piezas; `artificial-intelligence.spec.ts` guarda las capturas `ai-*.png`. Falta pasar el tablero al
+lienzo del sistema visual.
