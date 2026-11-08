@@ -38,7 +38,9 @@ Reúne primitivas generadas por shadcn y componentes propios de formularios, tab
 - Tests consultan por rol y texto; los de i18n y tema evitan regresiones de componentes generados.
 - El único Toaster se monta en AppProviders y fija la política común. No promover un FormError
   general ni usar Banner para resultados operativos. Comprobar avisos desde Dialog con teclado,
-  sin cambiar la modalidad ni crear otro Toaster.
+  sin cambiar la modalidad ni crear otro Toaster. El tipo de aviso se ve en el filo izquierdo y el ícono, con el aviso
+  blanco y la cruz adentro a la derecha (AV1-A, 2026-11-08): lo dibuja `index.css`, no `sonner.tsx`; sin fondos
+  tintados ni `richColors`.
 
 `PublicLanding` presenta título, descripción, acciones y capacidades de una portada pública.
 Sus textos e íconos los aporta el consumidor; colores y curvas usan los roles globales `public-*`.

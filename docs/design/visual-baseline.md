@@ -488,7 +488,7 @@ Sin elección; no se implementan sin ella.
 | --- | --- | --- |
 | Gestión de usuarios, Filtros, Reglas de filtrado | `/usuarios`, `/roles`, `UsersFilterBar` | Implementado |
 | Formularios | `FormField`, diálogos | Falta auditar campos fuera de `FormField` |
-| Avisos | Toaster y estados comunes | Adopción parcial |
+| Avisos | Toaster y estados comunes | Adopción parcial; el tipo de cada aviso, [AV1-A implementado](#avisos-según-el-tipo--2026-11-08) |
 | Anatomía; Encabezados, íconos y color; Las mismas piezas | `index.css`, `shared/ui`, 17 íconos | Implementado; biblioteca pendiente |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno |
 | Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado |
@@ -975,6 +975,43 @@ muy tenue: cambiarlo alcanza a toda la app y no se decidió. Un esqueleto de fil
 (`loading-tint`) y no `bg-accent`, que casi coincide con el tono de la fila.
 
 Las pruebas `DataTable`, `PageLoading` y `FormSkeleton` fijan cada caso.
+
+## Avisos según el tipo — 2026-11-08
+
+Mirando «Se guardó la conexión.», el usuario pidió que los avisos de abajo distingan un resultado correcto, una
+información, una atención y un error con algo más que el texto, sin colorear el aviso entero porque se perdería el tono
+de la app. Entre tres variantes del [tablero AV1](evidence/avisos-av1/av1-tablero.png) eligió la **A**: el aviso sigue
+blanco y con la tinta de siempre, y el tipo se ve en un **filo de 3 px a la izquierda y en el ícono**, los dos en el
+color del tipo. Descartó AV1-B (sólo el ícono, más grande, y el texto en negrita en atención y error) y AV1-C (el ícono y
+una línea arriba que se vacía con el tiempo que le queda al aviso).
+
+La regla, para todo aviso del Toaster:
+
+| Tipo | Color del filo y del ícono | Ícono |
+| --- | --- | --- |
+| Éxito | `--color-success` | círculo con tilde |
+| Información | `--color-content-muted`, el gris del texto secundario: el verde de la marca se confundiría con el de éxito | (i) |
+| Atención | `--color-warning` | triángulo |
+| Error | `--color-danger` | octógono con cruz |
+
+- El fondo, el borde y el texto no cambian con el tipo: nada de fondos tintados ni los `richColors` de sonner.
+- La cruz para cerrar va dentro del aviso, a la derecha, después de la acción; antes asomaba en un círculo arriba a la
+  izquierda.
+- La descripción va en el gris del texto secundario, y la letra es la de la app (Public Sans): el aviso usaba la del
+  sistema que trae sonner.
+- No cambian los tiempos ([mensajes y estados](../guides/mensajes-y-estados.md#duración-cierre-y-acciones)), la
+  ubicación, la acción ni que sonner muestre los tres avisos más nuevos.
+
+Dos cosas del tablero no pasaron al código: la acción conserva su lugar a la derecha y su relleno oscuro (el tablero
+la dibujaba debajo y con borde), y el código de seguimiento no va en letra monoespaciada, porque la descripción también
+lleva textos comunes («Revisá…») y va en gris como cualquier descripción.
+
+Lo dibuja `index.css` para el único Toaster, fuera de las capas de Tailwind y con `[data-sonner-toaster]` adelante,
+porque sonner agrega sus estilos al final del `<head>`. La escena `?screen=/catalogo&scenario=notices` muestra los
+cuatro tipos a la vez, y `design.spec.ts` mide en el navegador el filo, el color del ícono, el fondo blanco, la letra y
+la cruz adentro y a la derecha, con las capturas `notices-1440` y `notices-320`. De las referencias existentes cambiaron
+las seis `assistant-load-error-*`, que muestran el aviso de error con su filo y la cruz a la derecha; la corrida
+completa aprobó 1013 de 1013. Falta pasar el tablero al lienzo y la prueba manual.
 
 ## Una cosa, una zona — 2026-11-08
 

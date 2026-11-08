@@ -52,6 +52,8 @@ error al fallar un refetch. No confundir una carga fallida con una colección va
 
 - El único Toaster productivo se monta en `src/app/providers.tsx`; su presentación vive en
   `src/shared/ui/sonner.tsx`: abajo a la derecha, tema, tokens, íconos y textos accesibles comunes.
+  El tipo se ve en el filo izquierdo y el ícono, con el aviso blanco (AV1-A, en `index.css`:
+  [regla](../design/visual-baseline.md#avisos-según-el-tipo--2026-11-08)).
   Una feature no monta otro Toaster ni cambia sus props de posición, duración o estilo.
 - Los cuatro tipos operativos usan ese mismo canal, también dentro de un formulario o diálogo
   y en las pantallas de ingreso. No agregar un Banner, `FormError`, párrafo de error general
