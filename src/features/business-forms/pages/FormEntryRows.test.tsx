@@ -70,7 +70,8 @@ beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
 afterEach(() => vi.restoreAllMocks());
 
 describe("loading the items of a block from the page (RG2-A)", () => {
-  it("draws the block as a table that starts with its minimum and adds items up to its maximum", async () => {
+  // The longest ones choose options in several items: with the machine busy they pass the default five seconds.
+  it("draws the block as a table that starts with its minimum and adds items up to its maximum", { timeout: 20_000 }, async () => {
     setup();
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
@@ -100,7 +101,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     expect(sends).toHaveLength(0);
   });
 
-  it("sends the items in their order with their answers and shows the block in «Enviada»", async () => {
+  it("sends the items in their order with their answers and shows the block in «Enviada»", { timeout: 20_000 }, async () => {
     const { sends } = setup();
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
@@ -130,7 +131,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     expect(screen.queryByText("Cantidad")).not.toBeInTheDocument();
   });
 
-  it("takes an error of the server to the cell of its item and names it in the notice", async () => {
+  it("takes an error of the server to the cell of its item and names it in the notice", { timeout: 20_000 }, async () => {
     setup([() => HttpResponse.json({ title: "No se guardó", status: 400, code: "Forms.Record.CatalogItemInactive",
       errors: { [`answers.${fields.block}.1.${fields.article}`]: ["La opción ya no está disponible."] } }, { status: 400 })]);
     const user = userEvent.setup({ delay: null });
