@@ -364,6 +364,52 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
+/* Avisos (AV1-A, 2026-11-08). El aviso sigue blanco y con la tinta de siempre: el tipo se ve en un filo de 3 px a la
+   izquierda y en el ícono, con los colores de estado. La información va en el gris del texto secundario, porque el
+   verde de la marca se confundiría con el de éxito. La cruz deja de asomar arriba a la izquierda y pasa adentro, a la
+   derecha, después de la acción. La letra es la de la app, no la del sistema que trae sonner.
+   Sonner agrega sus estilos sin capa al final del <head>, después de los de la app: estas reglas van fuera de las capas
+   de Tailwind y empiezan por [data-sonner-toaster] para ganarle por especificidad. Sonner mide en px y no sigue la
+   escala de escritorio; lo nuevo se mide en em, sobre su letra. */
+[data-sonner-toaster][data-sonner-theme] {
+  font-family: var(--font-sans);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+  align-items: flex-start;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="success"] { --notice-edge: var(--color-success); }
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="info"] { --notice-edge: var(--color-content-muted); }
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="warning"] { --notice-edge: var(--color-warning); }
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type="error"] { --notice-edge: var(--color-danger); }
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type] {
+  box-shadow: inset 3px 0 var(--notice-edge, transparent), 0 4px 12px rgb(0 0 0 / 0.1);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"][data-type]:focus-visible {
+  box-shadow: inset 3px 0 var(--notice-edge, transparent), 0 4px 12px rgb(0 0 0 / 0.1), 0 0 0 2px rgb(0 0 0 / 0.2);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-icon] {
+  color: var(--notice-edge, currentColor);
+  margin-top: 0.15em;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-description] {
+  color: var(--color-content-muted);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] {
+  position: static;
+  order: 1;
+  transform: none;
+  flex-shrink: 0;
+  margin-left: 0.25em;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-content-muted);
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"]:hover [data-close-button]:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-content);
+}
+
 .access-shell { min-height: 100svh; display: flex; flex-direction: column; background: var(--color-surface); color: var(--color-content); font-size: 0.875rem; line-height: 1.55; letter-spacing: 0; }
 .access-header { min-height: 5rem; padding: 1rem 2.625rem; background: var(--color-surface); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
 .access-header-inner { display: flex; align-items: center; justify-content: flex-end; gap: 1.25rem; width: 100%; }

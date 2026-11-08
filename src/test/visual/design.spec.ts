@@ -27,6 +27,56 @@ for (const width of [1440, 320]) {
   });
 }
 
+// AV1-A (2026-11-08): el aviso sigue blanco; el tipo se ve en un filo de 3 px a la izquierda y en el ícono, con los
+// colores de estado de la app (la información, en el gris del texto secundario: el verde de la marca se confundiría con
+// el de éxito). La cruz va dentro del aviso, a la derecha, y la letra es la de la app.
+const noticeKinds = [
+  { type: "success", color: "rgb(23, 107, 76)" },
+  { type: "info", color: "rgb(72, 89, 77)" },
+  { type: "warning", color: "rgb(134, 98, 26)" },
+  { type: "error", color: "rgb(173, 52, 67)" },
+] as const;
+
+for (const width of [1440, 320]) {
+  test(`each notice kind shows its color on the edge and the icon, with the close button inside on the right, at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openScreen(page, "/catalogo", "es", "notices");
+    const notices = page.locator("[data-sonner-toast]");
+    await expect(notices).toHaveCount(4);
+    // Con el puntero encima, sonner abre la pila y frena el tiempo de cada aviso.
+    await notices.first().hover();
+    await expect(notices.first()).toHaveAttribute("data-expanded", "true");
+    for (const kind of noticeKinds) {
+      const notice = page.locator(`[data-sonner-toast][data-type="${kind.type}"]`);
+      const style = await notice.evaluate(element => ({
+        shadow: getComputedStyle(element).boxShadow,
+        icon: getComputedStyle(element.querySelector("[data-icon] svg")!).color,
+        background: getComputedStyle(element).backgroundColor,
+        font: getComputedStyle(element).fontFamily,
+      }));
+      expect(style.shadow).toContain(`${kind.color} 3px 0px 0px 0px inset`);
+      expect(style.icon).toBe(kind.color);
+      expect(style.background).toBe("rgb(255, 255, 255)");
+      expect(style.font).toContain("Public Sans");
+      const [box, close] = await Promise.all([
+        notice.boundingBox(),
+        notice.getByRole("button", { name: "Cerrar aviso", exact: true }).boundingBox(),
+      ]);
+      expect(close!.x + close!.width).toBeLessThanOrEqual(box!.x + box!.width);
+      expect(close!.x).toBeGreaterThan(box!.x + box!.width / 2);
+      expect(close!.y).toBeGreaterThanOrEqual(box!.y);
+    }
+    // Sonner muestra los tres avisos más nuevos; la captura recorta esos.
+    const boxes = await page.locator('[data-sonner-toast][data-visible="true"]').evaluateAll(elements => elements.map(element => element.getBoundingClientRect().toJSON() as DOMRect));
+    expect(boxes).toHaveLength(3);
+    const top = Math.min(...boxes.map(box => box.top)) - 8;
+    const left = Math.max(0, Math.min(...boxes.map(box => box.left)) - 8);
+    const right = Math.min(width, Math.max(...boxes.map(box => box.right)) + 8);
+    const bottom = Math.max(...boxes.map(box => box.bottom)) + 8;
+    await expect(page).toHaveScreenshot(`notices-${width}.png`, { clip: { x: left, y: top, width: right - left, height: bottom - top } });
+  });
+}
+
 async function openScreen(page: Page, screen: string, language = "es", scenario?: string) {
   const parameters = new URLSearchParams({ screen, lang: language, ...(scenario ? { scenario } : {}) });
   await page.goto(`/src/test/visual/index.html?${parameters}`);

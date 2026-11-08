@@ -1,5 +1,5 @@
 import { MessageCard } from "@/shared/ui/MessageCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/shared/ui/Page";
 import { Surface } from "@/shared/ui/Surface";
@@ -49,6 +49,19 @@ export function Catalog() {
   const [filter, setFilter] = useState("all");
   const restoreFocus = useRestoreFocusOnClose(formOpen);
   const english = i18n.language === "en";
+  const notices = new URLSearchParams(location.search).get("scenario") === "notices";
+  // Los cuatro tipos de aviso a la vez, para ver el filo y el ícono de cada uno (AV1-A).
+  useEffect(() => {
+    if (!notices) return;
+    const copy = english
+      ? { success: "Changes saved.", info: "Meta's preview can take a few minutes to update.", warning: "We couldn't confirm it was saved. Check before trying again.", review: "Check", error: "Couldn't save the connection.", trace: "Trace: 00-4bf92f3577b34da6" }
+      : { success: "Se guardaron los cambios.", info: "La vista de Meta puede tardar unos minutos en actualizarse.", warning: "No sabemos si se guardó. Revisá antes de volver a intentar.", review: "Revisar", error: "No se pudo guardar la conexión.", trace: "Seguimiento: 00-4bf92f3577b34da6" };
+    // Sonner muestra los tres más nuevos: la información, el tipo menos usado, va primero y queda detrás.
+    notify({ id: "catalog:notice:info", kind: "info", message: copy.info });
+    notify({ id: "catalog:notice:success", kind: "success", message: copy.success });
+    notify({ id: "catalog:notice:warning", kind: "warning", message: copy.warning, action: { label: copy.review, onClick: () => {} } });
+    notify({ id: "catalog:notice:error", kind: "error", message: copy.error, description: copy.trace });
+  }, [notices, english]);
   const text = english
     ? { title: "UI catalog", actions: "Actions", controls: "Fields", tables: "Table", states: "States", name: "Name", hint: "Use a name people can recognize.", invalid: "Enter a name.", status: "Status", empty: "No records yet", problem: "Content is unavailable", notice: "Changes saved", chip: "Active", remove: "Remove status filter", badgeSuccess: "Success", badgeWarning: "Attention", badgeDanger: "Problem" }
     : { title: "Catálogo de UI", actions: "Acciones", controls: "Campos", tables: "Tabla", states: "Estados", name: "Nombre", hint: "Usá un nombre que las personas reconozcan.", invalid: "Ingresá un nombre.", status: "Estado", empty: "Todavía no hay registros", problem: "No pudimos cargar el contenido", notice: "Guardamos los cambios", chip: "Activos", remove: "Quitar filtro de estado", badgeSuccess: "Éxito", badgeWarning: "Atención", badgeDanger: "Problema" };
