@@ -22,12 +22,15 @@ interface FormFieldProps {
   liveError?: "polite";
   /// Una acción del campo, al final del renglón de la etiqueta: «Agregar dato» del mensaje de una regla (MD1-A).
   action?: ReactNode;
+  /// Los botones que actúan sobre el valor, en el renglón del control y a su derecha: «Actualizar modelos» junto al
+  /// modelo de la conexión de IA (IA1-A, 2026-11-08). Si no entran, bajan; el error sigue debajo de los dos.
+  beside?: ReactNode;
   children: ReactElement<{ id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }>;
 }
 
 /// Etiqueta, control y mensaje de error, atados entre sí para lectores de pantalla (sección 7.4). La etiqueta lleva el id
 /// `<control>-label`: un control que un `<label>` no nombra, como un cuadro editable, lo apunta con `aria-labelledby`.
-export function FormField({ label, htmlFor, hint, help, helpLabel, error, required, liveError, action, children }: FormFieldProps): ReactNode {
+export function FormField({ label, htmlFor, hint, help, helpLabel, error, required, liveError, action, beside, children }: FormFieldProps): ReactNode {
   const { t } = useTranslation();
   const generatedId = useId();
   const controlId = htmlFor ?? children.props.id ?? generatedId;
@@ -42,6 +45,11 @@ export function FormField({ label, htmlFor, hint, help, helpLabel, error, requir
       {required ? <span aria-hidden="true"> *</span> : null}
     </Label>
   );
+  const control = cloneElement(children, {
+    id: controlId,
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": describedBy || undefined,
+  });
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -57,11 +65,7 @@ export function FormField({ label, htmlFor, hint, help, helpLabel, error, requir
           {action ? <div className="-my-1 ml-auto flex shrink-0 items-center gap-2">{action}</div> : null}
         </div>
       ) : labelNode}
-      {cloneElement(children, {
-        id: controlId,
-        "aria-invalid": error ? true : undefined,
-        "aria-describedby": describedBy || undefined,
-      })}
+      {beside ? <div className="flex flex-wrap items-center gap-2">{control}{beside}</div> : control}
       {message ? (
         <p
           id={messageId}

@@ -12,6 +12,15 @@ describe("FormSkeleton", () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3 + 2 * 2 + 2 * 1 + 2);
   });
 
+  it("stacks the fields of a zone in rows, one below the other, when it asks for it (IA1-A)", () => {
+    const { container } = renderWithProviders(<FormSkeleton zones={[{ fields: 4, stacked: true }, { fields: 2 }]} />);
+
+    const [rows, columns] = [...container.querySelectorAll('[data-slot="surface"]')].map(zone => zone.querySelector('[data-slot="skeleton"] + div') as HTMLElement);
+    expect(rows.children).toHaveLength(4);
+    expect(rows).not.toHaveClass("sm:grid-cols-2");
+    expect(columns).toHaveClass("sm:grid-cols-2");
+  });
+
   it("announces a single loading status", () => {
     renderWithProviders(<FormSkeleton zones={[{ fields: 2 }]} />);
 

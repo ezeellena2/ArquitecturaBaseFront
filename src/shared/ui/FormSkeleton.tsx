@@ -4,10 +4,12 @@ import { Skeleton } from "./skeleton";
 import { Surface } from "./Surface";
 
 /// Una zona del formulario que viene: `fields` son pares de etiqueta y control, en dos columnas; `rows`, bloques
-/// de una fila alta (una elección, una lista).
+/// de una fila alta (una elección, una lista). `stacked` pone los campos uno debajo del otro, como los renglones de
+/// una zona que reúne una sola cosa (IA1-A, 2026-11-08).
 export interface FormSkeletonZone {
   fields?: number;
   rows?: number;
+  stacked?: boolean;
 }
 
 /// Lo que se ve mientras llegan los ajustes de una pantalla de formulario (tablero ES3): las zonas con las barras de
@@ -21,11 +23,11 @@ export function FormSkeleton({ zones }: { zones: readonly FormSkeletonZone[] }):
         <Surface key={index} padded>
           <Skeleton aria-hidden="true" className="h-4 w-2/5" />
           {zone.fields ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className={zone.stacked ? "flex flex-col gap-4" : "grid gap-4 sm:grid-cols-2"}>
               {Array.from({ length: zone.fields }, (_, field) => (
                 <div key={field} className="flex flex-col gap-2">
-                  <Skeleton aria-hidden="true" className="h-3 w-1/3" />
-                  <Skeleton aria-hidden="true" className="h-7.5" />
+                  <Skeleton aria-hidden="true" className={zone.stacked ? "h-3 w-24" : "h-3 w-1/3"} />
+                  <Skeleton aria-hidden="true" className={zone.stacked ? "h-7.5 sm:w-72" : "h-7.5"} />
                 </div>
               ))}
             </div>

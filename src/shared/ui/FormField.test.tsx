@@ -63,6 +63,20 @@ describe("FormField", () => {
     expect(screen.getByLabelText("Mensaje")).toHaveAccessibleDescription("Cómo se arma el mensaje.");
   });
 
+  it("puts the buttons that act on the value beside the control, in its row, and keeps the error below (IA1-A)", () => {
+    render(
+      <FormField label="Modelo" htmlFor="model" error="Elegí un modelo." beside={<button type="button">Actualizar modelos</button>}>
+        <Input id="model" />
+      </FormField>,
+    );
+
+    const control = screen.getByLabelText("Modelo");
+    const row = control.parentElement as HTMLElement;
+    expect(row).toContainElement(screen.getByRole("button", { name: "Actualizar modelos" }));
+    expect(row).not.toContainElement(screen.getByRole("alert"));
+    expect(control).toHaveAccessibleDescription("Elegí un modelo.");
+  });
+
   it("gives the label an id, so a control that a label cannot name can point to it", () => {
     render(
       <FormField label="Mensaje" htmlFor="message">
