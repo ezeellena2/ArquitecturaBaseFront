@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
-import { useCallback, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
@@ -16,7 +16,7 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { cn } from "@/shared/lib/utils";
 import { ApiError } from "@/shared/api/ApiError";
-import { listChats } from "../api/chat";
+import { listChats, type Chat } from "../api/chat";
 import { ChatThread } from "../components/ChatThread";
 import type { ChatDraft } from "../components/ChatComposer";
 import { useVisibleChat } from "../hooks/useChatThread";
@@ -37,12 +37,17 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const [params] = useSearchParams();
   const updateQuery = useQueryUpdate();
   const selected = params.get("conversacion") || undefined;
-  const setSelected = (id: string | undefined) => updateQuery({ conversacion: id }, { replace: false });
+  const setSelected = useCallback((id: string | undefined) => updateQuery({ conversacion: id }, { replace: false }), [updateQuery]);
+  const back = useCallback(() => setSelected(undefined), [setSelected]);
   const [search, setSearch] = useState("");
   const [unread, setUnread] = useState(false);
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, ChatDraft>>({});
+  // Every key typed in the reply passes through here: the rows and the history are memoized and get the same callbacks.
+  const updateDraft = useCallback((update: (current: ChatDraft) => ChatDraft) => {
+    if (selected) setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }));
+  }, [selected]);
   const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.touched) || Boolean(draft.form?.attempt)));
   const visible = useVisibleChat();
   const listStamp = JSON.stringify(listRoot);
@@ -80,13 +85,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
             <div className="min-h-0 flex-1 overflow-y-auto" aria-label={t("conversations")}>
               {list.isPending ? <div role="status" className="flex items-center gap-2 p-4 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("loading")}</div> : null}
               {list.isError && !list.data ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
-              {/* The open one, as in a list with a detail: the brand tint and a 3 px bar at its start (OE1-A, 2026-11-03). */}
-              {list.data?.page.items.map(chat => <div key={chat.id} className={cn("border-b border-[var(--color-border)] p-2", selected === chat.id ? "bg-[var(--color-brand-50)] shadow-[inset_3px_0_0_var(--color-brand-600)]" : "")}>
-                <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected === chat.id} onClick={() => setSelected(chat.id)}>
-                  <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
-                </Button>
-                <p className="truncate px-2 text-xs text-[var(--color-content-muted)]">{drafts[chat.id]?.body ? t("draft") : previewText(t, chat.previewPurpose, chat.previewAccessEventKind, chat.preview)}</p>
-              </div>)}
+              {list.data?.page.items.map(chat => <ChatRow key={chat.id} chat={chat} selected={selected === chat.id} hasDraft={Boolean(drafts[chat.id]?.body)} onSelect={setSelected} />)}
               {list.data?.page.items.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t(search || unread ? "noResults" : "empty")}</p> : null}
             </div>
             {list.data && list.data.page.totalPages > 1 ? <div className="flex items-center justify-between gap-2 border-t border-[var(--color-border)] p-2">
@@ -95,7 +94,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
           </div>
           <div className={cn("min-h-0 min-w-0", selected ? "" : "max-xl:hidden")}>
             {selected ? <ChatThread key={selected} id={selected} actor={actor} readPermissions={permissions} timeZone={timeZone} canSend={has("whatsapp.send")} canConfigureAssistant={has("whatsapp.configureassistant")} draft={drafts[selected] ?? { body: "" }}
-              updateDraft={update => setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }))} onBack={() => setSelected(undefined)} /> :
+              updateDraft={updateDraft} onBack={back} /> :
               <div className="flex h-full items-center justify-center p-8 text-center text-sm text-[var(--color-content-muted)]">{t("select")}</div>}
           </div>
         </div>
@@ -104,3 +103,16 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
     </Page>
   );
 }
+
+// Memoized: typing a reply changes the drafts of the page, and only the row whose preview turns into «Borrador sin enviar»
+// redraws (performance review 26, 2026-11-07).
+const ChatRow = memo(function ChatRow({ chat, selected, hasDraft, onSelect }: { chat: Chat; selected: boolean; hasDraft: boolean; onSelect: (id: string) => void }) {
+  const { t } = useTranslation("whatsapp");
+  // The open one, as in a list with a detail: the brand tint and a 3 px bar at its start (OE1-A, 2026-11-03).
+  return <div className={cn("border-b border-[var(--color-border)] p-2", selected ? "bg-[var(--color-brand-50)] shadow-[inset_3px_0_0_var(--color-brand-600)]" : "")}>
+    <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected} onClick={() => onSelect(chat.id)}>
+      <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
+    </Button>
+    <p className="truncate px-2 text-xs text-[var(--color-content-muted)]">{hasDraft ? t("draft") : previewText(t, chat.previewPurpose, chat.previewAccessEventKind, chat.preview)}</p>
+  </div>;
+});

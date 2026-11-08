@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateInZone, formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
@@ -14,7 +14,9 @@ import { groupTimelineByDay, type TimelineItem } from "../lib/timeline";
 import { accessSummary } from "../lib/messagePresentation";
 import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 
-export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
+// Memoized: typing a reply redraws the composer, while the history formats a date and a time per message and stays as it
+// was (performance review 26, 2026-11-07). Its owner keeps the items and callbacks with the same identity.
+export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
   atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
   contactId: string; readOwner: string; onAudioForbidden: () => void;
   items: readonly TimelineItem[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
@@ -56,4 +58,4 @@ export function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, ac
       </MessageBubble>)}
     </div>)}
   </MessageHistory>;
-}
+});

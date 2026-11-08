@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError } from "@/shared/api/ApiError";
-import { getThread, markRead, type Thread } from "../api/chat";
+import { getThread, markRead, type ChatMessage, type Thread } from "../api/chat";
 import { mergeMessages } from "../lib/history";
 import { withoutFormReplyValues } from "../lib/threadPrivacy";
 import { createFormReplyReadGate } from "./formReplyReadGate";
@@ -19,6 +19,8 @@ export function useVisibleChat() {
   }, []);
   return visible;
 }
+
+const noMessages: ChatMessage[] = [];
 
 export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolean) {
   const client = useQueryClient();
@@ -87,7 +89,13 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
     read.mutate(sequence, { onSuccess: () => setReadThrough(sequence) });
   }, [enabled, visible, atBottom, latest.data, latest.isError, sequence, readThrough, read, readDenied]);
   const denyRead = useCallback(() => setDeniedScope(scopeStamp), [scopeStamp]);
-  return { denyRead, latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data: enabled && !readDenied && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
-    history: { ...history, data: enabled && !readDenied && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage: () => enabled && !readDenied ? history.fetchNextPage() : Promise.resolve(undefined) },
-    messages: enabled && !readDenied ? messages : [], read, visible, formValuesRevoked: gate.wasGranted && !allowed };
+  // The thread, its messages and loading older ones keep their identity until they change: typing a reply redraws the
+  // composer, not the whole history (performance review 26, 2026-11-07).
+  const data = useMemo(() => enabled && !readDenied && latest.data ? allowed ? latest.data : withoutFormReplyValues(latest.data) : undefined,
+    [enabled, readDenied, latest.data, allowed]);
+  const fetchOlder = history.fetchNextPage;
+  const fetchNextPage = useCallback(() => enabled && !readDenied ? fetchOlder() : Promise.resolve(undefined), [enabled, readDenied, fetchOlder]);
+  return { denyRead, latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
+    history: { ...history, data: enabled && !readDenied && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage },
+    messages: enabled && !readDenied ? messages : noMessages, read, visible, formValuesRevoked: gate.wasGranted && !allowed };
 }

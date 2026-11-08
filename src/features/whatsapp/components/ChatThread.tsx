@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -30,6 +30,9 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   useChatAudioTranscription({ owner: readOwner, contactId: id, enabled: readPermissions.includes("whatsapp.read") && latest.data?.contact.mode === "Manual", messages, onForbidden: denyRead });
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
   const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
+  // The history is memoized: its callbacks keep their identity while the reply is typed.
+  const resendForm = useCallback(() => setFormOpenRequest(value => value + 1), []);
+  const reuse = useCallback((body: string) => updateDraft(value => ({ ...value, body, attempt: undefined })), [updateDraft]);
   const contact = latest.data?.contact;
   const availability = latest.data?.assistantAvailability.state;
   const canEnableAssistant = canConfigureAssistant && availability === "available" && !latest.isError;
@@ -81,11 +84,11 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
         </div>
       </header>
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span>{retryAction}</div> : null}
-      <ChatTimeline contactId={id} readOwner={readOwner} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? ()=>setFormOpenRequest(value=>value+1) : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
+      <ChatTimeline contactId={id} readOwner={readOwner} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? resendForm : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending ? reviewing.variables?.requestId : undefined} onReview={setReview}
-        onReuse={body => updateDraft(value => ({ ...value, body, attempt: undefined }))} atBottom={atBottom} onAtBottomChange={setAtBottom}
+        onReuse={reuse} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}
-        historyError={history.isError} loadOlder={() => history.fetchNextPage()} />
+        historyError={history.isError} loadOlder={history.fetchNextPage} />
       {!atBottom ? <div className="p-2 text-center"><Button size="sm" variant="outline" onClick={() => setAtBottom(true)}>{t("latest")}</Button></div> : null}
       {read.isError ? <div className="p-2 text-sm text-[var(--color-content-muted)]">{t("readFailed")} <Button size="sm" variant="outline" onClick={() => read.reset()}>{t("retry")}</Button></div> : null}
       {contact.mode === "Assistant" ? <section aria-label={t("mode.Assistant")} className="border-t border-[var(--color-border)] p-3"><Banner tone={availabilityReason ? "warning" : "info"} action={canSend ? <Button disabled={changing.isPending || forbidden} onClick={event => { modeTrigger.current = event.currentTarget; setMode({ mode: "Manual", revision: contact.modeRevision }); }}>{t("mode.take")}</Button> : undefined}>{availabilityReason ? <><span>{availabilityReason}</span><br /></> : null}<span>{t("mode.assistantControlDescription")}</span></Banner>{!canSend ? <p className="mt-2 text-sm text-[var(--color-content-muted)]">{t("send.readOnly")}</p> : null}</section> : null}

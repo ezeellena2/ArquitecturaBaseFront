@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
@@ -14,7 +14,7 @@ export function useChatThreadActions(id: string, refresh: () => Promise<unknown>
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
   const [mode, setMode] = useState<{ mode: ChatMode; revision: number }>();
   const [review, setReviewReference] = useState<Pick<Outgoing, "requestId">>();
-  const setReview = (operation: Pick<Outgoing, "requestId"> | undefined) => setReviewReference(operation ? { requestId: operation.requestId } : undefined);
+  const setReview = useCallback((operation: Pick<Outgoing, "requestId"> | undefined) => setReviewReference(operation ? { requestId: operation.requestId } : undefined), []);
   function feedback(error: unknown, uncertain: "mode.uncertain" | "review.uncertain") {
     const result = errorFeedback(error, { writing: true });
     if (active.current && !["session", "cancelled"].includes(result.kind)) notify({ id: feedbackId, kind: "error", message: result.kind === "uncertain" ? t(uncertain) : result.detail ?? t("actionFailed") });
