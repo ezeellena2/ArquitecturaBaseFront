@@ -361,7 +361,7 @@ describe("LoginPage", () => {
       await arriveWithError("Auth.Account.NotInvited");
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Todavía no tenés acceso al sistema. Pedile a un administrador que te dé de alta.",
+        "Todavía no tenés acceso al sistema. Para ingresar, pedile una invitación a un administrador.",
       );
     });
 

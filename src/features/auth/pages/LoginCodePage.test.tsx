@@ -175,7 +175,7 @@ describe("LoginCodePage", () => {
   });
 
   it.each([
-    ["Auth.Account.NotInvited", "Todavía no tenés acceso al sistema. Pedile a un administrador que te dé de alta."],
+    ["Auth.Account.NotInvited", "Todavía no tenés acceso al sistema. Para ingresar, pedile una invitación a un administrador."],
     ["Auth.Account.Disabled", "Tu cuenta está deshabilitada. Contactá a un administrador."],
   ])("ends the attempt when the account can not sign in (%s)", async (code, detail) => {
     verifyFailsWith(403, { code, detail });
@@ -350,7 +350,7 @@ describe("LoginCodePage", () => {
     });
 
     it.each([
-      ["Auth.Account.NotInvited", "Todavía no tenés acceso al sistema. Pedile a un administrador que te dé de alta."],
+      ["Auth.Account.NotInvited", "Todavía no tenés acceso al sistema. Para ingresar, pedile una invitación a un administrador."],
       ["Auth.Account.Disabled", "Tu cuenta está deshabilitada. Contactá a un administrador."],
     ])("ends the attempt when the account can not sign in (%s)", async (code, detail) => {
       verifyFailsWith(403, { code, detail });
