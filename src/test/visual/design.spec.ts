@@ -209,6 +209,36 @@ test("the sticky header preserves keyboard focus in a long editor", async ({ pag
   expect((await name.boundingBox())!.y).toBeGreaterThanOrEqual((await header.boundingBox())!.y + (await header.boundingBox())!.height);
 });
 
+// The keys that move a page move `main`, which is the one that scrolls, also while the focus is in the menu or nowhere:
+// the key hands the focus to the content and the browser moves it with that same key (AppLayout).
+test("the keyboard moves the content of a long editor while the focus is in the menu or nowhere", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await openScreen(page, "/roles/support", "es", "tall");
+  await expect(page.getByRole("table")).toBeVisible();
+  const main = page.getByRole("main");
+  const scrollTop = () => main.evaluate(element => element.scrollTop);
+  // Just opened, as when arriving from the listing: nothing has the focus.
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await page.keyboard.press("PageDown");
+  await expect.poll(scrollTop).toBeGreaterThan(0);
+  const link = page.getByRole("navigation", { name: "Administración" }).getByRole("link", { name: "Roles y permisos" });
+  await link.focus();
+  await page.keyboard.press("Home");
+  await expect.poll(scrollTop).toBe(0);
+  // A link does not use Space: as in any page, it moves the screen down.
+  await link.focus();
+  await page.keyboard.press("Space");
+  await expect.poll(scrollTop).toBeGreaterThan(0);
+  await expect(main).toBeFocused();
+  // A field keeps its keys: End goes to the end of what it says, not to the end of the screen. The browser may still
+  // move the screen a few pixels to show the caret.
+  const description = page.getByRole("textbox", { name: "Descripción" });
+  await description.focus();
+  await page.keyboard.press("End");
+  await expect(description).toBeFocused();
+  expect(await scrollTop()).toBeLessThan(await main.evaluate(element => element.scrollHeight - element.clientHeight));
+});
+
 test("filter menus and removable filters work with keyboard", async ({ page }) => {
   await openScreen(page, "/usuarios");
   const trigger = page.getByRole("button", { name: "Filtrar por rol", exact: true });

@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cancelSignOut } from "@/auth/signOutStatus";
@@ -65,6 +65,57 @@ describe("AppLayout", () => {
     await act(() => router.navigate("/"));
     await screen.findByRole("heading", { level: 1, name: "Inicio" });
     expect(screen.getByRole("complementary")).toBe(sidebar);
+  });
+
+  // Re Pág, Av Pág, Espacio y las flechas mueven lo que tiene el foco, y el que scrollea es `main`: con el foco en el
+  // menú o en ninguna parte no movían nada hasta hacer clic en el contenido. jsdom no scrollea: acá se prueba que la
+  // tecla le pasa el foco al contenido, y `design.spec` prueba en el navegador que la misma tecla lo mueve.
+  it("hands the scrolling keys to the content while nothing has the focus", async () => {
+    renderRouteWithProviders("/perfil");
+    await screen.findByRole("heading", { level: 1, name: "Mi perfil" });
+    expect(document.body).toHaveFocus();
+
+    await userEvent.keyboard("{PageDown}");
+
+    expect(screen.getByRole("main")).toHaveFocus();
+  });
+
+  it("hands the scrolling keys to the content from a link of the menu, Space included", async () => {
+    renderRouteWithProviders("/perfil");
+    const home = within(await screen.findByRole("complementary")).getByRole("link", { name: "Inicio" });
+
+    home.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(screen.getByRole("main")).toHaveFocus();
+
+    // Un enlace no usa Espacio: en una página común, Espacio baja la pantalla.
+    home.focus();
+    await userEvent.keyboard(" ");
+    expect(screen.getByRole("main")).toHaveFocus();
+  });
+
+  it("leaves Space to a button of the menu, which it presses", async () => {
+    renderRouteWithProviders("/perfil");
+    // Con los permisos todavía en camino, en su lugar hay un bloque de carga.
+    const administration = await within(await screen.findByRole("complementary")).findByRole("button", { name: "Administración" });
+    const expanded = administration.getAttribute("aria-expanded");
+
+    administration.focus();
+    await userEvent.keyboard(" ");
+
+    expect(administration).toHaveFocus();
+    expect(administration).not.toHaveAttribute("aria-expanded", expanded);
+  });
+
+  // Ya pasaba antes del cambio; queda para que el contenido nunca le saque las teclas a un campo.
+  it("leaves the keys to a field of the content", async () => {
+    renderRouteWithProviders("/perfil");
+    const name = await screen.findByRole("textbox", { name: /nombre/i });
+
+    name.focus();
+    await userEvent.keyboard("{Home}{PageDown}{ArrowUp} ");
+
+    expect(name).toHaveFocus();
   });
 
   it("reverts the transition and lets the layout render again if signing out fails", async () => {

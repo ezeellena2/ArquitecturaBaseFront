@@ -166,6 +166,10 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - **`AppLayout`** usa `h-svh` y scrollea `<main>`, `relative` (un `sr-only` estira el documento) y con `scroll-pt-14` (más que
   la banda de 48 px: el foco no queda tapado, WCAG 2.4.11). Al imprimir, `print:h-auto` y `print:overflow-visible`. jsdom no
   maqueta: un cambio del caparazón se mira en el navegador.
+- **Teclado en el contenido** (2026-11-07): Re Pág, Av Pág, Inicio, Fin, Espacio y las flechas mueven `<main>` aunque el foco
+  esté en el menú, en la barra o en ninguna parte. `main` lleva `tabIndex={-1}` (también lo toma un clic en un lugar vacío) y
+  la tecla le pasa el foco; el navegador mueve el contenido con esa misma tecla. Se la quedan un control que ya la usó
+  (`defaultPrevented`), un botón con Espacio y todo lo que está dentro del contenido o de un diálogo.
 - **Formulario con ruta propia:** `useUnsavedChangesGuard` frena enlaces, migas, menú y Atrás (recargar lo pregunta el
   navegador). El `reset()` de `useBlocker` pisa `"proceeding"` y `ConfirmDialog` llama `onConfirm` y `onOpenChange(false)`
   en el mismo clic: `stay()` no hace nada tras `leave()`. Guarda apagada con `isDirty && !mutation.isPending`; la vuelta
