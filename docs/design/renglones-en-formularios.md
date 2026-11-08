@@ -158,8 +158,12 @@ Al programar cada etapa se reescribe lo que hoy dice lo contrario:
   - [«Publicar»](formularios-whatsapp.md#publicar-en-whatsapp-pu1-a--2026-11-01) suma «Pasan a renglones», el bloque vacío
     y el aviso del máximo;
   - las [reglas en pasos](formularios-whatsapp.md#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03) y el
-    [mensaje con datos](formularios-whatsapp.md#reglas-el-mensaje-con-datos-md1-a--2026-11-03) suman «algún renglón» y el
-    bloque como dato.
+    [mensaje con datos](formularios-whatsapp.md#reglas-el-mensaje-con-datos-md1-a--2026-11-03) suman «algún ítem» y el
+    bloque como dato: quedaron programados en la Etapa 4 (2026-11-08). Lo que el tablero RG5-A no fijaba se resolvió así:
+    una pregunta del bloque ofrece sólo los operadores con valor, como «Filtros»; cada condición del bloque empieza con
+    «Algún ítem con» y la lista las junta en una línea; «Así llega» lleva un solo ítem de ejemplo, y el aviso pone los
+    números sin separador de miles; las sugerencias cambian igual, porque comparten el editor, la lista y la evaluación. El
+    editor conserva sus tres columnas iguales: el tablero dibujó «Pregunta» el doble de ancha.
 - En [formularios](../../../ArquitecturaBase/docs/features/formularios.md#persistencia-y-responsabilidad), el tipo `group`,
   hoy reservado y rechazado al guardar, pasa a ser el bloque, y cada valor suma su renglón.
 - En [WhatsApp](../../../ArquitecturaBase/docs/features/whatsapp.md), la respuesta de más de 16 KiB, que hoy se marca

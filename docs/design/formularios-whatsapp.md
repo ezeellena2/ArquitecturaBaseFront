@@ -841,7 +841,8 @@ lista y C el botón escribe las llaves. Eligió **A**.
 - **«Agregar dato»** va al final del renglón de «Mensaje» (`FormField action`) y abre una lista con buscador:
   - «De la respuesta»: «Número» y, al rechazar, «Motivo del rechazo»;
   - «Preguntas», en el orden del formulario. No están las fotos ni los documentos, porque sólo llegaría el nombre del
-    archivo.
+    archivo. El bloque de renglones es un dato, con su nombre, y sus preguntas no ([RG5-A](renglones-en-formularios.md),
+    2026-11-08): el aviso lo trae con un ítem por línea.
   - Elegir pone el dato donde quedó el cursor y deja el cursor justo después.
 - **El cuadro** (`RuleMessageField`, un `contenteditable` con `role="textbox"` nombrado por la etiqueta) muestra cada dato
   como una etiqueta con el nombre actual de su pregunta.
@@ -849,7 +850,9 @@ lista y C el botón escribe las llaves. Eligió **A**.
   - Una pregunta que ya no está se ve «Pregunta no disponible», en rojo, y no deja guardar: «Quitá el dato que ya no está
     en el formulario.».
 - **«Así llega»**, debajo, muestra el mensaje con los datos de ejemplo de la vista previa del PDF: «Ejemplo de respuesta»,
-  la primera opción, 16/10/2026, 12.500,5, «Sí» y el número con el prefijo del formulario (VIS-000001).
+  la primera opción, 16/10/2026, 12.500,5, «Sí» y el número con el prefijo del formulario (VIS-000001). El bloque llega con
+  un ítem de ejemplo en su línea, «1. Urea granulada · 12.500,5 · Ejemplo de respuesta», que empieza en una línea nueva salvo
+  al comienzo del mensaje o después de un salto, igual que el aviso.
 - **Qué se guarda:** la pregunta por su identidad, `{FieldId}`. La etiqueta sigue a la pregunta renombrada y el mismo dato
   sirve en los dos idiomas. El servidor convierte al leer las reglas guardadas antes con el nombre.
 - El resumen de la regla (en pasos desde [LR1-A](#reglas-y-sugerencias-en-pasos-lr1-a--2026-11-03)) y «Original (…)» muestran los datos con sus nombres. La (i) de «Mensaje» explica
@@ -872,7 +875,10 @@ una respuesta. Quedó programada el mismo día; la regla general está en [Lectu
   y un círculo tachado cuando se rechaza; las condiciones, el ícono de «Filtros»; pedir aprobación, un escudo; armar el
   PDF, una hoja; el mensaje a quien la cargó, un globo; el aviso a un rol, personas.
 - **Las condiciones, una por renglón:** «Si» y «y» en gris al principio, la pregunta y el valor en negrita y la palabra
-  que los une en gris («Si ¿Llegó en buen estado? es No», «y Cantidad recibida desde 500»).
+  que los une en gris («Si ¿Llegó en buen estado? es No», «y Cantidad recibida desde 500»). Las condiciones con valor sobre
+  preguntas del bloque de renglones van juntas, en el lugar de la primera, porque las cumple un mismo ítem: «Si algún ítem
+  de **Artículos** con **Artículo** es **Glifosato 64%** y **Cantidad** desde **100**» (RG5-A, 2026-11-08). La presencia
+  mira la respuesta entera y va aparte. En el editor, cada una empieza con «Algún ítem con».
 - **Cada acción, un paso:** qué hace en negrita y su dato aparte, en una etiqueta: el rol o «con el PDF». Se ve que el
   PDF se arma antes del mensaje que lo adjunta. El mensaje va entero debajo, en su recuadro, con sus datos como etiquetas.
 - **Las sugerencias, igual:** el formulario y cómo se ofrece, cuándo (sólo con «La IA decide»), si y los datos que pasan
