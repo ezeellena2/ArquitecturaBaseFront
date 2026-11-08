@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useRef, useState } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
-import { fetchFormEntry, fetchFormEntryCorrection, fetchFormEntryOptions, submitFormEntry, submitFormEntryCorrection, type FormEntry, type FormEntrySubmitted } from "../api/entries";
+import { fetchFormEntry, fetchFormEntryCorrection, fetchFormEntryGroups, fetchFormEntryOptions, submitFormEntry, submitFormEntryCorrection, type FormEntry, type FormEntryGroup, type FormEntryQuestion, type FormEntrySubmitted } from "../api/entries";
 import { correctionSignature, entrySignature, keptFileIds, toEntrySend, type EntryDraft } from "../entryForm";
 
 /** The response being corrected (CW10-A): its catalog lists are those of whoever answered it. */
@@ -31,16 +31,38 @@ export function useFormEntry(formId: string) {
  * A catalog question's options for the person who loads, fifty at a time, searched in the server; a list that depends on
  * other answers is read for the ones chosen (CW7).
  */
-export function useEntryOptions(entry: FormEntry, fieldId: string, search: string, enabled: boolean, answers: Readonly<Record<string, string>> = {}) {
+export function useEntryOptions(entry: FormEntry, fieldId: string, search: string, enabled: boolean, answers: Readonly<Record<string, string>> = {},
+  group?: FormEntryGroup) {
   const { owner } = useFormEntryScope();
   const recordId = useContext(EntryRecordContext);
   return useInfiniteQuery({
-    queryKey: ["form-entry-options", owner, entry.definitionId, entry.versionId, fieldId, search, answers, recordId ?? null],
-    queryFn: ({ pageParam, signal }) => fetchFormEntryOptions(entry.definitionId, entry.versionId, fieldId, pageParam, search, signal, answers, recordId),
+    queryKey: ["form-entry-options", owner, entry.definitionId, entry.versionId, fieldId, search, answers, recordId ?? null, group ? ["group", group.id] : null],
+    queryFn: ({ pageParam, signal }) => fetchFormEntryOptions(entry.definitionId, entry.versionId, fieldId, pageParam, search, signal, answers, recordId, group),
     initialPageParam: 1,
     getNextPageParam: last => last.hasNext ? last.page + 1 : undefined,
     enabled, gcTime: 0, retry: false, meta: { errorOwner: "local" },
   });
+}
+
+/** LD1-A: the values of the field a question chooses first by, for the person who loads and the answers its list depends on. */
+export function useEntryGroups(entry: FormEntry, fieldId: string, enabled: boolean, answers: Readonly<Record<string, string>> = {}) {
+  const { owner } = useFormEntryScope();
+  const recordId = useContext(EntryRecordContext);
+  return useQuery({
+    queryKey: ["form-entry-groups", owner, entry.definitionId, entry.versionId, fieldId, answers, recordId ?? null],
+    queryFn: ({ signal }) => fetchFormEntryGroups(entry.definitionId, entry.versionId, fieldId, signal, answers, recordId),
+    enabled, gcTime: 0, retry: false, meta: { errorOwner: "local" },
+  });
+}
+
+/**
+ * LD1-A: the values of the field a question chooses first by and the one in use: the chosen one or, when only one is left, that
+ * one. The pair of lists and the two cells of an item read the same values.
+ */
+export function useEntryGroupChoice(entry: FormEntry, question: FormEntryQuestion, chosen: FormEntryGroup | undefined, enabled: boolean,
+  answers?: Readonly<Record<string, string>>) {
+  const groups = useEntryGroups(entry, question.fieldId, enabled && !!question.catalog?.groupBy, answers);
+  return { groups, group: chosen ?? (groups.data?.length === 1 ? groups.data[0] : undefined) };
 }
 
 /**

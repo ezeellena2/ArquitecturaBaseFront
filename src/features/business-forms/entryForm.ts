@@ -1,4 +1,4 @@
-import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
+import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryGroup, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
 
 /**
  * What the person has loaded, by question: typed values, the chosen options (with the title they saw) and the files.
@@ -12,9 +12,11 @@ export interface EntryDraft {
   kept?: Record<string, FormEntryKeptFile[]>;
   /** The items of the block of rows (RG2-A), by the block's question, in order. */
   rows?: Record<string, EntryItem[]>;
+  /** LD1-A: the value chosen first in each question that chooses first by a field. It is a step of the question: it is never sent. */
+  groups?: Record<string, FormEntryGroup>;
 }
 /** An item of the block: a stable key, for the table and the focus, and the values and options of the block's questions. */
-export interface EntryItem { key: string; values: Record<string, string>; choices: Record<string, FormEntryOption[]> }
+export interface EntryItem { key: string; values: Record<string, string>; choices: Record<string, FormEntryOption[]>; groups?: Record<string, FormEntryGroup> }
 export type EntryProblem = "required" | "choose" | "chooseAtLeast" | "chooseAtMost" | "number" | "date" | "maxLength" | "filesAtLeast" | "filesAtMost"
   | "rowsAtLeast" | "rowsAtMost";
 export type EntryFileProblem = "photoType" | "documentType" | "size" | "count";
@@ -77,8 +79,10 @@ export function entryChoiceInRow(question: FormEntryQuestion): boolean {
  * How many of the three columns a question takes (AR1-A): what has a single value takes one; what needs room, the whole
  * row. The width comes from its type, never from the author.
  */
-export function entryQuestionSpan(question: FormEntryQuestion): 1 | 3 {
+export function entryQuestionSpan(question: FormEntryQuestion): 1 | 2 | 3 {
   if (question.type === "longText" || question.type === "photo" || question.type === "document" || question.type === "group") return 3;
+  // LD1-A: the field to choose first and the question go side by side, a column each.
+  if (question.catalog?.groupBy) return 2;
   if (question.type === "shortText") return question.maxLength !== null && question.maxLength <= 80 ? 1 : 3;
   if (question.type === "multiChoice") return question.catalog ? 1 : 3;
   return 1;
@@ -198,15 +202,33 @@ export function clearDependentChoices(entry: FormEntry, draft: EntryDraft, field
     for (const question of entry.questions)
       if (question.catalog?.dependsOn?.includes(changed) && !cleared.has(question.fieldId)) { cleared.add(question.fieldId); pending.push(question.fieldId); }
   }
-  const keep = (choices: Record<string, FormEntryOption[]>) => Object.fromEntries(Object.entries(choices).filter(([id]) => !cleared.has(id)));
+  const keep = <T,>(choices: Record<string, T>) => Object.fromEntries(Object.entries(choices).filter(([id]) => !cleared.has(id)));
+  // The value chosen first in a cleared list goes with its option (LD1-A): the values were also those of the other answer.
+  const holds = (where: { choices: Record<string, FormEntryOption[]>; groups?: Record<string, FormEntryGroup> }) => [...cleared].some(id => where.choices[id] || where.groups?.[id]);
+  const kept = <T extends { choices: Record<string, FormEntryOption[]>; groups?: Record<string, FormEntryGroup> }>(where: T): T =>
+    ({ ...where, choices: keep(where.choices), ...where.groups ? { groups: keep(where.groups) } : {} });
   const block = entryBlock(entry);
   const items = block ? itemsOf(draft, block.group.fieldId) : [];
-  const touched = items.filter(item => (itemKey === undefined || item.key === itemKey) && [...cleared].some(id => item.choices[id]));
-  const outside = itemKey === undefined && [...cleared].some(id => draft.choices[id]);
+  const touched = items.filter(item => (itemKey === undefined || item.key === itemKey) && holds(item));
+  const outside = itemKey === undefined && holds(draft);
   if (!outside && touched.length === 0) return draft;
-  const next = outside ? { ...draft, choices: keep(draft.choices) } : draft;
-  return touched.length === 0 || !block ? next
-    : withItems(next, block.group.fieldId, items.map(item => touched.includes(item) ? { ...item, choices: keep(item.choices) } : item));
+  const next = outside ? kept(draft) : draft;
+  return touched.length === 0 || !block ? next : withItems(next, block.group.fieldId, items.map(item => touched.includes(item) ? kept(item) : item));
+}
+
+/**
+ * LD1-A: chooses the value of the field a question chooses first by, in the response or in an item. Another value clears the
+ * option chosen for the first one and what depends on it; the same one leaves everything as it was.
+ */
+export function chooseEntryGroup(entry: FormEntry, draft: EntryDraft, fieldId: string, group: FormEntryGroup, itemKey?: string): EntryDraft {
+  const block = entryBlock(entry);
+  const item = itemKey === undefined || !block ? undefined : itemsOf(draft, block.group.fieldId).find(current => current.key === itemKey);
+  const current = (item ?? draft).groups?.[fieldId];
+  if (current && current.id === group.id) return draft;
+  const choose = <T extends { choices: Record<string, FormEntryOption[]>; groups?: Record<string, FormEntryGroup> }>(where: T): T =>
+    ({ ...where, groups: { ...where.groups, [fieldId]: group }, choices: Object.fromEntries(Object.entries(where.choices).filter(([id]) => id !== fieldId)) });
+  const next = item ? changeEntryItem(entry, draft, item.key, choose) : choose(draft);
+  return clearDependentChoices(entry, next, fieldId, item?.key);
 }
 
 /**
@@ -344,24 +366,36 @@ export function carryEntryDraft(previous: FormEntry, draft: EntryDraft, next: Fo
       if (draft.files[question.fieldId]) carried.files[question.fieldId] = draft.files[question.fieldId];
       if (draft.kept?.[question.fieldId]) carried.kept = { ...carried.kept, [question.fieldId]: draft.kept[question.fieldId] };
     }
-    else if (isList(question)) { if (draft.choices[question.fieldId]) carried.choices[question.fieldId] = draft.choices[question.fieldId]; }
+    else if (isList(question)) {
+      // LD1-A: what was chosen under another field to choose first starts again; the same field carries its value.
+      if (question.catalog?.groupBy?.fieldId !== before.catalog?.groupBy?.fieldId) continue;
+      if (draft.choices[question.fieldId]) carried.choices[question.fieldId] = draft.choices[question.fieldId];
+      const group = draft.groups?.[question.fieldId];
+      if (group && question.catalog?.groupBy) carried.groups = { ...carried.groups, [question.fieldId]: group };
+    }
     else if (draft.values[question.fieldId] !== undefined) carried.values[question.fieldId] = draft.values[question.fieldId];
   }
   const block = entryBlock(next), earlier = entryBlock(previous);
   if (block && earlier?.group.fieldId === block.group.fieldId) {
-    const kept = block.questions.filter(question => earlier.questions.some(old => old.fieldId === question.fieldId && old.type === question.type));
-    carried.rows = { [block.group.fieldId]: itemsOf(draft, block.group.fieldId).map(item => ({
-      key: item.key,
-      values: Object.fromEntries(kept.filter(question => item.values[question.fieldId] !== undefined).map(question => [question.fieldId, item.values[question.fieldId]])),
-      choices: Object.fromEntries(kept.filter(question => item.choices[question.fieldId]).map(question => [question.fieldId, item.choices[question.fieldId]])),
-    })) };
+    // A list of the block keeps its options and its value chosen first only under the same field to choose first (LD1-A).
+    const kept = block.questions.filter(question => earlier.questions.some(old => old.fieldId === question.fieldId && old.type === question.type
+      && old.catalog?.groupBy?.fieldId === question.catalog?.groupBy?.fieldId));
+    carried.rows = { [block.group.fieldId]: itemsOf(draft, block.group.fieldId).map(item => {
+      const groups = Object.fromEntries(kept.filter(question => question.catalog?.groupBy && item.groups?.[question.fieldId]).map(question => [question.fieldId, item.groups![question.fieldId]]));
+      return {
+        key: item.key,
+        values: Object.fromEntries(kept.filter(question => item.values[question.fieldId] !== undefined).map(question => [question.fieldId, item.values[question.fieldId]])),
+        choices: Object.fromEntries(kept.filter(question => item.choices[question.fieldId]).map(question => [question.fieldId, item.choices[question.fieldId]])),
+        ...Object.keys(groups).length ? { groups } : {},
+      };
+    }) };
   }
   return carried;
 }
 
-/** «Mantener las respuestas para la siguiente»: everything but the files, the items included. */
+/** «Mantener las respuestas para la siguiente»: everything but the files, the items and the values chosen first included. */
 export function keepForNextEntry(draft: EntryDraft): EntryDraft {
-  return { values: draft.values, choices: draft.choices, files: {}, ...draft.rows ? { rows: draft.rows } : {} };
+  return { values: draft.values, choices: draft.choices, files: {}, ...draft.rows ? { rows: draft.rows } : {}, ...draft.groups ? { groups: draft.groups } : {} };
 }
 
 /** Type, size and count are checked before sending; the server checks the content again. */
@@ -393,11 +427,16 @@ export function correctionDraft(correction: FormEntryCorrection, language: strin
         for (const inner of row) {
           const asked = block.questions.find(value => value.fieldId === inner.fieldId);
           if (asked) correctionAnswer(asked, inner, item.values, item.choices, language);
+          if (asked?.catalog?.groupBy && inner.group) item.groups = { ...item.groups, [asked.fieldId]: inner.group };
         }
         return item;
       }) };
     }
-    else correctionAnswer(question, answer, draft.values, draft.choices, language);
+    else {
+      correctionAnswer(question, answer, draft.values, draft.choices, language);
+      // LD1-A: the first list starts with the value the saved option has now.
+      if (question.catalog?.groupBy && answer.group) draft.groups = { ...draft.groups, [question.fieldId]: answer.group };
+    }
   }
   // A block the replaced response did not answer starts, as a new response does, with its minimum of items.
   if (block && !draft.rows) draft.rows = { [block.group.fieldId]: Array.from({ length: block.group.rows?.minRows ?? 0 }, () => newItem(block.questions)) };

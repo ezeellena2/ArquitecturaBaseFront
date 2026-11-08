@@ -169,3 +169,65 @@ describe("a list that depends on another answer (CW7)", () => {
     expect(requests.at(-1)?.get(`answers[${field}]`)).toBe(esperanza);
   });
 });
+
+// LD1-A (2026-11-07): the question is two lists, the field's first («Rubro») and then its own with only the options of that value.
+describe("choosing first by a field (LD1-A)", () => {
+  const article: FormEntry["questions"][number] = { fieldId: id(511), type: "choice", label: "Artículo", help: null, required: true, maxLength: null, options: null,
+    selection: null, files: null, catalog: { onlyOption: null, issue: null, missingData: null, groupBy: { fieldId: id(513), name: "Rubro" } } };
+  const products: Record<string, { id: string; title: string; description: null }[]> = {
+    Herbicidas: [{ id: id(541), title: "2,4-D 100 %", description: null }, { id: id(542), title: "Glifosato 66,2 %", description: null }],
+    none: [{ id: id(543), title: "Sin clasificar", description: null }],
+  };
+  function serve(groups: { id: string | null; text: string }[]) {
+    const requests: URLSearchParams[] = [];
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.create"] })),
+      http.get("/api/forms/entries/:formId", () => HttpResponse.json({ ...entry(false), questions: [article] })),
+      http.get("/api/forms/entries/:formId/versions/:versionId/questions/:fieldId/groups", () => HttpResponse.json({ groups })),
+      http.get("/api/forms/entries/:formId/versions/:versionId/questions/:fieldId/options", ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        requests.push(query);
+        const items = query.get("withoutGroup") === "true" ? products.none : products[query.get("group") ?? ""] ?? [];
+        return HttpResponse.json({ items, page: 1, pageSize: 50, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+      }),
+    );
+    return requests;
+  }
+
+  it("waits for the value, lists only its options with the value in the count and is cleared when the value changes", async () => {
+    const requests = serve([{ id: "Herbicidas", text: "Herbicidas" }, { id: null, text: "Sin rubro" }]);
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const value = await screen.findByRole("combobox", { name: "Rubro" });
+    const option = screen.getByRole("combobox", { name: "Artículo" });
+    expect(option).toBeDisabled();
+    expect(option).toHaveAttribute("placeholder", "Elegí primero «Rubro»");
+    await user.click(value);
+    const values = await screen.findByRole("listbox", { name: "Rubro" });
+    await waitFor(() => expect(within(values).getAllByRole("option").map(item => item.textContent)).toEqual(["Herbicidas", "Sin rubro"]));
+    await user.click(within(values).getByRole("option", { name: "Herbicidas" }));
+    await waitFor(() => expect(option).toBeEnabled());
+    await user.click(option);
+    const list = await screen.findByRole("listbox", { name: "Artículo" });
+    expect(await within(list).findByText("2 opciones de Herbicidas")).toBeVisible();
+    await user.click(within(list).getByRole("option", { name: "Glifosato 66,2 %" }));
+    expect(option).toHaveValue("Glifosato 66,2 %");
+    expect(requests.at(-1)?.get("group")).toBe("Herbicidas");
+    // Another value clears the option chosen for the first one; the options without a value are asked as such.
+    await user.click(value);
+    await user.click(await screen.findByRole("option", { name: "Sin rubro" }));
+    expect(option).toHaveValue("");
+    await user.click(option);
+    expect(await within(await screen.findByRole("listbox", { name: "Artículo" })).findByRole("option", { name: "Sin clasificar" })).toBeVisible();
+    expect(requests.at(-1)?.get("withoutGroup")).toBe("true");
+    expect(requests.at(-1)?.has("group")).toBe(false);
+  });
+
+  it("comes with the only value already chosen", async () => {
+    serve([{ id: "Herbicidas", text: "Herbicidas" }]);
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const value = await screen.findByRole("combobox", { name: "Rubro" });
+    await waitFor(() => expect(value).toHaveValue("Herbicidas"));
+    expect(screen.getByRole("combobox", { name: "Artículo" })).toBeEnabled();
+  });
+});

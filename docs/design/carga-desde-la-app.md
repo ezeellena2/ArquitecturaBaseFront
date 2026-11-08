@@ -341,8 +341,9 @@ Diferencias con el dibujo:
 
 ## Elegir primero por un campo, LD1-A a LD3-A — 2026-11-07
 
-El editor quedó programado el 2026-11-07; la carga, los renglones y WhatsApp siguen por programar. Una pregunta de
-catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones con ese valor, como dibujan
+El editor y la carga, también en la tabla de ítems, quedaron programados el 2026-11-07; WhatsApp y LD3-A siguen por
+programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones
+con ese valor, como dibujan
 **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma pantalla») y, para las listas
 dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
 [lienzo provisorio](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en las filas «Formularios · un combo que filtra el
@@ -378,5 +379,7 @@ Diferencias con el dibujo:
 - La (i) de la casilla y los motivos de las dos casillas apagadas no se dibujaron: «No se combina con «Permitir elegir
   varias».» y, en «Permitir elegir varias», «No se combina con «Elegir primero por un campo».». «Campo» ocupa media fila,
   como «Pregunta» y «Tipo».
+- En la carga, la lista del campo es un combo con búsqueda, como la de la pregunta, y dice «Elegí una opción» hasta elegir;
+  en una sola columna (el panel y el celular) el par va uno debajo del otro.
 - Los círculos naranjas y el renglón punteado de WhatsApp («Artículos: aparece al elegir el rubro») son notas del tablero,
   no UI.

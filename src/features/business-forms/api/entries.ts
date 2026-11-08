@@ -15,9 +15,10 @@ const questionSchema = z.strictObject({
   options: z.array(z.strictObject({ id: z.string().uuid(), label: z.string().min(1) })).min(1).nullable(),
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).nullable(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).nullable(),
-  // A list that depends on other answers (CW7) names those questions and waits for them, with nothing chosen beforehand.
+  // A list that depends on other answers (CW7) names those questions and waits for them, with nothing chosen beforehand. One that
+  // chooses first by a field (LD1-A) names that field: its values come first and the list brings only the options of the one chosen.
   catalog: z.strictObject({ onlyOption: entryOptionSchema.nullable(), issue: z.string().min(1).nullable(), missingData: z.string().min(1).nullable(),
-    dependsOn: z.array(z.string().uuid()).min(1).optional() }).nullable(),
+    dependsOn: z.array(z.string().uuid()).min(1).optional(), groupBy: z.strictObject({ fieldId: z.string().uuid(), name: z.string().min(1) }).optional() }).nullable(),
   // The title of the section that starts at this question (CW15-B): the page opens a zone with it.
   section: z.string().min(1).max(80).optional(),
   // The block of rows (RG2-A) says how many items it takes; its questions follow it, marked as repeated.
@@ -52,14 +53,18 @@ const optionsPageSchema = z.strictObject({
   items: z.array(entryOptionSchema), page: z.number().int().positive(), pageSize: z.number().int().positive(),
   totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean(),
 });
+/** LD1-A: a value of the field to choose first, as the options take it; a null id stands for the options without a value («Sin rubro»). */
+const entryGroupSchema = z.strictObject({ id: z.string().min(1).max(300).nullable(), text: z.string().min(1) });
+const groupsSchema = z.strictObject({ groups: z.array(entryGroupSchema) });
 const submittedSchema = z.strictObject({
   recordId: z.string().uuid(), number: z.string().min(1),
   state: z.enum(["Received", "PendingApproval", "Approved", "Rejected"]), submittedAtUtc: z.iso.datetime(),
 });
 // What a correction opens (CW10-A): the active version and the response mapped to it, its answers and its files. The block's
 // answer carries its items, each with the answers of its questions as at the top.
+// LD1-A: an answer of a question that chooses first by a field carries the value its saved option has now, which the first list starts with.
 const correctionAnswerSchema = z.strictObject({ fieldId: z.string().uuid(), value: z.string().nullable(), choiceIds: z.array(z.string().uuid()).nullable(),
-  options: z.array(entryOptionSchema).nullable() });
+  options: z.array(entryOptionSchema).nullable(), group: entryGroupSchema.optional() });
 const correctionSchema = z.strictObject({
   entry: formEntrySchema, recordId: z.string().uuid(), number: z.string().min(1),
   answers: z.array(correctionAnswerSchema.extend({ rows: z.array(z.array(correctionAnswerSchema)).optional() })),
@@ -72,6 +77,7 @@ export type FormEntryKeptFile = FormEntryCorrection["files"][number];
 export type FormEntryQuestion = FormEntry["questions"][number];
 export type FormEntryOption = z.infer<typeof entryOptionSchema>;
 export type FormEntryOptionsPage = z.infer<typeof optionsPageSchema>;
+export type FormEntryGroup = z.infer<typeof entryGroupSchema>;
 export type FormEntrySubmitted = z.infer<typeof submittedSchema>;
 /** An answer of an item of the block: the canonical value of one of its questions. */
 export interface FormEntryItemAnswer { fieldId: string; value: string }
@@ -87,6 +93,7 @@ function read<T>(schema: z.ZodType<T>, body: unknown): T {
 }
 export const readFormEntry = (body: unknown) => read(formEntrySchema, body);
 export const readFormEntryOptions = (body: unknown) => read(optionsPageSchema, body);
+export const readFormEntryGroups = (body: unknown) => read(groupsSchema, body);
 export const readFormEntrySubmitted = (body: unknown) => read(submittedSchema, body);
 export const readFormEntryCorrection = (body: unknown) => read(correctionSchema, body);
 
@@ -102,13 +109,28 @@ export async function fetchFormEntry(formId: string, signal: AbortSignal): Promi
  * While correcting a response (CW10-A) they are the options of whoever answered it.
  */
 export async function fetchFormEntryOptions(formId: string, versionId: string, fieldId: string, page: number, search: string,
-  signal: AbortSignal, answers: Readonly<Record<string, string>> = {}, recordId?: string): Promise<FormEntryOptionsPage> {
+  signal: AbortSignal, answers: Readonly<Record<string, string>> = {}, recordId?: string, group?: FormEntryGroup): Promise<FormEntryOptionsPage> {
   const params = new URLSearchParams({ page: String(page), pageSize: "50" });
   if (search) params.set("search", search);
   for (const [questionId, optionId] of Object.entries(answers)) params.set(`answers[${uuid.parse(questionId)}]`, uuid.parse(optionId));
+  // LD1-A: only the options of the value chosen first, or those without one.
+  if (group) { if (group.id === null) params.set("withoutGroup", "true"); else params.set("group", group.id); }
   const base = recordId ? correctionPath(formId, recordId) : entryPath(formId);
   return readFormEntryOptions(await api.get<unknown>(`${base}/versions/${uuid.parse(versionId)}/questions/${uuid.parse(fieldId)}/options?${params}`,
     { signal, cache: "no-store" }));
+}
+/**
+ * LD1-A: the values of the field a question chooses first by, after the same filters as its options (and the same answers of a
+ * dependent list); while correcting, those of whoever answered.
+ */
+export async function fetchFormEntryGroups(formId: string, versionId: string, fieldId: string, signal: AbortSignal,
+  answers: Readonly<Record<string, string>> = {}, recordId?: string): Promise<FormEntryGroup[]> {
+  const params = new URLSearchParams();
+  for (const [questionId, optionId] of Object.entries(answers)) params.set(`answers[${uuid.parse(questionId)}]`, uuid.parse(optionId));
+  const base = recordId ? correctionPath(formId, recordId) : entryPath(formId);
+  const query = params.size ? "?" + params : "";
+  return readFormEntryGroups(await api.get<unknown>(`${base}/versions/${uuid.parse(versionId)}/questions/${uuid.parse(fieldId)}/groups${query}`,
+    { signal, cache: "no-store" })).groups;
 }
 function correctionPath(formId: string, recordId: string): string {
   return entryPath(formId) + "/records/" + uuid.parse(recordId);

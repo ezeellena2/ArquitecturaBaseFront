@@ -9,8 +9,8 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { CloseIcon } from "@/shared/ui/icons";
-import type { FormEntry, FormEntryOption, FormEntryQuestion } from "../api/entries";
-import { useEntryOptions } from "../hooks/useFormEntry";
+import type { FormEntry, FormEntryGroup, FormEntryOption, FormEntryQuestion } from "../api/entries";
+import { useEntryOptions, type useEntryGroups } from "../hooks/useFormEntry";
 
 interface Props {
   entry: FormEntry;
@@ -29,6 +29,8 @@ interface Props {
   waitingFor?: string;
   /** The titles of the answers it depends on, which the count of the list names («4 opciones de El Ombú»). */
   answerTitle?: string;
+  /** LD1-A: the value chosen first in the field the question chooses first by; the list brings only its options. */
+  group?: FormEntryGroup;
 }
 
 /**
@@ -40,13 +42,38 @@ export function EntryCatalogField(props: Props) {
   return mobile ? <MobileCatalogField {...props}/> : <DesktopCatalogField {...props}/>;
 }
 
-function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled: boolean, answers?: Readonly<Record<string, string>>) {
+function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled: boolean, answers?: Readonly<Record<string, string>>, group?: FormEntryGroup) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   useEffect(() => { const timer = window.setTimeout(() => setDebounced(search.trim()), 300); return () => window.clearTimeout(timer); }, [search]);
-  const options = useEntryOptions(entry, question.fieldId, debounced, enabled, answers);
+  const options = useEntryOptions(entry, question.fieldId, debounced, enabled, answers, group);
   const items = options.data?.pages.flatMap(page => page.items) ?? [];
   return { search, setSearch, debounced, options, items, total: options.data?.pages[0]?.totalCount };
+}
+
+const groupKey = (group: FormEntryGroup) => group.id === null ? "none" : "value:" + group.id;
+
+/**
+ * LD1-A: the first list of a question that chooses first by a field, named by that field («Rubro»). It holds the values its options
+ * have after the filters, in their order and with the options without one last («Sin rubro»); typing narrows them.
+ */
+export function EntryGroupField({ groups, value, onChange, id, label, invalid, describedBy, disabled, waitingFor, culture }: {
+  groups: ReturnType<typeof useEntryGroups>; value?: FormEntryGroup; onChange: (group: FormEntryGroup) => void; id: string; label: string;
+  invalid?: boolean; describedBy?: string; disabled?: boolean; waitingFor?: string; culture: string;
+}) {
+  const { t } = useTranslation("formEntries");
+  const [search, setSearch] = useState<string | null>(null);
+  const items = groups.data ?? [];
+  const typed = search?.trim() ?? "";
+  const shown = typed ? items.filter(group => group.text.toLocaleLowerCase(culture).includes(typed.toLocaleLowerCase(culture))) : items;
+  const state = <ListState loading={groups.isPending && !disabled} failed={groups.isError} empty={groups.isSuccess && shown.length === 0} search={typed}
+    onRetry={() => void groups.refetch()}/>;
+  return <Autocomplete id={id} aria-label={label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled} dropdown
+    placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : value ? undefined : t("page.choose")}
+    value={search ?? value?.text ?? ""} onValueChange={setSearch} onBlur={() => setSearch(null)}
+    status={shown.length === 0 ? state ?? undefined : undefined}
+    options={shown.map(group => ({ id: groupKey(group), label: group.text, selected: !!value && group.id === value.id }))}
+    onSelect={key => { const group = items.find(item => groupKey(item) === key); setSearch(null); if (group) onChange(group); }}/>;
 }
 
 // Inside the desktop list a button keeps the focus in the field: otherwise the field's blur closes the list before the click.
@@ -60,13 +87,13 @@ function ListState({ loading, failed, empty, search, onRetry }: { loading: boole
   return null;
 }
 
-function DesktopCatalogField({ entry, question, chosen, onChange, id, label, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
+function DesktopCatalogField({ entry, question, chosen, onChange, id, label, invalid, describedBy, disabled, answers, waitingFor, answerTitle, group }: Props) {
   const { t } = useTranslation("formEntries");
   const multiple = question.type === "multiChoice";
   const max = question.selection?.maxSelected ?? 1;
   const [opened, setOpened] = useState(false);
   const [typing, setTyping] = useState(false);
-  const list = useOptionsSearch(entry, question, opened && !disabled, answers);
+  const list = useOptionsSearch(entry, question, opened && !disabled, answers, group);
   // The count of the list names the answer it depends on (CW7): «4 opciones de El Ombú».
   const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
   const single = multiple ? undefined : chosen[0];
@@ -107,13 +134,13 @@ function DesktopCatalogField({ entry, question, chosen, onChange, id, label, inv
 }
 
 /** In the phone the list opens full screen, with the search on top, rows of 56 and, choosing several, «Listo» at the foot. */
-function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle }: Props) {
+function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle, group }: Props) {
   const { t } = useTranslation("formEntries");
   const multiple = question.type === "multiChoice";
   const max = question.selection?.maxSelected ?? 1;
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<FormEntryOption[]>([]);
-  const list = useOptionsSearch(entry, question, open, answers);
+  const list = useOptionsSearch(entry, question, open, answers, group);
   const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
   const full = multiple && picked.length >= max;
   const close = () => { setOpen(false); list.setSearch(""); };

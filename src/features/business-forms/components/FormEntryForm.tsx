@@ -12,13 +12,14 @@ import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
-import type { FormEntry, FormEntryOption, FormEntryQuestion } from "../api/entries";
+import type { FormEntry, FormEntryGroup, FormEntryOption, FormEntryQuestion } from "../api/entries";
 import {
-  addEntryItem, changeEntryItem, clearDependentChoices, entryAnswered, entryBlock, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileCount,
+  addEntryItem, changeEntryItem, chooseEntryGroup, clearDependentChoices, entryAnswered, entryBlock, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileCount,
   entryItemPath, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, moveEntryItem, removeEntryItem, type EntryDraft, type EntryItem,
   type EntryZone,
 } from "../entryForm";
-import { EntryCatalogField } from "./EntryCatalogField";
+import { useEntryGroupChoice } from "../hooks/useFormEntry";
+import { EntryCatalogField, EntryGroupField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
 
 interface Props {
@@ -84,7 +85,7 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     ? <EntryBlock key={item.fieldId} entry={entry} group={item} questions={block.questions} draft={draft} onChange={onChange} errors={errors} disabled={disabled}
       cards={columns === 1} narrowClass={narrowClass} boxColumns={boxColumns}/>
     : <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
-      narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]}/>;
+      narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]} pairInRow={columns > 1}/>;
 
   const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
   // Folded, a zone says how many questions were answered; the files zone says what was attached, as CW16 draws it.
@@ -103,6 +104,9 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
     </div>)}</div>
   </CollapsibleSection>)}</div>;
 }
+
+// The key of the column of the field to choose first (LD1-A), before the question's own.
+const groupColumn = "group:";
 
 // What a question of the block takes in the table: number and date stay narrow (CW12), and texts and lists get room to read.
 function cellWidth(question: FormEntryQuestion): string | undefined {
@@ -131,8 +135,10 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
     onMove: (key: string, offset: -1 | 1) => onChange(moveEntryItem(entry, draft, key, offset)),
   };
   const path = (index: number, question: FormEntryQuestion) => entryItemPath(group.fieldId, index, question.fieldId);
-  const tableColumns: ItemTableColumn[] = questions.map(question => ({ key: question.fieldId, label: question.label, required: question.required,
-    numeric: question.type === "decimal", className: cellWidth(question) }));
+  // LD1-A: a question that chooses first by a field takes two columns, the field's («Rubro») and its own; each item chooses its own.
+  const tableColumns: ItemTableColumn[] = questions.flatMap(question => [
+    ...question.catalog?.groupBy ? [{ key: groupColumn + question.fieldId, label: question.catalog.groupBy.name, required: question.required, className: "min-w-44" }] : [],
+    { key: question.fieldId, label: question.label, required: question.required, numeric: question.type === "decimal", className: cellWidth(question) }]);
   return <div className="flex flex-col gap-1.5" data-entry-question={group.fieldId}>
     <Label asChild><span id={id + "-label"}>{group.label}{group.required ? <span aria-hidden="true"> *</span> : null}</span></Label>
     {cards
@@ -140,11 +146,44 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
         onChange={onChange} error={errors[path(index, question)]} disabled={disabled} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}/>)}</ItemCards>
       : <ItemTable {...list} label={group.label} columns={tableColumns} error={(_, column, index) => errors[entryItemPath(group.fieldId, index, column.key)]}
         cell={(item, column, context) => {
-          const question = questions.find(current => current.fieldId === column.key)!;
+          const value = column.key.startsWith(groupColumn);
+          const question = questions.find(current => current.fieldId === (value ? column.key.slice(groupColumn.length) : column.key))!;
           return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} boxColumns={boxColumns}
-            item={item} path={path(context.index, question)} cell={context}/>;
+            item={item} path={path(context.index, question)} cell={context} part={value ? "group" : "options"}/>;
         }}/>}
     {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
+  </div>;
+}
+
+/**
+ * LD1-A (2026-11-07): a question that chooses first by a field is two lists, the field's («Rubro») and its own, which waits for the
+ * value and brings only its options («75 opciones de Herbicidas»). Another value clears the option; when only one value is left it
+ * comes chosen. In the table each list is a column of its own; elsewhere the pair goes side by side or, in one column, stacked.
+ */
+function EntryGroupedCatalog({ entry, question, draft, onChange, item, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle, chosen, onChoose,
+  cell, part, pairInRow, label, message, messageId, error, questionKey }: {
+  entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; item?: EntryItem; id: string; invalid: boolean;
+  describedBy?: string; disabled: boolean; answers?: Readonly<Record<string, string>>; waitingFor?: string; answerTitle?: string; chosen: FormEntryOption[];
+  onChoose: (chosen: FormEntryOption[]) => void; cell?: ItemCellContext; part?: "group" | "options"; pairInRow: boolean; label: ReactNode; message?: string;
+  messageId: string; error?: string; questionKey: string;
+}) {
+  const groupBy = question.catalog!.groupBy!;
+  const stored = (item ?? draft).groups?.[question.fieldId];
+  const { groups, group } = useEntryGroupChoice(entry, question, stored, !disabled, answers);
+  const groupId = id + "-group";
+  // Choosing the value already in use, such as the only one, changes nothing.
+  const choose = (next: FormEntryGroup) => { if (!group || next.id !== group.id) onChange(chooseEntryGroup(entry, draft, question.fieldId, next, item?.key)); };
+  const groupField = <EntryGroupField groups={groups} value={group} onChange={choose} id={groupId} label={cell && part === "group" ? cell.label : groupBy.name}
+    invalid={cell && part === "group" ? cell.invalid : undefined} describedBy={cell && part === "group" ? cell.describedBy : undefined} disabled={disabled}
+    waitingFor={waitingFor} culture={entry.culture}/>;
+  const optionsField = <EntryCatalogField entry={entry} question={question} chosen={chosen} id={id} label={cell?.label} invalid={invalid} describedBy={describedBy}
+    disabled={disabled || !group} answers={answers} group={group} waitingFor={waitingFor ?? (group ? undefined : groupBy.name)}
+    answerTitle={[answerTitle, group?.text].filter(Boolean).join(" · ") || undefined} onChange={onChoose}/>;
+  if (cell) return part === "group" ? groupField : optionsField;
+  return <div className={"grid gap-x-5 gap-y-3 " + (pairInRow ? "grid-cols-2" : "grid-cols-1")} data-entry-question={questionKey}>
+    <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor={groupId}>{groupBy.name}</Label>{groupField}</div>
+    <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor={id}>{label}</Label>{optionsField}
+      {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}</div>
   </div>;
 }
 
@@ -157,7 +196,7 @@ function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { bef
     {before === undefined ? null : <p className="text-xs text-[var(--color-content-muted)]">{before === "" ? t("correction.beforeEmpty") : t("correction.before", { value: before })}</p>}</div>;
 }
 
-function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns, item, path, cell }: {
+function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns, item, path, cell, pairInRow = false, part }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
@@ -168,6 +207,10 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   path?: string;
   /** In a cell of the table of items: only the control, named by the table, which says its problem under the row. */
   cell?: ItemCellContext;
+  /** LD1-A: the two lists of a question that chooses first by a field go side by side; otherwise, one under the other. */
+  pairInRow?: boolean;
+  /** LD1-A: in a cell, which of the two lists of that question the column holds. */
+  part?: "group" | "options";
 }) {
   const { t } = useTranslation("formEntries");
   const key = path ?? question.fieldId;
@@ -216,13 +259,17 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
     const waitingFor = answers ? undefined : entry.questions.find(other => question.catalog?.dependsOn?.includes(other.fieldId) && !answerOf(other.fieldId)?.length)?.label;
     const answerTitle = question.catalog.dependsOn?.map(fieldId => answerOf(fieldId)?.[0]?.title).join(" · ");
     const before = (choices[question.fieldId] ?? []).map(option => option.id).join();
+    const chooseOptions = (chosen: FormEntryOption[]) => {
+      const next = changed({ choices: { [question.fieldId]: chosen } });
+      onChange(chosen.map(option => option.id).join() === before ? next : clearDependentChoices(entry, next, question.fieldId, item?.key));
+    };
+    if (question.catalog.groupBy) return <EntryGroupedCatalog entry={entry} question={question} draft={draft} onChange={onChange} item={item} id={id}
+      invalid={cell ? cell.invalid : !!error} describedBy={cell ? cell.describedBy : message ? messageId : undefined} disabled={blocked || !answers}
+      answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined} chosen={choices[question.fieldId] ?? []} onChoose={chooseOptions}
+      cell={cell} part={part} pairInRow={pairInRow} label={labelText} message={message} messageId={messageId} error={error} questionKey={key}/>;
     return grouped(<EntryCatalogField entry={entry} question={question} chosen={choices[question.fieldId] ?? []} id={id} label={cell?.label}
       invalid={cell ? cell.invalid : !!error} describedBy={cell ? cell.describedBy : message ? messageId : undefined} disabled={blocked || !answers}
-      answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined}
-      onChange={chosen => {
-        const next = changed({ choices: { [question.fieldId]: chosen } });
-        onChange(chosen.map(option => option.id).join() === before ? next : clearDependentChoices(entry, next, question.fieldId, item?.key));
-      }}/>);
+      answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined} onChange={chooseOptions}/>);
   }
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
     invalid={!!error} describedBy={describedBy} disabled={disabled} kept={draft.kept?.[question.fieldId]}

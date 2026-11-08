@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, clearDependentChoices, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, chooseEntryGroup, clearDependentChoices, correctionDraft, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -162,5 +162,50 @@ describe("lists that depend on another answer (CW7)", () => {
       [ids.extra]: [option(ids.density, "Glifosato")] } };
     expect(clearDependentChoices(dependent, draft, ids.lot)).toEqual({ values: { [ids.notes]: "ok" }, files: {}, choices: { [ids.lot]: [option(ids.only, "El Ombú")] } });
     expect(clearDependentChoices(dependent, draft, ids.extra)).toBe(draft);
+  });
+});
+
+// LD1-A: the value chosen first is a step of the question that is never sent; another value clears the option chosen for the first.
+describe("choosing first by a field (LD1-A)", () => {
+  const groupBy = { fieldId: ids.date, name: "Rubro" };
+  const article = question(ids.lot, "choice", { required: false, catalog: { onlyOption: null, issue: null, missingData: null, groupBy } });
+  const dose = question(ids.crop, "choice", { required: false, catalog: { onlyOption: null, issue: null, missingData: null, dependsOn: [ids.lot] } });
+  const grouped: FormEntry = { ...entry, questions: [article, dose] };
+  const option = (id: string, title: string) => ({ id, title, description: null });
+  const herbicides = { id: "Herbicidas", text: "Herbicidas" }, none = { id: null, text: "Sin rubro" };
+
+  it("takes two columns, the field's and the question's", () => {
+    expect(entryQuestionSpan(article)).toBe(2);
+    expect(entryRows([article, dose], 3).map(row => row.length)).toEqual([2]);
+    expect(entryRows([article, dose], 2).map(row => row.length)).toEqual([1, 1]);
+  });
+
+  it("clears the option and what depends on it when another value is chosen, and keeps them with the same one", () => {
+    const draft = { values: {}, files: {}, groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")], [ids.crop]: [option(ids.soy, "1 l/ha")] } };
+    expect(chooseEntryGroup(grouped, draft, ids.lot, herbicides)).toBe(draft);
+    expect(chooseEntryGroup(grouped, draft, ids.lot, none)).toEqual({ values: {}, files: {}, groups: { [ids.lot]: none }, choices: {} });
+  });
+
+  it("is not sent, stays for the next response and does not carry to a question that chooses first by another field", () => {
+    const draft = { values: {}, files: {}, groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")] } };
+    expect(toEntrySend(grouped, draft, "00000000-0000-4000-8000-0000000000c1").answers).toEqual([{ fieldId: ids.lot, value: ids.only }]);
+    expect(keepForNextEntry(draft).groups).toEqual({ [ids.lot]: herbicides });
+    expect(carryEntryDraft(grouped, draft, grouped)).toMatchObject({ groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")] } });
+    const other: FormEntry = { ...grouped, questions: [{ ...article, catalog: { ...article.catalog!, groupBy: { fieldId: ids.notes, name: "Tipo" } } }, dose] };
+    expect(carryEntryDraft(grouped, draft, other)).toEqual({ values: {}, choices: {}, files: {} });
+  });
+
+  it("clears the value of a list that depends on a changed answer, with its option", () => {
+    const zone = question(ids.extra, "choice", { catalog: { onlyOption: null, issue: null, missingData: null } });
+    const byZone = question(ids.lot, "choice", { catalog: { onlyOption: null, issue: null, missingData: null, dependsOn: [ids.extra], groupBy } });
+    const draft = { values: {}, files: {}, groups: { [ids.lot]: herbicides }, choices: { [ids.extra]: [option(ids.only, "Norte")], [ids.lot]: [option(ids.soy, "2,4-D")] } };
+    expect(clearDependentChoices({ ...entry, questions: [zone, byZone] }, draft, ids.extra))
+      .toEqual({ values: {}, files: {}, groups: {}, choices: { [ids.extra]: [option(ids.only, "Norte")] } });
+  });
+
+  it("starts a correction with the value of the saved option", () => {
+    const answers = [{ fieldId: ids.lot, value: ids.only, choiceIds: null, options: [option(ids.only, "2,4-D")], group: herbicides }];
+    expect(correctionDraft({ entry: grouped, recordId: ids.photos, number: "SIE-000001", answers, files: [] }, "es"))
+      .toMatchObject({ groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")] } });
   });
 });
