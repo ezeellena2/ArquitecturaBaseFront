@@ -231,10 +231,7 @@ test("saving the options of a long Manual catalog keeps the place on the screen"
   const before = await scrollTop();
   expect(before).toBeGreaterThan(0);
   await page.evaluate(() => (globalThis as unknown as { catalogsFixture: HeldOptions }).catalogsFixture.holdItems());
-  // A click where the button is, as with the mouse: Playwright's click first brings the button into view, and a control of the
-  // sticky band moves the screen when it is brought into view.
-  const save = (await page.getByRole("button", { name: "Guardar", exact: true }).boundingBox())!;
-  await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2);
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect.poll(options).toBe(true);
   expect(await scrollTop()).toBe(before);
   await page.evaluate(() => (globalThis as unknown as { catalogsFixture: HeldOptions }).catalogsFixture.releaseItems());

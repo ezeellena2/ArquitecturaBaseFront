@@ -116,7 +116,8 @@ export function AppLayout() {
 
             `scroll-pt-14` (el alto de la banda de `Page`) porque la banda está adherida arriba de `main` y tapa
             lo que queda debajo. Sin ese margen, el navegador da por visible un control que la banda tapa entero:
-            con Shift+Tab, el foco caía detrás de la banda y `main` no se movía (WCAG 2.4.11).
+            con Shift+Tab, el foco caía detrás de la banda y `main` no se movía (WCAG 2.4.11). Los controles de la
+            banda lo compensan con el mismo valor en negativo (ver `Page`): llegar a uno con Tab no mueve `main`.
 
             `tabIndex={-1}` para que tome el foco cuando le pasan las teclas que mueven la pantalla (ver el efecto
             de arriba) o cuando se hace clic en un lugar vacío del contenido, sin sumarse al recorrido con Tab. Sin

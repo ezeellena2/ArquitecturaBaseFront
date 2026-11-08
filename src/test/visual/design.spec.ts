@@ -239,6 +239,25 @@ test("the keyboard moves the content of a long editor while the focus is in the 
   expect(await scrollTop()).toBeLessThan(await main.evaluate(element => element.scrollHeight - element.clientHeight));
 });
 
+// The scroll padding of `main` keeps a focused control out from under the sticky band; a control of the band itself is
+// always in sight, so reaching it with the keyboard does not move the content.
+test("reaching a control of the sticky band with the keyboard does not move the content", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await openScreen(page, "/roles/support", "es", "tall");
+  await expect(page.getByRole("table")).toBeVisible();
+  const main = page.getByRole("main");
+  const scrollTop = () => main.evaluate(element => element.scrollTop);
+  await main.evaluate(element => { element.scrollTop = 400; });
+  // The first control of the content, focused where it is: Shift+Tab goes from it to the last control of the band.
+  await page.getByRole("textbox", { name: /^Nombre/ }).evaluate(element => (element as HTMLElement).focus({ preventScroll: true }));
+  await page.keyboard.press("Shift+Tab");
+  await expect(main.locator("header").getByRole("link", { name: "Cancelar" })).toBeFocused();
+  expect(await scrollTop()).toBe(400);
+  await page.keyboard.press("Shift+Tab");
+  await expect(main.locator("header").getByRole("link", { name: "Volver a Roles y permisos" })).toBeFocused();
+  expect(await scrollTop()).toBe(400);
+});
+
 test("filter menus and removable filters work with keyboard", async ({ page }) => {
   await openScreen(page, "/usuarios");
   const trigger = page.getByRole("button", { name: "Filtrar por rol", exact: true });

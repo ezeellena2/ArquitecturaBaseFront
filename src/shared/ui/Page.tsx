@@ -51,7 +51,10 @@ export function Page({
   const { t } = useTranslation();
   const content = (
     <>
-      <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:py-1.5 max-sm:static">
+      {/* `main` lleva `scroll-pt-14` para que un control enfocado no quede tapado por esta banda, y el navegador también
+          lo aplica a los controles de la banda, que siempre están a la vista: llegar a uno con Tab movía el contenido.
+          Mientras es adherida, sus controles compensan ese margen con el mismo valor en negativo. */}
+      <header className="sticky top-0 z-20 flex min-h-12 flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[var(--color-border)] bg-[var(--color-page-header)] px-5 py-2 sm:py-1.5 sm:**:-scroll-mt-14 max-sm:static">
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 sm:flex-nowrap max-sm:basis-full">
           {backTo ? (
             <ActionTooltip label={backTo.label}>

@@ -164,8 +164,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   `DisabledReason`: tooltip sobre un span enfocable y descripción accesible; dentro de `FormField` reenvía `id`,
   `aria-invalid` y `aria-describedby` al control.
 - **`AppLayout`** usa `h-svh` y scrollea `<main>`, `relative` (un `sr-only` estira el documento) y con `scroll-pt-14` (más que
-  la banda de 48 px: el foco no queda tapado, WCAG 2.4.11). Al imprimir, `print:h-auto` y `print:overflow-visible`. jsdom no
-  maqueta: un cambio del caparazón se mira en el navegador.
+  la banda de 48 px: el foco no queda tapado, WCAG 2.4.11). Los controles de la banda adherida de `Page` compensan ese margen
+  con el mismo valor en negativo (`sm:**:-scroll-mt-14`): llegar a uno con Tab no mueve el contenido. Al imprimir,
+  `print:h-auto` y `print:overflow-visible`. jsdom no maqueta: un cambio del caparazón se mira en el navegador.
 - **Teclado en el contenido** (2026-11-07): Re Pág, Av Pág, Inicio, Fin, Espacio y las flechas mueven `<main>` aunque el foco
   esté en el menú, en la barra o en ninguna parte. `main` lleva `tabIndex={-1}` (también lo toma un clic en un lugar vacío) y
   la tecla le pasa el foco; el navegador mueve el contenido con esa misma tecla. Se la quedan un control que ya la usó
