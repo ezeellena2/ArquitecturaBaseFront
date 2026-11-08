@@ -1,7 +1,9 @@
 import type { FormDefinitionSnapshot, FormCulture } from "@/features/business-forms/model";
 import type { FormRuleSet } from "@/features/business-forms/api/rules";
 // Synthetic configuration persistence for the chosen G1 screen; no provider is called.
-export function createRuleVisualFixtures(culture: FormCulture, definition: () => FormDefinitionSnapshot | undefined, seeded = false) {
+// `seed` saves a revision before the screen opens: «reading» has the three rules of LR1-A and «rows», one rule on the block of
+// rows of «forms-rows» (RG5-A).
+export function createRuleVisualFixtures(culture: FormCulture, definition: () => FormDefinitionSnapshot | undefined, seed: "reading" | "rows" | null = null) {
   const revisions: FormRuleSet[] = [];
   const writes: { expectedRevision: number; rules: FormRuleSet["rules"] }[] = [];
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -10,7 +12,7 @@ export function createRuleVisualFixtures(culture: FormCulture, definition: () =>
   // Board LR1-A: three saved rules as the user wrote them, read in steps: one condition and a notice to a role, three
   // conditions and an approval, and three actions with the PDF attached.
   const form = definition();
-  if (seeded && form) {
+  if (seed === "reading" && form) {
     const field = (index: number) => form.draft.fields[index].fieldId!;
     const [customer, amount, completed, notes] = [field(0), field(2), field(4), field(5)];
     const number = { es: "{número}", en: "{number}" };
@@ -23,6 +25,19 @@ export function createRuleVisualFixtures(culture: FormCulture, definition: () =>
         { id: "01990000-0000-7000-8000-000000000523", kind: "GeneratePdf", roleId: null, includePdf: false, text: null },
         { id: "01990000-0000-7000-8000-000000000524", kind: "NotifyAuthor", roleId: null, includePdf: true, text: { es: `Aprobamos la visita ${number.es} de {${customer}}. Te mandamos el comprobante.`, en: `We approved visit ${number.en} to {${customer}}. Here is the receipt.` } },
         { id: "01990000-0000-7000-8000-000000000525", kind: "NotifyRole", roleId: author.userId, includePdf: false, text: { es: `Ya está aprobada la visita ${number.es}: cobró {${amount}}.`, en: `Visit ${number.en} is approved: it collected {${amount}}.` } }] },
+    ] });
+  }
+  // Board RG5-A: two conditions met by one same item and a notice that brings the block, one item per line.
+  if (seed === "rows" && form) {
+    // The block and, behind it, «Artículo» and «Cantidad».
+    const fields = form.draft.fields;
+    const index = fields.findIndex(field => field.type === "group");
+    const [block, article, quantity] = [fields[index].fieldId!, fields[index + 1].fieldId!, fields[index + 2].fieldId!];
+    const articleField = fields[index + 1];
+    const glyphosate = articleField.type === "choice" && !articleField.source ? articleField.options[1].choiceId! : "";
+    revisions.push({ id: "01990000-0000-7000-8000-000000000601", definitionId: form.id, revision: 1, originalCulture: culture, createdAtUtc: atUtc, author, rules: [
+      { id: "01990000-0000-7000-8000-000000000611", event: "Received", conditions: [{ fieldId: article, operator: "in", values: [glyphosate] }, { fieldId: quantity, operator: "gte", values: ["100"] }], actions: [
+        { id: "01990000-0000-7000-8000-000000000621", kind: "NotifyRole", roleId: author.userId, includePdf: false, text: { es: `Revisá lo que llegó en la visita {número}: {${block}}`, en: `Check what arrived in visit {number}: {${block}}` } }] },
     ] });
   }
   const current = (): FormRuleSet => revisions.at(-1) ?? { id: null, definitionId: definition()!.id, revision: 0, originalCulture: culture, rules: [], createdAtUtc: null, author: null };

@@ -59,3 +59,36 @@ describe("rule message", () => {
     expect(hasMissingRuleData(`Llegó {${remito}} {número}`, questions)).toBe(false);
   });
 });
+
+describe("the block of rows as a datum", () => {
+  const block = "0199a0c0-0000-7000-8000-000000000010", article = "0199a0c0-0000-7000-8000-000000000011", quantity = "0199a0c0-0000-7000-8000-000000000012", good = "0199a0c0-0000-7000-8000-000000000013";
+  const rows: RuleMessageQuestion[] = [
+    { fieldId: remito, type: "shortText", label: { es: "N° de remito", en: "Delivery note" } },
+    { fieldId: block, type: "group", label: { es: "Artículos", en: "Items" } },
+    { fieldId: article, type: "choice", label: { es: "Artículo", en: "Product" }, options: null, repeated: true },
+    { fieldId: quantity, type: "decimal", label: { es: "Cantidad", en: "Quantity" }, repeated: true },
+    { fieldId: good, type: "boolean", label: { es: "¿Llegó en buen estado?", en: "Arrived in good condition?" }, repeated: true },
+  ];
+  const rowChoices = { [article]: [{ id: "0199a0c0-0000-7000-8000-000000000101", label: "GLIFOSATO 64%" }] };
+  const preview = (template: string, culture: "es" | "en" = "es") => ruleMessagePreview(template, rows, rowChoices, culture, "es", "REC", i18n.getFixedT(culture, "forms"));
+
+  it("is offered, and its questions are not", () => {
+    expect(ruleMessageData(rows, "Received")).toEqual([{ kind: "number" }, { kind: "question", fieldId: remito }, { kind: "question", fieldId: block }]);
+  });
+
+  it.each([
+    ["es", "1. GLIFOSATO 64% · 12.500,5 · Sí"],
+    ["en", "1. GLIFOSATO 64% · 12,500.5 · Yes"],
+  ] as const)("arrives in %s with an example item on its own line, with the example of each of its questions", async (culture, item) => {
+    await i18n.loadLanguages(culture);
+    const segments = preview(`Llegó: {${block}}`, culture);
+    expect(segments.map(segment => segment.text).join("")).toBe("Llegó: \n" + item);
+    expect(segments.filter(segment => segment.sample).map(segment => segment.text)).toEqual([item]);
+  });
+
+  it("starts its item on a new line unless the message starts there or a line break comes before", () => {
+    const text = (template: string) => preview(template).map(segment => segment.text).join("");
+    expect(text(`{${block}}`)).toBe("1. GLIFOSATO 64% · 12.500,5 · Sí");
+    expect(text(`Llegó:\n{${block}}\nGracias`)).toBe("Llegó:\n1. GLIFOSATO 64% · 12.500,5 · Sí\nGracias");
+  });
+});

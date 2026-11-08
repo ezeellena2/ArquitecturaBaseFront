@@ -126,3 +126,18 @@ describe("RuleMessageField", () => {
     expect(screen.getByRole("button", { name: "Agregar dato" })).toBeDisabled();
   });
 });
+
+describe("RuleMessageField with a block of rows", () => {
+  const block = "0199a0c0-0000-7000-8000-000000000010", quantity = "0199a0c0-0000-7000-8000-000000000012";
+  const withBlock: RuleMessageQuestion[] = [...questions, { fieldId: block, type: "group", label: { es: "Artículos", en: "Items" } },
+    { fieldId: quantity, type: "decimal", label: { es: "Cantidad", en: "Quantity" }, repeated: true }];
+  it("offers the block as a datum without its questions, and «Así llega» brings it with one item on its own line", async () => {
+    renderWithProviders(<RuleMessageField label="Mensaje" help="Cómo se arma el mensaje." value={`Llegó: {${block}}`} onChange={vi.fn()} culture="es" original="es" questions={withBlock} choices={choices} event="Received" prefix="REC" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Agregar dato" }));
+    expect(optionNames()).toContain("Artículos");
+    expect(optionNames()).not.toContain("Cantidad");
+    await userEvent.keyboard("{Escape}");
+    const arrives = screen.getByRole("figure", { name: "Así llega" });
+    expect(within(arrives).getByText(/^Llegó:/).textContent).toBe("Llegó: \n1. 12.500,5");
+  });
+});

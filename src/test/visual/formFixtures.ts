@@ -117,12 +117,12 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   }
   // RG1-A: the block of rows «Artículos», with three questions of each row between «Contacto» and «Fecha de visita». RG13-A: with a
   // minimum of 15 items, which WhatsApp does not load, publishing stops.
-  if (scenario === "forms-rows" || scenario === "forms-publication-rows-minimum") {
+  if (scenario === "forms-rows" || scenario === "forms-publication-rows-minimum" || scenario === "forms-rules-rows") {
     const original = definitions.get(fixtureFormId)!;
     const [customer, contact, , date] = original.draft.fields;
     definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, fields: [customer!, contact!,
       { fieldId: guid(181), key: key(guid(181)), type: "group", label: { es: "Artículos", en: "Items" }, help: null, required: true,
-        rows: { minRows: scenario === "forms-rows" ? 1 : 15, maxRows: 20 } },
+        rows: { minRows: scenario === "forms-publication-rows-minimum" ? 15 : 1, maxRows: 20 } },
       { fieldId: guid(182), key: key(guid(182)), type: "choice", label: { es: "Artículo", en: "Item" }, help: null, required: true, repeated: true,
         options: [{ choiceId: guid(185), label: { es: "Urea granulada", en: "Granular urea" } }, { choiceId: guid(186), label: { es: "Glifosato 64%", en: "Glyphosate 64%" } }] },
       { fieldId: guid(183), key: key(guid(183)), type: "decimal", label: { es: "Cantidad", en: "Quantity" }, help: null, required: true, repeated: true },
@@ -153,7 +153,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   if (scenario === "forms-publication-blocked") { const d = definitions.get(fixtureFormId)!; definitions.set(d.id, { ...d, draft: { ...d.draft, fields: d.draft.fields.map(q => q.type === "decimal" ? { ...q, label: { ...q.label, [d.draft.culture]: d.draft.culture === "es" ? "Importe cobrado al cliente" : "Amount collected from the customer" } } : q) } }); }
   if(scenario === "forms-publication-budget-http"){ const budget=responseBudgetDefinition(culture);definitions.clear();definitions.set(budget.id,budget); }
   if (isRowsCheck(scenario)) { const rows = rowsCheckDefinition(scenario); definitions.clear(); definitions.set(rows.id, rows); }
-  const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId), scenario === "forms-rules-reading");
+  const ruleFixture = createRuleVisualFixtures(culture, () => definitions.get(fixtureFormId), scenario === "forms-rules-reading" ? "reading" : scenario === "forms-rules-rows" ? "rows" : null);
   const publications = new Map<string, { definitionId: string; requestId: string; operationId: string; versionId: string; versionNumber: number; draftRevision: number; state: string; acceptedAtUtc: string; recoveryPath: string }>();
   const publicationStates = new Map<string,string>();
   const publicationCultures = new Map<string, FormCulture[]>();

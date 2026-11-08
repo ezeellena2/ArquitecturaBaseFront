@@ -144,4 +144,27 @@ for (const language of ["es", "en"] as const)
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await page.screenshot({ path: "test-results/rules-reading-history-" + language + "-" + width + ".png" });
     });
+    // Board RG5-A: a rule on the block of rows reads its conditions together, which one same item meets; in the editor, each one
+    // starts with «Algún ítem con» and the message arrives with the block, one item per line.
+    test("RG5-A a rule on the block of rows " + language + " at " + width, async ({ page }) => {
+      const en = language === "en";
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-rules-rows&lang=" + language);
+      const section = page.getByRole("heading", { name: en ? "When a response arrives" : "Cuando llega una respuesta", exact: true }).locator("xpath=ancestor::section[1]");
+      const rule = section.getByRole("region", { name: en ? "Rule 1" : "Regla 1", exact: true });
+      await expect(rule.locator("ol > li").nth(1)).toHaveText(en ? "If any item of Items with Item is Glyphosate 64% and Quantity from 100"
+        : "Si algún ítem de Artículos con Artículo es Glifosato 64% y Cantidad desde 100");
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      await section.scrollIntoViewIfNeeded();
+      if (width >= 1024) await section.screenshot({ path: "test-results/rules-rows-reading-" + language + "-" + width + ".png" });
+      else await page.screenshot({ path: "test-results/rules-rows-reading-" + language + "-" + width + ".png", fullPage: true });
+      await section.getByRole("button", { name: en ? "Edit rule 1" : "Editar regla 1", exact: true }).click();
+      await expect(section.getByText(en ? "Any item with" : "Algún ítem con", { exact: true })).toHaveCount(2);
+      await expect(section.getByRole("figure", { name: en ? "How it arrives" : "Así llega", exact: true }))
+        .toContainText(en ? "1. Granular urea · 12,500.5 · Example response" : "1. Urea granulada · 12.500,5 · Ejemplo de respuesta");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      if (width >= 1024) await section.screenshot({ path: "test-results/rules-rows-editor-" + language + "-" + width + ".png" });
+      else await page.screenshot({ path: "test-results/rules-rows-editor-" + language + "-" + width + ".png", fullPage: true });
+    });
   }

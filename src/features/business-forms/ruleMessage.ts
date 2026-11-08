@@ -16,6 +16,8 @@ export interface RuleMessageQuestion {
   readonly label: LocalizedText;
   readonly options?: readonly { readonly label: LocalizedText }[] | null;
   readonly selection?: { readonly minSelected: number };
+  /** A question of the block of rows (RG5-A): the block is the datum, and brings it item by item. */
+  readonly repeated?: boolean;
 }
 export interface RuleMessageSegment { readonly text: string; readonly sample?: boolean; readonly missing?: boolean }
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -47,10 +49,11 @@ export const serializeRuleMessage = (parts: readonly RuleMessagePart[], culture:
     : "{" + (part.kind === "number" ? (culture === "es" ? "número" : "number") : (culture === "es" ? "motivo" : "reason")) + "}").join("");
 
 /** What «Agregar dato» offers: the number, the reason only when rejecting and the questions in the form's order. Photos and
- * documents are left out: a message would only bring the file name. */
+ * documents are left out: a message would only bring the file name. The block of rows is a datum and its questions are not. */
 export const ruleMessageData = (questions: readonly RuleMessageQuestion[], event: RuleEvent): RuleMessageData[] => [
   { kind: "number" }, ...(event === "Rejected" ? [{ kind: "reason" } as const] : []),
-  ...questions.filter(question => question.type !== "photo" && question.type !== "document").map(question => ({ kind: "question", fieldId: question.fieldId } as const)),
+  ...questions.filter(question => question.type !== "photo" && question.type !== "document" && !question.repeated)
+    .map(question => ({ kind: "question", fieldId: question.fieldId } as const)),
 ];
 
 /** The name of a datum, or null for a question that is no longer among the options. */
@@ -67,14 +70,34 @@ export const ruleMessageText = (template: string, questions: readonly RuleMessag
 export const hasMissingRuleData = (template: string, questions: readonly { readonly fieldId: string }[]) =>
   parseRuleMessage(template).some(part => part.kind === "question" && !questions.some(question => question.fieldId === part.fieldId));
 
-/** The message as it arrives, with the examples of the PDF preview (FormPdfPreviewIssuer): the data are the samples. */
+/**
+ * The message as it arrives, with the examples of the PDF preview (FormPdfPreviewIssuer): the data are the samples. The block
+ * of rows arrives as the notice brings it (RG5-A): an example item, «1. GLIFOSATO 64% · 12.500,5 · Sí», on a new line unless
+ * the message starts there or a line break comes before.
+ */
 export function ruleMessagePreview(template: string, questions: readonly RuleMessageQuestion[], choices: Choices, culture: FormCulture, original: FormCulture, prefix: string, t: Translate): RuleMessageSegment[] {
-  return parseRuleMessage(template).map(part => {
-    if (part.kind === "text") return { text: part.text };
-    if (part.kind === "number") return { text: prefix + "-000001", sample: true };
-    if (part.kind === "reason") return { text: t("rules.samples.reason"), sample: true };
-    const question = questions.find(item => item.fieldId === part.fieldId);
-    return question ? { text: example(question, choices, culture, original, t), sample: true } : { text: t("rules.missingQuestion"), missing: true };
+  const segments: RuleMessageSegment[] = [];
+  for (const part of parseRuleMessage(template)) {
+    const question = part.kind === "question" ? questions.find(item => item.fieldId === part.fieldId) : undefined;
+    if (question?.type === "group") {
+      const before = segments.map(segment => segment.text).join("");
+      if (before && !before.endsWith("\n")) segments.push({ text: "\n" });
+      const answers = blockQuestions(question, questions).map(item => example(item, choices, culture, original, t)).join(" · ");
+      segments.push({ text: answers ? "1. " + answers : "1.", sample: true });
+      continue;
+    }
+    segments.push(part.kind === "text" ? { text: part.text } : part.kind === "number" ? { text: prefix + "-000001", sample: true }
+      : part.kind === "reason" ? { text: t("rules.samples.reason"), sample: true }
+      : question ? { text: example(question, choices, culture, original, t), sample: true } : { text: t("rules.missingQuestion"), missing: true });
+  }
+  return segments;
+}
+/** The questions of a block, in order: each one goes with the last block before it, as the rule options bring them. */
+function blockQuestions(block: RuleMessageQuestion, questions: readonly RuleMessageQuestion[]) {
+  let current: string | null = null;
+  return questions.filter(question => {
+    if (question.type === "group") current = question.fieldId;
+    return question.repeated === true && current === block.fieldId;
   });
 }
 function example(question: RuleMessageQuestion, choices: Choices, culture: FormCulture, original: FormCulture, t: Translate) {

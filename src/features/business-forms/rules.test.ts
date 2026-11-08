@@ -138,3 +138,11 @@ describe("condition columns", () => {
     expect(columns[0]).toEqual({ fieldId: "remito", type: "shortText", label: "Remito (en)", introducedInVersion: 1, options: [] });
   });
 });
+describe("a message with the block of rows", () => {
+  it("looks for its data among every question, also those of the block, so the server says what is not a datum", () => {
+    const block: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000041", type: "group", label: "Artículos", introducedInVersion: 1, options: [],
+      questions: [{ fieldId: "0199a0c0-0000-7000-8000-000000000042", type: "decimal", label: "Cantidad", introducedInVersion: 1, options: [] }] };
+    const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: `Llegó {${block.fieldId}} con {${block.questions![0].fieldId}}`, en: "" } }] };
+    expect(prepareRules([rule], original, [column, block]).issues).toEqual([]);
+  });
+});
