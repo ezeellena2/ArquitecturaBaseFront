@@ -43,7 +43,7 @@ async function mount(card: AssistantProposalCardProps, permissions = ["formtempl
     http.get("/api/forms/catalogs/assistant-proposals/" + proposalId, status("catalogId")),
     http.post("/api/forms/catalogs/assistant-proposals", create("catalogId")));
   const router = createMemoryRouter([{ path: "/", element: <FormsProposalCard {...card} /> }, { path: "/formularios/:formId", element: <p>Editor</p> },
-    { path: "/catalogos/:catalogId", element: <p>Catálogo</p> }], { initialEntries: ["/"] });
+    { path: "/catalogos/:catalogId", element: <p>Página del catálogo</p> }], { initialEntries: ["/"] });
   await act(async () => { render(<AppProviders><RouterProvider router={router} /></AppProviders>); });
   return router;
 }
@@ -108,7 +108,7 @@ it("creates a Manual catalog and opens it; without managing catalogs there is no
   expect(within(card).getByText("Código · CUIT")).toBeInTheDocument();
   expect(within(card).getByText("Teléfono · Texto")).toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
-  expect(await screen.findByText("Catálogo")).toBeInTheDocument();
+  expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + createdId);
   cleanup(); queryClient.clear(); created = null;
   await mount(props(proposalCapabilities.catalog, catalog), ["formcatalogs.read"]);
