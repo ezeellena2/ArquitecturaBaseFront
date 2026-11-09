@@ -31,12 +31,6 @@ Vite queda en `http://localhost:5173` (sin Aspire no hay certificado, así que e
 
 ## Scripts
 
-Información del negocio usa un selector Leaflet/OSM que solicita mapas sólo al abrir su diálogo,
-sin clave de Google ni búsqueda de direcciones. La plantilla pública opcional de build
-`VITE_BUSINESS_MAP_TILE_URL` conserva por defecto las teselas estándar OSM. Para otro proveedor,
-revisar atribución, licencia y acceso; nunca colocar secretos en variables VITE.
-Consultar [contratos, migración y operación](../ArquitecturaBase/docs/features/inteligencia-artificial.md#editor-guiado-y-evolución-del-contrato).
-
 | Comando | Qué hace |
 |---|---|
 | `npm run dev` | servidor de desarrollo con recarga en caliente |

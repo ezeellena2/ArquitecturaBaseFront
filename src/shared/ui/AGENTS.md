@@ -45,12 +45,6 @@ Reúne primitivas generadas por shadcn y componentes propios de formularios, tab
 `PublicLanding` presenta título, descripción, acciones y capacidades de una portada pública.
 Sus textos e íconos los aporta el consumidor; colores y curvas usan los roles globales `public-*`.
 
-`LocationMap` es un selector genérico de coordenadas, sin contratos ni estado de una feature.
-El consumidor lo carga de forma diferida en un Dialog. Leaflet/OSM conserva atribución visible,
-caché del navegador y referrer por imagen limitado al origen, sin cambiar encabezados globales.
-No agregar búsquedas ficticias, geolocalización del dispositivo, descargas offline ni claves.
-La indisponibilidad se comunica desde el consumidor con el Toaster único y una alternativa manual.
-
 ## Referencias
 
 Autocomplete compone Input/tokens comunes, sin red ni proveedor. Admite teclado, Escape,

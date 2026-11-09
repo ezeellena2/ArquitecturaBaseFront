@@ -396,7 +396,6 @@ revisión pendiente como motivo. Recorridos:
   coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. La espera de un
   429 es el motivo del buscador apagado; su línea de estado dice sólo el resultado. Atribución de
   Google Maps junto al contenido. Pendientes por instalación: [operación](../../../ArquitecturaBase/docs/guides/configurar-google-places.md).
-- Leaflet/OSM: navegar, marcar o ingresar coordenadas genera el enlace, sin búsquedas simuladas.
 - Horarios, fechas especiales y FAQ con validación real; los textos anteriores quedan para revisión manual.
   [Detalle](../../../ArquitecturaBase/docs/reviews/2026-10-03-informacion-del-negocio-guiada.md).
 
