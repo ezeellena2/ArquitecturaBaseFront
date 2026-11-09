@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { UserDataSectionContext } from "@/shared/hooks/userDataSectionContext";
@@ -19,6 +20,21 @@ async function mount(permissions: string[], items: unknown[] = [attribute]) {
  await act(async () => { renderWithProviders(<MemoryRouter><PersonDataPage /></MemoryRouter>); });
  return () => reads;
 }
+it("puts the state and the source catalog of a datum in their own columns (UD5)", async () => {
+ const zone = { ...attribute, id: "01990000-0000-7000-8000-000000000009", key: "zone", name: { es: "Zona", en: "Zone" }, type: "Catalog", sourceCatalogId: "01990000-0000-7000-8000-000000000010", sourceCatalogName: "Zonas", position: 2, isActive: false };
+ await mount(["formpersondata.manage"], [attribute, zone]);
+ const table = await screen.findByRole("table");
+ const zoneRow = (await within(table).findByText("Zona")).closest("tr")!;
+ // A state never goes in grey under the name, not even with exception A: it has its column.
+ expect(cellUnder(table, zoneRow, "Dato")).toHaveTextContent(/^Zona$/);
+ expect(cellUnder(table, zoneRow, "Estado")).toHaveTextContent(/^Dado de baja$/);
+ expect(cellUnder(table, zoneRow, "Tipo")).toHaveTextContent(/^Elegir de un catálogo$/);
+ expect(cellUnder(table, zoneRow, "Catálogo")).toHaveTextContent(/^Zonas$/);
+ const branchRow = within(table).getByText("Sucursal").closest("tr")!;
+ expect(cellUnder(table, branchRow, "Estado")).toHaveTextContent(/^Activo$/);
+ expect(cellUnder(table, branchRow, "Tipo")).toHaveTextContent(/^Texto$/);
+ expect(cellUnder(table, branchRow, "Catálogo")).toHaveTextContent(/^—$/);
+});
 it("shows the dedicated people table with field values when both read permissions are present", async () => {
  await mount(["formpersondata.manage", "users.read"]);
  const table = (await screen.findByRole("heading", { name: "Personas" })).closest("section")!;

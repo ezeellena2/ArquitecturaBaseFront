@@ -5,6 +5,8 @@ import {http,HttpResponse} from "msw";
 import {beforeEach,expect,it,vi} from "vitest";
 import {queryClient} from "@/shared/api/queryClient";
 import {renderRouteWithProviders} from "@/test/utils/renderWithProviders";
+import {cellUnder} from "@/test/utils/tableCells";
+import {formatDateTimeInZone} from "@/shared/lib/dateTime";
 import {server} from "@/test/mocks/server";
 import {createFormFixtureStore} from "@/test/visual/formFixtures";
 import {notify} from "@/shared/ui/notifications";
@@ -48,7 +50,14 @@ it("uses server discarded counts and history, without claiming that no one has e
  setup();const queries:URLSearchParams[]=[];
  server.use(http.get("/api/forms/missing-requests",({request})=>{const q=new URL(request.url).searchParams;queries.push(q);return HttpResponse.json(q.get("state")==="Discarded"?page([{...topic,state:"Discarded",discardedBy:{userId:id,displayName:"Ana"},discardedAtUtc:"2026-10-17T13:00:00Z"}],{stateCounts:{pending:0,discarded:1}}):page([],{stateCounts:{pending:0,discarded:1}}));}));
  renderRouteWithProviders("/formularios/faltantes");const discarded=await screen.findByRole("button",{name:"Descartados (1)"});expect(screen.queryByText("Nadie pidió formularios que no existen")).not.toBeInTheDocument();await userEvent.click(discarded);
- await screen.findByText(topic.name);expect(screen.getByText(/Descartado por Ana/)).toBeInTheDocument();expect(queries.at(-1)?.get("state")).toBe("Discarded");expect(screen.queryByRole("button",{name:"Descartar Reclamos de clientes"})).not.toBeInTheDocument();
+ await screen.findByText(topic.name);
+ // Who discarded it and when are a person and a date: each in its column (UD5); the description stays under the topic (A).
+ const table=screen.getByRole("table"),row=within(table).getByText(topic.name).closest("tr")!;
+ expect(cellUnder(table,row,"Descartó")).toHaveTextContent(/^Ana$/);
+ expect(cellUnder(table,row,"Descartado")).toHaveTextContent(new RegExp("^"+formatDateTimeInZone("2026-10-17T13:00:00Z","es","America/Argentina/Buenos_Aires")+"$"));
+ expect(cellUnder(table,row,"Tema")).toHaveTextContent(topic.description);
+ expect(screen.queryByText(/Descartado por/)).not.toBeInTheDocument();
+ expect(queries.at(-1)?.get("state")).toBe("Discarded");expect(screen.queryByRole("button",{name:"Descartar Reclamos de clientes"})).not.toBeInTheDocument();
 });
 it("withdraws observed private rows and queries immediately after a server 403",async()=>{
  setup();const {router}=renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));

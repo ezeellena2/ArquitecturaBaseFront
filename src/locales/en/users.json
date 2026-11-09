@@ -2,7 +2,9 @@
   "title": "Users",
   "searchLabel": "Search by email, name or number",
   "columns": {
-    "user": "User",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "verified": "Verified",
     "displayName": "Name",
     "roles": "Roles",
     "createdAtUtc": "Created",
@@ -31,7 +33,8 @@
     "deleteFor": "Delete {{user}}"
   },
   "identity": {
-    "alsoWhatsApp": "Also signs in with WhatsApp",
+    "verified": "Yes",
+    "notVerified": "No",
     "unverifiedHint": "A number an admin added that the person has not signed in with yet."
   },
   "create": {

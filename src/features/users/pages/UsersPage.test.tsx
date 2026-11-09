@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { adminHandlers, ana, beto, carla, counts, juan, laura, pageOf } from "../testData";
 import type { UserListItem } from "../api/users";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { queryClient } from "@/shared/api/queryClient";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { server } from "@/test/mocks/server";
@@ -183,77 +184,82 @@ describe("UsersPage", () => {
     expect(within(table).getByText("beto@example.com")).toBeInTheDocument();
   });
 
-  it("calls the first column Usuario, and searches by email, name or number", async () => {
+  it("calls the columns Correo, WhatsApp and Verificado, and searches by email, name or number (UD5)", async () => {
     server.use(...listHandlers());
 
     renderRouteWithProviders("/usuarios");
 
     const table = await screen.findByRole("table");
-    // Una cuenta puede no tener correo: la columna dice quién es, con el correo o con el número.
-    expect(within(table).getByRole("columnheader", { name: /usuario/i })).toBeInTheDocument();
-    expect(within(table).queryByRole("columnheader", { name: /correo/i })).not.toBeInTheDocument();
+    // One piece of data per column: the email and the number are two, and whether the number is verified, a third.
+    for (const name of ["Correo", "WhatsApp", "Verificado"]) expect(within(table).getByRole("columnheader", { name })).toBeInTheDocument();
+    expect(within(table).queryByRole("columnheader", { name: "Usuario" })).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Buscar por correo, nombre o número" })).toHaveAttribute(
       "placeholder",
       "Buscar por correo, nombre o número",
     );
   });
 
-  it("shows the email and marks that the person also enters with WhatsApp", async () => {
+  it("shows the email and, in their own columns, the WhatsApp number and whether it is verified (UD5)", async () => {
     server.use(...listHandlers(pageOf([carla])));
 
     renderRouteWithProviders("/usuarios");
 
-    const row = await rowOf(carla);
-    expect(row.getByText("carla@example.com")).toBeInTheDocument();
-    // El número no se repite al lado del correo: el ícono alcanza para decir que también entra con WhatsApp.
-    expect(row.getByRole("img", { name: "También entra con WhatsApp" })).toBeInTheDocument();
-    expect(row.queryByText("+54 9 11 5555-4444")).not.toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByText("Carla Paz")).closest("tr")!;
+    expect(cellUnder(table, row, "Correo")).toHaveTextContent("carla@example.com");
+    expect(cellUnder(table, row, "WhatsApp")).toHaveTextContent(/^\+54 9 11 5555-4444$/);
+    expect(cellUnder(table, row, "Verificado")).toHaveTextContent(/^Sí$/);
+    // The number is in its column: the mark that said «also enters with WhatsApp» is gone.
+    expect(within(row).queryByRole("img", { name: /whatsapp/i })).not.toBeInTheDocument();
   });
 
-  it("shows only the email when the person has no number", async () => {
+  it("says a dash for the number of a person without one", async () => {
     server.use(...listHandlers(pageOf([ana])));
 
     renderRouteWithProviders("/usuarios");
 
-    const row = await rowOf(ana);
-    expect(row.getByText("ana@example.com")).toBeInTheDocument();
-    expect(row.queryByRole("img", { name: "También entra con WhatsApp" })).not.toBeInTheDocument();
-    expect(row.queryByText("Sin verificar")).not.toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByText("Ana")).closest("tr")!;
+    expect(cellUnder(table, row, "Correo")).toHaveTextContent("ana@example.com");
+    expect(cellUnder(table, row, "WhatsApp")).toHaveTextContent(/^—$/);
+    expect(cellUnder(table, row, "Verificado")).toHaveTextContent(/^—$/);
   });
 
-  it("shows the formatted number when there is no email", async () => {
+  it("shows the formatted number and a dash for the email of a person without one", async () => {
     server.use(...listHandlers(pageOf([juan])));
 
     renderRouteWithProviders("/usuarios");
 
-    const row = await rowOf(juan);
-    // El número formateado que manda el backend, nunca el E.164.
-    expect(row.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
-    expect(row.queryByText("+5491123456789")).not.toBeInTheDocument();
-    // El número ya dice que entra con WhatsApp: el ícono de al lado no se anuncia otra vez, con ningún nombre.
-    expect(row.queryByRole("img", { name: /whatsapp/i })).not.toBeInTheDocument();
-    expect(row.queryByText("Sin verificar")).not.toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByText("Juan Gómez")).closest("tr")!;
+    // The formatted number the backend sends, never the E.164; the status dot stays in front of the email (exception C).
+    expect(cellUnder(table, row, "WhatsApp")).toHaveTextContent(/^\+54 9 11 2345-6789$/);
+    expect(within(row).queryByText("+5491123456789")).not.toBeInTheDocument();
+    expect(cellUnder(table, row, "Correo")).toHaveTextContent("—");
+    expect(cellUnder(table, row, "Verificado")).toHaveTextContent(/^Sí$/);
   });
 
-  it("marks a number that the person has not used yet, and says what that means", async () => {
+  it("says No for a number that the person has not used yet, and what that means", async () => {
     server.use(...listHandlers(pageOf([laura])));
 
     renderRouteWithProviders("/usuarios");
 
-    const row = await rowOf(laura);
-    expect(row.getByText("+54 9 351 555-1234")).toBeInTheDocument();
-    expect(row.getByText("Sin verificar")).toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByText("Laura Ríos")).closest("tr")!;
+    expect(cellUnder(table, row, "WhatsApp")).toHaveTextContent(/^\+54 9 351 555-1234$/);
+    const verified = cellUnder(table, row, "Verificado");
+    expect(within(verified).getByText("No", { exact: true })).toBeInTheDocument();
     // Lo que quiere decir es texto de la fila, al alcance del lector de pantalla. Un `aria-describedby` sobre algo que
     // no recibe foco no alcanza: jsdom calcula la descripción igual, pero NVDA y JAWS no la leen en modo exploración.
-    const explanation = row.getByText("Número que cargó un admin y con el que la persona todavía no entró.");
+    const explanation = within(verified).getByText("Número que cargó un admin y con el que la persona todavía no entró.");
     expect(isInaccessible(explanation)).toBe(false);
   });
 
-  describe("the help on the marks, which the keyboard reaches too", () => {
+  describe("the help on an unverified number, which the keyboard reaches too", () => {
     const explanation = "Número que cargó un admin y con el que la persona todavía no entró.";
 
-    /// Lo que tiene el foco después de un Shift+Tab desde "Editar", la primera acción de la fila: lo último de la
-    /// columna "Usuario", porque el nombre, los roles y la fecha no reciben foco.
+    /// Lo que tiene el foco después de un Shift+Tab desde "Editar", la primera acción de la fila: el «No» de
+    /// "Verificado", porque el correo, el número, el nombre, los roles y la fecha no reciben foco.
     async function focusBeforeEdit(row: Awaited<ReturnType<typeof rowOf>>, identifier: string) {
       row.getByRole("button", { name: `Editar a ${identifier}` }).focus();
       await userEvent.tab({ shift: true });
@@ -261,26 +267,16 @@ describe("UsersPage", () => {
       return document.activeElement;
     }
 
-    it("reaches Sin verificar with the keyboard, and what shows up there is what it means", async () => {
+    it("reaches the No of an unverified number with the keyboard, and what shows up there is what it means", async () => {
       // "Lo que hace el puntero también lo hace el teclado" (fundamento visual): la ayuda que aparece al pasar el mouse
-      // aparece también al llegar con Tab, y para eso la insignia tiene que poder recibir el foco.
+      // aparece también al llegar con Tab, y para eso el «No» tiene que poder recibir el foco.
       server.use(...adminHandlers([laura]));
 
       renderRouteWithProviders("/usuarios");
 
       const focused = await focusBeforeEdit(await rowOf(laura), "+54 9 351 555-1234");
-      expect(focused).toHaveTextContent("Sin verificar");
+      expect(focused).toHaveTextContent(/^No/);
       expect(focused).toHaveTextContent(explanation);
-    });
-
-    it("reaches the WhatsApp mark next to the email with the keyboard", async () => {
-      server.use(...adminHandlers([carla]));
-
-      renderRouteWithProviders("/usuarios");
-
-      const row = await rowOf(carla);
-      await focusBeforeEdit(row, "carla@example.com");
-      expect(row.getByRole("img", { name: "También entra con WhatsApp" })).toHaveFocus();
     });
 
     it("closes the help with Esc without moving the focus, and brings it back on the next visit", async () => {
@@ -303,14 +299,14 @@ describe("UsersPage", () => {
       expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
     });
 
-    it("closes the help with Esc while the pointer is on the mark, wherever the focus is", async () => {
-      server.use(...adminHandlers([carla]));
+    it("closes the help with Esc while the pointer is on the No, wherever the focus is", async () => {
+      server.use(...adminHandlers([laura]));
 
       renderRouteWithProviders("/usuarios");
 
-      const mark = (await rowOf(carla)).getByRole("img", { name: "También entra con WhatsApp" });
+      const mark = (await rowOf(laura)).getByText("No", { exact: true });
       await userEvent.hover(mark);
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("También entra con WhatsApp");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
       await userEvent.keyboard("{Escape}");
 
       expect(mark).not.toHaveFocus();
@@ -318,7 +314,7 @@ describe("UsersPage", () => {
 
       await userEvent.unhover(mark);
       await userEvent.hover(mark);
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("También entra con WhatsApp");
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
     });
   });
 
@@ -341,12 +337,13 @@ describe("UsersPage", () => {
 
     renderRouteWithProviders("/usuarios");
 
-    const rows = within(await screen.findByRole("table")).getAllByRole("row");
+    const table = await screen.findByRole("table");
+    const rows = within(table).getAllByRole("row");
 
     expect(within(rows[1]).getByText("Admin")).toBeInTheDocument();
     // Quien no tiene ninguno muestra la raya, no una celda vacía que parece un dato que no cargó. Por celda
-    // y no por texto: beto tampoco tiene nombre, así que la raya aparece dos veces en su fila.
-    expect(within(rows[2]).getAllByRole("cell")[2]).toHaveTextContent("—");
+    // y no por texto: beto tampoco tiene nombre, así que la raya aparece varias veces en su fila.
+    expect(cellUnder(table, rows[2], "Roles")).toHaveTextContent(/^—$/);
   });
 
   it("offers Editar first, and names every action with the email or, without one, the number", async () => {

@@ -5,9 +5,8 @@ import { formatDateInZone } from "@/shared/lib/dateTime";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import type { Column } from "@/shared/ui/DataTable";
-import { CheckIcon, PencilIcon, PowerIcon, SmartphoneIcon, TrashIcon } from "@/shared/ui/icons";
+import { CheckIcon, PencilIcon, PowerIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
-import { VerificationBadge } from "@/shared/ui/VerificationBadge";
 
 /// Firma mínima que necesitamos de `t`: alcanza con la del namespace "users" (sin acoplar el tipo exacto de
 /// react-i18next, que cambia de versión en versión).
@@ -24,58 +23,13 @@ export interface UserRowActions {
 /// Foco visible para las marcas que también explican su significado con ActionTooltip.
 const hintTrigger = "inline-flex shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)]";
 
-/// El ícono del teléfono delante del número: el número ya dice que entra con WhatsApp, así que el ícono queda para la
-/// vista, oculto para el lector como en el tablero. No lleva ayuda: sin foco, le llegaría solo al puntero.
-function phoneIcon() {
-  return (
-    <span aria-hidden="true" className="inline-flex shrink-0 text-[var(--color-content-muted)]">
-      <SmartphoneIcon className="size-3.5" />
-    </span>
-  );
-}
-
-/// El ícono del teléfono al lado del correo: dice algo que no está escrito ("también entra con WhatsApp"), así que se
-/// anuncia con eso y lo muestra en la ayuda. Adentro de un `img`, lo demás es presentación: la ayuda no se lee dos veces.
-function alsoWhatsAppMark(t: Translate) {
-  const label = t("identity.alsoWhatsApp");
-
-  return (
-    <ActionTooltip label={label}>
-    <span
-      role="img"
-      aria-label={label}
-      tabIndex={0}
-      className={cn(hintTrigger, "rounded-sm text-[var(--color-content-muted)]")}
-    >
-      <SmartphoneIcon className="size-3.5" />
-    </span>
-    </ActionTooltip>
-  );
-}
-
-/// "Sin verificar": un número que cargó un admin y con el que la persona todavía no entró. Lo que quiere decir es texto
-/// de la fila, no un `aria-describedby`: NVDA y JAWS no anuncian la descripción de algo que no recibe foco en modo
-/// exploración. A la vista, es la ayuda que aparece al pasar el mouse o al llegar con el teclado.
-function unverifiedBadge(t: Translate) {
-  return (
-    <ActionTooltip label={t("identity.unverifiedHint")}>
-    <span tabIndex={0} className={cn(hintTrigger, "rounded-[var(--radius-control)]")}>
-      <VerificationBadge verified={false} className="text-[length:var(--text-caption)]">
-        {t("methods.unverified")}
-      </VerificationBadge>
-      <span className="sr-only">{t("identity.unverifiedHint")}</span>
-    </span>
-    </ActionTooltip>
-  );
-}
-
-/// La columna "Usuario" (tablero "WhatsApp · Usuarios: alta con teléfono", punto 1): quién es, con el correo o, si
-/// no tiene, con el número formateado que manda el backend. El E.164 no se muestra nunca.
+/// La columna "Correo" (un dato por columna, UD5, 2026-11-09): el correo, o la raya si la cuenta no tiene. El número va
+/// en "WhatsApp" y si ya entró con él, en "Verificado".
 ///
-/// El estado va como un punto delante y no como columna propia: así entra la columna de roles, que es el dato que
-/// hace falta mirar fila por fila, y el estado —que casi siempre es "activo"— deja de ocupar una columna entera
-/// para decir lo mismo veinte veces. El punto es verde si está activa y rojo si está inactiva; la cuenta inactiva,
-/// además, se escribe apagada. La acción de habilitar usa un check y la de deshabilitar, el ícono de encendido.
+/// El estado va como un punto delante del correo y no como columna propia (excepción C, confirmada el 2026-11-09): así
+/// entra la columna de roles, y el estado —que casi siempre es "activo"— no ocupa una columna entera para decir lo mismo
+/// veinte veces. El punto es verde si está activa y rojo si está inactiva; la cuenta inactiva, además, se escribe apagada.
+/// La acción de habilitar usa un check y la de deshabilitar, el ícono de encendido.
 ///
 /// El punto es decorativo y la palabra va al lado, oculta para la vista pero no para el lector de pantalla.
 /// Es la única concesión a "el color nunca comunica solo" del fundamento visual: para quien ve, el estado se
@@ -83,13 +37,7 @@ function unverifiedBadge(t: Translate) {
 ///
 /// Son funciones que se llaman, no componentes que se montan: el archivo exporta la fábrica de columnas, y
 /// declarar un componente al lado rompe el refresco en caliente.
-function identityCell(row: UserListItem, t: Translate) {
-  const phone = row.formattedPhoneNumber;
-  const text = cn(
-    "truncate font-medium",
-    row.isActive ? "text-[var(--color-content)]" : "text-[var(--color-content-muted)]",
-  );
-
+function emailCell(row: UserListItem, t: Translate) {
   return (
     <span className="inline-flex max-w-full min-w-0 items-center gap-2">
       <span
@@ -101,21 +49,28 @@ function identityCell(row: UserListItem, t: Translate) {
       />
       <span className="sr-only">{row.isActive ? t("status.active") : t("status.inactive")}</span>
       {row.email !== null ? (
-        <>
-          <span className={text}>{row.email}</span>
-          {phone !== null ? alsoWhatsAppMark(t) : null}
-        </>
-      ) : phone !== null ? (
-        <>
-          {phoneIcon()}
-          <span className={cn(text, "whitespace-nowrap")}>{phone}</span>
-        </>
+        <span className={cn("truncate font-medium", row.isActive ? "text-[var(--color-content)]" : "text-[var(--color-content-muted)]")}>{row.email}</span>
       ) : (
-        // Sin correo ni número: se le desvinculó el WhatsApp a alguien que no tenía correo.
         <span className="text-[var(--color-content-muted)]">—</span>
       )}
-      {phone !== null && !row.phoneNumberConfirmed ? unverifiedBadge(t) : null}
     </span>
+  );
+}
+
+/// "Verificado": si la persona ya entró con ese número. Un «No» es un número que cargó un admin y con el que todavía no
+/// entró, y lo que quiere decir es texto de la fila, no un `aria-describedby`: NVDA y JAWS no anuncian la descripción de
+/// algo que no recibe foco en modo exploración. A la vista, es la ayuda que aparece al pasar el mouse o al llegar con Tab.
+function verifiedCell(row: UserListItem, t: Translate) {
+  if (row.formattedPhoneNumber === null) return "—";
+  if (row.phoneNumberConfirmed) return t("identity.verified");
+
+  return (
+    <ActionTooltip label={t("identity.unverifiedHint")}>
+    <span tabIndex={0} className={cn(hintTrigger, "rounded-sm")}>
+      {t("identity.notVerified")}
+      <span className="sr-only">{t("identity.unverifiedHint")}</span>
+    </span>
+    </ActionTooltip>
   );
 }
 
@@ -144,7 +99,10 @@ export function createUserColumns(
   actions?: UserRowActions,
 ): Column<UserListItem>[] {
   const columns: Column<UserListItem>[] = [
-    { id: "email", header: t("columns.user"), cell: (row) => identityCell(row, t), sortable: true },
+    { id: "email", header: t("columns.email"), cell: (row) => emailCell(row, t), sortable: true },
+    // El número formateado que manda el backend, nunca el E.164; no se parte en renglones.
+    { id: "whatsapp", header: t("columns.whatsapp"), cell: (row) => row.formattedPhoneNumber === null ? "—" : <span className="whitespace-nowrap">{row.formattedPhoneNumber}</span> },
+    { id: "verified", header: t("columns.verified"), cell: (row) => verifiedCell(row, t) },
     { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true },
     { id: "roles", header: t("columns.roles"), cell: (row) => rolesCell(row.roles) },
     {

@@ -80,7 +80,10 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  if(forbidden)return <ForbiddenPage/>;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
  const columns:Column<MissingTopic>[]=[
-  {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p>{row.state==="Discarded"&&row.discardedAtUtc?<p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("missing.discardedBy",{name:row.discardedBy?.displayName??"—",date:date(row.discardedAtUtc)})}</p>:null}</div>},
+  // The description stays in grey under the topic (exception A); who discarded it and when go in their columns (UD5).
+  {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
+  ...(state==="Discarded"?[{id:"discardedBy",header:t("missing.discardedByColumn"),cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
+   {id:"discardedAtUtc",header:t("missing.discardedAtColumn"),cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
   {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
   {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
