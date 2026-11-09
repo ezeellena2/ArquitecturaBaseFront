@@ -122,10 +122,12 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   encabezado lo nombra. Si dos datos importan, cada uno va en su columna; si uno no importa, se saca.
   Cuentan como un dato la fecha y la hora de un mismo momento, un valor con su unidad, varios valores
   de un mismo dato y un dato con su enlace. No van juntos en una celda un número con su fecha y su
-  estado, «fecha · persona», un estado con su versión, una etiqueta de estado junto al nombre ni un
-  renglón gris debajo con otro dato. Una columna que sólo tiene sentido en una vista aparece sólo en
-  ella. Una excepción requiere una elección explícita del usuario: hoy sólo rige el punto de estado de
-  usuarios, que no se copia a otros listados, y las demás están propuestas sin decidir
+  estado, «fecha · persona», un estado con su versión, una etiqueta junto al dato, el resumen de otra
+  tabla ni, en un renglón debajo, un estado, una fecha o una persona; un encabezado o una banda nombran
+  una sola cosa. Una columna que sólo tiene sentido en una vista aparece sólo en ella. Excepciones
+  elegidas: un texto secundario en gris debajo del dato, como una descripción o un detalle; el punto de
+  estado de usuarios, que no se copia a otros listados; y las listas que no son tablas, que siguen la
+  regla de lecturas. Otra excepción requiere una elección explícita del usuario
   ([detalle](../design/visual-baseline.md#un-dato-por-columna--2026-11-09)).
 - Declarar `rowKey` con la identidad estable de la fila. Las columnas ordenables usan los campos
   aceptados por el backend; conservar `aria-sort` y ordenar/paginar con el servidor.
