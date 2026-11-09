@@ -114,6 +114,10 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
   botón al lado del dato que toca y lo que actúa sobre todo el conjunto, en la banda. Se parte en zonas sólo cuando son
   cosas distintas, que se entienden por separado, o pasos de un recorrido; nunca por tipo de control (los desplegables
   en una, los botones en otra, las opciones en otra).
+- **Lo apagado se explica en el mismo control** ([MA1-A, elegida el 2026-11-09 y por programar](#el-motivo-de-lo-apagado--2026-11-09)): si el
+  motivo no es obvio, aparece arriba del control apagado, como tooltip, al pasar el mouse, con el foco, con un clic o
+  con un toque, y el clic no hace la acción. Al lado no va nada: ni ícono, ni texto, ni candado. Responde el control
+  entero, y el control no cambia de lugar ni de forma al apagarse o encenderse.
 - **El color nunca comunica solo:** todo estado lleva texto, ícono accesible o ambos.
   - **Excepción:** en Usuarios el estado es un punto delante del correo (verde activo, rojo inactivo) con la palabra en
     `sr-only`. Habilitar (check) y deshabilitar (encendido) son íconos con nombre y tooltip, y piden confirmación. No se
@@ -205,8 +209,8 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
 - SVG decorativo (`aria-hidden="true"`); el botón lleva el nombre contextual (“Eliminar a ana@ejemplo.com”).
 - Toda acción sin texto usa `ActionTooltip`: hover y foco, Escape, el puntero puede pasar a la ayuda, se ajusta a los
   bordes y vive en un portal. Un solo `TooltipProvider`; se monta solo abierto; textos del namespace del módulo, también
-  en botones deshabilitados. Un botón con texto visible no repite su nombre en un tooltip; si está deshabilitado por un
-  motivo que no es obvio, `DisabledReason` lo muestra como tooltip y descripción accesible.
+  en botones deshabilitados. Un botón con texto visible no repite su nombre en un tooltip; si está apagado por un
+  motivo que no es obvio, `DisabledReason` lo muestra sobre el mismo botón ([MA1-A](#el-motivo-de-lo-apagado--2026-11-09)).
 - En una fila, inocuas primero y destructiva última; el rojo aparece al interactuar. Sin permiso, no se renderiza.
 
 ## Listados y filtros
@@ -253,7 +257,8 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
   - no se agregan textos debajo ni al costado, como «No hay cambios para guardar», «Revisá los datos marcados antes de
     guardar» o «Guardá … antes»;
   - los botones no cambian de lugar ni de forma con cada acción;
-  - si el motivo de un deshabilitado no es obvio, va como tooltip al pasar el mouse o con el foco (`DisabledReason`);
+  - si el motivo de un deshabilitado no es obvio, va sobre el mismo control, como tooltip, y se abre al pasar el mouse,
+    con el foco, con un clic o con un toque, sin íconos al lado (`DisabledReason`, [MA1-A, por programar](#el-motivo-de-lo-apagado--2026-11-09));
   - los errores se marcan en sus campos.
 - **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.
@@ -1049,3 +1054,49 @@ En el código: `FormField beside` pone los botones del valor en el renglón del 
 de una zona uno debajo del otro. `AiSettingsPage` fija la zona única, el orden y dónde va cada botón; `FormField` y
 `FormSkeleton`, las piezas; `artificial-intelligence.spec.ts` guarda las capturas `ai-*.png`. Falta pasar el tablero al
 lienzo del sistema visual.
+
+## El motivo de lo apagado — 2026-11-09
+
+Durante la prueba integral, sobre «Permitir elegir varias» apagada en una pregunta del bloque, el usuario preguntó si el
+motivo de algo apagado sigue en un tooltip sobre el control o lleva un ícono, como la (i), y pidió un estándar para toda
+la app. Se relevaron unos 120 lugares: 81 botones con texto, 13 botones de ícono, 4 casillas, 11 campos o grupos, unos 8
+ítems de menú con el motivo adentro, 3 opciones de desplegable con «· motivo» y el candado del prefijo. Un tercio de los
+motivos son esperas de segundos después de un 429. En el lienzo aparte [Motivo de lo apagado](https://claude.ai/artifact/AkskAbHDispJmt7wbGPBC6)
+(el Sistema visual no se abre desde Claude Code) eligió la **MA1-A**: el motivo sobre el control, como ya decía la regla
+del 2026-10-23, y que responda al clic y al toque. La regla quedó en los [principios](#principios-del-sistema).
+
+| Tablero | Qué define |
+| --- | --- |
+| **MA · Hoy** | El relevamiento: las formas que hay, cómo se usan con el mouse, el teclado, el lector y el celular, y lo que falla. |
+| **MA1-A · Sobre el control, y que responda al tocarlo** (elegida) | La casilla entera, el cuadradito y su texto, muestra el motivo arriba del cuadradito; un clic hace lo mismo y no la marca. «Publicar en WhatsApp» apagado muestra el motivo al pasar o con un clic, y el encabezado no cambia. Un campo responde igual. «Reenviar invitación» durante una espera de 25 s: sólo el motivo, y al terminar se enciende en el mismo lugar. En el celular, tocar lo apagado abre el motivo y tocar afuera lo cierra; la (i) también se abre al tocarla. Con Tab, el foco va al control apagado y el lector dice su nombre, «no disponible» y el motivo; Enter o Espacio lo vuelven a mostrar y Escape lo cierra. |
+
+Descartó MA1-B (una (i) al lado de todo lo apagado: unos 100 controles ganan y pierden un ícono, que en una espera
+aparece y se va en segundos, y la (i) pasaría a decir dos cosas distintas) y MA1-C (un candado junto al rótulo de
+casillas y campos, con los botones como A: dos reglas según el control, y el candado dice «quedó fijo» para motivos que
+cambian solos).
+
+La regla, para toda la app:
+
+- El motivo va arriba del control apagado, como tooltip, sólo si no es obvio. Al lado o debajo no va nada: ni ícono, ni
+  texto, ni candado nuevo.
+- Se abre al pasar el mouse, con el foco, con un clic o con un toque. El clic, el toque, Enter o Espacio sobre algo
+  apagado muestran el motivo y no hacen la acción. Lo cierran Escape, salir con el mouse, perder el foco o tocar afuera.
+- Responde el control entero: en una casilla, el cuadradito y su texto.
+- El control no cambia de lugar ni de forma al apagarse o encenderse. Una espera de segundos es sólo su motivo.
+- El control apagado se alcanza con Tab, y el lector de pantalla dice su nombre, «no disponible» y el motivo.
+- Siguen como están el motivo adentro de los ítems de un menú, en un segundo renglón; «· motivo» en una opción de un
+  desplegable; y el candado del prefijo, que marca un campo de sólo lectura y ya estaba aprobado en LC3. Lo obvio, como
+  «Guardar» sin cambios, sigue sin motivo.
+- La (i) sigue explicando qué es algo (LC3) y también se abre con un toque.
+
+Lo que encontró el relevamiento y arregla la regla:
+
+1. El tooltip de la biblioteca (Radix) no se abre al tocar: en el celular no se ve ni el motivo ni la (i).
+2. Con el mouse, un clic sobre lo apagado cierra el motivo.
+3. En `CheckboxField` sólo responde el cuadradito.
+4. Con Tab, el foco llega a un envoltorio sin rol ni nombre.
+
+En el código, las features siguen usando `DisabledReason`, `disabledReason` de `CheckboxField` y `disabledLabel` de
+`IconButton`: el cambio va en `shared/ui`. Está elegida y sin programar: se programa con el
+[plan](../plans/2026-11-09-motivo-de-lo-apagado.md), con el visto bueno del usuario y el front quieto. Hasta entonces, el
+motivo se abre sólo al pasar el mouse o con el foco. Falta pasar el tablero al lienzo del sistema visual.
