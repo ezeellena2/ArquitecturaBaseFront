@@ -94,7 +94,7 @@ dato por columna se enlazan; no se copian. La enlazan el [`AGENTS.md`](../../AGE
 | Tablero | Qué define |
 | --- | --- |
 | **EX0 · Hoy, contra la lista** | El tablero T5 y la captura del 2026-11-09 lado a lado, lo que no pasa la lista y cuándo salió cada regla. |
-| **EX1-A · Lo que se exporta arriba, en dos columnas** (recomendada) | «Respuestas» y «Filtros» en `DataList`, con los mismos chips de la planilla sin la cruz («Ninguno» sin filtros). «Columnas», título del grupo con su (i); sin columnas ocultas, «Solo las visibles» apagada con «Se ven todas las columnas.». «Incluir las anuladas» donde la puso CW11-A, con su (i), «Suma la columna «Anulada».»; marcada, «Respuestas» dice «2 y las anuladas». «Archivo» y «Hojas» al final, con la (i) «Cada bloque va en su hoja, con un renglón por ítem.»; las hojas cambian con «Solo las visibles». |
+| **EX1-A · Lo que se exporta arriba, en dos columnas** (recomendada) | «Respuestas» y «Filtros» en `DataList`, con los mismos chips de la planilla sin la cruz («Ninguno» sin filtros). «Columnas», título del grupo con su (i); sin columnas ocultas, «Solo las visibles» apagada con «Se ven todas las columnas.». «Incluir las anuladas» donde la puso CW11-A, con su (i), «Suma la columna «Anulada».»; marcada, «Respuestas» dice «2 y las anuladas». «Archivo» y «Filas» al final: «Una por ítem de Artículo» o «Una por respuesta», según el Excel elegido (XL1-A) y «Solo las visibles», con la (i) «Los datos de cada respuesta se repiten en sus ítems. Una respuesta sin ítems ocupa una fila.». |
 | **EX1-B · Como T5, sin leyendas** | Una frase con la cantidad en negrita y los chips, las columnas en tarjetas y el archivo en el pie, a la izquierda. |
 | **EX1-C · Las elecciones arriba, lo que se baja al pie** | Las mismas piezas que A, con las elecciones primero y un solo `DataList` junto al botón. |
 | **EX2 · El filtro de una pregunta del bloque** | **A** (recomendada): «Estado: Dañado (en algún ítem de Artículo)». **B**: «Algún ítem de Artículo con Estado: Dañado», las palabras de las reglas. **C**: «Artículo › Estado: Dañado», sin decir «algún». Vale para los chips de la planilla y el diálogo, que salen del mismo texto. |
@@ -105,14 +105,13 @@ que en la planilla; lo que depende de las elecciones queda al lado del resultado
 caso y se arma con piezas que ya existen. B vuelve al tablero que se eligió en octubre, pero la frase cambia con cada
 caso y las tarjetas duplican el alto. C pone primero una elección sin contexto y el filtro al final.
 
-No cambia el contrato con el backend: el diálogo no inventa cuántas anuladas hay, y las hojas salen de las columnas que
-ya llegan. El nombre de la hoja de un bloque lo recorta el servidor a 31 caracteres; el diálogo muestra el nombre del
-bloque.
+No cambia el contrato con el backend: el diálogo no inventa cuántas anuladas hay, y «Filas» sale de las columnas que ya
+llegan (si el bloque entra en lo que se exporta).
 
-El mismo día el usuario pidió el Excel en una sola hoja: la propuesta está en el
+El mismo día el usuario pidió el Excel en una sola hoja y eligió XL1-A, una fila por ítem: está en el
 [plan del Excel](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md), con los tableros
-XL0 a XL2 del mismo lienzo. Si se elige XL1-A, una fila por ítem, «Hojas» pasa a ser «Filas» («Una por ítem de
-Artículo», o «Una por respuesta» sin bloque).
+XL0 a XL2 del mismo lienzo. Por eso EX1-A, EX1-C y EX3 dicen «Filas» en lugar de «Hojas»: «Una por ítem de Artículo»,
+o «Una por respuesta» sin bloque o con el bloque fuera de «Solo las visibles».
 
 ## Los demás diálogos
 
