@@ -252,6 +252,15 @@ describe("PermissionPicker", () => {
     expect(onChange).toHaveBeenCalledWith(["users.read", "users.manage"]);
   });
 
+  it("says how many permissions of an area are picked in its «Asignado» cell, next to its checkbox, not in its name (UD, E)", () => {
+    renderWithProviders(<Harness initial={["users.read"]} />);
+
+    // A band names one thing: the area; how many it has picked goes in the column that says what is assigned.
+    const band = within(area("Usuarios")).getAllByRole("row")[0];
+    expect(within(band).getAllByRole("cell").at(-1)).toHaveTextContent("1 de 2");
+    expect(within(band).getByRole("button", { name: "Usuarios" })).not.toHaveTextContent("1 de 2");
+  });
+
   it("picks and removes a whole area, and counts over all of its permissions", async () => {
     renderWithProviders(<Harness initial={["users.read"]} />);
 

@@ -62,12 +62,13 @@ function PermissionArea({
             onClick={onToggleOpen}
           >
             <span id={`${id}-name`}>{group.name}</span>
-            <span className="text-xs font-normal tabular-nums text-[var(--color-content-muted)]">
-              {t("picker.areaProgress", { picked: progress.picked, total: progress.total })}
-            </span>
           </TableSectionToggle>
         </TableCell>
+        {/* A band names one thing (UD, E): how many are picked goes with what is assigned, next to the area's checkbox. */}
         <TableCell className="px-4 py-0 text-right">
+          <span className="mr-2 text-xs font-normal tabular-nums text-[var(--color-content-muted)]">
+            {t("picker.areaProgress", { picked: progress.picked, total: progress.total })}
+          </span>
           <label className={checkTarget}>
             <Checkbox
               aria-label={progress.all ? t("picker.clearAllFor", { area: group.name }) : t("picker.pickAllFor", { area: group.name })}
