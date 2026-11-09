@@ -9,7 +9,7 @@ import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
-import { formatDateInZone } from "@/shared/lib/dateTime";
+import { formatDateInZone, formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { FilterBar } from "@/shared/ui/FilterBar";
@@ -25,7 +25,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { formActorKey, formScopeKey, useFormDefinitions, type FormReadScope } from "../hooks/useFormQueries";
 import { useFormOverviewScope } from "../hooks/useFormOverview";
 import { useResponseScope } from "../hooks/useResponseQueries";
-import { deprecationMessage } from "../lifecyclePresentation";
+import { deprecationDateUtc, deprecationStateKey } from "../lifecyclePresentation";
 import { publicationLabelKey } from "../publicationPresentation";
 import { administrativeName } from "../editorModel";
 import { FormDeletionDialog } from "../components/FormDeletionDialog";
@@ -76,9 +76,21 @@ export function FormsPage() {
   const columns: Column<Row>[] = [
     { id: "name", header: t("formColumn"), sortable: true, cell: row => <Link to={`/formularios/${row.id}`} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{administrativeName(row.name, scope.culture)}</Link> },
     { id: "questionCount", header: t("countColumn"), sortable: true, numeric: true, cell: row => row.questionCount },
-    { id: "displayState", header: t("stateColumn"), cell: row => { const channel = row.lifecycle.deactivatedAtUtc ? deprecationMessage(row.lifecycle, t, scope.culture, user?.timeZoneId) : null; return <div><p>{row.lifecycle.deactivatedAtUtc ? t(row.activeVersionNumber === null ? "lifecycle.stateWithoutVersion" : "lifecycle.state", { version: row.activeVersionNumber }) : t(publicationLabelKey(row.displayState, true), { version: row.activeVersionNumber })}</p>{row.lifecycle.deactivatedAtUtc && row.lifecycle.unavailableReason === "PublicationInProgress" ? <p className="text-xs text-[var(--color-content-muted)]">{t("lifecycle.reactivating")}</p> : null}{!row.lifecycle.deactivatedAtUtc && row.activeVersionNumber !== null && row.displayState !== "Published" ? <p className="text-xs text-[var(--color-content-muted)]">{t("publication.previousActive", { version: row.activeVersionNumber })}</p> : null}{channel ? <p className="max-w-64 whitespace-normal text-xs text-[var(--color-content-muted)]">{channel}</p> : null}</div>; } },
+    // One piece of data per column (UD2): the state goes alone, the version that stays active and who changed it go apart.
+    { id: "displayState", header: t("stateColumn"), cell: row => {
+      if (!row.lifecycle.deactivatedAtUtc) return t(publicationLabelKey(row.displayState, true));
+      const key = deprecationStateKey(row.lifecycle);
+      return key ? t(key) : "—";
+    } },
+    // «Dado de baja» is what the segment already says: here, how the withdrawal goes in WhatsApp and its date.
+    ...(publicationFilter === "Deactivated" ? [{ id: "deprecation", header: t("lifecycle.deprecationColumn"), cell: (row: Row) => {
+      const at = deprecationDateUtc(row.lifecycle);
+      return at ? <time dateTime={at}>{formatDateTimeInZone(at, i18n.language, user?.timeZoneId)}</time> : "—";
+    } }] : []),
+    { id: "activeVersion", header: t("activeVersionColumn"), numeric: true, cell: row => row.activeVersionNumber ?? "—" },
     { id: "responseCount", header: t("responseCountColumn"), numeric: true, cell: row => row.lifecycle.responseCount ?? "—" },
-    { id: "lastChangedAtUtc", header: t("changedColumn"), sortable: true, cell: row => `${formatDateInZone(row.lastChangedAtUtc, i18n.language, user?.timeZoneId)} · ${row.lastChangedBy?.displayName ?? "—"}` },
+    { id: "lastChangedAtUtc", header: t("changedColumn"), sortable: true, cell: row => formatDateInZone(row.lastChangedAtUtc, i18n.language, user?.timeZoneId) },
+    { id: "lastChangedBy", header: t("changedByColumn"), cell: row => row.lastChangedBy?.displayName ?? "—" },
     { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{ hidden: !canManage || !row.canEdit, label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }, { hidden: !canPublish || !row.lifecycle.canDeactivate, label: t("lifecycle.deactivate"), accessibleName: t("lifecycle.deactivate") + " " + administrativeName(row.name, scope.culture), icon: BanIcon, onSelect: () => chooseAction(row, "deactivate") }, { hidden: !canPublish || !row.lifecycle.canReactivate, label: t("lifecycle.reactivate"), accessibleName: t("lifecycle.reactivate") + " " + administrativeName(row.name, scope.culture), icon: RefreshIcon, onSelect: () => { void navigate("/formularios/" + row.id, { state: { reactivateFormId: row.id } }); } }, { hidden: !canManage || !row.lifecycle.canDelete || row.lifecycle.deletionUnavailableReason === "HasResponses" || row.lifecycle.responseCount !== null && row.lifecycle.responseCount > 0, label: t("lifecycle.delete"), accessibleName: t("lifecycle.delete") + " " + administrativeName(row.name, scope.culture), icon: TrashIcon, destructive: true, onSelect: () => chooseAction(row, "delete") }]} /> },
   ];
   return <div ref={host}><Page title={t("title")} actions={canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.form"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button></> : undefined}>

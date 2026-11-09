@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { queryClient } from "@/shared/api/queryClient";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import type { FormOverview } from "../api/overview";
@@ -31,12 +32,6 @@ function setup(permissions: string[], payload = overview()) {
 }
 beforeEach(() => { queryClient.clear(); localStorage.clear(); });
 
-// One piece of data per column (UD1): the cell of a row under a header, by the position of that header.
-function cellUnder(table: HTMLElement, row: HTMLElement, header: string) {
-  const index = within(table).getAllByRole("columnheader").findIndex(cell => cell.textContent === header);
-  expect(index, header).toBeGreaterThanOrEqual(0);
-  return within(row).getAllByRole("cell")[index];
-}
 const received = formatDateTimeInZone("2026-10-21T12:30:00Z", "es", currentUser.timeZoneId);
 
 describe("MF1 form overview", () => {

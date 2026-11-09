@@ -9,6 +9,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
@@ -79,7 +80,7 @@ it("does not offer deactivation without Publish and preserves an unknown respons
  expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeInTheDocument();
  expect(within(table).queryByRole("button", { name: /Dar de baja/ })).not.toBeInTheDocument();
  expect(within(table).queryByRole("button", { name: /Eliminar/ })).not.toBeInTheDocument();
- const row = within(table).getAllByRole("row")[1]; expect(within(row).getAllByRole("cell")[3]).toHaveTextContent("—");
+ const row = within(table).getAllByRole("row")[1]; expect(cellUnder(table, row, "Respuestas")).toHaveTextContent(/^—$/);
 });
 
 it("returns focus to the editor action menu after cancelling deactivation", async () => {
@@ -141,12 +142,18 @@ it.each(["Pending","Uncertain","Deprecated","NeedsAttention"] as const)("shows a
  store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deactivatedAtUtc:"2026-10-20T12:00:00Z",deprecationState:state,lastOpenSessionExpiresAtUtc:state==="Pending"?"2026-10-22T18:00:00Z":null,deprecatedAtUtc:state==="Deprecated"?"2026-10-21T18:00:00Z":null}));
  const view=renderRouteWithProviders("/formularios?publicationFilter=Deactivated");
  const table=await screen.findByRole("table");
- expect(within(table).getByText(state==="Pending"?/se deprecan cuando venzan/:state==="Uncertain"?/Sin confirmar en WhatsApp/:state==="NeedsAttention"?/No se pudo deprecar en WhatsApp/:/Deprecados el 21 oct 2026, 15:00/)).toBeVisible();
+ // How the withdrawal goes in WhatsApp and its date, each in its own column (UD2).
+ const row=(await within(table).findByRole("link",{name:"Registrar visita"})).closest("tr")!;
+ expect(cellUnder(table,row,"En WhatsApp")).toHaveTextContent({Pending:/^Pendiente$/,Uncertain:/^Sin confirmar$/,NeedsAttention:/^Requiere atención$/,Deprecated:/^Deprecado$/}[state]);
+ expect(cellUnder(table,row,"Deprecación")).toHaveTextContent(state==="Pending"?/^22 oct 2026, 15:00$/:state==="Deprecated"?/^21 oct 2026, 15:00$/:/^—$/);
+ expect(cellUnder(table,row,"Versión activa")).toHaveTextContent(/^1$/);
+ expect(within(table).queryByText(/· versión/)).not.toBeInTheDocument();
  view.unmount();queryClient.clear();
  store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deprecationState:state,lastOpenSessionExpiresAtUtc:state==="Pending"?"2026-10-22T18:00:00Z":null,deprecatedAtUtc:state==="Deprecated"?"2026-10-21T18:00:00Z":null}));
  renderRouteWithProviders("/formularios");
  const active=await screen.findByRole("table");
- expect(within(active).queryByText(/se deprecan|Sin confirmar en WhatsApp|Deprecados el|No se pudo deprecar en WhatsApp/)).not.toBeInTheDocument();
+ expect(within(active).queryByText(/^(Pendiente|Sin confirmar|Requiere atención|Deprecado)$/)).not.toBeInTheDocument();
+ expect(within(active).queryByRole("columnheader",{name:"Deprecación"})).not.toBeInTheDocument();
 });
 it("omits WhatsApp deprecation claims from the impact preview when the channel has no confirmed Flows",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{deprecationState:null,deprecatedAtUtc:null,lastOpenSessionExpiresAtUtc:null}));

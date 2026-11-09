@@ -40,7 +40,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`/src/test/visual/index.html?screen=/formularios&scenario=forms-publication-http-published&lang=${language}`);
-    await expect(page.getByRole("table").getByText(es ? "Publicado · versión 1" : "Published · version 1", { exact: true })).toBeVisible();
+    // The state and the active version, each in its own column (UD2).
+    await expect(page.getByRole("table").getByText(es ? "Publicado" : "Published", { exact: true })).toBeVisible();
+    await expect(page.getByRole("table").getByRole("columnheader", { name: es ? "Versión activa" : "Active version", exact: true })).toBeVisible();
     await page.screenshot({ path: `test-results/forms-review-http-published-${language}-${width}.png`, fullPage: true });
     await page.goto(`/src/test/visual/index.html?screen=/formularios/${failedDetail.definition.id}&scenario=forms-publication-http-failed&lang=${language}`);
     await page.getByRole("button", { name: es ? "Ir a la pregunta" : "Go to the question", exact: true }).click();

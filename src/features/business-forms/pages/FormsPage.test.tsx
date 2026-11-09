@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { queryClient } from "@/shared/api/queryClient";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
+import { formatDateInZone } from "@/shared/lib/dateTime";
 import { server } from "@/test/mocks/server";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 import { notify } from "@/shared/ui/notifications";
@@ -479,7 +481,23 @@ it.each([null,1])("shows Failed independently of previous active version %s",asy
  renderRouteWithProviders("/formularios");
  await screen.findByText("No se pudo publicar",{exact:true});
  expect(screen.queryByText(/^No se pudo publicar · versión/)).not.toBeInTheDocument();
- if(activeVersionNumber)expect(screen.getByText("La versión 1 publicada sigue activa.")).toBeInTheDocument();
+ // The version that stays active goes in its own column, not in a grey line under the state (UD2).
+ const table=screen.getByRole("table"),row=within(table).getByRole("link",{name:"Visita"}).closest("tr")!;
+ expect(cellUnder(table,row,"En WhatsApp")).toHaveTextContent(/^No se pudo publicar$/);
+ expect(cellUnder(table,row,"Versión activa")).toHaveTextContent(activeVersionNumber?/^1$/:/^—$/);
+ expect(screen.queryByText(/sigue activa/)).not.toBeInTheDocument();
+});
+
+it("puts the last change and who made it in two columns, and the active version apart from the state (UD2)", async () => {
+  setup();
+  renderRouteWithProviders("/formularios");
+  const table = await screen.findByRole("table");
+  const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
+  expect(cellUnder(table, row, "Último cambio")).toHaveTextContent(new RegExp("^" + formatDateInZone("2026-10-10T12:00:00Z", "es", "America/Argentina/Buenos_Aires") + "$"));
+  expect(cellUnder(table, row, "Cambió")).toHaveTextContent(/^Ana Pérez$/);
+  expect(cellUnder(table, row, "En WhatsApp")).not.toHaveTextContent(/versión/);
+  expect(within(table).getByRole("columnheader", { name: "Versión activa" })).toHaveClass("text-right");
+  expect(within(table).queryByRole("columnheader", { name: "Deprecación" })).not.toBeInTheDocument();
 });
 
 it("returns focus to a neighboring row after confirmed question removal", async () => {
@@ -604,11 +622,15 @@ it("keeps the read-only list navigable without write actions", async () => {
   expect(within(table).queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
 });
 
-it("shows Published with its version from an actual backend list response", async () => {
+it("shows Published and, in its own column, its version from an actual backend list response", async () => {
   setup();
   server.use(http.get("/api/forms/definitions", () => Response.json(realPublishedList)));
   renderRouteWithProviders("/formularios");
-  await screen.findByText("Publicado · versión 1", { exact: true });
+  const table = await screen.findByRole("table");
+  const row = (await within(table).findByRole("link", { name: "Contract fixture published" })).closest("tr")!;
+  expect(cellUnder(table, row, "En WhatsApp")).toHaveTextContent(/^Publicado$/);
+  expect(cellUnder(table, row, "Versión activa")).toHaveTextContent(/^1$/);
+  expect(cellUnder(table, row, "Cambió")).toHaveTextContent(/^—$/);
 });
 it("marks the affected question and names the language of its error from actual Failed HTTP diagnostics", async () => {
   setup("", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);
