@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { CatalogListTable, type CatalogListRow } from "./CatalogListTable";
 
 const rows: CatalogListRow[] = [
@@ -22,6 +23,13 @@ async function mount(language: "es" | "en", canManage = true) {
   return { ...rendered!, props, onPageChange, onViewUsage, onEdit, user: userEvent.setup() };
 }
 describe("Chosen catalog list board K1", () => {
+  it("says where the options come from with one value, without a grey line under it (UD3)", async () => {
+    await mount("es");
+    const table = screen.getByRole("table");
+    expect(cellUnder(table, screen.getByRole("row", { name: /Supervisores activos/ }), "De dónde salen")).toHaveTextContent(/^De la base$/);
+    expect(cellUnder(table, screen.getByRole("row", { name: /Clientes/ }), "De dónde salen")).toHaveTextContent(/^Escritas a mano$/);
+    expect(within(table).queryByText("Usuarios, con filtros")).not.toBeInTheDocument();
+  });
   for (const language of ["es", "en"] as const) {
     it("uses supplied page and option counts without recounting the visible rows in " + language, async () => {
       const { user, onPageChange, onViewUsage, onEdit } = await mount(language);

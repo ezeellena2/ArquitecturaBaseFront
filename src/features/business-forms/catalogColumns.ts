@@ -17,7 +17,7 @@ export interface CatalogItemColumn {
   readonly numeric?: boolean;
 }
 
-// Both presentations describe the same option; only the compact readonly table folds code into text.
+// The table and the complete editor describe the same option with the same columns, the text and the code apart (UD3).
 export function catalogItemColumns(valueType: CatalogValueType, culture: FormCulture, fields: readonly CatalogFieldDraft[] = []): readonly CatalogItemColumn[] {
   return [
     { id: "text", tableLabelKey: "catalogs.items.text", editorLabelKey: "catalogs.items.text", errorPath: "text." + culture, required: true, maxLength: 30 },
@@ -28,8 +28,4 @@ export function catalogItemColumns(valueType: CatalogValueType, culture: FormCul
     { id: "detail", tableLabelKey: "catalogs.items.detail", editorLabelKey: "catalogs.items.detail", errorPath: "detail." + culture, required: false, maxLength: 300 },
     { id: "isActive", tableLabelKey: "catalogs.columns.state", editorLabelKey: "catalogs.items.active", errorPath: "isActive", required: false },
   ];
-}
-
-export function catalogTableColumns(columns: readonly CatalogItemColumn[], inline: boolean): readonly CatalogItemColumn[] {
-  return inline ? columns : columns.filter(column => column.id !== "code").map(column => column.id === "text" ? { ...column, tableLabelKey: "catalogs.items.textAndCode" } : column);
 }

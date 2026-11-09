@@ -1,7 +1,7 @@
 import { Checkbox } from "@/shared/ui/checkbox";
 import { CatalogInlineInput } from "./CatalogInlineInput";
 import { catalogScalarText, catalogTypedValueTypes, type CatalogValueType } from "../catalogValues";
-import { catalogItemColumns, catalogTableColumns } from "../catalogColumns";
+import { catalogItemColumns } from "../catalogColumns";
 import { Fragment, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
@@ -52,7 +52,8 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
   const { t } = useTranslation("forms");
   const readOnly = !canManage || busy;
   const editing = inline && canManage;
-  const allColumns = catalogTableColumns(catalogItemColumns(valueType, culture, fields), editing);
+  // Editing or not, on the phone too, the same columns: the text and the code are two (UD3).
+  const allColumns = catalogItemColumns(valueType, culture, fields);
   const columns = allColumns.filter(column => !column.field || !visibleFieldIds || visibleFieldIds.includes(column.field.localId));
   const problemId = useId();
   // Typed values are read and shown in the draft's culture, the one its editable text was written in.
@@ -96,18 +97,19 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
                 content = error ? <><p>{shown}</p><p className="whitespace-normal text-xs text-[var(--color-danger)]">{error}</p></> : shown;
               }
             } else switch (column.id) {
-              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} placeholder={contentReference(item.label, culture, original)} readOnly={rowReadOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })} onBlur={blur}/> : <><p>{name}</p><p className="text-xs text-[var(--color-content-muted)]">{item.code}</p></>; break;
-              case "code": content = <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={rowReadOnly} error={error} onChange={code => onChange({ ...item, code })} onBlur={blur}/>; break;
+              case "text": content = editing ? <CatalogInlineInput label={t("catalogs.items.inlineText", { number })} value={item.label[culture] ?? ""} placeholder={contentReference(item.label, culture, original)} readOnly={rowReadOnly} count error={error} warning={warnings?.[item.localId]} onChange={value => onChange({ ...item, label: { ...item.label, [culture]: value } })} onBlur={blur}/> : name; break;
+              case "code": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineCode", { number })} value={item.code} readOnly={rowReadOnly} error={error} onChange={code => onChange({ ...item, code })} onBlur={blur}/> : item.code || "—"; break;
               case "value": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineValue", { number })} value={item.value ?? ""} readOnly={rowReadOnly} type={column.inputType} inputMode={column.inputMode} error={error} onChange={value => onChange({ ...item, value: value || null })} onBlur={blur}/> : valueType === "Text" || !item.value ? item.value || "—" : catalogScalarText(catalogTypedValueTypes[valueType], item.value, valueCulture, yesNo, valueCulture); break;
               case "detail": content = editing ? <CatalogInlineInput maxLength={column.maxLength} label={t("catalogs.items.inlineDetail", { number })} value={item.detail[culture] ?? ""} placeholder={contentReference(item.detail, culture, original)} readOnly={rowReadOnly} error={error} onChange={value => onChange({ ...item, detail: { ...item.detail, [culture]: value || null } })}/> : administrativeName(item.detail, culture) || "—"; break;
-              case "isActive": content = editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={rowReadOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
+              // Deleted on Save is a state of the option: it goes here, in red, and the actions keep only «Restaurar» (UD3).
+              case "isActive": content = deleted ? <span className="text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</span> : editing ? <Checkbox aria-label={t("catalogs.items.activeNamed", { name })} checked={item.isActive} disabled={rowReadOnly} onCheckedChange={value => onChange({ ...item, isActive: value === true })}/> : <Badge variant="outline">{t(item.isActive ? "catalogs.items.active" : "catalogs.state.Inactive")}</Badge>; break;
             }
             return <WideTableCell key={column.id} pinned={column.id === "text" ? "start" : undefined} numeric={column.numeric}>{content}</WideTableCell>;
           })}
           <WideTableCell pinned="end" className="text-right">{canManage ? <div className="flex justify-end gap-1">
             {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
             <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
-            {deleted ? <><span className="self-center text-xs text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</span><Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button></>
+            {deleted ? <Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button>
               : item.isActive ? <IconButton size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} onClick={() => onEdit(item)}><PencilIcon className="size-4" /></IconButton>
               : <Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
             {onRemove && item.itemId === null ? <IconButton size="icon-sm" label={t("catalogs.items.removeNamed", { name })} disabled={busy} onClick={() => onRemove(item)}><TrashIcon className="size-4" /></IconButton> : null}

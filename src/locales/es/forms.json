@@ -405,7 +405,6 @@
       "text": "Texto",
       "detail": "Detalle",
       "code": "Código",
-      "textAndCode": "Texto y código",
       "codeHint": "El código es para la empresa: no se muestra en WhatsApp.",
       "active": "Activa",
       "activeHint": "Una opción dada de baja deja de ofrecerse en los envíos nuevos. Las respuestas que ya la eligieron siguen mostrándola.",

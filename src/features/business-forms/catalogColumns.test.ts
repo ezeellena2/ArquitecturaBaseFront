@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalogItemColumns, catalogTableColumns } from "./catalogColumns";
+import { catalogItemColumns } from "./catalogColumns";
 import { newCatalogField } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
 
@@ -7,17 +7,14 @@ describe("catalog option columns", () => {
   it("keeps the table and complete editor on the same ordered editable columns", () => {
     const columns = catalogItemColumns("Decimal", "en");
     expect(columns.map(column => column.id)).toEqual(["text", "code", "value", "detail", "isActive"]);
-    expect(catalogTableColumns(columns, true).map(column => column.id)).toEqual(columns.map(column => column.id));
     expect(columns.find(column => column.id === "text")).toMatchObject({ errorPath: "text.en", required: true, maxLength: 30 });
     expect(columns.find(column => column.id === "value")).toMatchObject({ inputMode: "decimal", inputType: "text", required: true });
   });
 
-  it("omits the value of a text catalog and folds the code into the readonly text column", () => {
+  it("omits the value of a text catalog and keeps the text and the code in their own columns (UD3)", () => {
     const columns = catalogItemColumns("Text", "es");
     expect(columns.map(column => column.id)).toEqual(["text", "code", "detail", "isActive"]);
-    expect(catalogTableColumns(columns, false).map(column => column.id)).toEqual(["text", "detail", "isActive"]);
-    expect(catalogTableColumns(columns, false)[0]?.tableLabelKey).toBe("catalogs.items.textAndCode");
-    expect(columns[0]?.tableLabelKey).toBe("catalogs.items.text");
+    expect(columns.map(column => column.tableLabelKey).slice(0, 2)).toEqual(["catalogs.items.text", "catalogs.items.code"]);
   });
 
   it("describes date-only and integer inputs without duplicating their presentation rules", () => {

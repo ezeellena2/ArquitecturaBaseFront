@@ -44,9 +44,8 @@ export function CatalogListTable({ page, canManage, loading, refreshing = false,
   const { t } = useTranslation("forms");
   const columns: Column<CatalogListRow>[] = [
     { id: "name", header: t("catalogs.columns.name"), sortable: true, cell: row => <Link to={"/catalogos/" + row.id} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{row.name}</Link> },
-    { id: "origin", header: t("catalogs.columns.origin"), cell: row => <div><p>{t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database"))}</p>
-      {row.origin !== "Manual" ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalogs.source.filters")}</p> : null}
-    </div> },
+    // One value: «Usuarios, con filtros» is the same in every catalog of the base and does not tell one row from another (UD3).
+    { id: "origin", header: t("catalogs.columns.origin"), cell: row => t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database")) },
     { id: "optionsCount", header: t("catalogs.columns.options"), numeric: true, cell: row => row.optionsCount ?? "—" },
     { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount !== null && row.usageCount > 0
       ? <Button type="button" variant="link" aria-label={t("catalogs.viewUsage", { name: row.name })} onClick={() => onViewUsage(row.id)}>{t("catalogs.usage", { count: row.usageCount })}</Button> : "—" },
