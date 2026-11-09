@@ -1,7 +1,6 @@
 # Un dato por columna (UD)
 
-Fecha: **2026-11-09**. Estado: **aprobado por el usuario el mismo día, con las excepciones elegidas; espera un momento
-con el front quieto**.
+Fecha: **2026-11-09**. Estado: **programado el mismo día; falta la prueba manual, y después se retira**.
 
 El usuario pidió el 2026-11-09 que una columna no junte varios datos, y que sea una premisa. La regla está en el
 [fundamento visual](../design/visual-baseline.md#un-dato-por-columna--2026-11-09), en las
@@ -9,6 +8,21 @@ El usuario pidió el 2026-11-09 que una columna no junte varios datos, y que sea
 [índice de premisas](../../../ArquitecturaBase/docs/architecture/premisas-de-la-plantilla.md). Los tableros están en el
 lienzo aparte [Un dato por columna](https://claude.ai/artifact/AbCaxVuSGySAjFkpx9gNzB). Este plan lleva a la regla las
 columnas, encabezados y bandas que hoy la rompen.
+
+## Cómo quedó
+
+El usuario aprobó los tableros y el plan, y pidió programarlo con la app levantada («es front»). Un commit por pantalla:
+a827be0a (Formularios), 2e72b524 (Diseñar formularios), d3f315fd (Catálogos y opciones), 6c48cac3 (planilla), 8dacdf93
+(Usuarios, Datos de las personas y Formularios que faltan) y da00d946 (la banda del rol).
+
+- Quien sólo carga también ve «Estado del formulario» cuando su lista tiene un formulario dado de baja: no tiene
+  segmentado, así que mezcla los dos.
+- El tipo de un dato de las personas conserva su texto de la app, «Elegir de un catálogo».
+- En Usuarios, la explicación de un número sin verificar es la ayuda del «No» de «Verificado», que se alcanza con Tab.
+- Los tests buscan cada celda por su encabezado con `cellUnder` (`src/test/utils/tableCells.ts`).
+- Tarea 8: no se sumó un control en `designRules.ts`. Los casos eran composiciones (una etiqueta junto al dato, un renglón
+  gris con un estado) que una regla de sintaxis no distingue de la excepción A, y una regla de «a · b» sólo habría visto
+  dos. Queda a cargo de la revisión de cada cambio.
 
 ## Antes de empezar
 

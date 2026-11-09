@@ -573,7 +573,7 @@ Sin elección; no se implementan sin ella.
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
-| Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros y plan aprobados, sin programar |
+| Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Implementado](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; falta la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [Propuesta](dialogos-con-la-lista-de-chequeo.md), sin elegir |
 | El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; por programar |
 | Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [Propuesta](acciones-del-encabezado.md), sin elegir |
@@ -1216,6 +1216,10 @@ planilla, las personas de «Datos de las personas», las tablas de la importaci�
 Configuración y de Apariencia y el bloque de renglones al cargar. En Catálogos, el renglón gris del motivo debajo del
 estado no aparece nunca: el servidor manda el estado sin motivo.
 
-La regla y sus excepciones están elegidas, y el usuario aprobó el mismo día los tableros UD1 a UD5 y el plan. Se
-programa con el [plan](../plans/2026-11-09-un-dato-por-columna.md) en un momento con el front quieto. Falta pasar los
-tableros al lienzo del sistema visual.
+La regla y sus excepciones están elegidas, y el usuario aprobó el mismo día los tableros UD1 a UD5 y el plan, que quedó
+programado el 2026-11-09 ([plan](../plans/2026-11-09-un-dato-por-columna.md)). Dos ajustes respecto de los tableros: quien
+sólo carga también ve «Estado del formulario» cuando su lista tiene un formulario dado de baja, porque no tiene
+segmentado, y el tipo de un dato de las personas conserva su texto de la app, «Elegir de un catálogo». Los tests buscan
+cada celda por su encabezado (`cellUnder`). No se sumó un control automático: los casos encontrados eran composiciones
+(una etiqueta junto al dato, un renglón gris con un estado) que una regla de sintaxis no distingue de la excepción A, y
+quedan a cargo de la revisión de cada cambio. Faltan la prueba manual y pasar los tableros al lienzo del sistema visual.
