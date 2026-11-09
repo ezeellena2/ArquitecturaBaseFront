@@ -159,9 +159,11 @@ export function FormResponsesPage() {
           className="font-medium text-[var(--color-brand-700)] underline"
         >
           {row.number}
-        </Link>{/* A correction says so next to its number (CW10-A). */}{row.corrected ? <Badge variant="outline" className="ml-2">{t("detail.corrected")}</Badge> : null}</>
+        </Link></>
       ),
     },
+    // A correction says so in its own column, only when the page has one (UD4, instead of next to its number as in CW10-A).
+    ...(data?.records.items.some(row => row.corrected) ? [{ id: "corrected", header: t("detail.corrected"), cell: (row: ResponseRow) => row.corrected ? t("responses.yes") : "—" }] : []),
     {
       id: "submittedAtUtc",
       header: t("responses.received"),
@@ -190,7 +192,8 @@ export function FormResponsesPage() {
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
-      header: catalogField ? `${column.label} · ${catalogField.label}` : column.label + (column.introducedInVersion > 1 ? " " + t("responses.sinceVersion", { version: column.introducedInVersion }) : ""),
+      // A header names one thing (UD4): since which version a question is asked is said in «Columnas».
+      header: catalogField ? `${column.label} · ${catalogField.label}` : column.label,
       sortable: !catalogField && column.type !== "multiChoice" && column.type !== "group",
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue

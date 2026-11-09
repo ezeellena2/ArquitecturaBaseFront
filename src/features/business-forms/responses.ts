@@ -58,14 +58,12 @@ export function responseQuestionColumns(columns: readonly ResponseColumn[]): rea
   return columns.flatMap(column => [column, ...(column.questions ?? [])]);
 }
 /**
- * «3 · GLIFOSATO 64%, …» (RG4-A): how many items a block has and the first asked question of each one, without the items that
- * left it unanswered. Only for a block with items: otherwise the cell reads like any other.
+ * How many items a block has: the sheet says «3 ítems» and its items are read in the response (UD4, 2026-11-09, which
+ * replaces the first values of RG4-A). Only for a block with items: otherwise the cell reads like any other.
  */
-export function responseRowsSummary(cell: ResponseCell): { readonly count: number; readonly firsts: readonly ResponseCell[] } | null {
+export function responseRowsSummary(cell: ResponseCell): { readonly count: number } | null {
   if (cell.type !== "group" || cell.state !== "Answered" || !Array.isArray(cell.value)) return null;
-  const items = (cell.value as readonly object[]).filter((item): item is ResponseItemCells => "cells" in item);
-  return { count: items.length, firsts: items.map(item => item.cells.find(itemCell => itemCell.state !== "NotAsked"))
-    .filter((first): first is ResponseCell => first?.state === "Answered") };
+  return { count: (cell.value as readonly object[]).filter((item): item is ResponseItemCells => "cells" in item).length };
 }
 export interface ResponseCondition {
   fieldId: string;
@@ -275,9 +273,4 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   if (query.receivedFromUtc || query.receivedToUtc) labels.push({ key: "received", label: t("responses.received") + " · " + [query.receivedFromUtc ? day(query.receivedFromUtc) : "…", query.receivedToUtc ? day(new Date(Date.parse(query.receivedToUtc) - 1).toISOString()) : "…"].join(" – ") });
   if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
   return labels;
-}
-
-export function responseDocumentFormat(contentType: string): string | null {
-  const formats: Record<string, string> = { "application/pdf": "PDF", "text/plain": "TXT", "application/msword": "DOC", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX", "application/vnd.ms-excel": "XLS", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX" };
-  return formats[contentType] ?? null;
 }

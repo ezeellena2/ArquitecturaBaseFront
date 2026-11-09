@@ -154,7 +154,6 @@ it("describes a yes/no condition with the shared yes and no labels", () => {
   expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "paid", operator: "in", values: ["true", "false"] }] }, [column], key => key, "es")).toEqual([{ key: "paid", label: "Paid: responses.yes, responses.no" }]);
 });
 
-it("uses the supplied media type to label a document format", async()=>{ const {responseDocumentFormat}=await import("./responses");expect(responseDocumentFormat("application/pdf")).toBe("PDF");expect(responseDocumentFormat("text/plain")).toBe("TXT");expect(responseDocumentFormat("application/octet-stream")).toBeNull();});
 
 
 it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("keeps the private %s state filter during normalization and describes it with static translations", state => {
@@ -263,16 +262,14 @@ it("splits a rule condition into its question, its words and its values", () => 
 });
 describe("a block of rows", () => {
   const answered = (fieldId: string, value: string): ResponseCell => ({ fieldId, type: "shortText", state: "Answered", value });
-  it("sums its items and takes the first asked question of each one, without the unanswered ones", () => {
-    const first = answered("item", "GLIFOSATO 64%");
-    const third = answered("item", "UREA GRANULADA");
+  it("counts its items, also those that left a question unanswered (UD4)", () => {
     const cell: ResponseCell = { fieldId: "block", type: "group", state: "Answered", value: [
-      { cells: [first, answered("quantity", "200")] },
+      { cells: [answered("item", "GLIFOSATO 64%"), answered("quantity", "200")] },
       { cells: [{ fieldId: "item", type: "shortText", state: "Unanswered", value: null }, answered("quantity", "7")] },
-      { cells: [{ fieldId: "old", type: "shortText", state: "NotAsked", value: null }, third] },
+      { cells: [{ fieldId: "old", type: "shortText", state: "NotAsked", value: null }, answered("item", "UREA GRANULADA")] },
     ] };
 
-    expect(responseRowsSummary(cell)).toEqual({ count: 3, firsts: [first, third] });
+    expect(responseRowsSummary(cell)).toEqual({ count: 3 });
     expect(responseRowsSummary({ ...cell, state: "Unanswered", value: [] })).toBeNull();
     expect(responseRowsSummary(answered("text", "Sólo texto"))).toBeNull();
   });

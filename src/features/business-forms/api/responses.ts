@@ -146,7 +146,7 @@ const row = z.strictObject({
   channel: z.string(),
   state: z.enum(["Received", "PendingApproval", "Approved", "Rejected", "Voided"]),
   hasPdf: z.boolean(),
-  // Only on a correction (CW10-A): the row says «Corregida» next to its number.
+  // Only on a correction (CW10-A): the sheet says «Corregida» in its own column (UD4).
   corrected: z.literal(true).optional(),
   cells: z.array(responseCellSchema),
 });

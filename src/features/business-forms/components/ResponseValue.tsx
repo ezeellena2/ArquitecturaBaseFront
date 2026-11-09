@@ -1,9 +1,10 @@
+import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { CellText } from "@/shared/ui/CellText";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
-import { responseCatalogFieldText, responseDocumentFormat, responseFiles, responseRowsSummary, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
+import { responseCatalogFieldText, responseFiles, responseRowsSummary, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 // The captured fields of an option, aligned under its value (board TL1-A): the field in grey and its value in the text color,
 // with a line that ties them to the value.
@@ -47,36 +48,18 @@ export function ResponseValue({
         )}
       </span>
     );
-  // «3 · GLIFOSATO 64%, …» (RG4-A): how many items in grey and the first value of each, in one line cut with «…».
+  // One piece of data per column (UD4): a block says how many items it has and a set of documents how many there are; what
+  // is inside, and the formats, are read when the response opens.
+  const openDetail = (event: MouseEvent) => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onOpenDetail?.(); };
+  const toDetail = (text: string) => detailLink ? <Link to={detailLink} onClick={openDetail} className="text-[var(--color-brand-700)] underline">{text}</Link> : text;
   const rows = responseRowsSummary(cell);
-  if (rows) {
-    const firsts = rows.firsts.map(first => typeof first.value === "string" && (first.type === "decimal" || first.type === "date")
-      ? formatTypedValue(first.type, first.value, i18n.language) ?? first.value
-      : responseValueText(first, t("responses.unanswered"), t("responses.yes"), t("responses.no"))).join(", ");
-    return <div className="max-w-64 truncate"><span className="text-[var(--color-content-muted)]">{rows.count}</span>{firsts ? " · " + firsts : null}</div>;
-  }
+  if (rows) return toDetail(t("rows.items", { count: rows.count }));
   const files = responseFiles(cell);
   if (
     (cell.type === "photo" || cell.type === "document") &&
     Array.isArray(cell.value)
   ) {
-    if (cell.type === "document" && !detail)
-      return (
-        <Link
-          to={detailLink}
-          onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) onOpenDetail?.(); }}
-          className="text-[var(--color-brand-700)] underline"
-        >
-          {t("responses.documents", { count: files.length })} ·{" "}
-          {[
-            ...new Set(
-              files.map((file) =>
-                responseDocumentFormat(file.contentType),
-              ),
-            ),
-           ].filter(Boolean).join(", ")}
-        </Link>
-      );
+    if (cell.type === "document" && !detail) return toDetail(t("responses.documents", { count: files.length }));
     return (
       <FormRecordFiles
         actor={actor}

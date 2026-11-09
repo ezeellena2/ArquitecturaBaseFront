@@ -1,4 +1,5 @@
 import { act, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { expect, it } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { ResponseCell } from "../responses";
@@ -47,6 +48,15 @@ it("keeps a code of a multiple choice whole in the sheet, whose labels still wra
     detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
   expect(view.container).toHaveTextContent("30-71458236-9, Repuestos Sur");
   expect(Array.from(view.container.querySelectorAll(".whitespace-nowrap"), node => node.textContent)).toEqual(["30-71458236-9,"]);
+});
+
+it("says how many documents there are in the sheet, without their formats, which show when they open (UD4)", async () => {
+  const file = (n: number, contentType: string) => ({ fileId: "0199a0c0-0000-7000-8000-00000000098" + n, fieldId: "remitos", name: "remito-" + n, contentType, size: 2048, hasThumbnail: false });
+  const cell: ResponseCell = { fieldId: "remitos", type: "document", state: "Answered", value: [file(1, "application/pdf"), file(2, "image/jpeg")] };
+  await act(async () => { renderWithProviders(<MemoryRouter><ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-1" label="Remitos"
+    detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/></MemoryRouter>); });
+  expect(screen.getByRole("link", { name: "2 documentos" })).toHaveAttribute("href", "/formularios/form/respuestas/record");
+  expect(screen.queryByText(/PDF|JPG/)).not.toBeInTheDocument();
 });
 
 it("shows decimal and date answers with the shared format", async () => {

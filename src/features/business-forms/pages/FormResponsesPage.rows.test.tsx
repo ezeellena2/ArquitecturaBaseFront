@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { responseDetailFixture, responseFormId, responseSheetFixture, responseWorkflowFixture } from "@/test/responseFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -33,10 +34,49 @@ it("shows the block as its amount of items and their first values, without sorti
 
   renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
 
-  const header = await screen.findByRole("columnheader", { name: "Artículos" });
+  // The first render pays the lazy page: with the machine loaded it takes more than a second.
+  const header = await screen.findByRole("columnheader", { name: "Artículos" }, { timeout: 10_000 });
   expect(within(header).queryByRole("button")).not.toBeInTheDocument();
-  const rows = within(screen.getByRole("table")).getAllByRole("row");
-  expect(within(rows[1]).getByText("3")).toHaveClass("text-[var(--color-content-muted)]");
-  expect(rows[1]).toHaveTextContent("3 · GLIFOSATO 64%, UREA GRANULADA");
-  expect(rows[2]).toHaveTextContent("Sin respuesta");
+  const table = screen.getByRole("table");
+  const rows = within(table).getAllByRole("row");
+  // One piece of data per column (UD4): how many items, which opens the response; the items are read in its detail.
+  const block = cellUnder(table, rows[1], "Artículos");
+  expect(block).toHaveTextContent(/^3 ítems$/);
+  expect(within(block).getByRole("link", { name: "3 ítems" })).toBeVisible();
+  expect(rows[1]).not.toHaveTextContent("GLIFOSATO");
+  expect(cellUnder(table, rows[2], "Artículos")).toHaveTextContent(/^Sin respuesta$/);
+  // Without a corrected response on the page there is no column for it.
+  expect(within(table).queryByRole("columnheader", { name: "Corregida" })).not.toBeInTheDocument();
+});
+
+function serveSheet(sheet: ReturnType<typeof responseSheetFixture>) {
+  server.use(http.get("/api/forms/approvals", () => HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false })),
+    http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(sheet)),
+    http.get("/api/forms/records/:id/workflow", ({ params }) => HttpResponse.json(responseWorkflowFixture(String(params.id)))),
+    http.get("/api/forms/records/:id", ({ params }) => HttpResponse.json(responseDetailFixture(String(params.id)))));
+}
+
+it("puts «Corregida» in its own column instead of next to the number (UD4)", async () => {
+  const sheet = responseSheetFixture();
+  sheet.records.items = sheet.records.items.map((row, index) => index === 0 ? { ...row, corrected: true as const } : row);
+  serveSheet(sheet);
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  await screen.findByRole("columnheader", { name: "Corregida" }, { timeout: 10_000 });
+  const table = screen.getByRole("table");
+  const rows = within(table).getAllByRole("row");
+  const number = sheet.records.items[0].number;
+  expect(cellUnder(table, rows[1], "N°")).toHaveTextContent(new RegExp("^" + number + "$"));
+  expect(cellUnder(table, rows[1], "Corregida")).toHaveTextContent(/^Sí$/);
+  expect(cellUnder(table, rows[2], "Corregida")).toHaveTextContent(/^—$/);
+});
+
+it("names a question added in a later version without «(desde vN)», which «Columnas» keeps (UD4)", async () => {
+  const sheet = responseSheetFixture();
+  sheet.columns = [...sheet.columns, { fieldId: quantityId, type: "decimal", label: "Hectáreas", introducedInVersion: 2, options: [] }];
+  sheet.records.items = sheet.records.items.map(row => ({ ...row, cells: [...row.cells, cell(quantityId, "decimal", "Answered", "10")] }));
+  serveSheet(sheet);
+  renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
+  expect(await screen.findByRole("columnheader", { name: "Hectáreas" }, { timeout: 10_000 })).toBeVisible();
+  expect(within(screen.getByRole("table")).queryByText(/\(desde v2\)/)).not.toBeInTheDocument();
 });

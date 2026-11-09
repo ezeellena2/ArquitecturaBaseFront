@@ -57,10 +57,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    // «Corregida» in the row and in the detail; the story tells who, when and why.
+    // «Corregida» in its own column of the sheet (UD4) and in the detail; the story tells who, when and why.
     await expect(page.getByText(text(language, "Ana Pérez · «El importe era 1350,5, no 1250,5.»", "Ana Pérez · “The amount was 1350.5, not 1250.5.”"), { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: text(language, "Ver la versión anterior", "See the previous version"), exact: true })).toBeVisible();
-    if (!phone) await expect(page.getByRole("row", { name: /TEST-000002/ }).getByText(text(language, "Corregida", "Corrected"), { exact: true })).toBeVisible();
+    if (!phone) await expect(page.getByRole("columnheader", { name: text(language, "Corregida", "Corrected"), exact: true })).toBeVisible();
     await noPageScroll(page, width);
     await capture(page, "cw10-corrected" + suffix);
     // If it was approved it goes back to be approved: the earlier decision keeps its PDF and the new one comes out on approval.
