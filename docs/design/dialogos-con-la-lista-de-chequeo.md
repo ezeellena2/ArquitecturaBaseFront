@@ -109,6 +109,11 @@ No cambia el contrato con el backend: el diálogo no inventa cuántas anuladas h
 ya llegan. El nombre de la hoja de un bloque lo recorta el servidor a 31 caracteres; el diálogo muestra el nombre del
 bloque.
 
+El mismo día el usuario pidió el Excel en una sola hoja: la propuesta está en el
+[plan del Excel](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md), con los tableros
+XL0 a XL2 del mismo lienzo. Si se elige XL1-A, una fila por ítem, «Hojas» pasa a ser «Filas» («Una por ítem de
+Artículo», o «Una por respuesta» sin bloque).
+
 ## Los demás diálogos
 
 Se leyeron en el código los 56 archivos que abren un diálogo (sin abrir la app). Tienen el mismo problema 19 diálogos,

@@ -549,6 +549,9 @@ Sin elección; no se implementan sin ella.
 - Ubicación por ficha de Maps (`?screen=ubicacion-lugar`): [diseño](ubicacion-por-lugar.md).
 - «Exportar respuestas a Excel» rehecho con la lista de chequeo (EX1-A y EX2-A, recomendadas) y los demás diálogos con
   el mismo problema (DL): [diseño](dialogos-con-la-lista-de-chequeo.md) y [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md).
+- El Excel de respuestas en una sola hoja (XL1-A, una fila por ítem, recomendada): [plan del backend](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md).
+- Qué acciones de un encabezado van a la vista y cuáles en ⋮ (AC1-A, recomendada): [diseño](acciones-del-encabezado.md)
+  y [plan](../plans/2026-11-09-acciones-del-encabezado.md).
 
 ## Mapa Artifact → proyecto
 
@@ -573,6 +576,8 @@ Sin elección; no se implementan sin ella.
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros y plan aprobados, sin programar |
 | Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [Propuesta](dialogos-con-la-lista-de-chequeo.md), sin elegir |
+| El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [Propuesta](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md), sin elegir |
+| Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [Propuesta](acciones-del-encabezado.md), sin elegir |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
