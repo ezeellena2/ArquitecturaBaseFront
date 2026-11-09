@@ -518,7 +518,7 @@ Sin elección; no se implementan sin ella.
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
-| Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros por aprobar, sin programar |
+| Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros y plan aprobados, sin programar |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
@@ -1158,6 +1158,6 @@ planilla, las personas de «Datos de las personas», las tablas de la importaci�
 Configuración y de Apariencia y el bloque de renglones al cargar. En Catálogos, el renglón gris del motivo debajo del
 estado no aparece nunca: el servidor manda el estado sin motivo.
 
-La regla y sus excepciones están elegidas; faltan el visto bueno a los tableros UD1 a UD5, que ya las aplican, y al
-plan. Se programa con el [plan](../plans/2026-11-09-un-dato-por-columna.md), con el front quieto. Falta pasar los
+La regla y sus excepciones están elegidas, y el usuario aprobó el mismo día los tableros UD1 a UD5 y el plan. Se
+programa con el [plan](../plans/2026-11-09-un-dato-por-columna.md) en un momento con el front quieto. Falta pasar los
 tableros al lienzo del sistema visual.

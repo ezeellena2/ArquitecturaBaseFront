@@ -1,7 +1,7 @@
 # Un dato por columna (UD)
 
-Fecha: **2026-11-09**. Estado: **regla y excepciones elegidas; faltan el visto bueno a los tableros y al plan, y un
-momento con el front quieto**.
+Fecha: **2026-11-09**. Estado: **aprobado por el usuario el mismo día, con las excepciones elegidas; espera un momento
+con el front quieto**.
 
 El usuario pidió el 2026-11-09 que una columna no junte varios datos, y que sea una premisa. La regla está en el
 [fundamento visual](../design/visual-baseline.md#un-dato-por-columna--2026-11-09), en las
@@ -136,6 +136,6 @@ en `null`. No cambia.
 
 ## Cuándo
 
-Toca nueve pantallas y sus capturas. Con la app levantada, Vite recarga la página de quien prueba: va después del visto
-bueno del usuario a los tableros y al plan, en un momento con el front quieto, acordado con el chat que coordina la
-prueba integral. Puede ir de a una pantalla, en el orden de las tareas.
+Toca nueve pantallas y sus capturas. El usuario aprobó los tableros y el plan el 2026-11-09. Con la app levantada, Vite
+recarga la página de quien prueba: va en un momento con el front quieto, acordado con el chat que coordina la prueba
+integral. Puede ir de a una pantalla, en el orden de las tareas.
