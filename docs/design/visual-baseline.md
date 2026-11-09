@@ -519,6 +519,7 @@ Sin elección; no se implementan sin ella.
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros por aprobar, sin programar |
+| Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
