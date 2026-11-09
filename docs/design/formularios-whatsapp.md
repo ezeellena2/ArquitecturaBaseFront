@@ -151,6 +151,8 @@ planilla y el PDF, con el mismo permiso que los valores. Detalle en el
 La Etapa 3 suma [T5 · Exportar a Excel](evidence/formularios-whatsapp/pla-t5-exportar.png): con los filtros aplicados,
 todas las preguntas o solo las visibles, permiso propio, archivos como cantidad y nombres, y hasta 10.000 respuestas por vez.
 Ese tope y la espera de un 429 son el motivo de «Exportar a Excel» apagado, como ayuda al pasar el mouse o con el foco, sin texto en el diálogo (decisión del 2026-10-23).
+El código se apartó de T5 desde el primer día y T5 quedó con las leyendas anteriores al 2026-10-31: desde el 2026-11-09
+hay una propuesta para rehacer el diálogo con la lista de chequeo, sin elegir ([EX1-A](dialogos-con-la-lista-de-chequeo.md#el-diálogo-de-exportar)).
 
 Etapa 3, planilla de respuestas (2026-10-10). **Diseño elegido**: los tableros 06 y 07 recortados a esta etapa,
 sin aprobación, PDF ni asistente. Cargar desde la web queda para después (decidido el 2026-10-10).

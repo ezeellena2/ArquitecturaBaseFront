@@ -10,6 +10,7 @@ redefinen duraciones o canales. Un plan propuesto no se presenta como código im
 
 - Las fuentes de las [premisas compartidas](../../ArquitecturaBase/docs/architecture/premisas-de-la-plantilla.md) fijan las reglas vigentes; los planes son trabajo pendiente, no otra arquitectura. Un plan cerrado se consolida y se retira según la [rutina de auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md), conservando información única, pendientes y procedencia en Git.
 - Una decisión visual se registra junto al cambio de tokens o UI y la biblioteca. Las propuestas sin elección no se convierten en reglas.
+- Todo tablero, pantalla o diálogo nuevo pasa la [lista de chequeo de diseño](design/visual-baseline.md#lista-de-chequeo-de-diseño) antes de mostrarse para elegir y otra vez antes de programarse.
 - Las guías por carpeta enlazan el detalle y se actualizan cuando cambia una responsabilidad; evitá duplicar todo el contrato visual.
 - Las rutas de archivo dentro de la guía canónica se expresan desde la raíz del repo.
 

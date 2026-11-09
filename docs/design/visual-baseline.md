@@ -47,6 +47,57 @@ El tablero dice cómo se comporta la pantalla. Muestra, cuando corresponda:
 Es la lista del “Criterio de finalización de una pantalla”: si el tablero la cubre, cerrar es implementar, no
 rediseñar. Al terminar, la pantalla suma su fila al “Mapa Artifact → proyecto” y se actualiza la revisión del encabezado.
 
+## Lista de chequeo de diseño
+
+Todo tablero, toda pantalla y todo diálogo nuevo pasan esta lista antes de mostrarse para elegir y otra vez antes de
+programarse (pedido del usuario, 2026-11-09). No agrega reglas: junta las de este documento, las
+[premisas](../guides/premisas-de-desarrollo.md) y el [contrato de mensajes](../guides/mensajes-y-estados.md), y enlaza
+cada una. Contestá las que apliquen y anotá en la nota del tablero cada diferencia aceptada, con su motivo; lo que no
+pasa se corrige antes de mostrarlo o se muestra como una pregunta. Al programar, la
+[revisión del cambio](../../../ArquitecturaBase/docs/guides/validar-un-cambio.md#antes-de-cerrar-lo-que-más-se-repite-en-las-revisiones)
+compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la lista de chequeo](dialogos-con-la-lista-de-chequeo.md#por-qué-pasa).
+
+1. **Entero y armado:** ¿el tablero muestra la pantalla o el diálogo entero, con sus estados y su recorrido, armado con
+   las piezas de la biblioteca y no dibujado a mano? ¿Es un diálogo sólo si es breve y contextual?
+   ([tablero](#pantalla-nueva-primero-el-tablero), [diálogos](#formularios-y-diálogos))
+2. **Una tarea, zonas que se entienden solas:** ¿resuelve una tarea? ¿Cada zona es una cosa, en el orden en que se usa,
+   sin partirla por tipo de control ni sumar superficies de adorno?
+   ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
+3. **El control según el dato:** ¿una colección va en una tabla; un valor de un catálogo, en un selector; pocas
+   alternativas, en radios o un segmentado; varias, en casillas; un filtro de opciones, en un desplegable simple?
+   ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla), [filtros](#listados-y-filtros))
+4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
+   en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido?
+   ([lecturas](#lecturas))
+5. **Un dato por columna:** ¿cada columna de una tabla o de una lista con columnas muestra un solo dato?
+   ([un dato por columna](#un-dato-por-columna--2026-11-09))
+6. **Sin leyendas:** ¿ningún texto debajo o al costado de un control, una sección o un título explica cómo funciona algo?
+   ¿Lo que sirve está en la (i), y `hint` y `description` llevan sólo datos?
+   ([diálogos](#formularios-y-diálogos), [leyendas y carga](#leyendas-y-carga--2026-11-01))
+7. **Textos ciertos, una sola vez:** ¿cada texto sigue siendo cierto sin datos, con filtros, sin permiso, después de un
+   error y al cambiar una opción de la misma pantalla, y nombra lo que pasa de verdad? ¿Nada se dice dos veces ni sobra:
+   el estado del encabezado no se repite debajo, el idioma del menú no se nombra y no hay resúmenes que no ayuden a
+   decidir? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+   [el estado, una vez](#el-estado-una-vez--2026-11-06), [el idioma](#el-idioma-sólo-cuando-es-el-otro--2026-11-03))
+8. **Botones y lo apagado:** ¿cada botón nombra su acción; Cancelar va junto a la principal, que va última, y una
+   destructiva, separada a la izquierda? ¿Lo apagado no lleva texto al lado, no cambia de lugar ni de forma y, si el
+   motivo no es obvio, lo da sobre el control? ([diálogos](#formularios-y-diálogos), [íconos y acciones](#íconos-y-acciones),
+   [el motivo de lo apagado](#el-motivo-de-lo-apagado--2026-11-09))
+9. **Lo elegido y la espera:** ¿lo elegido se distingue por algo más que un tinte? ¿Toda acción que tarda muestra el aro
+   y su gerundio, y lo que carga ocupa el lugar de lo que va a llegar sin mover lo que ya se ve?
+   ([opción elegida](#opción-elegida--2026-11-03), [leyendas y carga](#leyendas-y-carga--2026-11-01),
+   [esqueletos](#esqueletos-de-carga--2026-11-06))
+10. **Estados y mensajes:** ¿están la carga, los dos vacíos, el error con reintento, la falta de permiso, la espera de un
+    429 y el conflicto? ¿Cada mensaje tiene su canal y un solo dueño: el resultado en el aviso de abajo, la validación
+    junto al campo y la decisión en una confirmación? ([tablero](#pantalla-nueva-primero-el-tablero),
+    [mensajes](../guides/mensajes-y-estados.md))
+11. **Lo mismo, igual en toda la app:** ¿lo que ya tiene forma en otra pantalla se ve con la misma pieza (los filtros
+    aplicados, como chips; los datos de una cuenta, en `AccountRows`)? ¿Usa sólo tokens, los cinco niveles de letra y
+    los seis pasos de espacio, en `rem`? ([principios](#principios-del-sistema), [escala y forma](#escala-y-forma))
+12. **Celular, teclado e idiomas:** ¿funciona desde 320 px sin desplazar la página de costado, con 44 px para tocar, con
+    teclado y lector de pantalla, en español y en inglés, y una colección guarda su estado en la URL?
+    ([responsive y accesibilidad](#responsive-y-accesibilidad-mínimos), [criterio de finalización](#criterio-de-finalización-de-una-pantalla))
+
 ## La biblioteca de piezas
 
 Desde el 2026-09-23 el lienzo tiene [ArquitecturaBase UI](https://claude.ai/artifact/Ew763kqorVHSYeUqE8CZ7h): las piezas
@@ -496,6 +547,8 @@ Sin elección; no se implementan sin ella.
   historial + información del negocio. [Plan](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
 - Burbujas con forma inspirada en Chatscope (`libraries/shapes.html`): [diseño](whatsapp-bibliotecas-propuesta.md).
 - Ubicación por ficha de Maps (`?screen=ubicacion-lugar`): [diseño](ubicacion-por-lugar.md).
+- «Exportar respuestas a Excel» rehecho con la lista de chequeo (EX1-A y EX2-A, recomendadas) y los demás diálogos con
+  el mismo problema (DL): [diseño](dialogos-con-la-lista-de-chequeo.md) y [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md).
 
 ## Mapa Artifact → proyecto
 
@@ -519,6 +572,7 @@ Sin elección; no se implementan sin ella.
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; tableros y plan aprobados, sin programar |
+| Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [Propuesta](dialogos-con-la-lista-de-chequeo.md), sin elegir |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
