@@ -1377,10 +1377,13 @@
     "pendingColumn": "To approve",
     "responses": "Responses",
     "lastResponse": "Last response",
-    "noResponses": "No responses yet",
+    "formState": "Form status",
+    "formStates": {
+      "Active": "Active",
+      "Deactivated": "Deactivated"
+    },
     "myEntries": "My entries",
     "myLastEntry": "My last entry",
-    "noEntries": "Not filled in yet",
     "pendingOnly": "With something to approve",
     "deactivatedPending_one": "There is {{count}} deactivated form with something to approve.",
     "deactivatedPending_other": "There are {{count}} deactivated forms with something to approve.",

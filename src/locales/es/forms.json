@@ -1377,10 +1377,13 @@
     "pendingColumn": "Por aprobar",
     "responses": "Respuestas",
     "lastResponse": "Última respuesta",
-    "noResponses": "Sin respuestas todavía",
+    "formState": "Estado del formulario",
+    "formStates": {
+      "Active": "Activo",
+      "Deactivated": "Dado de baja"
+    },
     "myEntries": "Mis cargas",
     "myLastEntry": "Mi última carga",
-    "noEntries": "Todavía no cargaste",
     "pendingOnly": "Con algo por aprobar",
     "deactivatedPending_one": "Hay {{count}} formulario dado de baja con algo por aprobar.",
     "deactivatedPending_other": "Hay {{count}} formularios dados de baja con algo por aprobar.",

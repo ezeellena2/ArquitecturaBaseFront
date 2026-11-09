@@ -7,6 +7,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { queryClient } from "@/shared/api/queryClient";
+import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import type { FormOverview } from "../api/overview";
 import { responseFormId, responseRecordId } from "@/test/responseFixtures";
 
@@ -30,7 +31,41 @@ function setup(permissions: string[], payload = overview()) {
 }
 beforeEach(() => { queryClient.clear(); localStorage.clear(); });
 
+// One piece of data per column (UD1): the cell of a row under a header, by the position of that header.
+function cellUnder(table: HTMLElement, row: HTMLElement, header: string) {
+  const index = within(table).getAllByRole("columnheader").findIndex(cell => cell.textContent === header);
+  expect(index, header).toBeGreaterThanOrEqual(0);
+  return within(row).getAllByRole("cell")[index];
+}
+const received = formatDateTimeInZone("2026-10-21T12:30:00Z", "es", currentUser.timeZoneId);
+
 describe("MF1 form overview", () => {
+  it("puts the last response in three columns: its number, when it arrived and its state (UD1)", async () => {
+    setup(["formrecords.read", "formapprovals.decide"]);
+    renderRouteWithProviders("/formularios/respuestas");
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
+    const number = cellUnder(table, row, "Última respuesta");
+    expect(within(number).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    expect(number).toHaveTextContent(/^VIS-000024$/);
+    expect(cellUnder(table, row, "Recibida")).toHaveTextContent(new RegExp("^" + received + "$"));
+    expect(cellUnder(table, row, "Estado")).toHaveTextContent(/^Por aprobar$/);
+    // A segment shows one state at a time: the name goes alone, without a column for the state of the form.
+    expect(cellUnder(table, row, "Formulario")).toHaveTextContent(/^Registrar visita$/);
+    expect(within(table).queryByRole("columnheader", { name: "Estado del formulario" })).not.toBeInTheDocument();
+  });
+
+  it("says a form without responses with a dash in each of the three columns, since its count already says 0", async () => {
+    const payload = overview();
+    payload.forms.items[0] = { ...payload.forms.items[0], pendingApprovalCount: 0, responseCount: 0, lastResponse: null };
+    setup(["formrecords.read"], payload);
+    renderRouteWithProviders("/formularios/respuestas");
+    const table = await screen.findByRole("table");
+    const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
+    for (const header of ["Última respuesta", "Recibida", "Estado"]) expect(cellUnder(table, row, header)).toHaveTextContent(/^—$/);
+    expect(screen.queryByText("Sin respuestas todavía")).not.toBeInTheDocument();
+  });
+
   it("uses authoritative facets and clears pendingOnly when opening inactive forms", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
     const { router } = renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
@@ -90,10 +125,16 @@ describe("MF1 form overview", () => {
   it.each(["Active", "Deactivated"])("marks inactive rows and leaves state segments unselected while pendingOnly crosses %s", async state => {
     const payload = overview();
     payload.forms.items[0].deactivatedAtUtc = "2026-10-20T15:00:00Z";
+    payload.forms.items.push({ ...payload.forms.items[0], id: "0199a0c0-0000-7000-8000-000000000227", name: "Control vigente", deactivatedAtUtc: null });
     setup(["formrecords.read", "formapprovals.decide"], payload);
     renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&state=" + state);
     const row = (await screen.findByRole("link", { name: "Registrar visita" })).closest("tr")!;
     expect(within(row).getByText("Dado de baja", { exact: true })).toBeVisible();
+    // This view mixes active and deactivated forms: the state of each one goes in its own column, not next to its name (UD1).
+    const table = screen.getByRole("table");
+    expect(cellUnder(table, row, "Formulario")).toHaveTextContent(/^Registrar visita$/);
+    expect(cellUnder(table, row, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
+    expect(cellUnder(table, screen.getByRole("link", { name: "Control vigente" }).closest("tr")!, "Estado del formulario")).toHaveTextContent(/^Activo$/);
     const segment = screen.getByRole("group", { name: "Estado de los formularios" });
     for (const option of within(segment).getAllByRole("button")) expect(option).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
@@ -242,11 +283,17 @@ it("shows whoever only completes forms their own entries, opens their sheet and 
   const own = within(table).getByRole("link", { name: "Registrar visita" }).closest("tr")!;
   expect(within(own).getByText("12", { exact: true })).toBeVisible();
   expect(within(own).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-  // The last entry says its number and when, without its state.
+  // The last entry says its number and, in its own column, when; without its state (UD1).
   expect(within(own).queryByText("Aprobada", { exact: true })).not.toBeInTheDocument();
+  expect(cellUnder(table, own, "Mi última carga")).toHaveTextContent(/^VIS-000024$/);
+  expect(cellUnder(table, own, "Recibida")).toHaveTextContent(new RegExp("^" + received + "$"));
   const none = within(table).getByRole("link", { name: "Control anterior" }).closest("tr")!;
-  expect(within(none).getByText("Todavía no cargaste", { exact: true })).toBeVisible();
-  expect(within(none).getByText("—", { exact: true })).toBeVisible();
+  for (const header of ["Mis cargas", "Mi última carga", "Recibida"]) expect(cellUnder(table, none, header)).toHaveTextContent(/^—$/);
+  expect(screen.queryByText("Todavía no cargaste")).not.toBeInTheDocument();
+  // Without the segment, active and deactivated forms go together: the state of each one goes in its own column.
+  expect(cellUnder(table, none, "Formulario")).toHaveTextContent(/^Control anterior$/);
+  expect(cellUnder(table, none, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
+  expect(cellUnder(table, own, "Estado del formulario")).toHaveTextContent(/^Activo$/);
   expect(screen.queryByRole("group", { name: "Estado de los formularios" })).not.toBeInTheDocument();
   expect(within(table).queryByRole("button", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
   await userEvent.click(within(table).getByRole("button", { name: "Cargar Registrar visita" }));

@@ -241,7 +241,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       // Their own entries and the last one, and the name opens the sheet of their own (CW6-C, CW9).
       await expect(table.getByRole("columnheader", { name: es ? "Mis cargas" : "My entries", exact: true })).toBeVisible();
       await expect(table.getByRole("columnheader", { name: es ? "Mi última carga" : "My last entry", exact: true })).toBeVisible();
-      await expect(table.getByText(es ? "Todavía no cargaste" : "Not filled in yet", { exact: true })).toBeVisible();
+      // When their last entry arrived goes in its own column (UD1).
+      await expect(table.getByRole("columnheader", { name: es ? "Recibida" : "Received", exact: true })).toBeVisible();
       await expect(page.getByRole("group", { name: es ? "Estado de los formularios" : "Form status" })).toHaveCount(0);
     }
     await page.evaluate(() => document.fonts.ready);

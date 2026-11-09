@@ -48,17 +48,29 @@ export function FormOverviewPage() {
   const canOpen = scope.canRead || scope.canDecide || scope.canCreate;
   const own = scope.canCreate && !scope.canRead;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
+  // One piece of data per column (UD1). A segment shows one state at a time; the views without one in use (pendingOnly,
+  // or whoever only loads) mix active and deactivated forms, and then the state of each form goes in its own column.
+  const mixed = (!(scope.canRead || scope.canDecide) || pendingOnly) && !!data?.forms.items.some(row => row.deactivatedAtUtc);
+  const lastNumber = (row: FormOverviewRow) => row.lastResponse
+    ? <Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link> : "—";
+  const received = (row: FormOverviewRow) => row.lastResponse
+    ? <time dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time> : "—";
   const columns: Column<FormOverviewRow>[] = [
-    { id: "name", header: t("formColumn"), cell: row => <div className="inline-flex items-center gap-2 whitespace-nowrap">{canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span>}{row.deactivatedAtUtc ? <Badge variant="outline">{t("lifecycle.stateWithoutVersion")}</Badge> : null}</div> },
+    { id: "name", header: t("formColumn"), cell: row => canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span> },
+    ...(mixed ? [{ id: "formState", header: t("overview.formState"), cell: (row: FormOverviewRow) => t(row.deactivatedAtUtc ? "overview.formStates.Deactivated" : "overview.formStates.Active") }] : []),
     ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), numeric: true, cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{row.pendingApprovalCount}</Badge></Link> : "—" }] : []),
     ...(scope.canRead ? [
       { id: "responses", header: t("overview.responses"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
-      { id: "lastResponse", header: t("overview.lastResponse"), cell: (row: FormOverviewRow) => row.lastResponse ? <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link><time className="text-xs text-[var(--color-content-muted)]" dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time><Badge variant={approvalStateVariant(row.lastResponse.state)}>{t("approvals.states." + row.lastResponse.state)}</Badge></div> : <span className="text-sm text-[var(--color-content-muted)]">{t("overview.noResponses")}</span> },
+      { id: "lastResponse", header: t("overview.lastResponse"), cell: lastNumber },
+      { id: "received", header: t("responses.received"), cell: received },
+      { id: "state", header: t("approvals.state"), cell: (row: FormOverviewRow) => row.lastResponse
+        ? <Badge variant={approvalStateVariant(row.lastResponse.state)}>{t("approvals.states." + row.lastResponse.state)}</Badge> : "—" },
     ] : []),
     // Whoever only loads counts their own responses and sees their last one, without its state (CW9).
     ...(own ? [
       { id: "myEntries", header: t("overview.myEntries"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount || "—" },
-      { id: "myLastEntry", header: t("overview.myLastEntry"), cell: (row: FormOverviewRow) => row.lastResponse ? <div className="inline-flex items-center gap-2 whitespace-nowrap"><Link to={formPath(row.id) + "/" + row.lastResponse.id} className="font-medium text-[var(--color-brand-700)] underline">{row.lastResponse.number}</Link><time className="text-xs text-[var(--color-content-muted)]" dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time></div> : <span className="text-sm text-[var(--color-content-muted)]">{t("overview.noEntries")}</span> },
+      { id: "myLastEntry", header: t("overview.myLastEntry"), cell: lastNumber },
+      { id: "received", header: t("responses.received"), cell: received },
     ] : []),
     ...(scope.canCreate ? [{ id: "load", header: "", align: "right" as const, cell: (row: FormOverviewRow) => row.deactivatedAtUtc ? null
       : <Button type="button" variant="outline" size="sm" aria-label={t("formEntries:loadForm", { name: row.name })}
