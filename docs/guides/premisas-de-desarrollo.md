@@ -118,9 +118,15 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   cabecera, tono, borde y tipografía comunes. No duplicar las clases de la cabecera en cada tabla.
 - Con cero resultados, `Pagination` conserva el rango 0–0 de 0 y las flechas deshabilitadas,
   pero omite el contador de páginas: no presentar una página 1 de 0.
-- Cada dato tiene su columna y su encabezado. No mezclar datos distintos como insignias junto al
-  nombre. Una excepción requiere una revisión explícita; no se copia la excepción del punto de estado
-  de usuarios a otros listados por defecto.
+- **Un dato por columna** (decisión del usuario, 2026-11-09): cada columna muestra un solo dato y su
+  encabezado lo nombra. Si dos datos importan, cada uno va en su columna; si uno no importa, se saca.
+  Cuentan como un dato la fecha y la hora de un mismo momento, un valor con su unidad, varios valores
+  de un mismo dato y un dato con su enlace. No van juntos en una celda un número con su fecha y su
+  estado, «fecha · persona», un estado con su versión, una etiqueta de estado junto al nombre ni un
+  renglón gris debajo con otro dato. Una columna que sólo tiene sentido en una vista aparece sólo en
+  ella. Una excepción requiere una elección explícita del usuario: hoy sólo rige el punto de estado de
+  usuarios, que no se copia a otros listados, y las demás están propuestas sin decidir
+  ([detalle](../design/visual-baseline.md#un-dato-por-columna--2026-11-09)).
 - Declarar `rowKey` con la identidad estable de la fila. Las columnas ordenables usan los campos
   aceptados por el backend; conservar `aria-sort` y ordenar/paginar con el servidor.
 - La tabla contiene su scroll horizontal en móvil; no desborda el documento. Las medidas de los

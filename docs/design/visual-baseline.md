@@ -236,6 +236,14 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   filas, y sus columnas de números (cantidades, medidas, importes, el número de fila) van a la derecha, encabezado
   incluido. La tabla cierra abajo con la línea de su última fila, salvo cuando toca el borde de su superficie, que ya
   la cierra; un código o un número con guiones («30-71458236-9») no se parte en dos renglones.
+- **Un dato por columna** ([UD, 2026-11-09](#un-dato-por-columna--2026-11-09)). Cada columna de una tabla, planilla o
+  lista con columnas muestra un solo dato, y su encabezado lo nombra. Si dos datos importan, cada uno va en su columna;
+  si uno no importa, se saca. Cuentan como un dato la fecha y la hora de un mismo momento, un valor con su unidad, varios
+  valores de un mismo dato (los roles de una persona, las opciones elegidas) y un dato con su enlace. No van juntos en
+  una celda un número con su fecha y su estado, «fecha · persona», un estado con su versión («Publicado · versión 3»),
+  una etiqueta de estado junto al nombre ni un renglón gris debajo con otro dato. Una columna que sólo tiene sentido en
+  una vista aparece sólo en esa vista, como «Estado» en la planilla. La única excepción vigente es el punto de estado de
+  Usuarios ([principios](#principios-del-sistema)); las demás están propuestas y sin decidir.
 
 ## Formularios y diálogos
 
@@ -507,6 +515,7 @@ Sin elección; no se implementan sin ella.
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
+| Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Datos de las personas y Formularios que faltan | [Regla vigente](#un-dato-por-columna--2026-11-09); tableros y excepciones por elegir, sin programar |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -1100,3 +1109,48 @@ En el código, las features siguen usando `DisabledReason`, `disabledReason` de 
 `IconButton`: el cambio va en `shared/ui`. Está elegida y sin programar: se programa con el
 [plan](../plans/2026-11-09-motivo-de-lo-apagado.md), con el visto bueno del usuario y el front quieto. Hasta entonces, el
 motivo se abre sólo al pasar el mouse o con el foco. Falta pasar el tablero al lienzo del sistema visual.
+
+## Un dato por columna — 2026-11-09
+
+Durante la prueba integral, en «Gestión de formularios › Formularios», el usuario pidió que una columna no junte varios
+datos: «Última respuesta» mostraba en una celda el número (PDL-000001), la fecha y hora (3 nov 2026, 21:00) y el estado
+(Aprobada). Lo pidió como premisa, para que los tableros y las pantallas nuevas no vuelvan a hacerlo. Las
+[premisas](../guides/premisas-de-desarrollo.md#tablas) ya decían «Cada dato tiene su columna y su encabezado», sin decir
+qué cuenta como un dato, y no se cumplía. La regla quedó en [Listados y filtros](#listados-y-filtros).
+
+Se recorrieron las tablas y las listas del `src`: 16 columnas de 8 pantallas juntan dos o tres datos. Los tableros están
+en el lienzo aparte [Un dato por columna](https://claude.ai/artifact/AbCaxVuSGySAjFkpx9gNzB) (el Sistema visual no se abre
+desde Claude Code), con cada lugar como está hoy y separado:
+
+| Tablero | Qué define |
+| --- | --- |
+| **UD · La regla y dónde se rompe hoy** | La regla, el caso de «Última respuesta», las 16 columnas, lo que ya cumple y las listas que no son tablas. |
+| **UD1 · Formularios** | «Última respuesta» en tres columnas: el número, «Recibida» y «Estado». Para quien sólo carga, «Mi última carga» y «Recibida». El nombre del formulario va solo, porque «Dado de baja» ya lo dice el segmentado; con «Con algo por aprobar», que mezcla activos y dados de baja, va en «Estado del formulario». Sin respuestas, «—» en las tres. |
+| **UD2 · Diseñar formularios** | «En WhatsApp» con el estado solo, «Versión activa» (reemplaza «La versión N publicada sigue activa.») y «Último cambio» separado de «Cambió». En «Dados de baja», «En WhatsApp» dice cómo va la baja allá y «Deprecación», su fecha. |
+| **UD3 · Catálogos y sus opciones** | «De dónde salen» con un solo valor; «Texto» y «Código» siempre separados, también sin permiso para editar y en el celular; «Se elimina al guardar» en «Estado» y sólo «Restaurar» en «Acciones». |
+| **UD4 · Planilla de respuestas** | «Corregida» en su columna, el detalle de una opción como subcolumna «Pregunta · Detalle», el bloque como «3 ítems» y los documentos como «2 documentos». |
+| **UD5 · Usuarios, Datos de las personas y Formularios que faltan** | «Correo», «WhatsApp» y «Verificado» en lugar de «Usuario», con el punto delante del correo. El estado y el catálogo de un dato de las personas en sus columnas. La descripción de un tema en su columna y, en «Descartados», «Descartó» y «Descartado». |
+| **UD6 · Excepciones para decidir** | Seis excepciones posibles, cada una con y sin ella. |
+
+Las excepciones propuestas, sin decidir (UD6):
+
+- **A.** Un texto secundario en gris debajo del dato: la descripción de un tema que falta, el detalle de una opción en la
+  planilla, «Dado de baja» bajo un dato de las personas y los detalles de la actividad de una respuesta (TL3-A).
+- **B.** Una etiqueta que califica al dato de la celda: «Corregida» junto al número (CW10-A), «Sin verificar» junto al
+  número de WhatsApp y «Dado de baja» junto al nombre.
+- **C.** El punto de estado delante del correo en Usuarios, ya aprobado (ver los [principios](#principios-del-sistema)).
+- **D.** El resumen de otra tabla en una celda: el bloque de renglones («3 · …», RG4-A) y los documentos con sus formatos.
+- **E.** Encabezados y bandas que nombran dos cosas: «desde la versión N» en una pregunta de la planilla y «2 de 5» en la
+  banda de un área del rol.
+- **F.** Las listas que no son tablas («Campos de…», las opciones en su diálogo, el chat, las tarjetas de «Enviar
+  formulario», los documentos y las revisiones), que hoy siguen la regla de [lecturas](#lecturas).
+
+Mientras el usuario no las elija, una pantalla o un tablero nuevo no junta datos en una columna, y lo que ya existe sigue
+como está, incluidas CW10-A, RG4-A y TL3-A. Ya cumplen las aprobaciones pendientes, Roles, las demás columnas de la
+planilla, las personas de «Datos de las personas», las tablas de la importación, «Cambiar el tipo», las revisiones de
+Configuración y de Apariencia y el bloque de renglones al cargar. En Catálogos, el renglón gris del motivo debajo del
+estado no aparece nunca: el servidor manda el estado sin motivo.
+
+La regla está elegida; faltan los tableros y las excepciones. Se programa con el
+[plan](../plans/2026-11-09-un-dato-por-columna.md), con el visto bueno del usuario y el front quieto. Falta pasar los
+tableros al lienzo del sistema visual.
