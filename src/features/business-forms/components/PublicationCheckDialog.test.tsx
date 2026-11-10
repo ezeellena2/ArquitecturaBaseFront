@@ -82,7 +82,7 @@ describe("Chosen publication board PU1-A", () => {
     expect(within(problems).getByRole("button", { name: "Más información sobre Problemas" })).toHaveAccessibleDescription("Frenan la publicación: corregilos en el borrador, guardá y volvé a publicar.");
     expect(screen.queryByText("El formulario")).not.toBeInTheDocument();
     const publish = screen.getByRole("button", { name: "Publicar versión 3" });
-    expect(publish).toBeDisabled();
+    expect(publish).toHaveAttribute("aria-disabled", "true");
     expect(publish).toHaveAccessibleDescription("Corregí el problema para publicar.");
     expect(screen.queryByText(/todavía no está disponible/)).not.toBeInTheDocument();
   });
@@ -130,7 +130,7 @@ describe("Chosen publication board PU1-A", () => {
     await mount();
     expect(screen.getByRole("button", { name: "Volver a comprobar" })).toBeEnabled();
     const publish = screen.getByRole("button", { name: "Publicar versión 3" });
-    expect(publish).toBeDisabled();
+    expect(publish).toHaveAttribute("aria-disabled", "true");
     expect(publish).toHaveAccessibleDescription("La comprobación venció.");
   });
   it.each([["InProgress", "Ya hay una publicación en curso para este formulario."], ["Unavailable", "La publicación todavía no está disponible."]] as const)("an availability %s is the reason of the disabled Publish, not a text", async (availability, reason) => {
@@ -373,7 +373,7 @@ it("explains the check wait as the reason of Retry", async () => {
   error = new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 });
   await mount();
   const retry = screen.getByRole("button", { name: "Reintentar" });
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(retry).toHaveAccessibleDescription(wait);
   // The dialog may open with the focus on Retry, which shows its reason as a tooltip; without it, nothing shows the wait.
   act(() => (document.activeElement as HTMLElement | null)?.blur());

@@ -21,7 +21,7 @@ const onlyMethodHint = "Es tu único medio de ingreso: para desvincularlo, prime
 /// un texto a la vista en su lugar.
 function expectUnlinkTurnedOff(methods: ReturnType<typeof within>) {
   const unlink = methods.getByRole("button", { name: "Desvincular" });
-  expect(unlink).toBeDisabled();
+  expect(unlink).toHaveAttribute("aria-disabled", "true");
   expect(unlink).toHaveAccessibleDescription(onlyMethodHint);
   for (const text of methods.queryAllByText(onlyMethodHint)) expect(text).not.toBeVisible();
 }

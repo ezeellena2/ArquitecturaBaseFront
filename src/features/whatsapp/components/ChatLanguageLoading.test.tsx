@@ -27,7 +27,7 @@ it("keeps the selected chat and both private drafts visible while English resour
  await waitFor(()=>expect(finish).toBeTypeOf("function"));
  expect(language.hasResourceBundle("en","whatsapp")).toBe(false);
  expect(reply).toBeVisible();expect(reply).toHaveValue("Borrador de respuesta");expect(reply).toBeEnabled();expect(heading).toBeVisible();
- expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");
  await act(async()=>{finish!(null,en);});
  await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  expect(screen.getByLabelText("Respuesta al cliente")).toBe(reply);expect(reply).toHaveValue("Borrador de respuesta");expect(screen.getByRole("heading",{name:"Juan"})).toBe(heading);

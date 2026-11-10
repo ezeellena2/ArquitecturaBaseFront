@@ -28,4 +28,28 @@ describe("IconButton", () => {
     await userEvent.tab();
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Cerrar");
   });
+
+  it("keeps its name when it is off, with the reason as its tooltip and description (MA1-A)", async () => {
+    const onClick = vi.fn();
+    renderWithProviders(
+      <IconButton label="Subir la pregunta 1" disabledLabel="Ya es la primera." disabled onClick={onClick}>
+        <span aria-hidden="true">↑</span>
+      </IconButton>,
+    );
+    const button = screen.getByRole("button", { name: "Subir la pregunta 1" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("Ya es la primera.");
+
+    await userEvent.tab();
+    expect(button).toHaveFocus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Ya es la primera.");
+
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(button);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Ya es la primera.");
+    await userEvent.keyboard("{Escape}");
+    await userEvent.pointer({ keys: "[TouchA]", target: button });
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Ya es la primera.");
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

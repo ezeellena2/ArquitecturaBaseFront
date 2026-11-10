@@ -158,7 +158,7 @@ it("refreshes saved question options while preserving unsaved rules after the dr
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
   await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Reglas todavía sin guardar");
-  expect(screen.getByRole("button", { name: "Agregar condición" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Agregar condición" })).toHaveAttribute("aria-disabled", "true");
   const fieldId = "0199a0c0-0000-7000-8000-000000000030";
   server.use(http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Visita" }, originalCulture: "es", questions: [{ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type: "decimal", label: { es: "Pregunta guardada" }, help: null, required: false, maxLength: null, options: null }], conditionChoices: {}, roles: [] })));
   rendered.rerender(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={2} scope={scope} onDirtyChange={dirty} />);
@@ -402,7 +402,7 @@ it("keeps an attached PDF when the event changes, tells why under it and turns o
   await userEvent.click(attach);
   // Turned off, the box goes inside the wrapper of its reason: it is a new element.
   const off = screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
-  expect(off).not.toBeChecked(); expect(off).toBeDisabled();
+  expect(off).not.toBeChecked(); expect(off).toHaveAttribute("aria-disabled", "true");
   expect(off).toHaveAccessibleDescription(onlyApproved);
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
@@ -515,7 +515,7 @@ it("tells the server cooldown, not an in-flight save, as the disabled reason onc
   await userEvent.click(screen.getByRole("button",{name:"Guardar reglas"}));
   const saving=screen.getByRole("button",{name:"Guardando reglas…"});expect(saving).toBeDisabled();expect(saving).toHaveAttribute("aria-busy","true");expect(saving).not.toHaveAccessibleDescription();
   await act(async()=>{release();});const save=await screen.findByRole("button",{name:"Guardar reglas"});
-  expect(save).toBeDisabled();expect(save).toHaveAccessibleDescription(/Esperá [0-9]+ segundos para volver a intentar./);
+  expect(save).toHaveAttribute("aria-disabled", "true");expect(save).toHaveAccessibleDescription(/Esperá [0-9]+ segundos para volver a intentar./);
   expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar./)).toHaveLength(1);
   expect(messageText(screen.getByRole("textbox",{name:"Mensaje"}))).toBe("Mensaje guardado propio");
 });
@@ -583,7 +583,7 @@ it("explains why no action can follow an approval request", async () => {
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "RequestApproval");
   const addAction = screen.getByRole("button", { name: "Agregar acción" });
   const reason = "Pedir aprobación tiene que ser la última acción. Lo que sigue va en «Se aprueba» o «Se rechaza».";
-  expect(addAction).toBeDisabled();
+  expect(addAction).toHaveAttribute("aria-disabled", "true");
   expect(addAction).toHaveAccessibleDescription(reason);
   await userEvent.hover(addAction);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);
@@ -594,11 +594,11 @@ it("explains the limits of rules and of actions in a rule", async () => {
   serveRules([full, ...Array.from({ length: 19 }, () => storedRule())]);
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const addRule = await screen.findByRole("button", { name: "Agregar regla" });
-  expect(addRule).toBeDisabled();
+  expect(addRule).toHaveAttribute("aria-disabled", "true");
   expect(addRule).toHaveAccessibleDescription("Se alcanzó el límite.");
   await userEvent.click(screen.getByRole("button", { name: "Editar regla 1" }));
   const addAction = screen.getByRole("button", { name: "Agregar acción" });
-  expect(addAction).toBeDisabled();
+  expect(addAction).toHaveAttribute("aria-disabled", "true");
   expect(addAction).toHaveAccessibleDescription("Se alcanzó el límite.");
 });
 // «Agregar condición» (shared with suggestions) also gives its reason: a form without questions or the limit of conditions.
@@ -607,7 +607,7 @@ it("explains why a condition cannot be added to a form without questions", async
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   const addCondition = screen.getByRole("button", { name: "Agregar condición" });
-  expect(addCondition).toBeDisabled();
+  expect(addCondition).toHaveAttribute("aria-disabled", "true");
   expect(addCondition).toHaveAccessibleDescription("El formulario todavía no tiene preguntas.");
   await userEvent.hover(addCondition);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("El formulario todavía no tiene preguntas.");
@@ -619,7 +619,7 @@ it("explains the limit of conditions in a rule", async () => {
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   const addCondition = screen.getByRole("button", { name: "Agregar condición" });
-  expect(addCondition).toBeDisabled();
+  expect(addCondition).toHaveAttribute("aria-disabled", "true");
   expect(addCondition).toHaveAccessibleDescription("Se alcanzó el límite.");
   await userEvent.hover(addCondition);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Se alcanzó el límite.");
@@ -691,7 +691,7 @@ it("keeps «Historial» off with its reason while there are no revisions", async
   setup();
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   const history = await screen.findByRole("button", { name: "Historial" });
-  await waitFor(() => expect(history).toBeDisabled());
+  await waitFor(() => expect(history).toHaveAttribute("aria-disabled", "true"));
   expect(history).toHaveAccessibleDescription(noRevisions);
   expect(screen.queryByRole("heading", { name: "Historial de las reglas" })).not.toBeInTheDocument();
   await userEvent.hover(history);

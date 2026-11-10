@@ -151,11 +151,11 @@ it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and remova
  expect(first.queryByRole("alert")).not.toBeInTheDocument();
  expect(first.queryByRole("button",{name:/Editar/})).not.toBeInTheDocument();
  expect(first.getAllByRole("button")).toHaveLength(1);
- expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAttribute("aria-disabled", "true");
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAccessibleDescription(state === "Deleted" ? "Este formulario fue eliminado. Quitá la sugerencia para guardar." : "Este formulario está dado de baja. Quitá la sugerencia para guardar.");
  await userEvent.click(first.getByRole("button",{name:"Quitar sugerencia 1"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Quitar sugerencia 1"})).toHaveFocus());
- expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAttribute("aria-disabled", "true");
  await userEvent.click(screen.getByRole("button",{name:"Quitar sugerencia 1"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Agregar sugerencia"})).toHaveFocus());
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toBeEnabled();
@@ -210,7 +210,7 @@ it("explains why a suggestion without destination cannot take data", async () =>
   renderWithProviders(<FormSuggestionsSection {...props()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Agregar sugerencia"}));
   const addMapping = screen.getByRole("button",{name:"Agregar dato"});
-  expect(addMapping).toBeDisabled();
+  expect(addMapping).toHaveAttribute("aria-disabled", "true");
   expect(addMapping).toHaveAccessibleDescription("Elegí un formulario publicado disponible.");
   await userEvent.hover(addMapping);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Elegí un formulario publicado disponible.");
@@ -224,11 +224,11 @@ it("explains the limits of suggestions and of data in a suggestion", async () =>
   server.use(http.get("/api/forms/definitions/:id/suggestions",()=>HttpResponse.json({...current(),id:version,sourceVersionId:version,revision:1,suggestions:[row(40),...Array.from({length:19},()=>row(0))],createdAtUtc:"2026-10-17T12:00:00Z"})));
   renderWithProviders(<FormSuggestionsSection {...props()}/>);
   const addSuggestion = await screen.findByRole("button",{name:"Agregar sugerencia"});
-  expect(addSuggestion).toBeDisabled();
+  expect(addSuggestion).toHaveAttribute("aria-disabled", "true");
   expect(addSuggestion).toHaveAccessibleDescription("Se alcanzó el límite.");
   await userEvent.click(screen.getByRole("button",{name:"Editar sugerencia 1"}));
   const addMapping = screen.getByRole("button",{name:"Agregar dato"});
-  expect(addMapping).toBeDisabled();
+  expect(addMapping).toHaveAttribute("aria-disabled", "true");
   expect(addMapping).toHaveAccessibleDescription("Se alcanzó el límite.");
 });
 
@@ -286,7 +286,7 @@ it("explains a suggestion in its (i) instead of notes",async()=>{
   expect(screen.getByRole("button",{name:"Más información sobre Si (opcional)"})).toHaveAccessibleDescription("Sin condición, la sugerencia corre siempre. Las condiciones usan las preguntas del formulario.");
   expect(screen.queryByText(/la regla corre siempre/)).not.toBeInTheDocument();
   const history=screen.getByRole("button",{name:"Historial"});
-  await waitFor(()=>expect(history).toBeDisabled());
+  await waitFor(()=>expect(history).toHaveAttribute("aria-disabled", "true"));
   expect(history).toHaveAccessibleDescription("Todavía no hay revisiones.");
   expect(screen.queryByText("Todavía no hay revisiones.",hidden)).not.toBeInTheDocument();
 });

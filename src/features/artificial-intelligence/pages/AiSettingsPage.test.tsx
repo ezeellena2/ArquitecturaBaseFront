@@ -147,7 +147,7 @@ describe("AI settings", () => {
     const view = renderRouteWithProviders("/configuracion/ia");
     const reason = "Esperá 60 segundos antes de consultar los modelos otra vez.";
     await waitFor(() => expect(screen.getByRole("button", { name: "Cargar modelos" })).toHaveAccessibleDescription(reason));
-    expect(screen.getByRole("button", { name: "Cargar modelos" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cargar modelos" })).toHaveAttribute("aria-disabled", "true");
     // La espera es el motivo del botón deshabilitado: tooltip y descripción accesible, sin texto debajo.
     for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
     await userEvent.hover(screen.getByRole("button", { name: "Cargar modelos" }));
@@ -226,7 +226,7 @@ describe("AI settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
     const reason = "Esperá 60 segundos antes de probar otra vez.";
     await waitFor(() => expect(screen.getByRole("button", { name: "Probar conexión" })).toHaveAccessibleDescription(reason));
-    expect(screen.getByRole("button", { name: "Probar conexión" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Probar conexión" })).toHaveAttribute("aria-disabled", "true");
     // La espera es el motivo del botón deshabilitado: tooltip y descripción accesible, sin texto al lado.
     for (const text of screen.queryAllByText(reason)) expect(text).not.toBeVisible();
     await userEvent.hover(screen.getByRole("button", { name: "Probar conexión" }));

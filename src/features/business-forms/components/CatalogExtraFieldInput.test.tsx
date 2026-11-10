@@ -21,7 +21,7 @@ it("explains an unsaved field as help of its disabled cell instead of a message 
   expect(input.parentElement).toHaveFocus();
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Guardá para cargar valores");
   const checkbox = screen.getByRole("checkbox", { name: "Con GPS" });
-  expect(checkbox).toBeDisabled();
+  expect(checkbox).toHaveAttribute("aria-disabled", "true");
   expect(checkbox).toHaveAccessibleDescription("Guardá para cargar valores");
 });
 it("keeps the description of an unsaved field's cell together with the one its owner gives", async () => {

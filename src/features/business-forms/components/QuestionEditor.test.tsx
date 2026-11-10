@@ -143,7 +143,7 @@ it("names the field to choose first in the line and keeps choosing several off",
     catalogScope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} onChange={vi.fn()} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} /></MemoryRouter>); });
   expect((await screen.findByText(", primero por Rubro")).closest("p")).toHaveTextContent("Elegir de un catálogo, primero por Rubro · Opcional");
   const multiple = screen.getByRole("checkbox", { name: "Permitir elegir varias" });
-  expect(multiple).toBeDisabled();
+  expect(multiple).toHaveAttribute("aria-disabled", "true");
   expect(multiple).toHaveAccessibleDescription("No se combina con «Elegir primero por un campo».");
 });
 
@@ -257,7 +257,7 @@ it("preserves twenty-one authored options while refusing to add another, rather 
     culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
     onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
   expect(screen.getByLabelText("Opción 21")).toHaveValue("Opción 21");
-  expect(screen.getByRole("button", { name: "Agregar opción" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Agregar opción" })).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByRole("alert")).toHaveTextContent("20 opciones");
 });
 it.each([
@@ -270,7 +270,7 @@ it.each([
     culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
     onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
   const add = screen.getByRole("button", { name: "Agregar opción" });
-  expect(add).toBeDisabled();
+  expect(add).toHaveAttribute("aria-disabled", "true");
   expect(add).toHaveAccessibleDescription(reason);
   // At the limit there is no error: the limit is only the reason of the button, not a text below it.
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();

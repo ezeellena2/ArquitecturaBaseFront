@@ -41,7 +41,7 @@ it("preserves edits on conflict until the current revision is explicitly adopted
  // Rereading and choosing go in the header of the conflict surface; the disabled Save tells the conflict as its reason.
  const band=(await screen.findByRole("heading",{name:"El diseño cambió"})).parentElement!;
  expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Releer"]);
- expect(screen.getByRole("button",{name:"Guardar diseño"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Guardar diseño"})).toHaveAttribute("aria-disabled", "true");
  expect(screen.getByRole("button",{name:"Guardar diseño"})).toHaveAccessibleDescription("Releé y usá la revisión actual antes de volver a guardar.");
  await userEvent.click(within(band).getByRole("button",{name:"Releer"}));expect(name).toHaveValue("Comprobante de visita propio");
  await waitFor(()=>expect(within(band).getAllByRole("button").map(button=>button.textContent)).toEqual(["Releer","Usar la revisión actual"]));
@@ -72,7 +72,7 @@ it("keeps revision numbers and save status out of the PDF design",async()=>{
  await userEvent.type(name," otra vez");
  await userEvent.click(screen.getByRole("button",{name:"Guardar diseño"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Guardar diseño"})).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/));
- expect(screen.getByRole("button",{name:"Guardar diseño"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Guardar diseño"})).toHaveAttribute("aria-disabled", "true");
  expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar\./)).toHaveLength(1);
  expect(name).toHaveValue("Comprobante de visita propio otra vez");
 });

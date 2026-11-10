@@ -57,7 +57,7 @@ describe("the table of items", () => {
     expect(bodyRows()).toHaveLength(3);
     expect(screen.getByRole("textbox", { name: "Ítem 3 · Artículo" })).toHaveFocus();
     const add = screen.getByRole("button", { name: "Agregar ítem" });
-    expect(add).toBeDisabled();
+    expect(add).toHaveAttribute("aria-disabled", "true");
     expect(add).toHaveAccessibleDescription("Hasta 3 ítems.");
     expect(add).toHaveAttribute("id", "add-item");
   });
@@ -89,7 +89,7 @@ describe("the table of items", () => {
 
     expect(articles()).toEqual(["Atrazina 50%"]);
     expect(screen.getByRole("button", { name: "Agregar ítem" })).toHaveFocus();
-    expect(screen.getByRole("button", { name: "Quitar el ítem 1" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Quitar el ítem 1" })).toHaveAttribute("aria-disabled", "true");
     await user.hover(screen.getByRole("button", { name: "Quitar el ítem 1" }).parentElement!);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Al menos 1 ítem.");
   });
@@ -141,7 +141,7 @@ describe("the items in boxes", () => {
     await user.click(screen.getByRole("button", { name: "Quitar el ítem 2" }));
 
     const remove = screen.getByRole("button", { name: "Quitar el ítem 1" });
-    expect(remove).toBeDisabled();
+    expect(remove).toHaveAttribute("aria-disabled", "true");
     expect(remove).toHaveAccessibleDescription("Al menos 1 ítem.");
     expect(screen.getByRole("button", { name: "Agregar ítem" })).toHaveFocus();
   });

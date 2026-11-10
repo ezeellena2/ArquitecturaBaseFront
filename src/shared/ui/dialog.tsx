@@ -105,9 +105,9 @@ function DialogContent({
         {children}
         <div ref={registerHost} popover="manual" className="m-0 h-0 w-0 overflow-visible border-0 bg-transparent p-0 text-inherit" data-slot="notification-host" />
         {showCloseButton && closeDisabledReason ? (
-          // The reason's wrapper takes the corner, so hovering or focusing it shows the help.
+          // The reason's wrapper takes the corner and the pointer; the × keeps the focus, off but reachable (MA1-A).
           <DisabledReason reason={closeDisabledReason} className="absolute top-4 right-4 rounded-xs">
-            <button type="button" disabled data-slot="dialog-close" className="rounded-xs opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+            <button type="button" disabled data-slot="dialog-close" className="pointer-events-none rounded-xs opacity-40 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
               <XIcon />
               <span className="sr-only">{t("actions.close")}</span>
             </button>

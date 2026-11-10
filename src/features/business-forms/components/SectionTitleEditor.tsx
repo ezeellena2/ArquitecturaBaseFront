@@ -32,7 +32,7 @@ export function SectionTitleEditor({ section, position, total, culture, original
     const delta = pendingFocus.current;
     if (delta === null) return;
     pendingFocus.current = null;
-    const buttons = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>("button[data-move-item]:not(:disabled)") ?? []);
+    const buttons = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>('button[data-move-item]:not(:disabled):not([aria-disabled="true"])') ?? []);
     (buttons.find(button => button.dataset.moveDelta === String(delta)) ?? buttons[0])?.focus();
   }, [position]);
   function move(delta: number) {

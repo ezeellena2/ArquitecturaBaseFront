@@ -62,7 +62,7 @@ it("adds the block with «Agregar bloque» at the end, open as «Bloque» with 1
   expect(within(block).getByRole("spinbutton", { name: "Máximo" })).toHaveValue(20);
   expect(within(block).getByText("Bloque · de 1 a 20 ítems · 0 preguntas")).toBeInTheDocument();
   expect(within(box()).getByRole("button", { name: "Agregar pregunta" })).toBeEnabled();
-  expect(screen.getByRole("button", { name: "Agregar bloque" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Agregar bloque" })).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByRole("button", { name: "Agregar bloque" })).toHaveAccessibleDescription("Ya hay un bloque.");
   // The block is not one of the questions.
   expect(screen.getByText("6 preguntas")).toBeInTheDocument();

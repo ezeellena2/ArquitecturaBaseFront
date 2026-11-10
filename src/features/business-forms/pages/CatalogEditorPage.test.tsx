@@ -1123,7 +1123,7 @@ describe("Filters editor connected to current DTOs", () => {
     const previewBand = within(preview).getByRole("heading", { name: "Vista previa" }).parentElement!;
     // Why Test is off is its help, not a text in the preview (2026-10-31).
     const choose = "Elegí una persona para probar antes de guardar.";
-    expect(within(previewBand).getByRole("button", { name: "Probar" })).toBeDisabled();
+    expect(within(previewBand).getByRole("button", { name: "Probar" })).toHaveAttribute("aria-disabled", "true");
     expect(within(previewBand).getByRole("button", { name: "Probar" })).toHaveAccessibleDescription(choose);
     expect(screen.getAllByText(choose).every(node => node.closest("[hidden]"))).toBe(true);
     // Without changes Save is off; an edit turns it on, and that is what says there are changes.
@@ -1426,7 +1426,7 @@ it("requires a clean saved catalog to import, while Read still offers export",as
  const name=await screen.findByRole("textbox",{name:"Nombre"});
  expect(await screen.findByRole("button",{name:"Importar"})).toBeEnabled();
  await pasteText(user,name," editado");
- expect(screen.getByRole("button",{name:"Importar"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Importar"})).toHaveAttribute("aria-disabled", "true");
  expect(screen.getByRole("button",{name:"Importar"})).toHaveAccessibleDescription("Guardá o descartá los cambios antes de importar.");
  expect(screen.getByRole("button",{name:"Exportar"})).toBeEnabled();
  cleanup();queryClient.clear();setup(["formcatalogs.read"]);await mount("/catalogos/"+id);

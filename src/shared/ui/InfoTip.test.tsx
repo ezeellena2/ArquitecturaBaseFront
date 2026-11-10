@@ -21,6 +21,18 @@ describe("InfoTip", () => {
     expect(info).toHaveFocus();
     expect(await screen.findByRole("tooltip")).toHaveTextContent("La clave guardada nunca se muestra.");
   });
+
+  it("opens with a touch in the phone and stays open after a click (MA1-A)", async () => {
+    renderWithProviders(<InfoTip label="Más información sobre la clave" text="La clave guardada nunca se muestra." />);
+    const info = screen.getByRole("button", { name: "Más información sobre la clave" });
+
+    await userEvent.pointer({ keys: "[TouchA]", target: info });
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("La clave guardada nunca se muestra.");
+
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(info);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("La clave guardada nunca se muestra.");
+  });
 });
 
 describe("an information icon first in a dialog", () => {

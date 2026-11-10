@@ -27,7 +27,7 @@ it("explains the retry wait only as the reason of the disabled retry", async () 
   const load = vi.fn(async () => { throw new ApiError(429, { code: "RateLimit.Exceeded", detail: "Demasiados pedidos.", retryAfter: 30 }); });
   renderWithProviders(<FormPdfPreview operationId="retry-pdf" requestedCulture="es" load={load} onForbidden={vi.fn()}/>);
   const retry = await screen.findByRole("button", { name: "Reintentar" });
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(retry).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/);
   expect(screen.getAllByText(/Esperá [0-9]+ segundos para volver a intentar\./)).toHaveLength(1);
   await userEvent.hover(retry);

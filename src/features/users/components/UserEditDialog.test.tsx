@@ -714,7 +714,7 @@ describe("UserEditDialog", () => {
       );
       expect(strip.queryByText(/WhatsApp no la entregó/, { selector: "p" })).not.toBeInTheDocument();
       const resend = strip.getByRole("button", { name: "Reenviar invitación" });
-      expect(resend).toBeDisabled();
+      expect(resend).toHaveAttribute("aria-disabled", "true");
       expect(resend).toHaveAccessibleDescription("Podés reenviar en 45 s");
     });
 
@@ -781,7 +781,7 @@ describe("UserEditDialog", () => {
       const strip = stripOf(await openEdit("laura.rios@gmail.com"));
 
       const resend = strip.getByRole("button", { name: "Reenviar invitación" });
-      expect(resend).toBeDisabled();
+      expect(resend).toHaveAttribute("aria-disabled", "true");
       expect(resend).toHaveAccessibleDescription("Podés reenviar en 45 s");
     });
 
@@ -920,7 +920,7 @@ describe("UserEditDialog", () => {
         expect(await strip.findByText("Pendiente")).toBeInTheDocument();
         expect(strip.getByText(/24 sept 2026, 11:05/)).toBeInTheDocument();
         const resend = strip.getByRole("button", { name: "Reenviar invitación" });
-        expect(resend).toBeDisabled();
+        expect(resend).toHaveAttribute("aria-disabled", "true");
         expect(resend).toHaveAccessibleDescription("Podés reenviar en 60 s");
         // El botón apagado no toma el foco: lo toma la franja, que dice qué pasó.
         expect(dialog.getByRole("region", { name: "Última invitación" })).toHaveFocus();
@@ -1085,7 +1085,7 @@ describe("UserEditDialog", () => {
           expect(toastError).toHaveBeenCalledWith("Esperá un minuto antes de volver a invitar a esta persona.", expect.objectContaining({ id: expect.any(String), closeButton: true, duration: 10000 })),
         );
         const resend = stripOf(dialog).getByRole("button", { name: "Reenviar invitación" });
-        expect(resend).toBeDisabled();
+        expect(resend).toHaveAttribute("aria-disabled", "true");
         expect(resend).toHaveAccessibleDescription("Podés reenviar en 42 s");
       });
 
@@ -1131,7 +1131,7 @@ describe("UserEditDialog", () => {
 
         // El 202 lo apaga por un minuto: el foco no puede quedarse en un botón apagado, y lo toma la franja.
         await waitFor(() =>
-          expect(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" })).toBeDisabled(),
+          expect(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" })).toHaveAttribute("aria-disabled", "true"),
         );
         expect(dialog.getByRole("region", { name: "Última invitación" })).toHaveFocus();
       });
@@ -1159,7 +1159,7 @@ describe("UserEditDialog", () => {
         await userEvent.click(panel.getByRole("button", { name: "Cancelar" }));
 
         const resend = stripOf(dialog).getByRole("button", { name: "Reenviar invitación" });
-        expect(resend).toBeDisabled();
+        expect(resend).toHaveAttribute("aria-disabled", "true");
         expect(resend).toHaveAccessibleDescription("Podés reenviar en 60 s");
         // El botón apagado no puede tomar el foco: lo toma la franja, que dice qué pasó.
         expect(dialog.getByRole("region", { name: "Última invitación" })).toHaveFocus();

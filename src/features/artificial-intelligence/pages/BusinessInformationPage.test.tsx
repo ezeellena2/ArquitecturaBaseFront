@@ -116,7 +116,7 @@ describe("business information editor", () => {
     expect(screen.getByRole("button", { name: "Agregar franja · Lunes" })).toBe(add);
     await userEvent.click(add);
     const limited = screen.getByRole("button", { name: "Agregar franja · Lunes" });
-    expect(limited).toBeDisabled();
+    expect(limited).toHaveAttribute("aria-disabled", "true");
     expect(limited).toHaveAccessibleDescription("Podés agregar hasta 4 franjas.");
     expect(screen.getAllByRole("combobox", { name: /^Lunes \d · Desde$/ })).toHaveLength(4);
     await userEvent.hover(limited);
@@ -329,7 +329,7 @@ describe("business information editor", () => {
     renderRouteWithProviders("/configuracion/negocio");
     const custom = await screen.findByRole("button", { name: "Escribir otra pregunta" });
     const preset = screen.getByRole("combobox", { name: "Agregar una pregunta predefinida" });
-    expect(custom).toBeDisabled();
+    expect(custom).toHaveAttribute("aria-disabled", "true");
     expect(custom).toHaveAccessibleDescription("Podés agregar hasta 20 preguntas.");
     expect(preset).toBeDisabled();
     expect(preset).toHaveAccessibleDescription("Podés agregar hasta 20 preguntas.");
@@ -342,7 +342,7 @@ describe("business information editor", () => {
     current.details = { ...details, openingHours: { ...details.openingHours, exceptions } };
     renderRouteWithProviders("/configuracion/negocio");
     const add = await screen.findByRole("button", { name: "Agregar fecha especial" });
-    expect(add).toBeDisabled();
+    expect(add).toHaveAttribute("aria-disabled", "true");
     expect(add).toHaveAccessibleDescription("Podés agregar hasta 32 fechas especiales.");
     await userEvent.hover(add);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés agregar hasta 32 fechas especiales.");

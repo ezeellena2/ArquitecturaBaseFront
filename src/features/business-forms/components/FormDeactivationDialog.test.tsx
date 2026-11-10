@@ -70,7 +70,7 @@ it.each([
  const dialog=await screen.findByRole("dialog");
  await within(dialog).findByText("Qué deja de pasar");
  const button=within(dialog).getByRole("button",{name:"Dar de baja"});
- expect(button).toBeDisabled();
+ expect(button).toHaveAttribute("aria-disabled", "true");
  expect(button).toHaveAccessibleDescription(reason);
  expect(within(dialog).getAllByText(reason).every(node=>node.closest("[hidden]"))).toBe(true);
 });

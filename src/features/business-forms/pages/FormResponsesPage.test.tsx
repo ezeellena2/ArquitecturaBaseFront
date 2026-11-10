@@ -428,7 +428,7 @@ describe("response sheet", () => {
     expect(dialog.getByRole("radio", { name: "Salió" })).toBeDisabled();
     expect(dialog.getByRole("radio", { name: "No salió" })).toBeDisabled();
     // The wait is the reason of the disabled check; when it ends the check is drawn again without its reason.
-    if (failure === "rateLimit") { expect(check).toBeDisabled(); expect(check).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar."); await waitFor(() => expect(dialog.getByRole("button", { name: "Consultar" })).toBeEnabled(), { timeout: 2000 }); }
+    if (failure === "rateLimit") { expect(check).toHaveAttribute("aria-disabled", "true"); expect(check).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar."); await waitFor(() => expect(dialog.getByRole("button", { name: "Consultar" })).toBeEnabled(), { timeout: 2000 }); }
     await userEvent.click(dialog.getByRole("button", { name: "Consultar" }));
     await dialog.findByRole("button", { name: "Confirmar que no salió" });
     expect(reads).toBe(3);
@@ -889,7 +889,7 @@ describe("response sheet", () => {
     if (status === 429) {
       // The wait of the facet is the reason of its disabled Reintentar, not a text in the list.
       const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
-      expect(list.getByRole("button", { name: "Reintentar" })).toBeDisabled();
+      expect(list.getByRole("button", { name: "Reintentar" })).toHaveAttribute("aria-disabled", "true");
       expect(list.getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
       for (const text of list.getAllByText(wait)) expect(text).not.toBeVisible();
     } else expect(list.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
@@ -1032,11 +1032,11 @@ describe("response sheet", () => {
     await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
     let dialog = await screen.findByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
-    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toBeDisabled());
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toHaveAttribute("aria-disabled", "true"));
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
     dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toHaveAttribute("aria-disabled", "true");
     expect(within(dialog).getByRole("button", { name: "Exportar a Excel" })).toHaveAccessibleDescription(/^Esperá [0-9]+ segundos para volver a intentar\.$/);
   });
   it("closes a denied export and preserves the readable sheet", async () => {
@@ -1238,8 +1238,8 @@ it("keeps one workflow read notification in the detail without repeating its cau
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
     const header = within((await responseView.findByText("Supervisión")).closest("li")!);
-    expect(await header.findByRole("button", { name: "Aprobar" })).toBeDisabled();
-    expect(header.getByRole("button", { name: "Rechazar" })).toBeDisabled();
+    expect(await header.findByRole("button", { name: "Aprobar" })).toHaveAttribute("aria-disabled", "true");
+    expect(header.getByRole("button", { name: "Rechazar" })).toHaveAttribute("aria-disabled", "true");
     // The reason is the help of each disabled button, not a text under them.
     for (const name of ["Aprobar", "Rechazar"]) expect(header.getByRole("button", { name })).toHaveAccessibleDescription("No podés aprobar ni rechazar tu propia respuesta.");
     expect(fixture.writes).toEqual([]);

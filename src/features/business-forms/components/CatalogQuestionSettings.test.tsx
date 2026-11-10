@@ -172,7 +172,7 @@ it("offers filter additions in the section header", async () => {
   const reason = "Este catálogo no tiene campos de filtro disponibles.";
   for (const name of ["Agregar filtro según quien lo recibe", "Agregar filtro fijo"]) {
     const button = within(await band()).getByRole("button", { name });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAccessibleDescription(reason);
   }
   expect(screen.getAllByText(reason).every(node => node.closest("[hidden]"))).toBe(true);
@@ -199,7 +199,7 @@ it("offers Retry after a failed recipient preview and keeps it disabled during a
   await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
   await waitFor(() => expect(requests.previews).toHaveLength(2));
   const waiting = await screen.findByRole("button", { name: "Reintentar" });
-  await waitFor(() => expect(waiting).toBeDisabled());
+  await waitFor(() => expect(waiting).toHaveAttribute("aria-disabled", "true"));
   // The wait is the button's reason (tooltip and description), not a text beside it; the state keeps saying it failed.
   expect(waiting).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
   expect(screen.getByRole("alert")).toHaveTextContent("No se pudo preparar la vista previa.");
@@ -224,7 +224,7 @@ it("keeps Retry disabled during the wait of a 429 on the recipient samples", asy
   const failed = await screen.findByRole("alert");
   expect(failed).toHaveTextContent("No se pudo preparar la vista previa.");
   const retry = within(failed).getByRole("button", { name: "Reintentar" });
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(retry).toHaveAccessibleDescription("Esperá 5 segundos para volver a intentar.");
   expect(requests.samples).toBe(1);
   // Coming back to the window or reconnecting inside the wait does not repeat the read on its own (RF13-1).
@@ -232,7 +232,7 @@ it("keeps Retry disabled during the wait of a 429 on the recipient samples", asy
     await act(async () => { focusManager.setFocused(false); focusManager.setFocused(true); onlineManager.setOnline(false); onlineManager.setOnline(true); });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
     expect(requests.samples).toBe(1);
-    expect(within(screen.getByRole("alert")).getByRole("button", { name: "Reintentar" })).toBeDisabled();
+    expect(within(screen.getByRole("alert")).getByRole("button", { name: "Reintentar" })).toHaveAttribute("aria-disabled", "true");
   } finally { focusManager.setFocused(undefined); onlineManager.setOnline(true); }
 });
 
@@ -291,14 +291,14 @@ it("explains why each filter addition is disabled", async () => {
   await expand(filtersTitle);
   // The reason is known once the person data arrive: the button gets its tooltip then, so it is read again.
   await waitFor(async () => expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
-  expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toBeDisabled();
+  expect(within(await band()).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAttribute("aria-disabled", "true");
   const fixed = within(await band()).getByRole("button", { name: "Agregar filtro fijo" });
   expect(fixed).toBeEnabled();
   expect(fixed).not.toHaveAccessibleDescription();
   view.rerender(question([{ fieldId: zone, value: null }, { fieldId: category, value: "Frío" }]));
   for (const name of ["Agregar filtro según quien lo recibe", "Agregar filtro fijo"]) {
     const button = within(await band()).getByRole("button", { name });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAccessibleDescription("Ya se usan todos los campos de filtro.");
   }
 });
@@ -657,7 +657,7 @@ it("keeps choosing first off in a question of several, with its reason", async (
   serveGroupCatalog();
   renderWithProviders(groupQuestion({ catalog: maximumCatalog }, vi.fn(), { type: "multiChoice" }));
   const toggle = await screen.findByRole("checkbox", { name: "Elegir primero por un campo" });
-  expect(toggle).toBeDisabled();
+  expect(toggle).toHaveAttribute("aria-disabled", "true");
   expect(toggle).toHaveAccessibleDescription(/No se combina con «Permitir elegir varias»\./);
 });
 

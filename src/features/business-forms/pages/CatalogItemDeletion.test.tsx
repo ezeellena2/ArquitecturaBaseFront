@@ -67,7 +67,7 @@ describe("Deleting a saved option of a Manual catalog", () => {
     setup(() => [first, second]);
     await mount(); const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Bajar Pérez" }));
-    expect(screen.getByRole("button", { name: "Eliminar López" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Eliminar López" })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("stays marked and says what uses it when the server cannot delete it", async () => {

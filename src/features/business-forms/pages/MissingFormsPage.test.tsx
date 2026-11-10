@@ -110,7 +110,7 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  await userEvent.type(screen.getByRole("searchbox",{name:"Buscar por tema"}),"materiales");
  await act(async()=>{await queryClient.invalidateQueries({queryKey:["form-missing-requests"]});});
  // The wait is the tooltip of Retry once it is off, so the button is read again each time.
- const retry=()=>screen.getByRole("button",{name:"Reintentar"});await waitFor(()=>expect(retry()).toBeDisabled());expect(screen.getByText(topic.name)).toBeInTheDocument();
+ const retry=()=>screen.getByRole("button",{name:"Reintentar"});await waitFor(()=>expect(retry()).toHaveAttribute("aria-disabled", "true"));expect(screen.getByText(topic.name)).toBeInTheDocument();
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Descartados (0)"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();

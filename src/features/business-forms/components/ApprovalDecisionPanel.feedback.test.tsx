@@ -60,7 +60,7 @@ it("explains an own response as help of the decision buttons", async () => {
   renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
   const approve = await screen.findByRole("button", { name: "Aprobar" });
   for (const button of [approve, screen.getByRole("button", { name: "Rechazar" })]) {
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAccessibleDescription(reason);
   }
   for (const text of screen.getAllByText(reason)) expect(text).not.toBeVisible();
@@ -79,11 +79,11 @@ it("explains the decision wait as help of the decision buttons and of the reject
   await userEvent.type(within(dialog).getByRole("textbox", { name: /Motivo/ }), "Falta la firma");
   await userEvent.click(within(dialog).getByRole("button", { name: "Rechazar" }));
   await waitFor(() => expect(within(dialog).getByRole("button", { name: "Rechazar" })).toHaveAccessibleDescription(wait));
-  expect(within(dialog).getByRole("button", { name: "Rechazar" })).toBeDisabled();
+  expect(within(dialog).getByRole("button", { name: "Rechazar" })).toHaveAttribute("aria-disabled", "true");
   for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
   await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   for (const name of ["Aprobar", "Rechazar"]) {
-    expect(screen.getByRole("button", { name })).toBeDisabled();
+    expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(wait);
   }
   for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
@@ -173,7 +173,7 @@ it("waits in the reject dialog with Rechazando… and its close turned off, and 
   expect(within(dialog).getByRole("button", { name: "Rechazando…" })).toHaveAttribute("aria-busy", "true");
   expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
   const close = within(dialog).getByRole("button", { name: "Cerrar" });
-  expect(close).toBeDisabled();
+  expect(close).toHaveAttribute("aria-disabled", "true");
   expect(close).toHaveAccessibleDescription("Rechazando…");
   await userEvent.keyboard("{Escape}");
   expect(screen.getByRole("dialog", { name: "Rechazar VIS-00001" })).toBeInTheDocument();

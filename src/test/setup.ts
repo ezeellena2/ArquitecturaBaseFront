@@ -1,8 +1,21 @@
 import "@testing-library/jest-dom/vitest";
+import { toBeEnabled } from "@testing-library/jest-dom/matchers";
 import { configure } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import i18n from "@/shared/i18n";
 import { server } from "./mocks/server";
+
+// Un botón o una casilla apagados con motivo llevan `aria-disabled` y no `disabled` (MA1-A, `DisabledReason`). jest-dom
+// sólo lee `disabled`: `toBeEnabled()` pasaría sobre ellos y un `waitFor` dejaría de esperar antes de que se vaya el
+// motivo. Acá `aria-disabled="true"` tampoco cuenta como habilitado; lo demás sigue la regla de jest-dom. Que un control
+// está apagado con motivo se comprueba con `toHaveAttribute("aria-disabled", "true")`.
+expect.extend({
+  toBeEnabled(element: HTMLElement) {
+    const result = toBeEnabled.call(this, element);
+    if (!result.pass || element.getAttribute("aria-disabled") !== "true") return result;
+    return { pass: false, message: () => 'expect(element).toBeEnabled()\n\nReceived element has aria-disabled="true"' };
+  },
+});
 
 // onUnhandledRequest: "error" evita que un test pegue a la red real sin darse cuenta.
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));

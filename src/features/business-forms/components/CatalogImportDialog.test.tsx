@@ -163,7 +163,7 @@ it("keeps Cancel and the close button in sight but off, with their reason, while
   expect(screen.getByRole("button", { name: "Aplicando…" })).toHaveAttribute("aria-busy", "true");
   for (const name of ["Cancelar", "Cerrar"]) {
     const control = screen.getByRole("button", { name });
-    expect(control).toBeDisabled();
+    expect(control).toHaveAttribute("aria-disabled", "true");
     expect(control).toHaveAccessibleDescription("Esperá a que termine de aplicar.");
   }
   await act(async () => resolve({ catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} }));

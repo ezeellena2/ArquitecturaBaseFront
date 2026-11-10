@@ -34,8 +34,8 @@ describe("Pagination", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /anterior/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /siguiente/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /anterior/i })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: /siguiente/i })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("omits the page counter for an empty result and preserves its range and controls", () => {
@@ -45,7 +45,7 @@ describe("Pagination", () => {
 
     expect(screen.getByText("0–0 de 0")).toBeInTheDocument();
     expect(screen.queryByText(/Página \d+ de \d+/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /anterior/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /siguiente/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /anterior/i })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: /siguiente/i })).toHaveAttribute("aria-disabled", "true");
   });
 });

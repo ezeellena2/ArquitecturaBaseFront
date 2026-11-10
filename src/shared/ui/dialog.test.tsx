@@ -9,7 +9,7 @@ it("keeps the close button in sight but off, with its reason, while the dialog c
   const change = vi.fn(), reason = "Esperá a que termine de aplicar.";
   renderWithProviders(<Dialog open onOpenChange={change}><DialogContent aria-describedby={undefined} closeDisabledReason={reason}><DialogTitle>Importar</DialogTitle></DialogContent></Dialog>);
   const close = await screen.findByRole("button", { name: "Cerrar" });
-  expect(close).toBeDisabled();
+  expect(close).toHaveAttribute("aria-disabled", "true");
   expect(close).toHaveAccessibleDescription(reason);
   await userEvent.hover(close);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);

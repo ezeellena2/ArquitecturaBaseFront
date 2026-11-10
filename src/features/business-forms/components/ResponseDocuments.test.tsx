@@ -40,7 +40,7 @@ it("notifies one document download wait and gives it as the reason of each disab
   const wait = /^Esperá \d+ segundos para volver a intentar\.$/;
   for (const name of ["Ver PDF", "Descargar"]) {
     await waitFor(() => expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(wait));
-    expect(screen.getByRole("button", { name })).toBeDisabled();
+    expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
   }
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();

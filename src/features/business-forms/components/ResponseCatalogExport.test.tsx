@@ -14,7 +14,7 @@ it("explains the export limit only as the reason of the disabled download", asyn
   const limit = "Podés exportar hasta 10.000 respuestas. Acotá los filtros para continuar.";
   await act(async () => { renderWithProviders(<ResponseExportDialog formId="form" prefix="VIS" filter={{ page: 1, pageSize: 20 }} total={10001} ready cooldown={{ seconds: 0, isRunning: false, restart: vi.fn() }} columns={[]} visible={[]} filterLabels={[]} onClose={vi.fn()} onForbidden={vi.fn()}/>); });
   const download = screen.getByRole("button", { name: "Exportar a Excel" });
-  expect(download).toBeDisabled();
+  expect(download).toHaveAttribute("aria-disabled", "true");
   expect(download).toHaveAccessibleDescription(limit);
   for (const text of screen.getAllByText(limit)) expect(text).not.toBeVisible();
   await userEvent.hover(download);
@@ -24,7 +24,7 @@ it("explains the export wait only as the reason of the disabled download", async
   const wait = "Esperá 30 segundos para volver a intentar.";
   await act(async () => { renderWithProviders(<ResponseExportDialog formId="form" prefix="VIS" filter={{ page: 1, pageSize: 20 }} total={2} ready cooldown={{ seconds: 30, isRunning: true, restart: vi.fn() }} columns={[]} visible={[]} filterLabels={[]} onClose={vi.fn()} onForbidden={vi.fn()}/>); });
   const download = screen.getByRole("button", { name: "Exportar a Excel" });
-  expect(download).toBeDisabled();
+  expect(download).toHaveAttribute("aria-disabled", "true");
   expect(download).toHaveAccessibleDescription(wait);
   for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
 });

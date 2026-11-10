@@ -135,7 +135,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Ya no tenés permiso para esta acción.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
+    expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");
     expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument();
     expect(within(dialog).queryByText(selected.name[culture])).not.toBeInTheDocument();
     expect(posts).toEqual([]);

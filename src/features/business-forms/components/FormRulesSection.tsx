@@ -84,7 +84,7 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
     pendingFocus.current = null;
     if ("selector" in pending) host.current?.querySelector<HTMLElement>(pending.selector)?.focus();
     else {
-      const buttons = Array.from(host.current?.querySelectorAll<HTMLButtonElement>("button[data-move-item]:not(:disabled)") ?? []).filter(button => button.dataset.moveItem === pending.actionId);
+      const buttons = Array.from(host.current?.querySelectorAll<HTMLButtonElement>('button[data-move-item]:not(:disabled):not([aria-disabled="true"])') ?? []).filter(button => button.dataset.moveItem === pending.actionId);
       (buttons.find(button => button.dataset.moveDelta === String(pending.delta)) ?? buttons[0])?.focus();
     }
   }, [rules, expanded]);

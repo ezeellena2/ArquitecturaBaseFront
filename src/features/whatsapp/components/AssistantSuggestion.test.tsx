@@ -156,7 +156,7 @@ it("explains the wait of a suggested send as help of the footer action", async (
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
  const wait = /^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
  await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toHaveAccessibleDescription(wait));
- expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeDisabled();
+ expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toHaveAttribute("aria-disabled", "true");
  expect(within(dialog).getAllByText(wait)).toHaveLength(1);
  expect(notice).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: expect.stringMatching(wait) }));
  expect(sends).toHaveLength(1);
@@ -170,7 +170,7 @@ it("gives the wait of a 429 as the reason of the suggestion actions", async () =
  const wait = /^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
  for (const name of ["No, gracias", "Revisar y enviar"]) {
   await waitFor(() => expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(wait));
-  expect(screen.getByRole("button", { name })).toBeDisabled();
+  expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
  }
  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
  await userEvent.hover(screen.getByRole("button", { name: "Revisar y enviar" }));

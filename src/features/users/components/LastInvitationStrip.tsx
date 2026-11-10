@@ -237,8 +237,8 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
   const [errors, setErrors] = useState<ResendErrors>({});
   const { seconds, wait } = useResendWait(invitation, receivedAt);
 
-  /// Al cerrar el panel, el foco vuelve a "Reenviar invitación". Si quedó apagado por la espera no puede tomarlo, y lo
-  /// toma la franja, que dice qué pasó: si no, cae en `<body>`. Puede estar apagado aunque se cierre con Cancelar: el
+  /// Al cerrar el panel, el foco vuelve a "Reenviar invitación". Si quedó apagado por la espera (con su motivo, en
+  /// `aria-disabled`: MA1-A), no lo toma: lo toma la franja, que dice qué pasó. Puede estar apagado aunque se cierre con Cancelar: el
   /// detalle se vuelve a pedir con el panel abierto (al volver a la ventana) y trae una invitación que otro mandó recién.
   ///
   /// Si ya estaba cerrado, se canceló con el envío en camino, y Cancelar dejó el foco en "Reenviar invitación": la
@@ -247,7 +247,8 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     if (isOpen) {
       flushSync(() => setIsOpen(false));
       const button = resendRef.current;
-      (focus === "button" && button?.disabled === false ? button : sectionRef.current)?.focus();
+      const usable = button?.disabled === false && button.getAttribute("aria-disabled") !== "true";
+      (focus === "button" && usable ? button : sectionRef.current)?.focus();
     } else if (focus === "strip" && document.activeElement === resendRef.current) {
       sectionRef.current?.focus();
     }

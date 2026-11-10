@@ -23,7 +23,7 @@ it("explains the server wait as help of Delete",async()=>{
  await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
  const remove=within(dialog).getByRole("button",{name:"Eliminar"});
  await waitFor(()=>expect(remove).toHaveAccessibleDescription(wait));
- expect(remove).toBeDisabled();
+ expect(remove).toHaveAttribute("aria-disabled", "true");
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
  await userEvent.hover(remove);
  expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);

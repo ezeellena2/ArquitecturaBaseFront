@@ -73,7 +73,7 @@ it("gives the wait of a 429 as the reason of the disabled load button",async()=>
  renderPreview();
  const wait=/^Esperá [0-9]+ segundos para volver a intentar\.$/;
  await waitFor(()=>expect(screen.getByRole("button",{name:"Cargar vista"})).toHaveAccessibleDescription(wait));
- expect(screen.getByRole("button",{name:"Cargar vista"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Cargar vista"})).toHaveAttribute("aria-disabled", "true");
  for(const text of screen.getAllByText(wait))expect(text).not.toBeVisible();
  expect(fetchFormPreview).toHaveBeenCalledTimes(1);
 });

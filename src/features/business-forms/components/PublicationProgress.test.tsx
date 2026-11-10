@@ -137,7 +137,7 @@ describe("Chosen publication board EP1-A", () => {
     await mount({ ...session("Publishing"), phase: "Unconfirmed", canReplay: true, error: new ApiError(429, { code: "RateLimit.Exceeded", retryAfter: 30 }) }, { onReplay });
     for (const name of ["Consultar publicación", "Repetir el mismo intento"]) {
       const button = within(header()).getByRole("button", { name });
-      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
       expect(button).toHaveAccessibleDescription(wait);
     }
     for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();

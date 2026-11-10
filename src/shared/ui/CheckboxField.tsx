@@ -19,7 +19,8 @@ interface CheckboxFieldProps {
   error?: string;
   disabled?: boolean;
   /// Por qué está apagada, cuando no es obvio: tooltip y descripción accesible de la casilla (`DisabledReason`), sin
-  /// texto debajo. Sólo cuenta mientras está apagada.
+  /// texto debajo. Sólo cuenta mientras está apagada, y responde la fila entera: pasar por su texto, hacerle clic o
+  /// tocarlo muestra el motivo arriba del cuadradito y no la marca (MA1-A).
   disabledReason?: string | null;
 }
 
@@ -66,7 +67,9 @@ export function CheckboxField({
         disabled ? "" : "hover:bg-[var(--color-surface-muted)]",
       )}
     >
-      <DisabledReason reason={disabled ? disabledReason : null}>
+      {/* Con motivo, el envoltorio del cuadradito se estira sobre la fila, como la etiqueta de una casilla encendida:
+          la fila entera muestra el motivo, que se ancla en el cuadradito. */}
+      <DisabledReason reason={disabled ? disabledReason : null} className="after:absolute after:inset-0">
         <Checkbox
           id={id}
           checked={checked}

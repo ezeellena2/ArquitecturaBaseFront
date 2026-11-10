@@ -212,9 +212,10 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, f
     : rangeTypes.includes(field.type) ? <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-content-muted)]"><span className="flex items-center gap-2">{t("catalogs.fields.inline.from")}{bound("min")}</span><span className="flex items-center gap-2">{t("catalogs.fields.inline.to")}{bound("max")}</span></div>
     : field.type === "catalog" ? <CatalogFieldSourceInput scope={scope} value={field.sourceCatalogId} label={t("catalogQuestion.catalog")} readOnly={false} onChange={sourceCatalogId => set({ sourceCatalogId })} {...marked("sourceCatalogId")} />
     : null;
-  // A new field starts optional: its Obligatorio says why as a tooltip and its description, without a text under it.
+  // A new field starts optional: its Obligatorio says why as a tooltip and its description, without a text under it. The
+  // reason answers in the whole row, its text included, like a CheckboxField (MA1-A).
   const check = (path: "required" | "unique", label: string, reason: string | null) => <div className="flex flex-col gap-1">
-    <div className="flex items-center gap-2"><DisabledReason reason={reason} id={id + path} {...marked(path)}><Checkbox checked={field[path]} disabled={!!reason} onCheckedChange={value => set({ [path]: value === true })} /></DisabledReason><Label htmlFor={id + path} className="font-normal">{label}</Label></div>
+    <div className="relative flex items-center gap-2"><DisabledReason reason={reason} id={id + path} {...marked(path)} className="after:absolute after:inset-0"><Checkbox checked={field[path]} disabled={!!reason} onCheckedChange={value => set({ [path]: value === true })} /></DisabledReason><Label htmlFor={id + path} className="font-normal">{label}</Label></div>
     {messageOf(path)}
   </div>;
   // A line between rows; the type and its detail share one.

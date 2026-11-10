@@ -445,7 +445,7 @@ describe("Forms routes", () => {
     await pasteText(await screen.findByLabelText("Nombre"), " editado");
     await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" }));
     const check = await screen.findByRole("button", { name: "Consultar guardado" });
-    expect(check).toBeDisabled();
+    expect(check).toHaveAttribute("aria-disabled", "true");
     expect(check).toHaveAccessibleDescription(/^Esperá \d+ segundos para volver a intentar\.$/);
     // The wait is only the reason of the control: nothing is drawn as a paragraph on the page.
     expect(screen.getAllByText(/Esperá \d+ segundos para volver a intentar\./).every(node => node.closest("[hidden]"))).toBe(true);
@@ -460,7 +460,7 @@ describe("Forms routes", () => {
     })) } });
     renderRouteWithProviders("/formularios/" + fixtureFormId);
     const add = await screen.findByRole("button", { name: "Agregar pregunta" });
-    expect(add).toBeDisabled();
+    expect(add).toHaveAttribute("aria-disabled", "true");
     expect(add).toHaveAccessibleDescription("Podés agregar hasta 40 preguntas. Quitá una para agregar otra.");
     expect(screen.getByText("Podés agregar hasta 40 preguntas. Quitá una para agregar otra.").closest("[hidden]")).not.toBeNull();
   });

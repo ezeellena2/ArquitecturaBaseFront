@@ -104,7 +104,7 @@ it("gives assistant unavailability as the reason of the disabled Assistant switc
   thread.assistantAvailability = { state: "paused" };
   await open();
   const enable = screen.getByRole("button", { name: "Pasar a modo Asistente" });
-  expect(enable).toBeDisabled();
+  expect(enable).toHaveAttribute("aria-disabled", "true");
   expect(enable).toHaveAccessibleDescription("El asistente está pausado.");
   for (const text of screen.getAllByText("El asistente está pausado.")) expect(text).not.toBeVisible();
   expect(screen.queryByText("La conversación sigue en atención manual.")).not.toBeInTheDocument();
@@ -588,7 +588,7 @@ it.each([
   thread.assistantAvailability = { state };
   await open();
   const enable = screen.getByRole("button", { name: "Pasar a modo Asistente" });
-  expect(enable).toBeDisabled();
+  expect(enable).toHaveAttribute("aria-disabled", "true");
   expect(enable).toHaveAccessibleDescription(reason);
   await userEvent.hover(enable);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(reason);

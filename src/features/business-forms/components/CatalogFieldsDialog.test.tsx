@@ -110,7 +110,7 @@ it("adds an optional field at the end, with the cursor in its name, and says why
   expect(within(dialog).getByText("2 de 20")).toBeInTheDocument();
   expect(within(dialog).getByRole("textbox", { name: "Clave" })).not.toHaveAttribute("readonly");
   const required = within(dialog).getByRole("checkbox", { name: "Obligatorio" });
-  expect(required).toBeDisabled();
+  expect(required).toHaveAttribute("aria-disabled", "true");
   expect(required).toHaveAccessibleDescription(optionalFirst);
   expect(within(dialog).queryByText(optionalFirst, { selector: "p" })).not.toBeInTheDocument();
   expect(within(dialog).getByRole("button", { name: "Dato" })).toHaveAttribute("aria-pressed", "true");
@@ -459,7 +459,7 @@ it("explains the limit of fields on the disabled Add field", async () => {
   const full = Array.from({ length: 20 }, (_, index) => ({ ...field, localId: "saved-" + index, id: "01990000-0000-7000-8000-0000000001" + String(index).padStart(2, "0"), key: "field_" + index, name: { es: "Campo " + index } }));
   await mount({ initial: full });
   const add = within(await openFields()).getByRole("button", { name: "Agregar campo" });
-  expect(add).toBeDisabled();
+  expect(add).toHaveAttribute("aria-disabled", "true");
   expect(add).toHaveAccessibleDescription("Un catálogo admite hasta 20 campos.");
   await userEvent.hover(add);
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Un catálogo admite hasta 20 campos.");

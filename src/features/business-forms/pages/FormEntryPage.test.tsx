@@ -188,7 +188,7 @@ describe("loading a response from the app", () => {
     expect(await screen.findByText("No podés enviar Registro de lluvia: te falta el dato «Zona».")).toBeVisible();
     expect(screen.queryByText(/Pedíselo/)).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Lote" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Enviar" })).toHaveAttribute("aria-disabled", "true");
     expect(sends).toHaveLength(0);
   });
 

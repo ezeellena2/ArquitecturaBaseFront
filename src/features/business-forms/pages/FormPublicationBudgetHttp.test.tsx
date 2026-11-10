@@ -83,7 +83,7 @@ for (const culture of ["es", "en"] as const) describe("publication response budg
       const { dialog, checks, getPublications, getWrites } = page;
       expect(within(dialog).getAllByText(captured.issues[0]!.message, { exact: true })).toHaveLength(captured.issues.length);
       const publish = within(dialog).getByRole("button", { name: text.publication.publishVersion.replace("{{version}}", "1") });
-      expect(publish).toBeDisabled();
+      expect(publish).toHaveAttribute("aria-disabled", "true");
       await userEvent.click(publish);
       expect(getPublications()).toBe(0);
       expect(checks).toHaveLength(1);

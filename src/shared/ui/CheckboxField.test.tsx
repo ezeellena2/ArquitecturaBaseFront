@@ -54,11 +54,33 @@ describe("CheckboxField", () => {
     );
 
     const checkbox = screen.getByRole("checkbox", { name: "Adjuntar el PDF" });
-    expect(checkbox).toBeDisabled();
+    expect(checkbox).toHaveAttribute("aria-disabled", "true");
     expect(checkbox).toHaveAccessibleDescription("Sólo al aprobar.");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     await userEvent.hover(checkbox);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Sólo al aprobar.");
+  });
+
+  it("shows the reason when its text is clicked or touched, or with Space, and does not mark it (MA1-A)", async () => {
+    const onCheckedChange = vi.fn();
+    renderWithProviders(
+      <CheckboxField label="Permitir elegir varias" checked={false} disabled disabledReason="En un bloque se elige una sola opción." onCheckedChange={onCheckedChange} />,
+    );
+    const checkbox = screen.getByRole("checkbox", { name: "Permitir elegir varias" });
+
+    await userEvent.click(screen.getByText("Permitir elegir varias"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("En un bloque se elige una sola opción.");
+    await userEvent.keyboard("{Escape}");
+    await userEvent.pointer({ keys: "[TouchA]", target: screen.getByText("Permitir elegir varias") });
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("En un bloque se elige una sola opción.");
+
+    checkbox.focus();
+    await userEvent.keyboard("{Escape}");
+    await userEvent.keyboard(" ");
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("En un bloque se elige una sola opción.");
+
+    expect(checkbox).not.toBeChecked();
+    expect(onCheckedChange).not.toHaveBeenCalled();
   });
 
   it("leaves out the reason while the box can be used", () => {

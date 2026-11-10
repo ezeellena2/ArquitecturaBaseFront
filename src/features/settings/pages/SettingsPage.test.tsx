@@ -198,7 +198,7 @@ describe("SettingsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
     expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
-    expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(writes).toHaveLength(1);
   });
@@ -210,7 +210,7 @@ describe("SettingsPage", () => {
     const reason = "Primero revisá los valores actuales y elegí qué conservar.";
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAccessibleDescription(reason));
     for (const name of ["Guardar cambios", "Descartar"]) {
-      expect(screen.getByRole("button", { name })).toBeDisabled();
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
       expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(reason);
     }
     for (const text of screen.getAllByText(reason)) expect(text).not.toBeVisible();

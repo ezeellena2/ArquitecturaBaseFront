@@ -103,12 +103,12 @@ it("explains the action wait as the reason of the recovery buttons and of the re
   await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
   const confirm = within(dialog).getByRole("button", { name: "Confirmar que salió" });
   await waitFor(() => expect(confirm).toHaveAccessibleDescription(wait));
-  expect(confirm).toBeDisabled();
+  expect(confirm).toHaveAttribute("aria-disabled", "true");
   for (const text of within(dialog).getAllByText(wait)) expect(text).not.toBeVisible();
   await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   for (const name of ["Resolver envío", "Consultar"]) {
     const button = within(effects).getByRole("button", { name });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAccessibleDescription(wait);
   }
   for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
@@ -132,7 +132,7 @@ it("keeps the wait as the reason of Retry while a running action refetches the h
   await waitFor(() => expect(retry).toHaveAccessibleDescription(wait));
   await waitFor(() => expect(reads).toBe(2), { timeout: 3000 });
   expect(within(effects).getByRole("button", { name: "Reintentar" })).toBe(retry);
-  expect(retry).toBeDisabled();
+  expect(retry).toHaveAttribute("aria-disabled", "true");
   expect(retry).toHaveAccessibleDescription(wait);
 });
 

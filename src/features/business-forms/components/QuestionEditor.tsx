@@ -72,7 +72,7 @@ export function QuestionEditor({ question, position, number, total, culture, ori
     const pending = pendingFocus.current;
     if (!pending) return;
     pendingFocus.current = null;
-    const buttons = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>("button[data-move-item]:not(:disabled)") ?? []);
+    const buttons = Array.from(rootRef.current?.querySelectorAll<HTMLButtonElement>('button[data-move-item]:not(:disabled):not([aria-disabled="true"])') ?? []);
     const sameItem = buttons.filter(button => button.dataset.moveItem === pending.item);
     (sameItem.find(button => button.dataset.moveDelta === String(pending.delta)) ?? sameItem[0])?.focus();
   }, [position, question]);

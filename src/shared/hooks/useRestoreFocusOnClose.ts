@@ -12,8 +12,9 @@ import { useLayoutEffect, useRef, type RefObject } from "react";
 /// diálogos que se quedan montados cerrados; los que se montan solo mientras están abiertos no lo pasan.
 ///
 /// `fallback` es para cuando lo que hizo el diálogo se lleva el botón que lo abrió: al agregar el correo, la fila
-/// ya no ofrece "Agregar correo". Un elemento que ya no está en la página, o que está deshabilitado, no toma el
-/// foco, y el foco cae en `<body>` igual que sin este hook. Con `fallback`, va ahí.
+/// ya no ofrece "Agregar correo". Un elemento que ya no está en la página, o que está apagado, no vuelve a tomar el foco:
+/// con `fallback`, va ahí. Sin `fallback`, un control deshabilitado deja caer el foco en `<body>`, igual que sin este hook,
+/// y uno apagado con su motivo (`aria-disabled`, MA1-A) lo toma, porque sigue en el Tab.
 export function useRestoreFocusOnClose(open = true, fallback?: RefObject<HTMLElement | null>): (event: Event) => void {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
@@ -35,5 +36,5 @@ export function useRestoreFocusOnClose(open = true, fallback?: RefObject<HTMLEle
 }
 
 function canTakeFocus(element: HTMLElement): boolean {
-  return element.isConnected && !element.matches(":disabled");
+  return element.isConnected && !element.matches(':disabled, [aria-disabled="true"]');
 }

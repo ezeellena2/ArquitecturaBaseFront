@@ -46,7 +46,7 @@ describe("AppearancePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
     expect(screen.getByLabelText("Botones y enlaces")).toHaveValue("#335f85");
-    expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(screen.getAllByRole("button", { name: "Revisar valores actuales" })[0]);
     await userEvent.click(await screen.findByRole("button", { name: "Usar valores actuales" }));
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
@@ -59,7 +59,7 @@ describe("AppearancePage", () => {
     const reason = "Primero revisá los valores actuales y elegí qué conservar.";
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAccessibleDescription(reason));
     for (const name of ["Guardar cambios", "Descartar"]) {
-      expect(screen.getByRole("button", { name })).toBeDisabled();
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
       expect(screen.getByRole("button", { name })).toHaveAccessibleDescription(reason);
     }
     for (const text of screen.getAllByText(reason)) expect(text).not.toBeVisible();
@@ -162,7 +162,7 @@ describe("AppearancePage", () => {
     server.use(http.patch("/api/settings", () => { settings = { ...settings, revision: 8, appearance: { ...initialAppearance, menuColor: "#243B53" } }; return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 }); }));
     renderRouteWithProviders("/configuracion/apariencia"); await edit();
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAttribute("aria-disabled", "true"));
     // Revisar va en la banda de Page, antes de Descartar; las elecciones, en el encabezado de la comparación.
     const header = screen.getByRole("heading", { level: 1, name: "Apariencia" }).closest("header") as HTMLElement;
     expect(within(header).getAllByRole("button").map(button => button.textContent)).toEqual(["Revisar valores actuales", "Descartar", "Guardar cambios"]);

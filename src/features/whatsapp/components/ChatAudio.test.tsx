@@ -60,7 +60,7 @@ it("aborts a pending audio read and ignores its late bytes after unmount", async
 it("keeps the playback action paused after 429 without retrying when its wait expires", async () => {
  let reads = 0; server.use(http.get("/api/whatsapp/chats/chat-1/messages/audio-1/audio", () => { reads++; return HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 60 }, { status: 429 }); }));
  renderWithProviders(view()); await userEvent.click(screen.getByRole("button", { name: "Escuchar audio" }));
- await waitFor(() => expect(screen.getByRole("button", { name: "Escuchar audio" })).toBeDisabled());
+ await waitFor(() => expect(screen.getByRole("button", { name: "Escuchar audio" })).toHaveAttribute("aria-disabled", "true"));
  const now = performance.now(); vi.spyOn(performance, "now").mockReturnValue(now + 61000);
  await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
  await waitFor(() => expect(screen.getByRole("button", { name: "Escuchar audio" })).toBeEnabled());
@@ -73,7 +73,7 @@ it("gives the wait after a 429 as the reason of Escuchar audio, with no text bel
  const wait = "Esperá 60 segundos para volver a escuchar.";
  await waitFor(() => expect(screen.getByRole("button", { name: "Escuchar audio" })).toHaveAccessibleDescription(wait));
  const listen = screen.getByRole("button", { name: "Escuchar audio" });
- expect(listen).toBeDisabled();
+ expect(listen).toHaveAttribute("aria-disabled", "true");
  for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
  await userEvent.hover(listen);
  expect(await screen.findByRole("tooltip")).toHaveTextContent(wait);

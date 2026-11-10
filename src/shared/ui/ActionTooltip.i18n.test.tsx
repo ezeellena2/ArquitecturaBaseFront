@@ -48,7 +48,8 @@ describe("shared action tooltips", () => {
       expect(await screen.findByRole("tooltip")).toHaveTextContent(explanation);
       await userEvent.keyboard("{Enter}");
       expect(onPageChange).not.toHaveBeenCalled();
-      expect(screen.getAllByRole("button")).toSatisfy((buttons: HTMLElement[]) => buttons.every((button) => button.hasAttribute("disabled")));
+      // Apagados pero alcanzables (MA1-A): `aria-disabled`, no `disabled`.
+      expect(screen.getAllByRole("button")).toSatisfy((buttons: HTMLElement[]) => buttons.every((button) => button.getAttribute("aria-disabled") === "true"));
     } finally {
       await i18n.changeLanguage("es");
     }
