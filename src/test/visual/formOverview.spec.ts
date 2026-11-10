@@ -61,9 +61,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: es ? "Formularios" : "Forms", level: 1, exact: true })).toBeVisible();
     const table = page.getByRole("table");
     await expect(table).toBeVisible();
+    // The last response in three columns: its number, when it arrived and its state (UD1).
     await expect(table.getByRole("columnheader")).toHaveText(es
-      ? ["Formulario", "Por aprobar", "Respuestas", "Última respuesta"]
-      : ["Form", "To approve", "Responses", "Last response"]);
+      ? ["Formulario", "Por aprobar", "Respuestas", "Última respuesta", "Recibida", "Estado"]
+      : ["Form", "To approve", "Responses", "Last response", "Received", "State"]);
     await expect(table.getByRole("row")).toHaveCount(state === "active" ? 7 : 3);
     await expect(page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true })).not.toBeChecked();
     await assertStateControls(page, es, state, 6, 2, width);
@@ -120,7 +121,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const table = page.getByRole("table");
     await expect(table).toBeVisible();
     await expect(table.getByRole("columnheader")).toHaveText(profile === "read"
-      ? es ? ["Formulario", "Respuestas", "Última respuesta"] : ["Form", "Responses", "Last response"]
+      ? es ? ["Formulario", "Respuestas", "Última respuesta", "Recibida", "Estado"] : ["Form", "Responses", "Last response", "Received", "State"]
       : es ? ["Formulario", "Por aprobar"] : ["Form", "To approve"]);
     await expect(table.getByRole("row")).toHaveCount(profile === "read" ? 7 : 3);
     await expect(page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true })).toHaveCount(0);

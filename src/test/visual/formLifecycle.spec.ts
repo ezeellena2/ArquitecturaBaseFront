@@ -45,7 +45,9 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   const inactive=segment.getByRole("button",{name:es?"Dados de baja (1)":"Deactivated (1)",exact:true});
   await inactive.scrollIntoViewIfNeeded();await inactive.click();
   await expect(table.getByRole("link",{name:es?"Control anterior":"Previous inspection",exact:true})).toBeVisible();
-  await expect(table.getByText(es?/se deprecan cuando venzan los envíos abiertos/:/they will be deprecated when open sends expire/)).toBeVisible();
+  // How the withdrawal goes in WhatsApp and its date, each in its own column (UD2).
+  await expect(table.getByText(es?"Pendiente":"Pending",{exact:true})).toBeVisible();
+  await expect(table.getByRole("columnheader",{name:es?"Deprecación":"Deprecation",exact:true})).toBeVisible();
   await assertContained(page,width);
   await page.screenshot({path:"test-results/form-lifecycle-ba1-deactivated-"+language+"-"+width+".png",fullPage:true});
  });
