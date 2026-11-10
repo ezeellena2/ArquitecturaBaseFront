@@ -165,7 +165,7 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
   botón al lado del dato que toca y lo que actúa sobre todo el conjunto, en la banda. Se parte en zonas sólo cuando son
   cosas distintas, que se entienden por separado, o pasos de un recorrido; nunca por tipo de control (los desplegables
   en una, los botones en otra, las opciones en otra).
-- **Lo apagado se explica en el mismo control** ([MA1-A, elegida el 2026-11-09 y por programar](#el-motivo-de-lo-apagado--2026-11-09)): si el
+- **Lo apagado se explica en el mismo control** ([MA1-A, 2026-11-09](#el-motivo-de-lo-apagado--2026-11-09)): si el
   motivo no es obvio, aparece arriba del control apagado, como tooltip, al pasar el mouse, con el foco, con un clic o
   con un toque, y el clic no hace la acción. Al lado no va nada: ni ícono, ni texto, ni candado. Responde el control
   entero, y el control no cambia de lugar ni de forma al apagarse o encenderse.
@@ -320,7 +320,7 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
     guardar» o «Guardá … antes»;
   - los botones no cambian de lugar ni de forma con cada acción;
   - si el motivo de un deshabilitado no es obvio, va sobre el mismo control, como tooltip, y se abre al pasar el mouse,
-    con el foco, con un clic o con un toque, sin íconos al lado (`DisabledReason`, [MA1-A, por programar](#el-motivo-de-lo-apagado--2026-11-09));
+    con el foco, con un clic o con un toque, sin íconos al lado (`DisabledReason`, [MA1-A](#el-motivo-de-lo-apagado--2026-11-09));
   - los errores se marcan en sus campos.
 - **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.
@@ -1168,9 +1168,23 @@ Lo que encontró el relevamiento y arregla la regla:
 4. Con Tab, el foco llega a un envoltorio sin rol ni nombre.
 
 En el código, las features siguen usando `DisabledReason`, `disabledReason` de `CheckboxField` y `disabledLabel` de
-`IconButton`: el cambio va en `shared/ui`. Está elegida y sin programar: se programa con el
-[plan](../plans/2026-11-09-motivo-de-lo-apagado.md), con el visto bueno del usuario y el front quieto. Hasta entonces, el
-motivo se abre sólo al pasar el mouse o con el foco. Falta pasar el tablero al lienzo del sistema visual.
+`IconButton`, y el cambio quedó en `shared/ui` el 2026-11-09, con el [plan](../plans/2026-11-09-motivo-de-lo-apagado.md):
+
+- `ActionTooltip informative` es lo que sólo informa, el motivo y la (i): además de con el mouse y el foco, se abre con un
+  clic, un toque, Enter o Espacio, y queda abierto hasta Escape, salir con el mouse, perder el foco o tocar afuera. El
+  tooltip de una acción, como el nombre de un botón de ícono, no cambia: tocarlo hace la acción.
+- Un botón o una casilla apagados con motivo quedan con `aria-disabled` en lugar de `disabled`: se alcanzan con Tab, y
+  el clic, Enter y Espacio sólo muestran el motivo; un `submit` no envía el formulario. Su envoltorio queda sólo como
+  zona del puntero, sin foco ni rol: así la casilla conserva su `data-state`, un botón apagado no se ilumina al pasar el
+  mouse y los anchos de hoy (`grid w-full`, `max-sm:*:flex-1`) no cambian. Un campo o un grupo siguen deshabilitados, y
+  el foco lo toma su envoltorio, nombrado por la etiqueta del campo.
+- En `CheckboxField`, y en la casilla «Obligatorio» de los campos de un catálogo, el envoltorio del cuadradito se estira
+  sobre la fila: pasar por el texto o tocarlo muestra el motivo, anclado en el cuadradito, y no la marca.
+
+La escena `disabledReasons` del catálogo (`?scenario=disabled-reasons`) lo recorre con el mouse, el teclado y el toque,
+en es/en a 1440 y 390. Falta la prueba manual guiada: en el celular, tocar «Permitir elegir varias» en una pregunta del
+bloque y una (i); en la compu, llegar con Tab a un botón apagado y escucharlo con el lector. También falta pasar el
+tablero al lienzo del sistema visual.
 
 ## Un dato por columna — 2026-11-09
 

@@ -185,7 +185,7 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Un control deshabilitado mantiene el valor legible. Si el motivo no es evidente, `DisabledReason`
   lo muestra sobre el mismo control, como tooltip y descripción accesible, sin íconos ni textos al
   lado ni debajo. Se abre al pasar el mouse, con el foco, con un clic o con un toque, y el clic no
-  hace la acción (MA1-A, elegida el 2026-11-09 y por programar; [detalle](../design/visual-baseline.md#el-motivo-de-lo-apagado--2026-11-09)).
+  hace la acción (MA1-A, 2026-11-09; [detalle](../design/visual-baseline.md#el-motivo-de-lo-apagado--2026-11-09)).
   Los estados de validación no dependen solo del color.
 - Una mutación conserva el borrador ante un fallo. Toda acción que tarda muestra que trabaja (decisión
   del usuario, 2026-10-31; tableros LC1-A y LC2-A): el botón con `pending` pone el aro y su gerundio

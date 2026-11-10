@@ -161,8 +161,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   `formatDateInZone`/`formatDateTimeInZone`.
 - `IconButton` incluye `ActionTooltip` y usa `disabledLabel` con un motivo concreto. En `RowActions`, sin permiso se pasa
   `hidden`: un botón deshabilitado no recibe foco. Un control con texto deshabilitado por un motivo que no es obvio usa
-  `DisabledReason`: tooltip sobre un span enfocable y descripción accesible; dentro de `FormField` reenvía `id`,
-  `aria-invalid` y `aria-describedby` al control.
+  `DisabledReason`: el motivo sobre el mismo control, que se abre al pasar el mouse, con el foco, con un clic o con un
+  toque, y la descripción accesible; un botón o una casilla siguen en el Tab con `aria-disabled` y un campo, con su
+  envoltorio enfocable (MA1-A). Dentro de `FormField` reenvía `id`, `aria-invalid` y `aria-describedby` al control.
 - **`AppLayout`** usa `h-svh` y scrollea `<main>`, `relative` (un `sr-only` estira el documento) y con `scroll-pt-14` (más que
   la banda de 48 px: el foco no queda tapado, WCAG 2.4.11). Los controles de la banda adherida de `Page` compensan ese margen
   con el mismo valor en negativo (`sm:**:-scroll-mt-14`): llegar a uno con Tab no mueve el contenido. Al imprimir,

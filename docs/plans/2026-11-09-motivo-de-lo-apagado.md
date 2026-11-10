@@ -1,10 +1,51 @@
 # El motivo de lo apagado (MA1-A)
 
-Fecha: **2026-11-09**. Estado: **plan escrito; espera el visto bueno del usuario y un momento con el front quieto**.
+Fecha: **2026-11-09**. Estado: **programado y verificado el 2026-11-09; falta la prueba manual guiada y pasar el tablero al lienzo**.
 
 El usuario eligió la MA1-A en el lienzo aparte [Motivo de lo apagado](https://claude.ai/artifact/AkskAbHDispJmt7wbGPBC6):
 el motivo de algo apagado va sobre el mismo control y también se abre con un clic o un toque. La regla está en el
 [fundamento visual](../design/visual-baseline.md#el-motivo-de-lo-apagado--2026-11-09). Este plan la lleva al código.
+
+## Cómo quedó
+
+Se programó el 2026-11-09 en una copia del front, fuera de la carpeta que sirve Vite, porque el usuario estaba en la
+prueba integral, y se aplicó al front en un momento con el front quieto.
+
+- **Tareas 1 y 2.** `ActionTooltip informative` controla `open`: el clic, el toque, Enter y Espacio lo abren, y
+  `preventDefault` saltea los cierres de Radix en el `pointerdown` y el clic del disparador; tocar otra vez el control no
+  cuenta como tocar afuera. No hizo falta un `Popover`. `InfoTip` lo usa.
+- **Tarea 3.** `DisabledReason` reconoce `Button`, `button` y `Checkbox`: quedan con `aria-disabled`, sin `disabled`, y su
+  clic sólo muestra el motivo (`preventDefault`: un `submit` no envía y Radix no marca la casilla). **Cambio respecto del
+  plan:** el envoltorio queda, pero sólo como zona del puntero, sin foco ni rol; `aria-disabled:pointer-events-none` le
+  pasa el puntero. Si la casilla misma fuera el disparador del tooltip, Radix le pisaría su `data-state` (marcada o no);
+  además, así un botón apagado no se ilumina al pasar el mouse sin tocar las ocho variantes de `button.tsx`, y los anchos
+  de hoy (`grid w-full`, `max-sm:*:flex-1`) siguen igual. El foco, el nombre y «no disponible» son del control, como
+  pedía el plan. Un campo o un `fieldset` conservan el envoltorio enfocable: un `group` nombrado por la etiqueta de su
+  `FormField` y descrito por el motivo.
+- **Tareas 4 y 5.** En `CheckboxField` y en «Obligatorio» de `CatalogFieldsDialog`, el envoltorio del cuadradito se
+  estira sobre la fila (`after:absolute after:inset-0`). `IconButton` con `disabledLabel` usa `DisabledReason`; apagado sin
+  motivo o mientras trabaja, sigue como estaba.
+- **Tarea 6.** Ningún consumidor cambió cómo usa las piezas. Sí cambió el foco que busca un control habilitado: subir y
+  bajar de preguntas, títulos y acciones de una regla, la franja de «Reenviar invitación», `useRestoreFocusOnClose` y el
+  cierre del diálogo de publicar también descartan `aria-disabled`, y conservan el destino de antes. Cuando se va
+  «Consultar publicación», el foco lo toma «Publicar en WhatsApp» mismo, en lugar de su envoltorio. En los tests, 116
+  `toBeDisabled()` de controles con motivo pasaron a `toHaveAttribute("aria-disabled", "true")`, y `setup.ts` hace que
+  `toBeEnabled()` no cuente `aria-disabled="true"`, así un `waitFor` espera a que se vaya el motivo.
+- **Tarea 7.** La escena `disabledReasons` del catálogo, en es/en a 1440 y 390, con el mouse, el teclado y el toque.
+- **Tarea 8.** `src/shared/ui/AGENTS.md`, `src/test/AGENTS.md`, `src/test/visual/AGENTS.md`, `docs/architecture.md`, el
+  fundamento visual, las premisas y el estándar visual.
+- **Tarea 9.** Verificado en una copia sobre `c1a8251c`: tipos, lint (oxlint y los 53 de arquitectura), build y la escena
+  nueva (4 de 4). La corrida completa fue sobre `c8751ed9`, antes de los commits de «un dato por columna». `vitest`: 4399
+  tests en 10 tandas, con 14 vencidos o esperas de 3 s por la carga de la PC (36 procesos de Claude y la integración de
+  otra sesión), ninguno de MA1-A; esos 10 archivos pasaron 291 de 291 con plazos mayores (`asyncUtilTimeout` de 15 s y
+  60 s por test, sólo en la copia). `test:visual`: 1001 de 1017; las 16 de `formOverview` fallan igual sin este cambio,
+  desde UD1. Sobre `c1a8251c` se repitieron los 14 tests y las 4 escenas que cambiaron después: pasan, salvo los dos
+  primeros de `FormsPage` por la carga (solo, 58 de 58) y 6 de `formLifecycle` y `responsesRows`, que fallan igual sin
+  este cambio. Falta repetir la corrida completa normal con la PC tranquila.
+
+Falta la prueba manual guiada: en el celular, tocar «Permitir elegir varias» en una pregunta del bloque y una (i); en la
+compu, llegar con Tab a un botón apagado y escucharlo con el lector. También falta pasar el tablero al lienzo del sistema
+visual. Con eso, el plan se retira con la auditoría documental.
 
 ## Qué tiene que quedar
 
@@ -136,9 +177,3 @@ Relevamiento del 2026-11-09: unos 120 lugares. No cambian los ítems de menú co
 | `shared/ui/dialog.tsx` | la × del diálogo |
 | `shared/ui/ItemTable.tsx` | 1 botón de ícono, 2 botones |
 | `shared/ui/Pagination.tsx` | 2 botones de ícono |
-
-## Cuándo
-
-Programar esto toca `shared/ui`, que usa casi toda la app. Con la app levantada, Vite recarga la página de quien prueba.
-Va después del visto bueno del usuario y en un momento con el front quieto, acordado con el chat que coordina la prueba
-integral.
