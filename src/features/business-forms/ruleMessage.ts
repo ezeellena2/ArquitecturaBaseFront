@@ -104,7 +104,7 @@ function example(question: RuleMessageQuestion, choices: Choices, culture: FormC
   const labels = question.options?.map(option => localizedValue(option.label, culture, original)) ?? choices[question.fieldId]?.map(choice => choice.label) ?? [];
   switch (question.type) {
     case "decimal": return formatExactDecimal("12500.5", culture) ?? "12500.5";
-    case "date": return formatDateOnly("2026-10-16", culture, "numeric") ?? "2026-10-16";
+    case "date": return formatDateOnly("2026-10-16", culture) ?? "2026-10-16";
     case "boolean": return t("yes");
     case "choice": return labels[0] ?? t("rules.samples.answer");
     case "multiChoice": return labels.length ? labels.slice(0, Math.max(1, question.selection?.minSelected ?? 0)).join(", ") : t("rules.samples.answer");

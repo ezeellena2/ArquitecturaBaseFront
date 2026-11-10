@@ -144,7 +144,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Las acciones de una fila usan `RowActions`: un grupo, acciones inocuas primero y destructiva al
   final. Cada una tiene nombre accesible con el dato de la fila y tooltip. Sin permiso, se oculta.
 - Las fechas usan `formatDateInZone` o `formatDateTimeInZone`, según necesiten hora, con el idioma
-  y la zona de la cuenta. No crear formateadores locales por pantalla.
+  y la zona de la cuenta, y un día sin hora usa `formatDateOnly`. No crear formateadores locales por pantalla.
+  Se escriben sólo con números, `dd/MM/yyyy` (`03/11/2026`) en español y `MM/dd/yyyy` en inglés, nunca con el
+  mes en letras ([fechas](../design/visual-baseline.md#fechas-sólo-con-números--2026-11-10)).
 
 ## Formularios y selección
 

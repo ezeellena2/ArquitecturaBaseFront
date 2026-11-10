@@ -26,7 +26,7 @@ export function FormReplyPreview() {
     { id: "none", label: en ? "Contact phone" : "Teléfono de contacto", answer: { type: "shortText", value: null } },
   ];
   const long = [{ id: "long", label: en ? "Notes" : "Observaciones", answer: { type: "longText" as const, value: "Private long answer\n" + "The client signed, please deliver the remaining boxes on Monday. ".repeat(24) } }];
-  const bubble = (key: string, attachment: ReactNode) => <MessageBubble key={key} direction="incoming" text="" timestamp="2026-10-11T12:00:00Z" timeLabel="9:00" dateLabel="11 oct 2026" author="Juan" attachment={attachment} />;
+  const bubble = (key: string, attachment: ReactNode) => <MessageBubble key={key} direction="incoming" text="" timestamp="2026-10-11T12:00:00Z" timeLabel="9:00" dateLabel="11/10/2026" author="Juan" attachment={attachment} />;
   return <Page title={en ? "R1–R3 · simulated presentation" : "R1–R3 · presentación simulada"}
     actions={<Button variant="outline" onClick={() => setAllowed(false)}>{en ? "Revoke answer access" : "Revocar lectura de respuestas"}</Button>}>
     <div className="flex h-[calc(100svh-12rem)] min-h-0 flex-col">

@@ -47,4 +47,5 @@ Reglas adicionales:
 - Lo que el plan no fija se resuelve con la opción más simple que cumpla el plan y estas reglas, sin preguntar ni agregar mecanismos por las dudas. Un contrato del backend que todavía no se publicó se ajusta junto con él, sin capas de compatibilidad. No se protege contra datos o casos que no existen.
 - Una feature nunca importa otra. Lo compartido va en `src/shared`; router y providers, en `src/app`; sesión y guards, en `src/auth`; caparazón, en `src/layouts`.
 - TypeScript estricto, textos de i18next en español e inglés, datos por TanStack Query y `shared/api/httpClient`. Los tokens viven en memoria.
+- **Las fechas se muestran siempre con números: `dd/MM/yyyy` en español y `MM/dd/yyyy` en inglés** (`03/11/2026`), nunca con el mes en letras ni con un formato propio de una pantalla. Salen de `formatDateInZone`, `formatDateTimeInZone` o `formatDateOnly` ([regla](docs/design/visual-baseline.md#fechas-sólo-con-números--2026-11-10)).
 - Los permisos del front son para la experiencia; el servidor autoriza. Las decisiones visuales se implementan con tokens y UI comunes.

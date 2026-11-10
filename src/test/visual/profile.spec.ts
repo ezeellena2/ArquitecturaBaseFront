@@ -12,9 +12,9 @@ async function openProfile(page: Page, language: "es" | "en", scenario = "profil
 
 const copy = {
   es: { details: "Datos del perfil", methods: "Medios de ingreso", chat: "Chat de WhatsApp", verified: "Verificado",
-    unlinked: "Sin vincular", link: "Vincular", unlink: "Desvincular", notices: "No llegan", until: "Llegan hasta el 3 nov 2026, 21:40" },
+    unlinked: "Sin vincular", link: "Vincular", unlink: "Desvincular", notices: "No llegan", until: "Llegan hasta el 03/11/2026, 21:40" },
   en: { details: "Profile details", methods: "Sign-in methods", chat: "WhatsApp chat", verified: "Verified",
-    unlinked: "Not linked", link: "Link", unlink: "Unlink", notices: "They don't arrive", until: "They arrive until Nov 3, 2026, 9:40 PM" },
+    unlinked: "Not linked", link: "Link", unlink: "Unlink", notices: "They don't arrive", until: "They arrive until 11/03/2026, 9:40 PM" },
 } as const;
 
 for (const language of ["es", "en"] as const) {

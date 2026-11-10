@@ -10,8 +10,8 @@ for(const language of ["es","en"] as const) for(const state of ["Pending","Uncer
   await i18n.changeLanguage(language);
   const lifecycle=fixtureLifecycle(1,{deactivatedAtUtc:"2026-10-20T12:00:00Z",deprecationState:state,lastOpenSessionExpiresAtUtc:state==="Pending"?"2026-10-22T18:00:00Z":null,deprecatedAtUtc:state==="Deprecated"?"2026-10-21T18:00:00Z":null});
   renderWithProviders(<FormLifecycleNotice lifecycle={lifecycle} timeZoneId="America/Argentina/Buenos_Aires"/>);
-  expect(await screen.findByText(state==="Pending"?(language==="es"?/se deprecan cuando venzan los envíos abiertos/i:/they will be deprecated when open sends expire/i):state==="Uncertain"?(language==="es"?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):(language==="es"?/Deprecados el 21 oct 2026, 15:00/:/Deprecated on Oct 21, 2026, 3:00 PM/))).toBeVisible();
-  if(state==="Pending") expect(screen.getByText(language==="es"?/22 oct 2026, 15:00/:/Oct 22, 2026, 3:00 PM/)).toBeVisible();
+  expect(await screen.findByText(state==="Pending"?(language==="es"?/se deprecan cuando venzan los envíos abiertos/i:/they will be deprecated when open sends expire/i):state==="Uncertain"?(language==="es"?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):(language==="es"?/Deprecados el 21\/10\/2026, 15:00/:/Deprecated on 10\/21\/2026, 3:00 PM/))).toBeVisible();
+  if(state==="Pending") expect(screen.getByText(language==="es"?/22\/10\/2026, 15:00/:/10\/22\/2026, 3:00 PM/)).toBeVisible();
   expect(screen.queryByText(/2026-10-2[12]T18:00:00Z/)).not.toBeInTheDocument();
  });
 }

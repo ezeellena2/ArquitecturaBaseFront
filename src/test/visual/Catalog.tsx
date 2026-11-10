@@ -106,11 +106,11 @@ export function Catalog() {
       </section>
       <Surface title={english ? "Conversation messages" : "Mensajes de conversación"}>
         <MessageHistory label={english ? "Message examples" : "Ejemplos de mensajes"}>
-          <MessageDateDivider date="2026-10-02" label={english ? "Oct 2, 2026" : "2 oct 2026"} />
-          <MessageBubble direction="incoming" text={english ? "Hi, can you help me?" : "Hola, ¿me ayudás?"} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "Oct 2, 2026, 9:00 AM" : "2 oct 2026, 9:00"} />
+          <MessageDateDivider date="2026-10-02" label={english ? "10/02/2026" : "02/10/2026"} />
+          <MessageBubble direction="incoming" text={english ? "Hi, can you help me?" : "Hola, ¿me ayudás?"} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "10/02/2026, 9:00 AM" : "02/10/2026, 9:00"} />
           {(["pending", "sent", "delivered", "read", "failed", "uncertain", "reviewed", "unknown"] satisfies MessageDeliveryState[]).map(state =>
             <MessageBubble key={state} direction="outgoing" text={english ? "An example reply." : "Una respuesta de ejemplo."}
-              timestamp="2026-10-02T12:01:00Z" timeLabel="9:01" dateLabel={english ? "Oct 2, 2026, 9:01 AM" : "2 oct 2026, 9:01"}
+              timestamp="2026-10-02T12:01:00Z" timeLabel="9:01" dateLabel={english ? "10/02/2026, 9:01 AM" : "02/10/2026, 9:01"}
               delivery={{ state, label: ({ pending: t("whatsapp:status.Pending"), sent: t("whatsapp:status.Sent"), delivered: t("whatsapp:status.Delivered"),
                 read: t("whatsapp:status.Read"), failed: t("whatsapp:status.Failed"), uncertain: t("whatsapp:status.Uncertain"),
                 reviewed: t("whatsapp:status.Reviewed"), unknown: t("whatsapp:status.Unknown") })[state] }} />)}
@@ -138,7 +138,7 @@ export function Catalog() {
       {formPieces ? <Surface title={english ? "Form controls" : "Controles de formularios"} padded>
         <div className="flex flex-col gap-4">
           <RadioGroupField label={english ? "Choose a card" : "Elegí una tarjeta"} variant="cards" value={choice} onValueChange={setChoice} options={[{value:"InviteOnly",label:english ? "First card" : "Primera tarjeta",description:english ? "A shared selectable row." : "Una fila seleccionable común."},{value:"Open",label:english ? "Second card" : "Segunda tarjeta",description:english ? "Keyboard keeps the same radio behavior." : "Conserva el teclado del control de opción."}]} />
-          <MessageBubble direction="outgoing" text={english ? "An attached card." : "Una tarjeta adjunta."} attachment={<MessageCard icon={<FormIcon className="size-4" />} title={english ? "Example attachment" : "Adjunto de ejemplo"} description={english ? "A title and description inside the message." : "Título y descripción dentro del mensaje."} />} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "Oct 2, 2026, 9:00 AM" : "2 oct 2026, 9:00"} delivery={{state:"pending",label:t("whatsapp:status.Pending")}} />
+          <MessageBubble direction="outgoing" text={english ? "An attached card." : "Una tarjeta adjunta."} attachment={<MessageCard icon={<FormIcon className="size-4" />} title={english ? "Example attachment" : "Adjunto de ejemplo"} description={english ? "A title and description inside the message." : "Título y descripción dentro del mensaje."} />} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "10/02/2026, 9:00 AM" : "02/10/2026, 9:00"} delivery={{state:"pending",label:t("whatsapp:status.Pending")}} />
         </div>
       </Surface> : null}
       {tabPieces ? <Surface title={english ? "Content tabs" : "Pestañas de contenido"} padded>

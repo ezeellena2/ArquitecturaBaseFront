@@ -47,7 +47,7 @@ Los tableros no lo dicen, o el contrato no lo permite; se resolvió con la opci�
   servidor activa la conexión.
 - **«Cambiar» en Datos** con otra CUIT u otro ambiente reemplaza la conexión del alta: se empieza de nuevo.
 - **El estado** va con `Badge` en `Page.status`, como en el resto de las pantallas; el tablero dibuja un punto y el texto.
-- **Fechas y horas** en el formato de la app y en el huso de la persona («31 oct 2028», «9:10»).
+- **Fechas y horas** en el formato de la app y en el huso de la persona («31/10/2028», «9:10»).
 - **Los errores de ARCA de una acción** (no los de la prueba) van al aviso común con el texto del servidor.
 - **En el celular** las bandas apilan su acción debajo del título y los renglones bajan el valor; a 320 px nada desborda.
 

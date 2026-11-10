@@ -27,7 +27,7 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
     }
     const value = values[question.fieldId] ?? "";
     if (!value) return t("sent.none");
-    if (question.type === "date") return formatDateOnly(value, i18n.language, "numeric") ?? value;
+    if (question.type === "date") return formatDateOnly(value, i18n.language) ?? value;
     if (question.type === "boolean") return t(value === "true" ? "sent.yes" : "sent.no");
     return value;
   };

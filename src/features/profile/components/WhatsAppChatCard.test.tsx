@@ -91,7 +91,7 @@ describe("WhatsAppChatCard", () => {
     const chat = await openChat();
 
     expect(await chat.findByText("Vinculado")).toBeInTheDocument();
-    expect(chat.getByText("Llegan hasta el 3 nov 2026, 21:40")).toBeInTheDocument();
+    expect(chat.getByText("Llegan hasta el 03/11/2026, 21:40")).toBeInTheDocument();
     expect(chat.queryByRole("button", { name: "Vincular" })).not.toBeInTheDocument();
   });
 

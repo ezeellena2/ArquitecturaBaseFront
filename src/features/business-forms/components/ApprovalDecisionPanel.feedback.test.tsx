@@ -133,7 +133,7 @@ it("asks to confirm an approval with its number, author and date, starting on Ca
   renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
   const dialog = await screen.findByRole("dialog", { name: "¿Aprobar VIS-00001?" });
-  expect(dialog).toHaveAccessibleDescription(/^Ana · 16 oct 2026/);
+  expect(dialog).toHaveAccessibleDescription(/^Ana · 16\/10\/2026/);
   await waitFor(() => expect(within(dialog).getByRole("button", { name: "Cancelar" })).toHaveFocus());
   await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

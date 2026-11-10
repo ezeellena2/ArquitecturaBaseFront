@@ -93,7 +93,8 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
     [mensajes](../guides/mensajes-y-estados.md))
 11. **Lo mismo, igual en toda la app:** ¿lo que ya tiene forma en otra pantalla se ve con la misma pieza (los filtros
     aplicados, como chips; los datos de una cuenta, en `AccountRows`)? ¿Usa sólo tokens, los cinco niveles de letra y
-    los seis pasos de espacio, en `rem`? ([principios](#principios-del-sistema), [escala y forma](#escala-y-forma))
+    los seis pasos de espacio, en `rem`? ¿Toda fecha, sólo con números (`03/11/2026`)?
+    ([principios](#principios-del-sistema), [escala y forma](#escala-y-forma), [fechas](#fechas-sólo-con-números--2026-11-10))
 12. **Celular, teclado e idiomas:** ¿funciona desde 320 px sin desplazar la página de costado, con 44 px para tocar, con
     teclado y lector de pantalla, en español y en inglés, y una colección guarda su estado en la URL?
     ([responsive y accesibilidad](#responsive-y-accesibilidad-mínimos), [criterio de finalización](#criterio-de-finalización-de-una-pantalla))
@@ -1237,3 +1238,20 @@ segmentado, y el tipo de un dato de las personas conserva su texto de la app, «
 cada celda por su encabezado (`cellUnder`). No se sumó un control automático: los casos encontrados eran composiciones
 (una etiqueta junto al dato, un renglón gris con un estado) que una regla de sintaxis no distingue de la excepción A, y
 quedan a cargo de la revisión de cada cambio. Faltan la prueba manual y pasar los tableros al lienzo del sistema visual.
+
+## Fechas, sólo con números — 2026-11-10
+
+Toda fecha que ve una persona se escribe con números: día, mes y año, con dos dígitos para el día y el mes. En español
+es `dd/MM/yyyy` (`03/11/2026`) y en inglés `MM/dd/yyyy` (`11/03/2026`), el orden de cada idioma. Con hora, la hora
+sigue después de una coma (`03/11/2026, 21:00`). Nunca el mes en letras («3 nov 2026», «Nov 3, 2026»), nunca
+`dateStyle` y nunca un formato propio de una pantalla o de un tablero: el tablero dibuja la misma fecha que va a mostrar
+la app.
+
+Se cumple con las tres funciones de `shared/lib/dateTime`, que comparten las mismas opciones: `formatDateInZone` para
+las columnas de un listado, `formatDateTimeInZone` para los detalles y `formatDateOnly` para un día de calendario sin
+hora (un campo de fecha, un dato de un catálogo). `formatDateOnly` ya no tiene estilos: hay uno solo.
+
+Esta regla no estaba escrita: el formateador común usaba `dateStyle: "medium"` y todas las pantallas mostraban
+«3 nov 2026». El 2026-11-10, viendo «Último cambio» en «Diseñar formularios», el usuario pidió que fuera `dd/mm/aaaa` y
+nada más. Cambió el formateador común, así que cambiaron todas las pantallas a la vez, y los tests y las escenas
+visuales que escribían el formato viejo a mano pasaron al nuevo.

@@ -133,7 +133,7 @@ it("shows the last open send expiry in the profile time zone only when supplied"
  renderRouteWithProviders("/formularios/"+fixtureFormId);
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));
  const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
- expect(await within(dialog).findByText("El último envío abierto vence el 21 oct 2026, 15:00.")).toBeVisible();
+ expect(await within(dialog).findByText("El último envío abierto vence el 21/10/2026, 15:00.")).toBeVisible();
  expect(within(dialog).queryByText("2026-10-21T18:00:00Z")).not.toBeInTheDocument();
 });
 
@@ -145,7 +145,7 @@ it.each(["Pending","Uncertain","Deprecated","NeedsAttention"] as const)("shows a
  // How the withdrawal goes in WhatsApp and its date, each in its own column (UD2).
  const row=(await within(table).findByRole("link",{name:"Registrar visita"})).closest("tr")!;
  expect(cellUnder(table,row,"En WhatsApp")).toHaveTextContent({Pending:/^Pendiente$/,Uncertain:/^Sin confirmar$/,NeedsAttention:/^Requiere atención$/,Deprecated:/^Deprecado$/}[state]);
- expect(cellUnder(table,row,"Deprecación")).toHaveTextContent(state==="Pending"?/^22 oct 2026, 15:00$/:state==="Deprecated"?/^21 oct 2026, 15:00$/:/^—$/);
+ expect(cellUnder(table,row,"Deprecación")).toHaveTextContent(state==="Pending"?/^22\/10\/2026, 15:00$/:state==="Deprecated"?/^21\/10\/2026, 15:00$/:/^—$/);
  expect(cellUnder(table,row,"Versión activa")).toHaveTextContent(/^1$/);
  expect(within(table).queryByText(/· versión/)).not.toBeInTheDocument();
  view.unmount();queryClient.clear();

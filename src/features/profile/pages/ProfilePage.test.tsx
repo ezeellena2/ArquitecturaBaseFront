@@ -221,7 +221,7 @@ describe("ProfilePage", () => {
 
     // El perfil de prueba está en America/Argentina/Buenos_Aires: 12:00 UTC son las 9:00. Va acá y no en el
     // tablero (que va vacío a propósito): es un dato de la cuenta, y la cuenta se mira en su pantalla.
-    expect(await screen.findByText("18 sept 2026, 9:00")).toBeInTheDocument();
+    expect(await screen.findByText("18/09/2026, 9:00")).toBeInTheDocument();
   });
 
   it("says there is no last sign-in yet when the account never signed in", async () => {
@@ -250,7 +250,7 @@ describe("ProfilePage", () => {
     expect(methods.getByText("ana@example.com")).toBeInTheDocument();
     expect(details.queryByText("ana@example.com")).not.toBeInTheDocument();
     expect(methods.getByText("Último ingreso")).toBeInTheDocument();
-    expect(methods.getByText("18 sept 2026, 9:00")).toBeInTheDocument();
+    expect(methods.getByText("18/09/2026, 9:00")).toBeInTheDocument();
     expect(details.queryByText("Último ingreso")).not.toBeInTheDocument();
 
     // Sin leyendas debajo de los campos.

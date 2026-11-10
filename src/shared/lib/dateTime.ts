@@ -3,15 +3,22 @@
 /// aparece otro, las mismas fechas se van a ver distinto en dos pantallas.
 ///
 /// `timeZone: undefined` deja la del navegador, que es lo correcto mientras el perfil todavía no llegó.
+///
+/// FORMATO ÚNICO DE FECHA: día, mes y año con números y dos dígitos para el día y el mes: «03/11/2026»
+/// en español (dd/MM/yyyy) y «11/03/2026» en inglés (MM/dd/yyyy), el orden de cada idioma. Nunca el mes en
+/// letras («3 nov 2026») ni `dateStyle`: es un formato inventado que no es el de la app. Las tres funciones de
+/// fecha de este archivo comparten `dayOptions` para que no se separen.
+const dayOptions = { day: "2-digit", month: "2-digit", year: "numeric" } as const;
+
 export function formatDateTimeInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return dateTimeFormat(language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(new Date(valueUtc));
+  return dateTimeFormat(language, { ...dayOptions, hour: "numeric", minute: "2-digit", timeZone }).format(new Date(valueUtc));
 }
 
-/// Fecha sola, para las columnas de un listado: "20 sept 2026". La hora no aporta a la hora de barrer una
+/// Fecha sola, para las columnas de un listado: "20/09/2026". La hora no aporta a la hora de barrer una
 /// tabla con la vista, y ocupa el doble. Vive en este archivo a propósito: un formateador suelto en una
 /// pantalla es lo que hace que las mismas fechas se vean distinto en dos lugares.
 export function formatDateInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
-  return dateTimeFormat(language, { dateStyle: "medium", timeZone }).format(new Date(valueUtc));
+  return dateTimeFormat(language, { ...dayOptions, timeZone }).format(new Date(valueUtc));
 }
 
 export function formatTimeInZone(valueUtc: string, language: string, timeZone: string | undefined): string {
@@ -27,11 +34,11 @@ export function calendarDateInZone(valueUtc: string, timeZone: string | undefine
 }
 
 // A calendar day has no profile time zone. UTC is only the stable anchor used by Intl.
-export function formatDateOnly(value: string, language: string, style: "medium" | "numeric" = "medium"): string | null {
+export function formatDateOnly(value: string, language: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith("0000")) return null;
   const day = new Date(value + "T00:00:00.000Z");
   if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== value) return null;
-  return dateTimeFormat(language, style === "numeric" ? { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" } : { dateStyle: "medium", timeZone: "UTC" }).format(day);
+  return dateTimeFormat(language, { ...dayOptions, timeZone: "UTC" }).format(day);
 }
 
 export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {

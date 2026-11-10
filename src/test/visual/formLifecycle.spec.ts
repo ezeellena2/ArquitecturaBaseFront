@@ -107,12 +107,12 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) for(co
   // The editor keeps its notice; the list says how the withdrawal goes in one column and its date in another (UD2).
   const message=surface==="list"
    ?page.getByRole("table").getByText(state==="uncertain"?(es?"Sin confirmar":"Unconfirmed"):state==="needsattention"?(es?"Requiere atención":"Needs attention"):(es?"Deprecado":"Deprecated"),{exact:true})
-   :page.getByText(state==="uncertain"?(es?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):state==="needsattention"?(es?/No se pudo deprecar en WhatsApp. Requiere atención./:/Could not deprecate on WhatsApp. Needs attention./):(es?/Deprecados el 21 oct 2026, 15:00/:/Deprecated on Oct 21, 2026, 3:00 PM/));
+   :page.getByText(state==="uncertain"?(es?/Sin confirmar en WhatsApp/:/Unconfirmed on WhatsApp/):state==="needsattention"?(es?/No se pudo deprecar en WhatsApp. Requiere atención./:/Could not deprecate on WhatsApp. Needs attention./):(es?/Deprecados el 21\/10\/2026, 15:00/:/Deprecated on 10\/21\/2026, 3:00 PM/));
   await expect(message).toBeVisible();await message.scrollIntoViewIfNeeded();
   if(surface==="editor") await expect(page.getByRole("button",{name:es?"Reactivar":"Reactivate",exact:true})).toBeEnabled();
   else {
    await expect(page.getByRole("table").getByRole("columnheader",{name:es?"Deprecación":"Deprecation",exact:true})).toBeVisible();
-   if(state==="deprecated") await expect(page.getByRole("table").getByText(es?"21 oct 2026, 15:00":"Oct 21, 2026, 3:00 PM",{exact:true})).toBeVisible();
+   if(state==="deprecated") await expect(page.getByRole("table").getByText(es?"21/10/2026, 15:00":"10/21/2026, 3:00 PM",{exact:true})).toBeVisible();
   }
   await page.evaluate(()=>document.fonts.ready);
   await assertContained(page,width);

@@ -675,7 +675,7 @@ describe("UserEditDialog", () => {
       const strip = stripOf(dialog);
 
       expect(strip.getByText("Invitación por WhatsApp")).toBeInTheDocument();
-      expect(strip.getByText(/22 sept 2026, 10:42/)).toBeInTheDocument();
+      expect(strip.getByText(/22\/09\/2026, 10:42/)).toBeInTheDocument();
       expect(strip.getByText("Entregada")).toBeInTheDocument();
       expect(strip.getByRole("button", { name: "Reenviar invitación" })).toBeEnabled();
       // Es un envío, no un medio de ingreso: va debajo de la caja, no adentro.
@@ -727,7 +727,7 @@ describe("UserEditDialog", () => {
       const strip = stripOf(await openEdit("laura.rios@gmail.com"));
 
       expect(strip.getByText("Invitación por correo")).toBeInTheDocument();
-      expect(strip.getByText("22 sept 2026, 10:42")).toBeInTheDocument();
+      expect(strip.getByText("22/09/2026, 10:42")).toBeInTheDocument();
       for (const status of ["Pendiente", "Enviada", "Entregada", "Leída", "No llegó"]) {
         expect(strip.queryByText(status)).not.toBeInTheDocument();
       }
@@ -918,7 +918,7 @@ describe("UserEditDialog", () => {
         // Vuelve la franja, con la invitación nueva pendiente y un minuto de espera.
         const strip = stripOf(dialog);
         expect(await strip.findByText("Pendiente")).toBeInTheDocument();
-        expect(strip.getByText(/24 sept 2026, 11:05/)).toBeInTheDocument();
+        expect(strip.getByText(/24\/09\/2026, 11:05/)).toBeInTheDocument();
         const resend = strip.getByRole("button", { name: "Reenviar invitación" });
         expect(resend).toHaveAttribute("aria-disabled", "true");
         expect(resend).toHaveAccessibleDescription("Podés reenviar en 60 s");

@@ -361,8 +361,8 @@ it("reads each row in fixed columns, by moment, with the day once and the state 
   expect(message.getByText("Hecho")).toBeInTheDocument();
   expect(message.getByText("Leído")).toBeInTheDocument();
   expect(within(approved).queryByRole("listitem", { name: "Destinatario: Ana" })).not.toBeInTheDocument();
-  expect(screen.getAllByText("16 oct 2026")).toHaveLength(1);
-  expect(screen.getAllByText("17 oct 2026")).toHaveLength(1);
+  expect(screen.getAllByText("16/10/2026")).toHaveLength(1);
+  expect(screen.getAllByText("17/10/2026")).toHaveLength(1);
 });
 
 it("tells who rejected it and the reason in its box, without repeating the state", async () => {

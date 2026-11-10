@@ -34,7 +34,7 @@ export function useEntryCorrectionEditor(formId: string, recordId: string) {
   const trimmed = reason.trim();
   const reasonProblem = !trimmed ? t("correction.reasonRequired") : trimmed.length > maxReason ? t("correction.reasonTooLong") : null;
   const before = correction && initial && editor.draft ? correctionBefore(correction.entry, initial, editor.draft,
-    { yes: t("sent.yes"), no: t("sent.no"), date: iso => formatDateOnly(iso, i18n.language, "numeric") ?? iso }) : {};
+    { yes: t("sent.yes"), no: t("sent.no"), date: iso => formatDateOnly(iso, i18n.language) ?? iso }) : {};
   /** Sends when the reason is there and nothing else is missing; otherwise marks and focuses the first problem. */
   const send = async () => {
     setReasonAttempted(true);

@@ -42,9 +42,9 @@ describe("ChatTimeline", () => {
     const items = screen.getAllByRole("article", { name: "Mensaje saliente" });
     expect(within(items[0]).getByText("Estado no informado")).toBeInTheDocument();
     expect(within(items[0]).getByText("Automático ·")).toBeInTheDocument();
-    expect(within(items[0]).getByLabelText("1 oct 2026, 23:00")).toHaveTextContent("23:00");
-    expect(screen.getByText("1 oct 2026")).toBeInTheDocument();
-    expect(screen.getByText("2 oct 2026")).toBeInTheDocument();
+    expect(within(items[0]).getByLabelText("01/10/2026, 23:00")).toHaveTextContent("23:00");
+    expect(screen.getByText("01/10/2026")).toBeInTheDocument();
+    expect(screen.getByText("02/10/2026")).toBeInTheDocument();
     expect(within(items[1]).getByText("Revisado por el operador")).toBeInTheDocument();
     expect(screen.queryByText("Entregado")).not.toBeInTheDocument();
     expect(screen.queryByText("Leído")).not.toBeInTheDocument();
