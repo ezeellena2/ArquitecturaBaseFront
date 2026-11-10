@@ -24,6 +24,15 @@ a827be0a (Formularios), 2e72b524 (Diseñar formularios), d3f315fd (Catálogos y 
   gris con un estado) que una regla de sintaxis no distingue de la excepción A, y una regla de «a · b» sólo habría visto
   dos. Queda a cargo de la revisión de cada cambio.
 
+Verificación, con la PC al 100 % por otras sesiones:
+
+- Tipos, lint (oxlint y las 53 pruebas de arquitectura) y build, limpios.
+- `vitest` completo: pasaron 4387 de 4397. Los 10 que fallaron eran cortes por la carga. Ocho pasan con 60 s de plazo.
+  Los otros dos son el primer test de su archivo (pagan la página diferida) y pasan cuando el primer render tiene 20 s.
+  Falta una corrida completa con la PC quieta.
+- `test:visual`: pasaron 988 de 1013. Se ajustaron dos escenas (el panel Formularios y la lista de dados de baja) y se
+  actualizaron siete referencias, revisadas una por una (3ed055b2). Esas escenas pasan.
+
 ## Antes de empezar
 
 - El mismo día el usuario respondió las excepciones de UD6: «A sí, B no, C sí, D no, E no, F sí». Los tableros UD1 a UD5
