@@ -111,7 +111,8 @@ llegan (si el bloque entra en lo que se exporta).
 El mismo día el usuario pidió el Excel en una sola hoja y eligió XL1-A, una fila por ítem: está en el
 [plan del Excel](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md), con los tableros
 XL0 a XL2 del mismo lienzo. Por eso EX1-A, EX1-C y EX3 dicen «Filas» en lugar de «Hojas»: «Una por ítem de Artículo»,
-o «Una por respuesta» sin bloque o con el bloque fuera de «Solo las visibles».
+o «Una por respuesta» sin bloque o con el bloque fuera de «Solo las visibles». El backend quedó programado el mismo
+día, con un tope de 100.000 filas que el usuario eligió al ver la medición; la (i) de «Filas» lo dice.
 
 ## Los demás diálogos
 

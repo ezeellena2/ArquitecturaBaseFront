@@ -52,8 +52,9 @@ Cada tarea arranca con su test en rojo (`vitest`) y cierra con `tsc`, `lint` y l
    - `DataList` con «Archivo» y «Filas», como sale el Excel elegido (XL1-A, del
      [plan del Excel](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md)): «Una por ítem
      de Artículo», o «Una por respuesta» sin bloque o con el bloque fuera de «Solo las visibles», con la (i) «Los datos de
-     cada respuesta se repiten en sus ítems. Una respuesta sin ítems ocupa una fila.». Va junto con el Excel nuevo: con el
-     de hoy, el renglón no sería cierto.
+     cada respuesta se repiten en sus ítems. Una respuesta sin ítems ocupa una fila. Hasta 100.000 filas.». El backend ya
+     arma el Excel así desde el 2026-11-09, con el tope de 100.000 filas que eligió el usuario; si se pasa, el error
+     `Forms.Record.ExportTooManyRows` trae el motivo.
    - El cuerpo de la petición no cambia. Tests con los estados de EX3; escena visual del diálogo en es y en, a 1440,
      390 y 320, con referencias nuevas revisadas una por una.
 5. **Los cuatro dibujados en DL.**
