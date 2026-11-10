@@ -24,14 +24,13 @@ a827be0a (Formularios), 2e72b524 (Diseñar formularios), d3f315fd (Catálogos y 
   gris con un estado) que una regla de sintaxis no distingue de la excepción A, y una regla de «a · b» sólo habría visto
   dos. Queda a cargo de la revisión de cada cambio.
 
-Verificación, con la PC al 100 % por otras sesiones:
+Verificación:
 
 - Tipos, lint (oxlint y las 53 pruebas de arquitectura) y build, limpios.
-- `vitest` completo: pasaron 4387 de 4397. Los 10 que fallaron eran cortes por la carga. Ocho pasan con 60 s de plazo.
-  Los otros dos son el primer test de su archivo (pagan la página diferida) y pasan cuando el primer render tiene 20 s.
-  Falta una corrida completa con la PC quieta.
-- `test:visual`: pasaron 988 de 1013. Se ajustaron dos escenas (el panel Formularios y la lista de dados de baja) y se
-  actualizaron siete referencias, revisadas una por una (3ed055b2). Esas escenas pasan.
+- `vitest` completo, el 2026-11-10, en diez tandas y sin suites de otras sesiones, sobre 5759c99d (que suma el motivo de
+  lo apagado): 4410 de 4410.
+- `test:visual`: cambiaron sólo las pantallas tocadas. Se ajustaron dos escenas (el panel Formularios y la lista de dados
+  de baja) y se actualizaron siete referencias, revisadas una por una (3ed055b2); esas escenas pasan.
 
 ## Antes de empezar
 
