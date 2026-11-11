@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog, administrativeName, contentReference, contentRequired, ownTexts, emptyForm, hasFormTexts } from "./editorModel";
+import { createDraftReview, resolveDraftReview, replaceQuestionType, localizedValue, newQuestion, missingFormTexts, changeQuestionCatalog, administrativeName, contentReference, contentRequired, ownTexts, emptyForm, hasFormTexts, keepsQuestionIdentity, questionEditorType } from "./editorModel";
 import { openDraftSession } from "./draftSession";
-import type { FormDefinitionSnapshot } from "./model";
+import type { DraftQuestion, FormDefinitionSnapshot } from "./model";
 
 const current: FormDefinitionSnapshot = { offerWhen: null, id: "form", name: { es: "Visita" }, prefix: "VIS", prefixLocked: true, revision: 3,
   draft: { format: 1, culture: "es", submitLabel: { es: "Enviar", en: "Send" }, fields: [
@@ -206,4 +206,28 @@ it("keeps the mark of a question of the block when its new type fits a row, and 
   expect(replaceQuestionType(quantity, "photo", "new", "es")).not.toHaveProperty("repeated");
   const { repeated: _repeated, ...single } = quantity;
   expect(replaceQuestionType(single, "group", "new", "es")).toMatchObject({ type: "group", required: true, rows: { minRows: 1, maxRows: 20 }, label: { es: "Cantidad" } });
+});
+
+describe("«Cálculo» as a question type (CA1-A)", () => {
+  const saved: DraftQuestion = { localId: "field-net", fieldId: "field-net", replacesFieldId: null, type: "decimal", label: { es: "Neto" }, help: null, required: true };
+  it("starts multiplying with its two places empty, optional", () => {
+    expect(newQuestion("calculation", "es", "q")).toEqual({ localId: "q", fieldId: null, replacesFieldId: null, label: { es: "" }, help: null, required: false,
+      type: "decimal", calculation: { operation: "multiply", operands: [null, null] } });
+    expect(questionEditorType(newQuestion("calculation", "es", "q"))).toBe("calculation");
+    expect(questionEditorType(saved)).toBe("decimal");
+  });
+  it("switches between Número and Cálculo keeping the question's identity, and a calculation is never required", () => {
+    expect(keepsQuestionIdentity(saved, "calculation")).toBe(true);
+    expect(keepsQuestionIdentity(saved, "shortText")).toBe(false);
+    const calculated = replaceQuestionType(saved, "calculation", "other", "es");
+    expect(calculated).toEqual({ ...saved, required: false, calculation: { operation: "multiply", operands: [null, null] } });
+    const plain = replaceQuestionType(calculated, "decimal", "other", "es");
+    expect(plain).toEqual({ ...saved, required: false });
+    expect(plain).not.toHaveProperty("calculation");
+  });
+  it("keeps the condition when the type changes (CO1-A)", () => {
+    const conditioned = { ...saved, showWhen: { questionId: "field-concept", values: ["choice-services"] } };
+    expect(replaceQuestionType(conditioned, "date", "new", "es")).toMatchObject({ type: "date", replacesFieldId: "field-net", showWhen: { questionId: "field-concept", values: ["choice-services"] } });
+    expect(replaceQuestionType(conditioned, "group", "new", "es")).not.toHaveProperty("showWhen");
+  });
 });

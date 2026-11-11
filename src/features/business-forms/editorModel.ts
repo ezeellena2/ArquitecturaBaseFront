@@ -1,6 +1,6 @@
 import { normalizeCatalogQuestionSource } from "./catalogQuestionSource";
 import { openDraftSession } from "./draftSession";
-import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
+import type { DraftCalculation, DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCalculationOperation, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
 
 export const localizedValue = (text: LocalizedText | Readonly<Record<string, string | null>> | null, culture: FormCulture, original: FormCulture) => text?.[culture]?.trim() ? text[culture]! : text?.[original] ?? "";
 type ContentTexts = Readonly<Record<string, string | null | undefined>> | null | undefined;
@@ -19,8 +19,14 @@ export const defaultSubmitLabel = (culture: FormCulture) => culture === "es" ? "
 export function emptyForm(culture: FormCulture): DraftEditorValue {
   return { name: { [culture]: "" }, prefix: "", offerWhen: null, draft: { format: 1, culture, submitLabel: { [culture]: defaultSubmitLabel(culture) }, fields: [] } };
 }
-export type QuestionEditorType = Exclude<DraftQuestion["type"], "multiChoice"> | "catalogChoice";
-export const questionEditorType = (question: DraftQuestion): QuestionEditorType => question.type === "choice" || question.type === "multiChoice" ? question.source ? "catalogChoice" : "choice" : question.type;
+// «Cálculo» (CA1-A) is a decimal with a calculation: a type for the author, the same question for the server.
+export type QuestionEditorType = Exclude<DraftQuestion["type"], "multiChoice"> | "catalogChoice" | "calculation";
+export const questionEditorType = (question: DraftQuestion): QuestionEditorType => question.type === "choice" || question.type === "multiChoice" ? question.source ? "catalogChoice" : "choice"
+  : question.type === "decimal" && question.calculation ? "calculation" : question.type;
+/** A new calculation multiplies, with its two places empty; a sum starts without questions. */
+export const newCalculation = (operation: FormCalculationOperation = "multiply"): DraftCalculation => ({ operation, operands: operation === "sum" ? [] : [null, null] });
+/** Número and Cálculo are one question for the server: switching between them keeps its identity, without asking. */
+export const keepsQuestionIdentity = (question: DraftQuestion, type: QuestionEditorType) => question.type === "decimal" && (type === "decimal" || type === "calculation");
 export function newQuestion(type: QuestionEditorType, culture: FormCulture, localId: string): DraftQuestion {
   const common = { localId, fieldId: null, replacesFieldId: null, label: { [culture]: "" }, help: null, required: false };
   return type === "shortText" || type === "longText" ? { ...common, type, maxLength: type === "shortText" ? 80 : 600 }
@@ -28,14 +34,22 @@ export function newQuestion(type: QuestionEditorType, culture: FormCulture, loca
     : type === "catalogChoice" ? { ...common, type: "choice", source: { catalog: null } }
     : type === "choice" ? { ...common, type, options: [{ localId: "first-option", choiceId: null, label: { [culture]: "" } }] }
     // A new block starts with 1 and 20 rows; with a minimum it is required.
-    : type === "group" ? { ...common, type, required: true, rows: { minRows: 1, maxRows: 20 } } : { ...common, type };
+    : type === "group" ? { ...common, type, required: true, rows: { minRows: 1, maxRows: 20 } }
+    // A calculation is never required.
+    : type === "calculation" ? { ...common, type: "decimal", calculation: newCalculation() } : { ...common, type };
 }
 export function replaceQuestionType(question: DraftQuestion, type: QuestionEditorType, localId: string, culture: FormCulture): DraftQuestion {
+  if (keepsQuestionIdentity(question, type) && question.type === "decimal") {
+    const { calculation, ...number } = question;
+    return type === "calculation" ? { ...number, required: false, calculation: calculation ?? newCalculation() } : { ...number, required: false };
+  }
   const next = newQuestion(type, culture, localId);
+  // CO1-A: the condition stays with the question, except on the block, which takes none.
+  const condition = question.showWhen && next.type !== "group" ? { showWhen: question.showWhen } : {};
   // A question of the block stays in it while its new type fits a row; the block's required follows its minimum.
   const repeated = "repeated" in question && question.repeated && next.type !== "photo" && next.type !== "document" && next.type !== "group";
   return { ...next, ...(next.type === "photo" || next.type === "document" ? { files: { ...next.files, minFiles: question.required ? 1 : 0 } } : {}), label: question.label, help: question.help,
-    required: next.type === "group" ? next.required : question.required, ...(repeated ? { repeated: true } : {}),
+    required: next.type === "group" || type === "calculation" ? next.required : question.required, ...(repeated ? { repeated: true } : {}), ...condition,
     replacesFieldId: question.fieldId ?? question.replacesFieldId } as DraftQuestion;
 }
 export function changeQuestionCatalog(question: DraftQuestion, catalogId: string, localId: string): DraftQuestion {
@@ -61,7 +75,7 @@ export const hasFormTexts = (value: DraftEditorValue, culture: FormCulture) => f
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const fieldIdentity = (q: DraftQuestion) => q.fieldId ?? "new:" + q.localId;
 const choiceIdentity = (o: DraftChoice) => o.choiceId ?? "new:" + o.localId;
-const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ? normalizeCatalogQuestionSource(q.source) : null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}), ...(q.type === "group" ? { rows: q.rows } : {}), ...("repeated" in q && q.repeated ? { repeated: true } : {}) });
+const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q.replacesFieldId, type: q.type, source: q.source ? normalizeCatalogQuestionSource(q.source) : null, required: q.required, ...(q.type === "photo" || q.type === "document" ? { files: q.files } : {}), ...(q.type === "multiChoice" ? { selection: q.selection } : {}), ...("maxLength" in q ? { maxLength: q.maxLength } : {}), ...(q.type === "group" ? { rows: q.rows } : {}), ...("repeated" in q && q.repeated ? { repeated: true } : {}), ...(q.type === "decimal" && q.calculation ? { calculation: q.calculation } : {}), ...(q.showWhen ? { showWhen: q.showWhen } : {}) });
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;

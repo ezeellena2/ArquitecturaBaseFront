@@ -30,18 +30,32 @@ export interface DraftQuestionSource {
   readonly presentation?: FormCatalogPresentation | null;
   readonly groupBy?: string | null;
 }
+// CA1-A: a calculation is a read-only number the server computes with one fixed operation over questions that go before it,
+// named like a filter by another answer: by their field identity once saved, by their local one while new. Only a decimal has it.
+export type FormCalculationOperation = "multiply" | "sum" | "percent";
+export interface FormCalculation { readonly operation: FormCalculationOperation; readonly operands: readonly string[] }
+// While editing, multiply and percent keep their two places, empty (null) until a question is chosen.
+export interface DraftCalculation { readonly operation: FormCalculationOperation; readonly operands: readonly (string | null)[] }
+// CO1-A: the question shows only when an earlier question outside the block has one of these answers: an own option (by its
+// identity, or its local one while new), a catalog option or "true"/"false".
+export interface FormShowWhen { readonly questionId: string; readonly values: readonly string[] }
+// While editing, «Según otra respuesta» exists before its question is chosen.
+export interface DraftShowWhen { readonly questionId: string | null; readonly values: readonly string[] }
+// BI1-A: the library standard a form was copied from, its version and which question holds each datum it needs (datum → fieldId).
+export interface FormDefinitionStandard { readonly key: string; readonly version: number; readonly bound: Readonly<Record<string, string>> }
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 
 type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestionSource, TFiles = FormFileSettings, TSelection = FormSelectionSettings,
-  TRows = FormRowSettings> = {
+  TRows = FormRowSettings, TCalculation = FormCalculation, TShowWhen = FormShowWhen> = {
   readonly label: LocalizedText;
   readonly help: THelp;
   readonly required: boolean;
+  readonly showWhen?: TShowWhen | null;
 } & (
   | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true }
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }
-  | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null; readonly repeated?: true }
+  | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null; readonly repeated?: true; readonly calculation?: TCalculation | null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null; readonly repeated?: true }
   | { readonly type: "choice"; readonly source: TSource; readonly options?: null; readonly repeated?: true }
   | ({ readonly type: "multiChoice"; readonly selection: TSelection } & (
@@ -52,7 +66,8 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestion
 );
 export type DraftChoice = { readonly localId: string; readonly choiceId: string | null; readonly label: LocalizedText };
 export type CanonicalChoice = { readonly choiceId: string; readonly label: LocalizedText };
-export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, DraftQuestionSource, DraftFileSettings, DraftSelectionSettings, DraftRowSettings> & {
+export type DraftQuestion = QuestionContent<DraftChoice, Readonly<Record<string, string | null>> | null, number | null, DraftQuestionSource, DraftFileSettings, DraftSelectionSettings, DraftRowSettings,
+  DraftCalculation, DraftShowWhen> & {
   readonly localId: string;
   readonly fieldId: string | null;
   readonly replacesFieldId: string | null;
@@ -89,6 +104,8 @@ export interface FormDefinitionSnapshot {
   readonly prefixLocked: boolean;
   readonly revision: number;
   readonly draft: FormDraft<CanonicalQuestion>;
+  // BI1-A: only a form added from the library has it.
+  readonly standard?: FormDefinitionStandard;
 }
 export interface FormIdentityMap {
   readonly fields: readonly {

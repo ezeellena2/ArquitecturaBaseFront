@@ -378,3 +378,50 @@ it.each(["rows", "mark"] as const)("keeps the attempt uncertain when the respons
   expect(uncertain.phase).toBe("Unconfirmed");
   expect(uncertain.pending).toBe(saving.pending);
 });
+
+it("confirms a calculation and a condition that name new questions and options by the identities the save gave them (CA1-A, CO1-A)", () => {
+  const concept = { localId: "q-concept", fieldId: null, replacesFieldId: null, type: "choice", label: { es: "Concepto" }, help: null, required: true,
+    options: [{ localId: "opt-goods", choiceId: null, label: { es: "Productos" } }, { localId: "opt-services", choiceId: null, label: { es: "Servicios" } }] } as const;
+  const quantity = { localId: "q-quantity", fieldId: null, replacesFieldId: null, type: "decimal", label: { es: "Cantidad" }, help: null, required: false } as const;
+  const price = { localId: "field-price", fieldId: "field-price", replacesFieldId: null, type: "decimal", label: { es: "Precio" }, help: null, required: false } as const;
+  const amount = { localId: "q-amount", fieldId: null, replacesFieldId: null, type: "decimal", label: { es: "Importe" }, help: null, required: false,
+    calculation: { operation: "multiply", operands: ["q-quantity", "field-price"] }, showWhen: { questionId: "q-concept", values: ["opt-services"] } } as const;
+  const saving = beginDraftSave(startDraftSession(scope, { ...initial, draft: { ...initial.draft, fields: [concept, quantity, price, amount] } }), "request-calculation");
+  expect(saving.pending!.body.draft.fields[3]).toMatchObject({ calculation: { operation: "multiply", operands: ["q-quantity", "field-price"] },
+    showWhen: { questionId: "q-concept", values: ["opt-services"] } });
+  const canonical = (calculationOperands: readonly string[], showValues: readonly string[]): FormDraftSaveResult => ({ ...result("request-calculation"),
+    definition: { ...result().definition, draft: { ...initial.draft, fields: [
+      { fieldId: "field-concept", key: "field_concept", type: "choice", label: { es: "Concepto" }, help: null, required: true,
+        options: [{ choiceId: "choice-goods", label: { es: "Productos" } }, { choiceId: "choice-services", label: { es: "Servicios" } }] },
+      { fieldId: "field-quantity", key: "field_quantity", type: "decimal", label: { es: "Cantidad" }, help: null, required: false },
+      { fieldId: "field-price", key: "field_price", type: "decimal", label: { es: "Precio" }, help: null, required: false },
+      { fieldId: "field-amount", key: "field_amount", type: "decimal", label: { es: "Importe" }, help: null, required: false,
+        calculation: { operation: "multiply", operands: calculationOperands }, showWhen: { questionId: "field-concept", values: showValues } },
+    ] } },
+    identityMap: { fields: [{ localId: "q-concept", fieldId: "field-concept", key: "field_concept", replacesFieldId: null },
+      { localId: "q-quantity", fieldId: "field-quantity", key: "field_quantity", replacesFieldId: null },
+      { localId: "field-price", fieldId: "field-price", key: "field_price", replacesFieldId: null },
+      { localId: "q-amount", fieldId: "field-amount", key: "field_amount", replacesFieldId: null }],
+    choices: [{ fieldLocalId: "q-concept", localId: "opt-goods", fieldId: "field-concept", choiceId: "choice-goods" },
+      { fieldLocalId: "q-concept", localId: "opt-services", fieldId: "field-concept", choiceId: "choice-services" }] } });
+  const identity = { ...scope, requestId: "request-calculation" };
+  const confirmed = confirmDraftSave(saving, identity, canonical(["field-quantity", "field-price"], ["choice-services"]));
+  expect(confirmed.phase).toBe("Editing");
+  expect(confirmed.value.draft.fields[3]).toMatchObject({ localId: "q-amount", fieldId: "field-amount",
+    calculation: { operation: "multiply", operands: ["field-quantity", "field-price"] }, showWhen: { questionId: "field-concept", values: ["choice-services"] } });
+  // A calculation or a condition the server did not keep as sent leaves the attempt unconfirmed.
+  expect(confirmDraftSave(saving, identity, canonical(["field-price", "field-quantity"], ["choice-services"])).phase).toBe("Unconfirmed");
+  expect(confirmDraftSave(saving, identity, canonical(["field-quantity", "field-price"], ["choice-goods"])).phase).toBe("Unconfirmed");
+});
+
+it("opens a saved calculation and condition as they are and omits them where there are none", () => {
+  const definition: FormDefinitionSnapshot = { ...result().definition, draft: { ...initial.draft, fields: [
+    { fieldId: "field-paid", key: "field_paid", type: "boolean", label: { es: "¿Pagó?" }, help: null, required: false },
+    { fieldId: "field-total", key: "field_total", type: "decimal", label: { es: "Total" }, help: null, required: false,
+      calculation: { operation: "sum", operands: ["field-paid"] }, showWhen: { questionId: "field-paid", values: ["true"] } },
+  ] } };
+  const opened = openDraftSession(scope, definition).value.draft.fields;
+  expect(opened[0]).not.toHaveProperty("calculation");
+  expect(opened[0]).not.toHaveProperty("showWhen");
+  expect(opened[1]).toMatchObject({ calculation: { operation: "sum", operands: ["field-paid"] }, showWhen: { questionId: "field-paid", values: ["true"] } });
+});

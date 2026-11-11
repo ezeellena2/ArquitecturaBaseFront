@@ -32,7 +32,9 @@ function snapshot<T>(value: T): T {
 }
 
 function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId: (id: string) => string): DraftQuestion {
-  const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required };
+  // CO1-A: a condition is omitted where there is none, so the question keeps its bytes.
+  const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required,
+    ...field.showWhen ? { showWhen: { questionId: field.showWhen.questionId, values: [...field.showWhen.values] } } : {} };
   const repeated = "repeated" in field && field.repeated ? { repeated: true as const } : {};
   switch (field.type) {
     case "multiChoice": return field.source ? { ...common, type: field.type, selection: { ...field.selection }, source: copyCatalogQuestionSource(field.source) } : { ...common, type: field.type, selection: { ...field.selection }, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
@@ -40,7 +42,9 @@ function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId
     case "photo": case "document": return { ...common, type: field.type, files: { ...field.files } };
     case "shortText": case "longText": return { ...common, ...repeated, type: field.type, maxLength: field.maxLength };
     case "group": return { ...common, type: field.type, rows: { ...field.rows } };
-    default: return { ...common, ...repeated, type: field.type };
+    // CA1-A: only a decimal is calculated.
+    default: return { ...common, ...repeated, type: field.type,
+      ...field.type === "decimal" && field.calculation ? { calculation: { operation: field.calculation.operation, operands: [...field.calculation.operands] } } : {} };
   }
 }
 
@@ -99,6 +103,7 @@ export function rejectDraftSave(
 }
 
 const choiceKey = (fieldLocalId: string, localId: string) => JSON.stringify([fieldLocalId, localId]);
+const sameList = (first: readonly (string | null)[], second: readonly string[]) => first.length === second.length && first.every((item, index) => item === second[index]);
 
 function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): DraftEditorValue | null {
   const input = attempt.body.draft.fields;
@@ -110,6 +115,22 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
   const named = (source: DraftQuestionSource | null | undefined): DraftQuestionSource | null | undefined => source && {
     ...source, ...(source.match ? { match: source.match.map(match => "questionId" in match && match.questionId && fieldMap.has(match.questionId)
       ? { fieldId: match.fieldId, questionId: fieldMap.get(match.questionId)!.fieldId } : match) } : {}),
+  };
+  // A calculation (CA1-A) and a condition (CO1-A) name a new question by its local identity, and a condition a new option of its
+  // question by the option's local one: the save names them by the identities it gave them.
+  const localOf = new Map(input.map(field => [field.fieldId ?? field.localId, field.localId]));
+  const fieldName = (id: string | null) => id !== null && fieldMap.has(id) ? fieldMap.get(id)!.fieldId : id;
+  const sameCalculation = (field: DraftQuestion, saved: CanonicalQuestion) => {
+    const sent = field.type === "decimal" ? field.calculation ?? null : null, kept = saved.type === "decimal" ? saved.calculation ?? null : null;
+    return sent === null || kept === null ? sent === kept
+      : sent.operation === kept.operation && sameList(sent.operands.map(fieldName), kept.operands);
+  };
+  const sameCondition = (field: DraftQuestion, saved: CanonicalQuestion) => {
+    const sent = field.showWhen ?? null, kept = saved.showWhen ?? null;
+    if (sent === null || kept === null) return sent === kept;
+    const owner = sent.questionId === null ? undefined : localOf.get(sent.questionId);
+    const values = sent.values.map(value => owner !== undefined ? choiceMap.get(choiceKey(owner, value))?.choiceId ?? value : value);
+    return fieldName(sent.questionId) === kept.questionId && sameList(values, kept.values);
   };
   if (fieldMap.size !== input.length || fieldMap.size !== result.identityMap.fields.length
     || canonicalFields.size !== canonical.length || canonical.length !== input.length
@@ -131,6 +152,7 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     if (field.type === "group" && saved.type === "group"
       && (field.rows.minRows !== saved.rows.minRows || field.rows.maxRows !== saved.rows.maxRows)) return null;
     if (("repeated" in field && field.repeated === true) !== ("repeated" in saved && saved.repeated === true)) return null;
+    if (!sameCalculation(field, saved) || !sameCondition(field, saved)) return null;
     const options = new Map<string, string>();
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !sameCatalogQuestionSource(named(field.source), saved.source)) return null;
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !field.source && !saved.source) {

@@ -24,6 +24,10 @@ const questionSchema = z.strictObject({
   // The block of rows (RG2-A) says how many items it takes; its questions follow it, marked as repeated.
   rows: z.strictObject({ minRows: z.number().int().min(0).max(100), maxRows: z.number().int().min(1).max(100) }).optional(),
   repeated: z.literal(true).optional(),
+  // CA1-A: how the server computes this read-only number; the app shows a preview with the same rounding and never sends it.
+  calculation: z.strictObject({ operation: z.enum(["multiply", "sum", "percent"]), operands: z.array(z.string().uuid()).min(1).max(20) }).optional(),
+  // CO1-A: the earlier question and the answers that show this one; hidden, it is neither required nor sent.
+  showWhen: z.strictObject({ questionId: z.string().uuid(), values: z.array(z.string().min(1).max(64)).min(1).max(50) }).optional(),
 }).superRefine((value, context) => {
   const files = value.type === "photo" || value.type === "document";
   const list = value.type === "choice" || value.type === "multiChoice";
@@ -33,7 +37,11 @@ const questionSchema = z.strictObject({
     || (value.catalog?.dependsOn !== undefined && (value.catalog.onlyOption !== null || value.catalog.issue !== null))
     || (value.type === "group") !== (value.rows !== undefined) || (value.type === "group" && value.maxLength !== null)
     || (value.rows !== undefined && (value.rows.minRows > value.rows.maxRows || value.required !== value.rows.minRows > 0))
-    || (value.repeated && !itemTypes.includes(value.type)))
+    || (value.repeated && !itemTypes.includes(value.type))
+    // A calculation is an optional number: two operands for multiply and percent; a condition never goes on the block or in it.
+    || (value.calculation !== undefined && (value.type !== "decimal" || value.required
+      || (value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)))
+    || (value.showWhen !== undefined && (value.type === "group" || value.repeated === true)))
     context.addIssue({ code: "custom", message: "Invalid entry question." });
 });
 export const formEntrySchema = z.strictObject({
