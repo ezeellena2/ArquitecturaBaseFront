@@ -153,7 +153,8 @@
     "photo": "Photo",
     "document": "Document",
     "multiChoice": "Choose several",
-    "group": "Block"
+    "group": "Block",
+    "calculation": "Calculation"
   },
   "reviewOption": "{{question}} · option “{{option}}”",
   "reviewOptionOrder": "Option order for {{question}}",
@@ -1560,5 +1561,55 @@
       "option": "Option",
       "people": "People"
     }
+  },
+  "calculation": {
+    "operation": "What it calculates",
+    "help": "One of three operations with earlier number questions. While loading it shows greyed and changes as you type; on sending, the server calculates it, rounded to 2 decimals. It is never required.",
+    "operations": { "multiply": "Multiply", "sum": "Add", "percent": "Percentage" },
+    "multiplyFirst": "Multiplies",
+    "multiplySecond": "By",
+    "percentBase": "Base",
+    "percentRate": "Rate",
+    "sumOf": "Sum of",
+    "choose": "Choose a question",
+    "operand": "{{label}} (question {{number}})",
+    "allItems": "{{label}} · all items",
+    "unavailable": "Question not available",
+    "add": "+ Add",
+    "remove": "Remove {{label}} from the sum",
+    "sumInBlock": "A sum goes outside the block.",
+    "sumFull": "A sum takes up to {{count}} questions.",
+    "noNumbers": "There are no number questions before this one.",
+    "allAdded": "Every question it can add is already added.",
+    "incomplete": "Choose the questions the calculation uses."
+  },
+  "condition": {
+    "shows": "Shown",
+    "help": "Depending on the answer to an earlier single-choice or yes/no question, outside the block. While it is not shown it is not required, and what was typed in it is not sent.",
+    "always": "Always",
+    "byAnswer": "Depending on another answer",
+    "if": "If",
+    "is": "is",
+    "choose": "Choose a question",
+    "question": "{{label}} (question {{number}})",
+    "unavailableQuestion": "Question not available",
+    "unavailable": "Answer not available",
+    "add": "+ Add",
+    "remove": "Remove “{{label}}”",
+    "search": "Search for an answer",
+    "noQuestions": "There is no earlier single-choice or yes/no question outside the block.",
+    "chooseFirst": "Choose the question first.",
+    "allChosen": "Every answer is already chosen.",
+    "incomplete": "Choose the question and at least one answer.",
+    "line": "If {{question}} is {{answer}}",
+    "lineMore": "If {{question}} is {{answer}} or…",
+    "lineIncomplete": "Depending on another answer"
+  },
+  "standard": {
+    "origin": "From the library: {{name}}, version {{version}}",
+    "lock": "The library standard needs it: its text, help and order can change.",
+    "locked": "The library standard needs it: it does not change.",
+    "lockedRemove": "The library standard needs it: it cannot be removed.",
+    "lockedBlock": "It has questions the library standard needs: it cannot be removed."
   }
 }

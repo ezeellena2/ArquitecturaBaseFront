@@ -153,7 +153,8 @@
     "photo": "Foto",
     "document": "Documento",
     "multiChoice": "Elegir varias",
-    "group": "Bloque"
+    "group": "Bloque",
+    "calculation": "Cálculo"
   },
   "reviewOption": "{{question}} · la opción «{{option}}»",
   "reviewOptionOrder": "Orden de opciones de {{question}}",
@@ -1560,5 +1561,55 @@
       "option": "Opción",
       "people": "Personas"
     }
+  },
+  "calculation": {
+    "operation": "Qué calcula",
+    "help": "Una de tres operaciones con preguntas de número que van antes. Al cargar se ve en gris y cambia al escribir; al enviar la calcula el servidor, redondeada a 2 decimales. Nunca es obligatoria.",
+    "operations": { "multiply": "Multiplicar", "sum": "Sumar", "percent": "Porcentaje" },
+    "multiplyFirst": "Multiplica",
+    "multiplySecond": "Por",
+    "percentBase": "Base",
+    "percentRate": "Alícuota",
+    "sumOf": "Suma de",
+    "choose": "Elegí una pregunta",
+    "operand": "{{label}} (pregunta {{number}})",
+    "allItems": "{{label}} · todos los ítems",
+    "unavailable": "Pregunta no disponible",
+    "add": "+ Agregar",
+    "remove": "Quitar {{label}} de la suma",
+    "sumInBlock": "Una suma va afuera del bloque.",
+    "sumFull": "Una suma lleva hasta {{count}} preguntas.",
+    "noNumbers": "No hay preguntas de número antes de esta.",
+    "allAdded": "Ya se suman todas las preguntas que puede.",
+    "incomplete": "Elegí las preguntas que usa el cálculo."
+  },
+  "condition": {
+    "shows": "Se muestra",
+    "help": "Según la respuesta de una pregunta anterior de elegir una o de sí o no, afuera del bloque. Mientras no se ve no es obligatoria, y lo que se escribió en ella no se manda.",
+    "always": "Siempre",
+    "byAnswer": "Según otra respuesta",
+    "if": "Si",
+    "is": "es",
+    "choose": "Elegí una pregunta",
+    "question": "{{label}} (pregunta {{number}})",
+    "unavailableQuestion": "Pregunta no disponible",
+    "unavailable": "Respuesta no disponible",
+    "add": "+ Agregar",
+    "remove": "Quitar «{{label}}»",
+    "search": "Buscar una respuesta",
+    "noQuestions": "No hay antes una pregunta de elegir una o de sí o no, afuera del bloque.",
+    "chooseFirst": "Elegí primero la pregunta.",
+    "allChosen": "Ya están todas las respuestas.",
+    "incomplete": "Elegí la pregunta y al menos una respuesta.",
+    "line": "Si {{question}} es {{answer}}",
+    "lineMore": "Si {{question}} es {{answer}} o…",
+    "lineIncomplete": "Según otra respuesta"
+  },
+  "standard": {
+    "origin": "De la biblioteca: {{name}}, versión {{version}}",
+    "lock": "La necesita el estándar de la biblioteca: se cambian el texto, la ayuda y el orden.",
+    "locked": "La necesita el estándar de la biblioteca: no se cambia.",
+    "lockedRemove": "La necesita el estándar de la biblioteca: no se puede quitar.",
+    "lockedBlock": "Tiene preguntas que necesita el estándar de la biblioteca: no se puede quitar."
   }
 }

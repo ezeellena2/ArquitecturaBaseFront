@@ -10,8 +10,8 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
-import { PencilIcon, ChevronDownIcon, TrashIcon } from "@/shared/ui/icons";
-import { localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
+import { PencilIcon, ChevronDownIcon, LockIcon, TrashIcon } from "@/shared/ui/icons";
+import { keepsQuestionIdentity, localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
 import type { CatalogQuestionPreview, DraftQuestion, FormCulture } from "../model";
 import { localizedIssue, localizedIssueMessage, type DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
@@ -24,12 +24,16 @@ import { CatalogQuestionSettings } from "./CatalogQuestionSettings";
 import type { AnswerQuestions } from "./CatalogQuestionFilters";
 import { answerChoices } from "../dependentLists";
 import { canRepeat, rowsItems } from "../rowsQuestions";
+import { calculationIncomplete } from "../calculations";
+import { conditionIncomplete } from "../conditions";
+import { CalculationFormula, CalculationSettings } from "./CalculationSettings";
+import { ConditionLine, ConditionSettings } from "./ConditionSettings";
 
-// RG10-D: the block is not a type of answer; it is added with «Agregar bloque» or «Se carga varias veces».
-const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
+// RG10-D: the block is not a type of answer; it is added with «Agregar bloque» or «Se carga varias veces». «Cálculo» (CA1-A) is one more.
+const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "calculation", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
 const validRows = (rows: { minRows: number | null; maxRows: number | null }) => rows.minRows !== null && rows.maxRows !== null
   && Number.isInteger(rows.minRows) && Number.isInteger(rows.maxRows) && rows.minRows >= 0 && rows.maxRows >= 1 && rows.maxRows <= 100 && rows.minRows <= rows.maxRows;
-export function QuestionEditor({ question, position, number, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions, rowCount = 0, onRepeatedChange, appOnly = false }: {
+export function QuestionEditor({ question, position, number, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions, rowCount = 0, onRepeatedChange, appOnly = false, bound = false, removeReason = null, showIncomplete = false }: {
   question: DraftQuestion; position: number; total: number; culture: FormCulture; original: FormCulture; expanded: boolean; readOnly: boolean;
   /** What the list shows: «5» or, in the block of rows, «5.2». */
   number?: string;
@@ -41,6 +45,12 @@ export function QuestionEditor({ question, position, number, total, culture, ori
   onRepeatedChange?: (repeated: boolean) => void;
   /** SA2-A: a form completed only in the app has the app's limits, without what WhatsApp loads or shows. */
   appOnly?: boolean;
+  /** BI1-A: the library standard needs this question: only its text, help and order change; the rest is off, with its reason. */
+  bound?: boolean;
+  /** BI1-A: why the trash is off, when removing takes a question the standard needs (the block goes with its questions). */
+  removeReason?: string | null;
+  /** After a save it stopped: a calculation or a condition still to complete says so (CA1-A, CO1-A). */
+  showIncomplete?: boolean;
   catalogScope?: CatalogReadScope; definitionId?: string | null; previewCulture?: FormCulture; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void; filesAvailable?: boolean;
   issues: readonly DraftFieldIssue[]; onChange: (question: DraftQuestion) => void; onExpand: (open: boolean) => void; onMove: (delta: number) => void; onRemove: () => void;
 }) {
@@ -100,10 +110,16 @@ export function QuestionEditor({ question, position, number, total, culture, ori
   }
   function changeType(type: QuestionEditorType) {
     if (type === questionEditorType(question)) return;
-    if (question.fieldId) setConfirmation({ type });
+    // Número and Cálculo are one question for the server: switching keeps its identity, without asking (CA1-A).
+    if (question.fieldId && !keepsQuestionIdentity(question, type)) setConfirmation({ type });
     else onChange(replaceQuestionType(question, type, crypto.randomUUID(), original));
   }
   const repeated = "repeated" in question && question.repeated === true;
+  // BI1-A: what the library standard needs stays as it is, with the reason on each control (MA1-A).
+  const locked = bound ? t("standard.locked") : null;
+  const calculated = question.type === "decimal" && !!question.calculation;
+  // The standard's refusal names the question itself (`draft.fields[i]`): it goes on top of what can be fixed.
+  const questionError = localizedError(issue => /^draft\.fields\[\d+\]$/.test(issue.path));
   // RG9-A: an option that cannot be chosen says why after «·», as files without storage already do.
   const typeReason = (type: QuestionEditorType) => (type === "photo" || type === "document") && repeated ? t("rows.notRepeated")
     : (type === "photo" || type === "document") && !filesAvailable ? t("files.storageMissing") : null;
@@ -117,40 +133,45 @@ export function QuestionEditor({ question, position, number, total, culture, ori
   const optionError = fieldError("options") ?? (question.type === "multiChoice" && !question.source && question.options.length > 20 ? t("multiple.optionLimit") : undefined);
   // LD1-A: choosing first by a field is one option, so choosing several stays off with its reason.
   const groupBy = (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && question.source.groupBy ? { catalog: question.source.catalog, field: question.source.groupBy } : null;
-  const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly || repeated || groupBy !== null}
-      disabledReason={repeated ? t("rows.multipleReason") : groupBy ? t("catalogQuestion.groupBy.multipleOff") : null} onCheckedChange={multiple => {
+  const selectionControls = <>{question.type === "choice" || question.type === "multiChoice" ? <CheckboxField label={t("multiple.allow")} checked={question.type === "multiChoice"} disabled={readOnly || repeated || groupBy !== null || bound}
+      disabledReason={locked ?? (repeated ? t("rows.multipleReason") : groupBy ? t("catalogQuestion.groupBy.multipleOff") : null)} onCheckedChange={multiple => {
         if (question.fieldId) setConfirmation({ multiple });
         else onChange(changeQuestionMultiplicity(question, multiple, question.localId, () => crypto.randomUUID()));
       }} /> : null}
-      {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} minimumHelp={t(appOnly ? "multiple.hintInApp" : "multiple.hint")} maximumLabel={t("multiple.maximum")} readOnly={readOnly} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/></div> : null}</>;
+      {question.type === "multiChoice" ? <div data-question-control="selection" className="space-y-2"><SelectionRangeFields value={{ minimum: question.selection.minSelected, maximum: question.selection.maxSelected }} limit={20} minimumLabel={t("multiple.minimum")} minimumHelp={t(appOnly ? "multiple.hintInApp" : "multiple.hint")} maximumLabel={t("multiple.maximum")} readOnly={readOnly || bound} error={selectionError} onChange={range => onChange({ ...question, selection: { minSelected: range.minimum, maxSelected: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })}/></div> : null}</>;
   return <div ref={rootRef} data-question-local-id={question.localId} className="border-t border-[var(--color-border)] first:border-t-0">
     <div className="flex flex-wrap items-center gap-2 px-4 py-2">
       <span className="text-sm text-[var(--color-content-muted)]">{number ?? position}</span>
-      <div className="min-w-0 flex-1"><p className={"break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}</p><p className="text-xs text-[var(--color-content-muted)]">{items ? [t("types.group"), t(items.key, items), t("publication.questions", { count: rowCount })].join(" · ") : <>{t("types." + questionEditorType(question))}{groupBy && catalogScope ? <CatalogGroupByName scope={catalogScope} catalogId={groupBy.catalog} fieldId={groupBy.field} /> : null}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{question.type === "multiChoice" ? " · " + t("multiple.range", { maximum: question.selection.maxSelected }) : ""}{!expanded && (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null} · {t(question.required ? "required" : "optional")}</>}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{issueBadge}</Badge> : null}</div>
+      <div className="min-w-0 flex-1"><p className={"flex items-center gap-1 break-words text-sm font-medium" + (!question.label[culture]?.trim() ? " italic" : "")}>{label}{bound
+        ? <span className="-my-1 inline-flex"><IconButton size="icon-xs" label={t("standard.lock")}><LockIcon className="size-3.5 text-[var(--color-content-muted)]" /></IconButton></span> : null}</p><p className="text-xs text-[var(--color-content-muted)]">{items ? [t("types.group"), t(items.key, items), t("publication.questions", { count: rowCount })].join(" · ") : <>{t("types." + questionEditorType(question))}{groupBy && catalogScope ? <CatalogGroupByName scope={catalogScope} catalogId={groupBy.catalog} fieldId={groupBy.field} /> : null}{question.type === "photo" || question.type === "document" ? " · " + t("files.range", { minimum: question.files.minFiles, maximum: question.files.maxFiles }) + (question.type === "photo" ? " · " + t("files.sources." + question.files.photoSource) : "") : ""}{question.type === "multiChoice" ? " · " + t("multiple.range", { maximum: question.selection.maxSelected }) : ""}{!expanded && (question.type === "choice" || question.type === "multiChoice") && question.source?.catalog && catalogScope ? <CatalogQuestionName scope={catalogScope} id={question.source.catalog} /> : null}{calculated ? <>{" · "}<CalculationFormula question={question} questions={questions ?? [question]} culture={culture} original={original} /></> : " · " + t(question.required ? "required" : "optional")}</>}{culture !== original && missingQuestionTexts(question, culture) ? " · " + t("languageMissing", { count: missingQuestionTexts(question, culture) }) : ""}</p>{question.showWhen ? <p className="text-xs text-[var(--color-content-muted)]"><ConditionLine question={question} questions={questions ?? [question]} culture={culture} original={original} scope={catalogScope ?? { actorId: null, culture, permissions: [] }} /></p> : null}{culture !== original && !question.label[culture]?.trim() ? <Badge variant="outline" className="text-[var(--color-content-muted)]">{t("missingText")}</Badge> : null}{issues.length ? <Badge variant="outline" className="border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]">{issueBadge}</Badge> : null}</div>
       <div className="flex items-center gap-1">
         {!readOnly ? <>
         <IconButton size="icon-sm" label={t("up", { name: label })} disabled={readOnly || position === 1} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={-1} onClick={() => moveQuestion(-1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
         <IconButton size="icon-sm" label={t("down", { name: label })} disabled={readOnly || position === total} disabledLabel={t("position", { name: label, position, total })} data-move-item={question.localId} data-move-delta={1} onClick={() => moveQuestion(1)}><ChevronDownIcon className="size-4" /></IconButton>
         </> : null}
         <IconButton size="icon-sm" ref={editButton} data-question-action="edit" label={readOnly ? t("viewQuestion", { name: label }) : `${t("edit")} ${label}`} onClick={() => onExpand(!expanded)} aria-expanded={expanded}>{readOnly ? <ChevronDownIcon className="size-4" /> : <PencilIcon className="size-4" />}</IconButton>
-        {!readOnly ? <IconButton size="icon-sm" label={t("remove", { name: label })} onClick={onRemove}><TrashIcon className="size-4" /></IconButton> : null}
+        {!readOnly ? <IconButton size="icon-sm" label={t("remove", { name: label })} disabled={!!removeReason} disabledLabel={removeReason ?? undefined} onClick={onRemove}><TrashIcon className="size-4" /></IconButton> : null}
       </div>
     </div>
     {expanded ? <div className="flex flex-col gap-4 bg-[var(--color-surface-muted)] p-4">
+      {questionError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{questionError}</p> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label={t(question.type === "group" ? "rows.name" : "question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
         {/* RG10-D: the block has no type of answer; its editor is the name, the help and its items. */}
-        {question.type !== "group" ? <FormField label={t("type")} error={fieldError("type")}><NativeSelect disabled={readOnly} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => { const reason = typeReason(type); return <option key={type} value={type} disabled={reason !== null || type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read")}>{t(`types.${type}`)}{reason ? " · " + reason : ""}</option>; })}</NativeSelect></FormField> : null}
+        {question.type !== "group" ? <FormField label={t("type")} error={fieldError("type")}><DisabledReason reason={locked}><NativeSelect disabled={readOnly || bound} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => { const reason = typeReason(type); return <option key={type} value={type} disabled={reason !== null || type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read")}>{t(`types.${type}`)}{reason ? " · " + reason : ""}</option>; })}</NativeSelect></DisabledReason></FormField> : null}
         <FormField label={t("helpOptional")} hint={reference(question.help)} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} placeholder={culture !== original && question.help?.[original]?.trim() ? t("missingText") : undefined} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
-          {question.type === "group" ? <div data-question-control="rows" className="flex flex-col gap-2"><p className="text-sm font-medium">{t("rows.title")}</p><SelectionRangeFields value={{ minimum: question.rows.minRows, maximum: question.rows.maxRows }} limit={100} minimumLabel={t("rows.minimum")} maximumLabel={t("rows.maximum")} maximumHelp={appOnly ? undefined : t("rows.maximumHint")} readOnly={readOnly} error={rowsError} onChange={range => onChange({ ...question, rows: { minRows: range.minimum, maxRows: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })} /></div> : null}
-          {question.type !== "photo" && question.type !== "document" && question.type !== "group" ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
-          {onRepeatedChange && canRepeat(question) ? <CheckboxField label={t("rows.repeated")} help={t("rows.repeatedHint")} error={fieldError("repeated")} checked={repeated} disabled={readOnly} onCheckedChange={onRepeatedChange} /> : null}
-          {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><Input type="number" min={1} max={10000} readOnly={readOnly} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></FormField> : null}
+          {question.type === "group" ? <div data-question-control="rows" className="flex flex-col gap-2"><p className="text-sm font-medium">{t("rows.title")}</p><SelectionRangeFields value={{ minimum: question.rows.minRows, maximum: question.rows.maxRows }} limit={100} minimumLabel={t("rows.minimum")} maximumLabel={t("rows.maximum")} maximumHelp={appOnly ? undefined : t("rows.maximumHint")} readOnly={readOnly || bound} error={rowsError} onChange={range => onChange({ ...question, rows: { minRows: range.minimum, maxRows: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })} /></div> : null}
+          {/* A calculation is never required (CA1-A). */}
+          {question.type !== "photo" && question.type !== "document" && question.type !== "group" && !calculated ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly || bound} disabledReason={locked} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
+          {onRepeatedChange && canRepeat(question) ? <CheckboxField label={t("rows.repeated")} help={t("rows.repeatedHint")} error={fieldError("repeated")} checked={repeated} disabled={readOnly || bound} disabledReason={locked} onCheckedChange={onRepeatedChange} /> : null}
+          {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><DisabledReason reason={locked}><Input type="number" min={1} max={10000} readOnly={readOnly} disabled={bound} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></DisabledReason></FormField> : null}
         </div>
       </div>
-      {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly} error={fieldError("files")} onChange={onChange} /> : null}
-      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} inApp={appOnly} questionId={question.localId} answers={answers} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(issues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
+      {question.type === "photo" || question.type === "document" ? <FileQuestionSettings question={question} readOnly={readOnly || bound} error={fieldError("files")} onChange={onChange} /> : null}
+      {calculated ? <CalculationSettings question={question} questions={questions ?? [question]} culture={culture} original={original} readOnly={readOnly} lockedReason={locked}
+        error={fieldError("calculation(?:\\.operands)?") ?? (showIncomplete && calculationIncomplete(question) ? t("calculation.incomplete") : undefined)} onChange={onChange} /> : null}
+      {(question.type === "choice" || question.type === "multiChoice") && question.source ? <CatalogQuestionSettings scope={catalogScope ?? { actorId: null, culture, permissions: [] }} source={question.source} type={question.type} inApp={appOnly} questionId={question.localId} answers={answers} definitionId={definitionId} contentCulture={previewCulture} onPreviewChange={onPreviewChange} onSourceChange={source => onChange({ ...question, source })} errors={Object.fromEntries(issues.filter(issue => issue.path.includes(".source.") && !issue.choiceLocalId).map(issue => [issue.path.split(".source.")[1]!, issue.messages]))} readOnly={readOnly} lockedReason={locked} error={fieldError("source\\.catalog") ?? fieldError("source")} onCatalogChange={catalogId => {
         if (catalogId === question.source?.catalog) return;
         if (question.fieldId) setConfirmation({ catalog: catalogId });
         else onChange(changeQuestionCatalog(question, catalogId, question.localId));
@@ -161,13 +182,17 @@ export function QuestionEditor({ question, position, number, total, culture, ori
         {question.options.map((option, index) => <div key={option.localId} className="flex flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1"><FormField label={t("option", { number: index + 1 })} hint={reference(option.label)} error={localizedError(issue => issue.choiceLocalId === option.localId && /\.label(?:\.(es|en))?$/.test(issue.path))}><Input data-choice-local-id={option.localId} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={option.label[culture] ?? ""} onChange={e => onChange({ ...question, options: question.options.map(o => o.localId === option.localId ? { ...o, label: { ...o.label, [culture]: e.target.value } } : o) })} /></FormField></div>
           {!readOnly ? <div className="flex gap-1">
-            <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={-1} onClick={() => moveOption(index, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
-            <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1} disabledLabel={t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={1} onClick={() => moveOption(index, 1)}><ChevronDownIcon className="size-4" /></IconButton>
-            <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else removeOption(option.localId); }}><TrashIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("up", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === 0 || bound} disabledLabel={locked ?? t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={-1} onClick={() => moveOption(index, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
+            <IconButton size="icon-sm" label={t("down", { name: localizedValue(option.label, culture, original) || t("option", { number: index + 1 }) })} disabled={index === question.options.length - 1 || bound} disabledLabel={locked ?? t("position", { name: t("option", { number: index + 1 }), position: index + 1, total: question.options.length })} data-move-item={option.localId} data-move-delta={1} onClick={() => moveOption(index, 1)}><ChevronDownIcon className="size-4" /></IconButton>
+            <IconButton size="icon-sm" label={t("remove", { name: t("option", { number: index + 1 }) })} disabled={bound} disabledLabel={locked ?? undefined} onClick={() => { if (option.choiceId || Object.values(option.label).some(Boolean)) setConfirmation({ option: option.localId }); else removeOption(option.localId); }}><TrashIcon className="size-4" /></IconButton>
           </div> : null}
         </div>)}
-        {!readOnly ? <DisabledReason reason={optionsFull ? question.type === "multiChoice" ? t("multiple.optionLimit") : t("optionsLimit", { count: optionLimit }) : null}><Button ref={addOptionButton} type="button" variant="outline" disabled={optionsFull} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button></DisabledReason> : null}
+        {!readOnly ? <DisabledReason reason={locked ?? (optionsFull ? question.type === "multiChoice" ? t("multiple.optionLimit") : t("optionsLimit", { count: optionLimit }) : null)}><Button ref={addOptionButton} type="button" variant="outline" disabled={optionsFull || bound} onClick={() => onChange({ ...question, options: [...question.options, { localId: crypto.randomUUID(), choiceId: null, label: { [original]: "" } }] })}>{t("addOption")}</Button></DisabledReason> : null}
       </div> : null}
+      {/* CO1-A: every question but the block and its questions says when it shows. */}
+      <ConditionSettings question={question} questions={questions ?? [question]} culture={culture} original={original} readOnly={readOnly} lockedReason={locked}
+        error={fieldError("showWhen(?:\\.(?:questionId|values))?") ?? (showIncomplete && conditionIncomplete(question) ? t("condition.incomplete") : undefined)}
+        scope={catalogScope ?? { actorId: null, culture, permissions: [] }} onChange={onChange} />
       <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>

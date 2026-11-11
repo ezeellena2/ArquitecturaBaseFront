@@ -68,15 +68,18 @@ function useZoneOpen(problem: string) {
   return [open, setOpen] as const;
 }
 
-export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, answers, onCatalogChange, onSourceChange, onPreviewChange, children, inApp = false }: {
+export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly: readOnlyProp, error, errors = {}, answers, onCatalogChange, onSourceChange, onPreviewChange, children, inApp = false, lockedReason = null }: {
   scope: CatalogReadScope; source: DraftQuestionSource; type?: "choice" | "multiChoice"; questionId?: string; definitionId?: string | null; contentCulture?: FormCulture; readOnly: boolean; error?: string; errors?: Readonly<Record<string, readonly string[]>>; children?: ReactNode;
   /** The questions of the form a list can depend on (CW7). */
   answers?: AnswerQuestions;
   /** SA2-A: completed only in the app, a list of one choice has no WhatsApp limit. */
   inApp?: boolean;
+  /** BI1-A: the library standard needs the question: the catalog says why it is off, and filters and presentation stay as they are. */
+  lockedReason?: string | null;
   onCatalogChange: (catalogId: string) => void; onSourceChange?: (source: DraftQuestionSource) => void; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void;
 }) {
   const { t } = useTranslation("forms"), { t: content } = useTranslation("forms", { lng: contentCulture });
+  const readOnly = readOnlyProp || !!lockedReason;
   const canRead = !!scope.actorId && scope.permissions.includes("formcatalogs.read");
   const detail = useCatalogDetail(scope, onSourceChange ? source.catalog ?? "" : "");
   const catalog = canRead ? detail.data : undefined;
@@ -131,7 +134,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const filtersTitle = t("catalogQuestion.filter.title"), presentationTitle = t("catalogs.presentation.title");
   // A list that depends on another answer (CW7) is tried by loading the form: neither the test with a person nor the maximum apply.
   const dependsOnAnswer = (source.match ?? []).some(match => matchKind(match) === "answer");
-  return <div data-question-control="source" className="space-y-4"><CatalogQuestionSelector scope={scope} value={source.catalog ?? ""} selectedName={onSourceChange ? catalog ? administrativeName(catalog.name, scope.culture) : null : undefined} readOnly={readOnly} error={error} onChange={onCatalogChange}/>{children}
+  return <div data-question-control="source" className="space-y-4"><CatalogQuestionSelector scope={scope} value={source.catalog ?? ""} selectedName={onSourceChange ? catalog ? administrativeName(catalog.name, scope.culture) : null : undefined} readOnly={readOnlyProp} lockedReason={lockedReason} error={error} onChange={onCatalogChange}/>{children}
     {onSourceChange && source.catalog && canRead ? catalog ? catalog.kind === "Manual" ? <>
       <CatalogGroupBySetting source={source} fields={fields} type={type} culture={scope.culture} readOnly={readOnly} error={errors.groupBy?.join(" ")} onChange={change}/>
       <CollapsibleSection title={filtersTitle} help={t("catalogQuestion.filter.hint")} open={filtersOpen} onOpenChange={setFiltersOpen} expandLabel={t("catalogQuestion.zones.expand", { name: filtersTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: filtersTitle })}
