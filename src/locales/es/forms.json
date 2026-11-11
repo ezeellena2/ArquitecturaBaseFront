@@ -716,6 +716,17 @@
       "saveChangesFirst": "Guardá o descartá los cambios antes de importar.",
       "exportFailed": "No se pudo descargar el catálogo."
     },
+    "sort": {
+      "title": "Ordenar las opciones",
+      "column": "Columna",
+      "order": "Orden",
+      "orderHelp": "Las opciones con el mismo valor quedan en el orden de ahora, y las que no tienen valor van al final.",
+      "apply": "Ordenar",
+      "text": { "asc": "De la A a la Z", "desc": "De la Z a la A", "ascPhrase": "de la A a la Z", "descPhrase": "de la Z a la A" },
+      "number": { "asc": "De menor a mayor", "desc": "De mayor a menor", "ascPhrase": "de menor a mayor", "descPhrase": "de mayor a menor" },
+      "date": { "asc": "De la más antigua a la más reciente", "desc": "De la más reciente a la más antigua", "ascPhrase": "de la más antigua a la más reciente", "descPhrase": "de la más reciente a la más antigua" },
+      "yesNo": { "asc": "Primero «No»", "desc": "Primero «Sí»", "ascPhrase": "primero «No»", "descPhrase": "primero «Sí»" }
+    },
     "usageHeader_one": "Usado en 1 formulario",
     "usageHeader_other": "Usado en {{count}} formularios"
   },
