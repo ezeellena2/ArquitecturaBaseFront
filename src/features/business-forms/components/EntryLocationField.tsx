@@ -80,9 +80,12 @@ export function EntryLocationField({ value, onChange, id, invalid, describedBy, 
         onClick={() => { setProblem(null); onChange(""); }}><CloseIcon className="size-3.5"/></IconButton></span>
     </div>
     <div className={mobile ? "flex flex-col gap-2" : "flex flex-wrap items-center gap-2"}>
-      <Button asChild variant="outline" size={mobile ? "touch" : "sm"} className={mobile ? "w-full" : undefined}>
-        <a href={mapUrl(point)} target="_blank" rel="noopener noreferrer"><ExternalLinkIcon className="size-4"/>{t("location.viewOnMap")}</a>
-      </Button>
+      {mobile
+        ? <Button asChild variant="outline" size="touch" className="w-full">
+          <a href={mapUrl(point)} target="_blank" rel="noopener noreferrer"><ExternalLinkIcon className="size-4"/>{t("location.viewOnMap")}</a>
+        </Button>
+        : <a href={mapUrl(point)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-[var(--color-brand-700)] underline">
+          {t("location.viewOnMap")}<ExternalLinkIcon className="size-3.5 shrink-0"/></a>}
       {button(t("location.askAgain"), id)}
     </div>
     {problemLine}

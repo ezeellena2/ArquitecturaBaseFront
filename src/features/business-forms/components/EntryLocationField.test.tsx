@@ -51,6 +51,22 @@ describe("EntryLocationField", () => {
     expect(screen.getByRole("button", { name: "Volver a pedirla" })).toBeEnabled();
   });
 
+  // UB3-A: «Ver en el mapa» is a link with its icon; only on a phone does it take the shape of a full-width button.
+  it("opens the map from a plain link on a computer and from a button on a phone", () => {
+    const { unmount } = renderWithProviders(<Harness initial={point} geolocation={browser().geolocation}/>);
+    expect(screen.getByRole("link", { name: "Ver en el mapa" })).not.toHaveAttribute("data-slot", "button");
+    unmount();
+
+    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+    try {
+      renderWithProviders(<Harness initial={point} geolocation={browser().geolocation}/>);
+      expect(screen.getByRole("link", { name: "Ver en el mapa" })).toHaveAttribute("data-slot", "button");
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
   it("removes the point with its cross and asks again for another", async () => {
     const service = browser();
     service.answerWith(position(30));
