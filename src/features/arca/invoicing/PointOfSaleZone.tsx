@@ -9,6 +9,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { arcaQueryKey } from "../connection/api";
 import { ArcaZone } from "../connection/ArcaZone";
 import type { ArcaFamilyActiveProps, ArcaFamilySetupProps } from "../connection/families";
+import { robotPointOfSaleStep, useArcaRobotRun } from "../connection/robot";
 import { useArcaAction } from "../connection/useArcaAction";
 import {
   arcaInvoicingSettingsQueryKey, arcaPointsOfSaleQueryKey, chooseArcaPointOfSale, fetchArcaInvoicingSettings, fetchArcaPointsOfSale, formatPointOfSale,
@@ -33,14 +34,18 @@ function PointOfSaleChoice({ enabled, canManage, value, onChange }: { enabled: b
 }
 
 /// La zona de Facturación en el alta: el punto de venta que completa la familia. «Activar la conexión» lo guarda.
-export function PointOfSaleZone({ step, canManage, open, onReady }: ArcaFamilySetupProps) {
+export function PointOfSaleZone({ step, connection, canManage, open, onReady }: ArcaFamilySetupProps) {
   const { t } = useTranslation("arca");
+  // En la delegación automática, el punto de venta que dio de alta el robot llega elegido (RB2-A); se puede cambiar.
+  const robot = useArcaRobotRun(connection.mode === "PlatformDelegationAutomated");
+  const suggested = Number(robot.data?.company?.outputs[robotPointOfSaleStep]) || null;
   const [selected, setSelected] = useState<number | null>(null);
+  const value = selected ?? suggested;
   useEffect(() => {
-    onReady(selected === null ? null : async () => { await chooseArcaPointOfSale(selected); });
-  }, [selected, onReady]);
+    onReady(value === null ? null : async () => { await chooseArcaPointOfSale(value); });
+  }, [value, onReady]);
   return <ArcaZone step={step} title={t("invoicing.title")} state={open ? "open" : "off"} help={t("invoicing.help")}>
-    <PointOfSaleChoice enabled={open} canManage={canManage} value={selected} onChange={setSelected} />
+    <PointOfSaleChoice enabled={open} canManage={canManage} value={value} onChange={setSelected} />
   </ArcaZone>;
 }
 

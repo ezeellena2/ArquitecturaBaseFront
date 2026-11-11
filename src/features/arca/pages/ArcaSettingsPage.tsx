@@ -120,7 +120,8 @@ export function ArcaSettingsPage() {
         onChanged={changed} onTested={tested} onConflict={openConflict} testDetail={<CompanySection cuit={connection.cuit} embedded />} guideSteps={guideSteps}>
         {families.map((family, index) => {
           const Zone = familyZones[family].Setup;
-          return <Zone key={family} step={5 + index} connection={connection} canManage={canManage} open={connection.lastTestPassed === true} onReady={readyHandlers[family]} />;
+          // En la delegación automática hay tres zonas antes de las familias: el robot hace el pedido y el certificado.
+          return <Zone key={family} step={(connection.mode === "PlatformDelegationAutomated" ? 4 : 5) + index} connection={connection} canManage={canManage} open={connection.lastTestPassed === true} onReady={readyHandlers[family]} />;
         })}
       </SetupZones> : null}
       {phase === "active" ? <>
