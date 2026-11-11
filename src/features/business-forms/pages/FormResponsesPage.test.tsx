@@ -425,8 +425,11 @@ describe("response sheet", () => {
     await waitFor(() => expect(reads).toBe(2));
     expect(dialog.getByRole("radio", { name: "No salió" })).toBeChecked();
     const check = await dialog.findByRole("button", { name: "Consultar" });
-    expect(dialog.getByRole("radio", { name: "Salió" })).toBeDisabled();
-    expect(dialog.getByRole("radio", { name: "No salió" })).toBeDisabled();
+    // Off with their reason (DL, 2026-11-11): consulting first, on the options and not in a sentence under them.
+    for (const name of ["Salió", "No salió"]) {
+      expect(dialog.getByRole("radio", { name })).toHaveAttribute("aria-disabled", "true");
+      expect(dialog.getByRole("radio", { name })).toHaveAccessibleDescription(/Consultá el estado antes de volver a confirmar la revisión\.$/);
+    }
     // The wait is the reason of the disabled check; when it ends the check is drawn again without its reason.
     if (failure === "rateLimit") { expect(check).toHaveAttribute("aria-disabled", "true"); expect(check).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar."); await waitFor(() => expect(dialog.getByRole("button", { name: "Consultar" })).toBeEnabled(), { timeout: 2000 }); }
     await userEvent.click(dialog.getByRole("button", { name: "Consultar" }));
@@ -544,7 +547,7 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    expect(dialog.getByText("Destinatario: Pedro")).toBeInTheDocument();
+    expect(dialog.getByText("Destinatario", { selector: "dt" }).nextElementSibling).toHaveTextContent(/^Pedro$/);
     await userEvent.click(dialog.getByRole("radio", { name: wasSent ? "Salió" : "No salió" }));
     await userEvent.click(dialog.getByRole("button", { name: wasSent ? "Confirmar que salió" : "Confirmar que no salió" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

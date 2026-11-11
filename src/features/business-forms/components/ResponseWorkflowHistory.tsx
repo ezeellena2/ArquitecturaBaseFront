@@ -8,6 +8,7 @@ import { calendarDateInZone, formatDateInZone, formatDateTimeInZone, formatTimeI
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { DataList } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -45,6 +46,8 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
   // are not remounted under the mouse or the keyboard focus.
   const waitReason = workflow.busy || !workflow.cooldown.isRunning ? null : t("wait", { count: workflow.cooldown.seconds });
   const closeReview = () => { setReviewTarget(null); setWasSent(undefined); };
+  // Why Salió and No salió are off when the last confirmation is unknown; not while the dialog works, which only turns them off.
+  const consultFirst = needsConsult && !workflow.busy ? t("workflow.reviewCheckRequired") : null;
   // Only the touched button says what it is doing (board LC1-A): «Consultando…» or «Reintentando…» on its action, and
   // «Consultando…» or «Confirmando…» in the dialog; the rest only turn off.
   const acting = workflow.working?.kind === "act" ? workflow.working.runId : null;
@@ -167,16 +170,17 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
     {workflow.query.isPending || !data && !workflow.query.isError ? <Spinner /> : null}
     {workflow.query.error ? <div className="space-y-2 text-sm"><p role="status">{t("common:states.loadFailed")}</p>{!(workflow.query.error instanceof ApiError && workflow.query.error.status === 404) ? <Button variant="outline" pending={workflow.query.isFetching} onClick={() => void workflow.query.refetch()}>{t(workflow.query.isFetching ? "responses.retrying" : "common:actions.retry")}</Button> : null}</div> : null}
     {workflow.controlsDenied ? <p role="status" className="text-sm">{t("workflow.noManagePermission")}</p> : null}
-    {/* While the review works the dialog waits open, with the × off and its gerund as the reason, as a confirmation that waits. */}
+    {/* While the review works the dialog waits open, with the × off and its gerund as the reason, as a confirmation that waits.
+        The recipient reads in its row (DL, 2026-11-11), and after a lost confirmation whose reading also failed, consulting first
+        is the reason of the options that are off, not a sentence under them (MA1-A). */}
     <Dialog open={reviewOpen} onOpenChange={open => { if (!open && !workflow.busy) closeReview(); }}>
       <DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={workflow.busy ? t(reviewing ?? "workflow.confirming") : undefined} onEscapeKeyDown={event => { if (workflow.busy) event.preventDefault(); }} onPointerDownOutside={event => { if (workflow.busy) event.preventDefault(); }}>
         <DialogHeader><DialogTitle>{t("workflow.reviewTitle")}</DialogTitle></DialogHeader>
-        <p className="text-sm">{t("workflow.recipient", { name: reviewingRecipient?.user.displayName ?? unknown })}</p>
+        <DataList items={[{ key: "recipient", label: t("workflow.recipientLabel"), value: reviewingRecipient?.user.displayName ?? unknown }]} />
         <RadioGroupField label={t("workflow.reviewTitle")} value={wasSent === undefined ? undefined : String(wasSent)} onValueChange={value => setWasSent(value === "true")} options={[
-          { value: "true", label: t("workflow.sent"), help: t("workflow.sentHint"), disabled: workflow.busy || needsConsult },
-          { value: "false", label: t("workflow.notSent"), help: t(reviewingAction?.kind === "NotifyRole" ? "workflow.notSentRoleHint" : "workflow.notSentHint"), disabled: workflow.busy || needsConsult },
+          { value: "true", label: t("workflow.sent"), help: t("workflow.sentHint"), disabled: workflow.busy || needsConsult, disabledReason: consultFirst },
+          { value: "false", label: t("workflow.notSent"), help: t(reviewingAction?.kind === "NotifyRole" ? "workflow.notSentRoleHint" : "workflow.notSentHint"), disabled: workflow.busy || needsConsult, disabledReason: consultFirst },
         ]} />
-        {needsConsult ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("workflow.reviewCheckRequired")}</p> : null}
         <DialogFooter><Button variant="outline" disabled={workflow.busy} onClick={closeReview}>{t("common:actions.cancel")}</Button><DisabledReason reason={waitReason} className="max-sm:*:flex-1"><Button pending={!!reviewing} disabled={disabled || !needsConsult && wasSent === undefined} onClick={async () => { if (!reviewTarget) return; const resolved = needsConsult ? await workflow.checkReview(reviewTarget) : wasSent !== undefined && await workflow.review(reviewTarget, wasSent); if (resolved) closeReview(); }}>{t(reviewing ?? (needsConsult ? "workflow.consult" : wasSent === undefined ? "workflow.confirmReview" : wasSent ? "workflow.confirmSent" : "workflow.confirmNotSent"))}</Button></DisabledReason></DialogFooter>
       </DialogContent>
     </Dialog>

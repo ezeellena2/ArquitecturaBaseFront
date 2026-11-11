@@ -309,6 +309,36 @@ it("resolves a send without a description, with each option's consequence in its
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
+// DL (2026-11-11): the recipient reads in its row of two columns, never «Destinatario: Beto»; and after a lost confirmation whose
+// reading also failed, why the options are off is their reason, not a grey sentence under them.
+it("reads the recipient in its row and gives why the options are off as their reason", async () => {
+  const user = userEvent.setup();
+  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true, recipients: [recipient] })] };
+  let reads = 0;
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
+    http.get("/api/forms/records/:id/workflow", () => ++reads === 1 ? HttpResponse.json(workflow) : HttpResponse.error()),
+    http.post("/api/forms/records/:id/actions/:runId/review", () => HttpResponse.error()));
+  renderWithProviders(<ActivityHarness />);
+  const effects = await receivedBand();
+  await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
+  const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
+  expect(within(dialog).getByText("Destinatario", { selector: "dt" }).nextElementSibling).toHaveTextContent(/^Beto$/);
+  expect(within(dialog).queryByText(/Destinatario:/)).not.toBeInTheDocument();
+  await user.click(within(dialog).getByRole("radio", { name: "Salió" }));
+  await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
+  expect(await within(dialog).findByRole("button", { name: "Consultar" })).toBeEnabled();
+  const reason = "Consultá el estado antes de volver a confirmar la revisión.";
+  for (const [name, help] of [["Salió", "La regla continúa sin volver a mandar este aviso."], ["No salió", "El aviso queda para reintentar a esta persona."]]) {
+    const option = within(dialog).getByRole("radio", { name });
+    expect(option).toHaveAttribute("aria-disabled", "true");
+    expect(option).toHaveAccessibleDescription(help + " " + reason);
+  }
+  // Nothing written under the options: the reason is only on them.
+  for (const text of within(dialog).getAllByText(reason)) expect(text).not.toBeVisible();
+  expect(within(dialog).queryByText(/quedó guardada/)).not.toBeInTheDocument();
+});
+
 it("says Reintentando… while it reads again a history that failed after being shown", async () => {
   const user = userEvent.setup();
   let reads = 0;
