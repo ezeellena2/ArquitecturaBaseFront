@@ -39,8 +39,14 @@ function WithHelp({ label, help, children }: { label: string; help: string; chil
 
 // Before publishing (board PU1-A, 2026-11-01): what stops it and what is worth reviewing, each in its zone only when there is
 // any, and what is published in rows. Explanations go in the (i); why Publish is off is its reason, not a note under it.
-export function PublicationCheckDialog({ scope, id, revision, value, dirty, canSave, onAccept, accepting, onOpenChange, onSave, onConflict, onGoToIssue, onCompleteTranslation, savedAt, prefixLocked, reactivation, onCloseAutoFocus: restoreExternalFocus }: {
+export function PublicationCheckDialog({ scope, id, revision, value, dirty, canSave, onAccept, accepting, onOpenChange, onSave, onConflict, onGoToIssue, onCompleteTranslation, savedAt, prefixLocked, reactivation, onCloseAutoFocus: restoreExternalFocus, appOnly = false, channels = true, leavesChannels = false }: {
   reactivation?: { name: string; nextRecordNumber: string | null };
+  /** SA3-A: the version is completed only in the app (the draft says so, or no channel is installed): no WhatsApp in the dialog. */
+  appOnly?: boolean;
+  /** A form channel is installed, so the new version says where it is completed (SA5: without one, nothing to choose). */
+  channels?: boolean;
+  /** SA4-A: the active version is completed by WhatsApp and this one only in the app. */
+  leavesChannels?: boolean;
   onCloseAutoFocus?: (event: Event) => void;
   scope: FormReadScope; id: string; revision: number; value: DraftEditorValue; dirty: boolean; canSave: boolean; savedAt?: string; prefixLocked: boolean;
   onAccept: (body: DraftEditorValue & { expectedRevision: number }, checked: FormPublicationCheck) => void; accepting: boolean;
@@ -94,7 +100,9 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   // Up to three missing texts by name, and the rest counted.
   const missingList = (missing: readonly PublicationIssue[]) => t("publication.missingList", { count: missing.length,
     list: list.format([...missing.slice(0, 3).map(missingTextName), ...missing.length > 3 ? [t("publication.moreMissing", { count: missing.length - 3 })] : []]) });
-  const publishedCultures = [...new Set(result?.channels.flatMap(channel => channel.cultures) ?? [])];
+  // Published only in the app, the version seals the original and a complete translation; no channel tells them (SA3-A).
+  const publishedCultures = appOnly ? (result?.cultures ?? []).filter(culture => culture.isComplete).sort((a, b) => Number(b.isOriginal) - Number(a.isOriginal)).map(culture => culture.culture)
+    : [...new Set(result?.channels.flatMap(channel => channel.cultures) ?? [])];
   const untranslated = result?.cultures.filter(culture => !culture.isOriginal && !culture.isComplete) ?? [];
   const removedCultures = result?.diff.baseVersionId ? result.diff.removedCultures : [];
   const addedCultures = result?.diff.baseVersionId ? result.diff.addedCultures : [];
@@ -135,6 +143,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     {diff?.baseVersionId && diff.removed.length ? <SummaryRow label={t("publication.removedRow")}>{t("publication.questions", { count: diff.removed.length })}</SummaryRow> : null}
     {/* RG6-A: the published questions that entered the block are new ones, not removed and added. */}
     {diff?.baseVersionId && diff.movedToRows?.length ? <SummaryRow label={t("publication.movedToRowsRow")}>{currentNames(diff.movedToRows)}</SummaryRow> : null}
+    {/* SA3-A: where the new version is completed; without a channel there is nothing to say (SA5). */}
+    {channels ? <SummaryRow label={t("completedIn.label")}>{t(appOnly ? "completedIn.app" : "completedIn.channels")}</SummaryRow> : null}
   </>;
   const skeleton = (width: string) => <Skeleton className={cn("h-3", width)} />;
   const content = dirty ? null
@@ -143,6 +153,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
         <dl aria-hidden="true" className={rows}>
           {savedAt ? <SummaryRow label={t("publication.draftRow")}>{skeleton("w-40")}</SummaryRow> : null}
           <SummaryRow label={t("publication.questionsRow")}>{skeleton("w-8")}</SummaryRow>
+          {channels ? <SummaryRow label={t("completedIn.label")}>{skeleton("w-40")}</SummaryRow> : null}
           {!monolingual ? <SummaryRow label={t("publication.languagesRow")}>{skeleton("w-52")}</SummaryRow> : null}
           {!prefixLocked ? <SummaryRow label={t("publication.prefixRow")}>{skeleton("w-36")}</SummaryRow> : null}
         </dl>
@@ -153,8 +164,10 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
       {result.issues.length ? <Surface title={t("publication.problems")} headingLevel={3} help={t("publication.problemsHelp")}>
         <ul className={rows}>{result.issues.map((issue, index) => <Finding key={issue.path + ":" + index} tone="danger" title={issueName(issue)} action={goTo(issue)}><p className={muted}>{issueDetail(issue)}</p></Finding>)}</ul>
       </Surface> : null}
-      {result.warnings.length || removedCultures.length ? <Surface title={t("publication.warnings")} headingLevel={3} help={t("publication.warningsHelp")}>
+      {result.warnings.length || removedCultures.length || leavesChannels ? <Surface title={t("publication.warnings")} headingLevel={3} help={t("publication.warningsHelp")}>
         <ul className={rows}>
+          {/* SA4-A: from WhatsApp to the app, the open sends are still answered until they expire. */}
+          {leavesChannels ? <Finding tone="warning" title={t("publication.leavesChannels")}><p className={muted}>{t("publication.leavesChannelsDetail")}</p></Finding> : null}
           {/* A language that stops being published carries what it is missing, and completing it, like the one not published. */}
           {removedCultures.map(culture => {
             const missing = missingIn(culture), language = t("cultureNamesInText." + culture);
@@ -198,7 +211,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     : result.acceptanceAvailability === "InProgress" ? t("publication.inProgress") : !result.canAccept ? t("publication.unavailable") : null;
   // No description: with unsaved changes the title says it all.
   return <Dialog open onOpenChange={onOpenChange}><DialogContent mobileFullscreen={!!reactivation} className={reactivation ? "flex flex-col sm:max-w-2xl" : "sm:max-w-2xl"} onCloseAutoFocus={onCloseAutoFocus} aria-describedby={undefined}>
-    <DialogHeader><DialogTitle className="pr-6">{reactivation && !dirty ? t("lifecycle.reactivateTitle", { name: reactivation.name }) : t(dirty ? "publication.saveFirst" : check.result ? "publication.versionTitle" : "publication.title", { version: check.result?.nextVersionNumber })}</DialogTitle></DialogHeader>
+    <DialogHeader><DialogTitle className="pr-6">{reactivation && !dirty ? t("lifecycle.reactivateTitle", { name: reactivation.name }) : t(dirty ? "publication.saveFirst" : check.result ? appOnly ? "publication.versionTitleInApp" : "publication.versionTitle" : appOnly ? "publication.publish" : "publication.title", { version: check.result?.nextVersionNumber })}</DialogTitle></DialogHeader>
     {reactivation ? <div className="min-h-0 flex-1 overflow-y-auto">{content}</div> : content}
     <DialogFooter className={reactivation ? "shrink-0" : undefined}>
       <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t("common:actions.cancel")}</Button>

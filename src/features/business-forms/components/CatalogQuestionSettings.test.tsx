@@ -610,7 +610,7 @@ function serveGroupCatalog(fields: readonly unknown[] = groupFields) {
   serveMaximum(() => HttpResponse.json({ maximum: 18, maximumLabel: null }));
   server.use(http.get("/api/forms/catalogs/:id", () => HttpResponse.json({ ...detail(maximumCatalog, "Manual"), name: { es: "Proveedores", en: "Suppliers" }, itemsCount: 200, fields })));
 }
-const groupQuestion = (source: DraftQuestionSource, onSourceChange = vi.fn(), props: { type?: "choice" | "multiChoice"; errors?: Record<string, string[]> } = {}) =>
+const groupQuestion = (source: DraftQuestionSource, onSourceChange = vi.fn(), props: { type?: "choice" | "multiChoice"; errors?: Record<string, string[]>; inApp?: boolean } = {}) =>
   <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={source} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={onSourceChange} {...props}><p>Permitir elegir varias</p></CatalogQuestionSettings></MemoryRouter>;
 
 it("chooses first by an active text or catalog field of the catalog, below the multiplicity", async () => {
@@ -651,6 +651,22 @@ it("counts the options by value when the question chooses first by a field, even
   expect(await screen.findByText("Como mucho 460 por persona (Zona Sur, la más grande), en 230 valores de «Rubro». Los valores no entran en el desplegable (200).")).toBeInTheDocument();
   expect(bodies).toEqual([{ source: { catalog: maximumCatalog, groupBy: category } }, { source: { catalog: maximumCatalog, groupBy: zone } },
     { source: { catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }], groupBy: category } }]);
+});
+
+// SA2-A: completed only in the app, a list of one choice has no WhatsApp limit (the dropdown of 200); a question of several keeps its 20.
+it("drops the dropdown limit of a list of one choice completed only in the app", async () => {
+  serveMaximum(body => HttpResponse.json(body.source.groupBy === category ? { maximum: 125, maximumLabel: null, groups: 3, largestGroup: 75 }
+    : body.source.match?.some(match => match.personAttributeId) ? { maximum: 450, maximumLabel: "Zona Sur" } : { maximum: 450, maximumLabel: null }));
+  const inApp = (type: "choice" | "multiChoice", match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} type={type} questionId="q" readOnly={false} inApp onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
+  const view = renderWithProviders(groupQuestion({ catalog: maximumCatalog, groupBy: category }, vi.fn(), { inApp: true }));
+  expect((await screen.findByText("Todos ven las mismas 125, en 3 valores de «Rubro».")).closest("[role=status]")).toHaveClass("text-[var(--color-success-700)]");
+  view.rerender(inApp("choice", [{ fieldId: category, value: "Frío" }]));
+  expect(await screen.findByText("Todos ven las mismas 450.")).toBeInTheDocument();
+  view.rerender(inApp("choice", [{ fieldId: zone, personAttributeId: attribute }]));
+  expect(await screen.findByText("Como mucho 450 por persona (Zona Sur, la más grande).")).toBeInTheDocument();
+  view.rerender(inApp("multiChoice", [{ fieldId: category, value: "Frío" }]));
+  expect(await screen.findByText("Todos ven las mismas 450: no entra en una pregunta de varias (20).")).toBeInTheDocument();
+  expect(screen.queryByText(/desplegable/)).not.toBeInTheDocument();
 });
 
 it("keeps choosing first off in a question of several, with its reason", async () => {

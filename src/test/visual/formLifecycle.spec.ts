@@ -30,7 +30,7 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   await expect(page.getByRole("button",{name:es?"Activos (2)":"Active (2)",exact:true})).toHaveAttribute("aria-pressed","true");
   const area=page.locator('[data-slot="table-container"]');
   expect(await area.evaluate(node=>node.scrollWidth)).toBeGreaterThan(await area.evaluate(node=>node.clientWidth));
-  const segment=page.getByRole("group",{name:es?"Estado en WhatsApp":"WhatsApp status"});
+  const segment=page.getByRole("group",{name:es?"Estado":"Status"});
   await expect(segment.getByRole("button")).toHaveCount(4);
   await assertContained(page,width);
   await page.screenshot({path:"test-results/form-lifecycle-ba1-active-"+language+"-"+width+".png",fullPage:true});

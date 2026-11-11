@@ -59,6 +59,8 @@ export function FormsPage() {
   const actionOwner = JSON.stringify(formScopeKey(scope));
   if (action && action.owner !== actionOwner) setAction(null);
   const canManage = !!user?.permissions.includes("formtemplates.manage");
+  // SA3-A and SA5: where each form is completed, only with a form channel installed; without one, every form is of the app.
+  const channels = presentation.data?.installedFeatures ? presentation.data.installedFeatures.includes("form-channels") : true;
   const hasFilters = !!query.search || publicationFilter !== "Active";
   const feedbackId = `forms:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
@@ -82,6 +84,8 @@ export function FormsPage() {
       const key = deprecationStateKey(row.lifecycle);
       return key ? t(key) : "—";
     } },
+    // SA3-A: where the active version is completed and, without one, where the draft will be; one piece of data per column (UD).
+    ...(channels ? [{ id: "completedIn", header: t("completedIn.label"), cell: (row: Row) => t(row.appOnly ? "completedIn.app" : "completedIn.channels") }] : []),
     // «Dado de baja» is what the segment already says: here, how the withdrawal goes in WhatsApp and its date.
     ...(publicationFilter === "Deactivated" ? [{ id: "deprecation", header: t("lifecycle.deprecationColumn"), cell: (row: Row) => {
       const at = deprecationDateUtc(row.lifecycle);
@@ -100,5 +104,5 @@ export function FormsPage() {
       emptyTitle={t(hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters ? t("noMatchesDescription") : undefined} emptyAction={hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />
       {list.data ? <Pagination {...list.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /> : null}
     </Surface>
-  </Page>{canPublish && action?.owner === actionOwner && action.kind === "deactivate" ? <FormDeactivationDialog key={action.row.id} id={action.row.id} name={administrativeName(action.row.name, scope.culture)} scope={scope} onComplete={refresh} onObserved={refresh} onClose={() => setAction(null)} focusFallback={focusFallback} timeZoneId={user?.timeZoneId} /> : canManage && action?.owner === actionOwner && action.kind === "delete" ? <FormDeletionDialog id={action.row.id} name={administrativeName(action.row.name, scope.culture)} prefix={action.row.prefix} hasPublishedVersion={action.row.activeVersionNumber !== null} revision={action.row.lifecycle.revision} scope={scope} onChanged={() => { void refresh(); }} onDeleted={async () => { client.removeQueries({ queryKey: [...formScopeKey(scope), "detail", action.row.id] }); await refresh(); }} onClose={() => setAction(null)} focusFallback={focusFallback} /> : null}</div>;
+  </Page>{canPublish && action?.owner === actionOwner && action.kind === "deactivate" ? <FormDeactivationDialog key={action.row.id} id={action.row.id} name={administrativeName(action.row.name, scope.culture)} scope={scope} onComplete={refresh} onObserved={refresh} onClose={() => setAction(null)} focusFallback={focusFallback} timeZoneId={user?.timeZoneId} /> : canManage && action?.owner === actionOwner && action.kind === "delete" ? <FormDeletionDialog id={action.row.id} name={administrativeName(action.row.name, scope.culture)} prefix={action.row.prefix} hasPublishedVersion={action.row.activeVersionNumber !== null && !action.row.lifecycle.publishedOnlyInApp} revision={action.row.lifecycle.revision} scope={scope} onChanged={() => { void refresh(); }} onDeleted={async () => { client.removeQueries({ queryKey: [...formScopeKey(scope), "detail", action.row.id] }); await refresh(); }} onClose={() => setAction(null)} focusFallback={focusFallback} /> : null}</div>;
 }

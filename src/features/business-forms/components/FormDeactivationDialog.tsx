@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
+import { useSystemPresentation } from "@/shared/api/presentation";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
@@ -24,6 +25,7 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
  const key = [...formScopeKey(scope), "deactivation", id];
  usePrivateQueryCleanup(key);
  const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchFormDeactivation(id, signal), gcTime: 0, meta: { errorOwner: "local" } });
+ const installedFeatures = useSystemPresentation().data?.installedFeatures;
  const [busy, setBusy] = useState(false);
  const [denied, setDenied] = useState(false);
  const [needsRead, setNeedsRead] = useState(false);
@@ -39,6 +41,8 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   notify({ id: feedbackId, kind: "error", message: readErrorMessage(query.error, t) });
  }, [query.error, feedbackId, t]);
  const impact = query.data;
+ // The chat and the assistant stop only for a form that is in WhatsApp: not one published only in the app, nor without a channel (SA2-A).
+ const inWhatsApp = (installedFeatures ? installedFeatures.includes("form-channels") : true) && !impact?.lifecycle.publishedOnlyInApp;
  const revisionMismatch = expectedRevision !== undefined && impact?.revision !== undefined && expectedRevision !== impact.revision;
  const reread = async () => {
   const current = await query.refetch();
@@ -72,11 +76,11 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   <DialogHeader className="shrink-0 pr-6"><DialogTitle>{t("lifecycle.deactivateTitle", { name })}</DialogTitle></DialogHeader>
   <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
    {forbidden ? <EmptyState title={t("lifecycle.noPublish")} /> : !impact ? query.isPending ? <div role="status" className="flex gap-2"><Spinner />{t("lifecycle.loading")}</div> : <EmptyState title={t("common:states.loadFailed")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} /> : <>
-    <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatStops")}</h2>
-     <Banner tone="info"><span><strong>{t("lifecycle.chatStops")}</strong></span></Banner>
-     <Banner tone="info"><span><strong>{t("lifecycle.assistantStops")}</strong><span className="block">{t("lifecycle.assistantStopsHint")}</span></span></Banner>
+    {inWhatsApp || impact.affectedSuggestions.length ? <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatStops")}</h2>
+     {inWhatsApp ? <Banner tone="info"><span><strong>{t("lifecycle.chatStops")}</strong></span></Banner> : null}
+     {inWhatsApp ? <Banner tone="info"><span><strong>{t("lifecycle.assistantStops")}</strong><span className="block">{t("lifecycle.assistantStopsHint")}</span></span></Banner> : null}
      {impact.affectedSuggestions.length ? <Banner tone="info"><span><strong>{t("lifecycle.suggestionsStop", { count: impact.affectedSuggestions.length })}</strong><span className="block">{impact.affectedSuggestions.map(form => administrativeName(form.name, scope.culture)).join(", ")}</span></span></Banner> : null}
-    </section>
+    </section> : null}
     {impact.lifecycle.lastOpenSessionExpiresAtUtc || impact.lifecycle.deprecationState ? <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.openSends")}</h2>{impact.lifecycle.lastOpenSessionExpiresAtUtc ? <Banner tone="info"><span>{t("lifecycle.lastOpenSend", {date:formatDateTimeInZone(impact.lifecycle.lastOpenSessionExpiresAtUtc,scope.culture,timeZoneId)})}</span></Banner> : null}{impact.lifecycle.deprecationState ? <Banner tone="warning">{t(impact.lifecycle.lastOpenSessionExpiresAtUtc ? "lifecycle.metaIrreversible" : "lifecycle.metaIrreversibleNow")}</Banner> : null}</section> : null}
     <section className="space-y-2"><h2 className="text-sm font-semibold">{t("lifecycle.whatRemains")}</h2><Banner tone="info"><span>{impact.lifecycle.responseCount === null ? t("lifecycle.keepsResponsesUnknown") : t("lifecycle.keepsResponses", { count: impact.lifecycle.responseCount })}</span></Banner><Banner tone="info"><span>{t("lifecycle.keepsWorkflow")}{impact.lifecycle.pendingApprovalCount ? <span className="block">{t("lifecycle.keepsApprovals", { count: impact.lifecycle.pendingApprovalCount })}</span> : null}</span></Banner></section>
     {needsRead ? <Button variant="outline" disabled={busy || query.isFetching} pending={query.isFetching} onClick={() => void reread()}>{t(query.isFetching ? "retrying" : "common:actions.retry")}</Button> : null}

@@ -483,7 +483,7 @@ it.each([null,1])("shows Failed independently of previous active version %s",asy
  expect(screen.queryByText(/^No se pudo publicar · versión/)).not.toBeInTheDocument();
  // The version that stays active goes in its own column, not in a grey line under the state (UD2).
  const table=screen.getByRole("table"),row=within(table).getByRole("link",{name:"Visita"}).closest("tr")!;
- expect(cellUnder(table,row,"En WhatsApp")).toHaveTextContent(/^No se pudo publicar$/);
+ expect(cellUnder(table,row,"Estado")).toHaveTextContent(/^No se pudo publicar$/);
  expect(cellUnder(table,row,"Versión activa")).toHaveTextContent(activeVersionNumber?/^1$/:/^—$/);
  expect(screen.queryByText(/sigue activa/)).not.toBeInTheDocument();
 });
@@ -495,7 +495,7 @@ it("puts the last change and who made it in two columns, and the active version 
   const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
   expect(cellUnder(table, row, "Último cambio")).toHaveTextContent(new RegExp("^" + formatDateInZone("2026-10-10T12:00:00Z", "es", "America/Argentina/Buenos_Aires") + "$"));
   expect(cellUnder(table, row, "Cambió")).toHaveTextContent(/^Ana Pérez$/);
-  expect(cellUnder(table, row, "En WhatsApp")).not.toHaveTextContent(/versión/);
+  expect(cellUnder(table, row, "Estado")).not.toHaveTextContent(/versión/);
   expect(within(table).getByRole("columnheader", { name: "Versión activa" })).toHaveClass("text-right");
   expect(within(table).queryByRole("columnheader", { name: "Deprecación" })).not.toBeInTheDocument();
 });
@@ -628,7 +628,7 @@ it("shows Published and, in its own column, its version from an actual backend l
   renderRouteWithProviders("/formularios");
   const table = await screen.findByRole("table");
   const row = (await within(table).findByRole("link", { name: "Contract fixture published" })).closest("tr")!;
-  expect(cellUnder(table, row, "En WhatsApp")).toHaveTextContent(/^Publicado$/);
+  expect(cellUnder(table, row, "Estado")).toHaveTextContent(/^Publicado$/);
   expect(cellUnder(table, row, "Versión activa")).toHaveTextContent(/^1$/);
   expect(cellUnder(table, row, "Cambió")).toHaveTextContent(/^—$/);
 });

@@ -36,18 +36,21 @@ const fitsMaximum = ({ maximum, groups, largestGroup }: RecipientMaximum, limit:
 // offers Retry, disabled during the wait of a 429. Choosing first by a field (LD1-A), it counts by value: «Todos ven las mismas
 // 125, en 3 valores de «Rubro». El más grande tiene 75: entra en el desplegable (200).» With one value, its list is the whole
 // offer, which the plain line already tells.
-function RecipientMaximumState({ maximum, type, byPerson, groupName }: { maximum: ReturnType<typeof useRecipientMaximum>; type: "choice" | "multiChoice"; byPerson: boolean; groupName: string | null }) {
+function RecipientMaximumState({ maximum, type, byPerson, groupName, inApp = false }: { maximum: ReturnType<typeof useRecipientMaximum>; type: "choice" | "multiChoice"; byPerson: boolean; groupName: string | null; inApp?: boolean }) {
   const { t } = useTranslation("forms");
   if (maximum.failed) return <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.maximum.failed")}</p><DisabledReason reason={maximum.canRetry ? null : t("wait", { count: maximum.waitSeconds })}><Button type="button" variant="link" disabled={!maximum.canRetry} onClick={maximum.retry}>{t("common:actions.retry")}</Button></DisabledReason></div>;
   if (maximum.busy) return <p role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative/><span>{t("catalogQuestion.maximum.calculating")}</span></p>;
   if (!maximum.result) return null;
-  const { maximum: count, maximumLabel: group, groups, largestGroup } = maximum.result, limit = maximumLimit(type), ok = count > 0 && fitsMaximum(maximum.result, limit);
+  // SA2-A: completed only in the app, a list of one choice has no limit; the 200 of the dropdown is WhatsApp's.
+  const unlimited = inApp && type === "choice";
+  const { maximum: count, maximumLabel: group, groups, largestGroup } = maximum.result, limit = maximumLimit(type), ok = count > 0 && (unlimited || fitsMaximum(maximum.result, limit));
   const fitOf = (size: number) => t("catalogQuestion.maximum." + (size <= limit ? "fits" : "exceeds") + (type === "multiChoice" ? "Multiple" : "Choice"), { limit });
   const fit = fitOf(count), byValue = groups !== undefined && largestGroup !== undefined && groups > 1;
   const values = byValue ? t("catalogQuestion.maximum." + (!byPerson ? "sharedByValue" : group ? "perPersonByValue" : "perPersonUngroupedByValue"),
-    { count, group, groups, field: groupName ?? t("catalogQuestion.filter.unavailable") }) + " " + (groups > limit ? t("catalogQuestion.maximum.valuesExceed", { limit })
-    : t("catalogQuestion.maximum.largestValue", { largest: largestGroup, fit: fitOf(largestGroup) })) : null;
-  const text = count === 0 ? t("catalogQuestion.maximum.none") : values ?? (!byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit }));
+    { count, group, groups, field: groupName ?? t("catalogQuestion.filter.unavailable") }) + (unlimited ? "" : " " + (groups > limit ? t("catalogQuestion.maximum.valuesExceed", { limit })
+    : t("catalogQuestion.maximum.largestValue", { largest: largestGroup, fit: fitOf(largestGroup) }))) : null;
+  const text = count === 0 ? t("catalogQuestion.maximum.none") : values ?? (unlimited ? t("catalogQuestion.maximum." + (!byPerson ? "sharedInApp" : group ? "perPersonInApp" : "perPersonUngroupedInApp"), { count, group })
+    : !byPerson ? t("catalogQuestion.maximum.shared", { count, fit }) : group ? t("catalogQuestion.maximum.perPerson", { count, group, fit }) : t("catalogQuestion.maximum.perPersonUngrouped", { count, fit }));
   const Icon = ok ? CheckIcon : AlertTriangleIcon;
   return <p role="status" className={cn("flex items-start gap-2 text-sm", ok ? "text-[var(--color-success-700)]" : "text-[var(--color-warning-700)]")}><Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0"/><span>{text}</span></p>;
 }
@@ -65,10 +68,12 @@ function useZoneOpen(problem: string) {
   return [open, setOpen] as const;
 }
 
-export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, answers, onCatalogChange, onSourceChange, onPreviewChange, children }: {
+export function CatalogQuestionSettings({ scope, source, type = "choice", questionId = "catalog", definitionId = null, contentCulture = scope.culture, readOnly, error, errors = {}, answers, onCatalogChange, onSourceChange, onPreviewChange, children, inApp = false }: {
   scope: CatalogReadScope; source: DraftQuestionSource; type?: "choice" | "multiChoice"; questionId?: string; definitionId?: string | null; contentCulture?: FormCulture; readOnly: boolean; error?: string; errors?: Readonly<Record<string, readonly string[]>>; children?: ReactNode;
   /** The questions of the form a list can depend on (CW7). */
   answers?: AnswerQuestions;
+  /** SA2-A: completed only in the app, a list of one choice has no WhatsApp limit. */
+  inApp?: boolean;
   onCatalogChange: (catalogId: string) => void; onSourceChange?: (source: DraftQuestionSource) => void; onPreviewChange?: (questionId: string, preview: CatalogQuestionPreview | null) => void;
 }) {
   const { t } = useTranslation("forms"), { t: content } = useTranslation("forms", { lng: contentCulture });
@@ -135,7 +140,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
         {attributes.isError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.filter.dataFailed")}</p> : null}
         <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : dependsOnAnswer ? t("catalogQuestion.preview.dependsOnAnswer") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Autocomplete value={search ?? preview.person?.name ?? ""} options={(samples.data?.items ?? []).map(person => ({ id: person.id, label: person.name }))} disabled={!preview.available || !preview.complete} status={sampleStatus} aria-label={t("catalogQuestion.preview.asRecipient")} onValueChange={text => { setSearch(text); if (!text) { onPreviewChange?.(questionId, null); preview.select(null); } }} onBlur={() => setSearch(null)} onSelect={id => { const person = samples.data?.items.find(person => person.id === id); if (person) { onPreviewChange?.(questionId, null); preview.select(person); setSearch(null); } }}/></DisabledReason></FormField>
         {preview.busy ? <div role="status" className="flex items-center gap-2"><Spinner/><p className="text-sm">{t("catalogQuestion.preview.loading")}</p></div> : samplesRetrying ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("searching")}</p></div> : preview.denied || samples.denied ? <p role="alert" className="text-sm">{t("catalogQuestion.preview.denied")}</p> : preview.error || samples.isError ? <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.preview.failed")}</p>{offerRetry ? <DisabledReason reason={retryDisabled ? t("wait", { count: retryWait }) : null}><Button type="button" variant="link" disabled={retryDisabled} onClick={() => { if (samples.isError) { setSamplesRetrying(true); void samples.refetch().finally(() => setSamplesRetrying(false)); } else preview.retry(); }}>{t("common:actions.retry")}</Button></DisabledReason> : null}</div> : preview.result ? <div role="status" className="space-y-1"><p className="text-sm font-medium">{t(preview.result.state === "Ready" ? "catalogQuestion.preview.count" : preview.result.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable", { count: preview.result.optionCount })}</p>{preview.result.recipient.values.length ? <DataList items={preview.result.recipient.values.map(value => ({ key: value.attributeId, label: value.name, value: value.text || "—" }))}/> : null}{preview.result.exceedsLimit ? <p className="text-sm text-[var(--color-warning-700)]">{t("catalogQuestion.preview.exceeds", { limit: preview.result.limit })}</p> : null}</div> : null}
-        <RecipientMaximumState maximum={maximum} type={type} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}
+        <RecipientMaximumState maximum={maximum} type={type} inApp={inApp} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}
           groupName={groupField ? administrativeName(groupField.name, scope.culture) : null}/></div>
       </CollapsibleSection>
       <CollapsibleSection title={presentationTitle} open={presentationOpen} onOpenChange={setPresentationOpen} expandLabel={t("catalogQuestion.zones.expand", { name: presentationTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: presentationTitle })} summary={presentationSummary}>

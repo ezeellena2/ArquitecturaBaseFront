@@ -110,6 +110,27 @@ describe("SegmentedControl", () => {
     expect(screen.getByRole("button", { name: "Sí" })).toHaveClass("max-sm:min-w-11");
   });
 
+  it("lets an option that does not fit go to the next line on the phone when it wraps", () => {
+    render(
+      <SegmentedControl
+        wrap
+        aria-label="Dónde se completa"
+        options={[
+          { key: "channels", label: "En la app y por WhatsApp", pressed: false, onSelect: vi.fn() },
+          { key: "app", label: "Sólo en la app", pressed: true, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+
+    // SA1-A (2026-11-09): en el celular las opciones van separadas y la que no entra baja de renglón; desde 640 px vuelven a
+    // ir unidas, como cualquier segmentado.
+    const group = screen.getByRole("group", { name: "Dónde se completa" });
+    expect(group).toHaveClass("flex-wrap", "gap-1.5", "sm:inline-flex", "sm:divide-x", "sm:border");
+    expect(group).not.toHaveClass("max-sm:h-11");
+    expect(screen.getByRole("button", { name: "En la app y por WhatsApp" })).toHaveClass("max-sm:h-11", "max-sm:border", "max-sm:bg-[var(--color-surface)]");
+    expect(screen.getByRole("button", { name: "Sólo en la app" })).toHaveClass("bg-[var(--color-brand-600)]", "max-sm:border-[var(--color-brand-600)]");
+  });
+
   it("turns every option off while its owner works", async () => {
     const onFile = vi.fn();
     render(
