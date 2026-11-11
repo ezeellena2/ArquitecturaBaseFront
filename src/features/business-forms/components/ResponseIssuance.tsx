@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { formatDateOnly } from "@/shared/lib/dateTime";
+import { calendarDateInZone, formatDateInZone, formatDateOnly, formatTimeInZone } from "@/shared/lib/dateTime";
 import { formatExactDecimal } from "@/shared/lib/decimal";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -29,11 +29,12 @@ export function ResponseIssuance({ state, formId, onChanged }: { state: Response
   const { data, current, detail, workflow, loadingTarget } = state;
   if (!data) return null;
   return <IssuanceZone key={detail.scope.owner + ":" + data.id} record={data} flow={current} owner={detail.scope.owner} formId={formId} disabled={loadingTarget}
+    timeZoneId={detail.scope.user?.timeZoneId}
     readFlow={() => { void workflow.query.refetch(); }} readDetail={() => { if (!detail.query.isPlaceholderData) void detail.query.refetch(); }} onChanged={onChanged}/>;
 }
 
-function IssuanceZone({ record, flow, owner, formId, disabled, readFlow, readDetail, onChanged }: {
-  record: ResponseDetail; flow: ResponseWorkflow | undefined; owner: string; formId: string; disabled: boolean;
+function IssuanceZone({ record, flow, owner, formId, disabled, timeZoneId, readFlow, readDetail, onChanged }: {
+  record: ResponseDetail; flow: ResponseWorkflow | undefined; owner: string; formId: string; disabled: boolean; timeZoneId?: string;
   readFlow: () => void; readDetail: () => void; onChanged?: () => void;
 }) {
   const { t, i18n } = useTranslation("forms");
@@ -69,7 +70,7 @@ function IssuanceZone({ record, flow, owner, formId, disabled, readFlow, readDet
     </> : band?.stage === "awaiting" ? <p className="text-sm text-[var(--color-content-muted)]">{t("issuance.awaitingOthers")}</p> : null}
     {/* What the issuance left stays in sight while it is reversed (NC1-A): the credit note joins it once issued. */}
     <ResponseResults results={record.results}/>
-    {band ? <BandNotice band={band.stage} action={band.action} reversal={band.reversal} issued={issuance.issued}/> : null}
+    {band ? <BandNotice band={band.stage} action={band.action} reversal={band.reversal} issued={issuance.issued} timeZoneId={timeZoneId}/> : null}
     {open ? <IssuanceReviewDialog number={record.number} action={open} working={working === "proceed" || working === "stop" ? working : null}
       onClose={() => setReviewing(null)} onDecide={async proceed => { if (await actions.review(open.id, open.revision, proceed)) setReviewing(null); }}/> : null}
     {confirmation ? <ConfirmDialog open={skipping} onOpenChange={value => { if (!value && working !== "skip") setSkipping(false); }} destructive
@@ -82,10 +83,21 @@ function IssuanceZone({ record, flow, owner, formId, disabled, readFlow, readDet
 // A reason the server knows reads translated in `reason`; one only the issuer knows (its own code) comes as the code itself.
 const reasonText = (action: ResponseAction) => action.reason && action.reason !== action.reasonCode ? action.reason : action.reasonCode;
 
-function BandNotice({ band, action, reversal, issued }: { band: IssuanceStage; action: ResponseAction; reversal: boolean; issued: boolean }) {
+function BandNotice({ band, action, reversal, issued, timeZoneId }: { band: IssuanceStage; action: ResponseAction; reversal: boolean; issued: boolean; timeZoneId?: string }) {
   const { t, i18n } = useTranslation("forms");
   const titled = (title: string, detail: ReactNode) => <><span className="font-semibold">{title}</span>{detail ? <>{" · "}{detail}</> : null}</>;
-  if (band === "issuing")
+  // «En cola»: the issuer did not answer; it says when it tries again (the time today, or the date and time) and how many times it
+  // tried. The title is the reason the server sends («ARCA no responde»), which names the issuer; without it, a generic one.
+  if (band === "queued" && action.nextAttemptAtUtc) {
+    const next = action.nextAttemptAtUtc;
+    const time = formatTimeInZone(next, i18n.language, timeZoneId);
+    const today = calendarDateInZone(next, timeZoneId) === calendarDateInZone(new Date().toISOString(), timeZoneId);
+    const when = today ? t("issuance.queuedAt", { time }) : t("issuance.queuedOn", { date: formatDateInZone(next, i18n.language, timeZoneId), time });
+    const tried = action.attempts ? " " + t("issuance.queuedTried", { count: action.attempts }) : "";
+    const title = action.reason && action.reason !== action.reasonCode ? action.reason : t("issuance.queuedTitle");
+    return <Banner tone="warning">{titled(title, when + tried)}</Banner>;
+  }
+  if (band === "issuing" || band === "queued")
     return <p role="status" className="flex items-center gap-2 text-sm"><Spinner decorative/>{t(!reversal ? "issuance.issuing" : issued ? "issuance.voidingCreditNote" : "issuance.voidingCancel")}</p>;
   if (band === "failed") {
     if (!reversal && action.reasonCode === notIssuedCode) return <p className="text-sm text-[var(--color-content-muted)]">{reasonText(action)}</p>;

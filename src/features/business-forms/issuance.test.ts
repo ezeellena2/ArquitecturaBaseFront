@@ -22,6 +22,9 @@ describe("the issuance of a response", () => {
   it("reads each state of the issuance as a stage of the zone", () => {
     expect(responseIssuance(flow([action(2, { state: "Waiting" })])).band?.stage).toBe("issuing");
     expect(responseIssuance(flow([action(2, { state: "Running" })])).band?.stage).toBe("issuing");
+    // «En cola»: in flight while the issuer did not answer, with when it tries again; still live, so it is not corrected.
+    const queued = responseIssuance(flow([action(2, { state: "Running", nextAttemptAtUtc: "2026-11-11T13:45:00Z", attempts: 3 })]));
+    expect(queued).toMatchObject({ live: true, band: { stage: "queued" } });
     expect(responseIssuance(flow([action(2, { state: "Completed" })])).band?.stage).toBe("issued");
     expect(responseIssuance(flow([action(2, { state: "Failed", reasonCode: "wsfe.10015" })])).band?.stage).toBe("failed");
     expect(responseIssuance(flow([action(2, { state: "Uncertain", reasonCode: "issuer.numberTaken" })])).band?.stage).toBe("review");

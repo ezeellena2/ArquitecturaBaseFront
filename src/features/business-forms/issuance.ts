@@ -7,9 +7,10 @@ export const notIssuedCode = "Forms.Action.NotIssued";
 
 /**
  * What the zone «Comprobante» says (EM1-A and NC1-A): the run it reads, how it stands and whether it is the reversal that voids
- * it. `issuing` is Waiting or Running; `awaiting`, the confirmation of whoever loaded it; `review`, an issuance a person decides.
+ * it. `issuing` is Waiting or Running; `queued`, the same while the issuer does not answer and it tries again later («En cola»);
+ * `awaiting`, the confirmation of whoever loaded it; `review`, an issuance a person decides.
  */
-export type IssuanceStage = "awaiting" | "issuing" | "issued" | "failed" | "review";
+export type IssuanceStage = "awaiting" | "issuing" | "queued" | "issued" | "failed" | "review";
 export interface IssuanceBand { readonly stage: IssuanceStage; readonly action: ResponseAction; readonly reversal: boolean }
 
 export interface ResponseIssuance {
@@ -34,7 +35,7 @@ const inFlight = (action: ResponseAction) => action.state === "Waiting" || actio
 
 function stageOf(action: ResponseAction): IssuanceStage | null {
   switch (action.state) {
-    case "Waiting": case "Running": return "issuing";
+    case "Waiting": case "Running": return action.nextAttemptAtUtc ? "queued" : "issuing";
     case "Completed": return "issued";
     case "Failed": return "failed";
     case "Uncertain": return action.reasonCode === awaitingConfirmationCode ? "awaiting" : "review";

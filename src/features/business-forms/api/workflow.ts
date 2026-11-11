@@ -14,7 +14,9 @@ const recipient = z.strictObject({ user: author, channelId: z.string().min(1).nu
 const workflow = z.strictObject({
   recordId: guid, recordState: z.enum(["Received", "PendingApproval", "Approved", "Rejected", "Voided"]), ruleRevision: z.number().int().positive().nullable(),
   task: z.strictObject({ id: guid, roleId: guid, roleName: z.string().nullable(), requestedAtUtc: utc, decidedAtUtc: utc.nullable(), decidedBy: author.nullable(), reason: z.string().nullable(), revision: z.number().int().positive(), state: z.enum(["Open", "Approved", "Rejected", "Closed"]) }).nullable(),
-  actions: z.array(z.strictObject({ id: guid, ruleId: guid, kind: z.enum(ruleActionKinds), event: z.enum(actionEvents), order: z.number().int().nonnegative(), revision: z.number().int().nonnegative(), state: z.enum(actionStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canConsult: z.boolean(), canRetry: z.boolean(), canReview: z.boolean().optional(), recipients: z.array(recipient), createdAtUtc: utc, updatedAtUtc: utc, completedAtUtc: utc.nullable() })),
+  actions: z.array(z.strictObject({ id: guid, ruleId: guid, kind: z.enum(ruleActionKinds), event: z.enum(actionEvents), order: z.number().int().nonnegative(), revision: z.number().int().nonnegative(), state: z.enum(actionStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canConsult: z.boolean(), canRetry: z.boolean(), canReview: z.boolean().optional(), recipients: z.array(recipient), createdAtUtc: utc, updatedAtUtc: utc, completedAtUtc: utc.nullable(),
+    // «En cola»: an issuance waiting for its issuer, which did not answer, says when it tries again and how many times it tried.
+    nextAttemptAtUtc: utc.optional(), attempts: z.number().int().positive().optional() })),
   documents: z.array(z.strictObject({ id: guid, runId: guid, culture: z.enum(["es", "en"]), name: z.string(), size: z.number().int().positive(), createdAtUtc: utc })),
   // EM2-A: an issuance from a channel waiting for whoever loaded it to confirm, with its summary; only for that person.
   confirmation: z.strictObject({

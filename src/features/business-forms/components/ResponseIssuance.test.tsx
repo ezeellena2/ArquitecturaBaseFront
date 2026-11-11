@@ -101,6 +101,38 @@ describe("the zone «Comprobante» (EM1-A)", () => {
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     expect(within(await zone()).getByRole("alert")).toHaveTextContent("No se emitió el comprobante · wsfe.10015 No se emitió nada. Corregí la respuesta y el comprobante sale con la corrección.");
   });
+
+  // The text of the rejection is the issuer's, as the server sends it: its code and its message, never the raw code alone.
+  it("says the issuer's text of a rejection, not its raw code", async () => {
+    setup({}, { actions: [action({ state: "Failed", reasonCode: "wsfe.10015", reason: "10015 · El número de documento del receptor no es válido.", completedAtUtc: null })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(within(await zone()).getByRole("alert")).toHaveTextContent(
+      "No se emitió el comprobante · 10015 · El número de documento del receptor no es válido. No se emitió nada. Corregí la respuesta y el comprobante sale con la corrección.");
+    expect(within(await zone()).queryByText(/wsfe\./)).not.toBeInTheDocument();
+  });
+
+  it("says the issuer's text of a credit note that did not go out", async () => {
+    setup({ results: [invoice] }, { actions: [action({}), action({ id: reversalRun, event: "Voided", state: "Failed", reasonCode: "wsfe.10016", reason: "10016 · El número de comprobante no es correlativo.", completedAtUtc: null })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(within(await zone()).getByRole("alert")).toHaveTextContent(/^No se pudo anular · 10016 · El número de comprobante no es correlativo\.$/);
+  });
+
+  // «En cola» (falla 7): while the issuer does not answer, a yellow notice with its reason, when it tries again and how many
+  // times it tried, instead of «Se está emitiendo…».
+  it("says when an issuance the issuer did not answer tries again and how many times it tried", async () => {
+    setup({}, { actions: [action({ state: "Running", completedAtUtc: null, reasonCode: "Arca.Connection.Unavailable", reason: "ARCA no responde",
+      nextAttemptAtUtc: "2026-01-02T13:45:00Z", attempts: 3 })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const notice = within(await zone()).getByRole("status");
+    expect(notice).toHaveTextContent("ARCA no responde · Volvemos a probar el 02/01/2026 a las 10:45. Ya probamos 3 veces.");
+    expect(within(await zone()).queryByText(/Se está emitiendo/)).not.toBeInTheDocument();
+  });
+
+  it("titles «En cola» on its own when the server sends no reason, and leaves out the tries it does not know", async () => {
+    setup({}, { actions: [action({ state: "Waiting", completedAtUtc: null, nextAttemptAtUtc: "2026-01-02T13:45:00Z" })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(within(await zone()).getByRole("status")).toHaveTextContent(/^Esperando para emitir · Volvemos a probar el 02\/01\/2026 a las 10:45\.$/);
+  });
 });
 
 describe("an issuance in review (NC1-A)", () => {
