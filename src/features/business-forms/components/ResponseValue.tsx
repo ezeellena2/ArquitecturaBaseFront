@@ -17,7 +17,6 @@ export function ResponseValue({
   cell,
   actor,
   recordId,
-  number,
   label,
   detail = false,
   viewerFiles,
@@ -29,7 +28,6 @@ export function ResponseValue({
   cell: ResponseCell;
   actor: string;
   recordId: string;
-  number: string;
   label: string;
   detail?: boolean;
   viewerFiles?: readonly PrivateFormFile[];
@@ -69,7 +67,6 @@ export function ResponseValue({
         files={files}
         photo={cell.type === "photo"}
         label={viewerFiles ? t("responses.photos") : label}
-        number={number}
         thumbnailLimit={detail ? files.length : 1}
         compact={!detail}
         viewerFiles={viewerFiles}

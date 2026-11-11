@@ -8,7 +8,7 @@ import { Button } from "./button";
 import { PhotoViewer } from "./PhotoViewer";
 
 function Viewer(props: Partial<ComponentProps<typeof PhotoViewer>>) {
-  return <PhotoViewer title="Foto de la entrega" description="R-1" name="entrega.jpg" size="86 KB" index={0} count={3} loading={false}
+  return <PhotoViewer title="Foto de la entrega" name="entrega.jpg" size="86 KB" index={0} count={3} loading={false}
     thumbnails={null} onIndex={() => undefined} onClose={() => undefined} onDownload={() => undefined} {...props} />;
 }
 
@@ -45,7 +45,7 @@ it("moves with the arrows, closes with Escape and gives the focus back to what o
   renderWithProviders(<Gallery />);
   await userEvent.click(await screen.findByRole("button", { name: "Ver fotos" }));
   const dialog = await screen.findByRole("dialog", { name: "Foto de la entrega" });
-  expect(dialog).toHaveAccessibleDescription("Foto 1 de 3 · R-1");
+  expect(dialog).toHaveAccessibleDescription("Foto 1 de 3");
 
   // The first photo has none before it.
   dialog.focus();
@@ -53,7 +53,7 @@ it("moves with the arrows, closes with Escape and gives the focus back to what o
   expect(moves).toEqual([]);
   await userEvent.keyboard("{ArrowRight}");
   expect(moves).toEqual([1]);
-  expect(dialog).toHaveAccessibleDescription("Foto 2 de 3 · R-1");
+  expect(dialog).toHaveAccessibleDescription("Foto 2 de 3");
   dialog.focus();
   await userEvent.keyboard("{ArrowLeft}");
   expect(moves).toEqual([1, 0]);

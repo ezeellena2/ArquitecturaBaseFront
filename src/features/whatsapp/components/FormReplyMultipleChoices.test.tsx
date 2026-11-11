@@ -20,7 +20,7 @@ it("renders captured multi labels in order through the real private adapter, nev
     ] }] }, true);
   const presentation = toFormReplyPresentation(reply);
   if (!presentation || presentation.state !== "Completed" || !presentation.values) throw new Error("Expected a permitted captured reply.");
-  const view = renderWithProviders(<FormReplyValues rows={presentation.values} actor="reader" recordId={id} number="VIS-000001"/>);
+  const view = renderWithProviders(<FormReplyValues rows={presentation.values} actor="reader" recordId={id}/>);
   // The answer, and inside it the captured detail aligned with its choice (rule LR1).
   const [answer, detail] = screen.getAllByRole("definition");
   expect(answer).toHaveTextContent(/^Ruido, Frío/);

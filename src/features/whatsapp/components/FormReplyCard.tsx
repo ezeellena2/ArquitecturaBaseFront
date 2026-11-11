@@ -34,7 +34,7 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="", tim
   return <div ref={focusFallback} tabIndex={-1} role="group" aria-label={label}>
     <MessageCard icon={<FormIcon className="size-4" />} title={name} description={t("forms.reply.label")}>
       {completed ? <>
-        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} number={reply.recordNumber} onForbidden={loseFilePermission} onFileError={reportFileError} focusFallback={focusFallback} date={receivedDate} preserveViewport={preserveViewport} /> : null}
+        {reply.values !== null && !filePermissionLost ? <FormReplyValues rows={reply.values} actor={actor} recordId={reply.recordId} onForbidden={loseFilePermission} onFileError={reportFileError} focusFallback={focusFallback} date={receivedDate} preserveViewport={preserveViewport} /> : null}
         <p className="flex items-start gap-2 border-t border-[var(--color-border)] bg-[var(--color-success-50)] px-3 py-2 text-sm text-[var(--color-success-700)]"><CheckIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.saved", { number: reply.recordNumber })}</p>
         {/* What arrived stays as it was; the mark says it was later corrected or voided (CW10-A, CW11-A). */}
         {reply.amendment ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-content-muted)]"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t(reply.amendment === "Replaced" ? "forms.reply.corrected" : "forms.reply.voided", { number: reply.recordNumber })}</p> : null}

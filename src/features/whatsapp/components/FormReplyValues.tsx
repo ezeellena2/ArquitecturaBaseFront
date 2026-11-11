@@ -7,8 +7,8 @@ import { formatFormReplyItem, formatFormReplyValue, type FormReplyDisplayRow } f
 
 export type { FormReplyDisplayRow } from "../lib/formReplyValue";
 
-export function FormReplyValues({ rows, preserveViewport, actor="", recordId, number="", onForbidden=()=>undefined, onFileError=()=>undefined, focusFallback, date }: {
-  rows: readonly FormReplyDisplayRow[]; actor?:string; recordId?:string;number?:string;onForbidden?:()=>void;date?:string;onFileError?:(error:unknown)=>void;focusFallback?:RefObject<HTMLElement|null>;
+export function FormReplyValues({ rows, preserveViewport, actor="", recordId, onForbidden=()=>undefined, onFileError=()=>undefined, focusFallback, date }: {
+  rows: readonly FormReplyDisplayRow[]; actor?:string; recordId?:string;onForbidden?:()=>void;date?:string;onFileError?:(error:unknown)=>void;focusFallback?:RefObject<HTMLElement|null>;
   preserveViewport?: (change: () => void) => void;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
@@ -28,7 +28,7 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, nu
     <dl id={id} className="divide-y divide-[var(--color-border)]">
       {shown.map(row => <div key={row.id} className={cn("grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:gap-3",row.answer.type==="photo"||row.answer.type==="document"?"sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]":"sm:grid-cols-2")}>
         <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
-        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} number={number} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.answer.type === "group" && row.answer.value.length
+        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.answer.type === "group" && row.answer.value.length
           // A block of rows: an item per line, its answers in order and without the unanswered ones (RG4-A).
           ? <ol aria-label={row.label}>{row.answer.value.map((item, index) => <li key={index}>{`${index + 1}. ${formatFormReplyItem(item, i18n.resolvedLanguage ?? "es", labels)}`}</li>)}</ol>
           : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}

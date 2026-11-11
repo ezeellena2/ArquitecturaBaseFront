@@ -6,7 +6,7 @@ import { ResponseValue } from "./ResponseValue";
 
 const answered: ResponseCell = { fieldId: "place", type: "location", state: "Answered", value: { latitude: -34.603722, longitude: -58.381592, accuracyMeters: 2400 } };
 const render = (cell: ResponseCell, detail: boolean) => act(async () => {
-  renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="REG-000001" label="Dónde estás" detail={detail}
+  renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" label="Dónde estás" detail={detail}
     detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>);
 });
 

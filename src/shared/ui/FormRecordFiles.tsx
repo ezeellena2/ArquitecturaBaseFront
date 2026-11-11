@@ -76,7 +76,6 @@ function Original({
   files,
   index,
   label,
-  number,
   onIndex,
   onClose,
   onForbidden,
@@ -89,7 +88,6 @@ function Original({
   files: readonly PrivateFormFile[];
   index: number;
   label: string;
-  number: string;
   onIndex: (index: number) => void;
   onClose: () => void;
   onForbidden: () => void;
@@ -112,7 +110,6 @@ function Original({
       date={date}
       focusFallback={focusFallback}
       title={label}
-      description={number}
       name={file.name}
       size={formatFileSize(file.size, i18n.resolvedLanguage ?? "es")}
       index={index}
@@ -224,7 +221,6 @@ export function FormRecordFiles({
   files,
   photo,
   label,
-  number,
   onForbidden,
   onError,
   focusFallback,
@@ -241,7 +237,6 @@ export function FormRecordFiles({
   compact?: boolean;
   viewerFiles?: readonly PrivateFormFile[];
   label: string;
-  number: string;
   onForbidden: () => void;
   onError: (error: unknown) => void;
   focusFallback?: RefObject<HTMLElement | null>;
@@ -311,7 +306,6 @@ export function FormRecordFiles({
           files={viewerFiles}
           index={index}
           label={label}
-          number={number}
           date={date}
           focusFallback={focusFallback}
           onIndex={setIndex}

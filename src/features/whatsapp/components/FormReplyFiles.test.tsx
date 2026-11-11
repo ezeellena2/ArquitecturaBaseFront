@@ -28,7 +28,7 @@ it("downloads only thumbnails until opened and restores focus after arrows and E
  await act(async()=>{focusManager.setFocused(false);focusManager.setFocused(true);});
  expect(paths.filter(p=>p.endsWith("/thumbnail"))).toHaveLength(2);
  fireEvent.keyDown(screen.getByRole("dialog"),{key:"ArrowRight"});
- expect(await screen.findByText("Foto 2 de 2 · VIS-000001")).toBeInTheDocument();
+ expect(await screen.findByText("Foto 2 de 2")).toBeInTheDocument();
  fireEvent.keyDown(screen.getByRole("dialog"),{key:"Escape"});
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  expect(first).toHaveFocus();

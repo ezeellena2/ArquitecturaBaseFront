@@ -201,7 +201,7 @@ export function FormResponsesPage() {
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
-          actor={scope.user!.id} recordId={row.id} number={row.number} label={column.label}
+          actor={scope.user!.id} recordId={row.id} label={column.label}
           viewerFiles={row.cells.filter(cell => cell.type === "photo").flatMap(cell => responseFiles(cell))}
           onForbidden={deny} onError={onFileError} detailLink={recordPath(row.id)} onOpenDetail={() => rememberSheet(row.id)}
         />,

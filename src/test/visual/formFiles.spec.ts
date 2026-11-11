@@ -12,7 +12,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
   await page.screenshot({path:`test-results/form-files-cards-${lang}-${width}.png`,fullPage:true});
   await opener.click();const viewer=page.getByRole("dialog",{name:en?"Site photos":"Fotos de la obra"});await expect(viewer).toBeVisible();
   await expect(viewer.locator("img").first()).toHaveAttribute("src",/^blob:/);
-  await page.keyboard.press("ArrowRight");await expect(viewer.getByText(en?"Photo 2 of 8 · VIS-000032":"Foto 2 de 8 · VIS-000032")).toBeVisible();
+  await page.keyboard.press("ArrowRight");await expect(viewer.getByText(en?"Photo 2 of 8":"Foto 2 de 8",{exact:true})).toBeVisible();
   await expect(viewer.getByRole("button",{name:en?"Download":"Descargar",exact:true})).toBeEnabled();
   const bounds=(await viewer.boundingBox())!;expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(width);
   await page.screenshot({path:`test-results/form-files-viewer-${lang}-${width}.png`,fullPage:true});

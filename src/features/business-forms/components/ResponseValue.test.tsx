@@ -9,7 +9,7 @@ it.each([false, true])("preserves the captured option label and detail without c
   const cell: ResponseCell = { fieldId: "branch", type: "choice", state: "Answered", value: {
     choiceId: "historic-option", valueType: "Decimal", value: "9007199254740993.0123", label: "Sucursal histórica", detail: "Detalle capturado", catalogName: "Catálogo histórico",
   } };
-  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-000001" label="Sucursal" detail={detail} detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
+  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" label="Sucursal" detail={detail} detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
   expect(screen.getByText("Sucursal histórica", { exact: true })).toBeVisible();
   expect(screen.getByText("Detalle capturado", { exact: true })).toBeVisible();
   // The question already names the catalog: neither the sheet nor the detail repeats it (board TL1-A).
@@ -24,7 +24,7 @@ it.each([false, true])("shows every historical multi-choice label without numeri
     { choiceId: "noise", label: "Ruido", detail: "Capturado primero", catalogName: "Fallas anteriores", valueType: "Decimal", value: "9007199254740993.0123" },
     { choiceId: "cold", label: "Frío", detail: "Capturado segundo" },
   ] };
-  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-000001" label="Fallas" detail={detail}
+  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" label="Fallas" detail={detail}
     detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
   if (detail) {
     expect(screen.getByText("Ruido", { exact: true })).toBeVisible();
@@ -44,7 +44,7 @@ it("keeps a code of a multiple choice whole in the sheet, whose labels still wra
     { choiceId: "north", label: "30-71458236-9" }, { choiceId: "south", label: "Repuestos Sur" },
   ] };
   let view!: ReturnType<typeof renderWithProviders>;
-  await act(async () => { view = renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-000001" label="Proveedores"
+  await act(async () => { view = renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" label="Proveedores"
     detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/>); });
   expect(view.container).toHaveTextContent("30-71458236-9, Repuestos Sur");
   expect(Array.from(view.container.querySelectorAll(".whitespace-nowrap"), node => node.textContent)).toEqual(["30-71458236-9,"]);
@@ -53,7 +53,7 @@ it("keeps a code of a multiple choice whole in the sheet, whose labels still wra
 it("says how many documents there are in the sheet, without their formats, which show when they open (UD4)", async () => {
   const file = (n: number, contentType: string) => ({ fileId: "0199a0c0-0000-7000-8000-00000000098" + n, fieldId: "remitos", name: "remito-" + n, contentType, size: 2048, hasThumbnail: false });
   const cell: ResponseCell = { fieldId: "remitos", type: "document", state: "Answered", value: [file(1, "application/pdf"), file(2, "image/jpeg")] };
-  await act(async () => { renderWithProviders(<MemoryRouter><ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-1" label="Remitos"
+  await act(async () => { renderWithProviders(<MemoryRouter><ResponseValue cell={cell} actor="reader" recordId="record" label="Remitos"
     detailLink="/formularios/form/respuestas/record" onForbidden={() => undefined} onError={() => undefined}/></MemoryRouter>); });
   expect(screen.getByRole("link", { name: "2 documentos" })).toHaveAttribute("href", "/formularios/form/respuestas/record");
   expect(screen.queryByText(/PDF|JPG/)).not.toBeInTheDocument();
@@ -61,7 +61,7 @@ it("says how many documents there are in the sheet, without their formats, which
 
 it("shows decimal and date answers with the shared format", async () => {
   const cells: ResponseCell[] = [{ fieldId: "amount", type: "decimal", state: "Answered", value: "1500.5" }, { fieldId: "visit", type: "date", state: "Answered", value: "2027-03-15" }];
-  await act(async () => { renderWithProviders(<>{cells.map(cell => <ResponseValue key={cell.fieldId} cell={cell} actor="reader" recordId="record" number="VIS-1" label={cell.fieldId} detailLink="" onForbidden={() => undefined} onError={() => undefined}/>)}</>); });
+  await act(async () => { renderWithProviders(<>{cells.map(cell => <ResponseValue key={cell.fieldId} cell={cell} actor="reader" recordId="record" label={cell.fieldId} detailLink="" onForbidden={() => undefined} onError={() => undefined}/>)}</>); });
   expect(screen.getByText("1.500,5", { exact: true })).toBeVisible();
   expect(screen.getByText("15/03/2027", { exact: true })).toBeVisible();
 });
@@ -69,6 +69,6 @@ it("shows decimal and date answers with the shared format", async () => {
 it.each(["choice", "multiChoice"] as const)("shows every sealed extra field only in the %s detail", async type => {
   const choice = { choiceId: "historic", label: "Proveedor histórico", fields: [{ fieldId: "tax", label: "CUIT histórico", type: "text" as const, role: "data" as const, value: "30-71234567-8" }, { fieldId: "zone", label: "Zona histórica", type: "catalog" as const, role: "filter" as const, value: "private-option-id", text: "Centro de entonces" }, { fieldId: "days", label: "Plazo", type: "integer" as const, role: "data" as const, value: "900719925474099123" }] };
   const cell: ResponseCell = { fieldId: "supplier", type, state: "Answered", value: type === "choice" ? choice : [choice] };
-  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" number="VIS-1" label="Proveedor" detail detailLink="" onForbidden={() => undefined} onError={() => undefined}/>); });
+  await act(async () => { renderWithProviders(<ResponseValue cell={cell} actor="reader" recordId="record" label="Proveedor" detail detailLink="" onForbidden={() => undefined} onError={() => undefined}/>); });
   expect(screen.getByText("CUIT histórico")).toBeInTheDocument(); expect(screen.getByText("30-71234567-8")).toBeInTheDocument(); expect(screen.getByText("Zona histórica")).toBeInTheDocument(); expect(screen.getByText("Centro de entonces")).toBeInTheDocument(); expect(document.body).not.toHaveTextContent("private-option-id");
 });
