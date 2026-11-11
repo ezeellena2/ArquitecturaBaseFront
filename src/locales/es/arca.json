@@ -185,6 +185,7 @@
     "search": "Volver a buscar",
     "searching": "Buscando…",
     "loadError": "No pudimos traer los puntos de venta.",
+    "settingsLoadError": "No pudimos leer la configuración de Facturación.",
     "notChosen": "Sin elegir",
     "change": "Cambiar",
     "save": "Guardar",

@@ -12,7 +12,7 @@ import { Surface } from "@/shared/ui/Surface";
 import type { ArcaFamilyActiveProps } from "../connection/families";
 import { useArcaAction } from "../connection/useArcaAction";
 import { arcaInvoicingSettingsQueryKey, fetchArcaInvoicingSettings, setArcaVoucherData, type ArcaInvoicingSettings } from "./api";
-import { PointOfSaleSection } from "./PointOfSaleZone";
+import { InvoicingSettingsError, PointOfSaleSection } from "./PointOfSaleZone";
 
 const grossIncomeMaxLength = 30;
 
@@ -20,7 +20,8 @@ interface Draft { grossIncomeNumber: string; activityStartOn: string }
 interface DraftErrors { grossIncomeNumber?: string; activityStartOn?: string }
 
 /// Ingresos brutos e inicio de actividades (AC4): van en el PDF de cada factura y el padrón no los trae. Se guardan sin
-/// llamar a ARCA y no cambian el estado de la conexión. «Cargar» o «Cambiar» abre los dos campos con lo guardado.
+/// llamar a ARCA y no cambian el estado de la conexión, con la revisión que se leyó. «Cargar» o «Cambiar» abre los dos
+/// campos con lo guardado, y sólo se ofrece con lo guardado a la vista.
 export function VoucherDataSection({ canManage, onConflict }: ArcaFamilyActiveProps) {
   const { t, i18n } = useTranslation("arca");
   const queryClient = useQueryClient();
@@ -44,8 +45,8 @@ export function VoucherDataSection({ canManage, onConflict }: ArcaFamilyActivePr
   }
 
   async function save() {
-    if (draft === null) return;
-    const value = { grossIncomeNumber: draft.grossIncomeNumber.trim(), activityStartOn: draft.activityStartOn };
+    if (draft === null || !saved) return;
+    const value = { grossIncomeNumber: draft.grossIncomeNumber.trim(), activityStartOn: draft.activityStartOn, expectedRevision: saved.revision };
     const invalid: DraftErrors = {
       grossIncomeNumber: value.grossIncomeNumber.length === 0 || value.grossIncomeNumber.length > grossIncomeMaxLength ? t("voucher.grossIncomeInvalid") : undefined,
       activityStartOn: formatDateOnly(value.activityStartOn, i18n.language) === null ? t("voucher.activityStartInvalid") : undefined,
@@ -55,10 +56,13 @@ export function VoucherDataSection({ canManage, onConflict }: ArcaFamilyActivePr
       document.getElementById(invalid.grossIncomeNumber ? "arca-gross-income" : "arca-activity-start")?.focus();
       return;
     }
+    // Lo que rechaza el servidor va debajo de su campo, con su texto.
     const result = await action.run("voucher", () => setArcaVoucherData(value), error => {
-      const field = error instanceof ApiError ? fieldOf(error.code) : undefined;
-      if (!field || !(error instanceof ApiError)) return false;
-      setErrors({ [field]: error.detail ?? t(field === "grossIncomeNumber" ? "voucher.grossIncomeInvalid" : "voucher.activityStartInvalid") });
+      const fields: DraftErrors = error instanceof ApiError
+        ? { grossIncomeNumber: error.errors?.grossIncomeNumber?.[0], activityStartOn: error.errors?.activityStartOn?.[0] } : {};
+      if (!fields.grossIncomeNumber && !fields.activityStartOn) return false;
+      setErrors(fields);
+      document.getElementById(fields.grossIncomeNumber ? "arca-gross-income" : "arca-activity-start")?.focus();
       return true;
     });
     if (!result) return;
@@ -67,7 +71,7 @@ export function VoucherDataSection({ canManage, onConflict }: ArcaFamilyActivePr
   }
 
   const empty = t("voucher.notLoaded");
-  const actions = !canManage || settings.isPending ? undefined : draft !== null ? <>
+  const actions = !canManage || !saved ? undefined : draft !== null ? <>
     <Button variant="outline" disabled={action.pending !== null} onClick={() => setDraft(null)}>{t("invoicing.cancel")}</Button>
     <Button pending={action.pending === "voucher"} disabled={action.pending !== null || !changed} onClick={() => void save()}>
       {t(action.pending === "voucher" ? "invoicing.saving" : "invoicing.save")}</Button>
@@ -84,18 +88,13 @@ export function VoucherDataSection({ canManage, onConflict }: ArcaFamilyActivePr
           onChange={event => update({ activityStartOn: event.target.value })} />
       </FormField>
     </div>
+      : settings.isError && !saved ? <InvoicingSettingsError settings={settings} />
       : settings.isPending ? <Skeleton className="h-16" />
       : <DataList items={[
         { key: "grossIncome", label: t("voucher.grossIncome"), value: grossIncome ?? empty },
         { key: "activityStart", label: t("voucher.activityStart"), value: activityStart === null ? empty : formatDateOnly(activityStart, i18n.language) ?? activityStart },
       ]} />}
   </Surface>;
-}
-
-function fieldOf(code: string | undefined): keyof DraftErrors | undefined {
-  if (code === "Arca.Invoicing.GrossIncomeInvalid") return "grossIncomeNumber";
-  if (code === "Arca.Invoicing.ActivityStartInvalid") return "activityStartOn";
-  return undefined;
 }
 
 /// Las dos zonas de Facturación con la conexión activa: el punto de venta y, debajo, los datos del comprobante.

@@ -19,7 +19,7 @@ export function useArcaAction(onConflict: () => void) {
       return await action();
     } catch (error) {
       if (handle?.(error)) return undefined;
-      const feedback = errorFeedback(error, { writing: true, conflictCodes: ["Arca.Connection.RevisionConflict"] });
+      const feedback = errorFeedback(error, { writing: true, conflictCodes: ["Arca.Connection.RevisionConflict", "Arca.Invoicing.SettingsRevisionConflict"] });
       if (feedback.kind === "forbidden") void navigate("/sin-permiso");
       else if (feedback.kind === "conflict") onConflict();
       else if (feedback.kind !== "session" && feedback.kind !== "cancelled") {

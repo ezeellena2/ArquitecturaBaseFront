@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { MemoryRouter } from "react-router";
@@ -7,7 +7,8 @@ import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { ArcaConnection } from "../connection/api";
-import { PointOfSaleZone } from "./PointOfSaleZone";
+import type { ArcaInvoicingSettings } from "./api";
+import { PointOfSaleSection, PointOfSaleZone } from "./PointOfSaleZone";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
 
@@ -17,10 +18,13 @@ const automated = {
   lastTestedAtUtc: "2026-11-11T12:00:00Z", revision: 4,
 } as unknown as ArcaConnection;
 
-let chosen: number[];
+let chosen: unknown[];
+let settings: ArcaInvoicingSettings;
 beforeEach(() => {
   chosen = [];
+  settings = { pointOfSale: null, grossIncomeNumber: null, activityStartOn: null, revision: 3 };
   server.use(
+    http.get("/api/arca/invoicing/settings", () => HttpResponse.json(settings)),
     http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["arca.read", "arca.manage"] })),
     http.get("/api/arca/invoicing/points-of-sale", () => HttpResponse.json([
       { number: 2, emissionType: "RECE", blocked: false }, { number: 5, emissionType: "CAE", blocked: false },
@@ -32,8 +36,10 @@ beforeEach(() => {
       platform: null,
     })),
     http.put("/api/arca/invoicing/point-of-sale", async ({ request }) => {
-      chosen.push((await request.json() as { pointOfSale: number }).pointOfSale);
-      return HttpResponse.json({ pointOfSale: 2, grossIncomeNumber: null, activityStartOn: null });
+      const body = await request.json() as { pointOfSale: number };
+      chosen.push(body);
+      settings = { ...settings, pointOfSale: body.pointOfSale, revision: settings.revision + 1 };
+      return HttpResponse.json(settings);
     }),
   );
 });
@@ -48,9 +54,41 @@ describe("the point of sale zone with the robot", () => {
     expect(await screen.findByRole("radio", { name: /0002/ })).toBeChecked();
     await waitFor(() => expect(complete).not.toBeNull());
     await complete!();
-    expect(chosen).toEqual([2]);
+    expect(chosen).toEqual([{ pointOfSale: 2, expectedRevision: 3 }]);
 
     await userEvent.click(screen.getByRole("radio", { name: /0005/ }));
     expect(screen.getByRole("radio", { name: /0005/ })).toBeChecked();
+  });
+});
+
+describe("the point of sale with the connection active", () => {
+  const active = { ...automated, status: "Active" } as ArcaConnection;
+  const zone = () => screen.getByRole("region", { name: "Facturación · Punto de venta" });
+
+  it("changes the point of sale with the revision it read", async () => {
+    settings = { pointOfSale: 5, grossIncomeNumber: null, activityStartOn: null, revision: 2 };
+    renderWithProviders(<MemoryRouter><PointOfSaleSection connection={active} canManage onConflict={() => {}} /></MemoryRouter>);
+
+    await userEvent.click(await within(await screen.findByRole("region", { name: "Facturación · Punto de venta" })).findByRole("button", { name: "Cambiar" }));
+    await userEvent.click(await screen.findByRole("radio", { name: /0002/ }));
+    await userEvent.click(within(zone()).getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(chosen).toEqual([{ pointOfSale: 2, expectedRevision: 2 }]));
+  });
+
+  it("says when the settings could not be read and offers no change until they are", async () => {
+    let fail = true;
+    server.use(http.get("/api/arca/invoicing/settings", () => fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(settings)));
+    settings = { pointOfSale: 5, grossIncomeNumber: null, activityStartOn: null, revision: 2 };
+    renderWithProviders(<MemoryRouter><PointOfSaleSection connection={active} canManage onConflict={() => {}} /></MemoryRouter>);
+
+    expect(await screen.findByText("No pudimos leer la configuración de Facturación.")).toBeInTheDocument();
+    expect(within(zone()).queryByRole("button", { name: "Cambiar" })).not.toBeInTheDocument();
+    expect(within(zone()).queryByText("Sin elegir")).not.toBeInTheDocument();
+    fail = false;
+    await userEvent.click(within(zone()).getByRole("button", { name: "Reintentar" }));
+
+    expect(await within(zone()).findByText("0005")).toBeInTheDocument();
+    expect(within(zone()).getByRole("button", { name: "Cambiar" })).toBeInTheDocument();
   });
 });

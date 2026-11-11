@@ -65,9 +65,14 @@ cuando se cerró la etapa 1, a pedido del chat que coordina la tanda del 11/11.
   uno debajo del otro, con «Cancelar» y «Guardar»; «Guardar» se habilita cuando cambia algo. Un número vacío o de más de
   30 caracteres y una fecha vacía se marcan en su campo, con el foco en el primero, sin llamar al servidor; si el
   servidor rechaza uno, el error va al mismo campo. Lo demás va al Toaster, como en el resto de la conexión.
+- **Guardar con la revisión leída:** «Guardar» manda la revisión de la configuración de Facturación que se leyó, y el
+  punto de venta también, en el alta y con la conexión activa. Si otro guardó antes, se abre «Revisar», como con la
+  conexión (2026-11-11, revisión de premisas).
+- **Si no se pudo leer:** la zona dice «No pudimos leer la configuración de Facturación.» con «Reintentar», sin «Sin
+  cargar» ni «Cargar» o «Cambiar», para no guardar encima de lo que no se mostró. El punto de venta hace lo mismo.
 - **Sin `arca.manage`:** la lectura, sin botones.
 - **Código:** `VoucherDataSection` e `InvoicingSections` en `features/arca/invoicing`, sobre
-  `PUT /api/arca/invoicing/voucher-data`; `VoucherDataSection.test.tsx` fija los tres casos.
+  `PUT /api/arca/invoicing/voucher-data`; `VoucherDataSection.test.tsx` fija cada caso.
 
 ## Correspondencia con `shared/ui`
 

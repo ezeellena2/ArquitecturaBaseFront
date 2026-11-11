@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
@@ -33,19 +33,32 @@ function PointOfSaleChoice({ enabled, canManage, value, onChange }: { enabled: b
     }))} />;
 }
 
-/// La zona de Facturación en el alta: el punto de venta que completa la familia. «Activar la conexión» lo guarda.
+/// La configuración de Facturación no se pudo leer: sin lo guardado a la vista no se ofrece cargar ni cambiar, sólo volver a
+/// leer.
+export function InvoicingSettingsError({ settings }: { settings: UseQueryResult<unknown> }) {
+  const { t } = useTranslation(["arca", "common"]);
+  return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{t("invoicing.settingsLoadError")}</p>
+    <Button variant="outline" pending={settings.isFetching} disabled={settings.isFetching} onClick={() => void settings.refetch()}>{t("common:actions.retry")}</Button>
+  </div>;
+}
+
+/// La zona de Facturación en el alta: el punto de venta que completa la familia. «Activar la conexión» lo guarda con la
+/// revisión de la configuración que se leyó.
 export function PointOfSaleZone({ step, connection, canManage, open, onReady }: ArcaFamilySetupProps) {
   const { t } = useTranslation("arca");
   // En la delegación automática, el punto de venta que dio de alta el robot llega elegido (RB2-A); se puede cambiar.
   const robot = useArcaRobotRun(connection.mode === "PlatformDelegationAutomated");
+  const settings = useQuery({ queryKey: arcaInvoicingSettingsQueryKey, queryFn: ({ signal }) => fetchArcaInvoicingSettings(signal), enabled: open, retry: false });
   const suggested = Number(robot.data?.company?.outputs[robotPointOfSaleStep]) || null;
   const [selected, setSelected] = useState<number | null>(null);
   const value = selected ?? suggested;
+  const revision = settings.data?.revision;
   useEffect(() => {
-    onReady(value === null ? null : async () => { await chooseArcaPointOfSale(value); });
-  }, [value, onReady]);
+    onReady(value === null || revision === undefined ? null : async () => { await chooseArcaPointOfSale(value, revision); });
+  }, [value, revision, onReady]);
   return <ArcaZone step={step} title={t("invoicing.title")} state={open ? "open" : "off"} help={t("invoicing.help")}>
-    <PointOfSaleChoice enabled={open} canManage={canManage} value={value} onChange={setSelected} />
+    {settings.isError ? <InvoicingSettingsError settings={settings} />
+      : <PointOfSaleChoice enabled={open} canManage={canManage} value={value} onChange={setSelected} />}
   </ArcaZone>;
 }
 
@@ -59,18 +72,21 @@ export function PointOfSaleSection({ canManage, onConflict }: ArcaFamilyActivePr
   const [selected, setSelected] = useState<number | null>(null);
   const current = settings.data?.pointOfSale ?? null;
   async function save() {
-    if (selected === null) return;
-    const result = await action.run("save", () => chooseArcaPointOfSale(selected));
+    if (selected === null || !settings.data) return;
+    const revision = settings.data.revision;
+    const result = await action.run("save", () => chooseArcaPointOfSale(selected, revision));
     if (!result) return;
     setChanging(false);
     await queryClient.invalidateQueries({ queryKey: arcaQueryKey });
   }
-  return <Surface title={t("invoicing.title")} help={t("invoicing.help")} padded actions={canManage ? changing ? <>
+  // Sin lo guardado a la vista (leyendo o con error), no se ofrece cambiar.
+  return <Surface title={t("invoicing.title")} help={t("invoicing.help")} padded actions={canManage && settings.data ? changing ? <>
     <Button variant="outline" disabled={action.pending !== null} onClick={() => setChanging(false)}>{t("invoicing.cancel")}</Button>
     <Button pending={action.pending === "save"} disabled={action.pending !== null || selected === null || selected === current} onClick={() => void save()}>
       {t(action.pending === "save" ? "invoicing.saving" : "invoicing.save")}</Button>
   </> : <Button variant="outline" onClick={() => { setSelected(current); setChanging(true); }}>{t("invoicing.change")}</Button> : undefined}>
     {changing ? <PointOfSaleChoice enabled canManage={canManage} value={selected} onChange={setSelected} />
+      : settings.isError && !settings.data ? <InvoicingSettingsError settings={settings} />
       : settings.isPending ? <Skeleton className="h-8" />
       : <DataList items={[{ key: "number", label: t("invoicing.number"), value: current === null ? t("invoicing.notChosen") : formatPointOfSale(current) }]} />}
   </Surface>;

@@ -185,6 +185,7 @@
     "search": "Search again",
     "searching": "Searching…",
     "loadError": "We couldn't get the points of sale.",
+    "settingsLoadError": "We could not read the invoicing settings.",
     "notChosen": "Not chosen",
     "change": "Change",
     "save": "Save",

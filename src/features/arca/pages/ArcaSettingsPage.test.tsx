@@ -43,7 +43,9 @@ beforeEach(() => {
     http.get("/api/arca/registry/company", () => HttpResponse.json(current.lastTestPassed
       ? { legalName: "Campo SA", vatCondition: "RegisteredTaxpayer", fiscalAddress: "Ruta 9 km 400, Marcos Juárez, CORDOBA" }
       : { legalName: null, vatCondition: null, fiscalAddress: null })),
-    http.get("/api/arca/invoicing/settings", () => HttpResponse.json({ pointOfSale: current.status === "Active" ? 5 : null })),
+    http.get("/api/arca/invoicing/settings", () => HttpResponse.json(current.status === "Active"
+      ? { pointOfSale: 5, grossIncomeNumber: null, activityStartOn: null, revision: 1 }
+      : { pointOfSale: null, grossIncomeNumber: null, activityStartOn: null, revision: 0 })),
     http.post("/api/arca/connection/certificate-requests", async ({ request }) => {
       const body = await request.json() as StartArcaRequest;
       starts.push(body);
@@ -191,7 +193,7 @@ describe("ARCA settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Activar la conexión" }));
 
     expect(await screen.findByText("Activa")).toBeInTheDocument();
-    expect(chosen).toEqual([{ pointOfSale: 5 }]);
+    expect(chosen).toEqual([{ pointOfSale: 5, expectedRevision: 0 }]);
   });
 
   it("says the activation waits for a test while the connection was never tested", async () => {
