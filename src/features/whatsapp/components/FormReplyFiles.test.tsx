@@ -75,7 +75,8 @@ it("shows the received date in the photo footer using the account time zone",asy
  server.use(http.get("/api/forms/records/:record/files/:file/:kind",()=>new HttpResponse(new Uint8Array([1]),{headers:{"content-type":"image/png"}})));
  renderWithProviders(<FormReplyCard actor="actor" timeZone="America/Buenos_Aires" reply={{...reply,receivedAtUtc:"2026-10-15T12:00:00Z"}}/>);
  await userEvent.click(await screen.findByRole("button",{name:"Ver private.png"}));
- expect(await screen.findByText("15/10/2026, 9:00")).toBeInTheDocument();
+ // One grey line under the name, with the size (lista de chequeo, 2026-11-11).
+ expect(await screen.findByText("1 KB · 15/10/2026, 9:00")).toBeInTheDocument();
 });
 it("names the rejected question and counts received files without showing their values",()=>{
  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.InvalidType",rejectedQuestion:"Comprobante"}}/>);

@@ -22,6 +22,8 @@ export function PhotoViewer({title,description,name,size,index,count,blob,loadin
    <div className="absolute inset-y-0 right-1 flex items-center"><IconButton variant="outline" label={t("files.next")} disabled={index===count-1} onClick={()=>onIndex(index+1)}><ChevronRightIcon className="size-5"/></IconButton></div>
   </div>
   <div className="flex justify-start gap-2 overflow-x-auto sm:justify-center border-b p-3">{thumbnails}</div>
-  <DialogFooter className="flex-col items-center gap-3 p-4 sm:flex-row"><div className="min-w-0 flex-1 text-sm"><p className="break-words">{name}</p><p className="text-xs text-[var(--color-content-muted)]">{size}</p>{date?<p className="text-xs text-[var(--color-content-muted)]">{date}</p>:null}</div><Button type="button" variant="outline" disabled={downloading||!blob} onClick={onDownload}>{t("files.download")}</Button></DialogFooter>
+  {/* The file reads as its name and one grey line, «86 KB · 09/11/2026, 14:00» (lista de chequeo, 2026-11-11). The consumer
+      writes the date with the common formatter: this piece knows no feature. */}
+  <DialogFooter className="flex-col items-center gap-3 p-4 sm:flex-row"><div className="min-w-0 flex-1 text-sm"><p className="break-words">{name}</p><p className="text-xs text-[var(--color-content-muted)]">{[size,date].filter(Boolean).join(" · ")}</p></div><Button type="button" variant="outline" disabled={downloading||!blob} onClick={onDownload}>{t("files.download")}</Button></DialogFooter>
  </DialogContent></Dialog>;
 }
