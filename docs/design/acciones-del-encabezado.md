@@ -42,7 +42,7 @@ Se leyeron los encabezados con acciones de las 22 pantallas que tienen. Cambian 
 | Encabezado | Hoy | Con AC1-A |
 | --- | --- | --- |
 | Vista rápida de una respuesta (`FormResponseDetailPage`) | «Corregir» con texto; ⋮ con «Anular» | Pantalla completa, conversación y descargar como íconos; ⋮ con «Corregir» y «Anular»; ↑ ↓ ×. En el renglón del título. |
-| Respuesta en pantalla completa (`FormResponseFullPage`) | «Corregir», «1 de 2», ↑ ↓, «Abrir conversación», «Descargar ▾» | «Abrir conversación», «Descargar ▾», ⋮ con «Corregir» y «Anular», «1 de 2», ↑ ↓. «Aprobar» y «Rechazar» siguen a la vista: son la tarea mientras espera. |
+| Respuesta en pantalla completa (`FormResponseFullPage`) | «Corregir», «1 de 2», ↑ ↓, «Abrir conversación», «Descargar ▾» | «Abrir conversación», «Descargar ▾», ⋮ con «Corregir» y «Anular», «1 de 2», ↑ ↓. «Aprobar» y «Rechazar» siguen a la vista, primeros en el renglón: son la tarea mientras espera (lo eligió el usuario el 2026-11-11; en el celular van fijos al pie). |
 | Editor de un catálogo y de uno con filtros (`CatalogEditorPage`, `CatalogFiltersEditorPage`) | «Dar de baja» o «Reactivar» a la vista | ⋮ con «Dar de baja» o «Reactivar», como el editor de formularios. La propuesta del asistente sigue a la vista. |
 
 Ya cumplen: el editor de formularios, «Opciones» de un catálogo, la planilla, los listados, los ajustes y editores con

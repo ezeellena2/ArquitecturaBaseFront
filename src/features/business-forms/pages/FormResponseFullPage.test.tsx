@@ -141,6 +141,9 @@ it("continues to the pending successor after deciding on a compacted one-row pag
   const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(await within(quick).findByRole("link", { name: "Abrir en pantalla completa" }));
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
+  // AC1-A: deciding is the task while it waits, so «Rechazar» and «Aprobar» go first in the row, before ↑ ↓.
+  const approve = await screen.findByRole("button", { name: "Aprobar" });
+  expect(approve.compareDocumentPosition(screen.getByRole("button", { name: "Anterior" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   await approveAndConfirm();
   await waitFor(() => expect(reads.decisions).toBe(1));
   const next = screen.getByRole("button", { name: "Siguiente" });

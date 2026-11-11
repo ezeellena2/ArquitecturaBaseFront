@@ -95,6 +95,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     : issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge>
     : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}</>} actions={<>
+    {/* AC1-A: deciding is the task while it waits, so «Rechazar» and «Aprobar» go first; on the phone they go fixed at the foot. */}
+    <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {/* «PDF fiscal» next to «Descargar ▾» (EM1-A, AC2), which keeps the other copies and the loaded files. */}
     <ResponseFiscalPdf documents={fiscal} downloads={downloads}/>
@@ -109,7 +111,6 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     <IconButton label={t("responses.previous")} disabled={!navigation.previous || loadingTarget} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></IconButton>
     <IconButton label={t("responses.next")} disabled={!navigation.next || loadingTarget} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></IconButton>
     </span>
-    <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
       {/* A replaced version is read as it was; the notice leads to the correction that stands for it (CW10-A). */}
