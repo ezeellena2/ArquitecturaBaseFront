@@ -11,9 +11,9 @@ export interface AssistantProposalCardProps {
   /** The request of the turn that brought it: creating names the turn and the proposal, nothing else. */
   readonly requestId: string;
   readonly proposal: AssistantProposal;
-  /** The proposal of the same capability this one replaced in the conversation, to mark what changed. */
+  /** The proposal of the same replacement group this one replaced in the conversation, to mark what changed. */
   readonly previous: AssistantProposal | null;
-  /** A later proposal of the same capability replaced this one: it folds to one line and can no longer be created. */
+  /** A later proposal of the same replacement group replaced this one: it folds to one line and can no longer be created. */
   readonly replaced: boolean;
 }
 /** A request begun for empty Home: what the suggestion says and what it leaves in the composer, without sending it. */
@@ -21,10 +21,14 @@ export interface AssistantDraftSuggestion {
   readonly id: string;
   readonly question: string;
   readonly draft: string;
+  /** Choosing it also opens the file picker, as the clip does; Home offers it only when this person can attach files. */
+  readonly attach?: boolean;
 }
 export interface AssistantProposalExtension {
   readonly accepts: (proposal: AssistantProposal) => boolean;
   readonly Card: ComponentType<AssistantProposalCardProps>;
+  /** Proposals with the same group replace each other; without it, each capability is its own group. */
+  readonly replacementGroup?: (proposal: AssistantProposal) => string;
   /** The module's suggestions for empty Home, by the person's permissions, in the menu language. */
   readonly suggestions?: (permissions: readonly string[]) => readonly AssistantDraftSuggestion[];
   /** What the empty composer says when this person can ask the module for something; null keeps Home's own text. */
