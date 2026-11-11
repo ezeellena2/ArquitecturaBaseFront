@@ -184,5 +184,15 @@
     "save": "Save",
     "saving": "Saving…",
     "cancel": "Cancel"
+  },
+  "voucher": {
+    "title": "Invoicing · Voucher details",
+    "help": "They go on the PDF of every invoice. The ARCA registry does not bring them.",
+    "grossIncome": "Gross income",
+    "activityStart": "Activity start",
+    "notLoaded": "Not loaded",
+    "load": "Load",
+    "grossIncomeInvalid": "Enter the gross income number, up to 30 characters.",
+    "activityStartInvalid": "Choose the activity start date."
   }
 }

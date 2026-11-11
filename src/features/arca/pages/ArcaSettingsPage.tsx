@@ -20,7 +20,8 @@ import { SetupZones } from "../connection/SetupZones";
 import { useArcaAction } from "../connection/useArcaAction";
 import { useArcaFormat } from "../connection/useArcaFormat";
 import { pointOfSaleGuideStep } from "../invoicing/guide";
-import { PointOfSaleSection, PointOfSaleZone } from "../invoicing/PointOfSaleZone";
+import { PointOfSaleZone } from "../invoicing/PointOfSaleZone";
+import { InvoicingSections } from "../invoicing/VoucherDataSection";
 import { CompanySection } from "../registry/CompanySection";
 
 /// Las familias que suman una zona propia, por su nombre en el servidor, y los pasos que suman a la guía de la delegación:
@@ -28,7 +29,7 @@ import { CompanySection } from "../registry/CompanySection";
 const familyZones: Record<string, {
   Setup: ComponentType<ArcaFamilySetupProps>; Active: ComponentType<ArcaFamilyActiveProps>; guideSteps?: readonly ArcaFamilyGuideStep[];
 }> = {
-  Invoicing: { Setup: PointOfSaleZone, Active: PointOfSaleSection, guideSteps: [pointOfSaleGuideStep] },
+  Invoicing: { Setup: PointOfSaleZone, Active: InvoicingSections, guideSteps: [pointOfSaleGuideStep] },
 };
 
 /// La conexión con ARCA en una sola pantalla: sin conexión, el alta por zonas (AC1-A) o la conexión activa (AC2-A).

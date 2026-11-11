@@ -19,6 +19,10 @@ for (const language of ["es", "en"] as const) {
       await open(page, language, "arca-active", width);
       await expect(page.getByText("Campo del Sur SA", { exact: true })).toBeVisible();
       await expect(page.getByText("0005", { exact: true })).toBeVisible();
+      // AC4: los datos del comprobante, debajo del punto de venta, con el día sólo con números.
+      const voucher = page.getByRole("region", { name: es ? /Facturación · Datos del comprobante/ : /Invoicing · Voucher details/ });
+      await expect(voucher.getByText("901-123456-7", { exact: true })).toBeVisible();
+      await expect(voucher.getByText(es ? "01/03/2019" : "03/01/2019", { exact: true })).toBeVisible();
       expect(await fitsWidth(page)).toBe(true);
       await expect(page).toHaveScreenshot(`arca-active-${language}-${width}.png`, { fullPage: true });
     });

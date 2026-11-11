@@ -184,5 +184,15 @@
     "save": "Guardar",
     "saving": "Guardando…",
     "cancel": "Cancelar"
+  },
+  "voucher": {
+    "title": "Facturación · Datos del comprobante",
+    "help": "Van en el PDF de cada factura. El padrón de ARCA no los trae.",
+    "grossIncome": "Ingresos brutos",
+    "activityStart": "Inicio de actividades",
+    "notLoaded": "Sin cargar",
+    "load": "Cargar",
+    "grossIncomeInvalid": "Escribí el número de ingresos brutos, de hasta 30 caracteres.",
+    "activityStartInvalid": "Elegí la fecha de inicio de actividades."
   }
 }

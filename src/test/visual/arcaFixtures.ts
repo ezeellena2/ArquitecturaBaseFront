@@ -45,7 +45,9 @@ export function createArcaVisualFixtures(scenario: string) {
       if (path === "/api/arca/registry/company") return json(connection.lastTestPassed
         ? { legalName: "Campo del Sur SA", vatCondition: "RegisteredTaxpayer", fiscalAddress: "Ruta 8 km 612, Pergamino, BUENOS AIRES" }
         : { legalName: null, vatCondition: null, fiscalAddress: null });
-      if (path === "/api/arca/invoicing/settings") return json({ pointOfSale: connection.status === "Active" ? 5 : null });
+      if (path === "/api/arca/invoicing/settings") return json(connection.status === "Active"
+        ? { pointOfSale: 5, grossIncomeNumber: "901-123456-7", activityStartOn: "2019-03-01" }
+        : { pointOfSale: null, grossIncomeNumber: null, activityStartOn: null });
       if (path === "/api/arca/invoicing/points-of-sale") return json([
         { number: 5, emissionType: "CAE - Factura", blocked: false },
         { number: 7, emissionType: "CAE - Factura", blocked: false },
