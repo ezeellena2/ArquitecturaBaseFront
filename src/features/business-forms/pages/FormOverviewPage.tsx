@@ -42,6 +42,8 @@ export function FormOverviewPage() {
   const { scope, query, forbidden } = useFormOverview({ page: pagination.page, pageSize: pagination.pageSize,
     search: pagination.search, state, pendingOnly, ...folderListQuery(folders.selection) }, pagination.ready);
   const folderEmpty = useFolderEmpty(folders, "forms", !!pagination.search || state === "Deactivated" || pendingOnly);
+  // CP4: an empty folder with a search or a filter offers «Limpiar filtros» too, which keeps the folder.
+  const clearFilters = () => update({ search: undefined, state: undefined, pendingOnly: undefined, page: undefined });
   useResponseFeedback(query.error, "forms:overview:" + scope.owner, query.refetch);
   if (!scope.allowed || forbidden) return <ForbiddenPage/>;
   const data = query.data;
@@ -98,7 +100,7 @@ export function FormOverviewPage() {
       <Surface><DataTable columns={columns} rows={data?.forms.items ?? []} rowKey={row => row.id}
         isLoading={query.isPending} refreshing={query.isPlaceholderData || query.isError && query.isFetching} hasData={!!data} error={query.error ? t("loadFailed") : undefined} onRetry={() => void query.refetch()}
         emptyTitle={folderEmpty?.title ?? t(emptyTitle)}
-        emptyAction={folderEmpty?.searchAll ? <Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button> : undefined}/>
+        emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button></div> : undefined}/>
         {data ? <Pagination {...data.forms} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/> : null}
       </Surface>
     </div>

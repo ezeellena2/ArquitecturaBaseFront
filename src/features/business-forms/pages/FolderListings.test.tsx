@@ -100,4 +100,17 @@ describe("Diseñar formularios and Formularios with folders", () => {
     expect(await screen.findByText("No hay formularios en «Norte»")).toBeInTheDocument();
     expect(requests.at(-1)?.get("folderId")).toBe(north);
   });
+
+  // CP4: with a search or a filter, an empty folder offers «Buscar en todas» and «Limpiar filtros», as in the other listings.
+  it("offers «Limpiar filtros» in an empty folder of «Formularios» with a search, keeping the folder", async () => {
+    asUser(["formrecords.create"], false);
+    server.use(http.get("/api/forms/overview", () => HttpResponse.json({ forms: { ...emptyPage }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } })));
+    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+    await act(async () => { router = renderRouteWithProviders(`/formularios/respuestas?pageSize=20&search=urea&carpeta=${north}`).router; });
+    expect(await screen.findByText("No hay coincidencias en «Norte»")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Buscar en todas" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("search")).toBeNull());
+    expect(new URLSearchParams(router.state.location.search).get("carpeta")).toBe(north);
+  });
 });

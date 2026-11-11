@@ -16,7 +16,10 @@ function queryString(query: FormListQuery): string {
   return new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)])).toString();
 }
 export const fetchFormDefinitions = async (query: FormListQuery, signal?: AbortSignal) => readFormPage(await api.get<unknown>(`/api/forms/definitions?${queryString(query)}`, { signal }));
-export const fetchFormFacets = async (query: Pick<FormListQuery, "search" | "folderId" | "withoutFolder">, signal?: AbortSignal) => readFormFacets(await api.get<unknown>(`/api/forms/definitions/facets?${new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)]))}`, { signal }));
+// Only the search and the folder count: the listing's page, order and state do not reach the facets.
+export const fetchFormFacets = async ({ search, folderId, withoutFolder }: Pick<FormListQuery, "search" | "folderId" | "withoutFolder">, signal?: AbortSignal) =>
+  readFormFacets(await api.get<unknown>(`/api/forms/definitions/facets?${new URLSearchParams(Object.entries({ search, folderId, withoutFolder })
+    .filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)]))}`, { signal }));
 export const fetchFormDefinition = async (id: string, signal?: AbortSignal) => readFormDetail(await api.get<unknown>(`/api/forms/definitions/${formId(id)}`, { signal }));
 /** The draft as the server takes it: the titles' local identities never travel, and without titles there is no list (CW15-B). */
 export function draftWire<TQuestion>(draft: FormDraft<TQuestion, { readonly start: number; readonly title: Readonly<Record<string, string>> }>): FormDraft<TQuestion> {
