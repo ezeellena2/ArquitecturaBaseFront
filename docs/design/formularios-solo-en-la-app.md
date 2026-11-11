@@ -88,5 +88,8 @@ El 2026-11-09 el usuario eligió las siete recomendadas («Sí, las recomendadas
 - Una sugerencia hacia un formulario que pasó a la app se ve «Sólo en la app», como una dada de baja: hay que quitarla para
   guardar. Estos tres ajustes salieron de la revisión contra el código del 2026-11-11.
 - Publicar en la app no muestra «Publicación aceptada»: el aviso «Publicamos la versión N.» llega con el estado, que se lee enseguida.
-- La baja y la eliminación de un formulario publicado sólo en la app no hablan del chat, del asistente ni de los Flows.
+- La baja de un formulario cuya versión activa es de la app, aunque una anterior haya sido de WhatsApp, muestra sólo «App · No
+  se carga más» (sin «Chat», «Asistente» ni «Sugerencias») y suma el aviso con la fecha del último envío abierto únicamente si
+  todavía quedan envíos de cuando era de WhatsApp. Lo eligió el usuario el 2026-11-11 («App» y aviso), porque el plan y este
+  diseño se contradecían. La eliminación de uno publicado sólo en la app no habla de los Flows.
 - Evidencia: `src/test/visual/formAppOnly.spec.ts` (el editor, el diálogo, el listado y SA5, en es y en a 1440, 390 y 320 px).
