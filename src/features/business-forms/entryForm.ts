@@ -431,6 +431,22 @@ export function entrySignature(entry: FormEntry, draft: EntryDraft): string {
 }
 
 /**
+ * A short key for a signature (cyrb53, 53 bits in hex): what a query keys on, never the answers themselves, which stay out of the
+ * query cache. Two different signatures collide only by chance, and a collision only reuses a total the server recalculates.
+ */
+export function entrySignatureKey(signature: string): string {
+  let first = 0xdeadbeef, second = 0x41c6ce57;
+  for (let index = 0; index < signature.length; index++) {
+    const code = signature.charCodeAt(index);
+    first = Math.imul(first ^ code, 2654435761);
+    second = Math.imul(second ^ code, 1597334677);
+  }
+  first = Math.imul(first ^ (first >>> 16), 2246822507) ^ Math.imul(second ^ (second >>> 13), 3266489909);
+  second = Math.imul(second ^ (second >>> 16), 2246822507) ^ Math.imul(first ^ (first >>> 13), 3266489909);
+  return (4294967296 * (2097151 & second) + (first >>> 0)).toString(16);
+}
+
+/**
  * The draft a correction starts from (CW10-A): the response as it was, in the active version. A decimal is shown in the
  * menu's format, as the person would type it; the files of the response stay unless they are removed.
  */

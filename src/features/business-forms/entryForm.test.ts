@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, chooseEntryGroup, clearDependentChoices, correctionDraft, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, chooseEntryGroup, clearDependentChoices, correctionDraft, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entrySignatureKey, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -86,6 +86,11 @@ describe("entry form", () => {
     const draft = { values: { [ids.density]: "9" }, choices: {}, files: { [ids.photos]: [photo()] } };
     expect(entrySignature(entry, draft)).toBe(entrySignature(entry, { ...draft, values: { ...draft.values } }));
     expect(entrySignature(entry, draft)).not.toBe(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } }));
+    // The query keys on a short key of the signature, never on the answers (4.6).
+    const key = entrySignatureKey(entrySignature(entry, draft));
+    expect(key).toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { ...draft.values } })));
+    expect(key).not.toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } })));
+    expect(key).toMatch(/^[0-9a-f]{1,14}$/);
   });
 
   // Board AR1-A: what has a single value takes one column; what needs room, the whole row. No more two columns.

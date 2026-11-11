@@ -71,7 +71,9 @@ export function FormEntryPage() {
   const unavailable = editor.conflict === "deactivated" || query.error instanceof ApiError && query.error.code === "Forms.Entry.Unavailable";
   const missingForm = editor.conflict === "missing" || query.error instanceof ApiError && query.error.status === 404;
   const submitReason = editor.missing ? t("catalog.missingDataReason", { datum: editor.missing.catalog?.missingData ?? "" }) : null;
-  const sendLabel = editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…";
+  // While it asks «¿Emitimos la factura?», «Enviar» says what it does (5.6).
+  const sendLabel = editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) })
+    : editor.previewing && !editor.issue ? t("issue.preparing") : entry?.submitLabel ?? "…";
   // Kept, the form stays for the next one as in the panel (AR2-A): the notice says the number, the files start empty and
   // the focus goes back to the first question. Otherwise, «Enviada».
   // EM2-A: on a form that issues, the first «Enviar» opens «¿La emito?»; «Emitir factura» is `confirmed`.
@@ -105,8 +107,8 @@ export function FormEntryPage() {
       {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
       {missingForm ? <EmptyState title={t("forms:responses.unavailableForm")} action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}/>
         : entry && editor.draft ? <><FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="page" disabled={editor.sending || unavailable} reveal={editor.reveal}/>
-          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending}/>
-          <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} onConfirm={() => void submit(true)}
+          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending} failed={editor.totalsFailed} onRetry={editor.retryTotals}/>
+          <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} retryWait={editor.retryWait} onConfirm={() => void submit(true)}
             onRetry={() => void editor.retryIssue()} onClose={editor.closeIssue}/></>
         // Reintentar goes back to the skeleton below while it reads the form again.
         : query.isError && !unavailable ? <Surface padded><EmptyState title={t("page.loadFailed")}

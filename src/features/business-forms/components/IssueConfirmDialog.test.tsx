@@ -53,6 +53,23 @@ describe("«¿La emito?» (EM2-A, IV3)", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Volver a probar" }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
+
+  // 4.7: after a 429, «Volver a probar» goes off with the seconds left as its reason.
+  it("turns «Volver a probar» off while the wait of a 429 lasts, with the seconds as its reason", async () => {
+    renderWithProviders(<IssueConfirmDialog preview={{ document: null, receiver: null, total: null, failureCode: "Arca.Connection.Unavailable", failureMessage: "ARCA no responde." }}
+      sending={false} retrying={false} retryWait={12} onConfirm={vi.fn()} onRetry={vi.fn()} onClose={vi.fn()}/>);
+    const retry = within(await screen.findByRole("dialog")).getByRole("button", { name: "Volver a probar" });
+    expect(retry).toHaveAttribute("aria-disabled", "true");
+    expect(retry).toHaveAccessibleDescription("Esperá 12 segundos para volver a intentar.");
+  });
+
+  // 5.10: the amounts read with tabular figures, in the same grid as the zone «Comprobante».
+  it("writes the amounts with tabular figures", async () => {
+    renderWithProviders(<IssueConfirmDialog preview={invoiceA} sending={false} retrying={false} onConfirm={vi.fn()} onRetry={vi.fn()} onClose={vi.fn()}/>);
+    const dialog = await screen.findByRole("dialog", { name: "¿Emitimos la factura?" });
+    expect(within(dialog).getByText("$ 616.000")).toHaveClass("tabular-nums");
+    expect(within(dialog).getByText("Agro del Sur S.A.")).not.toHaveClass("tabular-nums");
+  });
 });
 
 describe("the itemized total while loading (IV1-A)", () => {
@@ -69,5 +86,14 @@ describe("the itemized total while loading (IV1-A)", () => {
     expect(screen.queryByRole("status", { name: "Calculando el total" })).not.toBeInTheDocument();
     rerender(<IssueTotals totals={null} pending/>);
     expect(screen.getByRole("status", { name: "Calculando el total" })).toBeInTheDocument();
+  });
+
+  // 4.6: a reading that failed says so, with «Volver a probar», instead of going away without a word.
+  it("says the total could not be worked out and tries again", async () => {
+    const onRetry = vi.fn();
+    renderWithProviders(<IssueTotals totals={null} pending={false} failed onRetry={onRetry}/>);
+    expect(screen.getByRole("status")).toHaveTextContent("No pudimos calcular el total. Al enviar se calcula igual.");
+    await userEvent.click(screen.getByRole("button", { name: "Volver a probar" }));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

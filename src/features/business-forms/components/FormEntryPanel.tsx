@@ -72,7 +72,7 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
           {t("send.newVersion", { name: entry.name })}</Banner> : null}
         {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
         {entry && editor.draft ? <><FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="panel" disabled={editor.sending}/>
-          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending}/></>
+          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending} failed={editor.totalsFailed} onRetry={editor.retryTotals}/></>
           : query.isError ? <EmptyState title={t("page.loadFailed")}
             action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/>
           : <div role="status" aria-label={t("page.opening")} className="flex flex-col gap-4">{[0, 1, 2].map(index => <div key={index} className="flex flex-col gap-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-8 w-full"/></div>)}</div>}
@@ -82,9 +82,9 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
       <div className="min-w-0 flex-1"><CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/></div>
       <Button type="button" variant="outline" disabled={editor.sending} onClick={close}>{t("common:actions.cancel")}</Button>
       <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending || editor.previewing} onClick={() => void submit()}>
-        {editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…"}</Button></DisabledReason>
+        {editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : editor.previewing && !editor.issue ? t("issue.preparing") : entry?.submitLabel ?? "…"}</Button></DisabledReason>
     </footer>
-    <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} onConfirm={() => void submit(true)}
+    <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} retryWait={editor.retryWait} onConfirm={() => void submit(true)}
       onRetry={() => void editor.retryIssue()} onClose={editor.closeIssue}/>
     <ConfirmDialog open={closing || guard.isBlocked} onOpenChange={open => { if (!open) { setClosing(false); guard.stay(); } }}
       title={t("panel.closeTitle")} description={t("panel.closeDescription")} cancelLabel={t("leave.stay")} confirmLabel={t("panel.closeConfirm")} destructive

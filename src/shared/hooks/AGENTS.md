@@ -14,6 +14,7 @@ Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas
   el navegador para escucharlo antes de mandarlo; al llegar al tope corta con lo que entró y suelta el micrófono al terminar
   o descartar. `supported` es falso sin `MediaRecorder` o sin un tipo admitido; `denied`, si la persona no da el permiso. No
   sube nada: lo hace el dueño. Se prueba con el doble `FakeMediaRecorder` de `test/mocks/mediaRecorder`.
+- `useSettledValue(valor, demora = 300)` da el valor cuando deja de cambiar por esa demora: una búsqueda o un cálculo se pide en la pausa, nunca en cada tecla; mientras cambia, queda el último.
 - `useCountdown` conserva `initialSeconds` sólo al montar y `seconds`, `isRunning`, `restart` (incluido updater funcional). Calcula contra un deadline monotónico con `performance.now`; el timer sólo recalcula y `visibilitychange` visible recupera el plazo tras suspensión. Limpiá timer/listener al desmontar y verificá StrictMode, reinicio y consumidores de acceso/verificación. Es presentación: el servidor autoriza y define los plazos.
 
 ## Referencias

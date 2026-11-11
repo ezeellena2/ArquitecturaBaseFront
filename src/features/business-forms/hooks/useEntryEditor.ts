@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
+import { useCountdown } from "@/shared/hooks/useCountdown";
+import { useSettledValue } from "@/shared/hooks/useSettledValue";
 import { notify } from "@/shared/ui/notifications";
 import { fetchFormIssuePreview, type FormEntry, type FormEntrySubmitted, type FormIssuePreview } from "../api/entries";
 import {
-  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, entrySignature, entryStartingOption, initialEntryDraft, toEntrySend,
+  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, entrySignature, entrySignatureKey, entryStartingOption, initialEntryDraft, toEntrySend,
   validateEntry, type EntryDraft, type EntryProblem,
 } from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
@@ -17,11 +19,6 @@ export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
 const previewSend = (entry: FormEntry, draft: EntryDraft) => toEntrySend(entry, draft, crypto.randomUUID());
 /** IV1-A: the totals are asked again a moment after the loaded answers stop changing, never on each keystroke. */
 const totalsDelay = 1200;
-function useSettled<T>(value: T, delay: number): T {
-  const [settled, setSettled] = useState(value);
-  useEffect(() => { const timer = window.setTimeout(() => setSettled(value), delay); return () => window.clearTimeout(timer); }, [value, delay]);
-  return settled;
-}
 
 /** How a correction sends (CW10-A), with its own progress; without it the editor sends a new response. */
 export interface EntrySubmission { submit: (entry: FormEntry, draft: EntryDraft) => Promise<FormEntrySubmitted>; progress: number | null; sending: boolean }
@@ -44,6 +41,8 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   // EM2-A: «Enviar» on a form that issues opens «¿La emito?» with what would be issued; «Emitir» sends it as always.
   const [issue, setIssue] = useState<{ preview: FormIssuePreview; signature: string } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  // The wait of a 429 on «Volver a probar»: its button goes off with the seconds left as its reason.
+  const cooldown = useCountdown(0);
   // A new reading of the entry (another version after «Pasar a la versión nueva») keeps the answers that still apply.
   if (entry && state?.entry !== entry) {
     setState({ entry, draft: state ? carryEntryDraft(state.entry, state.draft, entry) : initial ?? initialEntryDraft(entry) });
@@ -65,11 +64,12 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const missing = entry?.questions.find(question => question.catalog?.issue === "Forms.Record.RecipientDataMissing");
   // IV1-A: with a form that issues and nothing missing, the «Total» itemized by the issuer; the server recalculates on sending.
   const signature = entry?.issuePreview && draft && Object.keys(problems).length === 0 ? entrySignature(entry, draft) : null;
-  const settled = useSettled(signature, totalsDelay);
+  const settled = useSettledValue(signature, totalsDelay);
+  // The key is a short key of what is loaded, never the answers, and nothing stays cached once it is not shown (4.6).
   const totals = useQuery({
-    queryKey: ["form-issue-preview", owner, formId, settled],
+    queryKey: ["form-issue-preview", owner, formId, settled ? entrySignatureKey(settled) : null],
     queryFn: ({ signal }) => fetchFormIssuePreview(formId, previewSend(entry!, draft!), signal),
-    enabled: !!settled && settled === signature && !!entry && !!draft, staleTime: Infinity, gcTime: 30_000, retry: false, meta: { errorOwner: "local" },
+    enabled: !!settled && settled === signature && !!entry && !!draft, staleTime: Infinity, gcTime: 0, retry: false, meta: { errorOwner: "local" },
   });
   const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
     : Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
@@ -102,6 +102,46 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   });
 
   /**
+   * What a failed request means, the same for «Enviar» and «Volver a probar» (4.7): a conflict that stops the send, the
+   * server's problems of each question, the session (the app asks to sign in again, without a notice of its own), the wait of a
+   * 429 (the button of «Volver a probar» goes off until then) or a failure, told with `failed` («No se pudo enviar»).
+   */
+  const fail = (error: unknown, failed: string, retrying: boolean) => {
+    if (!entry || !draft) return;
+    if (!(error instanceof ApiError)) throw error;
+    const feedback = errorFeedback(error);
+    if (error.code === "Forms.Entry.VersionChanged") setConflict("version");
+    else if (error.code === "Forms.Entry.Unavailable") setConflict("deactivated");
+    else if (feedback.kind === "session") return;
+    else if (error.status === 403) setConflict("forbidden");
+    else if (error.status === 404) setConflict("missing");
+    else if (error.status === 400 && error.errors) {
+      // The path of an item («answers.<block>.<n>.<question>») is the key of its problem, as the form counts them.
+      const fields: Record<string, string> = {};
+      for (const [path, messages] of Object.entries(error.errors)) {
+        if (!path.startsWith("answers.")) continue;
+        const key = path.slice("answers.".length), [blockId, row, fieldId] = key.split(".");
+        const chosen = (fieldId === undefined ? draft.choices[key] : draft.rows?.[blockId]?.[Number(row)]?.choices[fieldId])?.[0];
+        fields[key] = error.code === "Forms.Record.CatalogItemInactive" && chosen ? t("catalog.unavailable", { title: chosen.title }) : messages[0] ?? "";
+      }
+      setServerErrors(fields);
+      setReveal(value => value + 1);
+      const first = entryProblemKeys(entry, draft).find(key => fields[key]);
+      const target = first ? entryProblemQuestion(entry, first) : null;
+      if (first && target) {
+        const label = target.group
+          ? `${target.group.label} · ${t("common:itemTable.cell", { number: (target.row ?? 0) + 1, label: target.question.label })}` : target.question.label;
+        notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: t("send.review", { label }) });
+        focus(first);
+      } else notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: error.detail ?? undefined });
+    } else {
+      if (feedback.kind === "wait") { cooldown.restart(feedback.retryAfterSeconds ?? 60); if (retrying) return; }
+      notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: failed,
+        description: feedback.network || error.status >= 500 || error.status === 429 ? t(retrying ? "issue.retryHint" : "send.failedHint", { submit: entry.submitLabel }) : error.detail ?? undefined });
+    }
+  };
+
+  /**
    * Sends when nothing is missing; otherwise marks every problem and focuses the first one. On a form that issues, the first
    * «Enviar» only asks what would be issued and opens «¿La emito?»; `confirmed` is «Emitir», which sends.
    */
@@ -129,35 +169,7 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
       return result;
     } catch (error) {
       setIssue(null);
-      if (!(error instanceof ApiError)) throw error;
-      if (error.code === "Forms.Entry.VersionChanged") setConflict("version");
-      else if (error.code === "Forms.Entry.Unavailable") setConflict("deactivated");
-      else if (error.status === 403) setConflict("forbidden");
-      else if (error.status === 404) setConflict("missing");
-      else if (error.status === 400 && error.errors) {
-        // The path of an item («answers.<block>.<n>.<question>») is the key of its problem, as the form counts them.
-        const fields: Record<string, string> = {};
-        for (const [path, messages] of Object.entries(error.errors)) {
-          if (!path.startsWith("answers.")) continue;
-          const key = path.slice("answers.".length), [blockId, row, fieldId] = key.split(".");
-          const chosen = (fieldId === undefined ? draft.choices[key] : draft.rows?.[blockId]?.[Number(row)]?.choices[fieldId])?.[0];
-          fields[key] = error.code === "Forms.Record.CatalogItemInactive" && chosen ? t("catalog.unavailable", { title: chosen.title }) : messages[0] ?? "";
-        }
-        setServerErrors(fields);
-        setReveal(value => value + 1);
-        const first = entryProblemKeys(entry, draft).find(key => fields[key]);
-        const target = first ? entryProblemQuestion(entry, first) : null;
-        if (first && target) {
-          const label = target.group
-            ? `${target.group.label} · ${t("common:itemTable.cell", { number: (target.row ?? 0) + 1, label: target.question.label })}` : target.question.label;
-          notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: t("send.review", { label }) });
-          focus(first);
-        } else notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.notSaved"), description: error.detail ?? undefined });
-      } else {
-        const feedback = errorFeedback(error);
-        notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.failed"),
-          description: feedback.network || error.status >= 500 || error.status === 429 ? t("send.failedHint", { submit: entry.submitLabel }) : error.detail ?? undefined });
-      }
+      fail(error, t("send.failed"), false);
       return null;
     }
   };
@@ -169,16 +181,24 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   };
   /** «Volver» in «¿La emito?»: nothing is sent and the answers stay as they are. */
   const closeIssue = () => setIssue(null);
-  /** «Volver a probar» when the issuer could not answer: asks again with the same answers. */
+  /** «Volver a probar» when the issuer could not answer: asks again with the same answers; a failure reads as one of «Enviar». */
   const retryIssue = async () => {
-    if (!entry || !draft || previewing) return;
+    if (!entry || !draft || previewing || cooldown.isRunning) return;
     setPreviewing(true);
     try { setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft)), signature: entrySignature(entry, draft) }); }
-    catch { notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.failed"), description: t("send.failedHint", { submit: entry.submitLabel }) }); }
+    catch (error) {
+      // A conflict or the problems of the answers close «¿La emito?»; any other failure leaves it open to try again.
+      if (error instanceof ApiError && (error.status === 400 || error.status === 403 || error.status === 404
+        || error.code === "Forms.Entry.VersionChanged" || error.code === "Forms.Entry.Unavailable")) setIssue(null);
+      fail(error, t("issue.retryFailed"), true);
+    }
     finally { setPreviewing(false); }
   };
-  // The totals shown are those of what is loaded now: while it changes, the zone waits for the new ones.
-  const issueTotals = signature && settled === signature && totals.data && !totals.data.failureCode ? totals.data : null;
+  // The totals shown are those of what is loaded now: while it changes, the zone waits for the new ones. A failed reading says so.
+  const current = !!signature && settled === signature;
+  const issueTotals = current && totals.data && !totals.data.failureCode ? totals.data : null;
   return { draft, change, errors, send, restart, focus, progress, sending, conflict, missing, dirty, reveal, blocked: !!missing || !!conflict,
-    issue: issue?.preview ?? null, closeIssue, retryIssue, previewing, issueTotals, totalsPending: !!signature && !issueTotals && (settled !== signature || totals.isFetching) };
+    issue: issue?.preview ?? null, closeIssue, retryIssue, retryWait: cooldown.isRunning ? cooldown.seconds : 0, previewing, issueTotals,
+    totalsPending: !!signature && !issueTotals && (settled !== signature || totals.isFetching), totalsFailed: current && totals.isError && !totals.isFetching,
+    retryTotals: () => { void totals.refetch(); } };
 }
