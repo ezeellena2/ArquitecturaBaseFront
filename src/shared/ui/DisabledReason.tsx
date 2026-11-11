@@ -1,4 +1,5 @@
 import { cloneElement, useId, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { RadioGroup } from "radix-ui";
 import { cn } from "@/shared/lib/utils";
 import { ActionTooltip } from "./ActionTooltip";
 import { Button } from "./button";
@@ -18,8 +19,10 @@ interface ControlProps extends FieldProps {
   "aria-labelledby"?: string;
 }
 
-/// Un botón y una casilla siguen en el Tab, con su nombre y «no disponible»; un campo o un grupo, no.
-const pressable = (control: ReactElement) => control.type === Button || control.type === Checkbox || control.type === "button";
+/// Un botón, una casilla y una opción de un grupo siguen en el Tab (la opción, también en las flechas del grupo), con su
+/// nombre y «no disponible»; un campo o un grupo, no.
+const pressable = (control: ReactElement) => control.type === Button || control.type === Checkbox || control.type === RadioGroup.Item
+  || control.type === "button";
 
 /// El clic sólo muestra el motivo: no llama a `onClick`, no envía el formulario de un `submit` y no marca una casilla,
 /// porque Radix saltea su cambio después de un `preventDefault`.

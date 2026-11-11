@@ -2,6 +2,8 @@ import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { RadioGroup } from "radix-ui";
 import { cn } from "@/shared/lib/utils";
+import { DisabledReason } from "./DisabledReason";
+import { GroupLabel } from "./GroupLabel";
 import { InfoTip } from "./InfoTip";
 import { Label } from "./label";
 
@@ -13,12 +15,20 @@ export interface RadioOption {
   /// La explicación de la opción: en la (i) al final de su texto, con su tooltip (tablero LC3). Tocarla no la elige.
   help?: string;
   disabled?: boolean;
+  /// Por qué está apagada, cuando no es obvio: tooltip y descripción accesible de la opción (`DisabledReason`), sin texto
+  /// debajo. La opción sigue en el Tab y en las flechas del grupo, y tocarla muestra el motivo sin elegirla (MA1-A).
+  disabledReason?: string | null;
 }
 
 interface RadioGroupFieldProps {
-  /// El nombre accesible del grupo. No se dibuja: en el tablero, lo que dice de qué se trata es la casilla de arriba
-  /// ("Mandarle una invitación"), y las opciones se leen solas ("Por correo", "Por WhatsApp").
+  /// El nombre accesible del grupo. Sin `showLabel` no se dibuja: en el tablero del alta de un usuario, lo que dice de
+  /// qué se trata es la casilla de arriba ("Mandarle una invitación"), y las opciones se leen solas.
   label: string;
+  /// Dibuja `label` como título del grupo, del nivel de letra de un rótulo, y el grupo se llama como su título
+  /// («Columnas» del Excel, los grupos de «Nuevo catálogo»).
+  showLabel?: boolean;
+  /// La explicación del grupo, en la (i) junto a su título. Sólo con `showLabel`.
+  help?: string;
   options: readonly RadioOption[];
   /// Undefined es "ninguna elegida".
   value: string | undefined;
@@ -33,15 +43,18 @@ interface RadioGroupFieldProps {
 /// de la invitación en el alta de un usuario (tablero "WhatsApp · Usuarios: alta con teléfono", punto 2). Es el Radio
 /// Group de Radix, que da el rol `radiogroup`, las flechas para moverse y el foco en la elegida, con la misma fila que
 /// `CheckboxField`.
-export function RadioGroupField({ label, options, value, onValueChange, error, variant = "plain", layout = "column" }: RadioGroupFieldProps): ReactNode {
+export function RadioGroupField({ label, showLabel, help, options, value, onValueChange, error, variant = "plain", layout = "column" }: RadioGroupFieldProps): ReactNode {
   const { t } = useTranslation();
   const id = useId();
   const errorId = `${id}-error`;
+  const labelId = `${id}-label`;
 
   return (
     <div className="flex flex-col gap-1.5">
+      {showLabel ? <GroupLabel id={labelId} help={help}>{label}</GroupLabel> : null}
       <RadioGroup.Root
-        aria-label={label}
+        aria-label={showLabel ? undefined : label}
+        aria-labelledby={showLabel ? labelId : undefined}
         aria-describedby={error ? errorId : undefined}
         // Radix toma `undefined` como "no controlado": la cadena vacía no coincide con ninguna opción.
         value={value ?? ""}
@@ -60,20 +73,23 @@ export function RadioGroupField({ label, options, value, onValueChange, error, v
             // La tarjeta elegida suma un borde de 2 px, sin moverse, y el tinte de la marca (OE1-A, 2026-11-03).
             <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && cn("rounded-[var(--radius-control)] border py-2.5",
               option.value === value ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]" : "border-[var(--color-border)]"))}>
-              <RadioGroup.Item
-                id={optionId}
-                value={option.value}
-                disabled={option.disabled}
-                aria-describedby={describedBy || undefined}
-                className={cn(
-                  "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
-                  // El tono de los enlaces y no el de los botones: con un color claro en Apariencia, se oscurece solo.
-                  "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-[var(--color-brand-600)]",
-                  "disabled:cursor-not-allowed disabled:opacity-50",
-                )}
-              >
-                <RadioGroup.Indicator className="size-2 rounded-full bg-[var(--color-brand-600)]" />
-              </RadioGroup.Item>
+              <DisabledReason reason={option.disabled ? option.disabledReason : null}>
+                <RadioGroup.Item
+                  id={optionId}
+                  value={option.value}
+                  disabled={option.disabled}
+                  aria-describedby={describedBy || undefined}
+                  className={cn(
+                    "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
+                    // El tono de los enlaces y no el de los botones: con un color claro en Apariencia, se oscurece solo.
+                    "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-[var(--color-brand-600)]",
+                    // Apagada con motivo queda con `aria-disabled` y sin el puntero, que recibe su envoltorio (MA1-A).
+                    "disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
+                  )}
+                >
+                  <RadioGroup.Indicator className="size-2 rounded-full bg-[var(--color-brand-600)]" />
+                </RadioGroup.Item>
+              </DisabledReason>
               <div className="flex flex-col gap-0.5">
                 {option.help ? (
                   <span className="flex items-center gap-1">

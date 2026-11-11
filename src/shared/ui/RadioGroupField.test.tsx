@@ -10,6 +10,32 @@ const options = [
 ];
 
 describe("RadioGroupField", () => {
+  it("draws its label as the title of the group, with its (i), and the group takes the name of its title", async () => {
+    renderWithProviders(<RadioGroupField label="Columnas" showLabel help="Las visibles son las que se ven en la planilla." options={options} value="WhatsApp" onValueChange={vi.fn()} />);
+
+    const group = screen.getByRole("radiogroup", { name: "Columnas" });
+    expect(group).toHaveAttribute("aria-labelledby");
+    expect(screen.getByText("Columnas")).toBeVisible();
+    await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Columnas" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Las visibles son las que se ven en la planilla.");
+  });
+
+  it("keeps an unavailable option in the group with its reason, which a click shows without choosing it (MA1-A)", async () => {
+    const onValueChange = vi.fn();
+    renderWithProviders(<RadioGroupField label="Columnas" value="all" onValueChange={onValueChange} options={[
+      { value: "all", label: "Todas las preguntas" },
+      { value: "visible", label: "Solo las visibles", disabled: true, disabledReason: "Se ven todas las columnas." },
+    ]} />);
+
+    const visible = screen.getByRole("radio", { name: "Solo las visibles" });
+    expect(visible).toHaveAttribute("aria-disabled", "true");
+    expect(visible).toHaveAccessibleDescription("Se ven todas las columnas.");
+    await userEvent.click(screen.getByText("Solo las visibles"));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Se ven todas las columnas.");
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(visible).not.toBeChecked();
+  });
+
   it("names the group and each option with its label", () => {
     renderWithProviders(<RadioGroupField label="Por dónde" options={options} value="WhatsApp" onValueChange={vi.fn()} />);
 
