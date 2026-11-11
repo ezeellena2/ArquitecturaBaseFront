@@ -1,0 +1,58 @@
+{
+  "title": "Automated delegation",
+  "summary": "Delegated · point of sale {{pointOfSale}}",
+  "summaryWithoutPoint": "Delegated",
+  "running": "Running",
+  "waitingPlatform": "The platform still has to accept",
+  "login": "You sign in with",
+  "loginHelp": "The company's CUIT or the CUIL of the person who manages its relations in ARCA. If it is a person, the robot picks the company in «Represent».",
+  "loginInvalid": "Check the CUIT or CUIL: the check digit does not match.",
+  "key": "Tax key",
+  "consent": "I authorize the use of my tax key once to delegate {{services}} to {{platform}} (CUIT {{cuit}}) and create a web service point of sale.",
+  "consentHelp": "The key is used to sign in to ARCA and is not stored anywhere. If ARCA asks for a captcha or something else, you continue with the guide.",
+  "consentMissing": "Check the authorization to continue.",
+  "keyMissing": "Type your tax key.",
+  "start": "Delegate with the robot",
+  "starting": "Delegating…",
+  "loginRejected": "ARCA rejected the CUIT or the tax key. The robot does not try again on its own.",
+  "columns": {
+    "company": "With your key",
+    "platform": "With {{platform}}'s key"
+  },
+  "steps": {
+    "company": {
+      "login": "Sign in to ARCA",
+      "delegate": "Delegate «{{service}}» to {{platform}}",
+      "point-of-sale": "Create the web service point of sale"
+    },
+    "platform": {
+      "login": "Sign in to ARCA",
+      "certificate": "Create this installation's certificate",
+      "authorize": "Authorize «{{service}}» for the fiscal computer",
+      "accept": "Accept the delegation",
+      "assign": "Assign «{{service}}» to the fiscal computer"
+    },
+    "verify": "Confirm with ARCA"
+  },
+  "stepState": {
+    "done": "Done",
+    "running": "Running",
+    "failed": "Stopped",
+    "pending": "Pending"
+  },
+  "pointOfSale": "Point of sale {{number}}",
+  "retryAt": "ARCA did not answer. It tries again at {{time}}",
+  "platformStopped": "The platform has to finish this step by hand; we already let them know.",
+  "check": "Check",
+  "checking": "Checking…",
+  "stopped": {
+    "Captcha": "The robot stopped: ARCA asked for a captcha. Continue from here with the guide; what came before is already done.",
+    "ExtraValidation": "The robot stopped: ARCA asked for an extra validation. Continue from here with the guide; what came before is already done.",
+    "ScreenChanged": "The robot stopped: an ARCA screen was not the expected one. Continue from here with the guide; what came before is already done.",
+    "Unavailable": "The robot stopped: ARCA did not answer. Try again or continue from here with the guide.",
+    "Interrupted": "The robot was interrupted: the server restarted in the middle of the run. Try again or continue from here with the guide.",
+    "LoginRejected": "ARCA rejected the CUIT or the tax key."
+  },
+  "retry": "Try again with the robot",
+  "doneByRobot": "Done by the robot"
+}

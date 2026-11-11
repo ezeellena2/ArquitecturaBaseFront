@@ -1,0 +1,58 @@
+{
+  "title": "Delegación automática",
+  "summary": "Delegada · punto de venta {{pointOfSale}}",
+  "summaryWithoutPoint": "Delegada",
+  "running": "En curso",
+  "waitingPlatform": "Falta que la plataforma acepte",
+  "login": "Entrás con",
+  "loginHelp": "La CUIT de la empresa o la CUIL de quien administra sus relaciones en ARCA. Si es una persona, el robot elige la empresa en «Representar a».",
+  "loginInvalid": "Revisá la CUIT o CUIL: el dígito verificador no coincide.",
+  "key": "Clave fiscal",
+  "consent": "Autorizo a usar mi clave fiscal una sola vez para delegar {{services}} en {{platform}} (CUIT {{cuit}}) y dar de alta un punto de venta de web service.",
+  "consentHelp": "La clave se usa para entrar a ARCA y no se guarda en ningún lado. Si ARCA pide un captcha o algo distinto, seguís con la guía.",
+  "consentMissing": "Marcá la autorización para seguir.",
+  "keyMissing": "Escribí tu clave fiscal.",
+  "start": "Delegar con el robot",
+  "starting": "Delegando…",
+  "loginRejected": "ARCA no aceptó la CUIT o la clave fiscal. El robot no vuelve a probar solo.",
+  "columns": {
+    "company": "Con tu clave",
+    "platform": "Con la clave de {{platform}}"
+  },
+  "steps": {
+    "company": {
+      "login": "Entrar a ARCA",
+      "delegate": "Delegar «{{service}}» en {{platform}}",
+      "point-of-sale": "Dar de alta el punto de venta de web service"
+    },
+    "platform": {
+      "login": "Entrar a ARCA",
+      "certificate": "Crear el certificado de esta instalación",
+      "authorize": "Autorizar «{{service}}» para el computador fiscal",
+      "accept": "Aceptar la delegación",
+      "assign": "Asignar «{{service}}» al computador fiscal"
+    },
+    "verify": "Confirmar con ARCA"
+  },
+  "stepState": {
+    "done": "Hecho",
+    "running": "En curso",
+    "failed": "Se frenó",
+    "pending": "Pendiente"
+  },
+  "pointOfSale": "Punto de venta {{number}}",
+  "retryAt": "ARCA no respondió. Vuelve a probar a las {{time}}",
+  "platformStopped": "La plataforma tiene que terminar este paso a mano; ya le avisamos.",
+  "check": "Comprobar",
+  "checking": "Comprobando…",
+  "stopped": {
+    "Captcha": "El robot se frenó: ARCA pidió un captcha. Seguí desde acá con la guía; lo anterior ya quedó hecho.",
+    "ExtraValidation": "El robot se frenó: ARCA pidió una validación extra. Seguí desde acá con la guía; lo anterior ya quedó hecho.",
+    "ScreenChanged": "El robot se frenó: una pantalla de ARCA no era la esperada. Seguí desde acá con la guía; lo anterior ya quedó hecho.",
+    "Unavailable": "El robot se frenó: ARCA no respondió. Probá otra vez o seguí desde acá con la guía.",
+    "Interrupted": "El robot se interrumpió: el servidor se reinició en medio del trámite. Probá otra vez o seguí desde acá con la guía.",
+    "LoginRejected": "ARCA no aceptó la CUIT o la clave fiscal."
+  },
+  "retry": "Probar otra vez con el robot",
+  "doneByRobot": "Lo hizo el robot"
+}
