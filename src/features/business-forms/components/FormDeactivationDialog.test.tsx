@@ -13,6 +13,50 @@ vi.mock("@/shared/ui/notifications",async()=>({...await vi.importActual<typeof i
 const scope={actorId:"actor",culture:"es" as const,permissions:["formtemplates.read","formtemplates.publish"]};
 const impact=(changes:Partial<FormDeactivation["lifecycle"]>={})=>({definitionId:fixtureFormId,revision:1,lifecycle:fixtureLifecycle(1,{canDeactivate:true,unavailableReason:null,deprecationState:"Pending",...changes}),affectedSuggestions:[]});
 beforeEach(async()=>{await i18n.changeLanguage("es");vi.mocked(notify).mockClear();});
+// The value of a row of a group of data: what it says next to its label, also when the label carries its (i).
+const valueOf=(area:HTMLElement,label:string)=>within(area).getByText(label,{selector:"dt, dt *"}).closest("dt")!.nextElementSibling as HTMLElement;
+const suggestions=[{definitionId:"0199a0d0-0000-7000-8000-000000000071",name:{es:"Pedido de repuestos"}},{definitionId:"0199a0d0-0000-7000-8000-000000000072",name:{es:"Visita técnica"}}];
+
+// DL (2026-11-11): what stops and what is kept, each a group of data in two columns with its title, and one warning, the one of
+// WhatsApp that cannot be undone, with the last open send in numbers. Where a request goes is the (i) of «Asistente».
+const groupTexts={
+ es:{stops:"Deja de pasar",kept:"Se conserva",app:["App","No se carga más"],chat:["Chat","No se manda más"],assistant:["Asistente","No lo ofrece"],more:"Más información sobre Asistente",hint:"Si alguien lo pide, se anota en «Formularios que faltan».",
+  suggestions:["Sugerencias","Dejan de ofrecerse 2: Pedido de repuestos, Visita técnica"],responses:["Respuestas","12"],approvals:["Aprobaciones pendientes","2, se pueden seguir decidiendo"],workflow:["PDF y acciones de reglas","Se conservan"],
+  warning:"En WhatsApp no se deshace. El último envío abierto vence el 12/11/2026, 18:00; después se deprecan sus Flows. Para volver a usarlo, se reactiva con una versión nueva."},
+ en:{stops:"What stops",kept:"What is kept",app:["App","No longer loaded"],chat:["Chat","No longer sent"],assistant:["Assistant","No longer offers it"],more:"More about Assistant",hint:"Requests for it are recorded in “Missing forms”.",
+  suggestions:["Suggestions","2 no longer offered: Pedido de repuestos, Visita técnica"],responses:["Responses","12"],approvals:["Pending approvals","2, can still be decided"],workflow:["PDFs and rule actions","Kept"],
+  warning:"This cannot be undone on WhatsApp. The last open send expires on 11/12/2026, 6:00 PM; then its Flows are deprecated. Reactivating publishes a new version."},
+} as const;
+for(const language of ["es","en"] as const) it("reads what stops and what is kept in two groups of two columns, with one warning, in "+language,async()=>{
+ const texts=groupTexts[language];await i18n.changeLanguage(language);
+ server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json({...impact({lastOpenSessionExpiresAtUtc:"2026-11-12T21:00:00Z",responseCount:12,pendingApprovalCount:2}),affectedSuggestions:suggestions})));
+ renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Remito de prueba" scope={{...scope,culture:language}} timeZoneId="America/Argentina/Buenos_Aires" onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()}/>);
+ const dialog=await screen.findByRole("dialog");
+ const stops=await within(dialog).findByRole("group",{name:texts.stops});
+ expect(within(stops).getAllByRole("definition").map(value=>value.textContent)).toEqual([texts.app[1],texts.chat[1],texts.assistant[1],texts.suggestions[1]]);
+ for(const [label,value] of [texts.app,texts.chat,texts.assistant,texts.suggestions])expect(valueOf(stops,label)).toHaveTextContent(new RegExp("^"+value+"$"));
+ expect(within(stops).getByRole("button",{name:texts.more})).toHaveAccessibleDescription(texts.hint);
+ for(const text of within(dialog).getAllByText(texts.hint))expect(text).not.toBeVisible();
+ const kept=within(dialog).getByRole("group",{name:texts.kept});
+ expect(within(kept).getAllByRole("definition").map(value=>value.textContent)).toEqual([texts.responses[1],texts.approvals[1],texts.workflow[1]]);
+ for(const [label,value] of [texts.responses,texts.approvals,texts.workflow])expect(valueOf(kept,label)).toHaveTextContent(new RegExp("^"+value+"$"));
+ // One warning, not one notice per consequence, and no titles built by hand: the only heading is the dialog's.
+ expect(within(dialog).getAllByRole("status").map(notice=>notice.textContent)).toEqual([texts.warning]);
+ expect(within(dialog).getAllByRole("heading")).toHaveLength(1);
+});
+it("keeps the responses without a count it cannot read and leaves out what does not apply",async()=>{
+ server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json(impact({deprecationState:null,responseCount:null,pendingApprovalCount:null}))));
+ renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Remito de prueba" scope={scope} onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()}/>);
+ const dialog=await screen.findByRole("dialog");
+ const stops=await within(dialog).findByRole("group",{name:"Deja de pasar"});
+ expect(within(stops).getAllByRole("definition").map(value=>value.textContent)).toEqual(["No se carga más","No se manda más","No lo ofrece"]);
+ const kept=within(dialog).getByRole("group",{name:"Se conserva"});
+ expect(within(kept).getAllByRole("definition").map(value=>value.textContent)).toEqual(["Se conservan","Se conservan"]);
+ expect(valueOf(kept,"Respuestas")).toHaveTextContent(/^Se conservan$/);
+ expect(within(kept).queryByText("Aprobaciones pendientes")).not.toBeInTheDocument();
+ // Nothing in WhatsApp, nothing to warn about.
+ expect(within(dialog).queryByRole("status")).not.toBeInTheDocument();
+});
 for(const language of ["es","en"] as const) it("explains immediate deprecation without claiming open sends or completed work in "+language,async()=>{
  await i18n.changeLanguage(language);server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json(impact())));
  renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Registrar visita" scope={{...scope,culture:language}} onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()}/>);
@@ -49,12 +93,12 @@ it("requires a successful impact reread after a failed recovery read",async()=>{
 });
 
 // Only the consequences stay, without explanations of how they work (2026-10-31): no description under the title, no note
-// under «No se manda más desde el chat», about open sends or about the kept files. Where a request goes still says so.
+// under «Chat», about open sends or about the kept files. Where a request goes is the (i) of «Asistente» (DL, 2026-11-11).
 it("keeps only the consequences of the deactivation",async()=>{
  server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json(impact({lastOpenSessionExpiresAtUtc:"2026-10-22T18:00:00Z",responseCount:24}))));
  renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Registrar visita" scope={scope} timeZoneId="America/Argentina/Buenos_Aires" onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()}/>);
  const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
- expect(await within(dialog).findByText("Si alguien lo pide, se anota en «Formularios que faltan».")).toBeVisible();
+ expect(await within(dialog).findByRole("button",{name:"Más información sobre Asistente"})).toHaveAccessibleDescription("Si alguien lo pide, se anota en «Formularios que faltan».");
  expect(within(dialog).getByText(/El último envío abierto vence el/)).toBeVisible();
  for(const note of ["Revisá qué cambia antes de confirmar. Lo cargado se conserva.","Sale del selector «Enviar formulario».","Los envíos abiertos se pueden responder hasta que vencen.","Con sus fotos y documentos, en la planilla y en el Excel."])expect(within(dialog).queryByText(note)).not.toBeInTheDocument();
  expect(dialog).not.toHaveAccessibleDescription();
@@ -68,7 +112,7 @@ it.each([
  server.use(http.get("/api/forms/definitions/:id/deactivation",()=>HttpResponse.json(impact(changes))));
  renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Registrar visita" scope={scope} onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()}/>);
  const dialog=await screen.findByRole("dialog");
- await within(dialog).findByText("Qué deja de pasar");
+ await within(dialog).findByRole("group",{name:"Deja de pasar"});
  const button=within(dialog).getByRole("button",{name:"Dar de baja"});
  expect(button).toHaveAttribute("aria-disabled", "true");
  expect(button).toHaveAccessibleDescription(reason);

@@ -37,7 +37,7 @@ it("reads incoming suggestion impact before deactivating and keeps its unsaved d
  await userEvent.click(within(menu).getByRole("menuitem", { name: /Dar de baja/ }));
  const dialog = await screen.findByRole("dialog", { name: "Dar de baja «Registrar visita»" });
  expect(await within(dialog).findByText(/Registrar entrega/)).toBeVisible();
- expect(within(dialog).getByText(/24 respuestas/)).toBeVisible();
+ expect(within(within(dialog).getByRole("group", { name: "Se conserva" })).getByText("Respuestas", { selector: "dt" }).nextElementSibling).toHaveTextContent(/^24$/);
  expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/deactivation"))).toHaveLength(0);
  await userEvent.click(within(dialog).getByRole("button", { name: "Dar de baja" }));
  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -133,7 +133,7 @@ it("shows the last open send expiry in the profile time zone only when supplied"
  renderRouteWithProviders("/formularios/"+fixtureFormId);
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Dar de baja/}));
  const dialog=await screen.findByRole("dialog",{name:"Dar de baja «Registrar visita»"});
- expect(await within(dialog).findByText("El último envío abierto vence el 21/10/2026, 15:00.")).toBeVisible();
+ expect(await within(dialog).findByText("En WhatsApp no se deshace. El último envío abierto vence el 21/10/2026, 15:00; después se deprecan sus Flows. Para volver a usarlo, se reactiva con una versión nueva.")).toBeVisible();
  expect(within(dialog).queryByText("2026-10-21T18:00:00Z")).not.toBeInTheDocument();
 });
 

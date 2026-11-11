@@ -55,6 +55,9 @@ it("deactivating a form published only in the app says nothing of the chat or th
     lifecycle: fixtureLifecycle(1, { canDeactivate: true, unavailableReason: null, publishedOnlyInApp: true }), affectedSuggestions: [] })));
   renderWithProviders(<FormDeactivationDialog id={fixtureFormId} name="Remito de prueba" scope={scope} onComplete={vi.fn()} onObserved={vi.fn()} onClose={vi.fn()} />);
   const dialog = await screen.findByRole("dialog");
-  expect(await within(dialog).findByText("Lo que se conserva")).toBeInTheDocument();
-  for (const text of ["Qué deja de pasar", "No se manda más desde el chat", "El asistente no lo ofrece"]) expect(within(dialog).queryByText(text)).not.toBeInTheDocument();
+  expect(await within(dialog).findByRole("group", { name: "Se conserva" })).toBeInTheDocument();
+  // «App · No se carga más» for every form (DL); «Chat» and «Asistente» only for one in WhatsApp.
+  const stops = within(dialog).getByRole("group", { name: "Deja de pasar" });
+  expect(within(stops).getAllByRole("definition").map(value => value.textContent)).toEqual(["No se carga más"]);
+  for (const text of ["Chat", "Asistente", "No se manda más", "No lo ofrece"]) expect(within(dialog).queryByText(text)).not.toBeInTheDocument();
 });
