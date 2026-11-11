@@ -47,8 +47,12 @@ export interface DraftShowWhen { readonly questionId: string | null; readonly va
 // BI1-A: the library standard a form was copied from, its version and which question holds each datum it needs (datum → fieldId).
 export interface FormDefinitionStandard { readonly key: string; readonly version: number; readonly bound: Readonly<Record<string, string>> }
 // IV2-A: a yes-or-no setting the standard declares on a bound question («El precio incluye IVA»), with its text and its (i) in
-// both languages; only `value` changes, and the whole toggle goes back to the server as it came.
-export interface FormQuestionToggle { readonly key: string; readonly label: LocalizedText; readonly help: LocalizedText; readonly value: boolean }
+// both languages; only `value` changes, and the whole toggle goes back to the server as it came. `whenOn` and `whenOff` (IV1-A)
+// are what the (i) of the question says in the entry with each value; the server adds it to the question's help.
+export interface FormQuestionToggle {
+  readonly key: string; readonly label: LocalizedText; readonly help: LocalizedText; readonly value: boolean;
+  readonly whenOn?: LocalizedText; readonly whenOff?: LocalizedText;
+}
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 

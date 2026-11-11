@@ -27,8 +27,9 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
   calculation: z.strictObject({ operation: z.enum(["multiply", "sum", "percent"]), operands: z.array(guid).min(1).max(20) }).optional(),
   // CO1-A: the earlier question and the answers that show this one (option identities, or "true"/"false").
   showWhen: z.strictObject({ questionId: guid, values: z.array(z.string().min(1).max(64)).min(1).max(50) }).optional(),
-  // IV2-A: the yes-or-no settings the library standard declares on a bound question, each with its text and (i) and the value chosen.
-  toggles: z.array(z.strictObject({ key: z.string().min(1), label: text, help: text, value: z.boolean() })).min(1).max(10)
+  // IV2-A: the yes-or-no settings the library standard declares on a bound question, each with its text and (i) and the value chosen;
+  // whenOn and whenOff (IV1-A) are what the (i) of the question says in the entry with that value.
+  toggles: z.array(z.strictObject({ key: z.string().min(1), label: text, help: text, value: z.boolean(), whenOn: text.optional(), whenOff: text.optional() })).min(1).max(10)
     .refine(toggles => new Set(toggles.map(toggle => toggle.key)).size === toggles.length).optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)

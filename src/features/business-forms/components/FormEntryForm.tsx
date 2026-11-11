@@ -151,9 +151,10 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
   // LD1-A: a question that chooses first by a field takes two columns, the field's («Rubro») and its own; each item chooses its own.
   const tableColumns: ItemTableColumn[] = questions.flatMap(question => [
     ...question.catalog?.groupBy ? [{ key: groupColumn + question.fieldId, label: question.catalog.groupBy.name, required: question.required, className: "min-w-44" }] : [],
-    // CA1-A: a calculation is one more column, to the right, whose (i) says how it is computed.
+    // CA1-A: a calculation is one more column, to the right, whose (i) says how it is computed. Any other question's help goes in
+    // the (i) of its column (IV1-A: «Sin IVA: …» in «Precio unitario»).
     { key: question.fieldId, label: question.label, required: question.required, numeric: question.type === "decimal", className: cellWidth(question),
-      ...question.calculation ? { help: formula(question) } : {} }]);
+      ...question.calculation ? { help: formula(question) } : question.help ? { help: question.help } : {} }]);
   return <div className="flex flex-col gap-1.5" data-entry-question={group.fieldId}>
     <Label asChild><span id={id + "-label"}>{group.label}{group.required ? <span aria-hidden="true"> *</span> : null}</span></Label>
     {cards

@@ -87,6 +87,20 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     expect(screen.getByRole("button", { name: "Agregar ítem" })).toHaveAccessibleDescription("Hasta 3 ítems.");
   });
 
+  // IV1-A: the help of a question of the block, like «Sin IVA: …» of «Precio unitario», is the (i) of its column, not a note.
+  it("puts the help of a question of the block in the (i) of its column", { timeout: 20_000 }, async () => {
+    setup();
+    const help = "Sin IVA: la factura le suma el de su alícuota.";
+    server.use(http.get("/api/forms/entries/:formId", () => HttpResponse.json({ ...entry,
+      questions: entry.questions.map(question => question.fieldId === fields.quantity ? { ...question, help } : question) })));
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+
+    expect(await screen.findByRole("region", { name: "Artículos" })).toBeVisible();
+    for (const text of screen.queryAllByText(help)) expect(text).not.toBeVisible();
+    await userEvent.hover(within(table()).getByRole("button", { name: "Más información sobre Cantidad" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(help);
+  });
+
   it("marks each cell to correct under its row and focuses the first, without sending", async () => {
     const { sends } = setup();
     const user = userEvent.setup({ delay: null });
