@@ -7,12 +7,13 @@
   "running": "Running",
   "waitingPlatform": "The platform still has to accept",
   "login": "You sign in with",
-  "loginHelp": "The company's CUIT or the CUIL of the person who manages its relations in ARCA. If it is a person, the robot picks the company in «Represent».",
+  "loginHelp": "The company's CUIT or the CUIL of the person who manages its relations in ARCA. If it is a person, the robot picks the company in “Representar a”.",
   "loginInvalid": "Check the CUIT or CUIL: the check digit does not match.",
   "key": "Tax key",
   "consent": "I authorize the use of my tax key once to delegate {{services}} to {{platform}} (CUIT {{cuit}}) and create a web service point of sale.",
   "consentHelp": "The key is used to sign in to ARCA and is not stored anywhere. If ARCA asks for a captcha or something else, you continue with the guide.",
   "consentMissing": "Check the authorization to continue.",
+  "quoted": "“{{value}}”",
   "keyMissing": "Type your tax key.",
   "start": "Delegate with the robot",
   "starting": "Delegating…",
@@ -24,15 +25,15 @@
   "steps": {
     "company": {
       "login": "Sign in to ARCA",
-      "delegate": "Delegate «{{service}}» to {{platform}}",
+      "delegate": "Delegate “{{service}}” to {{platform}}",
       "point-of-sale": "Create the web service point of sale"
     },
     "platform": {
       "login": "Sign in to ARCA",
       "certificate": "Create this installation's certificate",
-      "authorize": "Authorize «{{service}}» for the fiscal computer",
+      "authorize": "Authorize “{{service}}” for the fiscal computer",
       "accept": "Accept the delegation",
-      "assign": "Assign «{{service}}» to the fiscal computer"
+      "assign": "Assign “{{service}}” to the fiscal computer"
     },
     "verify": "Confirm with ARCA"
   },

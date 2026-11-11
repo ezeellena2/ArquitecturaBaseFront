@@ -36,7 +36,8 @@ export function createArcaVisualFixtures(scenario: string) {
       if (!path.startsWith("/api/arca/")) return undefined;
       if (path === "/api/arca/connection" && request.method === "GET") return json(connection);
       // El robot de la etapa 6 queda apagado en estas escenas: sin esto, su consulta da 404 y el aviso de error tapa la captura.
-      if (path === "/api/arca/connection/robot-runs/current") return json({ enabled: false, company: null, platform: null });
+      // Sólo «arca-empty-robot» lo prende, para ver los tres modos de «Datos» en el celular.
+      if (path === "/api/arca/connection/robot-runs/current") return json({ enabled: scenario === "arca-empty-robot", company: null, platform: null });
       if (path === "/api/arca/connection/test") return json(test());
       if (path === "/api/arca/connection/certificate-requests" && request.method === "POST") {
         const body = await request.json() as { cuit: string; environment: ArcaConnection["environment"]; alias: string; services: string[] };

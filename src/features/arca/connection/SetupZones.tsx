@@ -213,7 +213,7 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
     <div className="flex flex-col items-start gap-1.5">
       <span className="flex items-center gap-1 text-sm font-medium">{t("data.mode")}
         <span className="-my-1 inline-flex"><InfoTip text={t("data.modeHelp")} label={t("common:actions.moreInfo", { label: t("data.mode") })} /></span></span>
-      <SegmentedControl aria-label={t("data.mode")} disabled={locked} options={[
+      <SegmentedControl wrap aria-label={t("data.mode")} disabled={locked} options={[
         { key: "CompanyCertificate", label: t("data.modeCompany"), pressed: !delegation, onSelect: () => setMode("CompanyCertificate") },
         {
           key: "PlatformDelegation", label: platform ? t("data.modeDelegation", { platform: platform.name }) : t("data.modeDelegationUnknown"),

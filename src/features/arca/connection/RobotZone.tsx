@@ -151,7 +151,7 @@ function RobotForm({ step, connection, platform, services, rejected, onConflict,
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<{ login?: string; key?: string }>({});
   const [serverRejected, setServerRejected] = useState(rejected);
-  const serviceList = new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(services.map(service => `«${service}»`));
+  const serviceList = new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(services.map(service => t("quoted", { value: service })));
 
   async function start() {
     const normalized = normalizeCuit(login);

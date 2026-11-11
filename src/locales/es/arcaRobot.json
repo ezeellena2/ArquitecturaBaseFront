@@ -13,6 +13,7 @@
   "consent": "Autorizo a usar mi clave fiscal una sola vez para delegar {{services}} en {{platform}} (CUIT {{cuit}}) y dar de alta un punto de venta de web service.",
   "consentHelp": "La clave se usa para entrar a ARCA y no se guarda en ningún lado. Si ARCA pide un captcha o algo distinto, seguís con la guía.",
   "consentMissing": "Marcá la autorización para seguir.",
+  "quoted": "«{{value}}»",
   "keyMissing": "Escribí tu clave fiscal.",
   "start": "Delegar con el robot",
   "starting": "Delegando…",

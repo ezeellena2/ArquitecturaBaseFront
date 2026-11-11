@@ -75,6 +75,28 @@ for (const language of ["es", "en"] as const) {
     await expect(page).toHaveScreenshot(`arca-delegation-active-${language}.png`, { fullPage: true });
   });
 
+  // Con el robot prendido, «Cómo se conecta» tiene tres opciones: en el celular se acomodan en renglones y ninguna se corta.
+  for (const width of [390, 320]) {
+    test(`ARCA details with the three modes ${language} at ${width}px`, async ({ page }) => {
+      await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
+      await open(page, language, "arca-empty-robot", width);
+      await page.getByRole("button", { name: es ? "Conectar con ARCA" : "Connect to ARCA", exact: true }).click();
+      const automated = page.getByRole("button", { name: es ? "Delegación automática" : "Automated delegation", exact: true });
+      await automated.click();
+      await expect(automated).toHaveAttribute("aria-pressed", "true");
+      // Las tres enteras dentro de la pantalla: sin renglones, la zona se corre de costado y la primera queda afuera.
+      const modes = page.getByRole("group", { name: es ? "Cómo se conecta" : "How it connects" }).getByRole("button");
+      await expect(modes).toHaveCount(3);
+      for (const mode of await modes.all()) {
+        const box = (await mode.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(width);
+      }
+      expect(await fitsWidth(page)).toBe(true);
+      await expect(page).toHaveScreenshot(`arca-details-robot-${language}-${width}.png`, { fullPage: true });
+    });
+  }
+
   test(`ARCA without a connection and read only ${language}`, async ({ page }) => {
     await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
     await open(page, language, "arca-empty");
