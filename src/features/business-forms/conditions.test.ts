@@ -33,6 +33,11 @@ describe("a condition in the editor (CO1-A)", () => {
     expect(canHaveCondition(from)).toBe(true);
   });
 
+  // The server refuses a condition on a location (SaveFormDraftRequestValidator): the editor does not offer it.
+  it("is not offered on a location question", () => {
+    expect(canHaveCondition({ ...base, localId: "where", type: "location", label: { es: "Dónde estás" } })).toBe(false);
+  });
+
   it("starts «Según otra respuesta» without a question, and «Siempre» takes the condition away", () => {
     const conditioned = withCondition(from, true);
     expect(conditioned.showWhen).toEqual({ questionId: null, values: [] });

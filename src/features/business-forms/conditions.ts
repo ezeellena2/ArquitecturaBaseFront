@@ -10,8 +10,8 @@ import { questionNumbers } from "./rowsQuestions";
 
 const repeated = (question: DraftQuestion) => "repeated" in question && question.repeated === true;
 
-/** Whether a question can say when it shows: not the block nor a question of it, in this stage. */
-export const canHaveCondition = (question: DraftQuestion) => question.type !== "group" && !repeated(question);
+/** Whether a question can say when it shows: not the block nor a question of it, in this stage, nor a location (the server refuses it). */
+export const canHaveCondition = (question: DraftQuestion) => question.type !== "group" && question.type !== "location" && !repeated(question);
 
 /** A question a condition can name: by its identity, its number in the list and its kind of answer. */
 export interface ConditionCandidate {
