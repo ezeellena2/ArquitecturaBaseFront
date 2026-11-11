@@ -12,16 +12,8 @@ import { Button } from "@/shared/ui/button";
 import { useElementVisibility } from "@/shared/hooks/useElementVisibility";
 import { PhotoViewer } from "@/shared/ui/PhotoViewer";
 import { Spinner } from "@/shared/ui/Spinner";
+import { formatFileSize } from "@/shared/lib/fileSize";
 
-function fileSize(bytes: number, language: string) {
-  return bytes < 1024 * 1024
-    ? new Intl.NumberFormat(language).format(
-        Math.max(1, Math.ceil(bytes / 1024)),
-      ) + " KB"
-    : new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(
-        bytes / (1024 * 1024),
-      ) + " MB";
-}
 function Thumbnail({
   actor,
   recordId,
@@ -122,7 +114,7 @@ function Original({
       title={label}
       description={number}
       name={file.name}
-      size={fileSize(file.size, i18n.resolvedLanguage ?? "es")}
+      size={formatFileSize(file.size, i18n.resolvedLanguage ?? "es")}
       index={index}
       count={files.length}
       loading={query.isPending}
@@ -167,7 +159,7 @@ function DocumentDownload({
       <div className="min-w-0 basis-40 grow">
         <p className="break-words">{file.name}</p>
         <p className="text-xs text-[var(--color-content-muted)]">
-          {fileSize(file.size, i18n.resolvedLanguage ?? "es")}
+          {formatFileSize(file.size, i18n.resolvedLanguage ?? "es")}
         </p>
       </div>
       {/* While the document arrives its button shows that it works (board LC1-A). */}
