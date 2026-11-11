@@ -101,11 +101,14 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     {copies.length || files.length ? <ResponseDocumentDownloads documents={copies} files={files} downloads={downloads}/> : null}
     {/* ⋮ after «Descargar» (AC1-A): «Corregir» opens its page and «Anular» asks for the reason, for whoever may change it now. */}
     {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))} onVoid={() => setVoiding(true)}/> : null}
+    {/* «1 de 2», the spinner and ↑ ↓ wrap as one group: on a narrow screen ↓ never goes alone to the next line. */}
+    <span data-slot="response-navigation" className="flex shrink-0 items-center gap-2">
     {navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
     {/* While another response loads, the spinner goes next to «1 de 2» and the previous sections stay dimmed and out of reach. */}
     {loadingTarget ? <Spinner/> : null}
     <IconButton label={t("responses.previous")} disabled={!navigation.previous || loadingTarget} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></IconButton>
     <IconButton label={t("responses.next")} disabled={!navigation.next || loadingTarget} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></IconButton>
+    </span>
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>

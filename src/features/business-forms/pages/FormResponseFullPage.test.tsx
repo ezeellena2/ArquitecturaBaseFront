@@ -150,6 +150,10 @@ it("continues to the pending successor after deciding on a compacted one-row pag
   await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
   expect(reads.anchors).toHaveLength(0);
   expect(await screen.findByText("2 de 2 por aprobar")).toBeVisible();
+  // The position and ↑ ↓ go in one group (AC1-A): on a narrow screen they wrap together, never ↓ alone on the next line.
+  const moving = screen.getByText("2 de 2 por aprobar").closest("[data-slot='response-navigation']");
+  expect(moving).toContainElement(screen.getByRole("button", { name: "Anterior" }));
+  expect(moving).toContainElement(screen.getByRole("button", { name: "Siguiente" }));
   expect(reads.continuations).toHaveLength(1);
 });
 it.each(["quick", "full"] as const)("does not skip the next pending task when another approver removes an earlier row (%s)", async view => {
