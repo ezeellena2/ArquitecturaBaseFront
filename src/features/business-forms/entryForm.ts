@@ -1,4 +1,5 @@
 import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryGroup, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
+import { entryHiddenQuestions } from "./conditions";
 
 /**
  * What the person has loaded, by question: typed values, the chosen options (with the title they saw) and the files.
@@ -57,16 +58,18 @@ export interface EntryZone { key: string; title?: string; questions: FormEntryQu
 
 /**
  * The zones of the loading page (CW16 and CW15-B): one per section title, in the editor's order, with what comes before the
- * first title in «Datos», and the photos and documents at the end. A section of only files has no zone of its own.
+ * first title in «Datos», and the photos and documents at the end. A section of only files has no zone of its own. With the
+ * draft, a question its condition hides is not drawn (CO1-A), and a zone left with nothing in sight hides too.
  */
-export function entryZones(entry: FormEntry): EntryZone[] {
+export function entryZones(entry: FormEntry, draft?: EntryDraft): EntryZone[] {
+  const hidden = draft ? entryHiddenQuestions(entry, draft) : new Set<string>();
   const zones: EntryZone[] = [{ key: "data", questions: [] }];
   for (const question of entry.questions) {
     if (question.section) zones.push({ key: "section:" + question.fieldId, title: question.section, questions: [] });
     // The questions of the block are drawn inside it, never loose.
-    if (!isFile(question) && !question.repeated) zones.at(-1)!.questions.push(question);
+    if (!isFile(question) && !question.repeated && !hidden.has(question.fieldId)) zones.at(-1)!.questions.push(question);
   }
-  const files = entry.questions.filter(isFile);
+  const files = entry.questions.filter(question => isFile(question) && !hidden.has(question.fieldId));
   return [...zones.filter(zone => zone.questions.length > 0), ...files.length ? [{ key: "files", questions: files }] : []];
 }
 
@@ -233,19 +236,21 @@ export function chooseEntryGroup(entry: FormEntry, draft: EntryDraft, fieldId: s
 
 /**
  * Each question's first problem, in the order of the form; an empty object can be sent. The block says when it has fewer or
- * more items than it takes, and each question of an item goes under its path (`entryItemPath`).
+ * more items than it takes, and each question of an item goes under its path (`entryItemPath`). A calculation is not loaded
+ * (CA1-A) and a hidden question is not required (CO1-A).
  */
 export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<string, EntryProblem> {
   const problems: Record<string, EntryProblem> = {};
   const block = entryBlock(entry);
+  const hidden = entryHiddenQuestions(entry, draft);
   for (const question of entry.questions) {
-    if (question.repeated) continue;
+    if (question.repeated || question.calculation || hidden.has(question.fieldId)) continue;
     if (question.type === "group" && block) {
       const items = itemsOf(draft, question.fieldId);
       if (items.length < (question.rows?.minRows ?? 0)) problems[question.fieldId] = "rowsAtLeast";
       else if (items.length > (question.rows?.maxRows ?? 0)) problems[question.fieldId] = "rowsAtMost";
       items.forEach((item, row) => {
-        for (const inner of block.questions) {
+        for (const inner of block.questions.filter(inner => !inner.calculation)) {
           const problem = questionProblem(inner, { values: item.values, choices: item.choices, files: {} });
           if (problem) problems[entryItemPath(question.fieldId, row, inner.fieldId)] = problem;
         }
@@ -264,7 +269,8 @@ export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<strin
  */
 export function entryProblemKeys(entry: FormEntry, draft: EntryDraft): string[] {
   const block = entryBlock(entry);
-  return entry.questions.flatMap(question => question.repeated ? []
+  const hidden = entryHiddenQuestions(entry, draft);
+  return entry.questions.flatMap(question => question.repeated || hidden.has(question.fieldId) ? []
     : question.type === "group" && block ? [question.fieldId, ...itemsOf(draft, question.fieldId).flatMap((_, row) =>
       block.questions.map(inner => entryItemPath(question.fieldId, row, inner.fieldId)))]
     : [question.fieldId]);
@@ -326,17 +332,19 @@ function singleAnswer(question: FormEntryQuestion, values: Record<string, string
 
 /**
  * The send: canonical values (a decimal with a dot), the chosen ids and each file with the question it answers. The block goes
- * with its items, even none, each with the answers of its questions in their order.
+ * with its items, even none, each with the answers of its questions in their order. A calculation never goes, the server
+ * computes it (CA1-A), and neither does what was typed in a question its condition hides (CO1-A).
  */
 export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: string): FormEntrySend {
   const answers: FormEntryAnswer[] = [];
   const files: FormEntrySend["files"] = [];
   const block = entryBlock(entry);
+  const hidden = entryHiddenQuestions(entry, draft);
   for (const question of entry.questions) {
-    if (question.repeated) continue;
+    if (question.repeated || question.calculation || hidden.has(question.fieldId)) continue;
     if (question.type === "group") {
       answers.push({ fieldId: question.fieldId, rows: itemsOf(draft, question.fieldId)
-        .map(item => (block?.questions ?? []).map(inner => singleAnswer(inner, item.values, item.choices)).filter(answer => answer !== null)) });
+        .map(item => (block?.questions ?? []).filter(inner => !inner.calculation).map(inner => singleAnswer(inner, item.values, item.choices)).filter(answer => answer !== null)) });
       continue;
     }
     if (isFile(question)) {
@@ -420,12 +428,13 @@ export function correctionDraft(correction: FormEntryCorrection, language: strin
   const block = entryBlock(correction.entry);
   for (const answer of correction.answers) {
     const question = correction.entry.questions.find(item => item.fieldId === answer.fieldId);
-    if (!question || question.repeated) continue;
+    // A calculation starts empty: the server computes it again from the corrected answers (CA1-A).
+    if (!question || question.repeated || question.calculation) continue;
     if (question.type === "group" && block) {
       draft.rows = { [question.fieldId]: (answer.rows ?? []).map(row => {
         const item = newItem([]);
         for (const inner of row) {
-          const asked = block.questions.find(value => value.fieldId === inner.fieldId);
+          const asked = block.questions.find(value => value.fieldId === inner.fieldId && !value.calculation);
           if (asked) correctionAnswer(asked, inner, item.values, item.choices, language);
           if (asked?.catalog?.groupBy && inner.group) item.groups = { ...item.groups, [asked.fieldId]: inner.group };
         }

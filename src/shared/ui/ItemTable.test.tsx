@@ -146,3 +146,13 @@ describe("the items in boxes", () => {
     expect(screen.getByRole("button", { name: "Agregar ítem" })).toHaveFocus();
   });
 });
+
+describe("a column that explains itself (CA1-A)", () => {
+  it("puts the (i) next to the column's name, with what it says as its tooltip", () => {
+    const list = { items: three, minItems: 1, maxItems: 3, addId: "add-item", onAdd: () => {}, onRemove: () => {}, onMove: () => {} };
+    renderWithProviders(<ItemTable {...list} label="Artículos" columns={[...columns, { key: "amount", label: "Importe", numeric: true, help: "Cantidad por Precio unitario" }]}
+      cell={(entry, column, context) => <Input aria-label={context.label} readOnly value={entry.values[column.key] ?? ""} />} />);
+    const header = screen.getByRole("columnheader", { name: /Importe/ });
+    expect(within(header).getByRole("button", { name: "Más información sobre Importe" })).toHaveAccessibleDescription("Cantidad por Precio unitario");
+  });
+});

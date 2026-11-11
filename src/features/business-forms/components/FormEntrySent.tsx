@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateOnly, formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { formatTypedValue } from "@/shared/lib/typedValue";
 import { CheckIcon } from "@/shared/ui/icons";
 import { Surface } from "@/shared/ui/Surface";
 import type { FormEntry, FormEntryOption, FormEntryQuestion, FormEntrySubmitted } from "../api/entries";
+import { entryCalculations } from "../calculations";
+import { entryHiddenQuestions } from "../conditions";
 import { entryBlock, type EntryDraft } from "../entryForm";
 
 /**
@@ -15,8 +18,16 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
 }) {
   const { t, i18n } = useTranslation("formEntries");
   const block = entryBlock(entry);
+  // CO1-A: a hidden question was not sent; CA1-A: a calculation reads as the server computed it with what was sent.
+  const hidden = entryHiddenQuestions(entry, draft);
+  const calculated = entryCalculations(entry, draft, hidden);
   // An answer of the response or of an item of the block, which holds its own values and options.
-  const text = (question: FormEntryQuestion, values: Record<string, string> = draft.values, choices: Record<string, FormEntryOption[]> = draft.choices): string => {
+  const text = (question: FormEntryQuestion, values: Record<string, string> = draft.values, choices: Record<string, FormEntryOption[]> = draft.choices,
+    itemKey?: string): string => {
+    if (question.calculation) {
+      const computed = (itemKey === undefined ? calculated.values : calculated.items[itemKey])?.[question.fieldId];
+      return computed ? formatTypedValue("decimal", computed, i18n.language) ?? computed : t("sent.none");
+    }
     if (question.type === "photo" || question.type === "document") {
       const count = draft.files[question.fieldId]?.length ?? 0;
       return count ? t(question.type === "photo" ? "sent.photos" : "sent.files", { count }) : t("sent.none");
@@ -36,7 +47,7 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
     if (question.type !== "group") return text(question);
     const items = draft.rows?.[question.fieldId] ?? [], first = block?.questions[0];
     if (!items.length) return t("sent.none");
-    const firsts = first ? items.map(item => text(first, item.values, item.choices)).filter(value => value !== t("sent.none")) : [];
+    const firsts = first ? items.map(item => text(first, item.values, item.choices, item.key)).filter(value => value !== t("sent.none")) : [];
     return <><span className="text-[var(--color-content-muted)]">{items.length} ·</span> {firsts.join(", ") || t("sent.none")}</>;
   };
   return <Surface title={t("sent.title")} actions={actions}>
@@ -46,7 +57,7 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
       <span className="text-[var(--color-content-muted)]">{t("sent.version", { name: entry.name, version: entry.versionNumber })}</span>
     </p>
     <dl className="divide-y divide-[var(--color-border)]">
-      {entry.questions.filter(question => !question.repeated).map(question => <div key={question.fieldId} className="grid gap-1 px-4 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-4">
+      {entry.questions.filter(question => !question.repeated && !hidden.has(question.fieldId)).map(question => <div key={question.fieldId} className="grid gap-1 px-4 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-4">
         <dt className="text-[var(--color-content-muted)]">{question.label}</dt>
         <dd className="min-w-0 break-words">{shown(question)}</dd>
       </div>)}

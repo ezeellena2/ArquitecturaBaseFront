@@ -5,6 +5,7 @@ import { Button } from "./button";
 import { DisabledReason } from "./DisabledReason";
 import { IconButton } from "./IconButton";
 import { AlertTriangleIcon, ChevronDownIcon, PlusIcon, TrashIcon } from "./icons";
+import { InfoTip } from "./InfoTip";
 import { Surface } from "./Surface";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 import { WideTable } from "./WideTable";
@@ -17,6 +18,8 @@ export interface ItemTableColumn {
   numeric?: boolean;
   /// El ancho de la columna, como un número o una fecha angostos.
   className?: string;
+  /// Lo que explica la columna, en la (i) junto a su nombre, como la de un campo: cómo se calcula un importe (CA1-A).
+  help?: string;
 }
 
 /// Lo que la tabla le da al control de cada celda.
@@ -132,7 +135,9 @@ export function ItemTable<T extends { key: string }>({ label, columns, cell, err
         <TableHeader><TableRow>
           <TableHead numeric className="w-10 px-2"><span className="sr-only">{t("itemTable.number")}</span></TableHead>
           {columns.map(column => <TableHead key={column.key} numeric={column.numeric} className={cn("px-2", column.className)}>
-            {column.label}{column.required ? <span aria-hidden="true"> *</span> : null}</TableHead>)}
+            {column.help ? <span className={cn("inline-flex items-center gap-1", column.numeric && "justify-end")}>{column.label}{column.required ? <span aria-hidden="true"> *</span> : null}
+              <span className="-my-1 inline-flex"><InfoTip text={column.help} label={t("actions.moreInfo", { label: column.label })} /></span></span>
+              : <>{column.label}{column.required ? <span aria-hidden="true"> *</span> : null}</>}</TableHead>)}
           <TableHead className="w-px px-2"><span className="sr-only">{t("itemTable.actions")}</span></TableHead>
         </TableRow></TableHeader>
         <TableBody striped={false}>{list.items.map((item, index) => {

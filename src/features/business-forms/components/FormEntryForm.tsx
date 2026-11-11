@@ -12,12 +12,16 @@ import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
+import { formatTypedValue } from "@/shared/lib/typedValue";
 import type { FormEntry, FormEntryGroup, FormEntryOption, FormEntryQuestion } from "../api/entries";
+import { calculationFormula, entryCalculations, entryFormulaOperands, type EntryCalculations } from "../calculations";
+import { entryHiddenQuestions } from "../conditions";
 import {
   addEntryItem, changeEntryItem, chooseEntryGroup, clearDependentChoices, entryAnswered, entryBlock, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileCount,
   entryItemPath, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, moveEntryItem, removeEntryItem, type EntryDraft, type EntryItem,
   type EntryZone,
 } from "../entryForm";
+import { useCalculationWords } from "../hooks/useCalculationWords";
 import { useEntryGroupChoice } from "../hooks/useFormEntry";
 import { EntryCatalogField, EntryGroupField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
@@ -68,7 +72,10 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   // The boxes of a multiple choice go in as many columns as the zone, from top to bottom, and in two in the panel except on
   // the phone (AR1-A).
   const boxColumns = layout === "panel" ? phone ? 1 : 2 : columns;
-  const zones = entryZones(entry);
+  // CO1-A: a question its condition hides is not drawn, and its zone hides when nothing is left in sight. CA1-A: each calculation
+  // shows what the server would compute with what is loaded, without counting what is hidden.
+  const zones = entryZones(entry, draft);
+  const calculated = entryCalculations(entry, draft, entryHiddenQuestions(entry, draft));
   const block = entryBlock(entry);
   // The problems of the block are its own and those of its items (`entryItemPath`).
   const hasError = (item: FormEntryQuestion) => item.type === "group"
@@ -83,11 +90,15 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   // The block is a table where the zone has columns, and boxes in one column: the panel and the phone (RG2-A).
   const question = (item: FormEntryQuestion) => item.type === "group" && block
     ? <EntryBlock key={item.fieldId} entry={entry} group={item} questions={block.questions} draft={draft} onChange={onChange} errors={errors} disabled={disabled}
-      cards={columns === 1} narrowClass={narrowClass} boxColumns={boxColumns}/>
+      cards={columns === 1} narrowClass={narrowClass} boxColumns={boxColumns} calculated={calculated}/>
     : <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
-      narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]} pairInRow={columns > 1}/>;
+      narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]} pairInRow={columns > 1} calculated={calculated}/>;
 
-  const answered = (items: FormEntryQuestion[]) => t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
+  // A calculation is not answered by the person: the band counts the others.
+  const answered = (all: FormEntryQuestion[]) => {
+    const items = all.filter(item => !item.calculation);
+    return t("zone.answered", { count: items.filter(item => entryAnswered(item, draft)).length, total: items.length });
+  };
   // Folded, a zone says how many questions were answered; the files zone says what was attached, as CW16 draws it.
   const summary = (items: FormEntryQuestion[]) => {
     if (!items.every(isFile)) return answered(items);
@@ -119,10 +130,11 @@ function cellWidth(question: FormEntryQuestion): string | undefined {
  * The block of rows (RG2-A): its name and its items, as a table or in boxes, each with the questions of the block. A problem of
  * an item goes under its row in the table and under its question in a box; the block's own, under the block.
  */
-function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, cards, narrowClass, boxColumns }: {
+function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, cards, narrowClass, boxColumns, calculated }: {
   entry: FormEntry; group: FormEntryQuestion; questions: readonly FormEntryQuestion[]; draft: EntryDraft; onChange: (draft: EntryDraft) => void;
-  errors: Readonly<Record<string, string>>; disabled?: boolean; cards: boolean; narrowClass?: string; boxColumns: 1 | 2 | 3;
+  errors: Readonly<Record<string, string>>; disabled?: boolean; cards: boolean; narrowClass?: string; boxColumns: 1 | 2 | 3; calculated: EntryCalculations;
 }) {
+  const formula = useEntryFormula(entry);
   const id = entryQuestionId(group.fieldId), messageId = id + "-message";
   const error = errors[group.fieldId];
   const message = error ?? group.help ?? undefined;
@@ -138,18 +150,21 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
   // LD1-A: a question that chooses first by a field takes two columns, the field's («Rubro») and its own; each item chooses its own.
   const tableColumns: ItemTableColumn[] = questions.flatMap(question => [
     ...question.catalog?.groupBy ? [{ key: groupColumn + question.fieldId, label: question.catalog.groupBy.name, required: question.required, className: "min-w-44" }] : [],
-    { key: question.fieldId, label: question.label, required: question.required, numeric: question.type === "decimal", className: cellWidth(question) }]);
+    // CA1-A: a calculation is one more column, to the right, whose (i) says how it is computed.
+    { key: question.fieldId, label: question.label, required: question.required, numeric: question.type === "decimal", className: cellWidth(question),
+      ...question.calculation ? { help: formula(question) } : {} }]);
   return <div className="flex flex-col gap-1.5" data-entry-question={group.fieldId}>
     <Label asChild><span id={id + "-label"}>{group.label}{group.required ? <span aria-hidden="true"> *</span> : null}</span></Label>
     {cards
       ? <ItemCards {...list}>{(item, index) => questions.map(question => <EntryQuestion key={question.fieldId} entry={entry} question={question} draft={draft}
-        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}/>)}</ItemCards>
+        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}
+        calculated={calculated}/>)}</ItemCards>
       : <ItemTable {...list} label={group.label} columns={tableColumns} error={(_, column, index) => errors[entryItemPath(group.fieldId, index, column.key)]}
         cell={(item, column, context) => {
           const value = column.key.startsWith(groupColumn);
           const question = questions.find(current => current.fieldId === (value ? column.key.slice(groupColumn.length) : column.key))!;
           return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} boxColumns={boxColumns}
-            item={item} path={path(context.index, question)} cell={context} part={value ? "group" : "options"}/>;
+            item={item} path={path(context.index, question)} cell={context} part={value ? "group" : "options"} calculated={calculated}/>;
         }}/>}
     {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
   </div>;
@@ -187,6 +202,17 @@ function EntryGroupedCatalog({ entry, question, draft, onChange, item, id, inval
   </div>;
 }
 
+/** How a calculation of the form reads, for its (i): with a rate from a catalog it also says that it is computed on sending. */
+function useEntryFormula(entry: FormEntry) {
+  const { t } = useTranslation("formEntries");
+  const words = useCalculationWords();
+  return (question: FormEntryQuestion) => {
+    const { operands, catalogRate } = entryFormulaOperands(entry, question);
+    const formula = calculationFormula(question.calculation!.operation, operands, words);
+    return catalogRate ? t("calculation.withCatalogRate", { formula }) : formula;
+  };
+}
+
 function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { before?: string }) {
   const { t } = useTranslation("formEntries");
   const { before, ...control } = props;
@@ -196,7 +222,7 @@ function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { bef
     {before === undefined ? null : <p className="text-xs text-[var(--color-content-muted)]">{before === "" ? t("correction.beforeEmpty") : t("correction.before", { value: before })}</p>}</div>;
 }
 
-function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns, item, path, cell, pairInRow = false, part }: {
+function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns, item, path, cell, pairInRow = false, part, calculated }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
@@ -211,8 +237,11 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   pairInRow?: boolean;
   /** LD1-A: in a cell, which of the two lists of that question the column holds. */
   part?: "group" | "options";
+  /** CA1-A: what each calculation would be with what is loaded. */
+  calculated?: EntryCalculations;
 }) {
-  const { t } = useTranslation("formEntries");
+  const { t, i18n } = useTranslation("formEntries");
+  const formula = useEntryFormula(entry);
   const key = path ?? question.fieldId;
   const id = entryQuestionId(key);
   const messageId = id + "-message";
@@ -250,6 +279,15 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
       <FormField label={question.label} htmlFor={id} required={question.required} hint={question.help ?? undefined} error={error}>{control}</FormField>
     </div>;
 
+  // CA1-A: a calculation is shown greyed and is not written; it changes as the numbers it uses are typed. Its (i) says how it is
+  // computed; the server computes it again on sending.
+  if (question.calculation) {
+    const computed = (item ? calculated?.items[item.key] : calculated?.values)?.[question.fieldId];
+    const control = <Input readOnly value={computed ? formatTypedValue("decimal", computed, i18n.language) ?? "" : ""}
+      className={cell || !narrowClass ? "text-right" : "text-right " + narrowClass}/>;
+    return cell ? cloneElement(control, { id, "aria-label": cell.label, "aria-describedby": cell.describedBy })
+      : <div data-entry-question={key}><FormField label={question.label} htmlFor={id} help={formula(question)} hint={question.help ?? undefined}>{control}</FormField></div>;
+  }
   if (question.catalog) {
     // A list that depends on other answers (CW7) waits for them, saying which in its field, and lists only theirs; another
     // option in a question clears the lists that depend on it.
