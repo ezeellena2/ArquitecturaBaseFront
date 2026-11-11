@@ -17,6 +17,7 @@ import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createArcaVisualFixtures } from "./arcaFixtures";
 import { createFormFixtureStore } from "./formFixtures";
 import { createMissingRequestVisualFixtures } from "./missingRequestFixtures";
+import { createLibraryVisualFixtures } from "./libraryFixtures";
 import { initialAppearance } from "@/shared/lib/appearance";
 import type { CurrentUser } from "@/auth/useCurrentUser";
 import type { UserDetail, UserFilterCounts, UserListItem } from "@/features/users/api/users";
@@ -61,6 +62,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (chatFormsFixture) Object.assign(globalThis,{chatFormsFixture});
   const formsScenario = !formOverviewFixture && !chatFormsScenario && (scenario?.startsWith("forms-") ?? false);
   const missingRequestFixture=scenario?.startsWith("forms-missing")?createMissingRequestVisualFixtures(language):undefined;
+  const libraryFixture = scenario?.startsWith("forms-library") ? createLibraryVisualFixtures(language) : undefined;
   const formsFixture = catalogQuestionFixture?.forms ?? (formsScenario ? createFormFixtureStore(language, scenario!, language === "es" ? budgetEsRaw : budgetEnRaw,
     scenario === "forms-publication-rows-moved-http" ? rowsMovedCheckRaw : rowsCheckRaw) : undefined);
   if (formsFixture) Object.assign(globalThis, { formsFixture });
@@ -212,6 +214,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);
     if (chatFormsFixture && path.startsWith("/api/whatsapp/chats")) return chatFormsFixture.handle(request);
     const missingResponse=await missingRequestFixture?.(request);if(missingResponse)return missingResponse;
+    const libraryResponse = await libraryFixture?.(request); if (libraryResponse) return libraryResponse;
     if (formsFixture && path.startsWith("/api/forms/")) return formsFixture.handle(request);
     const assistantResponse = await assistantFixture?.(request);
     if (assistantResponse) return assistantResponse;

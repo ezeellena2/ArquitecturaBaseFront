@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
+import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -37,6 +38,8 @@ function FormLibrary({ actorId, culture, permissionsKey, canAdd }: { actorId: st
   const [adding, setAdding] = useState<FormStandard | null>(null);
   // «Agregar» offers the folders of «Diseñar formularios»; without the tree the copy goes to the standard's.
   const tree = useFolderTree(useFolderScope(), "designs");
+  // On a phone each standard is a card with «Agregar» as wide as the screen (DOC1 at 390 px); loading, failing and empty keep the table.
+  const phone = useMediaQuery("(max-width: 639px)");
   const folders = useMemo(() => treeOrder(tree.data?.folders ?? []).map(entry => ({ id: entry.folder.id, name: entry.folder.name, depth: entry.depth })), [tree.data]);
   const forbidden = library.error instanceof ApiError && (library.error.status === 403 || library.error.status === 401);
   useEffect(() => { if (forbidden) client.removeQueries({ queryKey: root }); }, [forbidden, client, root]);
@@ -62,9 +65,28 @@ function FormLibrary({ actorId, culture, permissionsKey, canAdd }: { actorId: st
     }] : [],
   ];
 
+  const standards = library.data?.standards ?? [];
+  if (phone && standards.length > 0) return <Page title={t("library.title")} help={t("library.help")}>
+    <ul className="flex flex-col gap-2">
+      {standards.map(standard => <li key={standard.key}><Surface padded>
+        <div className="flex flex-col gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="font-medium">{standard.name}</span>
+            {standard.description ? <span className="text-muted-foreground">{standard.description}</span> : null}
+            <span className="text-muted-foreground">{meta(standard)}</span>
+          </div>
+          {canAdd ? <Button type="button" className="w-full" onClick={() => setAdding(standard)} aria-label={t("library.addTitle", { name: standard.name })}>
+            <PlusIcon className="size-4" aria-hidden="true" />{t("library.add")}
+          </Button> : null}
+        </div>
+      </Surface></li>)}
+    </ul>
+    {adding ? <FormStandardAddDialog standard={adding} folders={folders} onOpenChange={open => { if (!open) setAdding(null); }} /> : null}
+  </Page>;
+
   return <Page title={t("library.title")} help={t("library.help")}>
     <Surface>
-      <DataTable columns={columns} rows={library.data?.standards ?? []} rowKey={standard => standard.key} isLoading={library.isPending}
+      <DataTable columns={columns} rows={standards} rowKey={standard => standard.key} isLoading={library.isPending}
         hasData={library.data !== undefined}
         error={failure && !["cancelled", "session"].includes(failure.kind) ? t("library.loadError") : undefined}
         errorDescription={library.error ? readErrorMessage(library.error, t) : undefined}
