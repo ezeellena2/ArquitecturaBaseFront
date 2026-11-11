@@ -3,7 +3,8 @@ import type { FormCulture, LocalizedText } from "./model";
 import { normalizeResponseQuery, responseQuestionColumns, type ResponseColumn, type ResponseCondition, type ResponseType } from "./responses";
 import { hasMissingRuleData, hasUnavailableResults, type RuleMessageResult } from "./ruleMessage";
 export const ruleEvents = ["Received", "Approved", "Rejected"] as const;
-export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole", "IssueDocument"] as const;
+// «SendCopy» (copy by email) sends the document of an earlier «IssueDocument» of its rule to whoever received it, with its message.
+export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole", "IssueDocument", "SendCopy"] as const;
 export type RuleEvent = typeof ruleEvents[number];
 export type RuleActionKind = typeof ruleActionKinds[number];
 /** `issuerId`: the installed issuer of an «IssueDocument» action; the other kinds do not carry it. */
@@ -13,7 +14,7 @@ export interface RuleIssuer { readonly id: string; readonly name: LocalizedText;
 export interface FormRule { readonly id: string; readonly event: RuleEvent; readonly conditions: readonly ResponseCondition[]; readonly actions: readonly RuleAction[] }
 export interface RuleIssue { readonly path: string; readonly key: string }
 export type PdfAttachmentIssue = { readonly key: "pdfBeforeAttachment"; readonly fix: "move" | "add" } | { readonly key: "pdfOnApproval"; readonly fix: null };
-export const usesMessage = (kind: RuleActionKind) => kind === "NotifyAuthor" || kind === "NotifyRole";
+export const usesMessage = (kind: RuleActionKind) => kind === "NotifyAuthor" || kind === "NotifyRole" || kind === "SendCopy";
 export const usesRole = (kind: RuleActionKind) => kind === "RequestApproval" || kind === "NotifyRole";
 export const newRule = (): FormRule => ({ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [] });
 export const newRuleAction = (kind: RuleActionKind, issuerId: string | null = null): RuleAction => ({ id: crypto.randomUUID(), kind, roleId: null,
@@ -88,6 +89,9 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
         else if (before.some(previous => usesMessage(previous.kind))) issues.push({ path: actionPath, key: "issueBeforeMessages" });
         if (!issuers.some(issuer => issuer.id === action.issuerId)) issues.push({ path: actionPath + ".issuerId", key: "issuerUnavailable" });
       }
+      // The copy by email sends what an issuance of its rule left: it goes after it.
+      if (action.kind === "SendCopy" && !rule.actions.slice(0, actionIndex).some(previous => previous.kind === "IssueDocument"))
+        issues.push({ path: actionPath, key: "copyAfterIssue" });
       const role = usesRole(action.kind);
       if (role && !action.roleId) issues.push({ path: actionPath + ".roleId", key: "required" });
       const attachment = pdfAttachmentIssue(rule, actionIndex);

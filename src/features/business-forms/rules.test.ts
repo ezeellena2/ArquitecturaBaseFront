@@ -29,6 +29,17 @@ describe("issuing a document", () => {
     expect(issuing).toMatchObject({ kind: "IssueDocument", issuerId: issuer.id });
     expect(withRuleActionKind(issuing, "NotifyAuthor")).not.toHaveProperty("issuerId");
   });
+  // The copy by email (SendCopy) sends what the issuance of its rule left, with a message like a notice: it goes after it.
+  it("sends its copy by email only after the issuance of its rule, with a message that may use its data", () => {
+    const copy = { ...newRuleAction("SendCopy"), text: { es: "Te mando {result:arca.invoice.number}", en: "" } };
+    const prepared = prepareRules([{ ...newRule(), actions: [issue(), copy] }], original, [column], [issuer]);
+    expect(prepared.issues).toEqual([]);
+    expect(prepared.rules[0].actions[1]).toMatchObject({ kind: "SendCopy", roleId: null, includePdf: false, issuerId: undefined, text: { es: "Te mando {result:arca.invoice.number}", en: "" } });
+    expect(prepareRules([{ ...newRule(), actions: [copy] }], original, [column], [issuer]).issues)
+      .toEqual([{ path: "rules.0.actions.0", key: "copyAfterIssue" }, { path: "rules.0.actions.0.text.es", key: "resultBeforeIssue" }]);
+    expect(prepareRules([{ ...newRule(), actions: [{ ...copy, text: { es: "", en: "" } }, issue()] }], original, [column], [issuer]).issues)
+      .toEqual([{ path: "rules.0.actions.0", key: "copyAfterIssue" }, { path: "rules.0.actions.0.text.es", key: "required" }, { path: "rules.0.actions.1", key: "issueBeforeMessages" }]);
+  });
 });
 describe("rule preparation", () => {
   it("requires only the original message language and preserves the optional text", () => {

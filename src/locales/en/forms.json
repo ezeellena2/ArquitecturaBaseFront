@@ -1075,7 +1075,8 @@
       "GeneratePdf": "Generate PDF",
       "NotifyAuthor": "Message the response author",
       "NotifyRole": "Notify people with a role",
-      "IssueDocument": "Issue a voucher"
+      "IssueDocument": "Issue a voucher",
+      "SendCopy": "Send a copy by email"
     },
     "operators": {
       "in": "Is one of",
@@ -1103,6 +1104,7 @@
       "issueOnce": "Each rule issues a single voucher.",
       "issueBeforeMessages": "Issuing goes before the messages, which may use its data.",
       "issuerUnavailable": "This action only applies to a form copied from its standard, with the module installed.",
+      "copyAfterIssue": "The copy goes after “Issue a voucher”, in this rule.",
       "resultBeforeIssue": "That data only arrives after the action that brings it, in this rule."
     },
     "saveConflict": "Reload and choose what to keep before saving.",

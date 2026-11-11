@@ -1075,7 +1075,8 @@
       "GeneratePdf": "Armar el PDF",
       "NotifyAuthor": "Mandarle un mensaje a quien la cargó",
       "NotifyRole": "Avisar a las personas con un rol",
-      "IssueDocument": "Emitir comprobante"
+      "IssueDocument": "Emitir comprobante",
+      "SendCopy": "Mandar copia por correo"
     },
     "operators": {
       "in": "Es una de",
@@ -1103,6 +1104,7 @@
       "issueOnce": "Cada regla emite un solo comprobante.",
       "issueBeforeMessages": "Emitir va antes de los mensajes, que pueden usar sus datos.",
       "issuerUnavailable": "Esta acción sólo vale en un formulario copiado de su estándar, con el módulo instalado.",
+      "copyAfterIssue": "La copia va después de «Emitir comprobante», en esta regla.",
       "resultBeforeIssue": "Ese dato llega sólo después de la acción que lo trae, en esta regla."
     },
     "saveConflict": "Releé y elegí qué conservar antes de guardar.",

@@ -57,6 +57,39 @@ it("saves rules independently using only the original language and records the n
   await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ expectedRevision: 0, rules: [expect.objectContaining({ event: "Received", actions: [expect.objectContaining({ kind: "NotifyAuthor", text: { es: "Recibimos {número}.", en: "" } })] })] })));
   await waitFor(() => expect(dirty).toHaveBeenLastCalledWith(false));
 });
+// SendCopy: «Mandar copia por correo» is offered only on a form with an issuer and goes after «Emitir comprobante», with its message.
+it("offers the copy by email only on a form with an issuer and saves it after the issuance with its message", async () => {
+  setup();
+  const saved = vi.fn();
+  server.use(
+    http.get("/api/forms/definitions/:id/rules/options", () => HttpResponse.json({ definitionId: id, name: { es: "Factura", en: "Invoice" }, originalCulture: "es", questions: [], conditionChoices: {}, roles: [],
+      issuers: [{ id: "arca.invoice", name: { es: "Emitir comprobante en ARCA", en: "Issue an ARCA voucher" }, resultFields: [] }] })),
+    http.post("/api/forms/definitions/:id/rules", async ({ request }) => {
+      const body = await request.json() as { rules: unknown[] };
+      saved(body);
+      return HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 1, rules: body.rules, createdAtUtc: "2026-11-11T12:00:00Z", author: { userId: actor, displayName: "Ana" } });
+    }));
+  renderWithProviders(<FormRulesSection prefix="FAC" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "IssueDocument:arca.invoice");
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 2" }), "Mandar copia por correo");
+  await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Te mando la factura.");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ actions: [
+    expect.objectContaining({ kind: "IssueDocument", issuerId: "arca.invoice" }),
+    expect.objectContaining({ kind: "SendCopy", roleId: null, includePdf: false, text: { es: "Te mando la factura.", en: "" } })] })] })));
+});
+it("does not offer the copy by email on a form without an issuer", async () => {
+  setup();
+  renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  const kind = screen.getByRole("combobox", { name: "Acción 1" });
+  expect(within(kind).getByRole("option", { name: "Avisar a las personas con un rol" })).toBeInTheDocument();
+  expect(within(kind).queryByRole("option", { name: "Mandar copia por correo" })).not.toBeInTheDocument();
+});
 it("retains edits on a revision conflict and adopts the reread revision only explicitly", async () => {
   setup();
   server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rules.RevisionConflict", detail: "Cambió la revisión." }, { status: 409 })));

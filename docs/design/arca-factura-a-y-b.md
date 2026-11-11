@@ -1,7 +1,7 @@
 # La factura A y B: tableros elegidos
 
-Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **elegido, sin programar** (etapa 4 de
-ARCA, tarea 7). El alcance, las normas y las decisiones están en el
+Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado el 2026-11-11** (etapa 4
+de ARCA, tarea 7); falta la prueba a mano. El alcance, las normas y las decisiones están en el
 [plan de la etapa 4](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-4-factura-a-y-b.md); la regla vigente, en
 [ARCA](../../../ArquitecturaBase/docs/features/arca.md). Las pantallas, los textos y los estados de la A y la B salen de acá.
 
@@ -47,17 +47,17 @@ revisó con dos muestras dibujadas por el renderer real. La regla está en [ARCA
   porcentaje de cada alícuota (se calculan al enviar), así que el desglose sale del emisor. La C no discrimina: no hay zona.
 - **La acción en el editor de reglas** (`FormRulesSection`): cada emisor del formulario es un tipo de acción con su nombre;
   vale al recibir o al aprobar, una por regla y antes de los mensajes, y los mensajes que siguen suman en «Agregar dato» el
-  grupo «De «…»» con los datos de su resultado.
-
-## Lo que se fijó al programar
-
+  grupo «De «…»» con los datos de su resultado. «Mandar copia por correo» (`SendCopy`, de la etapa 3) aparece en un formulario
+  con emisor: es un mensaje como un aviso, sin rol ni PDF, que va después de «Emitir comprobante» en su regla y admite sus datos.
 - **IV2-A (2026-11-11).** La casilla es genérica: el estándar declara en la pregunta atada sus casillas (`toggles`: clave, texto y
   (i) por idioma y el valor con que empiezan) y el editor dibuja una por cada una con el texto del estándar, sin textos propios
   en `forms.json`. «El precio incluye IVA» llega al emisor como el dato `pricesIncludeVat` («true» o «false»).
 - **IV1-A, la alícuota en 21 % (2026-11-11).** El estándar declara por código la opción con que empieza «Alícuota» (el 5); la
   carga la trae elegida en cada ítem nuevo y se puede cambiar. WhatsApp no la muestra elegida: el emisor toma 21 % si falta.
+- **IV1-A, la (i) de «Precio unitario» (2026-11-11).** La casilla declara también lo que dice la carga con cada valor
+  (`whenOff`: «Sin IVA: la factura le suma el de su alícuota.»; `whenOn`: «Con IVA: la factura separa el de su alícuota.») y
+  el servidor lo suma a la ayuda de la pregunta. En la tabla de ítems, la ayuda de cada pregunta va en la (i) de su columna.
 
 ## Pendiente
 
-- La casilla de IV2-A en el editor y la columna «Alícuota» del estándar «Factura» (etapa 3, tarea 11).
 - La prueba a mano, en la prueba integral.

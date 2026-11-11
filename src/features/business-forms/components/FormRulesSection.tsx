@@ -17,7 +17,7 @@ import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Spinner } from "@/shared/ui/Spinner";
 import { StepList } from "@/shared/ui/StepList";
 import { Surface } from "@/shared/ui/Surface";
-import { ArrowDownIcon, BanIcon, ChatIcon, CheckIcon, ChevronDownIcon, DocumentIcon, PencilIcon, ReceiptIcon, ShieldIcon, SlidersIcon, TrashIcon, UsersIcon } from "@/shared/ui/icons";
+import { ArrowDownIcon, BanIcon, ChatIcon, CheckIcon, ChevronDownIcon, DocumentIcon, MailIcon, PencilIcon, ReceiptIcon, ShieldIcon, SlidersIcon, TrashIcon, UsersIcon } from "@/shared/ui/icons";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchFormRules, fetchRuleHistory, fetchRuleOptions, fetchRuleRevision, saveFormRules, type FormRuleSet } from "../api/rules";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
@@ -96,7 +96,8 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
   const options = query.data?.options;
   // The block of rows has no answer of its own: only its questions can be conditions.
   const columns = options ? conditionColumns(options.questions, options.conditionChoices, culture, options.originalCulture) : [];
-  // The issuers come only on a form copied from their standard: «Emitir comprobante en ARCA» is offered there (IssueDocument).
+  // The issuers come only on a form copied from their standard: «Emitir comprobante en ARCA» is offered there (IssueDocument),
+  // and so is «Mandar copia por correo» (SendCopy), which goes after it.
   const issuers = options?.issuers ?? [];
   const prepared = prepareRules(rules ?? [], options?.originalCulture ?? "es", columns, issuers);
   const conflict = needsReview;
@@ -206,7 +207,7 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
               <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start"><div className="min-w-0 flex-1"><FormField label={<><span aria-hidden="true" className="min-w-0 sm:hidden">{t("rules.action", { number: actionIndex + 1 })}: {actionName(action)}</span><span className="sr-only sm:not-sr-only">{t("rules.action", { number: actionIndex + 1 })}</span></>} error={fieldError(actionPath) ?? fieldError(actionPath + ".issuerId")}><NativeSelect data-action-editor={action.id} disabled={blocked} value={kindValue} onChange={event => {
                 const [kind, issuerId] = event.target.value.split(/:(.*)/s);
                 changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? withRuleActionKind(item, kind as RuleActionKind, issuerId || null) : item) });
-              }}>{ruleActionKinds.filter(kind => kind !== "IssueDocument").map(kind => <option key={kind} value={kind}>{t("rules.actions." + kind)}</option>)}{issueOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></FormField></div>
+              }}>{ruleActionKinds.filter(kind => kind !== "IssueDocument" && (kind !== "SendCopy" || issuers.length > 0 || action.kind === "SendCopy")).map(kind => <option key={kind} value={kind}>{t("rules.actions." + kind)}</option>)}{issueOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect></FormField></div>
               <div className="flex justify-end sm:mt-6">{[-1, 1].map(delta => <IconButton key={delta} data-move-item={action.id} data-move-delta={delta} label={t(delta < 0 ? "rules.upAction" : "rules.downAction", { number: actionIndex + 1 })} disabled={blocked || actionIndex + delta < 0 || actionIndex + delta >= rule.actions.length} onClick={() => { pendingFocus.current = { actionId: action.id, delta }; setAnnouncement(t("position", { name: t("rules.action", { number: actionIndex + delta + 1 }), position: actionIndex + delta + 1, total: rule.actions.length })); changeRule(index, { ...rule, actions: moveItem(rule.actions, actionIndex, delta) }); }}><ChevronDownIcon className={"size-4 " + (delta < 0 ? "rotate-180" : "")} /></IconButton>)}<IconButton label={t("rules.removeAction", { number: actionIndex + 1 })} disabled={blocked} onClick={() => { const neighbor = rule.actions[actionIndex + 1] ?? rule.actions[actionIndex - 1]; pendingFocus.current = { selector: neighbor ? '[data-action-editor="' + neighbor.id + '"]' : '[data-add-action="' + rule.id + '"]' }; changeRule(index, { ...rule, actions: rule.actions.filter(item => item.id !== action.id) }); }}><TrashIcon className="size-4" /></IconButton></div></div>
               {action.kind === "RequestApproval" || action.kind === "NotifyRole" ? <FormField label={t("rules.role")} error={fieldError(actionPath + ".roleId")}><NativeSelect disabled={blocked} value={action.roleId ?? ""} onChange={event => changeRule(index, { ...rule, actions: rule.actions.map((item, position) => position === actionIndex ? { ...item, roleId: event.target.value || null } : item) })}><option value="">{t("rules.chooseRole")}</option>{action.roleId && !options.roles.some(role => role.id === action.roleId) ? <option value={action.roleId}>{t("rules.unavailableRole")}</option> : null}{options.roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}</NativeSelect></FormField> : null}
               {action.kind === "GeneratePdf" ? <div className="text-sm"><Button asChild variant="link"><Link to={"/formularios/" + definitionId + "/pdf"}>{t("rules.viewDesign")}</Link></Button></div> : null}
@@ -243,7 +244,7 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
 
 // The icon of each step of a rule (board LR1-A): when a response arrives, is approved or is rejected, and what each action does.
 const ruleEventIcons: Record<FormRule["event"], ReactNode> = { Received: <ArrowDownIcon/>, Approved: <CheckIcon/>, Rejected: <BanIcon/> };
-const ruleActionIcons: Record<RuleActionKind, ReactNode> = { RequestApproval: <ShieldIcon/>, GeneratePdf: <DocumentIcon/>, NotifyAuthor: <ChatIcon/>, NotifyRole: <UsersIcon/>, IssueDocument: <ReceiptIcon/> };
+const ruleActionIcons: Record<RuleActionKind, ReactNode> = { RequestApproval: <ShieldIcon/>, GeneratePdf: <DocumentIcon/>, NotifyAuthor: <ChatIcon/>, NotifyRole: <UsersIcon/>, IssueDocument: <ReceiptIcon/>, SendCopy: <MailIcon/> };
 
 // The message of an action, whole, in its box (board TL2-A), with each datum marked by its name: the number, the reason or
 // the question as it is called now (board MD1-A).
