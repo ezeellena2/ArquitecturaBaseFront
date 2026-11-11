@@ -1,9 +1,13 @@
 # Renglones en los formularios: tableros elegidos
 
 Fecha: **2026-11-04**, con los tableros dibujados del 2026-11-02 al 2026-11-04, RG10-D del 2026-11-06 y RG12-A del
-2026-11-07. Estado: **por programar**. El alcance, el
-modelo y las etapas están en el [plan](../../../ArquitecturaBase/docs/plans/2026-11-03-renglones-en-formularios.md); las
-pantallas, los textos y los estados salen de acá.
+2026-11-07. Estado: **programado** del 2026-11-04 al 2026-11-08 y **probado de punta a punta** el 2026-11-09.
+La regla y el modelo están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md#el-bloque-de-renglones-al-armar-y-publicar--rg1-a-rg3-a-y-rg6-a-2026-11-04),
+y el estado final, en el [traspaso 12](../../../ArquitecturaBase/docs/plans/2026-11-11-traspaso-multitenant-renglones.md).
+Las pantallas, los textos y los estados salen de acá.
+
+Desde XL1-A (2026-11-09), el Excel va en una sola hoja, con una fila por ítem
+([diseño](dialogos-con-la-lista-de-chequeo.md)). Lo que este documento dice de la hoja del Excel quedó reemplazado.
 
 Origen: el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas
 «Formularios · renglones · 0» a «· 12» (RG0 a RG6 en la versión 55; RG7 y RG8, al final, en las versiones 79 y 82; RG12 en
