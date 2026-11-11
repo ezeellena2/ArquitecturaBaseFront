@@ -152,9 +152,11 @@ describe("the preview while loading (CA1-A)", () => {
     expect(entryCalculations(entry, draft({ [ids.freight]: "7,5" }, [item("a", "", "")]), new Set()).values[ids.total]).toBe("7.5");
   });
 
-  it("does not compute a rate that comes from a catalog: the server does it on sending", () => {
-    const result = entryCalculations(entry, { ...draft({ [ids.net]: "1000" }), choices: { [ids.rate]: [{ id: "00000000-0000-4000-8000-0000000000c1", title: "21 %", description: null }] } }, new Set());
-    expect(result.values[ids.vat]).toBeUndefined();
+  it("computes a rate chosen from a catalog with the value its option brings, and leaves it empty without one", () => {
+    const option = { id: "00000000-0000-4000-8000-0000000000c1", title: "21 %", description: null };
+    const result = entryCalculations(entry, { ...draft({ [ids.net]: "1000" }), choices: { [ids.rate]: [{ ...option, value: "21" }] } }, new Set());
+    expect(result.values[ids.vat]).toBe("210");
+    expect(entryCalculations(entry, { ...draft({ [ids.net]: "1000" }), choices: { [ids.rate]: [option] } }, new Set()).values[ids.vat]).toBeUndefined();
   });
 
   it("uses an earlier calculation's rounded result and ignores a hidden question and a value that is not a number", () => {
@@ -179,7 +181,7 @@ describe("how a calculation reads (CA1-A)", () => {
     expect(calculationFormula("sum", [], words)).toBe("Suma de …");
   });
 
-  it("names the questions of a draft and of a loaded form, and knows a rate from a catalog", () => {
+  it("names the questions of a draft and of a loaded form, a rate from a catalog too", () => {
     const amount = number("amount", "Importe", { repeated: true });
     const total = number("total", "Total", { calculation: { operation: "sum", operands: ["amount", "gone"] } });
     expect(draftFormulaOperands([block, amount, total], total, "es", "es")).toEqual([{ label: "Importe", allItems: true }, null]);
@@ -187,6 +189,6 @@ describe("how a calculation reads (CA1-A)", () => {
       ({ fieldId, type, label: fieldId, help: null, required: false, maxLength: null, options: null, selection: null, files: null, catalog: null, ...extra });
     const vat = q("vat", "decimal", { calculation: { operation: "percent", operands: ["net", "rate"] } });
     const entry = { questions: [q("net", "decimal"), q("rate", "choice", { catalog: { onlyOption: null, issue: null, missingData: null } }), vat] } as unknown as FormEntry;
-    expect(entryFormulaOperands(entry, vat)).toEqual({ operands: [{ label: "net", allItems: false }, { label: "rate", allItems: false }], catalogRate: true });
+    expect(entryFormulaOperands(entry, vat)).toEqual([{ label: "net", allItems: false }, { label: "rate", allItems: false }]);
   });
 });

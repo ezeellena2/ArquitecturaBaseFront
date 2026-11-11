@@ -185,7 +185,6 @@
     "multiply": "{{first}} por {{second}}",
     "percent": "Porcentaje: {{rate}} de {{base}}",
     "sum": "Suma de {{questions}}",
-    "allItems": "{{label}} de todos los ítems",
-    "withCatalogRate": "{{formula}}. Con una alícuota de un catálogo, se calcula al enviar."
+    "allItems": "{{label}} de todos los ítems"
   }
 }

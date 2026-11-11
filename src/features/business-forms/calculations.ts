@@ -133,8 +133,7 @@ export interface EntryCalculations {
 /**
  * The calculations of a response while it is loaded, in the order of the form, as the server computes them on receiving it:
  * a hidden question counts as empty, a calculation uses earlier ones already rounded, a sum adds a question of the block over
- * all the items, and a rate chosen from a catalog has no value here (its option does not bring it), so that percentage stays
- * empty until it is sent.
+ * all the items, and a rate chosen from a catalog is the value its option brings (none, in a catalog without values).
  */
 export function entryCalculations(entry: FormEntry, draft: EntryDraft, hidden: ReadonlySet<string>): EntryCalculations {
   const known = new Map<string, Exact[]>();
@@ -159,7 +158,8 @@ export function entryCalculations(entry: FormEntry, draft: EntryDraft, hidden: R
         const own = new Map<string, Exact[]>();
         const results: Record<string, string> = {};
         for (const inner of block) {
-          const number = inner.calculation ? calculate(inner, own) : inner.type === "decimal" ? parseExact(item.values[inner.fieldId] ?? "") : null;
+          const number = inner.calculation ? calculate(inner, own) : inner.type === "decimal" ? parseExact(item.values[inner.fieldId] ?? "")
+            : inner.type === "choice" ? parseExact(item.choices[inner.fieldId]?.[0]?.value ?? "") : null;
           if (!number) continue;
           own.set(inner.fieldId, [number]);
           remember(inner.fieldId, number);
@@ -167,6 +167,11 @@ export function entryCalculations(entry: FormEntry, draft: EntryDraft, hidden: R
         }
         items[item.key] = results;
       }
+      continue;
+    }
+    if (question.type === "choice") {
+      const rate = parseExact(draft.choices[question.fieldId]?.[0]?.value ?? "");
+      if (rate) remember(question.fieldId, rate);
       continue;
     }
     if (question.type !== "decimal") continue;
@@ -208,16 +213,10 @@ export function draftFormulaOperands(fields: readonly Question[], question: Ques
   });
 }
 
-/**
- * The questions a calculation of the form being loaded names, and whether the rate of its percentage comes from a catalog: its
- * option does not bring the value here, so the preview stays empty until it is sent.
- */
-export function entryFormulaOperands(entry: Pick<FormEntry, "questions">, question: FormEntryQuestion): { operands: (FormulaOperand | null)[]; catalogRate: boolean } {
+/** The questions a calculation of the form being loaded names. */
+export function entryFormulaOperands(entry: Pick<FormEntry, "questions">, question: FormEntryQuestion): (FormulaOperand | null)[] {
   const calculation = question.calculation;
-  if (!calculation) return { operands: [], catalogRate: false };
-  const named = calculation.operands.map(operand => entry.questions.find(item => item.fieldId === operand));
-  return {
-    operands: named.map(item => item ? { label: item.label, allItems: calculation.operation === "sum" && !question.repeated && !!item.repeated } : null),
-    catalogRate: calculation.operation === "percent" && named[1]?.type === "choice",
-  };
+  if (!calculation) return [];
+  return calculation.operands.map(operand => entry.questions.find(item => item.fieldId === operand))
+    .map(item => item ? { label: item.label, allItems: calculation.operation === "sum" && !question.repeated && !!item.repeated } : null);
 }

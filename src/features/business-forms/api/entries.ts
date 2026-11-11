@@ -2,7 +2,8 @@ import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 
 const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-export const entryOptionSchema = z.strictObject({ id: z.string().uuid(), title: z.string().min(1), description: z.string().min(1).nullable() });
+// `value` is the option's canonical value in a catalog with values (CA1-A: the rate of a percentage is seen while loading).
+export const entryOptionSchema = z.strictObject({ id: z.string().uuid(), title: z.string().min(1), description: z.string().min(1).nullable(), value: z.string().min(1).optional() });
 /** What a question of the block of rows can be: a value of its own in each item. */
 const itemTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 const questionSchema = z.strictObject({
