@@ -22,6 +22,10 @@ El Artifact requiere sesión y cambia fuera de Git: este documento congela lo ap
 Una propuesta dibujada no está implementada: necesita revisión, elección explícita y terminar en tokens,
 componentes compartidos y tests. No se copia un valor aislado en una pantalla.
 
+Un cambio pedido sobre una captura vale para toda la app (RF3; lo decidió el usuario el 2026-11-03 y quedó escrito el
+2026-11-11): se buscan las pantallas y los diálogos parecidos, no sólo los que usan el mismo patrón, y la regla se escribe
+general, en su sección de este documento.
+
 ## Pantalla nueva: primero el tablero
 
 Una pantalla nueva arranca como tablero en el Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ),
@@ -50,7 +54,9 @@ rediseñar. Al terminar, la pantalla suma su fila al “Mapa Artifact → proyec
 ## Lista de chequeo de diseño
 
 Todo tablero, toda pantalla y todo diálogo nuevo pasan esta lista antes de mostrarse para elegir y otra vez antes de
-programarse (pedido del usuario, 2026-11-09). No agrega reglas: junta las de este documento, las
+programarse (pedido del usuario, 2026-11-09). También lo que se suma a lo que ya existe: un control, un dato o un estado
+nuevo en una pantalla o un diálogo se dibuja con la pantalla entera y se pasa la lista otra vez, no sólo por lo nuevo
+(RF1, 2026-11-11). No agrega reglas: junta las de este documento, las
 [premisas](../guides/premisas-de-desarrollo.md) y el [contrato de mensajes](../guides/mensajes-y-estados.md), y enlaza
 cada una. Contestá las que apliquen y anotá en la nota del tablero cada diferencia aceptada, con su motivo; lo que no
 pasa se corrige antes de mostrarlo o se muestra como una pregunta. Al programar, la
@@ -344,7 +350,8 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
 ## Lecturas
 
 Una lectura es lo que se muestra de algo guardado sin editarlo: una regla plegada, una sugerencia, los datos de un
-registro, lo que propuso el asistente. Regla general del 2026-11-03 ([LR1](#lecturas-en-pasos-y-en-dos-columnas--2026-11-03)):
+registro, lo que propuso el asistente. También lo es lo que un diálogo dice de lo que va a hacer: cuántas, con qué
+filtros, a quién o a qué archivo van en `DataList`, como los datos de un registro (RF2, 2026-11-11). Regla general del 2026-11-03 ([LR1](#lecturas-en-pasos-y-en-dos-columnas--2026-11-03)):
 
 - **Ningún rótulo suelto con texto al lado.** Cada dato va en un lugar fijo, con lo principal destacado (negrita o el
   color del texto) y lo secundario en gris. No va un rótulo chico en gris pegado a una frase («Cuándo  Se recibe una

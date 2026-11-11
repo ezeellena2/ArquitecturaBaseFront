@@ -1,8 +1,8 @@
 # Diálogos con la lista de chequeo
 
 Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 (EX1-A, EX2-A y los 19 diálogos de DL) y
-programadas el mismo día**; faltan la prueba manual, `test:visual` y pasar los tableros al lienzo del sistema visual. Las
-confirmaciones dudosas, el control automático y las reglas RF1 a RF3 siguen sin decidir.
+programadas el mismo día**; faltan la prueba manual y pasar los tableros al lienzo del sistema visual. Las confirmaciones
+dudosas y las reglas RF1 a RF3 también quedaron con lo recomendado; el control automático no se agregó (abajo).
 
 Durante la prueba integral, exportando la planilla de «Remito de prueba» con el filtro de un bloque de ítems, el usuario
 marcó que el diálogo «Exportar respuestas a Excel» es una lista suelta y preguntó por qué, para diseñar algo nuevo, las
@@ -81,7 +81,10 @@ la revisión: doce preguntas que enlazan cada regla en su fuente, sin repetirla.
 dato por columna se enlazan; no se copian. La enlazan el [`AGENTS.md`](../../AGENTS.md) del front y el de
 [`docs`](../AGENTS.md), que es la guía de `docs/design`.
 
-## Reglas que faltan (propuestas, sin decidir)
+## Reglas nuevas (elegidas el 2026-11-11)
+
+Están escritas en [`visual-baseline.md`](visual-baseline.md): RF1 en la [lista de chequeo](visual-baseline.md#lista-de-chequeo-de-diseño),
+RF2 en [Lecturas](visual-baseline.md#lecturas) y RF3 en [cómo se usa esta base](visual-baseline.md#cómo-se-usa-esta-base).
 
 - **RF1 · Sumar a lo que existe repasa el conjunto.** Al agregar un control, un dato o un estado a una pantalla o un
   diálogo que ya existe, el tablero lo muestra entero y pasa la lista otra vez, no sólo lo nuevo.
@@ -140,7 +143,8 @@ y hay 5 confirmaciones dudosas. Los cuatro primeros están dibujados en el table
 | Opciones y Campos de un catálogo (`CatalogItemsDialog`, `CatalogFieldsDialog`) | Lo pendiente al guardar en texto rojo y «Nuevo» en etiqueta; los usos como frases. | Los dos estados en etiqueta, con UD3; los usos en renglones. |
 | Verificar número o correo (`VerifyDestinationDialog`); Nuevo usuario (`UserFormDialog`) | El rótulo «Código» y la zona de la invitación, armados a mano. | Las mismas piezas, sin rótulos ni márgenes propios. |
 
-Confirmaciones dudosas, para decidir una por una: «Pasar a modo Asistente» explica cómo trabaja el asistente;
+Confirmaciones dudosas (el 2026-11-11 quedaron en una frase con lo que se afecta, sin instrucciones; la del idioma dice que
+es por el idioma): «Pasar a modo Asistente» explica cómo trabaja el asistente;
 «Confirmar revisión del envío», «¿Quitar la clave?» y «Descartar pedido» suman una frase de instrucciones; y
 «¿Descartar los cambios?» al cambiar el idioma no dice que es por el idioma.
 
@@ -152,8 +156,10 @@ asistente tiene el mismo problema («Texto · opción 1, opción 2 · Obligatori
 
 ## Qué falta
 
-- Que el usuario decida las confirmaciones dudosas, el control automático (tarea 8 del
-  [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md)) y las reglas RF1 a RF3.
+- **Control automático (tarea 8 del [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md)): no se agregó.** La
+  sintaxis no distingue una viñeta con datos de una lista de cosas: hay diez archivos con listas legítimas dentro de un
+  diálogo (opciones, campos, el historial, las revisiones, los problemas de publicar). Lo cubren la lista de chequeo y la
+  revisión.
 - La prueba manual y `test:visual`, con cada referencia que cambió revisada: la exportación, la baja, la eliminación,
   publicar, los editores y los diálogos del catálogo, el envío de un formulario, la foto, la fecha especial, verificar y
   nuevo usuario.

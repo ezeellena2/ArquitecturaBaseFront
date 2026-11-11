@@ -1,7 +1,7 @@
 # Diálogos con la lista de chequeo
 
-Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 y programadas el mismo día (tareas 1 a 6); la 7
-y la 8 esperan la decisión del usuario; falta el cierre**.
+Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 y programadas el mismo día (tareas 1 a 7; la 8
+no se agregó); falta el cierre**.
 
 El [diseño](../design/dialogos-con-la-lista-de-chequeo.md) rehace el diálogo «Exportar respuestas a Excel» con la
 [lista de chequeo de diseño](../design/visual-baseline.md#lista-de-chequeo-de-diseño) y propone cómo quedan los demás
@@ -88,6 +88,9 @@ El usuario eligió las recomendadas por medio del chat que coordina la tanda fin
   opciones (3e36fc87), cambiar el tipo y opciones y campos (41c40d44), nuevo catálogo (1933d623), aprobar (52c89b99), la foto
   (e87f2b2c), la fecha especial (73f6f08d), elegir opciones en el celular (8fb3b9ff), verificar (c23ea2f3) y nuevo usuario
   (95e1b614). Las diferencias con los tableros están en el [diseño](../design/dialogos-con-la-lista-de-chequeo.md#cómo-quedó-2026-11-11).
+- **Tarea 7:** las cinco confirmaciones dudosas, en una frase con lo que se afecta (bdc810f1).
+- **Tarea 8:** no se agregó: la sintaxis no distingue una viñeta con datos de una lista de cosas (diez archivos con listas
+  legítimas dentro de un diálogo), así que los falsos positivos no se acotan. RF1 a RF3 quedaron en `visual-baseline.md`.
 - Cada commit pasó `tsc`, oxlint y vitest de lo tocado, con los tests de arquitectura y la paridad de idiomas. El cierre de
   abajo va en la verificación conjunta de la tanda.
 
