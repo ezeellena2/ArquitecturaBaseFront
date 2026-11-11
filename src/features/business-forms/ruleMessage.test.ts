@@ -82,6 +82,13 @@ describe("rule message", () => {
     expect(hasMissingRuleData(`Llegó {${gone}}`, questions)).toBe(true);
     expect(hasMissingRuleData(`Llegó {${remito}} {número}`, questions)).toBe(false);
   });
+
+  // UB4-A: a location arrives as the point and, on the line below, its map link (FormActionMessagePolicy).
+  it("shows a location as an example point with its map link on the line below", () => {
+    const where = "0199a0c0-0000-7000-8000-000000000008";
+    expect(ruleMessagePreview(`Visita en {${where}}`, [{ fieldId: where, type: "location", label: { es: "Dónde estás" } }], {}, "es", "es", "REG", i18n.getFixedT("es", "forms")))
+      .toEqual([{ text: "Visita en " }, { text: "-34.603722, -58.381592\nhttps://www.google.com/maps?q=-34.603722,-58.381592", sample: true }]);
+  });
 });
 
 describe("the block of rows as a datum", () => {

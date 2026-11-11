@@ -1,6 +1,7 @@
 import { formatDateOnly } from "@/shared/lib/dateTime";
 import { formatExactDecimal } from "@/shared/lib/decimal";
 import { localizedValue } from "./editorModel";
+import { formatCoordinates, mapUrl } from "./locationAnswer";
 import type { FormCulture, LocalizedText } from "./model";
 import type { RuleEvent } from "./rules";
 
@@ -132,6 +133,7 @@ function resultExample(kind: string, culture: FormCulture, t: Translate) {
   if (kind === "date") return formatDateOnly("2026-10-16", culture) ?? "2026-10-16";
   return t("rules.samples.result");
 }
+const examplePoint = { latitude: -34.603722, longitude: -58.381592 };
 function example(question: RuleMessageQuestion, choices: Choices, culture: FormCulture, original: FormCulture, t: Translate) {
   const labels = question.options?.map(option => localizedValue(option.label, culture, original)) ?? choices[question.fieldId]?.map(choice => choice.label) ?? [];
   switch (question.type) {
@@ -140,6 +142,8 @@ function example(question: RuleMessageQuestion, choices: Choices, culture: FormC
     case "boolean": return t("yes");
     case "choice": return labels[0] ?? t("rules.samples.answer");
     case "multiChoice": return labels.length ? labels.slice(0, Math.max(1, question.selection?.minSelected ?? 0)).join(", ") : t("rules.samples.answer");
+    // UB4-A: the point and, on the line below, its map link, as the message arrives.
+    case "location": return formatCoordinates(examplePoint) + "\n" + mapUrl(examplePoint);
     default: return t("rules.samples.answer");
   }
 }
