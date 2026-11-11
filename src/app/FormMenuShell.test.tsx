@@ -1,7 +1,8 @@
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { useContext } from "react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useNavigate } from "react-router";
 import { expect, it, vi } from "vitest";
 import { initialAppearance } from "@/shared/lib/appearance";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -38,4 +39,28 @@ it.each([
   renderWithProviders(<MemoryRouter><FormMenuShell><Probe /></FormMenuShell></MemoryRouter>);
   await waitFor(() => expect(screen.getByTestId("menu")).toHaveTextContent("none"));
   expect(read).not.toHaveBeenCalled();
+});
+
+it("remembers the form opened from the menu while its screens are open, and forgets it on leaving them", async () => {
+  server.use(presentation(["forms"]), http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })), http.get("/api/forms/menu", () => HttpResponse.json(menu)));
+  function Entry() {
+    const value = useContext(FolderMenuNavigationContext);
+    const navigate = useNavigate();
+    return <>
+      <p data-testid="entry">{value?.entry?.formLabel ?? "none"}</p>
+      <button type="button" onClick={() => { value?.enter({ key: "k", formId: route, panel: "folder-menu:x", menuLabel: "Repartos", formLabel: "Hoja de ruta" }); void navigate(`/formularios/${route}/respuestas`); }}>Abrir desde el menú</button>
+      <button type="button" onClick={() => { void navigate(`/formularios/${route}/respuestas/registro`); }}>Abrir una respuesta</button>
+      <button type="button" onClick={() => { void navigate("/"); }}>Volver a Inicio</button>
+      <button type="button" onClick={() => { void navigate(`/formularios/${route}/respuestas`); }}>Abrir desde Formularios</button>
+    </>;
+  }
+  renderWithProviders(<MemoryRouter><FormMenuShell><Entry /></FormMenuShell></MemoryRouter>);
+  await userEvent.click(await screen.findByRole("button", { name: "Abrir desde el menú" }));
+  await waitFor(() => expect(screen.getByTestId("entry")).toHaveTextContent("Hoja de ruta"));
+  await userEvent.click(screen.getByRole("button", { name: "Abrir una respuesta" }));
+  expect(screen.getByTestId("entry")).toHaveTextContent("Hoja de ruta");
+  await userEvent.click(screen.getByRole("button", { name: "Volver a Inicio" }));
+  await waitFor(() => expect(screen.getByTestId("entry")).toHaveTextContent("none"));
+  await userEvent.click(screen.getByRole("button", { name: "Abrir desde Formularios" }));
+  expect(screen.getByTestId("entry")).toHaveTextContent("none");
 });

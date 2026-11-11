@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Fragment, lazy, Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router";
+import { ItemFoldersButton } from "../components/ItemFoldersButton";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { maximumFiles, hasInvalidFileCounts } from "../fileQuestions";
@@ -381,6 +382,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     {canPublish && session.confirmed ? <DisabledReason reason={publicationBlocks ? progress.publishReason : null}><Button ref={publicationAction} type="button" disabled={knownDeleted || deactivated && !lifecycle?.canReactivate || frozen || editor.busy || publicationBlocks} onClick={() => openPublication(publicationAction.current)}>{t(deactivated ? "lifecycle.reactivate" : appOnly ? "publication.publish" : "publication.title")}</Button></DisabledReason> : null}
     {lifecycle && (scope.permissions.includes("formtemplates.publish") || scope.permissions.includes("formtemplates.manage")) ? <FormLifecycleMenu canManage={scope.permissions.includes("formtemplates.manage")} canPublish={canPublish} onDelete={() => { deletionFallback.current = lifecycleAction.current; setDeletionOpen(true); }} triggerRef={lifecycleAction} lifecycle={lifecycle} blocked={knownDeleted || frozen || editor.busy || publicationPending} onDeactivate={() => setDeactivationOpen(true)} onReactivate={() => openPublication(lifecycleAction.current)} /> : null}
     {"definition" in initial && initial.capabilities.canPreview && projection?.activeVersion && !appOnly ? <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)}>{t("publication.previewAction")}</Button> : null}
+    {/* CP2-A: the folders of a saved form, as from the row menu of the listing. */}
+    {"definition" in initial && scope.permissions.includes("formtemplates.manage") && !knownDeleted ? <ItemFoldersButton kind="definitions" id={initial.definition.id} name={displayName} /> : null}
   </>}>
     <div className="flex flex-col gap-4">
     {lifecycle ? <FormLifecycleNotice lifecycle={lifecycle} timeZoneId={timeZoneId} /> : null}

@@ -16,7 +16,7 @@ import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
-import { BanIcon, PencilIcon, RefreshIcon, TrashIcon } from "@/shared/ui/icons";
+import { BanIcon, FolderIcon, PencilIcon, RefreshIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
@@ -30,16 +30,23 @@ import { publicationLabelKey } from "../publicationPresentation";
 import { administrativeName } from "../editorModel";
 import { FormDeletionDialog } from "../components/FormDeletionDialog";
 import { FormDeactivationDialog } from "../components/FormDeactivationDialog";
+import { FolderLayout } from "../components/FolderLayout";
+import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
+import { folderListQuery } from "../folderTree";
+import { useFolderEmpty, useListingFolders } from "../hooks/useFormFolders";
 import type { FormListQuery } from "../api/forms";
 import type { readFormPage } from "../api/response";
 
 const sortFields = ["name", "-name", "questionCount", "-questionCount", "lastChangedAtUtc", "-lastChangedAtUtc"] as const;
 type Row = ReturnType<typeof readFormPage>["items"][number];
 export function FormsPage() {
-  const { t, i18n } = useTranslation("forms");
+  const { t, i18n } = useTranslation(["forms", "formFolders"]);
   const { data: user } = useCurrentUser();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  // CP1-A: the folder of the address filters the listing and its counts, with its subfolders, before paging.
+  const folders = useListingFolders("designs");
+  const [foldersOf, setFoldersOf] = useState<{ id: string; name: string } | null>(null);
   const [params] = useSearchParams();
   const update = useQueryUpdate();
   const navigate = useNavigate();
@@ -54,7 +61,7 @@ export function FormsPage() {
   const scope: FormReadScope = { actorId: pagination.ready ? user?.id ?? null : null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
   const query: FormListQuery = { page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
     pageSize: Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : presentation.data?.defaultPageSize ?? 20,
-    search: pagination.search, sort: sortFields.find(field => field === pagination.sort), publicationFilter };
+    search: pagination.search, sort: sortFields.find(field => field === pagination.sort), publicationFilter, ...folderListQuery(folders.selection) };
   const { list, facets } = useFormDefinitions(scope, query);
   const actionOwner = JSON.stringify(formScopeKey(scope));
   if (action && action.owner !== actionOwner) setAction(null);
@@ -62,6 +69,7 @@ export function FormsPage() {
   // SA3-A and SA5: where each form is completed, only with a form channel installed; without one, every form is of the app.
   const channels = presentation.data?.installedFeatures ? presentation.data.installedFeatures.includes("form-channels") : true;
   const hasFilters = !!query.search || publicationFilter !== "Active";
+  const folderEmpty = useFolderEmpty(folders, "forms", hasFilters);
   const feedbackId = `forms:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
   useEffect(() => {
@@ -95,14 +103,18 @@ export function FormsPage() {
     { id: "responseCount", header: t("responseCountColumn"), numeric: true, cell: row => row.lifecycle.responseCount ?? "—" },
     { id: "lastChangedAtUtc", header: t("changedColumn"), sortable: true, cell: row => formatDateInZone(row.lastChangedAtUtc, i18n.language, user?.timeZoneId) },
     { id: "lastChangedBy", header: t("changedByColumn"), cell: row => row.lastChangedBy?.displayName ?? "—" },
-    { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{ hidden: !canManage || !row.canEdit, label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }, { hidden: !canPublish || !row.lifecycle.canDeactivate, label: t("lifecycle.deactivate"), accessibleName: t("lifecycle.deactivate") + " " + administrativeName(row.name, scope.culture), icon: BanIcon, onSelect: () => chooseAction(row, "deactivate") }, { hidden: !canPublish || !row.lifecycle.canReactivate, label: t("lifecycle.reactivate"), accessibleName: t("lifecycle.reactivate") + " " + administrativeName(row.name, scope.culture), icon: RefreshIcon, onSelect: () => { void navigate("/formularios/" + row.id, { state: { reactivateFormId: row.id } }); } }, { hidden: !canManage || !row.lifecycle.canDelete || row.lifecycle.deletionUnavailableReason === "HasResponses" || row.lifecycle.responseCount !== null && row.lifecycle.responseCount > 0, label: t("lifecycle.delete"), accessibleName: t("lifecycle.delete") + " " + administrativeName(row.name, scope.culture), icon: TrashIcon, destructive: true, onSelect: () => chooseAction(row, "delete") }]} /> },
+    { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{ hidden: !canManage || !row.canEdit, label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }, { hidden: !canManage, label: t("formFolders:item.action"), accessibleName: t("formFolders:item.actionFor", { name: administrativeName(row.name, scope.culture) }), icon: FolderIcon, onSelect: () => setFoldersOf({ id: row.id, name: administrativeName(row.name, scope.culture) }) }, { hidden: !canPublish || !row.lifecycle.canDeactivate, label: t("lifecycle.deactivate"), accessibleName: t("lifecycle.deactivate") + " " + administrativeName(row.name, scope.culture), icon: BanIcon, onSelect: () => chooseAction(row, "deactivate") }, { hidden: !canPublish || !row.lifecycle.canReactivate, label: t("lifecycle.reactivate"), accessibleName: t("lifecycle.reactivate") + " " + administrativeName(row.name, scope.culture), icon: RefreshIcon, onSelect: () => { void navigate("/formularios/" + row.id, { state: { reactivateFormId: row.id } }); } }, { hidden: !canManage || !row.lifecycle.canDelete || row.lifecycle.deletionUnavailableReason === "HasResponses" || row.lifecycle.responseCount !== null && row.lifecycle.responseCount > 0, label: t("lifecycle.delete"), accessibleName: t("lifecycle.delete") + " " + administrativeName(row.name, scope.culture), icon: TrashIcon, destructive: true, onSelect: () => chooseAction(row, "delete") }]} /> },
   ];
   return <div ref={host}><Page title={t("title")} actions={canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.form"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button></> : undefined}>
+    <FolderLayout folders={folders}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("filter")} options={(["Active", "Published", "Drafts", "Deactivated"] as const).map(key => ({ key, label: `${t(key === "Active" ? "active" : key === "Published" ? "published" : key === "Drafts" ? "drafts" : "deactivated")} (${facets.data?.[key === "Active" ? "active" : key === "Published" ? "published" : key === "Drafts" ? "drafts" : "deactivated"] ?? "…"})`, pressed: publicationFilter === key, onSelect: () => update({ publicationFilter: key === "Active" ? undefined : key, page: undefined }) }))} /></div></div></FilterBar>
     {/* Searching, filtering, sorting or paging keeps the previous rows in sight: the table says it reads again until they arrive. */}
     <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); void facets.refetch(); }} sort={query.sort} onSortChange={pagination.toggleSort}
-      emptyTitle={t(hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters ? t("noMatchesDescription") : undefined} emptyAction={hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />
+      emptyTitle={folderEmpty?.title ?? t(hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters && !folderEmpty ? t("noMatchesDescription") : undefined}
+      emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button></div>
+        : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />
       {list.data ? <Pagination {...list.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /> : null}
     </Surface>
-  </Page>{canPublish && action?.owner === actionOwner && action.kind === "deactivate" ? <FormDeactivationDialog key={action.row.id} id={action.row.id} name={administrativeName(action.row.name, scope.culture)} scope={scope} onComplete={refresh} onObserved={refresh} onClose={() => setAction(null)} focusFallback={focusFallback} timeZoneId={user?.timeZoneId} /> : canManage && action?.owner === actionOwner && action.kind === "delete" ? <FormDeletionDialog id={action.row.id} name={administrativeName(action.row.name, scope.culture)} prefix={action.row.prefix} hasPublishedVersion={action.row.activeVersionNumber !== null && !action.row.lifecycle.publishedOnlyInApp} revision={action.row.lifecycle.revision} scope={scope} onChanged={() => { void refresh(); }} onDeleted={async () => { client.removeQueries({ queryKey: [...formScopeKey(scope), "detail", action.row.id] }); await refresh(); }} onClose={() => setAction(null)} focusFallback={focusFallback} /> : null}</div>;
+    </FolderLayout>
+  </Page>{canManage && foldersOf ? <ItemFoldersDialog kind="definitions" id={foldersOf.id} name={foldersOf.name} onClose={() => setFoldersOf(null)} /> : null}{canPublish && action?.owner === actionOwner && action.kind === "deactivate" ? <FormDeactivationDialog key={action.row.id} id={action.row.id} name={administrativeName(action.row.name, scope.culture)} scope={scope} onComplete={refresh} onObserved={refresh} onClose={() => setAction(null)} focusFallback={focusFallback} timeZoneId={user?.timeZoneId} /> : canManage && action?.owner === actionOwner && action.kind === "delete" ? <FormDeletionDialog id={action.row.id} name={administrativeName(action.row.name, scope.culture)} prefix={action.row.prefix} hasPublishedVersion={action.row.activeVersionNumber !== null && !action.row.lifecycle.publishedOnlyInApp} revision={action.row.lifecycle.revision} scope={scope} onChanged={() => { void refresh(); }} onDeleted={async () => { client.removeQueries({ queryKey: [...formScopeKey(scope), "detail", action.row.id] }); await refresh(); }} onClose={() => setAction(null)} focusFallback={focusFallback} /> : null}</div>;
 }

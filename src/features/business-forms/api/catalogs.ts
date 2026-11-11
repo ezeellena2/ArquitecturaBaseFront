@@ -55,6 +55,9 @@ export interface CatalogListQuery {
   readonly sort?: CatalogSortField | `-${CatalogSortField}`;
   readonly kind?: "Manual" | "Filters";
   readonly state?: "Active" | "Inactive" | "Unavailable";
+  /// CP1-A: a folder with its subfolders, or the catalogs without one; never both.
+  readonly folderId?: string;
+  readonly withoutFolder?: true;
 }
 export async function fetchCatalogPage(query: CatalogListQuery, signal?: AbortSignal) {
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));

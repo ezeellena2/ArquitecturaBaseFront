@@ -30,7 +30,8 @@ export function useFormDefinitions(scope: FormReadScope, query: FormListQuery) {
     gcTime: 0, meta: { errorOwner: "local" } });
   // Retain only a new successful result; a conditional adjustment avoids an extra effect render.
   if (list.data && !list.isPlaceholderData && (lastLoaded?.owner !== owner || lastLoaded.data !== list.data)) setLastLoaded({ owner, data: list.data });
-  const facetQuery = { search: query.search };
+  // The facets count inside the folder too (CP1-A), before the publication filter.
+  const facetQuery = { search: query.search, folderId: query.folderId, withoutFolder: query.withoutFolder };
   const facets = useQuery({ queryKey: [...root, "facets", facetQuery], queryFn: ({ signal }) => fetchFormFacets(facetQuery, signal), enabled,
     gcTime: 0, meta: { errorOwner: "local" } });
   return { list: { ...list, data: list.data ?? (lastLoaded?.owner === owner ? lastLoaded.data : undefined) }, facets };

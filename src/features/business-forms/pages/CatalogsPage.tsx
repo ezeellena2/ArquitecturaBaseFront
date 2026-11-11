@@ -20,6 +20,10 @@ import { SearchInput } from "@/shared/ui/SearchInput";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { CatalogListQuery } from "../api/catalogs";
 import { CatalogListTable } from "../components/CatalogListTable";
+import { FolderLayout } from "../components/FolderLayout";
+import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
+import { folderListQuery } from "../folderTree";
+import { useFolderEmpty, useListingFolders } from "../hooks/useFormFolders";
 import { CatalogOriginDialog } from "../components/CatalogOriginDialog";
 import { useCatalogPage } from "../hooks/useCatalogQueries";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
@@ -37,10 +41,14 @@ export function CatalogsPage() {
   const state = catalogStates.find(value => value === filters.values.state);
   const kind = filters.values.kind === "Manual" || filters.values.kind === "Filters" ? filters.values.kind : undefined;
   const [choosingOrigin, setChoosingOrigin] = useState(false);
+  // CP1-A: the folder of the address filters the listing, with its subfolders, before paging.
+  const folders = useListingFolders("catalogs");
+  const [foldersOf, setFoldersOf] = useState<{ id: string; name: string } | null>(null);
   const scope: CatalogReadScope = { actorId: pagination.ready ? user?.id ?? null : null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
-  const query: CatalogListQuery = { page: pagination.page, pageSize: pagination.pageSize, search: pagination.search, sort: sortFields.find(field => field === pagination.sort), kind, state };
+  const query: CatalogListQuery = { page: pagination.page, pageSize: pagination.pageSize, search: pagination.search, sort: sortFields.find(field => field === pagination.sort), kind, state, ...folderListQuery(folders.selection) };
   const list = useCatalogPage(scope, query);
   const hasFilters = !!query.search || kind !== undefined || state !== undefined;
+  const folderEmpty = useFolderEmpty(folders, "catalogs", hasFilters);
   const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : null })) } : undefined;
   const canManage = !!user?.permissions.includes("formcatalogs.manage");
   const feedbackId = `catalogs:list:${scope.actorId}:${scope.culture}`;
@@ -54,14 +62,20 @@ export function CatalogsPage() {
   // «Armar con la IA» goes before «Nuevo catálogo» and opens Home with the request begun (IA4).
   const newAction = canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.catalog"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button></> : undefined;
   return <Page title={t("catalogs.title")} actions={newAction}>
+    <FolderLayout folders={folders}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={(["All", "Manual", "Filters"] as const).map(key => ({ key,
       label: `${t(key === "All" ? "all" : key === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} (${list.data?.filterCounts.byKind[key === "All" ? "all" : key === "Manual" ? "manual" : "filters"] ?? "…"})`,
       pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div><DropdownMenu><FilterMenuTrigger>{t("catalogs.stateFilter", { state: state ? t("catalogs.state." + state) : t("all") })}<ChevronDownIcon aria-hidden="true" className="size-3.5" /></FilterMenuTrigger><DropdownMenuContent align="start"><DropdownMenuRadioGroup value={state ?? ""}>{([undefined, ...catalogStates] as const).map(value => <DropdownMenuRadioItem key={value ?? "All"} value={value ?? ""} onSelect={() => filters.setFilter("state", value)}>{value ? t("catalogs.state." + value) : t("all")}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></div></FilterBar>
     <CatalogListTable page={visiblePage} canManage={canManage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
       sort={query.sort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}
-      emptyAction={hasFilters ? <Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button> : newAction}
-      onEdit={id => { void navigate("/catalogos/" + id); }} onViewUsage={id => { void navigate("/catalogos/" + id); }} />
+      emptyTitle={folderEmpty?.title}
+      emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button></div>
+        : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button> : newAction}
+      onEdit={id => { void navigate("/catalogos/" + id); }} onViewUsage={id => { void navigate("/catalogos/" + id); }}
+      onFolders={row => setFoldersOf({ id: row.id, name: row.name })} />
+    </FolderLayout>
+    {foldersOf && canManage ? <ItemFoldersDialog kind="catalogs" id={foldersOf.id} name={foldersOf.name} onClose={() => setFoldersOf(null)} /> : null}
     {choosingOrigin && canManage ? <CatalogOriginDialog onOpenChange={setChoosingOrigin} onSelect={(origin, valueType) => { void navigate(origin === "Filters" ? "/catalogos/nuevo?kind=Filters" : "/catalogos/nuevo" + (valueType === "Text" ? "" : "?valueType=" + valueType)); }} /> : null}
   </Page>;
 }

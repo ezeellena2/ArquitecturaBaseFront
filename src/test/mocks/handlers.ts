@@ -68,4 +68,7 @@ export const handlers = [
   // El robot de delegación de ARCA, apagado: la pantalla de ARCA lo consulta para ofrecer el modo 3.
   http.get("/api/arca/connection/robot-runs/current", () => HttpResponse.json({ enabled: false, company: null, platform: null })),
   http.get("/account/login-methods", () => HttpResponse.json(loginMethods)),
+  // Synthetic doubles: no folders yet (CP1-A) and nothing in the side menu (CP5-A). Tests of the folders bring their own.
+  http.get("/api/forms/folders", () => HttpResponse.json({ folders: [], canManage: false })),
+  http.get("/api/forms/menu", () => HttpResponse.json({ menus: [], forms: [], administration: [] })),
 ];

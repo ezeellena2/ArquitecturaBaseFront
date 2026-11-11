@@ -8,12 +8,15 @@ export interface FormListQuery {
   readonly search?: string;
   readonly sort?: "name" | "-name" | "questionCount" | "-questionCount" | "lastChangedAtUtc" | "-lastChangedAtUtc";
   readonly publicationFilter: "Active" | "Published" | "Drafts" | "Deactivated";
+  /// CP1-A: a folder with its subfolders, or the forms without one; never both.
+  readonly folderId?: string;
+  readonly withoutFolder?: true;
 }
 function queryString(query: FormListQuery): string {
   return new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)])).toString();
 }
 export const fetchFormDefinitions = async (query: FormListQuery, signal?: AbortSignal) => readFormPage(await api.get<unknown>(`/api/forms/definitions?${queryString(query)}`, { signal }));
-export const fetchFormFacets = async (query: Pick<FormListQuery, "search">, signal?: AbortSignal) => readFormFacets(await api.get<unknown>(`/api/forms/definitions/facets?${new URLSearchParams(query.search ? { search: query.search } : {})}`, { signal }));
+export const fetchFormFacets = async (query: Pick<FormListQuery, "search" | "folderId" | "withoutFolder">, signal?: AbortSignal) => readFormFacets(await api.get<unknown>(`/api/forms/definitions/facets?${new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)]))}`, { signal }));
 export const fetchFormDefinition = async (id: string, signal?: AbortSignal) => readFormDetail(await api.get<unknown>(`/api/forms/definitions/${formId(id)}`, { signal }));
 /** The draft as the server takes it: the titles' local identities never travel, and without titles there is no list (CW15-B). */
 export function draftWire<TQuestion>(draft: FormDraft<TQuestion, { readonly start: number; readonly title: Readonly<Record<string, string>> }>): FormDraft<TQuestion> {

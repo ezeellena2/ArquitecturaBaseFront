@@ -20,10 +20,13 @@ export function FormMenuShell({ children }: { children: ReactNode }) {
   const owner = [user?.id ?? "", i18n.language, [...(user?.permissions ?? [])].sort().join(",")].join(":");
   const enabled = presentation.data?.installedFeatures?.includes("forms") === true && !!user?.permissions.some(permission => openForms.includes(permission));
   const [loaded, setLoaded] = useState<{ owner: string; value: FolderMenuState } | null>(null);
-  const [entry, setEntry] = useState<{ owner: string; value: FolderMenuEntry } | null>(null);
-  if (entry && !isEntryPath(pathname, entry.value)) setEntry(null);
+  // The entry is recorded on the click, before the router moves: it goes away once the path leaves the form's screens.
+  const [entry, setEntry] = useState<{ owner: string; value: FolderMenuEntry; from: string } | null>(null);
+  // Once its screens open, `from` no longer counts: going back where the click was also leaves them.
+  if (entry && isEntryPath(pathname, entry.value) && entry.from !== "") setEntry({ ...entry, from: "" });
+  else if (entry && pathname !== entry.from && !isEntryPath(pathname, entry.value)) setEntry(null);
   const onState = useCallback((value: FolderMenuState) => setLoaded({ owner, value }), [owner]);
-  const enter = useCallback((value: FolderMenuEntry) => setEntry({ owner, value }), [owner]);
+  const enter = useCallback((value: FolderMenuEntry) => setEntry({ owner, value, from: pathname }), [owner, pathname]);
   const unknown = userPending || presentation.isPending;
   const value = useMemo<FolderMenuNavigation>(() => ({
     ...(enabled && loaded?.owner === owner ? loaded.value : { content: undefined, pending: enabled || unknown, failed: false, retry: () => undefined }),

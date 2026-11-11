@@ -65,6 +65,18 @@ export function useListingFolders(listing: FolderListing) {
 }
 export type ListingFolders = ReturnType<typeof useListingFolders>;
 
+/// The empty listing inside a folder (CP4): «No hay catálogos en «Siembra y cosecha»», or, with a search or a filter, «No hay
+/// coincidencias en «Facturación»» with «Buscar en todas», which keeps what was written. Null in «Todos».
+export function useFolderEmpty(folders: ListingFolders, items: "forms" | "catalogs", hasFilters: boolean) {
+  const { t } = useTranslation("formFolders");
+  const name = folders.label;
+  const { select } = folders;
+  if (name === undefined) return null;
+  return hasFilters
+    ? { title: t("empty.matchesIn", { name }), searchAll: { label: t("empty.searchAll"), run: () => select({ kind: "all" }) } }
+    : { title: t(items === "catalogs" ? "empty.catalogsIn" : "empty.formsIn", { name }), searchAll: null };
+}
+
 /// A write of its own, outside MutationCache: who started it shows the wait and owns its result.
 function useWrite<TArgs extends unknown[], TResult>(write: (...args: TArgs) => Promise<TResult>) {
   const [pending, setPending] = useState(false);

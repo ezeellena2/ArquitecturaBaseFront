@@ -27,6 +27,7 @@ import type { Chat, ChatMessage, Outgoing } from "@/features/whatsapp/api/chat";
 import type { AiConnection, AiSaveRequest } from "@/features/artificial-intelligence/api/aiConnection";
 import type { BusinessInformation, BusinessSaveRequest, BusinessChange } from "@/features/artificial-intelligence/api/businessInformation";
 import { emptyBusinessDetails } from "@/features/artificial-intelligence/businessDetailsModel";
+import { createFolderVisualFixtures } from "./folderFixtures";
 
 // Datos ficticios estables, con los tipos de los contratos reales.
 export function installVisualFixtures(language: "es" | "en", scenario: string | null) {
@@ -112,6 +113,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const counts: UserFilterCounts = { status: { all: 4, active: 3, inactive: 1 }, roles: [{ name: "Admin", count: 1 }, { name: "User", count: 3 }], createdWithin: [{ days: 7, count: 0 }, { days: 30, count: 4 }] };
   let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1 };
   const nativeFetch = globalThis.fetch;
+  const folderFixture = createFolderVisualFixtures(language, scenario, profile.permissions);
   let ai: AiConnection = { provider: "OpenAI", model: scenario === "ai-empty" ? "" : "fictional-model", hasCredential: scenario !== "ai-empty", enabled: scenario !== "ai-empty", revision: 1, providers: ["OpenAI", "Anthropic"] };
   const aiReceipts = new Map<string, { requestId: string; connection: AiConnection }>();
   if (roleGroupsScenario) permissions.push({ area: "whatsapp", name: "WhatsApp", permissions: [
@@ -192,6 +194,9 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     const request = new Request(input instanceof Request ? input : new URL(String(input), location.origin), init);
     const requestUrl = new URL(request.url);
     const path = requestUrl.pathname;
+    // The folders (CP1-A to CP5-A) answer the same in every scene: none outside «*-folders».
+    const folderResponse = await folderFixture.handle(request);
+    if (folderResponse) return folderResponse;
     if (arcaFixture) { const result = await arcaFixture.handle(request); if (result) return result; }
     if (catalogExtraFieldsFixture) { const result = await catalogExtraFieldsFixture.handle(request); if (result) return result; }
     if (personDataFixture) { const result = await personDataFixture.handle(request); if (result) return result; }
@@ -321,7 +326,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A); `forms-publication-without-channels` is
     // the template without a form channel (SA5).
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
-      ...scenario === "forms-publication-without-channels" ? [] : ["form-channels"]] });
+      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels"]] });
     if (path === "/api/settings") return json(settings);
     if (path === "/api/roles/paged") return json(pageOf(roles));
     if (path === "/api/roles") return json(roles);
