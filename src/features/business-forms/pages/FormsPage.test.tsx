@@ -144,7 +144,8 @@ describe("Forms routes", () => {
     await screen.findByLabelText("Name");
     await userEvent.click(screen.getByRole("button", { name: "Publish on WhatsApp" }));
     const dialog = await screen.findByRole("dialog", { name: "Publish version 1 on WhatsApp" });
-    expect(await within(dialog).findByText("Without English: 1 text missing")).toBeInTheDocument();
+    // What is missing in English has its own row of «What is published» (DL, 2026-11-11).
+    expect((await within(dialog).findByText("Without English", { selector: "dt" })).nextElementSibling).toHaveTextContent(/^1 text missing/);
     expect(within(dialog).getByRole("button", { name: "What is missing in English" })).toHaveAccessibleDescription(/Notes · help/);
     expect(within(dialog).getByRole("button", { name: "Publish version 1" })).toBeEnabled();
     expect(within(dialog).queryByRole("button", { name: "Complete English" })).not.toBeInTheDocument();

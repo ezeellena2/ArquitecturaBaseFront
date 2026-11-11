@@ -150,6 +150,27 @@ describe("Chosen publication board PU1-A", () => {
     expect(screen.queryByText("Tus cambios siguen en el editor.")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeEnabled();
   });
+  // DL (2026-11-11): «Qué se publica» is the common `DataList`, each thing in its row: the languages, the one that is added and
+  // what is missing in the other, apart, and «Dónde se completa».
+  it("reads each thing of what is published in its own row, the languages apart from what is added or missing", async () => {
+    incompleteReport(2, "es", false);
+    await mount(manage);
+    const published = zone("Qué se publica");
+    expect(within(published).getAllByRole("term").map(term => term.textContent)).toEqual(["Borrador", "Preguntas", "Agregadas", "Cambiadas", "Quitadas", "Dónde se completa", "Idiomas", "Sin el inglés"]);
+    expect(row(published, "Dónde se completa")).toHaveTextContent(/^En la app y por WhatsApp$/);
+    expect(row(published, "Idiomas")).toHaveTextContent(/^Español$/);
+    const without = row(published, "Sin el inglés");
+    expect(without).toHaveTextContent(/^Faltan 2 textos/);
+    expect(within(without).getByRole("button", { name: "Qué falta en el inglés" })).toHaveAccessibleDescription("Faltan Nombre y Texto del botón final.");
+    cleanup();
+    result = { ...structuredClone(checked), diff: { ...checked.diff, addedCultures: ["en"], removedCultures: [] } };
+    await mount();
+    const added = zone("Qué se publica");
+    expect(within(added).getAllByRole("term").map(term => term.textContent).slice(-2)).toEqual(["Idiomas", "Se suma"]);
+    expect(row(added, "Idiomas")).toHaveTextContent(/^Español e inglés/);
+    expect(row(added, "Idiomas")).not.toHaveTextContent(/Se suma/);
+    expect(row(added, "Se suma")).toHaveTextContent(/^Inglés$/);
+  });
   // P4 to P6: reactivating shows the next response as a datum, and nothing explains the numbering or what comes back.
   it("reactivating shows the next response as a row, without explanations", async () => {
     await mount(undefined, value, { reactivation: { name: "Registrar visita", nextRecordNumber: "VIS-0042" } });
@@ -165,10 +186,11 @@ describe("Chosen publication board PU1-A", () => {
   });
 });
 
-// Completing a translation is offered with the menu in that language, the one it is edited in.
+// Completing a translation is offered with the menu in that language, the one it is edited in. What is missing has its own
+// row (DL, 2026-11-11), with its (i) and the completion.
 const completionTexts = {
-  es: { zone: "Qué se publica", row: "Idiomas", languages: { es: "Español", en: "Inglés" }, without: { es: "Sin el español: falta 1 texto", en: "Sin el inglés: falta 1 texto" }, missing: { es: "Qué falta en el español", en: "Qué falta en el inglés" }, help: "Cliente · la ayuda", publish: "Publicar versión 3", complete: { es: "Completar el español", en: "Completar el inglés" } },
-  en: { zone: "What is published", row: "Languages", languages: { es: "Spanish", en: "English" }, without: { es: "Without Spanish: 1 text missing", en: "Without English: 1 text missing" }, missing: { es: "What is missing in Spanish", en: "What is missing in English" }, help: "Customer · help", publish: "Publish version 3", complete: { es: "Complete Spanish", en: "Complete English" } },
+  es: { zone: "Qué se publica", row: "Idiomas", languages: { es: "Español", en: "Inglés" }, withoutRow: { es: "Sin el español", en: "Sin el inglés" }, without: "Falta 1 texto", missing: { es: "Qué falta en el español", en: "Qué falta en el inglés" }, help: "Cliente · la ayuda", publish: "Publicar versión 3", complete: { es: "Completar el español", en: "Completar el inglés" } },
+  en: { zone: "What is published", row: "Languages", languages: { es: "Spanish", en: "English" }, withoutRow: { es: "Without Spanish", en: "Without English" }, without: "1 text missing", missing: { es: "What is missing in Spanish", en: "What is missing in English" }, help: "Customer · help", publish: "Publish version 3", complete: { es: "Complete Spanish", en: "Complete English" } },
 } as const;
 for (const original of ["es", "en"] as const) {
   const secondary = original === "es" ? "en" : "es";
@@ -178,12 +200,12 @@ for (const original of ["es", "en"] as const) {
     const missing: FormPublicationCheck["issues"][number] = { channelId: null, fieldId: definition.draft.fields[0]!.fieldId, choiceId: null, path: "draft.fields[0].help." + secondary, code: "Forms.Publication.MissingTranslation", message: "Completá la ayuda.", limit: null, culture: secondary };
     result = { ...result, channels: [{ ...checked.channels[0]!, cultures: [original] }], cultures: [{ culture: original, isOriginal: true, isComplete: true, missing: [] }, { culture: secondary, isOriginal: false, isComplete: false, missing: [missing] }] };
     await mount(manage, { ...value, draft: { ...value.draft, culture: original } });
-    const languages = row(zone(texts.zone), texts.row);
-    expect(languages).toHaveTextContent(new RegExp("^" + texts.languages[original]));
-    expect(within(languages).getByText(texts.without[secondary])).toBeInTheDocument();
-    expect(within(languages).getByRole("button", { name: texts.missing[secondary] })).toHaveAccessibleDescription(new RegExp(escape(texts.help)));
+    expect(row(zone(texts.zone), texts.row)).toHaveTextContent(new RegExp("^" + texts.languages[original] + "$"));
+    const without = row(zone(texts.zone), texts.withoutRow[secondary]);
+    expect(without).toHaveTextContent(new RegExp("^" + texts.without));
+    expect(within(without).getByRole("button", { name: texts.missing[secondary] })).toHaveAccessibleDescription(new RegExp(escape(texts.help)));
     expect(screen.getByRole("button", { name: texts.publish })).toBeEnabled();
-    await userEvent.click(within(languages).getByRole("button", { name: texts.complete[secondary] }));
+    await userEvent.click(within(without).getByRole("button", { name: texts.complete[secondary] }));
     expect(onCompleteTranslation).toHaveBeenLastCalledWith(missing);
     expect(onGoToIssue).not.toHaveBeenCalled();
   });
@@ -193,7 +215,7 @@ it("shows optional omissions without a completion action for Publish-only", asyn
   await i18n.changeLanguage("en");
   result = { ...result, cultures: [{ ...checked.cultures[0]! }, { culture: "en", isOriginal: false, isComplete: false, missing: [{ channelId: null, fieldId: null, choiceId: null, path: "name.en", code: "Forms.Publication.MissingTranslation", message: "Completá el nombre.", limit: null, culture: "en" }] }] };
   await mount();
-  expect(within(row(zone("What is published"), "Languages")).getByText("Without English: 1 text missing")).toBeInTheDocument();
+  expect(row(zone("What is published"), "Without English")).toHaveTextContent(/^1 text missing/);
   expect(screen.queryByRole("button", { name: "Complete English" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publish version 3" })).toBeEnabled();
 });
@@ -201,13 +223,13 @@ it("announces a complete bilingual publication using the checked channels", asyn
   await mount();
   const languages = row(zone("Qué se publica"), "Idiomas");
   expect(languages).toHaveTextContent(/^Español e inglés/);
-  expect(within(languages).queryByText(/^Sin el/)).not.toBeInTheDocument();
+  expect(within(zone("Qué se publica")).queryByText(/^Sin el/, { selector: "dt" })).not.toBeInTheDocument();
   expect(within(languages).getByRole("button", { name: "Cómo se elige el idioma" })).toHaveAccessibleDescription(/^Se publican los dos idiomas\./);
 });
-it("shows the checked language addition", async () => {
+it("shows the checked language addition in its own row", async () => {
   result = { ...result, diff: { ...checked.diff, addedCultures: ["en"], removedCultures: [] } };
   await mount();
-  expect(within(row(zone("Qué se publica"), "Idiomas")).getByText("Se suma el inglés.")).toBeInTheDocument();
+  expect(row(zone("Qué se publica"), "Se suma")).toHaveTextContent(/^Inglés$/);
 });
 it("warns before removing a published language", async () => {
   result = { ...result, channels: [{ ...checked.channels[0]!, cultures: ["es"] }], diff: { ...checked.diff, addedCultures: [], removedCultures: ["en"] } };
@@ -241,9 +263,8 @@ it("keeps the languages row while the menu is in the language nobody started", a
   await i18n.changeLanguage("en");
   incompleteReport(8, "es", false);
   await mount(manage, spanishOnly(value));
-  const languages = row(zone("What is published"), "Languages");
-  expect(languages).toHaveTextContent(/^Spanish/);
-  expect(within(languages).getByText("Without English: 8 texts missing")).toBeInTheDocument();
+  expect(row(zone("What is published"), "Languages")).toHaveTextContent(/^Spanish$/);
+  expect(row(zone("What is published"), "Without English")).toHaveTextContent(/^8 texts missing/);
 });
 
 it("renders the complete publication decision in English without changing content cultures", async () => {
@@ -266,12 +287,13 @@ it.each([1, 3, 4, 8])("names at most three optional omissions in the (i) and cou
   // English original with the menu in Spanish, the language that can be completed.
   incompleteReport(count, "en", false);
   await mount(manage, { ...value, draft: { ...value.draft, culture: "en" } });
-  const languages = row(zone("Qué se publica"), "Idiomas");
+  const without = row(zone("Qué se publica"), "Sin el español");
   const names = ["Nombre", "Texto del botón final", "Cliente · la pregunta"].slice(0, Math.min(count, 3));
   const list = new Intl.ListFormat("es", { type: "conjunction" }).format(count > 3 ? [...names, count - 3 + " más"] : names);
   // P10: the count stays, without «Podés publicar igual y sumarlo en otra versión.».
-  expect(within(languages).getByRole("button", { name: "Qué falta en el español" })).toHaveAccessibleDescription((count === 1 ? "Falta " : "Faltan ") + list + ".");
-  expect(within(languages).getByRole("button", { name: "Completar el español" })).toBeEnabled();
+  expect(without).toHaveTextContent(new RegExp("^" + (count === 1 ? "Falta 1 texto" : "Faltan " + count + " textos")));
+  expect(within(without).getByRole("button", { name: "Qué falta en el español" })).toHaveAccessibleDescription((count === 1 ? "Falta " : "Faltan ") + list + ".");
+  expect(within(without).getByRole("button", { name: "Completar el español" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Publicar versión 3" })).toBeEnabled();
 });
 for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as const) {
@@ -288,8 +310,8 @@ for (const ui of ["es", "en"] as const) for (const original of ["es", "en"] as c
     const hint = es ? "Desde la versión 3, las cuentas en " + languages[secondary] + " lo reciben en " + languages[original] + "." : "From version 3, accounts in " + languages[secondary] + " receive it in " + languages[original] + ".";
     expect(within(warnings).getByRole("button", { name: es ? "Qué cambia para el " + languages[secondary] : "What changes for " + languages[secondary] }))
       .toHaveAccessibleDescription(new RegExp("^" + escape(hint) + (es ? " Faltan .* y 5 más\\.$" : " Missing: .*, and 5 more\\.$")));
-    // The published languages do not repeat it.
-    expect(within(row(zone(es ? "Qué se publica" : "What is published"), es ? "Idiomas" : "Languages")).queryByText(es ? /^Sin el/ : /^Without/)).not.toBeInTheDocument();
+    // The published languages do not repeat it: no row of what is missing.
+    expect(within(zone(es ? "Qué se publica" : "What is published")).queryByText(es ? /^Sin el/ : /^Without/, { selector: "dt" })).not.toBeInTheDocument();
     // Only with the menu in the removed language does the warning offer to complete it.
     if (ui !== secondary) { expect(within(warnings).queryByRole("button", { name: /^(Completar|Complete) / })).not.toBeInTheDocument(); return; }
     await userEvent.click(within(warnings).getByRole("button", { name: es ? "Completar el " + languages[secondary] : "Complete " + languages[secondary] }));
@@ -310,14 +332,14 @@ it("keeps one removal warning and its omissions without an editing action for Pu
 it("offers to complete a translation only when the menu is in that language", async () => {
   const missing = incompleteReport(2, "es", false);
   await mount(manage);
-  expect(within(row(zone("Qué se publica"), "Idiomas")).getByText("Sin el inglés: faltan 2 textos")).toBeInTheDocument();
+  expect(row(zone("Qué se publica"), "Sin el inglés")).toHaveTextContent(/^Faltan 2 textos/);
   expect(screen.queryByRole("button", { name: "Completar el inglés" })).not.toBeInTheDocument();
   cleanup();
   await i18n.changeLanguage("en");
   await mount(manage);
-  const languages = row(zone("What is published"), "Languages");
-  expect(within(languages).getByText("Without English: 2 texts missing")).toBeInTheDocument();
-  await userEvent.click(within(languages).getByRole("button", { name: "Complete English" }));
+  const without = row(zone("What is published"), "Without English");
+  expect(without).toHaveTextContent(/^2 texts missing/);
+  await userEvent.click(within(without).getByRole("button", { name: "Complete English" }));
   expect(onCompleteTranslation).toHaveBeenCalledExactlyOnceWith(missing[0]);
 });
 

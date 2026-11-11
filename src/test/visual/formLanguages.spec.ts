@@ -25,19 +25,20 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: es ? "Publicar la versión " + version + " en WhatsApp" : "Publish version " + version + " on WhatsApp", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: es ? "Publicar versión " + version : "Publish version " + version, exact: true })).toBeEnabled();
-    // PU1-A (2026-11-01): the languages are a row of «Qué se publica»; what is missing is the (i) of that row, and a language
-    // that stops being published is a warning with its own (i).
+    // PU1-A (2026-11-01): the languages are a row of «Qué se publica», and a language that stops being published is a warning
+    // with its own (i). What is missing and what is added have rows of their own (DL, 2026-11-11): what is missing keeps its (i).
     const incomplete = state === "original" || state === "remove";
     const published = dialog.getByRole("region", { name: es ? "Qué se publica" : "What is published", exact: true });
-    const languages = published.locator("dt", { hasText: es ? "Idiomas" : "Languages" }).locator("xpath=following-sibling::dd[1]");
+    const rowValue = (label: string) => published.locator("dt", { hasText: new RegExp("^" + label + "$") }).locator("xpath=following-sibling::dd[1]");
+    const languages = rowValue(es ? "Idiomas" : "Languages");
     await expect(languages).toContainText(incomplete ? es ? "Español" : "Spanish" : es ? "Español e inglés" : "Spanish and English");
-    const without = languages.getByText(es ? "Sin el inglés: faltan 3 textos" : "Without English: 3 texts missing", { exact: true });
+    const without = rowValue(es ? "Sin el inglés" : "Without English");
     const warnings = dialog.getByRole("region", { name: es ? "Avisos" : "Warnings", exact: true });
     // A text missing in English is named in English when the question has it, and in Spanish when it does not.
     const missing = es ? "Faltan Cliente · la opción «Pérez Hnos.», Importe cobrado · la pregunta y Observaciones · la ayuda." : "Missing: Customer · option “Pérez Hnos.”, Importe cobrado · question, and Notes · help.";
     if (state === "original") {
-      await expect(without).toBeVisible();
-      await expect(languages.getByRole("button", { name: es ? "Qué falta en el inglés" : "What is missing in English", exact: true })).toHaveAccessibleDescription(missing);
+      await expect(without.getByText(es ? "Faltan 3 textos" : "3 texts missing", { exact: true })).toBeVisible();
+      await expect(without.getByRole("button", { name: es ? "Qué falta en el inglés" : "What is missing in English", exact: true })).toHaveAccessibleDescription(missing);
     } else await expect(without).toHaveCount(0);
     if (state === "remove") {
       await expect(warnings.getByText(es ? "Deja de publicarse." : "It will no longer be published.", { exact: true })).toBeVisible();
@@ -49,10 +50,10 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
       if (es) await expect(dialog.getByRole("button", { name: "Completar el inglés", exact: true })).toHaveCount(0);
       else await expect(dialog.getByRole("button", { name: "Complete English", exact: true })).toBeEnabled();
     }
-    if (state === "add") await expect(languages.getByText(es ? "Se suma el inglés." : "English is added.", { exact: true })).toBeVisible();
+    if (state === "add") await expect(rowValue(es ? "Se suma" : "Language added")).toHaveText(es ? "Inglés" : "English");
     await page.evaluate(() => document.fonts.ready);
-    // The row wraps inside its zone, the completion included: nothing runs off to the side.
-    expect(await languages.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    // The rows wrap inside their zone, the completion included: nothing runs off to the side.
+    for (const value of state === "original" ? [languages, without] : [languages]) expect(await value.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     if (incomplete && !es) {
       const zone = (await (state === "remove" ? warnings : published).boundingBox())!;
       const action = (await dialog.getByRole("button", { name: "Complete English", exact: true }).boundingBox())!;

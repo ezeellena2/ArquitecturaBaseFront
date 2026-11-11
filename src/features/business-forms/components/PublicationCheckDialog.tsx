@@ -6,6 +6,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
+import { DataList, type DataListItem } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -25,17 +26,12 @@ import { Finding, findingRows as rows, type PublicationIssue } from "./Publicati
 type PublicationWarning = FormPublicationCheck["warnings"][number];
 const muted = "text-[var(--color-content-muted)]";
 
-// A row of «Qué se publica»: the label on the left from 640 px and on top below, like a `CatalogRow`.
-function SummaryRow({ label, children }: { label: string; children: ReactNode }) {
-  return <div className="grid gap-1 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-x-4">
-    <dt className="text-sm font-medium sm:flex sm:min-h-[var(--height-control)] sm:items-center">{label}</dt>
-    <dd className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:min-h-[var(--height-control)]">{children}</dd>
-  </div>;
-}
 // A text with its (i) right after the last word, also when the line wraps.
 function WithHelp({ label, help, children }: { label: string; help: string; children: ReactNode }) {
   return <p className={muted}><span>{children}</span> <span className="-my-1 inline-flex align-middle"><InfoTip label={label} text={help} /></span></p>;
 }
+// An (i) inside a row of «Qué se publica»: it does not make the row taller than its text.
+const RowHelp = ({ label, text }: { label: string; text: string }) => <span className="-my-1 inline-flex"><InfoTip label={label} text={text} /></span>;
 
 // Before publishing (board PU1-A, 2026-11-01): what stops it and what is worth reviewing, each in its zone only when there is
 // any, and what is published in rows. Explanations go in the (i); why Publish is off is its reason, not a note under it.
@@ -133,30 +129,55 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     }
   };
   const currentNames = (ids: readonly string[]) => value.draft.fields.filter(q => q.fieldId && ids.includes(q.fieldId)).map(q => localizedValue(q.label, scope.culture, value.draft.culture)).join(", ");
-  const summaryRows = (diff: FormPublicationCheck["diff"] | null) => <>
-    {reactivation?.nextRecordNumber ? <SummaryRow label={t("publication.nextRecordRow")}>{reactivation.nextRecordNumber}</SummaryRow> : null}
-    {savedAt ? <SummaryRow label={t("publication.draftRow")}>{t("publication.savedAtValue", { date: savedAt })}</SummaryRow> : null}
-    <SummaryRow label={t("publication.questionsRow")}>{questionCount(value.draft.fields)}</SummaryRow>
-    {/* The changes are against the published version, without naming it: a newer one is never labeled with a stale number. */}
-    {diff?.baseVersionId && diff.added.length ? <SummaryRow label={t("publication.addedRow")}>{currentNames(diff.added)}</SummaryRow> : null}
-    {diff?.baseVersionId && diff.changed.length ? <SummaryRow label={t("publication.changedRow")}>{currentNames(diff.changed)}</SummaryRow> : null}
-    {diff?.baseVersionId && diff.removed.length ? <SummaryRow label={t("publication.removedRow")}>{t("publication.questions", { count: diff.removed.length })}</SummaryRow> : null}
-    {/* RG6-A: the published questions that entered the block are new ones, not removed and added. */}
-    {diff?.baseVersionId && diff.movedToRows?.length ? <SummaryRow label={t("publication.movedToRowsRow")}>{currentNames(diff.movedToRows)}</SummaryRow> : null}
-    {/* SA3-A: where the new version is completed; without a channel there is nothing to say (SA5). */}
-    {channels ? <SummaryRow label={t("completedIn.label")}>{t(appOnly ? "completedIn.app" : "completedIn.channels")}</SummaryRow> : null}
-  </>;
-  const skeleton = (width: string) => <Skeleton className={cn("h-3", width)} />;
+  // «Qué se publica» reads in the common `DataList` (DL, 2026-11-11): each thing in its row, the languages apart from the one
+  // that is added and from what is missing in the other, which keeps its (i) and the completion.
+  const row = (key: string, label: string, content: ReactNode): DataListItem => ({ key, label, value: content });
+  const summaryRows = (diff: FormPublicationCheck["diff"] | null): DataListItem[] => [
+    ...reactivation?.nextRecordNumber ? [row("next", t("publication.nextRecordRow"), reactivation.nextRecordNumber)] : [],
+    ...savedAt ? [row("draft", t("publication.draftRow"), t("publication.savedAtValue", { date: savedAt }))] : [],
+    row("questions", t("publication.questionsRow"), questionCount(value.draft.fields)),
+    // The changes are against the published version, without naming it: a newer one is never labeled with a stale number.
+    ...diff?.baseVersionId && diff.added.length ? [row("added", t("publication.addedRow"), currentNames(diff.added))] : [],
+    ...diff?.baseVersionId && diff.changed.length ? [row("changed", t("publication.changedRow"), currentNames(diff.changed))] : [],
+    ...diff?.baseVersionId && diff.removed.length ? [row("removed", t("publication.removedRow"), t("publication.questions", { count: diff.removed.length }))] : [],
+    // RG6-A: the published questions that entered the block are new ones, not removed and added.
+    ...diff?.baseVersionId && diff.movedToRows?.length ? [row("movedToRows", t("publication.movedToRowsRow"), currentNames(diff.movedToRows))] : [],
+    // SA3-A: where the new version is completed; without a channel there is nothing to say (SA5).
+    ...channels ? [row("completedIn", t("completedIn.label"), t(appOnly ? "completedIn.app" : "completedIn.channels"))] : [],
+  ];
+  const languageRows = (): DataListItem[] => !publishedCultures.length || monolingual ? [] : [
+    row("languages", t("publication.languagesRow"), <span className="flex flex-wrap items-center gap-x-1">
+      <span>{list.format(publishedCultures.map((culture, index) => t((index ? "cultureNamesInText." : "cultures.") + culture)))}</span>
+      {publishedCultures.length > 1 ? <RowHelp label={t("publication.languagesHelpLabel")} text={t("publication.severalLanguagesHint")} /> : null}
+    </span>),
+    ...addedCultures.map(culture => row("added-" + culture, t("publication.addedCultureRow"), t("cultures." + culture))),
+    ...untranslated.filter(item => !removedCultures.includes(item.culture)).map(({ culture, missing }) => {
+      const language = t("cultureNamesInText." + culture);
+      return row("without-" + culture, t("publication.withoutCultureRow", { language }), <span className="flex flex-wrap items-center gap-x-1">
+        <span>{t("publication.withoutCulture", { count: missing.length })}</span>
+        <RowHelp label={t("publication.missingHelpLabel", { language })} text={missingList(missing)} />
+        {complete(culture)}
+      </span>);
+    }),
+  ];
+  const prefixRows = (): DataListItem[] => prefixLocked ? [] : [row("prefix", t("publication.prefixRow"), <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <span>{value.prefix}</span>
+    <span className={cn("flex items-center gap-x-1", muted)}><span>{t("publication.prefixFixed")}</span><RowHelp label={t("publication.prefixHelpLabel")} text={t("publication.fixedPrefix", { prefix: value.prefix })} /></span>
+  </span>)];
+  // A bar in the height of a line of text, so the rows keep their height when the check arrives.
+  const skeleton = (width: string) => <span className="flex h-5 items-center"><Skeleton className={cn("h-3", width)} /></span>;
   const content = dirty ? null
-    : checking ? <Surface title={t("publication.summary")} headingLevel={3}>
+    : checking ? <Surface title={t("publication.summary")} headingLevel={3} padded>
       <div role="status" aria-label={t("publication.checking")}>
-        <dl aria-hidden="true" className={rows}>
-          {savedAt ? <SummaryRow label={t("publication.draftRow")}>{skeleton("w-40")}</SummaryRow> : null}
-          <SummaryRow label={t("publication.questionsRow")}>{skeleton("w-8")}</SummaryRow>
-          {channels ? <SummaryRow label={t("completedIn.label")}>{skeleton("w-40")}</SummaryRow> : null}
-          {!monolingual ? <SummaryRow label={t("publication.languagesRow")}>{skeleton("w-52")}</SummaryRow> : null}
-          {!prefixLocked ? <SummaryRow label={t("publication.prefixRow")}>{skeleton("w-36")}</SummaryRow> : null}
-        </dl>
+        <div aria-hidden="true">
+          <DataList items={[
+            ...savedAt ? [row("draft", t("publication.draftRow"), skeleton("w-40"))] : [],
+            row("questions", t("publication.questionsRow"), skeleton("w-8")),
+            ...channels ? [row("completedIn", t("completedIn.label"), skeleton("w-40"))] : [],
+            ...!monolingual ? [row("languages", t("publication.languagesRow"), skeleton("w-52"))] : [],
+            ...!prefixLocked ? [row("prefix", t("publication.prefixRow"), skeleton("w-36"))] : [],
+          ]} />
+        </div>
       </div>
     </Surface>
     : check.error ? <EmptyState title={t(check.error instanceof ApiError && check.error.status === 403 ? "publication.noPermission" : "publication.pending")} action={check.error instanceof ApiError && check.error.status === 403 ? undefined : <DisabledReason reason={waitReason}><Button type="button" variant="outline" disabled={cooldown.isRunning} onClick={() => void check.check(id, body)}>{t("common:actions.retry")}</Button></DisabledReason>} />
@@ -183,27 +204,8 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
           </Finding>)}
         </ul>
       </Surface> : null}
-      <Surface title={t("publication.summary")} headingLevel={3}>
-        <dl className={rows}>
-          {summaryRows(result.diff)}
-          {publishedCultures.length && !monolingual ? <SummaryRow label={t("publication.languagesRow")}>
-            <span>{list.format(publishedCultures.map((culture, index) => t((index ? "cultureNamesInText." : "cultures.") + culture)))}</span>
-            {publishedCultures.length > 1 ? <InfoTip label={t("publication.languagesHelpLabel")} text={t("publication.severalLanguagesHint")} /> : null}
-            {addedCultures.map(culture => <span key={culture} className={muted}>{t("publication.cultureAdded", { language: t("cultureNamesInText." + culture) })}</span>)}
-            {untranslated.filter(item => !removedCultures.includes(item.culture)).map(({ culture, missing }) => {
-              const language = t("cultureNamesInText." + culture);
-              return <span key={culture} className="flex flex-wrap items-center gap-x-1">
-                <span className={muted}>{t("publication.withoutCulture", { language, count: missing.length })}</span>
-                <InfoTip label={t("publication.missingHelpLabel", { language })} text={missingList(missing)} />
-                {complete(culture)}
-              </span>;
-            })}
-          </SummaryRow> : null}
-          {!prefixLocked ? <SummaryRow label={t("publication.prefixRow")}>
-            <span>{value.prefix}</span>
-            <span className={cn("flex items-center gap-x-1", muted)}><span>{t("publication.prefixFixed")}</span><InfoTip label={t("publication.prefixHelpLabel")} text={t("publication.fixedPrefix", { prefix: value.prefix })} /></span>
-          </SummaryRow> : null}
-        </dl>
+      <Surface title={t("publication.summary")} headingLevel={3} padded>
+        <DataList items={[...summaryRows(result.diff), ...languageRows(), ...prefixRows()]} />
       </Surface>
     </div> : null;
   // Why Publish is off is its reason: a problem, the expired check, a publication in progress or a channel not available.
