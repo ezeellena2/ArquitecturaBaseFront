@@ -16,7 +16,7 @@ let listed: readonly Record<string, unknown>[];
 beforeEach(() => {
   queryClient.clear();
   store = createFormFixtureStore("es");
-  listed = [{ key: "arca.invoice", version: 1, name: "Factura", description: "La factura con sus ítems.", prefix: "FAC", copies: 1, culture: "es" }];
+  listed = [{ key: "arca.invoice", version: 1, name: "Factura", description: "La factura con sus ítems.", prefix: "FAC", copies: 1, culture: "es", suggestedPrefix: "FAC2" }];
   server.use(
     http.get("/api/forms/library", () => HttpResponse.json({ standards: listed })),
     http.get("/api/forms/definitions/:id", async ({ request }) => {
