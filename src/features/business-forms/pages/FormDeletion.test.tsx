@@ -2,7 +2,7 @@ import { QueryObserver } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
 import { server } from "@/test/mocks/server";
@@ -10,6 +10,8 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// The first test of a file pays the editor's lazy route; loading it beforehand keeps that wait out of the tests under load.
+beforeAll(async () => { await import("./FormEditorPage"); }, 60000);
 let stopOverview: (() => void) | undefined;
 afterEach(() => { stopOverview?.(); stopOverview = undefined; });
 function setup(scenario = "forms-lifecycle", permissions = ["formtemplates.read", "formtemplates.manage"]) {
