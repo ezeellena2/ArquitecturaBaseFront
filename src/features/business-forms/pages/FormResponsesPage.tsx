@@ -348,6 +348,8 @@ export function FormResponsesPage() {
           columns={data.columns}
           visible={visible}
           visibleCatalogFields={visibleCatalogFields}
+          resultColumns={data.resultColumns}
+          visibleResults={resultColumns}
           onForbidden={() => {
             setPanel(null);
             notify({ id: `responses:export-permission:${scope.owner}:${formId}`, kind: "error", message: t("responses.exportNoPermission") });

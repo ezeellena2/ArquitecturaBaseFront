@@ -260,7 +260,7 @@ it("exports the same selected state without adding a state facet or another filt
   expect(screen.queryByRole("checkbox", { name: "Incluir las anuladas" })).not.toBeInTheDocument();
   await userEvent.click(await screen.findByRole("button", { name: "Exportar a Excel" }));
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
-  expect(body).toEqual({ filter: selected, columns: null, catalogFields: null });
+  expect(body).toEqual({ filter: selected, columns: null, catalogFields: null, resultColumns: null });
 });
 
 // CW11-A: the Excel leaves the voided out unless «Incluir las anuladas», unchecked at first, asks for them.
@@ -276,7 +276,7 @@ it("adds the voided responses to the Excel only when they are asked for", async 
   await userEvent.click(include);
   await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
   await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledOnce());
-  expect(body).toEqual({ filter: all, columns: null, catalogFields: null, includeVoided: true });
+  expect(body).toEqual({ filter: all, columns: null, catalogFields: null, resultColumns: null, includeVoided: true });
 });
 
 // The export says once what always goes in the (i) next to «Columnas» (EX1-A), and its button waits with «Exportando…».

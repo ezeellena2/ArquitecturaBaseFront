@@ -22,9 +22,11 @@ import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
+import type { ResponseResultColumn } from "../api/responses";
 import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
 
-/// The columns of the Excel (XL1-A): one per question with its catalog fields, and a block as «Ítem» and its questions.
+/// The columns of the Excel (XL1-A): one per question with its catalog fields, a block as «Ítem» and its questions, and one per
+/// datum of the results (RE1-A), counted apart.
 // A location goes in the file as Latitud, Longitud and Precisión; any other question, as its answer, «· valor» when its
 // catalog has values, and its catalog fields, as FormExportService writes them.
 const locationColumns = 3;
@@ -43,6 +45,8 @@ export function ResponseExportDialog({
   columns,
   visible,
   visibleCatalogFields = [],
+  resultColumns = [],
+  visibleResults = [],
   onClose,
   onForbidden,
   filterLabels,
@@ -56,6 +60,9 @@ export function ResponseExportDialog({
   columns: readonly ResponseColumn[];
   visible: readonly ResponseColumn[];
   visibleCatalogFields?: readonly ResponseCatalogFieldSelection[];
+  /// The data of the results (RE1-A): all of them, and the ones «Columnas» shows.
+  resultColumns?: readonly ResponseResultColumn[];
+  visibleResults?: readonly ResponseResultColumn[];
   onClose: () => void;
   onForbidden: () => void;
   filterLabels: readonly string[];
@@ -70,11 +77,11 @@ export function ResponseExportDialog({
   const restore = useRestoreFocusOnClose();
   const count = formatExactDecimal(String(total), i18n.language) ?? String(total);
   const voided = includeVoided && !filter.state;
-  const allColumns = exportedColumns(columns);
-  // The visible catalog fields come apart: each visible question counts only its own columns.
+  const allColumns = exportedColumns(columns) + resultColumns.length;
+  // The visible catalog fields and data of the results come apart: each visible question counts only its own columns.
   const visibleColumns = visible.reduce((sum, column) => sum + (column.type === "group"
     ? 1 + (column.questions ?? []).reduce((inner, question) => inner + ownColumns(question), 0) : ownColumns(column)), 0)
-    + visibleCatalogFields.length;
+    + visibleCatalogFields.length + visibleResults.length;
   const nothingHidden = visibleColumns === allColumns;
   // The block that goes in the file: with «Solo las visibles», only if its column is visible.
   const block = (selection === "visible" ? visible : columns).find(column => column.type === "group");
@@ -100,6 +107,8 @@ export function ResponseExportDialog({
               ? visible.map((column) => column.fieldId)
               : null,
           catalogFields: selection === "visible" ? visibleCatalogFields : null,
+          // The data of the results that are seen, by their ids (RE1-A); null takes them all.
+          resultColumns: selection === "visible" ? visibleResults.map((column) => column.id) : null,
           // The voided go only when asked (CW11-A); unchecked, the body stays as it always was.
           ...(includeVoided && !filter.state ? { includeVoided: true } : {}),
         },

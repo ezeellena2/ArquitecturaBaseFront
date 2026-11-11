@@ -178,3 +178,5 @@ Igual a los tableros, con estas diferencias, que siguen reglas que ya existían:
   sólo Idioma (si es el otro) y el vencimiento.
 - **Publicar:** los renglones que el tablero no nombraba se llaman «Se suma» y «Sin el inglés».
 - **Exportar:** una pregunta «Ubicación» cuenta como tres columnas (latitud, longitud y precisión), como sale en el Excel.
+  Cada dato del resultado de una acción (RE1-A) cuenta como una columna en las dos opciones, y «Solo las visibles» manda
+  los que se ven (2026-11-11): con sólo uno oculto en «Columnas», ya se puede elegir.

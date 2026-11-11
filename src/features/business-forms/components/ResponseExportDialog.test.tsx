@@ -1,4 +1,4 @@
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { responseFormId } from "@/test/responseFixtures";
+import type { ResponseResultColumn } from "../api/responses";
 import type { ResponseColumn, ResponseQuery } from "../responses";
 import { ResponseExportDialog } from "./ResponseExportDialog";
 
@@ -18,13 +19,17 @@ const supplier: ResponseColumn = { fieldId: "supplier", type: "shortText", label
 const status: ResponseColumn = { fieldId: "status", type: "choice", label: "Estado", options: [], introducedInVersion: 1 };
 const block: ResponseColumn = { fieldId: "items", type: "group", label: "Artículos", options: [], introducedInVersion: 1, questions: [status] };
 const all: ResponseQuery = { page: 1, pageSize: 20 };
+// RE1-A: the data an external action left, a column each in the sheet and in the Excel.
+const voucher: ResponseResultColumn = { id: "arca.invoice.voucher", source: "arca.invoice", sourceName: "Emitir comprobante en ARCA", key: "voucher", label: "Comprobante", kind: "text" };
+const expires: ResponseResultColumn = { id: "arca.invoice.expiresOn", source: "arca.invoice", sourceName: "Emitir comprobante en ARCA", key: "expiresOn", label: "Vencimiento del código", kind: "date" };
 
-function Export({ filter = all, total = 2, columns = [supplier, block], visible = columns, filterLabels = [] }: {
+function Export({ filter = all, total = 2, columns = [supplier, block], visible = columns, filterLabels = [], resultColumns = [], visibleResults = resultColumns }: {
   filter?: ResponseQuery; total?: number; columns?: readonly ResponseColumn[]; visible?: readonly ResponseColumn[]; filterLabels?: readonly string[];
+  resultColumns?: readonly ResponseResultColumn[]; visibleResults?: readonly ResponseResultColumn[];
 }) {
   const cooldown = useCountdown(0);
   return <ResponseExportDialog formId={responseFormId} prefix="RMP" filter={filter} total={total} ready cooldown={cooldown} columns={columns} visible={visible}
-    filterLabels={filterLabels} onClose={vi.fn()} onForbidden={vi.fn()} />;
+    resultColumns={resultColumns} visibleResults={visibleResults} filterLabels={filterLabels} onClose={vi.fn()} onForbidden={vi.fn()} />;
 }
 
 async function show(props: Parameters<typeof Export>[0] = {}) {
@@ -88,6 +93,29 @@ describe("ResponseExportDialog (EX1-A)", () => {
 
     expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (4 columnas)" })).not.toHaveAttribute("aria-disabled");
     expect(within(dialog).getByRole("radio", { name: "Solo las visibles (3 columnas)" })).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("counts each datum of the results as a column, and lets Solo las visibles be chosen when only one of them is hidden", async () => {
+    const dialog = await show({ columns: [supplier], resultColumns: [voucher, expires], visibleResults: [voucher] });
+
+    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (3 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (2 columnas)" })).not.toHaveAttribute("aria-disabled");
+  });
+
+  it.each([
+    { option: "Todas las preguntas (3 columnas)", body: { columns: null, resultColumns: null } },
+    { option: "Solo las visibles (2 columnas)", body: { columns: ["supplier"], resultColumns: ["arca.invoice.expiresOn"] } },
+  ])("sends the ids of the result data that are seen only with Solo las visibles: $option", async ({ option, body }) => {
+    let sent: unknown;
+    server.use(http.post("/api/forms/definitions/:id/records/export", async ({ request }) => {
+      sent = await request.json();
+      return new HttpResponse(new Uint8Array([80, 75]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=rmp.xlsx" } });
+    }));
+    const dialog = await show({ columns: [supplier], resultColumns: [voucher, expires], visibleResults: [expires] });
+
+    await userEvent.click(within(dialog).getByRole("radio", { name: option }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
+    await waitFor(() => expect(sent).toMatchObject(body));
   });
 
   it("says the file and how its rows go: one per item of the block, with its (i), or one per response when the block stays out", async () => {
