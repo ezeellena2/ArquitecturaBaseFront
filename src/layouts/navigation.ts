@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { PermissionRequirement } from "@/auth/usePermissions";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -13,6 +13,8 @@ export interface NavigationLink extends NavigationEntry {
   to: string;
   exact?: boolean;
   permission?: PermissionRequirement;
+  /// Sólo con ese módulo instalado (`installedFeatures`), además del permiso: «Biblioteca» con `form-library`.
+  feature?: string;
 }
 
 /// Un ítem que agrupa enlaces. No tiene `to` a propósito: a un grupo no se navega, se despliega. Tampoco
@@ -91,6 +93,7 @@ export const forms: NavigationPanel = {
   items: [
     { labelKey: "navigation.formOverview", to: "/formularios/respuestas", icon: FormIcon, permission: ["formrecords.read", "formapprovals.decide", "formrecords.create"] },
     { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
+    { labelKey: "navigation.library", to: "/formularios/biblioteca", icon: DocumentIcon, permission: "formtemplates.read", feature: "form-library" },
     { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },
     { labelKey: "navigation.missingForms", to: "/formularios/faltantes", icon: FormIcon, permission: "formtemplates.manage", exact: true },
   ],

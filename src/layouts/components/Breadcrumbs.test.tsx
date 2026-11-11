@@ -58,6 +58,15 @@ describe("Breadcrumbs", () => {
     ]);
   });
 
+  it("hangs «Biblioteca» from «Gestión de formularios», not from the design listing", async () => {
+    renderBreadcrumbsAt("/formularios/biblioteca");
+
+    const items = await breadcrumbs();
+
+    expect(items.map((item) => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Biblioteca"]);
+    expect(items[2]).toHaveAttribute("aria-current", "page");
+  });
+
   it("leaves the middle level out for a screen that is not in a group", async () => {
     renderRouteWithProviders("/perfil");
 

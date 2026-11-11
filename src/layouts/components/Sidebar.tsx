@@ -19,6 +19,7 @@ import { FormIcon } from "@/shared/ui/icons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
+import { useSystemPresentation } from "@/shared/api/presentation";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, RefreshIcon } from "@/shared/ui/icons";
@@ -56,7 +57,7 @@ function NavItem({
 }) {
   const Icon = item.icon;
   const pathname = useLocation().pathname;
-  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
+  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|biblioteca|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
   const responseWorkspace = item.to === "/formularios/respuestas" && /^\/formularios\/(?:respuestas(?:\/|$)|[^/]+\/respuestas(?:\/|$))/.test(pathname);
 
   const match = useMatch({ path: item.to, end: item.exact || item.to === "/" });
@@ -367,7 +368,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // Contraída a solo íconos únicamente en escritorio: el cajón de móvil siempre se ve expandido.
   const iconsOnly = collapsed && !isMobile;
   const onNavigate = isMobile ? onCloseMobile : undefined;
-  const canSee = (link: NavigationLink) => isPending || !link.permission || has(link.permission);
+  // A link of an optional module («Biblioteca») shows only once the presentation says it is installed.
+  const installedFeatures = useSystemPresentation().data?.installedFeatures;
+  const canSee = (link: NavigationLink) => (isPending || !link.permission || has(link.permission)) && (!link.feature || installedFeatures?.includes(link.feature) === true);
   // Sin nombre no hay renglón de abajo: el del nombre ya muestra el correo o el número.
   const accountDetail = user ? accountDetailOf(user) : undefined;
 

@@ -7,6 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { renderRouteWithProviders, renderWithProviders } from "@/test/utils/renderWithProviders";
 import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
 import { queryClient } from "@/shared/api/queryClient";
+import { initialAppearance } from "@/shared/lib/appearance";
 import { server } from "@/test/mocks/server";
 
 vi.mock("react-oidc-context", async () => {
@@ -59,6 +60,23 @@ describe("Sidebar", () => {
       ["Formularios", "/formularios/respuestas"], ["Diseñar formularios", "/formularios"],
       ["Catálogos", "/catalogos"], ["Formularios que faltan", "/formularios/faltantes"],
     ]);
+  });
+
+  it.each([[["form-library"], true], [[], false]] as const)("shows «Biblioteca» after «Diseñar formularios» only with the library installed (%j)", async (features, shown) => {
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formtemplates.read"] })),
+      http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, installedFeatures: features })),
+    );
+    renderWithProviders(<MemoryRouter initialEntries={["/formularios/biblioteca"]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
+    const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
+    await within(panel).findByRole("link", { name: "Diseñar formularios" });
+    if (shown) {
+      expect(await within(panel).findByRole("link", { name: "Biblioteca" })).toHaveAttribute("aria-current", "page");
+      expect(within(panel).getAllByRole("link").map(link => link.textContent)).toEqual(["Diseñar formularios", "Biblioteca"]);
+    } else {
+      expect(within(panel).queryByRole("link", { name: "Biblioteca" })).not.toBeInTheDocument();
+    }
+    expect(within(panel).getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
   });
 
   it.each(["/formularios/form-id", "/catalogos", "/formularios/faltantes"])("does not mark the overview on the separate forms task %s", async path => {
