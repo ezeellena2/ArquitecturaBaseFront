@@ -151,6 +151,7 @@
   "editDate": "Editar",
   "specialTitle": "Horario de una fecha especial",
   "specialDate": "Fecha",
+  "specialPeriods": "Horario",
   "specialDateRequired": "Elegí la fecha.",
   "confirmDate": "Agregar fecha",
   "confirmPoint": "Usar esta ubicación",

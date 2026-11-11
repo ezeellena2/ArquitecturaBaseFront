@@ -151,6 +151,7 @@
   "editDate": "Edit",
   "specialTitle": "Opening hours for a special date",
   "specialDate": "Date",
+  "specialPeriods": "Hours",
   "specialDateRequired": "Choose the date.",
   "confirmDate": "Add date",
   "confirmPoint": "Use this location",

@@ -130,7 +130,7 @@ describe("business information editor", () => {
     const dialog = await screen.findByRole("dialog");
     const confirm = within(dialog).getByRole("button", { name: "Agregar fecha" });
     const date = within(dialog).getByLabelText("Fecha");
-    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha · Atención" }), "open");
+    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Atención" }), "open");
     // Confirmar está habilitado y la franja recién abierta no se marca antes de tocarlo.
     expect(confirm).toBeEnabled();
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
@@ -149,6 +149,38 @@ describe("business information editor", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByText("2026-10-10 · Abierto · 09:00–13:00")).toBeInTheDocument();
     expect(writes).toHaveLength(0);
+  });
+  it("labels the state and the hours of a special date as fields, with the error of the hours in its field", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
+    const dialog = await screen.findByRole("dialog", { name: "Horario de una fecha especial" });
+    // Like the date, each part has its visible label (lista de chequeo, 2026-11-11): «Atención» names the state and
+    // «Horario» its time slots, which appear only when the date is open.
+    const state = within(dialog).getByRole("combobox", { name: "Atención" });
+    expect(within(dialog).getByText("Atención", { selector: "label" })).toBeVisible();
+    expect(within(dialog).queryByRole("group", { name: "Horario" })).not.toBeInTheDocument();
+    await userEvent.selectOptions(state, "open");
+    const hours = within(dialog).getByRole("group", { name: "Horario" });
+    expect(within(dialog).getByText("Horario", { selector: "label" })).toBeVisible();
+    expect(within(hours).getByRole("combobox", { name: "Fecha 1 · Desde" })).toBeInTheDocument();
+    expect(within(hours).getByRole("combobox", { name: "Fecha 1 · Hasta" })).toBeInTheDocument();
+    expect(within(hours).getByRole("button", { name: "Agregar franja · Fecha" })).toBeInTheDocument();
+    expect(hours).not.toHaveAttribute("aria-invalid");
+    await userEvent.type(within(dialog).getByLabelText("Fecha"), "2026-10-10");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Agregar fecha" }));
+    // The problem of the time slots goes under «Horario» and describes its group, not loose at the end of the dialog.
+    const problem = within(dialog).getByRole("alert");
+    expect(problem).toHaveTextContent("Elegí apertura y cierre para cada franja.");
+    expect(hours).toHaveAttribute("aria-invalid", "true");
+    expect(hours).toHaveAccessibleDescription("Elegí apertura y cierre para cada franja.");
+    expect(hours.parentElement).toContainElement(problem);
+    await userEvent.selectOptions(within(hours).getByRole("combobox", { name: "Fecha 1 · Desde" }), "09:00");
+    await userEvent.selectOptions(within(hours).getByRole("combobox", { name: "Fecha 1 · Hasta" }), "13:00");
+    expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
+    expect(hours).not.toHaveAttribute("aria-invalid");
+    expect(hours).not.toHaveAccessibleDescription();
   });
   it("adds a special date over an incomplete weekly day and leaves that day for Save", async () => {
     current.details = emptyBusinessDetails("UTC");

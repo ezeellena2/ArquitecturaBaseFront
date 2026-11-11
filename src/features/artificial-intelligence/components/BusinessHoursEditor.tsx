@@ -49,9 +49,11 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   {special && editable && !locked ? <SpecialDateDialog initial={special} hours={value} onCancel={() => setSpecial(null)} onConfirm={next => { onChange({ ...value, exceptions: [...value.exceptions.filter(item => item.date !== special.date), next].sort((a,b) => a.date.localeCompare(b.date)) }); setSpecial(null); }} /> : null}
   </Surface>;
 }
-function OpeningStatusSelect({ status, label, disabled, onChange }: { status: OpeningStatus; label: string; disabled: boolean; onChange: (status: OpeningStatus) => void }) {
+/// Un día de la semana lo nombra su renglón («Lunes · Atención»); el estado de una fecha especial, la etiqueta de su
+/// `FormField`, que le pasa el id y la descripción.
+function OpeningStatusSelect({ status, label, disabled, onChange, ...field }: { status: OpeningStatus; label?: string; disabled: boolean; onChange: (status: OpeningStatus) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
   const { t } = useTranslation("businessInformation");
-  return <NativeSelect aria-label={`${label} · ${t("attention")}`} value={status} disabled={disabled} onChange={event => onChange(event.target.value as OpeningStatus)}>{["unknown", "open", "closed", "allDay"].map(value => <option key={value} value={value}>{t(value)}</option>)}</NativeSelect>;
+  return <NativeSelect {...field} aria-label={label ? `${label} · ${t("attention")}` : undefined} value={status} disabled={disabled} onChange={event => onChange(event.target.value as OpeningStatus)}>{["unknown", "open", "closed", "allDay"].map(value => <option key={value} value={value}>{t(value)}</option>)}</NativeSelect>;
 }
 /// «Agregar franja» va siempre debajo de las franjas, con la misma forma: con cuatro se apaga con el límite como motivo
 /// (`DisabledReason`) y, mientras el editor está bloqueado, sólo se apaga. La papelera aparece en cada franja cuando hay
@@ -77,6 +79,7 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
   // Confirmar valida al tocarlo; después del primer intento, los errores siguen en vivo mientras se corrigen.
   const [attempted,setAttempted] = useState(false);
   const dateId = useId();
+  const periodsId = useId();
   function problems(next: SpecialDate): { date?: string; periods?: string } {
     const periods = validateHours([{ ...next,weekday:0 }],false);
     if (!next.date || periods) return { date: next.date ? undefined : "specialDateRequired", periods: periods ? `hourErrors.${periods}` : undefined };
@@ -93,13 +96,15 @@ function SpecialDateDialog({ initial, hours, onCancel, onConfirm }: { initial: S
     setAttempted(true);
     if (found.date) document.getElementById(dateId)?.focus();
   }
-  // Sin leyenda debajo del título: el diálogo se explica con sus campos.
+  // Sin leyenda debajo del título: el diálogo se explica con sus campos. Cada parte lleva su etiqueta, como la fecha
+  // (lista de chequeo, 2026-11-11): «Atención» es el estado y «Horario», el grupo de sus franjas, con su problema debajo.
   return <Dialog open onOpenChange={open => { if (!open) onCancel(); }}><DialogContent aria-describedby={undefined} onCloseAutoFocus={restore}>
     <DialogHeader><DialogTitle>{t("specialTitle")}</DialogTitle></DialogHeader>
     <FormField label={t("specialDate")} error={shown.date ? t(shown.date) : undefined}><Input id={dateId} type="date" min="1900-01-01" max="9998-12-31" value={value.date} onChange={event => setValue({ ...value,date:event.target.value })} /></FormField>
-    <OpeningStatusSelect label={t("specialDate")} status={value.status} disabled={false} onChange={status => setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] })} />
-    {value.status === "open" ? <OpeningPeriods periods={value.periods} label={t("specialDate")} editable disabled={false} onChange={periods => setValue({ ...value,periods })} /> : null}
-    {shown.periods ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t(shown.periods)}</p> : null}
+    <FormField label={t("attention")}><OpeningStatusSelect status={value.status} disabled={false} onChange={status => setValue({ ...value,status,periods:status === "open" ? [emptyPeriod()] : [] })} /></FormField>
+    {value.status === "open" ? <FormField label={t("specialPeriods")} htmlFor={periodsId} error={shown.periods ? t(shown.periods) : undefined}>
+      <div role="group" aria-labelledby={`${periodsId}-label`}><OpeningPeriods periods={value.periods} label={t("specialDate")} editable disabled={false} onChange={periods => setValue({ ...value,periods })} /></div>
+    </FormField> : null}
     <DialogFooter><Button variant="outline" onClick={onCancel}>{t("cancel")}</Button><Button onClick={confirm}>{t("confirmDate")}</Button></DialogFooter>
   </DialogContent></Dialog>;
 }
