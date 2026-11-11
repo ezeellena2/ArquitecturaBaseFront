@@ -1,14 +1,16 @@
-import type { RefObject } from "react";
+import type { Ref, RefObject } from "react";
 import { IconButton } from "../IconButton";
 import { CloseIcon, FileIcon, PaperclipIcon } from "../icons";
 
 /// The clip (IA4): left of the microphone, it opens the browser's picker for one file of the accepted types. The owner keeps the
 /// input to open the picker from elsewhere too (a Home suggestion that attaches), checks the chosen file and says what failed.
-export function AssistantAttach({ label, accept, inputRef, onChoose, disabled = false, showButton = true }: {
+export function AssistantAttach({ label, accept, inputRef, buttonRef, onChoose, disabled = false, showButton = true }: {
   label: string;
   /// The types the picker offers (`.xlsx,.csv`): the server reads the kind from the bytes, never from this.
   accept: string;
   inputRef: RefObject<HTMLInputElement | null>;
+  /// The clip, for the owner to give it back the focus when the X goes with the file.
+  buttonRef?: Ref<HTMLButtonElement>;
   onChoose: (file: File) => void;
   disabled?: boolean;
   /// One file per message: with one already chosen the clip hides, and the picker still opens from its owner.
@@ -24,7 +26,7 @@ export function AssistantAttach({ label, accept, inputRef, onChoose, disabled = 
           if (file) onChoose(file);
         }} />
       {showButton ? (
-        <IconButton label={label} className="assistant-attach" type="button" disabled={disabled}
+        <IconButton ref={buttonRef} label={label} className="assistant-attach" type="button" disabled={disabled}
           onClick={() => inputRef.current?.click()}>
           <PaperclipIcon />
         </IconButton>
@@ -35,10 +37,12 @@ export function AssistantAttach({ label, accept, inputRef, onChoose, disabled = 
 
 /// A file in the composer, about to be sent, or in a message (IA1-A): its name and what describes it, which its owner writes (the
 /// type, the rows, the size). In the composer it is removed with the X, which turns off while the file travels.
-export function AssistantFile({ name, description, removeLabel, onRemove, disabled = false }: {
+export function AssistantFile({ name, description, removeLabel, removeRef, onRemove, disabled = false }: {
   name: string;
   description: string;
   removeLabel?: string;
+  /// The X, for the owner to move the focus to it when the clip hides with the file chosen.
+  removeRef?: Ref<HTMLButtonElement>;
   onRemove?: () => void;
   disabled?: boolean;
 }) {
@@ -50,7 +54,8 @@ export function AssistantFile({ name, description, removeLabel, onRemove, disabl
         <p className="text-xs text-[var(--color-content-muted)]">{description}</p>
       </div>
       {onRemove && removeLabel ? (
-        <IconButton label={removeLabel} type="button" className="assistant-file-remove" disabled={disabled} onClick={onRemove}>
+        <IconButton ref={removeRef} label={removeLabel} type="button" className="assistant-file-remove" disabled={disabled}
+          onClick={onRemove}>
           <CloseIcon />
         </IconButton>
       ) : null}

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation, useSearchParams, Link } from "react-router";
@@ -158,6 +159,8 @@ export function AiAssistantPage() {
   // Stage 2: one file per message, with what the browser saw that does not serve; the clip and a suggestion open the picker.
   const [attachment, setAttachment] = useState<{ file: File; problem?: AttachmentProblem }>();
   const fileInput = useRef<HTMLInputElement>(null);
+  const clip = useRef<HTMLButtonElement>(null);
+  const removeButton = useRef<HTMLButtonElement>(null);
   const [accepted, setAccepted] = useState<AssistantAccepted>();
   const [panelExpanded, setPanelExpanded] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -363,14 +366,17 @@ export function AiAssistantPage() {
   const attachmentReason = attachment?.problem
     ? t(`attachment.${attachment.problem}`, { size: formatFileSize(attachment.file.size, i18n.language) })
     : attachment ? actions.fileError : undefined;
+  // The clip hides when the file is chosen and the X goes with the file: the focus passes from one to the other, not to <body>.
   function chooseFile(file: File) {
     actions.clearFileError();
     setLocalError(undefined);
-    setAttachment({ file, problem: attachmentProblem(file) });
+    flushSync(() => setAttachment({ file, problem: attachmentProblem(file) }));
+    removeButton.current?.focus();
   }
   function removeFile() {
     actions.clearFileError();
-    setAttachment(undefined);
+    flushSync(() => setAttachment(undefined));
+    clip.current?.focus();
   }
   async function sendMedia() {
     if (composerDisabled || !bootstrap.data || attachmentReason) return;
@@ -642,7 +648,7 @@ export function AiAssistantPage() {
                         disabled={composerDisabled}
                         error={localError ?? attachmentReason ?? dictation.error ?? (recorder.denied ? t("audio.denied") : undefined) ?? actions.fieldError}
                         attach={bootstrap.data.attachments ? (
-                          <AssistantAttach label={t("attachment.attach")} accept={attachmentAccept} inputRef={fileInput}
+                          <AssistantAttach label={t("attachment.attach")} accept={attachmentAccept} inputRef={fileInput} buttonRef={clip}
                             disabled={composerDisabled} showButton={!attachment} onChoose={chooseFile} />
                         ) : undefined}
                         record={bootstrap.data.audio && recorder.supported && recorder.state === "idle"
@@ -656,7 +662,7 @@ export function AiAssistantPage() {
                         attachment={attachment ? (
                           <AssistantFile name={attachment.file.name} removeLabel={t("attachment.remove", { name: attachment.file.name })}
                             description={describeFile(t, i18n.language, { kind: fileExtension(attachment.file.name), size: attachment.file.size })}
-                            disabled={sendingMedia} onRemove={removeFile} />
+                            removeRef={removeButton} disabled={sendingMedia} onRemove={removeFile} />
                         ) : undefined}
                         onSendMedia={recorder.state === "ready" || attachment ? () => void sendMedia() : undefined}
                       />

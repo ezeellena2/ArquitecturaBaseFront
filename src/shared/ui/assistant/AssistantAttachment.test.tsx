@@ -1,7 +1,7 @@
 import { AssistantRuntimeProvider, useExternalStoreRuntime, type ThreadMessageLike } from "@assistant-ui/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRef, type ReactNode } from "react";
+import { createRef, useRef, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "../tooltip";
 import { AssistantComposer } from "./AssistantComposer";
@@ -58,6 +58,18 @@ describe("AssistantFile", () => {
     render(<TooltipProvider><AssistantFile name="clientes.xlsx" description="Excel · 24 KB" removeLabel="Quitar clientes.xlsx"
       onRemove={() => {}} disabled /></TooltipProvider>);
     expect(screen.getByRole("button", { name: "Quitar clientes.xlsx" })).toBeDisabled();
+  });
+
+  it("hands its owner the clip and the X, to pass the focus from one to the other", () => {
+    const clip = createRef<HTMLButtonElement>();
+    const remove = createRef<HTMLButtonElement>();
+    render(<TooltipProvider>
+      <AssistantAttach label="Adjuntar una planilla" accept=".xlsx,.csv" inputRef={createRef()} buttonRef={clip} onChoose={() => {}} />
+      <AssistantFile name="clientes.xlsx" description="Excel · 24 KB" removeLabel="Quitar clientes.xlsx" removeRef={remove}
+        onRemove={() => {}} />
+    </TooltipProvider>);
+    expect(clip.current).toBe(screen.getByRole("button", { name: "Adjuntar una planilla" }));
+    expect(remove.current).toBe(screen.getByRole("button", { name: "Quitar clientes.xlsx" }));
   });
 
   it("shows the file of a message without a way to remove it", () => {

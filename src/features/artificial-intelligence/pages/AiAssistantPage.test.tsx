@@ -1059,6 +1059,17 @@ describe("spreadsheets in Home (Stage 2)", () => {
     expect(writes).toHaveLength(0);
   });
 
+  it("moves the focus to the X when a file is chosen, and back to the clip when it is removed, never to the page", async () => {
+    server.use(withAttachments(true));
+    renderRouteWithProviders("/");
+    await userEvent.click(await screen.findByRole("button", { name: "Adjuntar una planilla" }));
+    choose("clientes.xlsx");
+    expect(screen.getByRole("button", { name: "Quitar clientes.xlsx" })).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.queryByText("clientes.xlsx")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adjuntar una planilla" })).toHaveFocus();
+  });
+
   it("shows the server's reason for a file it did not read under the composer and keeps the file to remove or change it", async () => {
     server.use(withAttachments(true));
     const reason = "No se puede leer una planilla con contraseña. Quitale la contraseña y volvé a adjuntarla.";
