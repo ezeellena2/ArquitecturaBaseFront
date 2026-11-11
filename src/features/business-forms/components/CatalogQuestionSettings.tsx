@@ -72,7 +72,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   scope: CatalogReadScope; source: DraftQuestionSource; type?: "choice" | "multiChoice"; questionId?: string; definitionId?: string | null; contentCulture?: FormCulture; readOnly: boolean; error?: string; errors?: Readonly<Record<string, readonly string[]>>; children?: ReactNode;
   /** The questions of the form a list can depend on (CW7). */
   answers?: AnswerQuestions;
-  /** SA2-A: completed only in the app, a list of one choice has no WhatsApp limit. */
+  /** SA2-A: completed only in the app, a list of one choice has no WhatsApp limit and «En WhatsApp» does not show. */
   inApp?: boolean;
   /** BI1-A: the library standard needs the question: the catalog says why it is off, and filters and presentation stay as they are. */
   lockedReason?: string | null;
@@ -115,7 +115,8 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const sentParts = own ? presentationPartNames(source.presentation ?? null, fields, scope.culture, key => t("catalogs.items." + key), t("catalogs.presentation.unavailable")) : inheritedParts;
   const presentationSummary = [t(own ? "catalogQuestion.presentation.own" : "catalogQuestion.presentation.inherit"), ...sentParts.title, ...sentParts.description].join(" · ");
   // «Como en el catálogo» uses the detail's check; an own presentation is checked by the server over every active option.
-  const ownCheck = useCatalogPresentationCheck(scope, catalog?.kind === "Manual" ? catalog.id : "", catalog?.revision ?? null, source.presentation ?? null);
+  // Completed only in the app nothing is checked: the length of the options is WhatsApp's.
+  const ownCheck = useCatalogPresentationCheck(scope, catalog?.kind === "Manual" && !inApp ? catalog.id : "", catalog?.revision ?? null, source.presentation ?? null);
   const check = own ? ownCheck.data ?? null : catalog?.presentationCheck ?? null;
   // Retry is offered for a retryable failure of the samples or of the preview (network, 5xx, 429); during a 429 wait of the failed
   // read it stays disabled with the wait as its reason. A lost permission on the samples is the preview's denial.
@@ -132,6 +133,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const [filtersOpen, setFiltersOpen] = useZoneOpen(filtersProblem);
   const [presentationOpen, setPresentationOpen] = useZoneOpen(presentationProblem);
   const filtersTitle = t("catalogQuestion.filter.title"), presentationTitle = t("catalogs.presentation.title");
+  // SA2-A: completed only in the app, «En WhatsApp» does not show; the app lists the options as the saved presentation says.
   // A list that depends on another answer (CW7) is tried by loading the form: neither the test with a person nor the maximum apply.
   const dependsOnAnswer = (source.match ?? []).some(match => matchKind(match) === "answer");
   return <div data-question-control="source" className="space-y-4"><CatalogQuestionSelector scope={scope} value={source.catalog ?? ""} selectedName={onSourceChange ? catalog ? administrativeName(catalog.name, scope.culture) : null : undefined} readOnly={readOnlyProp} lockedReason={lockedReason} error={error} onChange={onCatalogChange}/>{children}
@@ -146,11 +148,11 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
         <RecipientMaximumState maximum={maximum} type={type} inApp={inApp} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}
           groupName={groupField ? administrativeName(groupField.name, scope.culture) : null}/></div>
       </CollapsibleSection>
-      <CollapsibleSection title={presentationTitle} open={presentationOpen} onOpenChange={setPresentationOpen} expandLabel={t("catalogQuestion.zones.expand", { name: presentationTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: presentationTitle })} summary={presentationSummary}>
+      {inApp ? null : <CollapsibleSection title={presentationTitle} open={presentationOpen} onOpenChange={setPresentationOpen} expandLabel={t("catalogQuestion.zones.expand", { name: presentationTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: presentationTitle })} summary={presentationSummary}>
         <div className="flex flex-col gap-4 p-4"><RadioGroupField label={t("catalogQuestion.presentation.mode")} variant="cards" value={own ? "own" : "catalog"} onValueChange={mode => change({ ...source, presentation: mode === "own" ? { title: [...(catalog.presentation?.title ?? ["text"])], description: [...(catalog.presentation?.description ?? ["detail"])] } : null })} options={[{ value: "catalog", disabled: readOnly, label: t("catalogQuestion.presentation.inherit"), description: inherited }, { value: "own", disabled: readOnly, label: t("catalogQuestion.presentation.own") }]}/><CatalogPresentationSection embedded value={source.presentation ?? catalog.presentation} fields={draftFields} items={draftItems} valueType={catalog.valueType} culture={contentCulture} inputCulture="en" readOnly={readOnly || !own} errors={errors} check={check} onChange={presentation => change({ ...source, presentation })}/>
         {own && ownCheck.isFetching ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("catalogQuestion.presentation.checking")}</p></div> : null}
         {own && ownCheck.isError && !ownCheck.isFetching ? <div role="alert"><p className="text-sm">{t("catalogQuestion.presentation.checkFailed")}</p><Button type="button" variant="link" onClick={() => void ownCheck.refetch()}>{t("common:actions.retry")}</Button></div> : null}</div>
-      </CollapsibleSection>
+      </CollapsibleSection>}
     </> : null : detail.isError ? <div role="alert"><p className="text-sm">{t("catalogQuestion.preview.catalogFailed")}</p><Button type="button" variant="link" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button></div> : <Spinner/> : null}
   </div>;
 }

@@ -46,7 +46,7 @@ const ownCatalogId = "01990000-0000-7000-8000-000000000098";
 const ownOption = (index: number) => ({ id: "01990000-0000-7000-8000-0000000009" + String(index).padStart(2, "0"), code: "C" + index, text: { es: "Opción " + index, en: null }, detail: {}, value: null, position: index, isActive: true, fields: {}, fieldTexts: {} });
 const ownExamples = ["C1 · Distribuidora del Litoral Norte", "C2 · Ferretería Industrial del Centro", "C3 · Repuestos y Servicios del Oeste"].map((title, index) => ({ itemId: ownOption(index + 1).id, title }));
 const ownPresentation = { title: ["code", "text"], description: [] };
-function renderOwnPresentation(answer: (call: number) => Response | Promise<Response>) {
+function renderOwnPresentation(answer: (call: number) => Response | Promise<Response>, props: { inApp?: boolean } = {}) {
   const bodies: unknown[] = [];
   server.use(
     http.get("/api/forms/catalogs", () => HttpResponse.json({ filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } }, ...page([{ id: ownCatalogId, name: "Proveedores", description: null, origin: "Manual", valueType: "Text", optionsCount: 60, usageCount: 0, state: "Active", stateReason: null, canEdit: true }]) })),
@@ -54,7 +54,7 @@ function renderOwnPresentation(answer: (call: number) => Response | Promise<Resp
     // Only the first 20 options are loaded and one composes a long title: a count of this page alone would find just that one.
     http.get("/api/forms/catalogs/:id/items", () => HttpResponse.json({ ...page(Array.from({ length: 20 }, (_, index) => index === 19 ? { ...ownOption(20), text: { es: "Opción 20 con un nombre bastante largo", en: null } } : ownOption(index + 1))), totalCount: 60, totalPages: 3, hasNext: true })),
     http.post("/api/forms/catalogs/:id/presentation-checks", async ({ request }) => { bodies.push(await request.json()); return answer(bodies.length); }));
-  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} source={{ catalog: ownCatalogId, presentation: ownPresentation }} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} /></MemoryRouter>);
+  renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage", "formcatalogs.read"] }} source={{ catalog: ownCatalogId, presentation: ownPresentation }} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} {...props} /></MemoryRouter>);
   return bodies;
 }
 const longTitles = () => HttpResponse.json({ cultures: [{ culture: "es", titleTooLongCount: 41, titleExamples: ownExamples, descriptionTooLongCount: 0, descriptionExamples: [] }] });
@@ -67,6 +67,16 @@ it("shows the server title check of an own presentation over every catalog optio
   for (const example of ownExamples) expect(screen.getByText(example.title)).toBeInTheDocument();
   expect(screen.getByText("y 38 más")).toBeInTheDocument();
   expect(bodies).toEqual([{ presentation: ownPresentation }]);
+});
+
+// SA2-A: completed only in the app, «En WhatsApp» (what travels to WhatsApp and the length of its options) goes away, and
+// nothing checks that length.
+it("leaves out «En WhatsApp» and its length check in a form completed only in the app", async () => {
+  const bodies = renderOwnPresentation(longTitles, { inApp: true });
+  expect(await screen.findByRole("region", { name: filtersTitle })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: whatsappTitle })).not.toBeInTheDocument();
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+  expect(bodies).toEqual([]);
 });
 
 it("offers to retry the server check of an own presentation when it fails", async () => {
