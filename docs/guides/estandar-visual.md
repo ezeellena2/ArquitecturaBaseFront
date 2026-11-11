@@ -47,7 +47,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
 | Explicación de un campo, una sección o una opción | `InfoTip`, `help` de `FormField`, `Surface`, `Page`, `CheckboxField` y `RadioGroupField` | La (i) con su tooltip; nunca un texto debajo o al costado (`hint` y `description`, sólo datos) |
 | Acción que tarda | `Button`/`IconButton` con `pending`, `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` | Aro y gerundio en el botón, confirmación abierta hasta la respuesta, filas atenuadas con la línea que corre; nunca sólo apagar el botón |
-| Motivo de un deshabilitado | `DisabledReason`, `disabledReason` de `CheckboxField` y `disabledLabel` de `IconButton` | Motivo traducido, sólo si no es obvio, sobre el mismo control: se abre con el mouse, el foco, un clic o un toque; sin íconos ni textos al lado ni debajo (MA1-A) |
+| Motivo de un deshabilitado | `DisabledReason`, `disabledReason` de `CheckboxField` y de una opción de `RadioGroupField`, y `disabledLabel` de `IconButton` | Motivo traducido, sólo si no es obvio, sobre el mismo control: se abre con el mouse, el foco, un clic o un toque; sin íconos ni textos al lado ni debajo (MA1-A) |
 | Conversación | `MessageHistory`, `MessageBubble`, `MessageDateDivider` | Orden/origen de los mensajes, día del perfil, formato común, estado confirmado y acciones permitidas |
 
 `Surface` no recibe clases ni estilos de apariencia. Su banda puede crecer con el título en móvil.

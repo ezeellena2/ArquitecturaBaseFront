@@ -1204,7 +1204,9 @@ En el código, las features siguen usando `DisabledReason`, `disabledReason` de 
   mouse y los anchos de hoy (`grid w-full`, `max-sm:*:flex-1`) no cambian. Un campo o un grupo siguen deshabilitados, y
   el foco lo toma su envoltorio, nombrado por la etiqueta del campo.
 - En `CheckboxField`, y en la casilla «Obligatorio» de los campos de un catálogo, el envoltorio del cuadradito se estira
-  sobre la fila: pasar por el texto o tocarlo muestra el motivo, anclado en el cuadradito, y no la marca.
+  sobre la fila: pasar por el texto o tocarlo muestra el motivo, anclado en el cuadradito, y no la marca. Una opción de
+  `RadioGroupField` hace lo mismo desde el 2026-11-11, anclada en su punto; encendida, su etiqueta se estira igual y el
+  renglón entero la elige, con el punto encima para que un clic en él le llegue a él.
 
 La escena `disabledReasons` del catálogo (`?scenario=disabled-reasons`) lo recorre con el mouse, el teclado y el toque,
 en es/en a 1440 y 390. Falta la prueba manual guiada: en el celular, tocar «Permitir elegir varias» en una pregunta del

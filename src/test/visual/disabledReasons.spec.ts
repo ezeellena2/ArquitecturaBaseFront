@@ -9,12 +9,14 @@ const copy = {
     publish: "Publicar en WhatsApp", publishReason: "Hay una publicación en curso.", up: "Subir Cantidad",
     upReason: "Cantidad: posición 1 de 3", info: "Más información sobre Máximo", infoText: "En WhatsApp se cargan hasta 10 ítems.",
     sample: "Como si lo recibiera", sampleReason: "Guardá el formulario para probar con una persona.",
+    place: "Dónde va", other: "Compras", self: "Ventas", selfReason: "No puede ir adentro de sí misma ni de sus subcarpetas.",
   },
   en: {
     title: "Reason for what is off", multiple: "Allow choosing several", multipleReason: "A block picks a single option.",
     publish: "Publish on WhatsApp", publishReason: "A publication is in progress.", up: "Move Quantity up",
     upReason: "Quantity: position 1 of 3", info: "More about Maximum", infoText: "WhatsApp loads up to 10 items.",
     sample: "As if received by", sampleReason: "Save the form to try it with a person.",
+    place: "Where it goes", other: "Purchases", self: "Sales", selfReason: "It cannot go inside itself or its subfolders.",
   },
 } as const;
 type Lang = keyof typeof copy;
@@ -41,6 +43,12 @@ async function evidence(page: Page, region: Locator, name: string) {
   const x = Math.max(0, box.x - 160), y = Math.max(0, box.y - 60);
   await page.screenshot({ path: `test-results/${name}.png`, clip: { x, y, width: Math.min(view.width - x, box.width + 320), height: box.height + 80 } });
 }
+
+// To the right of a text, still on its row: only the area of the option that stretches over the row is there.
+const rightOf = async (target: Locator) => {
+  const box = (await target.boundingBox())!;
+  return { x: box.x + box.width + 48, y: box.y + box.height / 2 };
+};
 
 const center = async (target: Locator) => {
   const box = (await target.boundingBox())!;
@@ -86,6 +94,25 @@ for (const lang of ["es", "en"] as const) {
     expect(await publish.boundingBox()).toEqual(before);
     await evidence(page, region, `disabled-reasons-click-${lang}-1440`);
     await away(page, region);
+
+    // An option of a group answers on its whole row too, like the box: its text shows the reason above the dot and a click
+    // there does not choose it; an option that can be chosen is chosen from anywhere on its row.
+    await region.getByRole("radiogroup", { name: text.place, exact: true }).scrollIntoViewIfNeeded();
+    const self = region.getByRole("radio", { name: text.self, exact: true });
+    const onSelf = await center(region.getByText(text.self, { exact: true }));
+    await page.mouse.move(onSelf.x, onSelf.y);
+    await expectReasonAbove(page, self, text.selfReason);
+    await evidence(page, region, `disabled-reasons-option-${lang}-1440`);
+    await page.mouse.click(onSelf.x, onSelf.y);
+    await expectReasonAbove(page, self, text.selfReason);
+    await expect(self).toHaveAttribute("aria-checked", "false");
+    const besideSelf = await rightOf(region.getByText(text.self, { exact: true }));
+    await page.mouse.move(besideSelf.x, besideSelf.y, { steps: 4 });
+    await expectReasonAbove(page, self, text.selfReason);
+    await away(page, region);
+    const besideOther = await rightOf(region.getByText(text.other, { exact: true }));
+    await page.mouse.click(besideOther.x, besideOther.y);
+    await expect(region.getByRole("radio", { name: text.other, exact: true })).toHaveAttribute("aria-checked", "true");
 
     // With the keyboard the control itself takes the focus, after the box, with no stop on a wrapper; Enter shows the
     // reason again and Escape closes it.
@@ -135,6 +162,18 @@ for (const lang of ["es", "en"] as const) {
       await page.touchscreen.tap(onInfo.x, onInfo.y);
       await expectReasonAbove(page, info, text.infoText);
       await evidence(page, region, `disabled-reasons-tap-info-${lang}-390`);
+      // Touching the row of an option, beside its text, chooses it; touching the text of one that cannot be chosen shows
+      // its reason above the dot, over the option above, and does not choose it.
+      await region.getByRole("radiogroup", { name: text.place, exact: true }).scrollIntoViewIfNeeded();
+      const besideOther = await rightOf(region.getByText(text.other, { exact: true }));
+      await page.touchscreen.tap(besideOther.x, besideOther.y);
+      await expect(region.getByRole("radio", { name: text.other, exact: true })).toHaveAttribute("aria-checked", "true");
+      const self = region.getByRole("radio", { name: text.self, exact: true });
+      const onSelf = await center(region.getByText(text.self, { exact: true }));
+      await page.touchscreen.tap(onSelf.x, onSelf.y);
+      await expectReasonAbove(page, self, text.selfReason);
+      await expect(self).toHaveAttribute("aria-checked", "false");
+      await evidence(page, region, `disabled-reasons-tap-option-${lang}-390`);
       const onTitle = await center(region.getByRole("heading", { name: text.title, exact: true }));
       await page.touchscreen.tap(onTitle.x, onTitle.y);
       await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0);

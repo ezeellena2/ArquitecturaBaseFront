@@ -16,7 +16,8 @@ export interface RadioOption {
   help?: string;
   disabled?: boolean;
   /// Por qué está apagada, cuando no es obvio: tooltip y descripción accesible de la opción (`DisabledReason`), sin texto
-  /// debajo. La opción sigue en el Tab y en las flechas del grupo, y tocarla muestra el motivo sin elegirla (MA1-A).
+  /// debajo. La opción sigue en el Tab y en las flechas del grupo, y tocarla en cualquier lugar de su renglón muestra el
+  /// motivo sin elegirla (MA1-A), como el de una casilla.
   disabledReason?: string | null;
 }
 
@@ -42,7 +43,7 @@ interface RadioGroupFieldProps {
 /// Una elección entre pocas opciones, una debajo de la otra, cada una con su etiqueta y su ayuda al lado: la del canal
 /// de la invitación en el alta de un usuario (tablero "WhatsApp · Usuarios: alta con teléfono", punto 2). Es el Radio
 /// Group de Radix, que da el rol `radiogroup`, las flechas para moverse y el foco en la elegida, con la misma fila que
-/// `CheckboxField`.
+/// `CheckboxField`: el renglón entero elige la opción o, si está apagada, muestra su motivo.
 export function RadioGroupField({ label, showLabel, help, options, value, onValueChange, error, variant = "plain", layout = "column" }: RadioGroupFieldProps): ReactNode {
   const { t } = useTranslation();
   const id = useId();
@@ -66,6 +67,13 @@ export function RadioGroupField({ label, showLabel, help, options, value, onValu
           const descriptionId = `${optionId}-description`;
           const helpId = `${optionId}-help`;
           const describedBy = [option.help ? helpId : undefined, option.description ? descriptionId : undefined].filter(Boolean).join(" ");
+          // Encendida, la etiqueta se estira sobre el renglón, que es `relative`: tocar en cualquier lugar elige la opción.
+          const labelNode = (
+            <Label htmlFor={optionId} className={cn("text-[0.84375rem] leading-[1.2]",
+              option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer after:absolute after:inset-0")}>
+              {option.label}
+            </Label>
+          );
 
           return (
             // `relative`: dentro de un formulario, Radix pone al lado del botón un input escondido y posicionado, para
@@ -73,14 +81,18 @@ export function RadioGroupField({ label, showLabel, help, options, value, onValu
             // La tarjeta elegida suma un borde de 2 px, sin moverse, y el tinte de la marca (OE1-A, 2026-11-03).
             <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && cn("rounded-[var(--radius-control)] border py-2.5",
               option.value === value ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]" : "border-[var(--color-border)]"))}>
-              <DisabledReason reason={option.disabled ? option.disabledReason : null}>
+              {/* Con motivo, el envoltorio del punto se estira sobre el renglón, como la etiqueta de una opción encendida:
+                  el renglón entero muestra el motivo, que se ancla en el punto. */}
+              <DisabledReason reason={option.disabled ? option.disabledReason : null} className="after:absolute after:inset-0">
                 <RadioGroup.Item
                   id={optionId}
                   value={option.value}
                   disabled={option.disabled}
                   aria-describedby={describedBy || undefined}
                   className={cn(
-                    "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
+                    // Encima del área que se estira sobre el renglón: un clic en el punto le llega al punto. Apagado con motivo
+                    // no recibe el puntero y el clic pasa al envoltorio, que muestra el motivo.
+                    "relative z-10 mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--color-content-muted)] bg-[var(--color-surface)] outline-none",
                     // El tono de los enlaces y no el de los botones: con un color claro en Apariencia, se oscurece solo.
                     "focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=checked]:border-[var(--color-brand-600)]",
                     // Apagada con motivo queda con `aria-disabled` y sin el puntero, que recibe su envoltorio (MA1-A).
@@ -93,22 +105,11 @@ export function RadioGroupField({ label, showLabel, help, options, value, onValu
               <div className="flex flex-col gap-0.5">
                 {option.help ? (
                   <span className="flex items-center gap-1">
-                    <Label htmlFor={optionId} className={cn("text-[0.84375rem] leading-[1.2]", option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer")}>
-                      {option.label}
-                    </Label>
+                    {labelNode}
+                    {/* Encima del área que se estira sobre el renglón: tocar la (i) abre su ayuda y no elige la opción. */}
                     <span className="-my-1 inline-flex"><InfoTip id={helpId} text={option.help} label={t("actions.moreInfo", { label: option.label })} /></span>
                   </span>
-                ) : (
-                  <Label
-                    htmlFor={optionId}
-                    className={cn(
-                      "text-[0.84375rem] leading-[1.2]",
-                      option.disabled ? "text-[var(--color-content-muted)]" : "cursor-pointer",
-                    )}
-                  >
-                    {option.label}
-                  </Label>
-                )}
+                ) : labelNode}
                 {option.description ? (
                   <p id={descriptionId} className="text-[0.78125rem] leading-[1.4] text-[var(--color-content-muted)]">
                     {option.description}
