@@ -96,7 +96,8 @@ export function ConditionSettings({ question, questions, culture, original, read
   return <div data-question-control="showWhen" className="flex flex-col gap-3">
     <div className="flex flex-col gap-1.5">
       <GroupLabel id={question.localId + "-condition"} help={t("condition.help")}>{t("condition.shows")}</GroupLabel>
-      <SegmentedControl aria-label={t("condition.shows")} disabled={readOnly} options={[
+      {/* wrap: in English, «Always | Depending on another answer» does not fit a phone of 320 px in one row. */}
+      <SegmentedControl aria-label={t("condition.shows")} disabled={readOnly} wrap options={[
         { key: "always", label: t("condition.always"), pressed: !showWhen, onSelect: () => onChange(withCondition(question, false)), disabledReason: lockedReason ?? undefined },
         { key: "answer", label: t("condition.byAnswer"), pressed: !!showWhen, onSelect: () => onChange(withCondition(question, true)),
           disabledReason: lockedReason ?? (!showWhen && candidates.length === 0 ? t("condition.noQuestions") : undefined) },
