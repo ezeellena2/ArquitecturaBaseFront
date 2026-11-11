@@ -1,4 +1,5 @@
 {
+  "money": "${{amount}}",
   "messages": {
     "incoming": "Incoming message",
     "outgoing": "Outgoing message"

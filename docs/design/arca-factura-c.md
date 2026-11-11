@@ -50,6 +50,10 @@ dice y se relee la actividad.
 ## Lo que el tablero no fija o ya cambió
 
 - **«Esperando que lo confirmes»** no tiene dibujo; lo más simple es la banda de la zona, como los demás estados.
+- **Revisión de premisas (2026-11-11):** los textos de «Para revisar» y de «Revisar la emisión» (por qué, qué significa,
+  «Emitir con el número siguiente» o «Emitir con la fecha de hoy» y «Antes de decidir, mirá «Mis comprobantes» en ARCA.») los
+  manda el emisor en `review`. Una respuesta con emisión guarda el lugar de la zona con un esqueleto mientras llega el flujo,
+  y «Enviar» dice «Preparando…» mientras se pide el «¿La emito?». En inglés, «Comprobante» es «Voucher» en toda la factura.
 - **«En cola» y «Rechazada» al programarse (2026-11-11):** formularios no nombra módulos, así que los títulos los da el
   servidor. «En cola» dice «Todavía no se pudo emitir» · «Volvemos a probar a las 10:45. Ya probamos 3 veces.» (la fecha
   también, si no es hoy): el motivo de la espera pide probar más tarde y acá el sistema vuelve a probar solo. Sin intentos

@@ -1,6 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
@@ -135,8 +135,34 @@ describe("the zone «Comprobante» (EM1-A)", () => {
   });
 });
 
+describe("the place of the zone while the flow is read (5.2)", () => {
+  // The flow is read apart from the detail: a response with an issuance keeps the zone's place, so nothing jumps when it arrives.
+  it("keeps the zone's place for a response with an issuance until the flow arrives", async () => {
+    setup({ hasIssuance: true, results: undefined }, { actions: [action({ state: "Running", completedAtUtc: null })] });
+    server.use(http.get("/api/forms/records/:id/workflow", async () => { await delay("infinite"); return HttpResponse.json({}); }));
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(section.querySelector("[data-slot=skeleton]")).not.toBeNull();
+    expect(within(section).queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("draws no zone while the flow is read for a response without an issuance", async () => {
+    setup({ results: undefined }, { actions: [] });
+    server.use(http.get("/api/forms/records/:id/workflow", async () => { await delay("infinite"); return HttpResponse.json({}); }));
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(await screen.findByRole("region", { name: "Detalle de la respuesta" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Comprobante" })).not.toBeInTheDocument();
+  });
+});
+
 describe("an issuance in review (NC1-A)", () => {
-  const review = action({ state: "Uncertain", reasonCode: "arca.invoice.numberTaken", reason: "arca.invoice.numberTaken", completedAtUtc: null });
+  // The texts of the review are the issuer's (`review`): the feature has none of its own (4.8).
+  const review = action({ state: "Uncertain", reasonCode: "arca.invoice.numberTaken", reason: "arca.invoice.numberTaken", completedAtUtc: null, review: {
+    title: { es: "El número ya figura en ARCA con otros datos", en: "The number is already in ARCA with other data" },
+    detail: { es: "Puede haber otro sistema usando el mismo punto de venta.", en: "Another system may be using the same point of sale." },
+    proceed: { es: "Emitir con el número siguiente", en: "Issue with the next number" },
+    advice: { es: "Antes de decidir, mirá «Mis comprobantes» en ARCA.", en: "Before deciding, check “Mis comprobantes” in ARCA." },
+  } });
 
   it("says why with the text tied to its code and decides it with «Revisar», without a person", { timeout: 20_000 }, async () => {
     const { posts } = setup({}, { actions: [{ ...review, canReview: true }] });

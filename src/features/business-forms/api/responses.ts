@@ -304,6 +304,8 @@ export const responseDetailSchema = z.strictObject({
   canAmend: z.literal(true).optional(),
   // RE1-A: what external actions left, above «Datos»; omitted without results.
   results: z.array(result).min(1).optional(),
+  // A response with an issuance: the zone «Comprobante» keeps its place while the flow, read apart, arrives.
+  hasIssuance: z.literal(true).optional(),
 });
 export type ResponseSheet = z.infer<typeof responseSheetSchema>;
 export type ResponseRow = ResponseSheet["records"]["items"][number];

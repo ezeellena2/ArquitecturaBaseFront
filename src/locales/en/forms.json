@@ -1676,8 +1676,8 @@
     "lockedBlock": "It has questions the library standard needs: it cannot be removed."
   },
   "issuance": {
-    "title": "Document",
-    "issuing": "The document is being issued. The page updates on its own.",
+    "title": "Voucher",
+    "issuing": "The voucher is being issued. The page updates on its own.",
     "voidingCreditNote": "The credit note is being issued. The page updates on its own.",
     "voidingCancel": "The issuance is being voided. The page updates on its own.",
     "queuedTitle": "Not issued yet",
@@ -1685,17 +1685,17 @@
     "queuedOn": "We try again on {{date}} at {{time}}.",
     "queuedTried_one": "We tried once.",
     "queuedTried_other": "We tried {{count}} times.",
-    "failedTitle": "The document was not issued",
-    "failedFix": "Nothing was issued. Correct the response and the document goes out with the correction.",
+    "failedTitle": "The voucher was not issued",
+    "failedFix": "Nothing was issued. Correct the response and the voucher goes out with the correction.",
     "voidFailedTitle": "It could not be voided",
     "reviewTitle": "The issuance awaits a review",
-    "reviewOthers": "Someone who can issue documents resolves it.",
+    "reviewOthers": "Someone who can issue vouchers resolves it.",
     "review": "Review",
     "reviewDialogTitle": "Review the issuance of {{number}}",
     "reviewChoice": "What to do with the issuance",
     "proceed": "Go on with the issuance",
     "stop": "Do not issue",
-    "stopHelp": "The response is voided, without a document.",
+    "stopHelp": "The response is voided, without a voucher.",
     "confirm": "Confirm",
     "confirming": "Confirming…",
     "awaiting": "Waiting for you to confirm it",
@@ -1707,51 +1707,28 @@
     "previewFailed": "It cannot be issued yet",
     "skip": "Do not issue",
     "skipTitle": "Do not issue {{number}}?",
-    "skipDescription": "{{number}} is voided, without a document.",
+    "skipDescription": "{{number}} is voided, without a voucher.",
     "skipping": "Voiding…",
-    "document": "Document",
-    "why": "Why this document",
+    "document": "Voucher",
+    "why": "Why this voucher",
     "receiver": "Customer",
     "date": "Date",
     "total": "Total",
     "failed": "The issuance of {{number}} could not be decided",
     "done": {
       "retry": "We try the issuance of {{number}} again.",
-      "issue": "The document of {{number}} is being issued.",
-      "skip": "{{number}} was voided, without a document.",
+      "issue": "The voucher of {{number}} is being issued.",
+      "skip": "{{number}} was voided, without a voucher.",
       "proceed": "The issuance of {{number}} goes on.",
-      "stop": "{{number}} is voided, without a document."
+      "stop": "{{number}} is voided, without a voucher."
     },
     "fiscalPdf": "Fiscal PDF",
     "voidingStatus": "Voiding",
-    "notAmendable": "It has a document issued or in progress: void it and load another one.",
+    "notAmendable": "It has a voucher issued or in progress: void it and load another one.",
     "voidingReason": "The response is being voided.",
     "voidWithCreditNote": "Void with a credit note",
-    "voidDescription": "A credit note for the total of the document of {{number}} is issued, which voids it. It cannot be undone.",
+    "voidDescription": "A credit note for the total of the voucher of {{number}} is issued, which voids it. It cannot be undone.",
     "voidRequested": "{{number}} is being voided.",
-    "creditNoteRequested": "The credit note of {{number}} is being issued.",
-    "reasons": {
-      "arca": {
-        "invoice": {
-          "numberTaken": {
-            "title": "The number is already in ARCA with other data",
-            "detail": "Another system may be using the same point of sale.",
-            "proceed": "Issue with the next number",
-            "advice": "Before deciding, check «Mis comprobantes» in ARCA."
-          },
-          "numberMissing": {
-            "title": "The number is not in ARCA, but an equal or greater one is",
-            "detail": "Another system may be using the same point of sale.",
-            "proceed": "Issue with the next number",
-            "advice": "Before deciding, check «Mis comprobantes» in ARCA."
-          },
-          "dateOutOfRange": {
-            "title": "ARCA no longer accepts the date of the document",
-            "detail": "With products, it can be up to 5 days before today; with services, up to 10.",
-            "proceed": "Issue with today's date"
-          }
-        }
-      }
-    }
+    "creditNoteRequested": "The credit note of {{number}} is being issued."
   }
 }

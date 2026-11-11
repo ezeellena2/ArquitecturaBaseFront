@@ -1,29 +1,29 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { calendarDateInZone, formatDateInZone, formatDateOnly, formatTimeInZone } from "@/shared/lib/dateTime";
-import { formatExactDecimal } from "@/shared/lib/decimal";
+import { calendarDateInZone, formatDateInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { InfoTip } from "@/shared/ui/InfoTip";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { ResponseDetail } from "../api/responses";
-import type { ResponseAction, ResponseIssueConfirmation, ResponseWorkflow } from "../api/workflow";
+import type { ResponseAction, ResponseWorkflow } from "../api/workflow";
 import type { ResponseDetailState } from "../hooks/useResponseDetailState";
 import { useResponseIssuance } from "../hooks/useResponseIssuance";
 import { notIssuedCode, responseIssuance, type IssuanceStage } from "../issuance";
 import { issueText } from "../issuePreview";
-import { ResponseResults, ResultData } from "./ResponseResults";
+import { IssueSummary } from "./IssueSummary";
+import { ResponseResults } from "./ResponseResults";
 
 /**
  * The zone «Comprobante» (EM1-A), the first of the detail: what the issuance left (RE1-A) and, while it is not issued, how it
  * stands, with what unlocks it in its band: «Revisar» (NC1-A, for who may decide) or «No emitir» and «Emitir» (EM2-A, for
  * whoever loaded it). The title says the state of the response («Anulándose»); the zone, the one of the issuance. Nothing says
- * which issuer it is: its name, its codes and its texts come from the server, and the reasons in review, from texts tied to the
- * codes it sends. Without an issuance nor results there is no zone.
+ * which issuer it is: its name, its codes and its texts come from the server, also the texts of a review (`review`). Without an
+ * issuance nor results there is no zone; one the detail says it has (`hasIssuance`) keeps its place while the flow is read.
  */
 export function ResponseIssuance({ state, formId, onChanged }: { state: ResponseDetailState; formId: string; onChanged?: () => void }) {
   const { data, current, detail, workflow, loadingTarget } = state;
@@ -37,7 +37,7 @@ function IssuanceZone({ record, flow, owner, formId, disabled, timeZoneId, readF
   record: ResponseDetail; flow: ResponseWorkflow | undefined; owner: string; formId: string; disabled: boolean; timeZoneId?: string;
   readFlow: () => void; readDetail: () => void; onChanged?: () => void;
 }) {
-  const { t, i18n } = useTranslation("forms");
+  const { t } = useTranslation("forms");
   const issuance = responseIssuance(flow);
   const actions = useResponseIssuance({ owner, formId, recordId: record.id, number: record.number, onRead: () => { readFlow(); readDetail(); onChanged?.(); } });
   const [reviewing, setReviewing] = useState<{ runId: string; revision: number } | null>(null);
@@ -54,6 +54,8 @@ function IssuanceZone({ record, flow, owner, formId, disabled, timeZoneId, readF
   }, [signature, readDetail]);
   const band = issuance.band;
   const confirmation = issuance.confirmation;
+  // The flow is read apart from the detail: a response with an issuance keeps the zone's place meanwhile, so nothing jumps.
+  if (!flow && record.hasIssuance) return <Surface title={t("issuance.title")} padded><Skeleton aria-hidden="true" className="h-10 w-full"/></Surface>;
   if (!band && !confirmation && !record.results?.length) return null;
   const working = actions.working;
   const reviewAction = band?.stage === "review" && band.action.canReview ? band.action : null;
@@ -71,7 +73,7 @@ function IssuanceZone({ record, flow, owner, formId, disabled, timeZoneId, readF
       <p className="text-sm font-semibold">{t("issuance.awaiting")}</p>
       {confirmation.failureCode
         ? <Banner tone="warning"><span className="font-semibold">{t("issuance.previewFailed")}</span>{" · "}{confirmation.failureMessage ?? confirmation.failureCode}</Banner>
-        : <ConfirmationSummary confirmation={confirmation} language={i18n.language}/>}
+        : <IssueSummary summary={confirmation} label={t("issuance.awaiting")}/>}
     </> : band?.stage === "awaiting" ? <p className="text-sm text-[var(--color-content-muted)]">{t("issuance.awaitingOthers")}</p> : null}
     {/* What the issuance left stays in sight while it is reversed (NC1-A): the credit note joins it once issued. */}
     <ResponseResults results={record.results}/>
@@ -107,29 +109,13 @@ function BandNotice({ band, action, reversal, issued, timeZoneId }: { band: Issu
     return <Banner tone="danger">{titled(t(reversal ? "issuance.voidFailedTitle" : "issuance.failedTitle"), reasonText(action))}{reversal ? null : <> {t("issuance.failedFix")}</>}</Banner>;
   }
   if (band === "review") {
-    // The reasons the issuer gives (another number, the date) are texts tied to its codes; another one reads as the server says.
-    const key = "issuance.reasons." + action.reasonCode;
-    const known = !!action.reasonCode && i18n.exists("forms:" + key + ".title");
-    return <Banner tone="warning">{titled(known ? t(key + ".title") : t("issuance.reviewTitle"), known ? t(key + ".detail") : action.reason !== action.reasonCode ? action.reason : null)}
+    // Why it waits and what that means are the issuer's texts (`review`); without them, a generic title and the server's reason.
+    const review = action.review;
+    return <Banner tone="warning">{titled(review ? issueText(review.title, i18n.language) : t("issuance.reviewTitle"),
+      review?.detail ? issueText(review.detail, i18n.language) : action.reason !== action.reasonCode ? action.reason : null)}
       {action.canReview ? null : <> {t("issuance.reviewOthers")}</>}</Banner>;
   }
   return null;
-}
-
-const money = (value: string | null | undefined, language: string) => value ? "$ " + (formatExactDecimal(value, language) ?? value) : "—";
-
-// «Esperando que lo confirmes» (EM2-A): what «¿La emito?» said, as in the app: the document with why in its (i), the customer,
-// the date, the amounts it itemizes and the total.
-function ConfirmationSummary({ confirmation, language }: { confirmation: ResponseIssueConfirmation; language: string }) {
-  const { t } = useTranslation("forms");
-  const info = issueText(confirmation.info, language);
-  return <ResultData label={t("issuance.awaiting")} items={[
-    { key: "document", label: t("issuance.document"), value: <span className="inline-flex items-center gap-1">{issueText(confirmation.document, language) || "—"}{info ? <InfoTip label={t("issuance.why")} text={info}/> : null}</span> },
-    { key: "receiver", label: t("issuance.receiver"), value: confirmation.receiver ?? "—" },
-    ...confirmation.date ? [{ key: "date", label: t("issuance.date"), value: formatDateOnly(confirmation.date, language) ?? confirmation.date }] : [],
-    ...(confirmation.amounts ?? []).map((amount, index) => ({ key: "amount:" + index, label: issueText(amount.label, language), value: money(amount.value, language) })),
-    { key: "total", label: t("issuance.total"), value: money(confirmation.total, language), strong: true },
-  ]}/>;
 }
 
 /**
@@ -142,16 +128,16 @@ function IssuanceReviewDialog({ number, action, working, onClose, onDecide }: {
 }) {
   const { t, i18n } = useTranslation("forms");
   const [choice, setChoice] = useState("proceed");
-  const key = "issuance.reasons." + action.reasonCode;
-  const known = !!action.reasonCode && i18n.exists("forms:" + key + ".proceed");
-  const advice = known && i18n.exists("forms:" + key + ".advice") ? t(key + ".advice") : null;
+  // How it goes on and where to look first are the issuer's texts (`review`).
+  const proceed = action.review ? issueText(action.review.proceed, i18n.language) : t("issuance.proceed");
+  const advice = action.review?.advice ? issueText(action.review.advice, i18n.language) : null;
   return <Dialog open onOpenChange={value => { if (!value && !working) onClose(); }}>
     <DialogContent aria-describedby={undefined} closeDisabledReason={working ? t("issuance.confirming") : undefined}
       onEscapeKeyDown={event => { if (working) event.preventDefault(); }} onPointerDownOutside={event => { if (working) event.preventDefault(); }}>
       <DialogHeader><DialogTitle>{t("issuance.reviewDialogTitle", { number })}</DialogTitle></DialogHeader>
       {advice ? <Banner>{advice}</Banner> : null}
       <RadioGroupField label={t("issuance.reviewChoice")} value={choice} onValueChange={setChoice} options={[
-        { value: "proceed", label: known ? t(key + ".proceed") : t("issuance.proceed"), disabled: !!working },
+        { value: "proceed", label: proceed, disabled: !!working },
         { value: "stop", label: t("issuance.stop"), help: t("issuance.stopHelp"), disabled: !!working },
       ]}/>
       <DialogFooter>

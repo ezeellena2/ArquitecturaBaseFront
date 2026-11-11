@@ -1729,29 +1729,6 @@
     "voidWithCreditNote": "Anular con nota de crédito",
     "voidDescription": "Se emite una nota de crédito por el total del comprobante de {{number}}, que lo anula. No se puede deshacer.",
     "voidRequested": "Se está anulando {{number}}.",
-    "creditNoteRequested": "Se está emitiendo la nota de crédito de {{number}}.",
-    "reasons": {
-      "arca": {
-        "invoice": {
-          "numberTaken": {
-            "title": "El número ya figura en ARCA con otros datos",
-            "detail": "Puede haber otro sistema usando el mismo punto de venta.",
-            "proceed": "Emitir con el número siguiente",
-            "advice": "Antes de decidir, mirá «Mis comprobantes» en ARCA."
-          },
-          "numberMissing": {
-            "title": "El número no figura en ARCA, pero ya hay uno igual o mayor",
-            "detail": "Puede haber otro sistema usando el mismo punto de venta.",
-            "proceed": "Emitir con el número siguiente",
-            "advice": "Antes de decidir, mirá «Mis comprobantes» en ARCA."
-          },
-          "dateOutOfRange": {
-            "title": "ARCA ya no acepta la fecha del comprobante",
-            "detail": "Con productos, puede estar hasta 5 días antes de hoy; con servicios, hasta 10.",
-            "proceed": "Emitir con la fecha de hoy"
-          }
-        }
-      }
-    }
+    "creditNoteRequested": "Se está emitiendo la nota de crédito de {{number}}."
   }
 }

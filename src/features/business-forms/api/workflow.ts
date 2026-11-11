@@ -16,7 +16,9 @@ const workflow = z.strictObject({
   task: z.strictObject({ id: guid, roleId: guid, roleName: z.string().nullable(), requestedAtUtc: utc, decidedAtUtc: utc.nullable(), decidedBy: author.nullable(), reason: z.string().nullable(), revision: z.number().int().positive(), state: z.enum(["Open", "Approved", "Rejected", "Closed"]) }).nullable(),
   actions: z.array(z.strictObject({ id: guid, ruleId: guid, kind: z.enum(ruleActionKinds), event: z.enum(actionEvents), order: z.number().int().nonnegative(), revision: z.number().int().nonnegative(), state: z.enum(actionStates), reasonCode: z.string().nullable(), reason: z.string().nullable(), canConsult: z.boolean(), canRetry: z.boolean(), canReview: z.boolean().optional(), recipients: z.array(recipient), createdAtUtc: utc, updatedAtUtc: utc, completedAtUtc: utc.nullable(),
     // «En cola»: an issuance waiting for its issuer, which did not answer, says when it tries again and how many times it tried.
-    nextAttemptAtUtc: utc.optional(), attempts: z.number().int().positive().optional() })),
+    nextAttemptAtUtc: utc.optional(), attempts: z.number().int().positive().optional(),
+    // An issuance in review: its texts by language as its issuer gives them (why, what it means, how it goes on, where to look).
+    review: z.strictObject({ title: localized, proceed: localized, detail: localized.optional(), advice: localized.optional() }).optional() })),
   documents: z.array(z.strictObject({ id: guid, runId: guid, culture: z.enum(["es", "en"]), name: z.string(), size: z.number().int().positive(), createdAtUtc: utc })),
   // EM2-A: an issuance from a channel waiting for whoever loaded it to confirm, with its summary; only for that person. A summary
   // that could not be made (a new customer the registry does not have, a registry that does not answer) brings only why, in
