@@ -13,6 +13,8 @@ const standard = z.strictObject({
   copies: z.number().int().nonnegative(),
   culture: z.enum(["es", "en"]),
   source: z.string().min(1).optional(),
+  // The prefix «Agregar» offers: the server knows the prefixes in use, deleted forms' too.
+  suggestedPrefix: z.string().min(1).max(12),
 });
 const library = z.strictObject({ standards: z.array(standard) });
 

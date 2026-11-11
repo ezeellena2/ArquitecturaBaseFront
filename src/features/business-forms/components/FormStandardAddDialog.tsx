@@ -12,7 +12,6 @@ import { Input } from "@/shared/ui/input";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { addFormStandard, type FormStandard } from "../api/library";
-import { suggestedPrefix } from "../libraryCopy";
 
 /// A folder the copy can go to, with how deep it is in the tree so the list reads as one.
 export interface FormStandardFolderOption {
@@ -37,7 +36,7 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
   const restoreFocus = useRestoreFocusOnClose();
   const [requestId] = useState(() => crypto.randomUUID());
   const [name, setName] = useState(standard.name);
-  const [prefix, setPrefix] = useState(() => suggestedPrefix(standard));
+  const [prefix, setPrefix] = useState(standard.suggestedPrefix);
   const [folderId, setFolderId] = useState("");
   const [errors, setErrors] = useState<{ name?: string; prefix?: string; folder?: string }>({});
   const [busy, setBusy] = useState(false);

@@ -5,7 +5,7 @@ import { server } from "@/test/mocks/server";
 import { addFormStandard, fetchFormLibrary, readFormLibrary, type FormStandard } from "./library";
 
 // BI1-A: the library lists the standards of the installed modules and «Agregar» creates an own draft under the standard's culture.
-const standard: FormStandard = { key: "arca.invoice", version: 1, name: "Factura", description: "Factura C con sus ítems y el total.", prefix: "FAC", copies: 1, culture: "es", source: "ARCA" };
+const standard: FormStandard = { key: "arca.invoice", version: 1, name: "Factura", description: "Factura C con sus ítems y el total.", prefix: "FAC", copies: 1, culture: "es", source: "ARCA", suggestedPrefix: "FAC2" };
 // A real draft receipt captured by the backend export: «Agregar» answers with the same receipt as creating a draft.
 const created = httpCohort("forms").json("published/created.json") as Record<string, unknown>;
 

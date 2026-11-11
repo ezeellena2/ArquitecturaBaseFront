@@ -7,13 +7,15 @@ import { notify } from "@/shared/ui/notifications";
 import { httpCohort } from "@/test/httpCohort";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
 
-// BI1-A: «Biblioteca» lists the standards and «Agregar» creates an own draft that opens in the editor.
-const invoice = { key: "arca.invoice", version: 1, name: "Factura", description: "Factura C con sus ítems y el total.", prefix: "FAC", copies: 1, culture: "es", source: "ARCA" };
-const delivery = { key: "test.delivery", version: 2, name: "Remito", description: "Un remito con sus ítems.", prefix: "REM", copies: 0, culture: "es" };
+// BI1-A: «Biblioteca» lists the standards and «Agregar» creates an own draft that opens in the editor. The prefix it offers is the
+// server's, which knows the prefixes in use («FAC3», although one copy would give «FAC2»).
+const invoice = { key: "arca.invoice", version: 1, name: "Factura", description: "Factura C con sus ítems y el total.", prefix: "FAC", copies: 1, culture: "es", source: "ARCA", suggestedPrefix: "FAC3" };
+const delivery = { key: "test.delivery", version: 2, name: "Remito", description: "Un remito con sus ítems.", prefix: "REM", copies: 0, culture: "es", suggestedPrefix: "REM" };
 const created = httpCohort("forms").json("published/created.json") as { definition: { id: string } };
 
 const sales = "0196f2a0-0000-7000-8000-0000000000f1";
@@ -39,8 +41,15 @@ it("lists each standard with its version, module and copies, and offers «Agrega
 
   expect(await screen.findByText("Factura")).toBeInTheDocument();
   expect(screen.getByText("Factura C con sus ítems y el total.")).toBeInTheDocument();
-  expect(screen.getByText("Versión 1 · ARCA · En 1 formulario")).toBeInTheDocument();
-  expect(screen.getByText("Versión 2 · Sin formularios")).toBeInTheDocument();
+  // One piece of data per column (UD1): the version, the module that brings it and how many forms came from it.
+  const table = screen.getByRole("table");
+  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Estándar", "Versión", "Origen", "Formularios"]);
+  const [first, second] = within(table).getAllByRole("row").slice(1);
+  expect(cellUnder(table, first!, "Versión")).toHaveTextContent(/^1$/);
+  expect(cellUnder(table, first!, "Origen")).toHaveTextContent(/^ARCA$/);
+  expect(cellUnder(table, first!, "Formularios")).toHaveTextContent(/^1$/);
+  expect(cellUnder(table, second!, "Origen")).toHaveTextContent(/^—$/);
+  expect(cellUnder(table, second!, "Formularios")).toHaveTextContent(/^0$/);
   expect(screen.queryByRole("button", { name: /Agregar/ })).not.toBeInTheDocument();
 });
 
@@ -62,9 +71,10 @@ it("adds a copy with the name under the standard's language and a free prefix, a
   server.use(http.post("/api/forms/library/:key/copies", async ({ request }) => { bodies.push(await request.json() as Record<string, unknown>); return HttpResponse.json(created, { status: 201 }); }));
   const { router } = renderRouteWithProviders("/formularios/biblioteca");
 
+  expect(await screen.findByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
   await userEvent.click(await screen.findByRole("button", { name: "Agregar «Factura»" }));
   const dialog = await screen.findByRole("dialog", { name: "Agregar «Factura»" });
-  expect(within(dialog).getByRole("textbox", { name: /^Prefijo de numeración/ })).toHaveValue("FAC2");
+  expect(within(dialog).getByRole("textbox", { name: /^Prefijo de numeración/ })).toHaveValue("FAC3");
   const name = within(dialog).getByRole("textbox", { name: /^Nombre/ });
   await userEvent.clear(name);
   await userEvent.type(name, "Facturas de servicios");
@@ -73,7 +83,7 @@ it("adds a copy with the name under the standard's language and a free prefix, a
   // The editor is a lazy route: the location changes once its module loads.
   await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/${created.definition.id}`), { timeout: 20000 });
   expect(bodies).toHaveLength(1);
-  expect(bodies[0]).toMatchObject({ name: { es: "Facturas de servicios" }, prefix: "FAC2" });
+  expect(bodies[0]).toMatchObject({ name: { es: "Facturas de servicios" }, prefix: "FAC3" });
   expect(bodies[0]).not.toHaveProperty("folderId");
   expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "success")).toHaveLength(1);
 });

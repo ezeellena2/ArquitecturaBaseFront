@@ -56,9 +56,12 @@ function FormLibrary({ actorId, culture, permissionsKey, canAdd }: { actorId: st
         {standard.description ? <span className="text-muted-foreground">{standard.description}</span> : null}
       </div>,
     },
-    { id: "details", header: t("library.details"), cell: standard => <span className="whitespace-nowrap text-muted-foreground">{meta(standard)}</span> },
+    // One piece of data per column (UD1): the version, the module that brings it and how many forms came from it.
+    { id: "version", header: t("library.version"), align: "right", cell: standard => standard.version },
+    { id: "source", header: t("library.source"), cell: standard => standard.source ?? "—" },
+    { id: "forms", header: t("library.forms"), align: "right", cell: standard => standard.copies },
     ...canAdd ? [{
-      id: "actions", header: "", align: "right" as const,
+      id: "actions", header: t("actionsColumn"), align: "right" as const,
       cell: (standard: FormStandard) => <Button type="button" size="sm" onClick={() => setAdding(standard)} aria-label={t("library.addTitle", { name: standard.name })}>
         <PlusIcon className="size-4" aria-hidden="true" />{t("library.add")}
       </Button>,
