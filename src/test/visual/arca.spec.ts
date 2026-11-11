@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
-// La pantalla ARCA con los tableros AC1-A, AC2-A y AC3. El reloj queda en el 2026-11-05: los vencimientos no cambian.
+// La pantalla ARCA con los tableros AC1-A, AC2-A y AC3, y la delegación (DG1-A, DG2-A y DG3). El reloj queda en el
+// 2026-11-05: los vencimientos no cambian.
 async function open(page: Page, language: "es" | "en", scenario: string, width = 1440) {
   await page.setViewportSize({ width, height: 1000 });
   await page.goto(`/src/test/visual/index.html?screen=/configuracion/arca&lang=${language}&scenario=${scenario}`);
@@ -45,6 +46,29 @@ for (const language of ["es", "en"] as const) {
     await expect(page.getByRole("status").filter({ hasText: es ? "El certificado vence el" : "The certificate expires on" })).toBeVisible();
     await expect(page.getByRole("button", { name: es ? "Cancelar la renovación" : "Cancel the renewal", exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot(`arca-renewal-${language}.png`, { fullPage: true });
+  });
+
+  for (const width of [1440, 390]) {
+    test(`ARCA delegation guide ${language} at ${width}px`, async ({ page }) => {
+      await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
+      await open(page, language, "arca-delegation-waiting", width);
+      await expect(page.getByRole("heading", { name: es ? "4 · Delegación" : "4 · Delegation", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: es ? "Verificar la delegación" : "Check the delegation", exact: true }).click();
+      await expect(page.getByText(es ? "Sin delegar" : "Not delegated", { exact: true })).toBeVisible();
+      expect(await fitsWidth(page)).toBe(true);
+      await expect(page).toHaveScreenshot(`arca-delegation-guide-${language}-${width}.png`, { fullPage: true });
+    });
+  }
+
+  test(`ARCA delegation setup and active ${language}`, async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
+    await open(page, language, "arca-delegation-setup");
+    await expect(page.getByRole("heading", { name: es ? "3 · Certificado de la plataforma" : "3 · Platform certificate", exact: true })).toBeVisible();
+    await expect(page).toHaveScreenshot(`arca-delegation-setup-${language}.png`, { fullPage: true });
+
+    await open(page, language, "arca-delegation-active");
+    await expect(page.getByText("Plataforma Ejemplo S.A. · 30-71999888-3", { exact: true })).toBeVisible();
+    await expect(page).toHaveScreenshot(`arca-delegation-active-${language}.png`, { fullPage: true });
   });
 
   test(`ARCA without a connection and read only ${language}`, async ({ page }) => {

@@ -186,7 +186,7 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
       <Button pending={action.pending === "generate"} disabled={locked} onClick={() => void generate()}>{t(action.pending === "generate" ? "data.generating" : "data.generate")}</Button>
     </> : undefined : canManage && connection.status === "AwaitingCertificate"
       ? <Button variant="link" onClick={() => onEditingChange(true)}>{t("data.change")}</Button> : undefined}>
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col items-start gap-1.5">
       <span className="flex items-center gap-1 text-sm font-medium">{t("data.mode")}
         <span className="-my-1 inline-flex"><InfoTip text={t("data.modeHelp")} label={t("common:actions.moreInfo", { label: t("data.mode") })} /></span></span>
       <SegmentedControl aria-label={t("data.mode")} disabled={locked} options={[
@@ -207,7 +207,7 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
         <Input value={alias} autoComplete="off" spellCheck={false} autoCapitalize="none" maxLength={30} disabled={locked} onChange={event => setAlias(event.target.value)} />
       </FormField>
     </div>
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col items-start gap-1.5">
       <span className="flex items-center gap-1 text-sm font-medium">{t("data.environment")}
         <span className="-my-1 inline-flex"><InfoTip text={t("data.environmentHelp")} label={t("common:actions.moreInfo", { label: t("data.environment") })} /></span></span>
       <SegmentedControl aria-label={t("data.environment")} disabled={locked} options={(["Testing", "Production"] as const).map(option => ({
