@@ -1,7 +1,7 @@
 # La factura C: tableros elegidos
 
-Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **elegido, sin programar** (etapa 3 de
-ARCA, tarea 14). El alcance y las decisiones están en el
+Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado el 2026-11-11** (etapa 3 de
+ARCA, tarea 14; front 0815da57, 18e31307, 9da76575 y e7b7476c). El alcance y las decisiones están en el
 [plan de la etapa 3](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-3-factura-c.md); la regla vigente, en
 [ARCA](../../../ArquitecturaBase/docs/features/arca.md). La A y la B suman lo suyo en [la factura A y B](arca-factura-a-y-b.md).
 
@@ -74,11 +74,9 @@ dice y se relee la actividad.
 Confirmación, vista previa, revisión y anulación:
 [Emitir un documento — IssueDocument](../../../ArquitecturaBase/docs/features/formularios.md#emitir-un-documento--issuedocument-2026-11-09).
 Catálogos, emisor, cola y PDF fiscal:
-[Emisión de comprobantes](../../../ArquitecturaBase/docs/features/arca.md#emisión-de-comprobantes-etapas-3-y-4-en-curso).
+[Emisión de comprobantes](../../../ArquitecturaBase/docs/features/arca.md#emisión-de-comprobantes-etapas-3-y-4).
 
 ## Pendiente
 
-- Programar EM1-A, EM2-A, NC1-A y CA1 después de la prueba integral; lo que se fije al programar se anota acá.
 - Fecha, cliente, CUIT y condición no vienen en el resultado del emisor: salen de la respuesta o se suman, con el backend.
-- «Completar con ARCA» y el cliente nuevo esperan el padrón de un tercero (tareas 7 y 11 del plan).
 - La prueba a mano, en la prueba integral.

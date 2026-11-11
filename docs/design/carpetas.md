@@ -2,7 +2,7 @@
 
 Fecha: **2026-11-11**. Las carpetas ordenan formularios y catálogos en un solo árbol, con subcarpetas, y un mismo elemento
 puede estar en varias. El usuario eligió **CP1-A, CP2-A, CP3-A y CP5-A** el 2026-11-03 y el 2026-11-04; CP4 son los
-estados. El backend está programado desde el 2026-11-09 y este documento registra el diseño antes de programar el front.
+estados. El backend está programado desde el 2026-11-09 y el front desde el 2026-11-11; lo que se fijó al programar está abajo.
 
 Origen: el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas
 «Carpetas» (CP1 a CP4) y CP5 a su derecha. El Sistema visual es de otra cuenta, así que, como en renglones, la IA y el motor

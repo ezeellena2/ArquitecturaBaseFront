@@ -2,7 +2,8 @@
 
 Fecha: **2026-10-22**. **Elegidos DOC5-A y DOC7-A, con DOC1–DOC4 y DOC6**, de la versión 116 del lienzo; la 117 los marca
 y suma las correcciones al elegir (abajo), la 118 agranda DOC5-A para que entren sus notas y la 119 deja DOC2 y DOC4 como
-quedaron en el plan. Por programar.
+quedaron en el plan. Por programar, salvo la pantalla «Biblioteca» de DOC1, sin la lectura de documentos, que llegó con la
+etapa 2 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)).
 
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
