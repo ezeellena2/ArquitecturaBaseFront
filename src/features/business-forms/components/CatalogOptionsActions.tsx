@@ -2,11 +2,9 @@ import { useRef, useState } from "react";
 import type { RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
+import { ActionsMenu, type ActionsMenuEntry, type ActionsMenuItem } from "@/shared/ui/ActionsMenu";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { IconButton } from "@/shared/ui/IconButton";
-import { MoreVerticalIcon } from "@/shared/ui/icons";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 
 export interface CatalogOptionsActionsProps {
   canManage: boolean;
@@ -50,13 +48,24 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
     onImport();
   }
 
-  function item(label: string, reason: string | null, action: () => void, unavailable = busy || reason !== null) {
-    return <DropdownMenuItem aria-disabled={unavailable || undefined} onSelect={event => {
-      if (unavailable) event.preventDefault(); else action();
-    }}><span>{label}{reason ? <span className="block text-xs">{reason}</span> : null}</span></DropdownMenuItem>;
-  }
+  const item = (label: string, reason: string | null, onSelect: () => void, unavailable = busy || reason !== null): ActionsMenuItem =>
+    ({ label, reason, unavailable, onSelect });
   // While a file is on its way, the other download waits for it too: the owner takes one at a time.
   const download = (label: string, template: boolean) => item(label, saveReason, () => onExport(template), busy || saveReason !== null || downloading !== null);
+  // «⋯» (AC1-A): on the phone also «Importar» and «Exportar»; the template; ordering and codes for whoever manages.
+  const items: ActionsMenuEntry[] = [
+    ...(mobile ? [
+      ...(canManage ? [item(t("catalogs.actions.import"), importReason, () => beginImport(trigger.current))] : []),
+      download(t("catalogs.actions.export"), false),
+      { separator: true as const },
+    ] : []),
+    download(t("catalogs.actions.template"), true),
+    ...(canManage ? [
+      { separator: true as const },
+      item(t("catalogs.actions.sort"), sortReason, onSort),
+      item(t("catalogs.actions.generateCodes"), null, onGenerateCodes),
+    ] : []),
+  ];
 
   // Sin contenedor propio: las acciones de la Surface «Opciones» las alinea ella, al borde derecho y a la altura del título.
   return <>
@@ -66,30 +75,13 @@ export function CatalogOptionsActions({ canManage, busy, saved, importDisabledRe
       <DisabledReason reason={exportReason}><Button type="button" variant="outline" pending={exporting} disabled={busy || !saved || downloading !== null}
         onClick={() => onExport(false)}>{t(exporting ? "catalogs.actions.exporting" : "catalogs.actions.export")}</Button></DisabledReason>
     </> : null}
-    <DropdownMenu open={open && !dialogOpen} onOpenChange={value => {
-      if (value) openingDialog.current = false;
-      setOpen(value);
-    }}>
-      <DropdownMenuTrigger asChild><IconButton ref={trigger} pending={menuWorking}
-        label={t(!menuWorking ? "catalogs.actions.more" : exporting ? "catalogs.actions.exporting" : "catalogs.actions.downloadingTemplate")}
-        disabled={busy || dialogOpen}><MoreVerticalIcon className="size-4" aria-hidden="true" /></IconButton></DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onCloseAutoFocus={event => {
-        if (openingDialog.current || dialogOpen) event.preventDefault();
-      }}>
-        {mobile ? <>
-          {canManage ? <DropdownMenuItem aria-disabled={busy || importReason !== null || undefined} onSelect={event => {
-            if (busy || importReason !== null) event.preventDefault(); else beginImport(trigger.current);
-          }}><span>{t("catalogs.actions.import")}{importReason ? <span className="block text-xs">{importReason}</span> : null}</span></DropdownMenuItem> : null}
-          {download(t("catalogs.actions.export"), false)}
-          <DropdownMenuSeparator />
-        </> : null}
-        {download(t("catalogs.actions.template"), true)}
-        {canManage ? <>
-          <DropdownMenuSeparator />
-          {item(t("catalogs.actions.sort"), sortReason, onSort)}
-          {item(t("catalogs.actions.generateCodes"), null, onGenerateCodes)}
-        </> : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ActionsMenu items={items} open={open && !dialogOpen} triggerRef={trigger} pending={menuWorking} disabled={busy || dialogOpen}
+      label={t(!menuWorking ? "catalogs.actions.more" : exporting ? "catalogs.actions.exporting" : "catalogs.actions.downloadingTemplate")}
+      onOpenChange={value => {
+        if (value) openingDialog.current = false;
+        setOpen(value);
+      }}
+      // The dialog that an item opens takes the focus; otherwise it goes back to «⋯».
+      onCloseAutoFocus={event => { if (openingDialog.current || dialogOpen) event.preventDefault(); }} />
   </>;
 }
