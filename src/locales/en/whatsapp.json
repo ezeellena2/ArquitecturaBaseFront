@@ -112,7 +112,12 @@
     "Other": "other",
     "Interactive": "interactive",
     "Template": "template",
-    "Audio": "audio"
+    "Audio": "audio",
+    "Spreadsheet": "spreadsheet"
+  },
+  "spreadsheet": {
+    "label": "Spreadsheet",
+    "gone": "It is no longer available."
   },
   "access": {
     "label": "System access",

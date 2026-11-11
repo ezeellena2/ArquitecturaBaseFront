@@ -71,7 +71,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const assistantEntryScenario = scenario?.endsWith("-assistant-entry") ?? false;
   const assistantFixture = assistantScenario || assistantEntryScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;
   const roleGroupsScenario = scenario === "role-groups";
-  const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-audio" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
+  const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-audio" || scenario === "chat-spreadsheet" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
   const aiScenario = scenario?.startsWith("ai-") ?? false;
   const arcaFixture = scenario?.startsWith("arca-") ? createArcaVisualFixtures(scenario) : undefined;
   const businessScenario = (scenario?.startsWith("business-") ?? false) || roleGroupsScenario;
@@ -151,6 +151,19 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (scenario === "chat-audio") {
     chatContact.preview = english ? "Audio" : "Audio";
     chatMessages = (["Pending", "Completed", "Failed", "Expired"] as const).map((state, index) => ({ ...chatMessages[0], id: "audio-" + index, kind: "Audio", inboundSequence: index + 1, audio: { state, canPlay: state !== "Expired" }, body: state === "Completed" ? english ? "I visited Pérez Brothers and collected 125,500." : "Recién salgo de Pérez Hnos. Me pagaron 125.500." : null, occurredAtUtc: "2026-10-02T12:0" + (index + 3) + ":00Z" }));
+  }
+  // Stage 2 of the assistant authoring: a spreadsheet with its caption, one without it and one whose content expired; the list
+  // shows the generic preview the server writes.
+  if (scenario === "chat-spreadsheet") {
+    chatContact.preview = english ? "Spreadsheet" : "Planilla";
+    chatMessages = [
+      { ...chatMessages[0], id: "spreadsheet-expired", kind: "Spreadsheet", body: null, inboundSequence: 1, occurredAtUtc: "2026-10-02T12:03:00Z" },
+      { ...chatMessages[0], id: "spreadsheet-1", kind: "Spreadsheet", inboundSequence: 2, occurredAtUtc: "2026-10-02T12:04:00Z",
+        body: english ? "Make me a catalog of contractors with this spreadsheet" : "Armame un catálogo de contratistas con esta planilla",
+        spreadsheetName: english ? "contractors.xlsx" : "contratistas.xlsx" },
+      { ...chatMessages[0], id: "spreadsheet-2", kind: "Spreadsheet", body: null, inboundSequence: 3, occurredAtUtc: "2026-10-02T12:05:00Z",
+        spreadsheetName: "zonas.csv" },
+    ];
   }
   const earlierMessages: ChatMessage[] = [];
   const chatOutgoing: Outgoing[] = [];

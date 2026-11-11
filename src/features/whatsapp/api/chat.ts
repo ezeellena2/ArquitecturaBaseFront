@@ -27,6 +27,8 @@ export interface ChatMessage {
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
   formReply?: FormReply | null;
+  /** The normalized name of a received spreadsheet; the other messages do not bring it. */
+  spreadsheetName?: string;
 }
 export interface Outgoing {
   assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies"; form?: ChatFormMetadata | null; recoveryPath?: string | null;

@@ -19,6 +19,8 @@ export function deliveryStatus(value: string | null) {
 
 interface TimelineContent {
   audio: ChatAudio | null;
+  /** A received spreadsheet: its name, or null once its content expired. */
+  spreadsheetName: string | null;
   assistant: AssistantExplanation | null;
   quickReplies: string[] | null;
   key: string;
@@ -41,6 +43,7 @@ export type TimelineItem = TimelineContent & ({ source: "message"; messageId: st
 export function buildTimeline(messages: readonly ChatMessage[], outgoing: readonly Outgoing[]): TimelineItem[] {
   const items: TimelineItem[] = messages.map(message => ({
     audio: message.kind === "Audio" ? message.audio : null,
+    spreadsheetName: message.kind === "Spreadsheet" ? message.spreadsheetName ?? null : null,
     messageId: message.id,
     quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
     assistant: message.purpose === "Access" ? null : message.assistant,
@@ -56,6 +59,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
   }));
   for (const operation of outgoing) items.push({
     audio: null,
+    spreadsheetName: null,
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,

@@ -24,6 +24,27 @@ async function setup(messages: ChatMessage[], outgoing: Outgoing[], canSend = tr
 }
 
 describe("ChatTimeline", () => {
+  // Stage 2 of the assistant authoring: a received spreadsheet with its name and the file icon, and its caption below it.
+  it("shows a received spreadsheet with its name and its caption below, not as a message of another kind", async () => {
+    const spreadsheet = { ...message(null), direction: "Inbound" as const, kind: "Spreadsheet", body: "Armame un catálogo con esta planilla",
+      spreadsheetName: "clientes.xlsx" };
+    await setup([spreadsheet], []);
+    const card = screen.getByRole("region", { name: "planilla" });
+    expect(within(card).getByText("clientes.xlsx")).toBeInTheDocument();
+    expect(within(card).getByText("Planilla")).toBeInTheDocument();
+    expect(within(card).getByText("clientes.xlsx").compareDocumentPosition(within(card).getByText("Armame un catálogo con esta planilla")))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByText(/de otro tipo/)).not.toBeInTheDocument();
+  });
+  it("keeps a spreadsheet without caption, and one whose content expired, as a spreadsheet", async () => {
+    await setup([{ ...message(null), id: "with-name", direction: "Inbound" as const, kind: "Spreadsheet", body: null, spreadsheetName: "clientes.csv" },
+      { ...message(null), id: "expired", direction: "Inbound" as const, kind: "Spreadsheet", body: null }], []);
+    const regions = screen.getAllByRole("region", { name: "planilla" });
+    expect(regions).toHaveLength(2);
+    expect(regions.find(region => within(region).queryByText("clientes.csv"))).toBeDefined();
+    expect(within(regions.find(region => !within(region).queryByText("clientes.csv"))!).getByText("Ya no está disponible.")).toBeInTheDocument();
+    expect(screen.queryByText(/no disponible|de otro tipo/)).not.toBeInTheDocument();
+  });
   it("uses access metadata without showing or recovering the retained secret", async () => {
     const access = Object.assign(message("Failed"), { purpose: "Access", accessEventKind: "SignInCode", body: "123456 https://example.test/#t=secret" });
     await setup([access], []);

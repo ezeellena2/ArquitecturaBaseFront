@@ -112,7 +112,12 @@
     "Other": "de otro tipo",
     "Interactive": "interactivo",
     "Template": "de plantilla",
-    "Audio": "audio"
+    "Audio": "audio",
+    "Spreadsheet": "planilla"
+  },
+  "spreadsheet": {
+    "label": "Planilla",
+    "gone": "Ya no está disponible."
   },
   "access": {
     "label": "Acceso al sistema",
