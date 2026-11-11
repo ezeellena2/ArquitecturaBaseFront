@@ -118,6 +118,10 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
       <IconButton size="icon-sm" label={t("down", { name: title(field) })} disabled={index === active.length - 1} onClick={() => move(field, 1)}><ChevronDownIcon className="size-4" /></IconButton>
     </div>;
   };
+  // Both states of a field go in their label, as those of an option (UD3): «Nuevo» and «Se quita al guardar», in red. Under
+  // the name go always its type and its role, also in a removed field.
+  const state = (field: CatalogFieldDraft) => !field.id ? <Badge variant="warning">{t("catalogs.fields.newBadge")}</Badge>
+    : !field.isActive ? <Badge variant="danger">{t("catalogs.fields.removedState")}</Badge> : null;
   // The list in its box: a line between fields, the chosen one tinted with a bar on its edge, and «Agregar campo» at the foot.
   const list = <Surface title={t("catalogs.fields.title")} headingLevel={3} actions={!readOnly ? <span className="text-xs text-[var(--color-surface-header-foreground)]">{t("catalogs.fields.count", { count: active.length, max: maxFields })}</span> : null}>
     {visible.length ? <ul aria-label={t("catalogs.fields.title")} className="flex flex-col divide-y divide-[var(--color-border)]">{visible.map(field => {
@@ -126,8 +130,8 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
         <Button ref={button => { if (button) rows.current.set(field.localId, button); else rows.current.delete(field.localId); }} type="button" variant="ghost" size="touch" className="min-w-0 flex-1 justify-start text-left" aria-current={current && desktop ? "true" : undefined} aria-label={t(readOnly ? "catalogs.fields.viewNamed" : "catalogs.editNamed", { name: title(field) })} onClick={() => choose(field)}>
           <span className="w-5 shrink-0 text-xs text-[var(--color-content-muted)]">{field.isActive ? active.indexOf(field) + 1 : "—"}</span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{title(field)}</span>{!field.id ? <Badge variant="warning">{t("catalogs.fields.newBadge")}</Badge> : null}{catalogFieldHasErrors(shown, field) ? <AlertTriangleIcon className="size-3.5 shrink-0 text-[var(--color-danger)]" /> : null}</span>
-            <span className="truncate text-xs font-normal text-[var(--color-content-muted)]">{field.isActive ? t("catalogs.fields.types." + field.type) + " · " + t("catalogs.fields.roles." + field.role) : t("catalogs.fields.removedState")}</span>
+            <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{title(field)}</span>{state(field)}{catalogFieldHasErrors(shown, field) ? <AlertTriangleIcon className="size-3.5 shrink-0 text-[var(--color-danger)]" /> : null}</span>
+            <span className="truncate text-xs font-normal text-[var(--color-content-muted)]">{t("catalogs.fields.types." + field.type) + " · " + t("catalogs.fields.roles." + field.role)}</span>
           </span>
         </Button>
         {current && desktop && !readOnly && field.isActive ? arrows(field) : null}
@@ -138,11 +142,12 @@ export function CatalogFieldsDialog({ catalogName, fields, presentation, culture
     </div> : null}
   </Surface>;
 
-  // The chosen field in its box: its band says which one it is and carries «Quitar campo» (and the arrows on the phone).
-  const pane = selected ? <Surface title={selected.id ? t("catalogs.fields.position", { number: active.indexOf(selected) + 1, count: active.length }) : t("catalogs.fields.new")} headingLevel={3}
+  // The chosen field in its box: its band says which one it is and carries «Quitar campo» (and the arrows on the phone). A
+  // removed field has no place among the active ones: its box takes its name.
+  const pane = selected ? <Surface title={!selected.isActive ? title(selected) : selected.id ? t("catalogs.fields.position", { number: active.indexOf(selected) + 1, count: active.length }) : t("catalogs.fields.new")} headingLevel={3}
     padded={!selected.isActive || readOnly}
     actions={!readOnly && selected.isActive ? <>{!desktop ? arrows(selected) : null}<Button type="button" variant="destructive-outline" onClick={() => { setRemoving(selected.localId); setConfirmValues(false); }}><TrashIcon className="size-4" />{t("catalogs.fields.removeField")}</Button></> : null}>
-    {!selected.isActive ? <RemovedField title={title(selected)} messages={shown[selected.localId] ?? {}} uses={uses(selected)} readOnly={readOnly} onRestore={() => restore(selected)} />
+    {!selected.isActive ? <RemovedField state={state(selected)} messages={shown[selected.localId] ?? {}} uses={uses(selected)} readOnly={readOnly} onRestore={() => restore(selected)} />
       : readOnly ? <FieldText field={selected} title={title(selected)} scope={scope} />
       : <FieldForm key={selected.localId} field={selected} takenKeys={draft.fields.filter(field => field.localId !== selected.localId).map(field => field.key)} culture={culture} original={original} scope={scope} errors={shown[selected.localId] ?? {}} uses={uses(selected)} focusOnOpen={focusField}
         onChange={next => update(draft.fields.map(value => value.localId === next.localId ? next : value))} />}
@@ -250,11 +255,12 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, f
   </div>;
 }
 
-// A removed field the server said something about: what it said, its uses and Restore.
-function RemovedField({ title, messages, uses, readOnly, onRestore }: { title: string; messages: FieldMessages; uses: ReactNode; readOnly: boolean; onRestore: () => void }) {
+// A removed field the server said something about, in the box with its name: its state, what the server said, its uses and
+// Restore.
+function RemovedField({ state, messages, uses, readOnly, onRestore }: { state: ReactNode; messages: FieldMessages; uses: ReactNode; readOnly: boolean; onRestore: () => void }) {
   const { t } = useTranslation("forms");
   return <div className="flex flex-col gap-3">
-    <p className="text-sm font-medium">{title}</p>
+    <div>{state}</div>
     {Object.values(messages).flat().map((message, index) => <Message key={index} error>{message}</Message>)}
     {uses}
     {!readOnly ? <Button type="button" variant="outline" className="self-start" onClick={onRestore}>{t("catalogs.fields.restoreField")}</Button> : null}

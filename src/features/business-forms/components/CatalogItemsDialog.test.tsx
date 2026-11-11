@@ -50,6 +50,7 @@ it("lists the options added in the modal with their badge and code, and opens th
   expect(list.getByRole("button", { name: "Editar Combustibles" })).toHaveTextContent("COMBUSTIBLES");
   expect(list.getByRole("button", { name: "Editar Nueva opción" })).toHaveTextContent("Sin código");
   expect(list.getAllByText("Nueva")).toHaveLength(2);
+  for (const badge of list.getAllByText("Nueva")) expect(badge).toHaveAttribute("data-slot", "badge");
   expect(screen.getByRole("heading", { name: "Nueva opción" })).toBeInTheDocument();
   await waitFor(() => expect(screen.getByRole("textbox", { name: "Texto" })).toHaveFocus());
   expect(screen.getByRole("button", { name: "Para qué es el código" })).toBeInTheDocument();
@@ -99,7 +100,13 @@ it("asks before removing a saved option, marks it to delete and offers to restor
   expect(within(confirm).queryByText(/no se va a poder eliminar/)).not.toBeInTheDocument();
   await user.click(within(confirm).getByRole("button", { name: "Eliminar opción" }));
   expect(onDelete).toHaveBeenCalledWith(first);
-  expect(screen.getByRole("button", { name: "Editar Pérez Hnos." })).toHaveTextContent("Se elimina al guardar");
+  // Deleted on Save is a state, in its label as in the table (UD3): the row keeps its code, and the option says it in red.
+  const row = screen.getByRole("button", { name: "Editar Pérez Hnos." });
+  expect(within(row).getByText("Se elimina al guardar")).toHaveAttribute("data-variant", "danger");
+  expect(row).toHaveTextContent("C-001");
+  const pane = screen.getByRole("region", { name: "Opción 1 de 2" });
+  expect(within(pane).getByText("Se elimina al guardar")).toHaveAttribute("data-slot", "badge");
+  expect(within(pane).getByText("Se elimina al guardar")).toHaveAttribute("data-variant", "danger");
   expect(screen.queryByRole("textbox", { name: "Texto" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Restaurar" }));
   expect(onRestore).toHaveBeenCalledWith(first);

@@ -51,13 +51,16 @@ afterEach(() => { cleanup(); });
 it("draws each real use of a field with its stage and the link to its question", async () => {
   const router = await mount(<Harness />);
   const user = userEvent.setup();
-  for (const [name, text] of [["zone", "«Proveedor» en Pedir repuesto, en la versión activa y en el borrador"], ["kind", "«Proveedor» en Pedir repuesto, en la versión activa"]] as const) {
+  for (const [name, stage] of [["zone", "En la versión activa y en el borrador"], ["kind", "En la versión activa"]] as const) {
     const dialog = await askToRemove(user, name);
     expect(within(dialog).getByText("El campo está en uso. Sacá esos usos para poder quitarlo.")).toBeInTheDocument();
-    const items = within(dialog).getAllByRole("listitem");
-    expect(items).toHaveLength(1);
-    expect(items[0]).toHaveTextContent(text);
-    expect(within(items[0]!).getByRole("link", { name: "Ir a la pregunta «Proveedor» de Pedir repuesto" })).toHaveTextContent("Ir a la pregunta");
+    // Each use is a row: the form as the datum, the question with its stage under it and the link beside it.
+    const forms = within(dialog).getAllByRole("term");
+    expect(forms.map(term => term.textContent)).toEqual(["Pedir repuesto"]);
+    const use = forms[0]!.nextElementSibling as HTMLElement;
+    expect(within(use).getByText("Proveedor")).toBeInTheDocument();
+    expect(within(use).getByText(stage)).toBeInTheDocument();
+    expect(within(use).getByRole("link", { name: "Ir a la pregunta «Proveedor» de Pedir repuesto" })).toHaveTextContent("Ir a la pregunta");
     expect(within(dialog).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
     if (name === "kind") break;
     // Esc closes the confirmation and then the modal.
@@ -74,7 +77,7 @@ it("draws each real use of a field with its stage and the link to its question",
 it("shows the catalog's own use of a field as its «En WhatsApp», not as a form", async () => {
   await mount(<Harness />);
   const dialog = await askToRemove(userEvent.setup(), "tax_id");
-  expect(within(dialog).queryByRole("listitem")).not.toBeInTheDocument();
+  expect(within(dialog).queryByRole("term")).not.toBeInTheDocument();
   expect(within(dialog).getByText("También se saca de «En WhatsApp» de este catálogo.")).toBeInTheDocument();
   expect(within(dialog).getByRole("button", { name: "Quitar el campo" })).toBeInTheDocument();
 });
@@ -92,7 +95,9 @@ it("shows the uses of the real FieldInUse rejection with the removed field, with
   await userEvent.click(within(notice).getByRole("button", { name: "Revisar" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText(problem.errors["fields[0].isActive"]![0]!)).toBeInTheDocument();
-  expect(within(dialog).getByRole("listitem")).toHaveTextContent("«Proveedor» en Pedir repuesto, en la versión activa y en el borrador");
+  const use = within(dialog).getByText("Pedir repuesto", { selector: "dt" }).nextElementSibling as HTMLElement;
+  expect(use).toHaveTextContent("Proveedor");
+  expect(within(use).getByText("En la versión activa y en el borrador")).toBeInTheDocument();
   expect(within(dialog).getByRole("button", { name: "Restaurar el campo" })).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("link", { name: "Ir a la pregunta «Proveedor» de Pedir repuesto" }));
   expect(router.state.location.pathname).toBe("/formularios/" + form);

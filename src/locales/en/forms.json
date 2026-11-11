@@ -361,10 +361,9 @@
       "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values", "saveToEnterValues": "Save the catalog to enter values for the new fields.", "limit_one": "A catalog can have up to {{count}} field.", "limit_other": "A catalog can have up to {{count}} fields.",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
       "confirmRemoval_one": "Yes, remove the field and its value", "confirmRemoval_other": "Yes, remove the field and its {{count, number(useGrouping: always)}} values", "detail": { "between": "From {{min}} to {{max}}", "from": "From {{min}}", "to": "Up to {{max}}", "length_one": "{{count}} character", "length_other": "{{count}} characters", "source_one": "{{name}} · 1 option", "source_other": "{{name}} · {{count, number(useGrouping: always)}} options" }, "inUse": "This field is in use. Remove those uses before removing it.",
-      "hiddenUse": { "Draft": "A form's draft", "Active": "A form's active version" },
       "usage": {
-        "question": "“{{question}}” in {{form}}, {{stage}}",
-        "stage": { "Draft": "in the draft", "Active": "in the active version", "both": "in the active version and the draft" },
+        "hiddenForm": "A form",
+        "stage": { "Draft": "In the draft", "Active": "In the active version", "both": "In the active version and the draft" },
         "goTo": "Go to the question", "goToNamed": "Go to the question “{{question}}” in {{form}}",
         "presentation": "It's also removed from this catalog's “In WhatsApp”."
       },
@@ -393,9 +392,8 @@
       },
       "restoreField": "Restore field",
       "conversion": {
-        "title": "Change the type of “{{name}}”", "types": "From {{from}} to {{to}}",
-        "reviewed_one": "1 loaded value is checked: {{converted}} and {{invalid}}.", "reviewed_other": "All {{count, number(useGrouping: always)}} loaded values are checked: {{converted}} and {{invalid}}.",
-        "converted_one": "{{count}} converts", "converted_other": "{{count, number(useGrouping: always)}} convert", "invalid_one": "{{count}} doesn't", "invalid_other": "{{count, number(useGrouping: always)}} don't",
+        "title": "Change the type of “{{name}}”", "savedType": "Saved type", "newType": "New type",
+        "loaded": "Loaded values", "converted": "Convert", "invalid": "Don't convert",
         "row": "Row", "what": "What happens", "more_one": "And {{count}} more.", "more_other": "And {{count, number(useGrouping: always)}} more.",
         "show_one": "Show the row in the table", "show_other": "Show the {{count}} in the table"
       }

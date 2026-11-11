@@ -19,6 +19,8 @@ type Errors = Readonly<Record<string, Readonly<Record<string, readonly string[]>
 const field: CatalogFieldDraft = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", key: "tax_id", name: { es: "CUIT" }, valuesCount: 2 };
 const zone: CatalogFieldDraft = { ...newCatalogField("zone", 2), id: "01990000-0000-7000-8000-000000000003", key: "zone", name: { es: "Zona" }, role: "filter" };
 const catalogPermissions = ["formcatalogs.read", "formcatalogs.manage"] as const;
+// Each use of a field is a row (lista de chequeo, 2026-11-11): the form as the datum and the question with its stage as the value.
+const usesOf = (container: HTMLElement) => within(container).getAllByRole("term").map(term => [term.textContent, term.nextElementSibling as HTMLElement] as const);
 const optionalFirst = "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.";
 
 // As in the catalog editor: «Agregar campos» in the options header, the notice above the table and the modal, mounted while open.
@@ -354,9 +356,12 @@ it("names the stage of each form use once and links to its question", async () =
     await act(async () => { renderWithProviders(<RouterProvider router={router} />); });
     await userEvent.click(within(await openFields()).getByRole("button", { name: "Quitar campo" }));
     const confirm = screen.getByRole("dialog", { name: "Quitar «CUIT»" });
-    const items = within(confirm).getAllByRole("listitem");
-    expect(items).toHaveLength(1);
-    expect(items[0]).toHaveTextContent("«Proveedor» en Pedir repuesto, en la versión activa y en el borrador");
+    const rows = usesOf(confirm);
+    expect(rows.map(([form]) => form)).toEqual(["Pedir repuesto"]);
+    const [, use] = rows[0]!;
+    expect(within(use).getByText("Proveedor")).toBeInTheDocument();
+    expect(within(use).getByText("En la versión activa y en el borrador")).toHaveClass("text-[var(--color-content-muted)]");
+    expect(within(confirm).queryByRole("listitem")).not.toBeInTheDocument();
     expect(within(confirm).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
     if (!canOpenForms) {
       expect(within(confirm).queryByRole("link")).not.toBeInTheDocument();
@@ -378,7 +383,7 @@ it("shows the stage of uses whose form the reader cannot see and still blocks re
   await mount({ initial: [{ ...field, usedBy: [{ ...hidden, stage: "Active" }, { ...hidden, stage: "Draft" }] }] });
   await userEvent.click(within(await openFields()).getByRole("button", { name: "Quitar campo" }));
   const confirm = screen.getByRole("dialog", { name: "Quitar «CUIT»" });
-  expect(within(confirm).getAllByRole("listitem").map(item => item.textContent)).toEqual(["La versión activa de un formulario", "El borrador de un formulario"]);
+  expect(usesOf(confirm).map(([form, use]) => [form, use.textContent])).toEqual([["Un formulario", "En la versión activa"], ["Un formulario", "En el borrador"]]);
   expect(within(confirm).queryByRole("button", { name: "Quitar el campo" })).not.toBeInTheDocument();
 });
 
@@ -386,7 +391,7 @@ it("shows the stage of a field-in-use conflict whose form the reader cannot see"
   const uses = [{ definitionId: null, formName: null, question: null, questionId: null, stage: "Draft" as const }];
   await mount({ initial: [{ ...field, isActive: false }], errors: { saved: { isActive: ["El campo está en uso."] } }, feedback: { uses } });
   await userEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Revisar" }));
-  expect(within(screen.getByRole("dialog")).getByText("El borrador de un formulario")).toBeInTheDocument();
+  expect(usesOf(screen.getByRole("dialog")).map(([form, use]) => [form, use.textContent])).toEqual([["Un formulario", "En el borrador"]]);
 });
 
 it("shows the catalog's own WhatsApp use as part of this catalog instead of a form", async () => {
@@ -445,6 +450,14 @@ it("shows a removed field rejected by a concurrent use and restores its identity
   await userEvent.click(within(notice).getByRole("button", { name: "Revisar" }));
   const reviewed = screen.getByRole("dialog");
   expect(within(reviewed).getByRole("button", { name: "Editar CUIT" })).toHaveAttribute("aria-current", "true");
+  // Removed on Save is a state, in its red label as an option to delete (UD3): its row keeps the type and the role.
+  const row = within(reviewed).getByRole("button", { name: "Editar CUIT" });
+  expect(within(row).getByText("Se quita al guardar")).toHaveAttribute("data-variant", "danger");
+  expect(row).toHaveTextContent("Texto · Dato");
+  // A removed field has no place among the active ones: its box is named after it, never «Campo 0 de 1».
+  const pane = within(reviewed).getByRole("region", { name: "CUIT" });
+  expect(within(pane).getByText("Se quita al guardar")).toHaveAttribute("data-slot", "badge");
+  expect(within(reviewed).queryByText(/^Campo 0 de/)).not.toBeInTheDocument();
   expect(within(reviewed).getByText(message)).toBeInTheDocument();
   await userEvent.click(within(reviewed).getByRole("button", { name: "Restaurar el campo" }));
   expect(within(reviewed).getByRole("textbox", { name: "Nombre" })).toHaveValue("CUIT");
@@ -598,7 +611,10 @@ it.each(["role", "type", "sourceCatalogId"])("shows the uses next to an in-use %
   await userEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Revisar" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText("El campo está en uso.")).toBeInTheDocument();
-  expect(within(dialog).getAllByText("«Proveedor» en Pedir repuesto, en la versión activa")).toHaveLength(1);
+  const rows = usesOf(dialog);
+  expect(rows.map(([form]) => form)).toEqual(["Pedir repuesto"]);
+  expect(within(rows[0]![1]).getByText("Proveedor")).toBeInTheDocument();
+  expect(within(rows[0]![1]).getByText("En la versión activa")).toBeInTheDocument();
   expect(within(dialog).getByRole("textbox", { name: "Clave" })).toHaveValue("tax_id");
 });
 

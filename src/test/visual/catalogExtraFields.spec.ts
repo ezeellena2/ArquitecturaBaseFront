@@ -182,10 +182,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
       await expect(dialog).toBeVisible();
       return dialog;
     };
-    // One line for the question used by the active version and the draft, its link and no removal.
+    // One row for the question used by the active version and the draft (lista de chequeo, 2026-11-11): the form as the datum,
+    // the question with its stage under it as the value, its link and no removal.
     const zone = await remove(es ? "Zona" : "Zone");
-    await expect(zone.getByRole("listitem")).toHaveCount(1);
-    await expect(zone.getByRole("listitem")).toContainText(es ? `«${question}» en ${form}, en la versión activa y en el borrador` : `“${question}” in ${form}, in the active version and the draft`);
+    await expect(zone.getByRole("term")).toHaveText([form]);
+    await expect(zone.getByRole("definition")).toContainText(question);
+    await expect(zone.getByRole("definition")).toContainText(es ? "En la versión activa y en el borrador" : "In the active version and the draft");
     const link = zone.getByRole("link", { name: es ? `Ir a la pregunta «${question}» de ${form}` : `Go to the question “${question}” in ${form}`, exact: true });
     await expect(link).toHaveText(es ? "Ir a la pregunta" : "Go to the question");
     await expect(link).toHaveAttribute("href", "/formularios/" + catalogExtraFieldFixtureIds.form);
@@ -203,14 +205,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await close();
     // A use left only in the active version says so.
     const term = await remove(es ? "Plazo de pago (días)" : "Payment term (days)");
-    await expect(term.getByRole("listitem")).toContainText(es ? `«${question}» en ${form}, en la versión activa` : `“${question}” in ${form}, in the active version`);
-    await expect(term.getByRole("listitem")).not.toContainText(es ? "borrador" : "draft");
+    await expect(term.getByRole("term")).toHaveText([form]);
+    await expect(term.getByRole("definition")).toContainText(es ? "En la versión activa" : "In the active version");
+    await expect(term.getByRole("definition")).not.toContainText(es ? "borrador" : "draft");
     await close();
     // The catalog's own «En WhatsApp» is part of this catalog, not a form: it does not block and is not named.
     const cuit = await remove("CUIT");
     await expect(cuit.getByText(es ? "También se saca de «En WhatsApp» de este catálogo." : "It's also removed from this catalog's “In WhatsApp”.", { exact: true })).toBeVisible();
     await expect(cuit.getByText(es ? "Proveedores" : "Suppliers", { exact: true })).toHaveCount(0);
-    await expect(cuit.getByRole("listitem")).toHaveCount(0);
+    await expect(cuit.getByRole("term")).toHaveCount(0);
     await expect(cuit.getByRole("checkbox", { name: es ? "Sí, quitar el campo y sus 6 valores" : "Yes, remove the field and its 6 values", exact: true })).toBeVisible();
     await expect(cuit.getByRole("button", { name: es ? "Quitar el campo" : "Remove field", exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("ce1-field-own-presentation.png"), fullPage: true });

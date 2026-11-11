@@ -553,8 +553,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("opens the type change dialog from the server rows and filters the table to them", async () => {
     viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
     const dialog = await saveTypeChange(user);
-    expect(within(dialog).getByText("De texto a entero")).toBeInTheDocument();
-    expect(within(dialog).getByText("Se revisan los 2 valores cargados: 1 se convierte y 1 no.")).toBeInTheDocument();
+    // The type and the counts as the data of a record (lista de chequeo, 2026-11-11).
+    expect(within(dialog).getAllByRole("term").map(term => [term.textContent, term.nextElementSibling?.textContent])).toEqual([["Tipo guardado", "Texto"], ["Tipo nuevo", "Entero"], ["Valores cargados", "2"], ["Se convierten", "1"], ["No se convierten", "1"]]);
     expect(within(dialog).getByRole("cell", { name: "«30 días» no es un número entero." })).toBeInTheDocument();
     expect(screen.queryByText(/Revisá las opciones con código/)).not.toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Ver la fila en la tabla" }));
@@ -678,7 +678,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toBeInvalid();
     expect(screen.getByRole("textbox", { name: "Fila 2 · Plazo" })).toHaveAccessibleDescription("Fila 2 · Plazo: «60 días» supera los 5 caracteres.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.queryByText(/^De texto a/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Tipo nuevo")).not.toBeInTheDocument();
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Ver los 2 en la tabla" }));
     expect(await screen.findByText("Con error · 2 filas")).toBeInTheDocument();
@@ -857,10 +857,13 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Revisar" }));
     const fields = screen.getByRole("dialog", { name: /^Campos de/ });
-    expect(within(fields).getByText("«Proveedor» en Pedir repuesto, en la versión activa")).toBeInTheDocument();
+    // The use is a row: the form as the datum, the question with its stage as the value (lista de chequeo, 2026-11-11).
+    const use = within(fields).getByText("Pedir repuesto", { selector: "dt" }).nextElementSibling as HTMLElement;
+    expect(within(use).getByText("Proveedor")).toBeInTheDocument();
+    expect(within(use).getByText("En la versión activa")).toBeInTheDocument();
     expect(within(fields).getByText(message)).toBeInTheDocument();
     await user.click(within(fields).getByRole("button", { name: "Restaurar el campo" }));
-    expect(within(fields).queryByText("«Proveedor» en Pedir repuesto, en la versión activa")).not.toBeInTheDocument();
+    expect(within(fields).queryByText("Pedir repuesto", { selector: "dt" })).not.toBeInTheDocument();
     await applyFields(user);
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(bodies).toHaveLength(2));

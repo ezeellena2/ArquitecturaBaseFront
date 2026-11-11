@@ -63,7 +63,11 @@ export function CatalogItemsDialog({ catalogName, mode, items, selectedId, total
   };
   const listTitle = t(mode === "new" ? "catalogs.items.listNew" : "catalogs.items.title");
 
+  // Both states of an option go in their label, as in the table (UD3): «Nueva» and «Se elimina al guardar», in red.
+  const state = (item: CatalogManualItemValue) => item.itemId === null ? <Badge variant="warning">{t("catalogs.items.newBadge")}</Badge>
+    : deleted(item) ? <Badge variant="danger">{t("catalogs.items.deletedState")}</Badge> : null;
   // The list in its box: a line between options, the chosen one tinted with a bar on its edge, and «Agregar opción» at the foot.
+  // Under the text goes always its code, also in an option marked to delete.
   const list = <Surface title={listTitle} headingLevel={3} actions={<span className="text-xs text-[var(--color-surface-header-foreground)]">{mode === "new" ? items.length : range}</span>}>
     {items.length ? <ul aria-label={listTitle} className="flex flex-col divide-y divide-[var(--color-border)]">{items.map(item => {
       const current = item.localId === selected?.localId;
@@ -71,8 +75,8 @@ export function CatalogItemsDialog({ catalogName, mode, items, selectedId, total
         <Button type="button" variant="ghost" size="touch" className="min-w-0 flex-1 justify-start text-left" aria-current={current && desktop ? "true" : undefined} aria-label={t("catalogs.editNamed", { name: name(item) })} onClick={() => onSelect(item.localId)}>
           <span className="w-5 shrink-0 text-xs text-[var(--color-content-muted)]">{item.itemId === null ? "—" : item.position}</span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{name(item)}</span>{item.itemId === null ? <Badge variant="warning">{t("catalogs.items.newBadge")}</Badge> : null}{marked(item) ? <AlertTriangleIcon className="size-3.5 shrink-0 text-[var(--color-danger)]" /> : null}</span>
-            <span className={"truncate text-xs font-normal " + (deleted(item) ? "text-[var(--color-danger)]" : "text-[var(--color-content-muted)]")}>{deleted(item) ? t("catalogs.items.deletedState") : item.code || t("catalogs.items.noCode")}</span>
+            <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{name(item)}</span>{state(item)}{marked(item) ? <AlertTriangleIcon className="size-3.5 shrink-0 text-[var(--color-danger)]" /> : null}</span>
+            <span className="truncate text-xs font-normal text-[var(--color-content-muted)]">{item.code || t("catalogs.items.noCode")}</span>
           </span>
         </Button>
       </li>;
@@ -85,8 +89,7 @@ export function CatalogItemsDialog({ catalogName, mode, items, selectedId, total
   const pane = selected ? <Surface title={selected.itemId === null ? t("catalogs.items.new") : t("catalogs.items.position", { number: selected.position, count: totalCount })} headingLevel={3} padded={removed}
     actions={!readOnly && !removed ? <Button type="button" variant="destructive-outline" onClick={() => remove(selected)}><TrashIcon className="size-4" />{t("catalogs.items.removeOption")}</Button> : null}>
     {removed ? <div className="flex flex-col gap-3">
-      <p className="text-sm font-medium">{name(selected)}</p>
-      <p className="text-sm text-[var(--color-danger)]">{t("catalogs.items.deletedState")}</p>
+      <p className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm font-medium"><span className="min-w-0 break-words">{name(selected)}</span>{state(selected)}</p>
       {deleteErrors?.[selected.localId] ? <p role="alert" className="text-sm text-[var(--color-danger)]">{deleteErrors[selected.localId]}</p> : null}
       {!readOnly ? <Button type="button" variant="outline" className="self-start" onClick={() => onRestore(selected)}>{t("catalogs.items.restore")}</Button> : null}
     </div> : <CatalogItemFields key={selected.localId} item={selected} culture={culture} original={original} valueType={valueType} fields={fields} scope={scope} readOnly={readOnly}

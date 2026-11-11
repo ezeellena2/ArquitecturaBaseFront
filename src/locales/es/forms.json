@@ -361,10 +361,9 @@
       "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores", "saveToEnterValues": "Guardá el catálogo para cargar los valores de los campos nuevos.", "limit_one": "Un catálogo admite hasta {{count}} campo.", "limit_other": "Un catálogo admite hasta {{count}} campos.",
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
       "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count, number(useGrouping: always)}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count, number(useGrouping: always)}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
-      "hiddenUse": { "Draft": "El borrador de un formulario", "Active": "La versión activa de un formulario" },
       "usage": {
-        "question": "«{{question}}» en {{form}}, {{stage}}",
-        "stage": { "Draft": "en el borrador", "Active": "en la versión activa", "both": "en la versión activa y en el borrador" },
+        "hiddenForm": "Un formulario",
+        "stage": { "Draft": "En el borrador", "Active": "En la versión activa", "both": "En la versión activa y en el borrador" },
         "goTo": "Ir a la pregunta", "goToNamed": "Ir a la pregunta «{{question}}» de {{form}}",
         "presentation": "También se saca de «En WhatsApp» de este catálogo."
       },
@@ -393,9 +392,8 @@
       },
       "restoreField": "Restaurar el campo",
       "conversion": {
-        "title": "Cambiar el tipo de «{{name}}»", "types": "De {{from}} a {{to}}",
-        "reviewed_one": "Se revisa 1 valor cargado: {{converted}} y {{invalid}}.", "reviewed_other": "Se revisan los {{count, number(useGrouping: always)}} valores cargados: {{converted}} y {{invalid}}.",
-        "converted_one": "{{count}} se convierte", "converted_other": "{{count, number(useGrouping: always)}} se convierten", "invalid_one": "{{count}} no", "invalid_other": "{{count, number(useGrouping: always)}} no",
+        "title": "Cambiar el tipo de «{{name}}»", "savedType": "Tipo guardado", "newType": "Tipo nuevo",
+        "loaded": "Valores cargados", "converted": "Se convierten", "invalid": "No se convierten",
         "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count, number(useGrouping: always)}} más.",
         "show_one": "Ver la fila en la tabla", "show_other": "Ver los {{count}} en la tabla"
       }

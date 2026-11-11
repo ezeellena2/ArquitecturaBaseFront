@@ -10,13 +10,16 @@ const rows = [
   { itemId: "01990000-0000-7000-8000-000000000052", code: "P-52", row: 52, value: null, reason: "required" as const },
 ];
 const term = { type: "integer" as const, min: null, max: null, maxLength: null };
+// The type and the counts read as the data of a record (lista de chequeo, 2026-11-11): each datum once, with its value.
+const data = (dialog: HTMLElement) => within(dialog).getAllByRole("term").map(term => [term.textContent, term.nextElementSibling?.textContent]);
 
 it("lists row, value and reason with the remaining count and offers to show those rows", async () => {
   const onClose = vi.fn(), onShowRows = vi.fn();
   await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Plazo de pago (días)" from="text" field={term} culture="es" convertedCount={1188} invalidCount={12} rows={rows} onClose={onClose} onShowRows={onShowRows} />); });
   const dialog = screen.getByRole("dialog", { name: "Cambiar el tipo de «Plazo de pago (días)»" });
-  expect(within(dialog).getByText("De texto a entero")).toBeInTheDocument();
-  expect(within(dialog).getByText("Se revisan los 1.200 valores cargados: 1.188 se convierten y 12 no.")).toBeInTheDocument();
+  expect(data(dialog)).toEqual([["Tipo guardado", "Texto"], ["Tipo nuevo", "Entero"], ["Valores cargados", "1.200"], ["Se convierten", "1.188"], ["No se convierten", "12"]]);
+  expect(dialog).not.toHaveAccessibleDescription();
+  expect(within(dialog).queryByText(/^De texto a entero$|Se revisan/)).not.toBeInTheDocument();
   expect(within(dialog).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Fila", "Qué pasa"]);
   const [first, second] = within(dialog).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell").map(cell => cell.textContent));
   expect(first).toEqual(["37", "«30 días» no es un número entero."]);
@@ -53,7 +56,7 @@ it("shows at most five rows and leaves out the types when only the source change
   const dialog = screen.getByRole("dialog", { name: "Cambiar el tipo de «Zona»" });
   expect(within(dialog).getAllByRole("row")).toHaveLength(6);
   expect(within(dialog).getByText("Y 2 más.")).toBeInTheDocument();
-  expect(within(dialog).queryByText(/^De /)).not.toBeInTheDocument();
+  expect(data(dialog).map(([label]) => label)).toEqual(["Valores cargados", "Se convierten", "No se convierten"]);
   expect(within(dialog).getByRole("button", { name: "Ver los 7 en la tabla" })).toBeInTheDocument();
 });
 
@@ -62,8 +65,7 @@ it("speaks English with the same counts", async () => {
   try {
     await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Term" from="text" field={term} culture="es" convertedCount={0} invalidCount={1} rows={rows.slice(0, 1)} onClose={() => {}} onShowRows={() => {}} />); });
     const dialog = screen.getByRole("dialog", { name: "Change the type of “Term”" });
-    expect(within(dialog).getByText("From text to whole number")).toBeInTheDocument();
-    expect(within(dialog).getByText("1 loaded value is checked: 0 convert and 1 doesn't.")).toBeInTheDocument();
+    expect(data(dialog)).toEqual([["Saved type", "Text"], ["New type", "Whole number"], ["Loaded values", "1"], ["Convert", "0"], ["Don't convert", "1"]]);
     expect(within(dialog).queryByText(/more\.$/)).not.toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Show the row in the table" })).toBeInTheDocument();
   } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
@@ -74,7 +76,7 @@ it("groups thousands in every count", async () => {
   try {
     await act(async () => { renderWithProviders(<CatalogFieldConversionDialog name="Term" from="text" field={term} culture="es" convertedCount={1188} invalidCount={1200} rows={rows} onClose={() => {}} onShowRows={() => {}} />); });
     const dialog = screen.getByRole("dialog", { name: "Change the type of “Term”" });
-    expect(within(dialog).getByText("All 2,388 loaded values are checked: 1,188 convert and 1,200 don't.")).toBeInTheDocument();
+    expect(data(dialog).slice(2)).toEqual([["Loaded values", "2,388"], ["Convert", "1,188"], ["Don't convert", "1,200"]]);
     expect(within(dialog).getByText("And 1,198 more.")).toBeInTheDocument();
   } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
 });
