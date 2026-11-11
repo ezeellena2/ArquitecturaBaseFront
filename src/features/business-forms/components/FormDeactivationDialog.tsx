@@ -20,8 +20,8 @@ import { fetchFormDeactivation, deactivateForm } from "../api/forms";
 import type { FormDeactivation } from "../api/response";
 import { administrativeName } from "../editorModel";
 import { formScopeKey, usePrivateQueryCleanup, type FormReadScope } from "../hooks/useFormQueries";
-export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRevisionMismatch, onComplete, onObserved, onClose, focusFallback, timeZoneId }: {
- timeZoneId?: string; id: string; name: string; scope: FormReadScope; expectedRevision?: number; onRevisionMismatch?: () => void;
+export function FormDeactivationDialog({ id, name, scope, appOnly = false, expectedRevision, onRevisionMismatch, onComplete, onObserved, onClose, focusFallback, timeZoneId }: {
+ timeZoneId?: string; id: string; name: string; scope: FormReadScope; /** The active version is completed only in the app (SA3-A). */ appOnly?: boolean; expectedRevision?: number; onRevisionMismatch?: () => void;
  onComplete: (result: FormDeactivation, expectedRevision: number) => void | Promise<void>; onObserved: () => void | Promise<void>; onClose: () => void; focusFallback?: RefObject<HTMLElement | null>;
 }) {
  const { t } = useTranslation("forms");
@@ -45,8 +45,10 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   notify({ id: feedbackId, kind: "error", message: readErrorMessage(query.error, t) });
  }, [query.error, feedbackId, t]);
  const impact = query.data;
- // The chat and the assistant stop only for a form that is in WhatsApp: not one published only in the app, nor without a channel (SA2-A).
- const inWhatsApp = (installedFeatures ? installedFeatures.includes("form-channels") : true) && !impact?.lifecycle.publishedOnlyInApp;
+ // The chat, the assistant and the suggestions stop only for a form that is in WhatsApp now: not one whose active version is only in
+ // the app, though an earlier one was in WhatsApp («App» and notice, 2026-11-11), nor one published only in the app or without a
+ // channel (SA2-A).
+ const inWhatsApp = (installedFeatures ? installedFeatures.includes("form-channels") : true) && !appOnly && !impact?.lifecycle.publishedOnlyInApp;
  const revisionMismatch = expectedRevision !== undefined && impact?.revision !== undefined && expectedRevision !== impact.revision;
  const reread = async () => {
   const current = await query.refetch();
@@ -76,14 +78,14 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
  // Why it cannot be deactivated is the reason of the disabled button, not a paragraph in the dialog.
  const unavailable = impact && !impact.lifecycle.canDeactivate && !revisionMismatch && !busy && !needsRead && !forbidden ? t(impact.lifecycle.deactivatedAtUtc ? "lifecycle.alreadyDeactivated" : "lifecycle.reasons." + (impact.lifecycle.unavailableReason ?? "Unavailable")) : null;
  // What stops and what is kept are two groups of data in two columns, each with its title (DL, 2026-11-11), not a notice per
- // consequence. «App» goes for every form; «Chat» and «Asistente», only for one in WhatsApp (SA2-A). Where a request goes is
+ // consequence. «App» goes for every form; «Chat», «Asistente» and «Sugerencias», only for one in WhatsApp now (SA2-A). Where a request goes is
  // the (i) of «Asistente».
  const assistant = t("lifecycle.assistantRow");
  const stops: DataListItem[] = !impact ? [] : [
   { key: "app", label: t("lifecycle.appRow"), value: t("lifecycle.appStops") },
   ...inWhatsApp ? [{ key: "chat", label: t("lifecycle.chatRow"), value: t("lifecycle.chatStops") }, { key: "assistant", value: t("lifecycle.assistantStops"),
    label: <span className="flex items-center gap-1">{assistant}<span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: assistant })} text={t("lifecycle.assistantStopsHint")} /></span></span> }] : [],
-  ...impact.affectedSuggestions.length ? [{ key: "suggestions", label: t("lifecycle.suggestionsRow"), value: t("lifecycle.suggestionsStop", { count: impact.affectedSuggestions.length,
+  ...inWhatsApp && impact.affectedSuggestions.length ? [{ key: "suggestions", label: t("lifecycle.suggestionsRow"), value: t("lifecycle.suggestionsStop", { count: impact.affectedSuggestions.length,
    names: impact.affectedSuggestions.map(form => administrativeName(form.name, scope.culture)).join(", ") }) }] : [],
  ];
  // Without permission to read responses there is no count: they are kept all the same.
@@ -92,9 +94,10 @@ export function FormDeactivationDialog({ id, name, scope, expectedRevision, onRe
   ...impact.lifecycle.pendingApprovalCount ? [{ key: "approvals", label: t("lifecycle.approvalsRow"), value: t("lifecycle.keepsApprovals", { count: impact.lifecycle.pendingApprovalCount }) }] : [],
   { key: "workflow", label: t("lifecycle.workflowRow"), value: t("lifecycle.kept") },
  ];
- // The one notice that really warns: WhatsApp cannot undo it, with the last open send in numbers when there is one.
+ // The one notice that really warns: WhatsApp cannot undo it, with the last open send in numbers when there is one. A form that
+ // moved to the app warns only while sends of back then are still open («App» and notice).
  const openUntil = impact?.lifecycle.lastOpenSessionExpiresAtUtc;
- const whatsApp = !impact || !openUntil && !impact.lifecycle.deprecationState ? null
+ const whatsApp = !impact || !openUntil && (appOnly || !impact.lifecycle.deprecationState) ? null
   : openUntil ? t("lifecycle.metaIrreversible", { date: formatDateTimeInZone(openUntil, scope.culture, timeZoneId) }) : t("lifecycle.metaIrreversibleNow");
  // Only the consequences, without a description under the title or notes on how they work.
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}><DialogContent mobileFullscreen aria-describedby={undefined} className="flex flex-col sm:max-w-2xl" showCloseButton={!busy} onCloseAutoFocus={restoreFocus}>
