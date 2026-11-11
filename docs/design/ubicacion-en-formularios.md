@@ -190,6 +190,10 @@ la lista de chequeo. Se puso después de W3 para no mover W2 ni W3.
 | Estado de la tarjeta, siguió sin ella | Siguió sin la ubicación | Continued without the location |
 | Estado de la tarjeta, venció | Venció sin la ubicación | Expired without the location |
 | Ubicación que llega al chat de la app | -34.603722, -58.381592 · Ver en el mapa | -34.603722, -58.381592 · View on the map |
+| Ubicación cuyo punto ya no se conserva | Mensaje de ubicación | location message |
+| Actividad del detalle, se pidió | Se pidió la ubicación | Location requested |
+| Actividad del detalle, llegó | Llegó la ubicación | Location received |
+| Actividad del detalle, siguió sin ella | Siguió sin la ubicación | Continued without the location |
 
 ### Decisiones de detalle al dibujar
 
@@ -211,9 +215,10 @@ W1-A y el plan no las fijaban; se tomó la opción más simple:
    «Guardada como»; «Esperando la ubicación» con el reloj, «Siguió sin la ubicación» con la (i) y «Venció sin la ubicación»
    con el triángulo, en el color del texto. La ubicación que llega es el punto con el pin y «Ver en el mapa», en lugar de
    «Mensaje de otro tipo».
-8. **Sin cambios en la respuesta:** la planilla, el detalle, el Excel y el PDF quedan como en la Etapa 1, con el punto sin
-   precisión. El detalle no suma renglones de actividad: el W1-A elegido dibujó «Se pidió la ubicación» y «Llegó la
-   ubicación», y el tablero entero los deja afuera, con la actividad de hoy.
+8. **La respuesta:** la planilla, el Excel y el PDF quedan como en la Etapa 1, con el punto sin precisión. La actividad del
+   detalle suma «Se pidió la ubicación» y «Llegó la ubicación», como dibujó el W1-A elegido, y «Siguió sin la ubicación»
+   cuando la persona tocó el botón; van antes de «Se mandó el formulario», que sale cuando llega la ubicación. Al
+   programar se corrigió el tablero entero, que los dejaba afuera.
 9. **La vista previa del teléfono en el editor:** sigue sin mostrar la pregunta.
 
 Lista de chequeo de diseño: pasada (2026-11-11). Diferencias aceptadas, en la nota gris del lienzo: dibujado a mano con las
