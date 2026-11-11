@@ -1,6 +1,7 @@
 # Diálogos con la lista de chequeo
 
-Fecha: **2026-11-09**. Estado: **plan escrito; espera la elección del usuario y un momento con el front quieto**.
+Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 y programadas el mismo día (tareas 1 a 6); la 7
+y la 8 esperan la decisión del usuario; falta el cierre**.
 
 El [diseño](../design/dialogos-con-la-lista-de-chequeo.md) rehace el diálogo «Exportar respuestas a Excel» con la
 [lista de chequeo de diseño](../design/visual-baseline.md#lista-de-chequeo-de-diseño) y propone cómo quedan los demás
@@ -72,6 +73,23 @@ Cada tarea arranca con su test en rojo (`vitest`) y cierra con `tsc`, `lint` y l
 8. **Control automático (a decidir con el usuario).** Una regla en `designRules.ts` que marque viñetas y párrafos
    sueltos con datos dentro de un `DialogContent` de una feature, con casos permitidos y prohibidos, como pide la
    revisión. Si da falsos positivos que no se pueden acotar, no se agrega.
+
+## Avance (2026-11-11)
+
+El usuario eligió las recomendadas por medio del chat que coordina la tanda final. Todo en el front:
+
+- **Tareas 1 y 2:** `GroupLabel`, `ActionsMenu`, `RadioGroupField` con título, (i) y motivo por opción, y `FilterChip` sin
+  cruz (3bb07370).
+- **Tareas 3 y 4:** el filtro de una pregunta del bloque (1e71a5b8), el diálogo de exportar (1b9a9eda y 05998a09) y una
+  ubicación contada como tres columnas (e28d0ff2).
+- **Tarea 5:** dar de baja (31ed74c2), eliminar (a0b5cf15), resolver el envío (5fb2ae1d) y la revisión del catálogo
+  (f8a1c98a).
+- **Tarea 6:** publicar (3dace410), el envío de un formulario (d1aef7b9), un dato de las personas (63f6e0e0), importar
+  opciones (3e36fc87), cambiar el tipo y opciones y campos (41c40d44), nuevo catálogo (1933d623), aprobar (52c89b99), la foto
+  (e87f2b2c), la fecha especial (73f6f08d), elegir opciones en el celular (8fb3b9ff), verificar (c23ea2f3) y nuevo usuario
+  (95e1b614). Las diferencias con los tableros están en el [diseño](../design/dialogos-con-la-lista-de-chequeo.md#cómo-quedó-2026-11-11).
+- Cada commit pasó `tsc`, oxlint y vitest de lo tocado, con los tests de arquitectura y la paridad de idiomas. El cierre de
+  abajo va en la verificación conjunta de la tanda.
 
 ## Cierre
 

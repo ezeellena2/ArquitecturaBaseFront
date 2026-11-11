@@ -1,6 +1,7 @@
 # Las acciones de un encabezado
 
-Fecha: **2026-11-09**. Estado: **propuesta, sin elegir**. Nada está programado.
+Fecha: **2026-11-09**. Estado: **AC1-A elegida el 2026-11-11 y programada el mismo día**; falta la prueba manual. La
+regla quedó en [íconos y acciones](visual-baseline.md#íconos-y-acciones) y en la pregunta 8 de la lista de chequeo.
 
 En la prueba integral, en la vista rápida de una respuesta, el usuario marcó que «Corregir» queda suelto entre la
 etiqueta «Recibida» y los íconos (⋮, pantalla completa, conversación, ↑ ↓ ×): «se ve mal, para eso están los tres
@@ -45,14 +46,17 @@ Se leyeron los encabezados con acciones de las 22 pantallas que tienen. Cambian 
 | Editor de un catálogo y de uno con filtros (`CatalogEditorPage`, `CatalogFiltersEditorPage`) | «Dar de baja» o «Reactivar» a la vista | ⋮ con «Dar de baja» o «Reactivar», como el editor de formularios. La propuesta del asistente sigue a la vista. |
 
 Ya cumplen: el editor de formularios, «Opciones» de un catálogo, la planilla, los listados, los ajustes y editores con
-guardar, las reglas y sugerencias y el chat de WhatsApp. ARCA se repasa al programar. Quedan fuera de la regla el pie de
+guardar, las reglas y sugerencias y el chat de WhatsApp. ARCA se repasó al programar: cada zona tiene a la vista su tarea, y sólo «Desconectar», a la vista en el encabezado de la conexión activa, va contra la regla; queda preguntado al usuario. Quedan fuera de la regla el pie de
 un diálogo y las filas de una tabla.
+
+Al programarla (2026-11-11), a pedido de la sesión de carpetas, «Carpetas…» también pasó al ⋮ de los editores de
+formularios y de catálogos (CP2-A), y en el editor de formularios «Vista oficial», que lleva a otro lado, quedó antes del ⋮.
 
 ## En la lista de chequeo
 
-Al elegir AC1-A, la pregunta 8 suma: «¿A la vista va sólo la tarea de la pantalla y lo que lleva a otro lado, y lo
-demás que se hace con el objeto va en ⋮, con lo destructivo al final?», con un enlace a la regla, que se escribe en
-[íconos y acciones](visual-baseline.md#íconos-y-acciones). Hasta la elección no entra: una propuesta no es regla.
+Desde el 2026-11-11 la pregunta 8 suma: «¿A la vista va sólo la tarea de la pantalla y lo que lleva a otro lado, y lo
+demás que se hace con el objeto va en ⋮, con lo destructivo al final?», con un enlace a la regla, escrita en
+[íconos y acciones](visual-baseline.md#íconos-y-acciones).
 
 ## Lo que cambia otra decisión
 

@@ -1,6 +1,6 @@
 # Las acciones de un encabezado
 
-Fecha: **2026-11-09**. Estado: **plan escrito; espera la elección del usuario y un momento con el front quieto**.
+Fecha: **2026-11-09**. Estado: **AC1-A elegida el 2026-11-11 y programada el mismo día (tareas 1 a 5); falta el cierre**.
 
 El [diseño](../design/acciones-del-encabezado.md) propone qué acciones van a la vista y cuáles en ⋮, en toda la app.
 Este plan supone AC1-A, la recomendada; con otra, cambian las tareas 2 a 4. Los tableros están en el lienzo aparte
@@ -40,6 +40,16 @@ Cada tarea arranca con su test en rojo (`vitest`) y cierra con `tsc`, `lint` y l
    [lista de chequeo](../design/visual-baseline.md#lista-de-chequeo-de-diseño) suma la línea del diseño. CW10-A, en
    [carga desde la app](../design/carga-desde-la-app.md#corregir-y-anular-etapa-3--2026-11-05), dice que «Corregir» va en ⋮.
 5. **ARCA y lo nuevo.** Se repasan los encabezados de ARCA con la regla; lo que no cumpla se anota y se pregunta.
+
+## Avance (2026-11-11)
+
+- **Tarea 1:** `ActionsMenu` en `shared/ui` (3bb07370), que usan `FormLifecycleMenu` (fdf3e6d9), `ResponseAmendActions`
+  (6483ce0b) y `CatalogOptionsActions` (260404a4).
+- **Tarea 2:** «Corregir» y «Anular» en ⋮ en la vista rápida y en la pantalla completa (6483ce0b).
+- **Tarea 3:** «Acciones del catálogo» en los dos editores (f8a1c98a). A pedido de la sesión de carpetas, «Carpetas…»
+  también va en ese ⋮ y en el del editor de formularios (9c7efea3), donde «Vista oficial» quedó antes del ⋮.
+- **Tarea 4:** la regla en íconos y acciones, en las premisas y en la pregunta 8; CW10-A ya decía que «Corregir» va en ⋮.
+- **Tarea 5:** ARCA cumple salvo «Desconectar», a la vista en el encabezado de la conexión activa: queda preguntado.
 
 ## Cierre
 

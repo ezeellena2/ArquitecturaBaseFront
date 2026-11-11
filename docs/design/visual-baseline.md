@@ -566,10 +566,6 @@ Sin elección; no se implementan sin ella.
   historial + información del negocio. [Plan](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
 - Burbujas con forma inspirada en Chatscope (`libraries/shapes.html`): [diseño](whatsapp-bibliotecas-propuesta.md).
 - Ubicación por ficha de Maps (`?screen=ubicacion-lugar`): [diseño](ubicacion-por-lugar.md).
-- «Exportar respuestas a Excel» rehecho con la lista de chequeo (EX1-A y EX2-A, recomendadas) y los demás diálogos con
-  el mismo problema (DL): [diseño](dialogos-con-la-lista-de-chequeo.md) y [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md).
-- Qué acciones de un encabezado van a la vista y cuáles en ⋮ (AC1-A, recomendada): [diseño](acciones-del-encabezado.md)
-  y [plan](../plans/2026-11-09-acciones-del-encabezado.md).
 
 ## Mapa Artifact → proyecto
 
@@ -593,9 +589,9 @@ Sin elección; no se implementan sin ella.
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Implementado](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; falta la prueba manual y pasar los tableros al lienzo del sistema visual |
-| Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [Propuesta](dialogos-con-la-lista-de-chequeo.md), sin elegir |
-| El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas; falta «Filas» en el diálogo |
-| Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [Propuesta](acciones-del-encabezado.md), sin elegir |
+| Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [EX1-A, EX2-A y DL implementados](dialogos-con-la-lista-de-chequeo.md) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar los tableros al lienzo del sistema visual |
+| El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas, y «Filas» llegó al diálogo el 2026-11-11 con EX1-A |
+| Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [AC1-A implementada](acciones-del-encabezado.md) el 2026-11-11, con la regla en [íconos y acciones](#íconos-y-acciones); falta la prueba manual |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
 | La pregunta «Ubicación» · UB, UB3-A y UB4-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel | [Tableros elegidos y programados](ubicacion-en-formularios.md) |
 

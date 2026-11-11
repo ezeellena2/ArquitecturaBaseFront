@@ -1,6 +1,8 @@
 # Diálogos con la lista de chequeo
 
-Fecha: **2026-11-09**. Estado: **propuesta, sin elegir**. Nada está programado.
+Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 (EX1-A, EX2-A y los 19 diálogos de DL) y
+programadas el mismo día**; faltan la prueba manual, `test:visual` y pasar los tableros al lienzo del sistema visual. Las
+confirmaciones dudosas, el control automático y las reglas RF1 a RF3 siguen sin decidir.
 
 Durante la prueba integral, exportando la planilla de «Remito de prueba» con el filtro de un bloque de ítems, el usuario
 marcó que el diálogo «Exportar respuestas a Excel» es una lista suelta y preguntó por qué, para diseñar algo nuevo, las
@@ -150,6 +152,23 @@ asistente tiene el mismo problema («Texto · opción 1, opción 2 · Obligatori
 
 ## Qué falta
 
-- Que el usuario elija EX1 y EX2, apruebe los «así» de DL y decida las confirmaciones dudosas y las reglas RF1 a RF3.
-- Programarlo con el [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md), después de MA1-A y con el front quieto.
-- Pasar los tableros al lienzo del sistema visual y marcar T5 como reemplazado en [formularios](formularios-whatsapp.md).
+- Que el usuario decida las confirmaciones dudosas, el control automático (tarea 8 del
+  [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md)) y las reglas RF1 a RF3.
+- La prueba manual y `test:visual`, con cada referencia que cambió revisada: la exportación, la baja, la eliminación,
+  publicar, los editores y los diálogos del catálogo, el envío de un formulario, la foto, la fecha especial, verificar y
+  nuevo usuario.
+- Pasar los tableros al lienzo del sistema visual. T5 ya figura como reemplazado en [formularios](formularios-whatsapp.md).
+
+## Cómo quedó (2026-11-11)
+
+Igual a los tableros, con estas diferencias, que siguen reglas que ya existían:
+
+- **Revisión del catálogo:** la revisión actual primero, como «Revisión del borrador», y sólo lo distinto una vez leída
+  ([comparaciones lado a lado](visual-baseline.md#comparaciones-lado-a-lado--2026-11-03)); si no cambió ninguno de esos
+  datos (cambiaron las opciones), muestra todos, así la tabla nunca queda vacía.
+- **Importar opciones:** además de Archivo, Hoja y Filas leídas, «Sin cambios» y «Reactivadas» cuando hay, porque no tienen
+  pestaña y reactivar es un efecto que conviene ver antes de aplicar.
+- **Enviar un formulario:** en la lista, la tarjeta elegida ya dice el formulario y la versión, así que el `DataList` lleva
+  sólo Idioma (si es el otro) y el vencimiento.
+- **Publicar:** los renglones que el tablero no nombraba se llaman «Se suma» y «Sin el inglés».
+- **Exportar:** una pregunta «Ubicación» cuenta como tres columnas (latitud, longitud y precisión), como sale en el Excel.
