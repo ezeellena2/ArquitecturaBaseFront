@@ -1,7 +1,9 @@
+import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { Link, useLocation } from "react-router";
 import { branchOf, isFormsPath, navigationLinks, parentLinkOf, withoutTrailingSlash } from "../navigation";
+import { FolderMenuNavigationContext, isEntryScreen, type FolderMenuEntry } from "../folderMenuNavigation";
 import { useCurrentBreadcrumbLeaf, useCurrentBreadcrumbParent } from "@/shared/hooks/useBreadcrumbLeaf";
 
 /// Pantallas que no están en el menú lateral pero igual tienen migas propias: al perfil se entra desde el
@@ -37,6 +39,9 @@ export function Breadcrumbs() {
   const pathname = withoutTrailingSlash(useLocation().pathname);
   const leaf = useCurrentBreadcrumbLeaf();
   const parent = useCurrentBreadcrumbParent();
+  const menuEntry = useContext(FolderMenuNavigationContext)?.entry ?? null;
+  // A form opened from a folder of the menu is named by that menu (CP5-A): «Repartos / Hoja de ruta».
+  if (isEntryScreen(pathname, menuEntry)) return <MenuEntryBreadcrumbs entry={menuEntry} />;
   const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
   // The full view and the correction of a response hang from its form's sheet (DC1, CW10-A).
@@ -128,4 +133,13 @@ function PdfBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: strin
       <Separator/><li aria-current="page" className="truncate font-medium text-[var(--color-content)]">{leaf ?? t("forms:pdf.title")}</li>
     </ol>
   </nav>;
+}
+
+function MenuEntryBreadcrumbs({ entry }: { entry: FolderMenuEntry }) {
+  const { t } = useTranslation();
+  return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
+    <li><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator/>
+    <li className="truncate text-[var(--color-content-muted)]">{entry.menuLabel}</li><Separator/>
+    <li aria-current="page" className="truncate font-medium text-[var(--color-content)]">{entry.formLabel}</li>
+  </ol></nav>;
 }

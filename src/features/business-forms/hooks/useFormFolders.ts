@@ -48,8 +48,22 @@ export function useFolderSelection(tree: FormFolderTree | undefined) {
     update({ carpeta: undefined, page: undefined });
     notify({ id: "form-folders:missing", kind: "info", message: t("missing") });
   }, [missing, update, t]);
-  return { selection, select, pendingFolder: parsed.kind === "folder" && tree === undefined };
+  return { selection, select };
 }
+
+/// The tree of a listing and the folder it shows (CP1-A). While the tree cannot be read the listing goes on with «Todos» (CP4).
+export function useListingFolders(listing: FolderListing) {
+  const { t } = useTranslation("formFolders");
+  const scope = useFolderScope();
+  const tree = useFolderTree(scope, listing);
+  const failed = tree.isError && tree.data === undefined;
+  const chosen = useFolderSelection(tree.data);
+  const selection: FolderSelection = failed ? { kind: "all" } : chosen.selection;
+  const label = selection.kind === "none" ? t("withoutFolder")
+    : selection.kind === "folder" ? tree.data?.folders.find(folder => folder.id === selection.id)?.name : undefined;
+  return { listing, scope, tree, selection, select: chosen.select, label };
+}
+export type ListingFolders = ReturnType<typeof useListingFolders>;
 
 /// A write of its own, outside MutationCache: who started it shows the wait and owns its result.
 function useWrite<TArgs extends unknown[], TResult>(write: (...args: TArgs) => Promise<TResult>) {
@@ -87,8 +101,10 @@ export function useFolderWrites(scope: FolderScope) {
     await Promise.all([folders(), listings()]);
     return folder;
   }, [folders, listings]));
-  const remove = useWrite(useCallback(async (id: string, expectedRevision: number) => {
+  // `deleted` runs before reading again, so a listing that showed the folder leaves it before the tree says it is gone.
+  const remove = useWrite(useCallback(async (id: string, expectedRevision: number, deleted?: () => void) => {
     await deleteFolder(id, expectedRevision);
+    deleted?.();
     await Promise.all([folders(), listings()]);
   }, [folders, listings]));
   const menu = useWrite(useCallback(async (id: string, expectedRevision: number, placement: MenuPlacement, icon: string | null) => {

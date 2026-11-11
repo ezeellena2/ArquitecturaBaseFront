@@ -14,6 +14,7 @@
   "missing": "The folder in the address no longer exists. Showing everything.",
   "selector": "Folder: {{name}}",
   "reread": "Read again",
+  "retrying": "Retrying…",
   "name": {
     "new": "Name of the new folder",
     "rename": "Name of “{{name}}”",
@@ -31,6 +32,7 @@
     "inside": "In {{path}}",
     "save": "Move",
     "saving": "Moving…",
+    "self": "It cannot go inside itself or its subfolders.",
     "done": "We moved “{{name}}”."
   },
   "deleteDialog": {

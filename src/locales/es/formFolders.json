@@ -14,6 +14,7 @@
   "missing": "La carpeta de la dirección ya no existe. Te mostramos todos.",
   "selector": "Carpeta: {{name}}",
   "reread": "Volver a leer",
+  "retrying": "Reintentando…",
   "name": {
     "new": "Nombre de la carpeta nueva",
     "rename": "Nombre de «{{name}}»",
@@ -31,6 +32,7 @@
     "inside": "En {{path}}",
     "save": "Mover",
     "saving": "Moviendo…",
+    "self": "No puede ir adentro de sí misma ni de sus subcarpetas.",
     "done": "Movimos «{{name}}»."
   },
   "deleteDialog": {

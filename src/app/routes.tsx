@@ -9,6 +9,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
 import { AppLayout } from "@/layouts/AppLayout";
 import { FormOverviewShell } from "./FormOverviewShell";
+import { FormMenuShell } from "./FormMenuShell";
 import { UserDataSectionShell } from "./UserDataSectionShell";
 import { Spinner } from "@/shared/ui/Spinner";
 import { RouteErrorPage } from "./RouteErrorPage";
@@ -33,7 +34,7 @@ export const routes: RouteObject[] = [
     HydrateFallback: Spinner,
     children: [
       {
-        element: <HomeLayout authenticatedShell={<UserDataSectionShell><FormOverviewShell><AppLayout /></FormOverviewShell></UserDataSectionShell>} />,
+        element: <HomeLayout authenticatedShell={<UserDataSectionShell><FormOverviewShell><FormMenuShell><AppLayout /></FormMenuShell></FormOverviewShell></UserDataSectionShell>} />,
         children: [
           { path: "/", lazy: async () => ({ Component: (await import("@/app/AuthenticatedHome")).AuthenticatedHome }) },
           {

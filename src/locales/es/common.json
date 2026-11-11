@@ -137,7 +137,8 @@
       "loadError": "No pudimos cargar tu menú.",
       "retryLoad": "Reintentar cargar el menú",
       "closeAdministration": "Cerrar Administración",
-      "closeWhatsApp": "Cerrar WhatsApp"
+      "closeWhatsApp": "Cerrar WhatsApp",
+      "closeMenu": "Cerrar {{name}}"
     },
     "topbar": {
       "toggle": "Menú de navegación"
@@ -197,5 +198,9 @@
     "atLeast_other": "Al menos {{count}} ítems.",
     "atMost_one": "Hasta {{count}} ítem.",
     "atMost_other": "Hasta {{count}} ítems."
+  },
+  "treeList": {
+    "expand": "Desplegar {{label}}",
+    "collapse": "Plegar {{label}}"
   }
 }

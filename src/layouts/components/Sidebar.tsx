@@ -11,11 +11,15 @@ import {
   isAdministrationPath,
   isBranch,
   navigation,
+  type NavigationBranch,
   type NavigationItem,
   type NavigationLink,
+  type NavigationPanel,
 } from "../navigation";
 import { FormsOverviewNavigationContext } from "../formsOverviewNavigation";
-import { FormIcon } from "@/shared/ui/icons";
+import { FolderMenuNavigationContext, isEntryPath, type FolderMenuContent, type FolderMenuEntry, type FolderMenuGroup, type FolderMenuLink } from "../folderMenuNavigation";
+import { FolderIcon, FormIcon } from "@/shared/ui/icons";
+import { menuIcons } from "@/shared/ui/menuIcons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
@@ -61,13 +65,13 @@ function NavItem({
   const responseWorkspace = item.to === "/formularios/respuestas" && /^\/formularios\/(?:respuestas(?:\/|$)|[^/]+\/respuestas(?:\/|$))/.test(pathname);
 
   const match = useMatch({ path: item.to, end: item.exact || item.to === "/" });
-  const isCurrent = (!!match || responseWorkspace) && !(item.to === "/formularios" && otherFormsPage);
+  const isCurrent = item.current ?? ((!!match || responseWorkspace) && !(item.to === "/formularios" && otherFormsPage));
 
   const link = (
     <Link
       to={item.to}
       aria-current={isCurrent ? "page" : undefined}
-      onClick={onNavigate}
+      onClick={() => { item.onSelect?.(); onNavigate?.(); }}
       className={cn(
           "relative flex min-h-7.5 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
           isCurrent
@@ -282,6 +286,46 @@ function dependsOnPermissions(item: NavigationItem): boolean {
     : Boolean(item.permission);
 }
 
+/// The folders of the side menu (CP5-A, 2026-11-04) as items of the same model: a menu of its own is a panel, with its forms
+/// and a group per subfolder, and a folder put in «Gestión de formularios» or «Administración» is a group at the end of it.
+/// Their names come from the server, so they go in `labels` instead of a translation key; choosing a form records where it was
+/// opened from, which marks it and keeps its panel open while its screens are.
+function folderMenuModel(content: FolderMenuContent | undefined, entry: FolderMenuEntry | null, enter: ((entry: FolderMenuEntry) => void) | undefined) {
+  const labels = new Map<string, string>();
+  const link = (panel: string, menuLabel: string, scope: string, form: FolderMenuLink): NavigationLink => {
+    const key = `folder-form:${scope}:${form.id}`;
+    labels.set(key, form.label);
+    return { labelKey: key, to: form.to, icon: FormIcon, current: entry?.key === key,
+      onSelect: () => enter?.({ key, formId: form.id, panel, menuLabel, formLabel: form.label }) };
+  };
+  const group = (panel: string, menuLabel: string | null, source: FolderMenuGroup): NavigationBranch => {
+    const key = `folder-group:${panel}:${source.id}`;
+    labels.set(key, source.label);
+    return { labelKey: key, icon: FolderIcon, children: source.links.map(form => link(panel, menuLabel ?? source.label, `${panel}:${source.id}`, form)) };
+  };
+  const own = (content?.sections ?? []).map((section): NavigationPanel => {
+    const key = `folder-menu:${section.id}`;
+    labels.set(key, section.label);
+    return { labelKey: key, icon: menuIcons[section.icon], items: [...section.links.map(form => link(key, section.label, key, form)), ...section.groups.map(source => group(key, section.label, source))] };
+  });
+  return { labels, own, forms: (content?.formsGroups ?? []).map(source => group("forms", null, source)), administration: (content?.administrationGroups ?? []).map(source => group("admin", null, source)) };
+}
+
+/// The notice of a menu that could not be read, with Reintentar: instead of a shorter menu nobody would notice.
+function MenuLoadError({ iconsOnly, onRetry }: { iconsOnly: boolean; onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className={cn("mb-3 flex flex-col gap-2 rounded-[var(--radius-control)] border border-dashed border-[var(--color-border)] p-2", iconsOnly ? "items-center" : "")}>
+      <p className={cn("px-1 text-xs text-[var(--color-content-muted)]", iconsOnly ? "sr-only" : "")}>{t("layout.sidebar.loadError")}</p>
+      {iconsOnly ? (
+        <IconButton label={t("layout.sidebar.retryLoad")} onClick={onRetry} size="icon-sm"><RefreshIcon className="size-4" /></IconButton>
+      ) : (
+        <Button type="button" variant="outline" size="sm" onClick={onRetry}>{t("actions.retry")}</Button>
+      )}
+    </div>
+  );
+}
+
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -322,7 +366,13 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // El panel sigue a la sección, no a los clics: entrar a una ruta de administración lo abre y salir lo
   // cierra, también recargando o llegando desde un favorito. Mientras estás adentro se puede cerrar y abrir
   // a mano cuantas veces quieras; lo que lo vuelve a decidir es cambiar de sección.
-  const routePanel = isAdministrationPath(location.pathname) ? "admin" : isWhatsAppPath(location.pathname) ? "whatsapp" : isFormsPath(location.pathname) ? "forms" : undefined;
+  const folderMenu = useContext(FolderMenuNavigationContext);
+  const entry = folderMenu?.entry ?? null;
+  const activeEntry = isEntryPath(location.pathname, entry) ? entry : null;
+  const folderModel = folderMenuModel(folderMenu?.content, activeEntry, folderMenu?.enter);
+  const translate = (key: string) => folderModel.labels.get(key) ?? t(key);
+  // A form opened from the menu keeps the panel it was opened from (CP5-A).
+  const routePanel = activeEntry ? activeEntry.panel : isAdministrationPath(location.pathname) ? "admin" : isWhatsAppPath(location.pathname) ? "whatsapp" : isFormsPath(location.pathname) ? "forms" : undefined;
   const [openPanel, setOpenPanel] = useState<string | undefined>(routePanel);
   const [lastRoutePanel, setLastRoutePanel] = useState(routePanel);
   if (routePanel !== lastRoutePanel) {
@@ -376,16 +426,17 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
   // El panel no se aplana nunca: se ve expandido aunque la barra esté contraída, que es justamente lo que lo
   // hace mejor que un desplegable de 40px.
-  const adminItems = visibleItems(administration.items, canSee, false);
+  const adminItems = [...visibleItems(administration.items, canSee, false), ...folderModel.administration];
   const adminPending = isPending && administration.items.every(dependsOnPermissions);
   const showAdministration = adminItems.length > 0;
   const whatsappItems = visibleItems(whatsapp.items, canSee, false);
   const responses = useContext(FormsOverviewNavigationContext);
   const activateResponses = responses?.setActive;
   useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
-  const formsItems = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview"), canSee, false);
-  const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : administration;
-  const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : adminItems;
+  const formsItems = [...visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview"), canSee, false), ...folderModel.forms];
+  const ownPanel = folderModel.own.find(panel => panel.labelKey === openPanel);
+  const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : ownPanel ?? administration;
+  const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : ownPanel ? ownPanel.items : openPanel === "admin" ? adminItems : [];
   const PanelIcon = selectedPanel.icon;
   const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && has(["formrecords.read", "formapprovals.decide", "formrecords.create"])) && openPanel !== undefined && !isMobile;
 
@@ -455,27 +506,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           {/* Si /api/me falló no sabemos qué ítems mostrar, y el filtro de abajo los esconde. Sin avisar,
               una caída del backend pasa por un menú más corto de lo habitual, que nadie va a notar. El
               aviso queda para el lector de pantalla también cuando la barra está contraída. */}
-          {isError ? (
-            <div
-              className={cn(
-                "mb-3 flex flex-col gap-2 rounded-[var(--radius-control)] border border-dashed border-[var(--color-border)] p-2",
-                iconsOnly ? "items-center" : "",
-              )}
-            >
-              <p className={cn("px-1 text-xs text-[var(--color-content-muted)]", iconsOnly ? "sr-only" : "")}>
-                {t("layout.sidebar.loadError")}
-              </p>
-              {iconsOnly ? (
-                <IconButton label={t("layout.sidebar.retryLoad")} onClick={() => void refetch()} size="icon-sm">
-                  <RefreshIcon className="size-4" />
-                </IconButton>
-              ) : (
-                <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
-                  {t("actions.retry")}
-                </Button>
-              )}
-            </div>
-          ) : null}
+          {isError ? <MenuLoadError iconsOnly={iconsOnly} onRetry={() => void refetch()} />
+            : folderMenu?.failed ? <MenuLoadError iconsOnly={iconsOnly} onRetry={folderMenu.retry} /> : null}
 
           {navigation.map((group, index) => {
             const items = visibleItems(group.items, canSee, iconsOnly);
@@ -516,7 +548,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                           items={item.children}
                           showIcon={false}
                           controls={controls}
-                          translate={t}
+                          translate={translate}
                           onNavigate={onNavigate}
                         />
                       ) : (
@@ -534,10 +566,31 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
+          {/* The menus of their own (CP5-A) go below Inicio, alphabetically as the server sends them. While the menu is read, a
+              loading block takes their place. */}
+          {folderMenu?.pending ? (
+            <div className={cn("mt-1", iconsOnly ? "flex justify-center" : "")}>
+              <Skeleton aria-hidden="true" className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-7.5" : "h-7.5")} />
+            </div>
+          ) : folderModel.own.length > 0 ? (
+            <ul className={cn("mt-1 flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
+              {folderModel.own.map(panel => (
+                <li key={panel.labelKey}>
+                  {isMobile ? (
+                    <NavBranch labelKey={panel.labelKey} icon={panel.icon} items={panel.items} controls={controls} translate={translate} onNavigate={onNavigate} />
+                  ) : (
+                    <PanelTrigger icon={panel.icon} label={translate(panel.labelKey)} open={openPanel === panel.labelKey} collapsed={iconsOnly} panelId={panelId}
+                      onToggle={() => setOpenPanel(openPanel === panel.labelKey ? undefined : panel.labelKey)} />
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
           {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide", "formrecords.create"]) ? (
             <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
               {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate}/>} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -548,7 +601,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           {whatsappItems.length > 0 ? (
             <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
               {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
-                <ul><li><NavBranch labelKey={whatsapp.labelKey} icon={whatsapp.icon} items={whatsappItems} controls={controls} translate={t} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={whatsapp.labelKey} icon={whatsapp.icon} items={whatsappItems} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={whatsapp.icon} label={t(whatsapp.labelKey)} open={openPanel === "whatsapp"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "whatsapp" ? undefined : "whatsapp")} />
@@ -579,7 +632,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                       icon={administration.icon}
                       items={adminItems}
                       controls={controls}
-                      translate={t}
+                      translate={translate}
                       onNavigate={onNavigate}
                     />
                   </li>
@@ -651,18 +704,18 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
       {panelVisible ? (
         <nav
           id={panelId}
-          aria-label={t(selectedPanel.labelKey)}
+          aria-label={translate(selectedPanel.labelKey)}
           className="subnavigation-surface relative z-30 flex h-svh w-56 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]"
         >
           {/* El mismo alto que la marca del menú y que el Topbar: los tres bordes de arriba forman una sola
               línea que cruza la pantalla. */}
           <div className="flex h-12 items-center gap-2 border-b border-[var(--color-border)] px-3">
             <PanelIcon className="size-4 shrink-0 text-[var(--color-content-muted)]" />
-            <p className="truncate text-sm font-medium text-[var(--color-content)]">{t(selectedPanel.labelKey)}</p>
+            <p className="truncate text-sm font-medium text-[var(--color-content)]">{translate(selectedPanel.labelKey)}</p>
           </div>
 
           <IconButton
-            label={openPanel === "forms" ? t("layout.sidebar.closeForms") : openPanel === "admin" ? t("layout.sidebar.closeAdministration") : t("layout.sidebar.closeWhatsApp")}
+            label={openPanel === "forms" ? t("layout.sidebar.closeForms") : openPanel === "admin" ? t("layout.sidebar.closeAdministration") : ownPanel ? t("layout.sidebar.closeMenu", { name: translate(ownPanel.labelKey) }) : t("layout.sidebar.closeWhatsApp")}
             onClick={() => setOpenPanel(undefined)}
             className={sidebarEdgeToggleClassName}
           >
@@ -670,9 +723,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           </IconButton>
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
-            {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate}/> : null}
+            {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/> : null}
             <ul className="flex flex-col gap-1">
-              <NavItems items={selectedItems} controls={controls} translate={t} onNavigate={onNavigate} pending={isPending} />
+              <NavItems items={selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
             </ul>
           </div>
         </nav>
@@ -683,11 +736,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
 /// «Formularios», con lo que espera tu decisión. Mientras el número carga, su lugar lo ocupa un bloque de carga en el
 /// mismo renglón: debajo no se agrega nada que desaparezca al llegar el número y suba al resto del panel.
-function FormsOverviewLink({onNavigate}:{onNavigate?:()=>void}) {
+function FormsOverviewLink({onNavigate,enteredFromMenu=false}:{onNavigate?:()=>void;enteredFromMenu?:boolean}) {
  const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
  if(isPending)return <div className="mb-2"><Skeleton aria-hidden="true" className="h-7.5"/></div>;
  if(!has(["formrecords.read","formapprovals.decide","formrecords.create"]))return null;
  const pending=overview?.pending===true;
  const count=has("formapprovals.decide")&&!pending?overview?.count:undefined;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"]}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
+ return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"],current:enteredFromMenu?false:undefined}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
 }
