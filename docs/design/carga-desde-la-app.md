@@ -299,9 +299,10 @@ cualquiera con «Corregir y anular respuestas». La regla está en
 
 Diferencias con el dibujo:
 
-- «⋯» tiene sólo «Anular». El tablero dibujó también «Descargar el PDF», pero el PDF ya se baja desde los íconos del título
-  (TL3-A) y desde la actividad, así que el menú no lo repite.
-- «Corregir» y «⋯» van en la fila del título, con los íconos, y no debajo como en el dibujo (TL3-A).
+- El ⋮ tiene «Corregir» y, después de una línea, «Anular» en rojo (AC1-A, 2026-11-11). El tablero dibujó también
+  «Descargar el PDF», pero el PDF ya se baja desde los íconos del título (TL3-A) y desde la actividad, así que el menú no
+  lo repite.
+- El ⋮ va en la fila del título, después de los íconos, y no debajo como en el dibujo (TL3-A).
 - El panel de la corrección conserva las zonas «Datos» y «Fotos y documentos» de la carga (AR1-A), con los archivos que ya
   estaban; el tablero sólo dibujó los datos.
 - «Anulada» está en el desplegable «Estado» de siempre (PL1-A y PL2-A), en lugar de un «Más filtros».
