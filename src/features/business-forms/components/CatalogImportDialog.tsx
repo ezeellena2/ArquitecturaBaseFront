@@ -193,7 +193,8 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     <div className={rows}>
       {state.chatGone ? <div><Banner tone="warning">{state.chatGone}</Banner></div> : null}
       <Row label={<><Label>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t(chatOffered ? "catalogs.import.sourceHelpChat" : "catalogs.import.sourceHelp")} /></>}>
-        <div className="sm:self-start"><SegmentedControl fullWidth={!chatOffered} wrap={chatOffered} aria-label={t("catalogs.import.from")} disabled={busy} options={sources.map(source => ({ key: source, label: sourceLabel(source), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
+        {/* On a 320 px phone not even two of its texts fit side by side: in the phone its options go down a line (`wrap`). */}
+        <div className="sm:self-start"><SegmentedControl wrap aria-label={t("catalogs.import.from")} disabled={busy} options={sources.map(source => ({ key: source, label: sourceLabel(source), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
       </Row>
       {state.source === "file" ? <Row label={<><Label htmlFor={id + "file"}>{t("catalogs.import.file")}</Label><Help label={t("catalogs.import.fileHelpLabel")} text={t("catalogs.import.fileHint")} /></>}>
         <div className="flex min-w-0 items-center gap-2">
