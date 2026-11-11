@@ -136,6 +136,13 @@ const column = z.strictObject({ ...columnShape, type, questions: z.array(questio
   .refine(column => typedOnlyInChoices(column) && (column.type === "group") === (column.questions !== undefined)
     && (column.type !== "group" || column.options.length === 0)
     && new Set(column.questions?.map(question => question.fieldId)).size === (column.questions?.length ?? 0));
+// RE1-A: what external actions left in the responses, a column per datum after the questions; each row has the value of its own.
+const resultKind = z.enum(["text", "date", "number"]);
+const resultColumn = z.strictObject({ id: z.string().min(1), source: z.string().min(1), sourceName: z.string(), key: z.string().min(1), label: z.string(), kind: resultKind });
+const result = z.strictObject({
+  source: z.string().min(1), name: z.string(), recordedAtUtc: utc,
+  values: z.array(z.strictObject({ key: z.string().min(1), label: z.string(), kind: resultKind, value: z.string().nullable() })).min(1),
+});
 const row = z.strictObject({
   id: guid,
   versionId: guid,
@@ -149,6 +156,7 @@ const row = z.strictObject({
   // Only on a correction (CW10-A): the sheet says «Corregida» in its own column (UD4).
   corrected: z.literal(true).optional(),
   cells: z.array(responseCellSchema),
+  results: z.record(z.string(), z.string().nullable()).optional(),
 });
 function page<T extends z.ZodType>(item: T) {
   return z.strictObject({
@@ -173,6 +181,7 @@ export const responseSheetSchema = z
       z.strictObject({ id: guid, number: z.number().int().positive() }),
     ),
     records: page(row),
+    resultColumns: z.array(resultColumn).min(1).optional(),
   })
   .superRefine((sheet, context) => {
     const columns = new Map(
@@ -196,7 +205,8 @@ export const responseSheetSchema = z
           record.cells.length === columns.size &&
           new Set(record.cells.map((cell) => cell.fieldId)).size ===
             columns.size &&
-          record.cells.every((cell) => columns.get(cell.fieldId) === cell.type && itemsMatch(cell)),
+          record.cells.every((cell) => columns.get(cell.fieldId) === cell.type && itemsMatch(cell)) &&
+          Object.keys(record.results ?? {}).every(id => sheet.resultColumns?.some(resultColumn => resultColumn.id === id)),
       );
     if (!valid)
       context.addIssue({
@@ -283,10 +293,14 @@ export const responseDetailSchema = z.strictObject({
   void: z.strictObject({ atUtc: utc, by: author, reason: z.string().min(1) }).optional(),
   // Whether whoever reads it may correct or void it now (decision 8); the server checks again.
   canAmend: z.literal(true).optional(),
+  // RE1-A: what external actions left, above «Datos»; omitted without results.
+  results: z.array(result).min(1).optional(),
 });
 export type ResponseSheet = z.infer<typeof responseSheetSchema>;
 export type ResponseRow = ResponseSheet["records"]["items"][number];
 export type ResponseDetail = z.infer<typeof responseDetailSchema>;
+export type ResponseResult = NonNullable<ResponseDetail["results"]>[number];
+export type ResponseResultColumn = NonNullable<ResponseSheet["resultColumns"]>[number];
 function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
   if (!parsed.success) throw new Error("Invalid form response contract.");

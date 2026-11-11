@@ -879,6 +879,7 @@
     "invalidRange": "Use whole counts: minimum 0–10, maximum 1–10, and minimum no greater than maximum."
   },
   "responses": {
+    "resultEmpty": "—",
     "item": "Item",
     "inSomeItem": "In any item of {{block}}",
     "inAnyItem": "in any item of {{block}}",
