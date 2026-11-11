@@ -10,7 +10,8 @@ import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixture
 vi.mock("react-oidc-context",async()=>({...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),useAuth:()=>({isAuthenticated:true,isLoading:false,user:{access_token:"test"}})}));
 vi.mock("../hooks/useFormDraftEditor",async()=>{const actual=await vi.importActual<typeof import("../hooks/useFormDraftEditor")>("../hooks/useFormDraftEditor");return {...actual,useFormDraftEditor:(...args:Parameters<typeof actual.useFormDraftEditor>)=>({...actual.useFormDraftEditor(...args),confirmRevision:()=>false})};});
 let stopOverview: (() => void) | undefined;
-afterEach(() => { stopOverview?.(); stopOverview = undefined; });
+let stopMenu: (() => void) | undefined;
+afterEach(() => { stopOverview?.(); stopOverview = undefined; stopMenu?.(); stopMenu = undefined; });
 it("refreshes confirmed lifecycle and overview even when its private draft cannot adopt the revision",async()=>{
  queryClient.clear();const store=createFormFixtureStore("es","forms-lifecycle");const overview=vi.fn();
  server.use(http.all("/api/forms/*",({request})=>store.handle(request)),http.get("/api/me",()=>HttpResponse.json({id:"actor",displayName:"Ana",email:"ana@example.com",emailConfirmed:true,phoneNumber:null,formattedPhoneNumber:null,maskedPhoneNumber:null,phoneNumberConfirmed:false,hasGoogleLogin:false,culture:"es",timeZoneId:"America/Argentina/Buenos_Aires",lastLoginAtUtc:null,roles:[],permissions:["formtemplates.read","formtemplates.manage","formtemplates.publish","formrecords.read"]})));
@@ -21,11 +22,16 @@ it("refreshes confirmed lifecycle and overview even when its private draft canno
    filterCounts:{active:active?1:0,deactivated:exists&&inactive?1:0,deactivatedPending:null}};
  } });
  stopOverview=observer.subscribe(()=>{});
- renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" privado");
+ // The side menu lists the active forms of its folders (CP5-A): a change of state reads it again, as the folders' trees.
+ const menu=vi.fn();const menuObserver=new QueryObserver(queryClient,{queryKey:["form-folders","actor","menu-probe"],gcTime:0,queryFn:async()=>{menu();return {};}});
+ stopMenu=menuObserver.subscribe(()=>{});
+ // The first render pays the lazy editor: with the machine loaded it takes more than a second.
+ renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre",{},{timeout:20_000});await userEvent.click(name);await userEvent.paste(" privado");
  await waitFor(()=>expect(overview).toHaveBeenCalledOnce());
  expect(observer.getCurrentResult().data).toMatchObject({forms:{totalCount:1},filterCounts:{active:1,deactivated:0}});
  const trigger=screen.getByRole("button",{name:"Acciones del formulario"});act(()=>trigger.focus());await userEvent.keyboard("{Enter}");await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitem",{name:/Dar de baja/}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("button",{name:"Dar de baja"}));
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(await screen.findByText(/Lo dio de baja /)).toBeVisible();expect(name).toHaveValue("Registrar visita privado");
  await waitFor(()=>expect(overview).toHaveBeenCalledTimes(2));
+ await waitFor(()=>expect(menu.mock.calls.length).toBeGreaterThanOrEqual(2));
  expect(observer.getCurrentResult().data).toMatchObject({forms:{items:[],totalCount:0},filterCounts:{active:0,deactivated:1}});
 });

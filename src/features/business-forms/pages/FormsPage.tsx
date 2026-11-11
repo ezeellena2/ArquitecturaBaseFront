@@ -33,7 +33,7 @@ import { FormDeactivationDialog } from "../components/FormDeactivationDialog";
 import { FolderLayout } from "../components/FolderLayout";
 import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
 import { folderListQuery } from "../folderTree";
-import { useFolderEmpty, useListingFolders } from "../hooks/useFormFolders";
+import { folderActorKey, useFolderEmpty, useListingFolders } from "../hooks/useFormFolders";
 import type { FormListQuery } from "../api/forms";
 import type { readFormPage } from "../api/response";
 
@@ -82,7 +82,7 @@ export function FormsPage() {
   const clearFilters = () => update({ search: undefined, publicationFilter: undefined, page: undefined });
   const canPublish = scope.permissions.includes("formtemplates.publish");
   const chooseAction = (row: Row, kind: "deactivate" | "delete") => { focusFallback.current = host.current?.querySelector<HTMLInputElement>("input") ?? null; setAction({ row, kind, owner: JSON.stringify(formScopeKey(scope)) }); };
-  const refresh = async () => { await Promise.all([client.invalidateQueries({ queryKey: formActorKey(scope.actorId) }), client.invalidateQueries({ queryKey: ["form-overview", overviewScope.owner] }), client.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] })]); };
+  const refresh = async () => { await Promise.all([client.invalidateQueries({ queryKey: formActorKey(scope.actorId) }), client.invalidateQueries({ queryKey: folderActorKey(scope.actorId) }), client.invalidateQueries({ queryKey: ["form-overview", overviewScope.owner] }), client.invalidateQueries({ queryKey: ["form-responses", responseScope.owner] })]); };
   const columns: Column<Row>[] = [
     { id: "name", header: t("formColumn"), sortable: true, cell: row => <Link to={`/formularios/${row.id}`} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{administrativeName(row.name, scope.culture)}</Link> },
     { id: "questionCount", header: t("countColumn"), sortable: true, numeric: true, cell: row => row.questionCount },
