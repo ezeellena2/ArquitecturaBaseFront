@@ -57,7 +57,8 @@ dice y se relee la actividad.
   canal llega el aviso. El aviso lleva el ícono de su tono (AV1-A), no un reloj. «Rechazada» dice «No se emitió el
   comprobante» · el texto de ARCA que manda el servidor («10015 · …»); lo mismo «No se pudo anular».
 - **El cliente nuevo** (decisión 4 del plan) tampoco: «Otro: escribir la CUIT» y, si ARCA no la tiene o no responde, el
-  resumen lo dice con «Volver a probar» y «No emitir».
+  resumen lo dice con «Volver a probar» y «No emitir». En el detalle (2026-11-11), «Esperando que lo confirmes» muestra
+  «Todavía no se puede emitir» · el motivo, con «No emitir» y «Volver a probar»; probar de nuevo deja «Se está emitiendo…».
 - **Los datos del comprobante** siguen AC4 ([conexión con ARCA](arca-conexion.md#ac4--datos-del-comprobante--2026-11-11)),
   ya programado: zona propia, sin completar la familia. CA1 los dibujó en «Facturación» con «Falta completar».
 - **«Clases»** en la condición frente al IVA y **«en una hora»** son del dibujo: el catálogo trae código, texto y valor, y

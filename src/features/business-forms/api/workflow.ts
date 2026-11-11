@@ -18,10 +18,13 @@ const workflow = z.strictObject({
     // «En cola»: an issuance waiting for its issuer, which did not answer, says when it tries again and how many times it tried.
     nextAttemptAtUtc: utc.optional(), attempts: z.number().int().positive().optional() })),
   documents: z.array(z.strictObject({ id: guid, runId: guid, culture: z.enum(["es", "en"]), name: z.string(), size: z.number().int().positive(), createdAtUtc: utc })),
-  // EM2-A: an issuance from a channel waiting for whoever loaded it to confirm, with its summary; only for that person.
+  // EM2-A: an issuance from a channel waiting for whoever loaded it to confirm, with its summary; only for that person. A summary
+  // that could not be made (a new customer the registry does not have, a registry that does not answer) brings only why, in
+  // `failureCode` and `failureMessage`, to try again or not issue (decision 4).
   confirmation: z.strictObject({
     runId: guid, document: localized.nullable(), receiver: z.string().nullable(), total: z.string().nullable(),
     info: localized.optional(), date: z.string().optional(), amounts: z.array(z.strictObject({ label: localized, value: z.string() })).optional(),
+    failureCode: z.string().min(1).optional(), failureMessage: z.string().min(1).optional(),
   }).optional(),
 });
 export type ResponseWorkflow = z.infer<typeof workflow>;
@@ -41,4 +44,5 @@ export const continueResponseAction = async (recordId: string, runId: string, ac
 export const reviewResponseAction = async (recordId: string, runId: string, body: { recipientUserId?: string; expectedRevision: number; wasSent: boolean }, signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/review", body, { signal }), recordId);
 export const retryResponseRecipient = async (recordId: string, runId: string, recipientUserId: string, body: { expectedRevision: number }, signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/recipients/" + formId(recipientUserId) + "/retry", body, { signal }), recordId);
 // «¿La emito?» from the detail (EM2-A): whoever loaded it issues, or voids it without issuing; 202 with the flow.
-export const confirmResponseIssue = async (recordId: string, runId: string, issue: boolean, signal?: AbortSignal) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/confirmation", { issue }, { signal }), recordId);
+// «Volver a probar» after a summary that failed sends `retry` with `issue`; a decision that does not fit the state is a 409.
+export const confirmResponseIssue = async (recordId: string, runId: string, issue: boolean, signal?: AbortSignal, retry = false) => readResponseWorkflow(await api.post<unknown>(path(recordId) + "/actions/" + formId(runId) + "/confirmation", retry ? { issue, retry } : { issue }, { signal }), recordId);

@@ -61,12 +61,17 @@ function IssuanceZone({ record, flow, owner, formId, disabled, timeZoneId, readF
   const bandActions = reviewAction ? <Button variant="outline" size="sm" disabled={disabled || !!working} onClick={() => setReviewing({ runId: reviewAction.id, revision: reviewAction.revision })}>{t("issuance.review")}</Button>
     : confirmation ? <>
       <Button variant="destructive-outline" size="sm" disabled={disabled || !!working} onClick={() => setSkipping(true)}>{t("issuance.skip")}</Button>
-      <Button size="sm" pending={working === "issue"} disabled={disabled || !!working} onClick={() => void actions.confirm(confirmation.runId, true)}>{t(working === "issue" ? "issuance.issuingAction" : "issuance.issue")}</Button>
+      {/* Decision 4: a summary that failed offers «Volver a probar» instead of «Emitir». */}
+      {confirmation.failureCode
+        ? <Button size="sm" pending={working === "retry"} disabled={disabled || !!working} onClick={() => void actions.retry(confirmation.runId)}>{t(working === "retry" ? "issuance.retrying" : "issuance.retry")}</Button>
+        : <Button size="sm" pending={working === "issue"} disabled={disabled || !!working} onClick={() => void actions.confirm(confirmation.runId, true)}>{t(working === "issue" ? "issuance.issuingAction" : "issuance.issue")}</Button>}
     </> : null;
   return <Surface title={t("issuance.title")} padded actions={bandActions}>
     {confirmation ? <>
       <p className="text-sm font-semibold">{t("issuance.awaiting")}</p>
-      <ConfirmationSummary confirmation={confirmation} language={i18n.language}/>
+      {confirmation.failureCode
+        ? <Banner tone="warning"><span className="font-semibold">{t("issuance.previewFailed")}</span>{" · "}{confirmation.failureMessage ?? confirmation.failureCode}</Banner>
+        : <ConfirmationSummary confirmation={confirmation} language={i18n.language}/>}
     </> : band?.stage === "awaiting" ? <p className="text-sm text-[var(--color-content-muted)]">{t("issuance.awaitingOthers")}</p> : null}
     {/* What the issuance left stays in sight while it is reversed (NC1-A): the credit note joins it once issued. */}
     <ResponseResults results={record.results}/>

@@ -7,7 +7,7 @@ import { notify } from "@/shared/ui/notifications";
 import { confirmResponseIssue, reviewResponseAction, type ResponseWorkflow } from "../api/workflow";
 import { responseWorkflowKey } from "./useResponseWorkflow";
 
-export type IssuanceOperation = "issue" | "skip" | "proceed" | "stop";
+export type IssuanceOperation = "issue" | "retry" | "skip" | "proceed" | "stop";
 
 /**
  * The decisions of the zone «Comprobante»: «Emitir» and «No emitir» of «¿La emito?» (EM2-A, only whoever loaded it) and the
@@ -36,7 +36,7 @@ export function useResponseIssuance({ owner, formId, recordId, number, onRead }:
       const result = await request(current.signal);
       if (live.current !== scope || current.signal.aborted) return false;
       client.setQueryData(responseWorkflowKey(owner, formId, recordId), result);
-      notify({ id: notice, kind: kind === "issue" || kind === "proceed" ? "info" : "success", message: t("issuance.done." + kind, { number }) });
+      notify({ id: notice, kind: kind === "issue" || kind === "retry" || kind === "proceed" ? "info" : "success", message: t("issuance.done." + kind, { number }) });
       onRead();
       return true;
     } catch (error) {
@@ -52,6 +52,8 @@ export function useResponseIssuance({ owner, formId, recordId, number, onRead }:
   return {
     working: working?.scope === scope ? working.kind : null,
     confirm: (runId: string, issue: boolean) => run(issue ? "issue" : "skip", signal => confirmResponseIssue(recordId, runId, issue, signal)),
+    // «Volver a probar» (decision 4): the summary failed; the issuer is asked again and the zone says it is being issued.
+    retry: (runId: string) => run("retry", signal => confirmResponseIssue(recordId, runId, true, signal, true)),
     review: (runId: string, expectedRevision: number, proceed: boolean) =>
       run(proceed ? "proceed" : "stop", signal => reviewResponseAction(recordId, runId, { expectedRevision, wasSent: proceed }, signal)),
   };

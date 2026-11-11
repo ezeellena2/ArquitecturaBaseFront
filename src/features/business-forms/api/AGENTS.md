@@ -10,7 +10,7 @@ Familias:
 - Tabla MF1: `overview.ts` consume `/api/forms/overview`, con página y facetas hermanas. Los contadores privados son nullable requeridos: null no se convierte en cero ni habilita columnas. El guard es estricto también en cada fila, última respuesta y facetas; no conserva los issues ni su contenido al rechazar.
 - Planilla y detalle de respuestas: `responses.ts` (búsqueda POST, anclaje de vecinos por RecordId, detalle y conteos por filtro).
 - Reglas y PDF: `rules.ts` (configuración, opciones, revisiones) y `pdf.ts` (diseño, vista previa y copias fijas en bytes).
-- Workflow y aprobaciones: `workflow.ts` (estado, consultar, reintentar, revisar un destinatario o una emisión, sin persona, reintentar a una persona de un aviso a un rol y confirmar o no una emisión, EM2-A; la reversión de una emisión llega con el evento `Voided` y el resumen de «¿La emito?», en `confirmation`, sólo para quien la cargó) y `approvals.ts` (tareas por formulario, cantidad, tarea, continuación anclada y decisión).
+- Workflow y aprobaciones: `workflow.ts` (estado, consultar, reintentar, revisar un destinatario o una emisión, sin persona, reintentar a una persona de un aviso a un rol y confirmar o no una emisión, EM2-A; la reversión de una emisión llega con el evento `Voided` y el resumen de «¿La emito?», en `confirmation`, sólo para quien la cargó; si no se pudo armar trae sólo `failureCode` y `failureMessage`, y «Volver a probar» manda `retry`) y `approvals.ts` (tareas por formulario, cantidad, tarea, continuación anclada y decisión).
 - Sugerencias y formularios que faltan: `suggestions.ts` y `missingRequests.ts`.
 
 ## Al modificar

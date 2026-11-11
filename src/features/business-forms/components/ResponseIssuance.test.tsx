@@ -154,6 +154,21 @@ describe("an issuance in review (NC1-A)", () => {
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "info", message: "Se sigue con la emisión de TEST-000002." }));
   });
 
+  // Falla 8: «No emitir» in the review voids the response, without a document, once the server processes it.
+  it("says that «No emitir» voids the response and decides it without a person", { timeout: 20_000 }, async () => {
+    const { posts } = setup({}, { actions: [{ ...review, canReview: true }] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    await user.click(within(await zone()).getByRole("button", { name: "Revisar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Revisar la emisión de TEST-000002" });
+    const stop = within(dialog).getByRole("radio", { name: "No emitir" });
+    expect(stop).toHaveAccessibleDescription("La respuesta queda anulada, sin comprobante.");
+    await user.click(stop);
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "review:" + issueRun, body: { expectedRevision: 3, wasSent: false } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "TEST-000002 se anula, sin comprobante." })));
+  });
+
   it("tells who cannot decide that someone else resolves it, without «Revisar»", async () => {
     setup({}, { actions: [review] });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
@@ -193,6 +208,23 @@ describe("«Esperando que lo confirmes» (EM2-A)", () => {
     await user.click(within(dialog).getByRole("button", { name: "No emitir" }));
     await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: false } }]));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "TEST-000002 quedó anulada, sin comprobante." })));
+  });
+
+  // Decision 4 (falla 6): the summary could not be made; it says why and offers «Volver a probar» instead of «Emitir».
+  it("says why a summary could not be made and tries again with «Volver a probar»", { timeout: 20_000 }, async () => {
+    const failed = { runId: issueRun, document: null, receiver: null, total: null, failureCode: "Arca.Registry.PersonNotFound", failureMessage: "ARCA no tiene datos de esa CUIT en el padrón." };
+    const { posts } = setup({}, { actions: [waiting], confirmation: failed });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(within(section).getByRole("status")).toHaveTextContent("Todavía no se puede emitir · ARCA no tiene datos de esa CUIT en el padrón.");
+    expect(within(section).queryByRole("group", { name: "Esperando que lo confirmes" })).not.toBeInTheDocument();
+    expect(within(section).queryByRole("button", { name: "Emitir" })).not.toBeInTheDocument();
+    expect(within(section).getByRole("button", { name: "No emitir" })).toBeInTheDocument();
+    await user.click(within(section).getByRole("button", { name: "Volver a probar" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: true, retry: true } }]));
+    expect(await within(await zone()).findByText("Se está emitiendo el comprobante. La página se actualiza sola.")).toBeInTheDocument();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "info", message: "Volvemos a probar la emisión de TEST-000002." }));
   });
 
   it("tells anyone else that it waits for whoever loaded it, without deciding", async () => {
