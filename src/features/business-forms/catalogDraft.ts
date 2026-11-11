@@ -16,7 +16,8 @@ export interface CatalogDraft {
   readonly culture: FormCulture;
   readonly proposal: CatalogDetail["proposal"];
   readonly isActive: boolean;
-  readonly kind: "Manual" | "Filters";
+  // External is opened read-only, as its module keeps it: it is never saved from the editor.
+  readonly kind: CatalogDetail["kind"];
   readonly filters: CatalogFiltersEditorValue | null;
   readonly id: string | null;
   readonly revision: number | null;

@@ -104,3 +104,20 @@ it("leaves the empty list with its title and «Nuevo catálogo», and no matches
   expect(screen.queryByText("Limpiá los filtros para ver los demás catálogos.")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Limpiar filtros" })).toBeInTheDocument();
 });
+
+// CA1: the catalogs a module keeps are a choice of «De dónde salen» only when the server counts some (`byKind.external`).
+it("offers the catalogs a module keeps only when the server counts some, and asks the server for them", async () => {
+  const external = { valueType: "Integer" as const, id: "01990000-0000-7000-8000-000000000031", name: "Condición frente al IVA", description: null, origin: "External", optionsCount: 9, usageCount: null, state: "Active", stateReason: null, canEdit: true };
+  setup(["formcatalogs.read"]); const requests: URLSearchParams[] = [];
+  server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ ...listRaw, items: [external], totalCount: 1, totalPages: 1, filterCounts: { byKind: { all: 6, manual: 1, filters: 0, external: 5 } } }); }));
+  let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+  await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20").router; });
+  await userEvent.setup().click(await screen.findByRole("button", { name: "De otro sistema (5)" }));
+  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("kind")).toBe("External"));
+  await waitFor(() => expect(requests.some(request => request.get("kind") === "External")).toBe(true));
+  expect(screen.getByRole("cell", { name: "De otro sistema" })).toBeInTheDocument();
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json(listRaw)));
+  await act(async () => { await router.navigate("/catalogos?pageSize=20&search=x"); });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Todos (0)" })).toBeInTheDocument());
+  expect(screen.queryByRole("button", { name: /^De otro sistema/ })).not.toBeInTheDocument();
+});

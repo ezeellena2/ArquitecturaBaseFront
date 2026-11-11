@@ -30,6 +30,15 @@ describe("Chosen catalog list board K1", () => {
     expect(cellUnder(table, screen.getByRole("row", { name: /Clientes/ }), "De dónde salen")).toHaveTextContent(/^Escritas a mano$/);
     expect(within(table).queryByText("Usuarios, con filtros")).not.toBeInTheDocument();
   });
+  it("names a catalog a module keeps by where it comes from and opens it from its name, without the pencil (CA1)", async () => {
+    await i18n.changeLanguage("es");
+    const external: CatalogListRow = { valueType: "Integer", id: "external", name: "Condición frente al IVA", description: null, origin: "External", optionsCount: 9, usageCount: 0, state: "Active", stateReason: null, canEdit: true };
+    await act(async () => { renderWithProviders(<MemoryRouter><CatalogListTable page={{ ...page, items: [external] }} canManage onPageChange={vi.fn()} onViewUsage={vi.fn()} onEdit={vi.fn()} hasFilters={false} /></MemoryRouter>); });
+    const row = screen.getByRole("row", { name: /Condición frente al IVA/ });
+    expect(cellUnder(screen.getByRole("table"), row, "De dónde salen")).toHaveTextContent(/^De otro sistema$/);
+    expect(within(row).getByRole("link", { name: "Condición frente al IVA" })).toHaveAttribute("href", "/catalogos/external");
+    expect(within(row).queryByRole("button", { name: "Editar Condición frente al IVA" })).not.toBeInTheDocument();
+  });
   for (const language of ["es", "en"] as const) {
     it("uses supplied page and option counts without recounting the visible rows in " + language, async () => {
       const { user, onPageChange, onViewUsage, onEdit } = await mount(language);

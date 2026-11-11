@@ -1,7 +1,8 @@
 import type { CatalogValueType } from "../catalogValues";
 import type { FormCulture } from "../model";
+import { ApiError } from "@/shared/api/ApiError";
 import { api } from "@/shared/api/httpClient";
-import { catalogId, readCatalog, readCatalogItems, readCatalogPage, readCatalogPresentationCheck, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
+import { catalogId, readCatalog, readCatalogItems, readCatalogLookup, readCatalogLookupResult, readCatalogPage, readCatalogPresentationCheck, readCatalogSave, readCatalogFilterOptions, readCatalogFilterPreview, readCatalogFiltersSave, UnsupportedCatalogResponse } from "./catalogResponse";
 
 import type { CatalogFiltersBody } from "../catalogFilterDraft";
 import type { CatalogFieldBody } from "../catalogFields";
@@ -53,7 +54,7 @@ export interface CatalogListQuery {
   readonly pageSize: number;
   readonly search?: string;
   readonly sort?: CatalogSortField | `-${CatalogSortField}`;
-  readonly kind?: "Manual" | "Filters";
+  readonly kind?: "Manual" | "Filters" | "External";
   readonly state?: "Active" | "Inactive" | "Unavailable";
   /// CP1-A: a folder with its subfolders, or the catalogs without one; never both.
   readonly folderId?: string;
@@ -63,6 +64,19 @@ export async function fetchCatalogPage(query: CatalogListQuery, signal?: AbortSi
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));
   return readCatalogPage(await api.get<unknown>(`/api/forms/catalogs?${params}`, { signal }));
 }
+
+/** «Completar con …» (CA1): which registry completes this catalog and its tax-id field, or null when none does (the button does not go). */
+export async function fetchCatalogLookup(id: string, signal?: AbortSignal) {
+  try {
+    return readCatalogLookup(await api.get<unknown>(`/api/forms/catalogs/${catalogId(id)}/lookup`, { signal, cache: "no-store" }));
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404 && error.code === "Forms.Catalog.LookupUnavailable") return null;
+    throw error;
+  }
+}
+/** Asks the registry for a tax id as it was typed: nothing is saved, the option is filled and saved as always. */
+export const lookupCatalogParty = async (id: string, taxId: string, signal?: AbortSignal) =>
+  readCatalogLookupResult(await api.post<unknown>(`/api/forms/catalogs/${catalogId(id)}/lookup`, { taxId }, { signal, cache: "no-store" }));
 
 export interface CatalogFilterOptionsQuery { readonly page: number; readonly pageSize: number; readonly search?: string; readonly sort?: "name" | "-name" }
 export interface FiltersCatalogBody { readonly name: Readonly<Partial<Record<FormCulture, string>>>; readonly description: Readonly<Partial<Record<FormCulture, string>>>; readonly filters: CatalogFiltersBody }

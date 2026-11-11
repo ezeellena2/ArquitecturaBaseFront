@@ -29,8 +29,9 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { formatDateInZone, formatDateTimeInZone, formatRelativeTime } from "@/shared/lib/dateTime";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
@@ -50,7 +51,8 @@ import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor
 import { CatalogActionsMenu } from "../components/CatalogActionsMenu";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
-import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
+import { useCatalogDetail, useCatalogItems, useCatalogLookup } from "../hooks/useCatalogQueries";
+import { catalogFeedFailure, catalogFeedUpdate } from "../catalogOrigin";
 
 import { CatalogFiltersEditorPage } from "./CatalogFiltersEditorPage";
 
@@ -175,7 +177,15 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     if (readAssistantImportState(location.state)) void navigate({ pathname: location.pathname, search: location.search, hash: location.hash }, { replace: true, state: withoutAssistantImport(location.state) });
     else if (readAssistantImportQuery(searchParams)) updateQuery({ pedido: undefined, propuesta: undefined });
   }, [assistantOpened, location, searchParams, navigate, updateQuery]);
-  const readOnly = !editor.canSave;
+  // An External catalog (CA1) is kept by its module: it opens like a Manual one, read-only, without adding or importing options.
+  const readOnly = !editor.canSave || !canManage;
+  const feedUpdate = initial?.kind === "External" ? catalogFeedUpdate(initial.feed) : null;
+  const feedFailure = initial?.kind === "External" ? catalogFeedFailure(initial.feed) : null;
+  // «Completar con …» (CA1): offered in the options modal of a catalog a registry completes, for whoever manages it. A registry
+  // names its catalog by the stable key a standard gave it, so a catalog whose key is its own id is never asked about.
+  const stableKey = !!initial && initial.key !== initial.id.replaceAll("-", "").toLowerCase();
+  const lookup = useCatalogLookup(scope, canManage && stableKey ? draft?.id ?? "" : "");
+  const lookupOffer = lookup.data && draft?.id ? { catalogId: draft.id, name: administrativeName(lookup.data.name, culture), fieldId: lookup.data.fieldId } : undefined;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const fieldFeedback = editor.error instanceof ApiError ? readCatalogFieldFeedback(editor.error.problem) : null;
   const changedItems = draft ? catalogItemChanges(draft.items) : [];
@@ -362,13 +372,17 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   // Removing the chip goes back to the list, also when reading only the rows with errors failed.
   const errorRowsChip = rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null;
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
-  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge> : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}
+  return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge>
+      : feedUpdate ? <>{t(feedUpdate.recent ? "catalogs.feed.updatedAgo" : "catalogs.feed.updatedOn", { when: feedUpdate.recent ? formatRelativeTime(feedUpdate.at, scope.culture) : formatDateInZone(feedUpdate.at, scope.culture, timeZoneId) })}<InfoTip label={t("catalogs.feed.help")} text={t("catalogs.feed.helpText")} /></>
+      : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}
     actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button variant={pendingProposal ? "outline" : "default"} pending={saving} disabled={readOnly || !editor.dirty} onClick={() => void save()}>{t(saving ? "saving" : "common:actions.save")}</Button>
       {pendingProposal ? <DisabledReason reason={editor.dirty ? t("catalogs.proposal.saveFirst") : null}><Button pending={editor.working === "approveProposal"} disabled={!editor.canSave || editor.dirty} onClick={() => void approveProposal()}>{t(editor.working === "approveProposal" ? "catalogs.proposal.approving" : "catalogs.proposal.approve")}</Button></DisabledReason> : null}
       {/* AC1-A: the folders and deactivating or reactivating are something else done with the catalog, in ⋮ after the task of the editor. */}
       <CatalogActionsMenu triggerRef={actionsTrigger} onFolders={draft.id && !pendingProposal ? () => setFoldersOpen(true) : undefined}
         state={draft.id && (!proposal || proposal.state === "Approved") ? { isActive: draft.isActive, disabled: !editor.canSave, onChange: isActive => editor.changeMetadata({ isActive }) } : undefined} /></> : undefined}>
     <div ref={host} className="flex flex-col gap-4">
+      {/* CA1: the last update of an External catalog failed. It is a lasting condition, so a notice on the page and not a toast. */}
+      {feedFailure ? <Banner tone="warning"><strong>{t("catalogs.feed.failedTitle")}.</strong>{" "}{feedFailure.unavailable ? <>{t("catalogs.feed.unavailable")}{" "}</> : null}{feedFailure.copyAt ? t("catalogs.feed.keepsCopy", { date: formatDateInZone(feedFailure.copyAt, scope.culture, timeZoneId) }) : t("catalogs.feed.retrying")}</Banner> : null}
       {proposal ? <Banner>{/* EP1-A (2026-11-06): a pending proposal is the label of the header; the notice says who asked for it and when. */}{!pendingProposal ? <><strong>{t("catalogs.proposal.states." + proposal.state)}.</strong>{" "}</> : null}{t(proposal.requestedIn === "app" ? "catalogs.proposal.requestedInApp" : "catalogs.proposal.requested", { name: proposal.requestedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.requestedAtUtc, scope.culture, timeZoneId) })}{" "}{!pendingProposal && proposal.decidedBy && proposal.decidedAtUtc ? t("catalogs.proposal.decided", { name: proposal.decidedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.decidedAtUtc, scope.culture, timeZoneId) }) : null}</Banner> : null}
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded actions={<Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button>}><p className="text-sm">{t("catalogs.review.required")}</p></Surface> : null}
       <KeepHeight keep={waitingForOptions}><div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"><div className="flex min-w-0 flex-col gap-4"><CatalogMetadataFields valueType={draft.valueType} name={draft.name} description={draft.description} culture={culture} original={original} origin={initial?.kind ?? "Manual"} canManage={canManage} busy={readOnly} errors={fields} onChange={editor.changeMetadata} /><CatalogPresentationSection value={draft.presentation} fields={draft.fields} items={rowItems} valueType={draft.valueType} culture={culture} cultures={catalogCultures} readOnly={readOnly} errors={fields} inputCulture={draft.culture} pendingTexts={pendingTexts} check={!editor.dirty ? (editor.confirmed ?? initial)?.presentationCheck : undefined} onChange={editor.changePresentation} /></div><div className="xl:self-stretch xl:contain-size"><CatalogPreview items={rowItems} fields={draft.fields} presentation={draft.presentation} valueType={draft.valueType} inputCulture={draft.culture} pendingTexts={pendingTexts} name={currentName} culture={culture} /></div></div></KeepHeight>
@@ -382,7 +396,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     </div>
     {fieldsDialog ? <CatalogFieldsDialog catalogName={currentName} fields={draft.fields} presentation={draft.presentation} culture={culture} original={original} scope={scope} readOnly={readOnly} confirmedRemovals={draft.confirmFieldRemovals} errors={definitionErrors} feedback={fieldFeedback} initialFieldId={fieldsDialog.fieldId} noticeId={fieldsNoticeId} onApply={editor.changeFields} onClose={() => setFieldsDialog(null)} /> : null}
     {itemsDialog ? <CatalogItemsDialog catalogName={currentName} mode={itemsDialog.mode} items={dialogItems} selectedId={itemsDialog.selectedId} totalCount={(editor.confirmed ?? initial)?.itemsCount ?? items.data?.totalCount ?? 0} range={pageRange}
-      culture={culture} original={original} valueType={draft.valueType} fields={draft.fields} scope={scope} readOnly={readOnly} errors={itemErrors} warnings={itemWarnings} pendingTexts={pendingTexts} deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors}
+      culture={culture} original={original} valueType={draft.valueType} fields={draft.fields} scope={scope} readOnly={readOnly} errors={itemErrors} warnings={itemWarnings} pendingTexts={pendingTexts} deletedItemIds={draft.deleteItems} deleteErrors={deleteErrors} lookup={lookupOffer}
       onSelect={selectedId => setItemsDialog({ ...itemsDialog, selectedId })} onChange={editor.changeItem} onFieldBlur={touch} onGenerateCode={canManage ? item => generateCode(item.localId) : undefined}
       onAdd={addDialogItem} onRemove={item => editor.discardItem(item.localId)} onDelete={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, true); }} onRestore={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, false); }}
       onDone={finishItems} onCancel={cancelItems} /> : null}

@@ -56,6 +56,16 @@ dice y se relee la actividad.
   ya programado: zona propia, sin completar la familia. CA1 los dibujó en «Facturación» con «Falta completar».
 - **«Clases»** en la condición frente al IVA y **«en una hora»** son del dibujo: el catálogo trae código, texto y valor, y
   una falla se vuelve a leer a los 15 minutos.
+- **CA1 al programarse (2026-11-11):** el contrato de un catálogo External no trae el nombre de su origen ni,
+  en el listado, cuándo se actualizó, y formularios no nombra módulos. Por eso el origen dice «De otro sistema» (no «ARCA»),
+  el listado no tiene la columna «Actualizado» y el título dice «Actualizado hace 2 horas» o «Actualizado el 08/11/2026»,
+  con la (i) «Lo mantiene otro sistema, que lo actualiza una vez por día. No se edita a mano.». El aviso amarillo es
+  «No se pudo actualizar.», con «El sistema que lo mantiene no responde.» si el código termina en `Unavailable`, y «Los
+  formularios siguen usando la copia del 08/11/2026; volvemos a probar cada 15 minutos.». «Completar con ARCA» sí lleva el
+  nombre, que manda el padrón; sus avisos van en el Toaster («ARCA no responde» · «Probá de nuevo en un rato o completalo a
+  mano.», «ARCA no tiene esa CUIT.») y lo que está mal en la CUIT, debajo del campo: «Escribí la CUIT.», «Revisá la CUIT:
+  son 11 números.» y «Revisá la CUIT: el último dígito no corresponde.». Para «ARCA» y «Actualizado» en el listado hace
+  falta que el backend sume el nombre del origen y la fecha a la fila.
 
 ## Contratos del backend
 

@@ -433,7 +433,31 @@
     "source": {
       "manual": "Written manually",
       "database": "From the database",
-      "filters": "Users with filters"
+      "filters": "Users with filters",
+      "external": "From another system"
+    },
+    "feed": {
+      "updatedAgo": "Updated {{when}}",
+      "updatedOn": "Updated on {{when}}",
+      "help": "When it updates",
+      "helpText": "Another system keeps it and updates it once a day. It is not edited by hand.",
+      "failedTitle": "Could not update",
+      "unavailable": "The system that keeps it is not answering.",
+      "keepsCopy": "Forms keep using the copy from {{date}}; we try again every 15 minutes.",
+      "retrying": "We try again every 15 minutes."
+    },
+    "lookup": {
+      "action": "Complete with {{name}}",
+      "working": "Completing…",
+      "done": "Details completed with {{name}}.",
+      "notFound": "{{name}} does not have that CUIT.",
+      "unavailable": "{{name}} is not answering",
+      "unavailableHint": "Try again in a while or complete it by hand.",
+      "taxId": {
+        "required": "Write the CUIT.",
+        "length": "Check the CUIT: it has 11 digits.",
+        "checkDigit": "Check the CUIT: the last digit does not match."
+      }
     },
     "state": {
       "Active": "Active",

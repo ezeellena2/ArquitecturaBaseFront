@@ -30,7 +30,8 @@ function SourceOptionInput({ field, value, texts, culture, label, readOnly, erro
   const owner = scope ?? { actorId: null, culture, permissions: [] };
   const detail = useCatalogDetail(owner, readOnly ? "" : field.sourceCatalogId ?? "", "global");
   const items = useCatalogItems(owner, readOnly ? "" : field.sourceCatalogId ?? "", detail.data?.revision ?? null, { page: 1, pageSize: 20, search: settled, isActive: true, sort: "text" }, "global");
-  const sourceActive = detail.data?.kind === "Manual" && detail.data.isActive && !detail.data.unavailableReasonCode;
+  // A source offers its own options when it is Manual or External (kept by a module, such as the condition frente al IVA).
+  const sourceActive = (detail.data?.kind === "Manual" || detail.data?.kind === "External") && detail.data.isActive && !detail.data.unavailableReasonCode;
   // While the source and its first options load, or a search reads, the open list says so instead of the previous options.
   const loading = detail.isLoading || (sourceActive && items.isLoading);
   const searching = sourceActive && !loading && ((search ?? "") !== settled || items.isPlaceholderData);

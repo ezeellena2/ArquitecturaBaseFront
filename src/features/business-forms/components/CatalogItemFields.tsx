@@ -1,8 +1,9 @@
 import type { CatalogValueType } from "../catalogValues";
 import { catalogItemColumns } from "../catalogColumns";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
+import { RefreshIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -13,6 +14,7 @@ import type { FormCulture } from "../model";
 import { catalogFieldInputHint, type CatalogFieldDraft } from "../catalogFields";
 import { catalogItemFieldRule } from "../catalogDraft";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import { useCatalogPartyLookup, type CatalogLookupOffer } from "../hooks/useCatalogPartyLookup";
 import { administrativeName, contentReference, contentRequired } from "../editorModel";
 import { localizedIssue, localizedIssueMessage } from "../validationPaths";
 import { CatalogExtraFieldInput } from "./CatalogExtraFieldInput";
@@ -20,7 +22,7 @@ import { CatalogRow, CatalogRowHelp, CatalogRowMessage } from "./CatalogRow";
 
 // One option in the options modal (B, 2026-10-31): a row per control with a line between rows, like a field in «Campos de…».
 // It edits the draft as it is typed; the modal decides what «Listo» and «Cancelar» keep.
-export function CatalogItemFields({ item, culture, original, valueType, fields = [], scope, readOnly, errors, warning, pendingTexts, onGenerateCode, onChange, onFieldBlur }: {
+export function CatalogItemFields({ item, culture, original, valueType, fields = [], scope, readOnly, errors, warning, pendingTexts, lookup, onGenerateCode, onChange, onFieldBlur }: {
   item: CatalogManualItemValue; valueType: CatalogValueType; readOnly: boolean;
   /** The texts are edited in the menu language (`culture`); outside the catalog's original they are the optional translation. */
   culture: FormCulture; original: FormCulture;
@@ -31,10 +33,16 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
   /** Leaving a control, by its error path: the page then marks it if it is empty. */
   onFieldBlur?: (path: string) => void;
   fields?: readonly CatalogFieldDraft[]; scope?: CatalogReadScope;
+  /** «Completar con …» (CA1): the registry that completes this catalog; its button goes next to the field of the tax id. */
+  lookup?: CatalogLookupOffer;
 }) {
   const { t } = useTranslation("forms");
   const id = useId();
   const root = useRef<HTMLDivElement>(null), textRef = useRef<HTMLInputElement>(null);
+  const partyLookup = useCatalogPartyLookup(lookup);
+  // The registry answers what the option is when it arrives, not when it was asked.
+  const latest = useRef(item);
+  useLayoutEffect(() => { latest.current = item; });
   // The option opens with the cursor in its first marked control (a failed Save opens it so) or else in Texto; leaving Texto
   // before typing is not touching it. The modal mounts it per option.
   const textAutoFocused = useRef(false);
@@ -63,9 +71,17 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         // A field that cannot take values before it is saved says so instead. Its error quotes the value and changes with
         // each keystroke, so it is a polite status, not an alert that interrupts the typing.
         const hint = field.id ? catalogFieldInputHint(field, valueCulture, t) ?? undefined : undefined;
+        // «Completar con …» goes next to the field of the tax id, like «Generar desde el texto» next to the code. What is wrong
+        // with the tax id goes under it until the tax id is edited.
+        const offersLookup = !!lookup && !readOnly && !!field.id && field.id.toLowerCase() === lookup.fieldId.toLowerCase();
+        const lookupProblem = offersLookup && partyLookup.problem && (item.fields?.[key] ?? "") === partyLookup.problem.taxId ? partyLookup.problem.message : undefined;
+        const fieldError = lookupProblem ?? error;
+        const input = <CatalogExtraFieldInput field={field} scope={scope} label={name} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} pendingText={pendingTexts?.[key]} culture={culture} readOnly={readOnly} {...described(column.id, fieldError, hint)} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />;
         return <CatalogRow key={column.id} label={label(column.id, name, field.required)}>
-          <CatalogExtraFieldInput field={field} scope={scope} label={name} value={item.fields?.[key]} texts={item.fieldTexts?.[key]} pendingText={pendingTexts?.[key]} culture={culture} readOnly={readOnly} {...described(column.id, error, hint)} onChange={(value, texts) => onChange(withCatalogFieldValue(item, key, value, texts))} onBlur={blur} />
-          {message(column.id, error, hint, true)}
+          {offersLookup ? <div className="flex flex-col gap-2 sm:flex-row sm:items-start"><div className="min-w-0 sm:flex-1">{input}</div>
+            <Button type="button" variant="outline" pending={partyLookup.working} onClick={() => void partyLookup.run({ latest: () => latest.current, fields, culture, valueCulture, onChange })}>
+              {partyLookup.working ? null : <RefreshIcon className="size-4" />}{t(partyLookup.working ? "catalogs.lookup.working" : "catalogs.lookup.action", { name: lookup?.name })}</Button></div> : input}
+          {message(column.id, fieldError, hint, !lookupProblem)}
         </CatalogRow>;
       }
       switch (column.id) {

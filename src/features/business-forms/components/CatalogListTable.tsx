@@ -1,4 +1,6 @@
 import type { CatalogValueType } from "../catalogValues";
+import type { CatalogKind } from "../api/catalogResponse";
+import { catalogOriginKey } from "../catalogOrigin";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
@@ -15,7 +17,7 @@ export interface CatalogListRow {
   id: string;
   name: string;
   description: string | null;
-  origin: "Manual" | "Filters";
+  origin: CatalogKind;
   valueType: CatalogValueType;
   optionsCount: number | null;
   usageCount: number | null;
@@ -49,7 +51,7 @@ export function CatalogListTable({ page, canManage, loading, refreshing = false,
   const columns: Column<CatalogListRow>[] = [
     { id: "name", header: t("catalogs.columns.name"), sortable: true, cell: row => <Link to={"/catalogos/" + row.id} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{row.name}</Link> },
     // One value: «Usuarios, con filtros» is the same in every catalog of the base and does not tell one row from another (UD3).
-    { id: "origin", header: t("catalogs.columns.origin"), cell: row => t("catalogs.source." + (row.origin === "Manual" ? "manual" : "database")) },
+    { id: "origin", header: t("catalogs.columns.origin"), cell: row => t(catalogOriginKey(row.origin)) },
     { id: "optionsCount", header: t("catalogs.columns.options"), numeric: true, cell: row => row.optionsCount ?? "—" },
     { id: "usageCount", header: t("catalogs.columns.usage"), cell: row => row.usageCount !== null && row.usageCount > 0
       ? <Button type="button" variant="link" aria-label={t("catalogs.viewUsage", { name: row.name })} onClick={() => onViewUsage(row.id)}>{t("catalogs.usage", { count: row.usageCount })}</Button> : "—" },
@@ -59,7 +61,8 @@ export function CatalogListTable({ page, canManage, loading, refreshing = false,
     </div> },
     { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{
       label: t("edit"), accessibleName: t("catalogs.editNamed", { name: row.name }), icon: PencilIcon,
-      hidden: !canManage || !row.canEdit, onSelect: () => onEdit(row.id),
+      // An External catalog is kept by its module and opens read-only from its name: there is nothing to edit.
+      hidden: !canManage || !row.canEdit || row.origin === "External", onSelect: () => onEdit(row.id),
     }, {
       label: t("formFolders:item.action"), accessibleName: t("formFolders:item.actionFor", { name: row.name }), icon: FolderIcon,
       hidden: !canManage || !onFolders, onSelect: () => onFolders?.(row),

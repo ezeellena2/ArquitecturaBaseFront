@@ -433,7 +433,31 @@
     "source": {
       "manual": "Escritas a mano",
       "database": "De la base",
-      "filters": "Usuarios, con filtros"
+      "filters": "Usuarios, con filtros",
+      "external": "De otro sistema"
+    },
+    "feed": {
+      "updatedAgo": "Actualizado {{when}}",
+      "updatedOn": "Actualizado el {{when}}",
+      "help": "Cuándo se actualiza",
+      "helpText": "Lo mantiene otro sistema, que lo actualiza una vez por día. No se edita a mano.",
+      "failedTitle": "No se pudo actualizar",
+      "unavailable": "El sistema que lo mantiene no responde.",
+      "keepsCopy": "Los formularios siguen usando la copia del {{date}}; volvemos a probar cada 15 minutos.",
+      "retrying": "Volvemos a probar cada 15 minutos."
+    },
+    "lookup": {
+      "action": "Completar con {{name}}",
+      "working": "Completando…",
+      "done": "Completamos los datos con {{name}}.",
+      "notFound": "{{name}} no tiene esa CUIT.",
+      "unavailable": "{{name}} no responde",
+      "unavailableHint": "Probá de nuevo en un rato o completalo a mano.",
+      "taxId": {
+        "required": "Escribí la CUIT.",
+        "length": "Revisá la CUIT: son 11 números.",
+        "checkDigit": "Revisá la CUIT: el último dígito no corresponde."
+      }
     },
     "state": {
       "Active": "Activo",

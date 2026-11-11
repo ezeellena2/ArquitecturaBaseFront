@@ -56,20 +56,36 @@ const filterColumn = z.strictObject({ key: z.string(), dataType: z.string(), can
 const sampleUsers = z.strictObject({ items: z.array(z.strictObject({ id: guid, name: z.string() })), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() });
 const filterOptions = z.strictObject({ source: z.literal("users"), columns: z.array(filterColumn), sampleUsers: sampleUsers.nullable() });
 const filterPreview = z.strictObject({ items: z.array(z.strictObject({ id: guid, text: z.string(), detail: z.string().nullable(), canSend: z.boolean() })), totalCount: count, exceedsLimit: z.boolean() });
-const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), originalCulture: z.enum(["es", "en"]), kind: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: catalogPresentationCheckSchema.nullable() })
+// An External catalog (one an installed module keeps, read-only) says when its source last answered and its last failure, with
+// its stable code; a successful read clears the failure. The others do not bring it.
+const catalogFeed = z.strictObject({ refreshedAtUtc: instant.nullable(), failedAtUtc: instant.nullable(), failureCode: z.string().min(1).nullable() })
+  .refine(value => (value.failedAtUtc === null) === (value.failureCode === null));
+// The key is the id without hyphens, or the stable key a standard or a feed gave it («arca.customers»), as the server checks it.
+const standardKey = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
+const catalog = z.strictObject({ id: guid, key: z.string(), name: textMap(120), description: textMap(1000), originalCulture: z.enum(["es", "en"]), kind: z.enum(["Manual", "Filters", "External"]), valueType: z.enum(catalogValueTypes), revision, isActive: z.boolean(), itemsCount: count.nullable(), usageCount: count.nullable(), unavailableReasonCode: z.string().nullable(), filters: filters.nullable(), proposal: proposal.nullable(), fields: z.array(catalogField).max(20).nullable(), presentation: presentation.nullable(), presentationCheck: catalogPresentationCheckSchema.nullable(), feed: catalogFeed.optional() })
   .refine(value => value.proposal ? (value.kind === "Filters" ? value.filters !== null && !!value.proposal.originalProposal : !!value.proposal.manual)
     && !!value.name[value.proposal.originalCulture]?.trim() && (value.proposal.state === "Approved" || !value.isActive) : anyText(value.name))
-  .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase())
+  .refine(value => value.key === value.id.replaceAll("-", "").toLowerCase() || value.key.length <= 32 && standardKey.test(value.key))
+  .refine(value => (value.feed !== undefined) === (value.kind === "External"))
   .refine(value => value.kind !== "Filters" || value.valueType === "Text")
   .refine(value => value.kind !== "Manual" || value.fields !== null && value.presentationCheck !== null)
   .refine(value => !value.fields || new Set(value.fields.map(field => field.id.toLowerCase())).size === value.fields.length && new Set(value.fields.map(field => field.key)).size === value.fields.length);
 const item = z.strictObject({ id: guid, code: z.string().min(1).max(80), text: z.record(cultureKey, z.string().min(1).max(200).nullable()).refine(anyText), detail: nullableText(500), value: z.string().max(64).nullable(), position: z.number().int().min(1).max(10000), isActive: z.boolean(), fields: z.record(guid, z.string().max(300)), fieldTexts: z.record(guid, textMap(200).refine(anyText)) });
 const itemPage = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
-const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters"]), valueType: z.enum(catalogValueTypes), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() }).refine(value => value.origin !== "Filters" || value.valueType === "Text");
-const catalogPage = z.strictObject({ filterCounts: z.strictObject({ byKind: z.strictObject({ all: count, manual: count, filters: count }) }), items: z.array(listItem), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
+const listItem = z.strictObject({ id: guid, name: z.string().min(1), description: z.string().nullable(), origin: z.enum(["Manual", "Filters", "External"]), valueType: z.enum(catalogValueTypes), optionsCount: count.nullable(), usageCount: count.nullable(), state: z.enum(["Active", "Inactive", "Unavailable"]), stateReason: z.string().nullable(), canEdit: z.boolean() }).refine(value => value.origin !== "Filters" || value.valueType === "Text");
+// `external` comes only when some catalog is External.
+const catalogPage = z.strictObject({ filterCounts: z.strictObject({ byKind: z.strictObject({ all: count, manual: count, filters: count, external: count.optional() }) }), items: z.array(listItem), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, totalPages: count, hasPrevious: z.boolean(), hasNext: z.boolean() })
   .refine(value => new Set(value.items.map(row => row.id.toLowerCase())).size === value.items.length);
 const saved = z.strictObject({ catalog, itemIdentityMap: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), guid), fieldIdentityMap: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/), guid).nullable() });
+// «Completar con …» (CA1): the registry that completes the catalog, named by language, and the field that holds the tax id.
+const lookup = z.strictObject({ name: textMap(120).refine(anyText), fieldId: guid });
+// What the registry knows of a tax id (its text and the value of each field it knows; a catalog field, with the id of the option),
+// or why it could not, with its stable code and its message in the menu language. Nothing is saved.
+const lookupResult = z.strictObject({ text: z.string().min(1).nullable(), fields: z.array(z.strictObject({ fieldId: guid, value: z.string() })), failureCode: z.string().min(1).nullable(), failureMessage: z.string().min(1).nullable() })
+  .refine(value => (value.failureCode === null) === (value.failureMessage === null))
+  .refine(value => value.failureCode === null || value.text === null && value.fields.length === 0)
+  .refine(value => new Set(value.fields.map(field => field.fieldId.toLowerCase())).size === value.fields.length);
 
 export class UnsupportedCatalogResponse extends Error {
   constructor() { super("Unsupported catalog response."); this.name = "UnsupportedCatalogResponse"; }
@@ -102,6 +118,12 @@ export function readCatalogSave(value: unknown, newLocalIds: readonly string[], 
   return result;
 }
 export const readCatalogPage = (value: unknown) => read(catalogPage, value);
+export const readCatalogLookup = (value: unknown) => read(lookup, value);
+export const readCatalogLookupResult = (value: unknown) => read(lookupResult, value);
+export type CatalogLookup = z.infer<typeof lookup>;
+export type CatalogLookupResult = z.infer<typeof lookupResult>;
+export type CatalogKind = z.infer<typeof catalog>["kind"];
+export type CatalogFeed = z.infer<typeof catalogFeed>;
 export type CatalogListItem = z.infer<typeof listItem>;
 export type CatalogDetail = z.infer<typeof catalog>;
 export type CatalogItem = z.infer<typeof item>;

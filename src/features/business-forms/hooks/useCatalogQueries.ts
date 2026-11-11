@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
-import { checkCatalogPresentation, fetchCatalog, fetchCatalogItems, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
+import { checkCatalogPresentation, fetchCatalog, fetchCatalogItems, fetchCatalogLookup, fetchCatalogPage, type CatalogItemsQuery, type CatalogListQuery, fetchCatalogFilterOptions, type CatalogFilterOptionsQuery } from "../api/catalogs";
 import type { CatalogPresentation } from "../api/catalogResponse";
 import type { CatalogReadScope } from "./useCatalogDraftEditor";
 import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
@@ -35,6 +35,14 @@ export function useCatalogItemsById(scope: CatalogReadScope, id: string, itemIds
   const root = [...catalogScopeKey(scope), "items-by-id", id, itemIds] as const;
   useUnobservedQueryCleanup(root);
   return useQuery({ queryKey: root, queryFn: ({ signal }) => fetchCatalogItems(id, { page: 1, pageSize: itemIds.length, ids: itemIds }, signal), enabled: canRead(scope) && id !== "" && itemIds.length > 0, staleTime: 0, gcTime: 0, meta: { errorOwner } });
+}
+// «Completar con …» (CA1): which registry completes the catalog, or null. Only whoever manages catalogs asks; a failed read leaves
+// the option without the button, to complete by hand as always.
+export function useCatalogLookup(scope: CatalogReadScope, id: string) {
+  const key = [...catalogScopeKey(scope), "lookup", id] as const;
+  useUnobservedQueryCleanup(key);
+  return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchCatalogLookup(id, signal), enabled: canRead(scope) && scope.permissions.includes("formcatalogs.manage") && id !== "",
+    retry: false, gcTime: 0, meta: { errorOwner: "local" } });
 }
 // The server's length check of a question's own presentation over every active option of the catalog revision.
 export function useCatalogPresentationCheck(scope: CatalogReadScope, id: string, revision: number | null, presentation: CatalogPresentation | null) {

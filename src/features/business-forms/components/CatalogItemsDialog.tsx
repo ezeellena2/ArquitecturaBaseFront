@@ -12,6 +12,7 @@ import type { CatalogValueType } from "../catalogValues";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
 import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
+import type { CatalogLookupOffer } from "../hooks/useCatalogPartyLookup";
 import type { FormCulture } from "../model";
 import { administrativeName } from "../editorModel";
 import { CatalogItemFields } from "./CatalogItemFields";
@@ -33,6 +34,8 @@ export interface CatalogItemsDialogProps {
   errors?: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>; warnings?: Readonly<Record<string, string>>;
   pendingTexts?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   deletedItemIds?: readonly string[]; deleteErrors?: Readonly<Record<string, string>>;
+  /** «Completar con …» (CA1), when a registry completes the catalog: next to the field of the tax id of the chosen option. */
+  lookup?: CatalogLookupOffer;
   onSelect: (localId: string | null) => void;
   onChange: (item: CatalogManualItemValue) => void;
   onFieldBlur?: (localId: string, path: string) => void;
@@ -46,7 +49,7 @@ export interface CatalogItemsDialogProps {
 // The options in a modal like «Campos de…» (B, 2026-10-31): the list on the left and the chosen option on the right, each in
 // its box; on the phone, first the list and then the option. It edits the draft as it is typed: «Listo» keeps it, «Cancelar»
 // or Esc ask the page to put it back. It is mounted only while open.
-export function CatalogItemsDialog({ catalogName, mode, items, selectedId, totalCount, range, culture, original, valueType, fields, scope, readOnly, errors, warnings, pendingTexts, deletedItemIds = [], deleteErrors, onSelect, onChange, onFieldBlur, onGenerateCode, onAdd, onRemove, onDelete, onRestore, onDone, onCancel }: CatalogItemsDialogProps) {
+export function CatalogItemsDialog({ catalogName, mode, items, selectedId, totalCount, range, culture, original, valueType, fields, scope, readOnly, errors, warnings, pendingTexts, deletedItemIds = [], deleteErrors, lookup, onSelect, onChange, onFieldBlur, onGenerateCode, onAdd, onRemove, onDelete, onRestore, onDone, onCancel }: CatalogItemsDialogProps) {
   const { t } = useTranslation("forms");
   const desktop = useMediaQuery("(min-width: 640px)");
   const restoreFocus = useRestoreFocusOnClose();
@@ -93,7 +96,7 @@ export function CatalogItemsDialog({ catalogName, mode, items, selectedId, total
       {deleteErrors?.[selected.localId] ? <p role="alert" className="text-sm text-[var(--color-danger)]">{deleteErrors[selected.localId]}</p> : null}
       {!readOnly ? <Button type="button" variant="outline" className="self-start" onClick={() => onRestore(selected)}>{t("catalogs.items.restore")}</Button> : null}
     </div> : <CatalogItemFields key={selected.localId} item={selected} culture={culture} original={original} valueType={valueType} fields={fields} scope={scope} readOnly={readOnly}
-      errors={errors?.[selected.localId]} warning={warnings?.[selected.localId]} pendingTexts={pendingTexts?.[selected.localId]} onGenerateCode={onGenerateCode ? () => onGenerateCode(selected) : undefined}
+      errors={errors?.[selected.localId]} warning={warnings?.[selected.localId]} pendingTexts={pendingTexts?.[selected.localId]} lookup={lookup} onGenerateCode={onGenerateCode ? () => onGenerateCode(selected) : undefined}
       onChange={onChange} onFieldBlur={path => onFieldBlur?.(selected.localId, path)} />}
   </Surface> : null;
 

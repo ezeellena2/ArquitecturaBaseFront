@@ -19,6 +19,7 @@ import { Page } from "@/shared/ui/Page";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { CatalogListQuery } from "../api/catalogs";
+import { catalogOriginKey } from "../catalogOrigin";
 import { CatalogListTable } from "../components/CatalogListTable";
 import { FolderLayout } from "../components/FolderLayout";
 import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
@@ -30,6 +31,8 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 
 const filterKeys = ["kind", "state"] as const;
 const catalogStates = ["Active", "Inactive", "Unavailable"] as const;
+const catalogKinds = ["Manual", "Filters", "External"] as const;
+const kindCounts = { All: "all", Manual: "manual", Filters: "filters", External: "external" } as const;
 const sortFields = ["name", "-name", "kind", "-kind", "revision", "-revision", "optionsCount", "-optionsCount", "usageCount", "-usageCount"] as const;
 export function CatalogsPage() {
   const { t, i18n } = useTranslation("forms");
@@ -39,7 +42,7 @@ export function CatalogsPage() {
   const navigate = useNavigate();
   const filters = useFilters(filterKeys);
   const state = catalogStates.find(value => value === filters.values.state);
-  const kind = filters.values.kind === "Manual" || filters.values.kind === "Filters" ? filters.values.kind : undefined;
+  const kind = catalogKinds.find(value => value === filters.values.kind);
   const [choosingOrigin, setChoosingOrigin] = useState(false);
   // CP1-A: the folder of the address filters the listing, with its subfolders, before paging.
   const folders = useListingFolders("catalogs");
@@ -51,6 +54,8 @@ export function CatalogsPage() {
   const folderEmpty = useFolderEmpty(folders, "catalogs", hasFilters);
   const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : null })) } : undefined;
   const canManage = !!user?.permissions.includes("formcatalogs.manage");
+  // The catalogs a module keeps (External) are a choice only when the server counts some, or when the address already chose them.
+  const kindOptions = ["All", "Manual", "Filters", ...(list.data?.filterCounts.byKind.external !== undefined || kind === "External" ? ["External"] as const : [])] as const;
   const feedbackId = `catalogs:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
   useEffect(() => {
@@ -63,8 +68,8 @@ export function CatalogsPage() {
   const newAction = canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.catalog"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button></> : undefined;
   return <Page title={t("catalogs.title")} actions={newAction}>
     <FolderLayout folders={folders}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={(["All", "Manual", "Filters"] as const).map(key => ({ key,
-      label: `${t(key === "All" ? "all" : key === "Manual" ? "catalogs.source.manual" : "catalogs.source.database")} (${list.data?.filterCounts.byKind[key === "All" ? "all" : key === "Manual" ? "manual" : "filters"] ?? "…"})`,
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={kindOptions.map(key => ({ key,
+      label: `${t(key === "All" ? "all" : catalogOriginKey(key))} (${list.data?.filterCounts.byKind[kindCounts[key]] ?? "…"})`,
       pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div><DropdownMenu><FilterMenuTrigger>{t("catalogs.stateFilter", { state: state ? t("catalogs.state." + state) : t("all") })}<ChevronDownIcon aria-hidden="true" className="size-3.5" /></FilterMenuTrigger><DropdownMenuContent align="start"><DropdownMenuRadioGroup value={state ?? ""}>{([undefined, ...catalogStates] as const).map(value => <DropdownMenuRadioItem key={value ?? "All"} value={value ?? ""} onSelect={() => filters.setFilter("state", value)}>{value ? t("catalogs.state." + value) : t("all")}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu></div></FilterBar>
     <CatalogListTable page={visiblePage} canManage={canManage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
