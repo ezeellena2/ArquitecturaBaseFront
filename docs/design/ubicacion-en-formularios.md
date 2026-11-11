@@ -1,7 +1,8 @@
 # La pregunta «Ubicación» en los formularios: tableros elegidos
 
 Fecha: **2026-11-11**. Estado: **elegidos y programados** (Etapa 1, en la app; 2026-11-11, para la prueba integral final). El usuario eligió UB1-A a UB4-A el
-2026-11-11. El alcance, las reglas por defecto y las tareas están en el
+2026-11-11. La Etapa 2, por WhatsApp, eligió W1-A el mismo día y tiene su [tablero entero](#etapa-2-por-whatsapp-w1-a),
+por programar. El alcance, las reglas por defecto y las tareas están en el
 [plan del backend](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación);
 las pantallas, los textos y los estados salen de acá.
 
@@ -11,7 +12,7 @@ ubicación que llega por WhatsApp no se lee. Se puede pedir un punto en el momen
 prueba presencia: es lo que informa el dispositivo.
 
 Lienzo: [Pregunta «Ubicación» en los formularios](https://claude.ai/artifact/9z3HT35LTTF7C7hmwHgFZj), de tipo Design
-(versión 3, con las elegidas marcadas y una nota verde por fila). Se armó aparte porque el
+(con las elegidas marcadas y una nota verde por fila; abajo, la Etapa 2 con W1-A, W2, W3 y el tablero entero de W1-A). Se armó aparte porque el
 [Sistema visual](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) es de otra cuenta y no se abre desde Claude Code. Los
 tableros pasan a ese lienzo cuando se pueda abrir; como el lienzo es privado y puede cambiar fuera de Git, este documento
 congela lo elegido.
@@ -102,7 +103,8 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
 - Al corregir una respuesta, la pregunta arranca con el punto guardado; «Volver a pedirla» lo cambia y debajo aparece
   «Antes: -34.603722, -58.381592», como cualquier pregunta corregida.
 - La vista previa de la app en el editor muestra la pregunta con «Usar mi ubicación», como la carga: no pide nada hasta tocar
-  el botón. La vista previa de WhatsApp no la muestra, porque por WhatsApp no se pide.
+  el botón. La vista previa de WhatsApp no la muestra: por WhatsApp se pide antes del Flow, con un mensaje aparte
+  ([Etapa 2](#etapa-2-por-whatsapp-w1-a)), y el teléfono de la vista previa dibuja sólo el Flow.
 - El resultado de pedirla (el punto, la precisión o el motivo) se anuncia al lector de pantalla (`aria-live="polite"`).
 
 ## Piezas de `src/shared/ui`
@@ -146,3 +148,84 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
     foto, y las fechas van sólo con números. Suma un ícono, `MapPinIcon`.
 12. **Celular, teclado e idiomas:** sí; desde 320 px el punto entra en un renglón, los botones tienen 44 px, todo se alcanza
     con el teclado, el resultado se anuncia y los textos están en español y en inglés. No es una colección: no hay URL.
+
+## Etapa 2: por WhatsApp (W1-A)
+
+El 2026-11-11 el usuario eligió **W1-A, pedirla antes del Flow**, y descartó W2 (pedirla después del Flow) y W3 (sólo por el
+asistente). Cómo anda, según el
+[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación), en «Etapa 2»:
+antes del Flow sale un `location_request_message`; la ubicación que vuelve (latitud y longitud, sin precisión) se guarda en
+el envío que la pidió y recién ahí sale el Flow de siempre, sin la pregunta; al llegar el Flow, el servidor suma la
+ubicación y guarda una sola respuesta completa. Si la ubicación no llega, el envío vence como cualquier otro, y la
+publicación deja de frenar la pregunta en un formulario de WhatsApp.
+
+El tablero entero está en el lienzo, debajo de W3, en la sección «W1-A · tablero entero: los estados y el inglés»: siete
+tableros con el teléfono de la persona y el chat de la app, una nota naranja con las decisiones de detalle y una gris con
+la lista de chequeo. Se puso después de W3 para no mover W2 ni W3.
+
+### Los tableros
+
+| Tablero | Qué define |
+| --- | --- |
+| **1 · Obligatoria: pedido, ubicación y formulario** | El pedido «Para completar «Registro de visita», mandanos tu ubicación.» con el botón «Enviar ubicación», que dibuja WhatsApp en el idioma del teléfono. La persona manda su ubicación y enseguida sale el Flow de siempre: «Completá el formulario «Registro de visita».» con «Abrir formulario», o el mensaje propio del operador si escribió uno. El Flow no lleva la pregunta. En el chat de la app, el pedido es una tarjeta (pin, «Pedido de ubicación», el nombre del formulario) con su estado en un renglón, «Ubicación recibida»; la ubicación que llega es el punto con «Ver en el mapa»; después, la tarjeta del Flow y la de la respuesta, que trae el punto entre sus valores, sin precisión. |
+| **2 · Opcional: «Seguir sin ubicación»** | Después del pedido sale un segundo mensaje, «La ubicación es opcional.», con el botón de respuesta «Seguir sin ubicación». Tocarlo manda el Flow y la respuesta queda sin la ubicación («Sin respuesta» en la tarjeta). Vale lo primero que llega, el botón o la ubicación: lo segundo queda como un mensaje más y no manda otro formulario. La tarjeta del pedido dice «Siguió sin la ubicación»; el segundo mensaje se ve con su botón, como cualquier respuesta rápida. |
+| **3 · Escribe un texto en vez de mandarla** | Nada contesta solo: el texto le llega a quien atiende la conversación, como hoy, y el pedido sigue en «Esperando la ubicación» con su botón andando. Una ubicación mandada después, con el botón o con el clip, lo completa. |
+| **4 · La manda dos veces** | La primera completa el pedido y sale el formulario; la segunda queda en el chat como un mensaje más, con su punto y su enlace. La respuesta guarda la primera. |
+| **5 · El envío vence** | A las 24 horas sin la ubicación (`WhatsApp:FlowSessionLifetimeHours`), el envío vence sin guardar nada y la tarjeta dice «Venció sin la ubicación». Una ubicación que llega después es un mensaje más y no manda el formulario. En la app, las fechas van sólo con números; en el teléfono, «Ayer» y «Hoy» los pone WhatsApp. |
+| **6 · Dos pedidos abiertos a la misma persona** | «Registro de visita» y «Entrega de mercadería» esperan la ubicación. Cada ubicación completa el pedido más viejo que todavía la espera, y la siguiente completa el otro; los formularios salen en ese orden. Cada pedido tiene su tarjeta y su estado. |
+| **7 · En inglés** | Todo lo que recibe la persona sale en el idioma del formulario; la app usa el idioma del menú, también en la tarjeta y su estado. |
+
+### Los textos
+
+| Dónde | Español | Inglés |
+| --- | --- | --- |
+| Pedido (`location_request_message`) | Para completar «{formulario}», mandanos tu ubicación. | To fill in “{form}”, send us your location. |
+| Botón del pedido (lo dibuja WhatsApp) | Enviar ubicación | Send location |
+| Segundo mensaje, pregunta opcional | La ubicación es opcional. | The location is optional. |
+| Botón de respuesta del segundo mensaje (hasta 20 caracteres) | Seguir sin ubicación | Continue without it |
+| Mensaje y botón del Flow (ya existen, `FlowTexts`) | Completá el formulario «{formulario}». · Abrir formulario | Complete the form “{form}”. · Open form |
+| Título de la tarjeta del pedido en el chat de la app | Pedido de ubicación | Location request |
+| Estado de la tarjeta, esperando | Esperando la ubicación | Waiting for the location |
+| Estado de la tarjeta, llegó | Ubicación recibida | Location received |
+| Estado de la tarjeta, siguió sin ella | Siguió sin la ubicación | Continued without the location |
+| Estado de la tarjeta, venció | Venció sin la ubicación | Expired without the location |
+| Ubicación que llega al chat de la app | -34.603722, -58.381592 · Ver en el mapa | -34.603722, -58.381592 · View on the map |
+
+### Decisiones de detalle al dibujar
+
+W1-A y el plan no las fijaban; se tomó la opción más simple:
+
+1. **El botón del Flow:** el de siempre, «Abrir formulario». Con un mensaje propio del operador, va ese texto, como hoy.
+2. **La pregunta opcional:** un segundo mensaje con un botón de respuesta, porque el pedido de Meta no lleva otro botón.
+   El botón dice «Seguir sin ubicación» («Continue without it» en inglés) porque Meta limita el título de un botón de
+   respuesta a 20 caracteres; el texto del mensaje no cambia y el estado de la tarjeta, que no tiene ese límite, dice
+   «Siguió sin la ubicación».
+3. **Lo primero vale:** el botón o la ubicación, lo que llegue antes. Lo segundo no cambia el envío ni manda otro
+   formulario.
+4. **Un texto en vez de la ubicación:** sin respuesta automática; el pedido sigue abierto hasta que vence. Una ubicación
+   compartida con el clip también lo completa: es el mismo mensaje de ubicación.
+5. **Una ubicación de más:** la segunda, o una que llega vencido el envío, queda en el chat como un mensaje más.
+6. **Dos pedidos abiertos:** cada ubicación completa el más viejo que todavía la espera.
+7. **El chat de la app:** el pedido es una tarjeta como la del formulario enviado (`MessageCard`) con el ícono de pin y su
+   estado en un renglón, como el de la tarjeta de una respuesta: «Ubicación recibida» en verde con el tilde, como
+   «Guardada como»; «Esperando la ubicación» con el reloj, «Siguió sin la ubicación» con la (i) y «Venció sin la ubicación»
+   con el triángulo, en el color del texto. La ubicación que llega es el punto con el pin y «Ver en el mapa», en lugar de
+   «Mensaje de otro tipo».
+8. **Sin cambios en la respuesta:** la planilla, el detalle, el Excel y el PDF quedan como en la Etapa 1, con el punto sin
+   precisión. El detalle no suma renglones de actividad: el W1-A elegido dibujó «Se pidió la ubicación» y «Llegó la
+   ubicación», y el tablero entero los deja afuera, con la actividad de hoy.
+9. **La vista previa del teléfono en el editor:** sigue sin mostrar la pregunta.
+
+Lista de chequeo de diseño: pasada (2026-11-11). Diferencias aceptadas, en la nota gris del lienzo: dibujado a mano con las
+medidas y los tokens de `MessageBubble` y `MessageCard`, porque la biblioteca de piezas está en otra cuenta; el chat de la
+app no se dibuja a 320 px, porque el pedido usa la misma `MessageCard` del formulario enviado, que ya se adapta; un pedido
+que no sale se ve como cualquier mensaje («No se pudo enviar», «Envío sin confirmar») y no se dibuja aparte.
+
+### Piezas de `src/shared/ui` y del chat
+
+| Parte | Pieza |
+| --- | --- |
+| Tarjeta del pedido | `MessageCard` con `MapPinIcon`, como la del formulario enviado en `ChatTimeline`, y el renglón de estado de `FormReplyCard` |
+| Segundo mensaje con su botón | la lista de respuestas rápidas de `ChatTimeline` |
+| Ubicación que llega | la burbuja de `MessageBubble` con `MapPinIcon`, el punto y el enlace con `ExternalLinkIcon` |
+| El punto en la tarjeta de la respuesta | `FormReplyValues`, con el punto y «Ver en el mapa» |
