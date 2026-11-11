@@ -1,6 +1,6 @@
 # El robot de delegación de ARCA: tableros elegidos
 
-Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado** (front 5afcd50e, cde6d0dd y a197460a). El alcance y
+Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado** (front 5afcd50e, cde6d0dd, a197460a y dcf13351). El alcance y
 las decisiones están en el [plan de la etapa 6](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-6-robot.md), el
 [ADR 0026](../../../ArquitecturaBase/docs/decisions/0026-robot-de-delegacion-arca.md) y la
 [regla de ARCA](../../../ArquitecturaBase/docs/features/arca.md#delegación-con-robot-modo-3). Se apoya en la delegación guiada
@@ -40,9 +40,15 @@ Los tableros no lo dicen, o el contrato no lo permite; se resolvió con la opci�
   ningún estado fuera del campo ni en la URL. «Entrás con» valida el dígito de la CUIT antes de enviar.
 - **El avance** se consulta cada dos segundos mientras algún lado corre o la plataforma espera con el cliente terminado; con
   la pantalla cerrada, el robot sigue igual. «Comprobar» corre la prueba de la conexión (la de la etapa 5) y vuelve a leer.
+  Cada vez que un lado avanza, la pantalla vuelve a leer la conexión: el robot instala el certificado y confirma con la
+  prueba, así que al terminar la prueba y Facturación se abren solas, y un reintento manda la revisión vigente.
 - **Cuándo se va a la guía (RB3-A):** el lado del cliente frenado por captcha, validación extra, pantalla cambiada, ARCA sin
   responder o interrumpido. Un ingreso rechazado no abre la guía: el error va debajo de la clave (RB1-A). La guía abre en el
   paso que falló; con un captcha, una validación extra o una corrida interrumpida antes de entrar, en el primero.
+- **Seguir con la guía (RB3-A):** la banda tiene «Probar otra vez con el robot» y «Verificar la delegación», el botón de la
+  guía de la etapa 5. Con sus pasos hechos a mano, «Verificar la delegación» da por terminado el lado del cliente
+  (`POST …/robot-runs/current/manual-completion`) y la zona vuelve al avance, con lo del cliente hecho y la plataforma
+  aceptando, asignando y confirmando.
 - **Si se frena la plataforma:** el cliente no vuelve a su guía, porque ese paso no lo puede hacer él. La zona dice «La
   plataforma tiene que terminar este paso a mano; ya le avisamos.» con «Comprobar», y el dueño recibe el correo (RB4-A).
 - **Al terminar:** la zona se pliega con «Delegada · punto de venta 0005» y se abre la prueba. La zona de Facturación llega
