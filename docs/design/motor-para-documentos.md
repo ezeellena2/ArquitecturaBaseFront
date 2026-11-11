@@ -33,15 +33,19 @@ congela lo elegido. El alcance y el backend están en el
 ## En el código (front, 2026-11-11)
 
 - CA1-A: «Cálculo» en «Tipo de respuesta» y «Qué calcula» en `CalculationSettings`; la vista previa de la carga en `calculations.ts`
-  (`entryCalculations`), con decimales exactos y el redondeo half-even del servidor. Una alícuota de un catálogo no se calcula
-  al cargar (la opción no trae su valor): el campo queda vacío hasta enviar y su (i) lo dice.
+  (`entryCalculations`), con decimales exactos y el redondeo half-even del servidor. Una alícuota de un catálogo con valores se
+  calcula con el `value` que trae su opción; en uno sin valores, el campo queda vacío hasta enviar.
 - CO1-A: «Se muestra» en `ConditionSettings`, la línea de la lista en `ConditionLine` y lo que se oculta al cargar en
-  `conditions.ts` (`entryHiddenQuestions`).
+  `conditions.ts` (`entryHiddenQuestions`). En un formulario que va por WhatsApp, una pregunta de catálogo toma una sola
+  respuesta (el buscador queda apagado con su motivo) y una cuarta condición en cadena (`conditionDepth`) lo dice debajo, con
+  «Sólo en la app» como salida: es lo que el canal no publica.
 - BI1-A (la parte del editor): el encabezado con el estándar (`useFormStandardName`), el candado y los controles apagados con
   su motivo en `QuestionEditor` (`boundQuestions.ts`). El motivo dice «el estándar de la biblioteca», sin nombrar el módulo.
-- BI1-A (la pantalla): «Biblioteca» en Gestión de formularios sólo con `form-library` instalado, `FormLibraryPage` con la tabla
-  en la compu y una tarjeta por estándar con «Agregar» de todo el ancho en el celular, y `FormStandardAddDialog` con nombre,
-  prefijo y carpeta («La del estándar» o una de Diseñar formularios). Escena en `src/test/visual/forms-library.spec.ts`.
+- BI1-A (la pantalla): «Biblioteca» en Gestión de formularios sólo con `form-library` instalado. `FormLibraryPage` muestra en
+  la compu una tabla con un dato por columna («Estándar», «Versión», «Origen», «Formularios» y «Acciones»), porque el tablero es
+  anterior a esa premisa (UD1); en el celular, una tarjeta por estándar con la línea en gris y «Agregar» de todo el ancho.
+  `FormStandardAddDialog` pide nombre, prefijo (el que sugiere el servidor, `suggestedPrefix`, que mira los prefijos en uso) y
+  carpeta («La del estándar» o una de Diseñar formularios). Escena en `src/test/visual/forms-library.spec.ts`.
 - RE1-A: la zona `ResponseResults`, primera en `ResponseAnswer`, y una columna por dato en la planilla, agrupadas por acción en
   «Columnas» (`responseResultColumnId`). El grupo «De «Emitir comprobante en ARCA»» de «Agregar dato» lo sumó la etapa 4 con
   su acción.
