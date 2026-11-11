@@ -66,6 +66,8 @@ dice y se relee la actividad.
   mano.», «ARCA no tiene esa CUIT.») y lo que está mal en la CUIT, debajo del campo: «Escribí la CUIT.», «Revisá la CUIT:
   son 11 números.» y «Revisá la CUIT: el último dígito no corresponde.». Para «ARCA» y «Actualizado» en el listado hace
   falta que el backend sume el nombre del origen y la fecha a la fila.
+- **«Completar con ARCA» y el nombre largo (2026-11-11):** el nombre entero va en el campo «Razón social» de «Clientes»; el
+  texto de la opción toma sus primeros 30 caracteres, como el cliente nuevo que el backend suma al emitir.
 
 ## Contratos del backend
 

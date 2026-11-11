@@ -36,6 +36,15 @@ describe("what the registry answered", () => {
     expect(filled.fieldTexts).toEqual({ [condition.id!]: { es: "Responsable inscripto", en: "Registered taxpayer" } });
     expect(filled.localId).toBe("new");
   });
+  // The whole name goes in a field of its own: the option text takes its first 30 characters, as the backend does with the
+  // customer it adds when issuing, so the editor never marks it long.
+  it("takes the first 30 characters of a longer name as the option text, without a trailing space", () => {
+    const name = "Cooperativa Agropecuaria del Sur Limitada";
+    const filled = withCatalogLookup(item, { text: name, failureCode: null, failureMessage: null, fields: [] }, fields, "es", "es");
+    expect(filled.label.es).toBe("Cooperativa Agropecuaria del S");
+    const spaced = withCatalogLookup(item, { text: "Agropecuaria del Sur Sociedad Anónima", failureCode: null, failureMessage: null, fields: [] }, fields, "es", "es");
+    expect(spaced.label.es).toBe("Agropecuaria del Sur Sociedad");
+  });
   it("keeps the text when the registry gives none, and drops a previous option's texts it cannot name", () => {
     const before = { ...item, label: { es: "Escrito", en: null }, fieldTexts: { [condition.id!]: { es: "Monotributo" } } };
     const filled = withCatalogLookup(before, { text: null, failureCode: null, failureMessage: null, fields: [{ fieldId: condition.id!, value: option }] }, fields, "es", "es");

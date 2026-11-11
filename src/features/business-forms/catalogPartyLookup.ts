@@ -1,4 +1,5 @@
 import type { CatalogLookupResult } from "./api/catalogResponse";
+import { catalogItemTextMaxLength } from "./catalogEditing";
 import { formatCatalogFieldValue, type CatalogFieldDraft } from "./catalogFields";
 import { withCatalogFieldValue, type CatalogManualItemValue } from "./catalogItemEdits";
 import type { FormCulture } from "./model";
@@ -42,10 +43,13 @@ export function catalogLookupOptionIds(result: CatalogLookupResult, fields: read
  * The option with what the registry answered: its text in the language being edited (`culture`, never copied to the other one)
  * and the value of each active saved field it knows, written in the draft's culture. A catalog field takes the id of the option
  * and, when it came, the texts of that option (`optionTexts`, by id), so it shows its name; a value without its field is dropped.
+ * A longer name gives its first 30 characters to the text, as the backend does with the customer it adds when issuing: the
+ * whole name comes among the fields.
  */
 export function withCatalogLookup(item: CatalogManualItemValue, result: CatalogLookupResult, fields: readonly CatalogFieldDraft[], culture: FormCulture,
   valueCulture: FormCulture, optionTexts: Readonly<Record<string, Readonly<Record<string, string>>>> = {}): CatalogManualItemValue {
-  let next: CatalogManualItemValue = result.text ? { ...item, label: { ...item.label, [culture]: result.text } } : item;
+  const text = result.text && result.text.length > catalogItemTextMaxLength ? result.text.slice(0, catalogItemTextMaxLength).trimEnd() : result.text;
+  let next: CatalogManualItemValue = text ? { ...item, label: { ...item.label, [culture]: text } } : item;
   for (const value of result.fields) {
     const field = lookupField(fields, value.fieldId);
     if (!field?.id) continue;

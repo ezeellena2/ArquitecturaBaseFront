@@ -2,6 +2,8 @@ import { administrativeName } from "./editorModel";
 import type { CatalogManualItemValue } from "./catalogItemEdits";
 import type { FormCulture } from "./model";
 export interface CatalogItemProblem { localId: string; field: string; kind: "required" | "duplicateCode" | "textTooLong"; otherPosition?: number | null }
+/** The longest text of an option, the one WhatsApp shows in a list. */
+export const catalogItemTextMaxLength = 30;
 // Match ordinal case-insensitive codes without expanding one letter into several different letters.
 const folded = (value: string) => Array.from(value.trim()).map(letter => { const upper = letter.toUpperCase(); return upper.length === letter.length ? upper : letter; }).join("");
 // An option needs its text only in the catalog's original (`original`); the other language is an optional translation.
@@ -18,7 +20,7 @@ export function catalogItemProblems(items: readonly CatalogManualItemValue[], or
     for (const culture of ["es", "en"]) {
       const text = item.label[culture] ?? "";
       if (culture === original && !text.trim()) problems.push({ localId: item.localId, field: "text." + original, kind: "required" });
-      else if (text.length > 30) problems.push({ localId: item.localId, field: "text." + culture, kind: "textTooLong" });
+      else if (text.length > catalogItemTextMaxLength) problems.push({ localId: item.localId, field: "text." + culture, kind: "textTooLong" });
     }
   }
   return problems;
