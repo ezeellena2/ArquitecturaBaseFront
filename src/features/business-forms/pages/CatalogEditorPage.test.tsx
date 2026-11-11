@@ -1538,15 +1538,35 @@ it("requires a clean saved catalog to import, while Read still offers export",as
  await screen.findByRole("textbox",{name:"Nombre"});expect(await screen.findByRole("button",{name:"Exportar"})).toBeEnabled();
  expect(screen.queryByRole("button",{name:"Importar"})).not.toBeInTheDocument();
 });
-it("saves alphabetical ordering as a single command and no movements",async()=>{
- setup();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});}));
- await mount("/catalogos/"+id);const user=userEvent.setup();
- const more=await screen.findByRole("button",{name:"Más acciones de opciones"});act(()=>more.focus());await user.keyboard("{Enter}");
- await user.click(await screen.findByRole("menuitem",{name:"Ordenar A–Z"}));
- expect(screen.getByRole("status")).toHaveTextContent("Se ordenará A–Z al guardar.");expect(bodies).toEqual([]);
+// Two options, so «Bajar Pérez» stays on until an order is pending.
+function twoOptions(detail:Record<string,unknown>={}){const second={...option,id:"01990000-0000-7000-8000-000000000062",code:"C2",text:{es:"Gómez",en:null},position:2};
+ server.use(http.get("/api/forms/catalogs/"+id,()=>HttpResponse.json({...initial,itemsCount:2,...detail})),http.get("/api/forms/catalogs/"+id+"/items",()=>HttpResponse.json({items:[option,second],page:1,pageSize:20,totalCount:2,totalPages:1,hasPrevious:false,hasNext:false})));}
+// «Ordenar por…» (OR1-A) of ⋮ in «Opciones» opens the dialog; «Ordenar» leaves the order pending until Save.
+async function sortBy(user:ReturnType<typeof userEvent.setup>){const more=await screen.findByRole("button",{name:"Más acciones de opciones"});act(()=>more.focus());await user.keyboard("{Enter}");
+ await user.click(await screen.findByRole("menuitem",{name:"Ordenar por…"}));return {more,dialog:await screen.findByRole("dialog",{name:"Ordenar las opciones"})};}
+it("saves the order chosen in «Ordenar por…» as a single command and no movements",async()=>{
+ setup();twoOptions();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});}));
+ await mount("/catalogos/"+id);const user=userEvent.setup();expect(await screen.findByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
+ const {more,dialog}=await sortBy(user);
+ await user.selectOptions(within(dialog).getByRole("combobox",{name:"Columna"}),"code");await user.click(within(dialog).getByRole("radio",{name:"De la Z a la A"}));
+ await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));await waitFor(()=>expect(more).toHaveFocus());
+ expect(screen.getByRole("status")).toHaveTextContent("Se ordenará por «Código», de la Z a la A, al guardar.");expect(bodies).toEqual([]);
  expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeDisabled();
  await user.click(screen.getByRole("button",{name:"Guardar"}));await waitFor(()=>expect(bodies).toHaveLength(1));
- expect(bodies[0]).toMatchObject({expectedRevision:1,sort:{column:"text",descending:false},items:[]});expect(bodies[0]).not.toHaveProperty("moves");
+ expect(bodies[0]).toMatchObject({expectedRevision:1,sort:{column:"code",descending:true},items:[]});expect(bodies[0]).not.toHaveProperty("moves");
+});
+it("names a pending order by a field in its words, opens again with it and cancels it with «Cancelar orden»",async()=>{
+ const stock={id:"01990000-0000-7000-8000-000000000061",key:"stock",name:{es:"Stock mínimo",en:"Minimum stock"},type:"integer",sourceCatalogId:null,required:false,unique:false,min:null,max:null,maxLength:null,role:"data",position:1,isActive:true,valuesCount:1,usedBy:[]};
+ setup();twoOptions({fields:[stock]});await mount("/catalogos/"+id);const user=userEvent.setup();await screen.findByRole("button",{name:"Bajar Pérez"});
+ const {dialog}=await sortBy(user);
+ await user.selectOptions(within(dialog).getByRole("combobox",{name:"Columna"}),stock.id);
+ await user.click(within(dialog).getByRole("radio",{name:"De mayor a menor"}));await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));
+ expect(await screen.findByRole("status")).toHaveTextContent("Se ordenará por «Stock mínimo», de mayor a menor, al guardar.");
+ const {dialog:again}=await sortBy(user);
+ expect(within(again).getByRole("combobox",{name:"Columna"})).toHaveValue(stock.id);expect(within(again).getByRole("radio",{name:"De mayor a menor"})).toBeChecked();
+ await user.click(within(again).getByRole("button",{name:"Cancelar"}));await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ await user.click(screen.getByRole("button",{name:"Cancelar orden"}));
+ expect(screen.queryByText(/Se ordenará por/)).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
 });
 it("applies an explicitly reviewed paste and adopts the returned clean baseline without saving the draft",async()=>{
  setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});

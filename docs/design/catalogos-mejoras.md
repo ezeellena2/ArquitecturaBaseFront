@@ -191,3 +191,34 @@ e IM3 del lienzo provisorio [Formularios desde la app](https://claude.ai/artifac
 Es `CatalogImportDialog` con la grilla común `PasteGrid` (biblioteca compartida); la lectura de lo pegado es
 `readCatalogPaste` y el CSV que se revisa, `catalogPasteCsv`. La evidencia está en las escenas CA2 de `catalogLoading` (grilla vacía, columna ajena, revisando y
 aplicando).
+
+## Ordenar por una columna, 2026-11-11
+
+Con «Artículos» (331 opciones en 17 páginas, cargado desde una planilla) el usuario pidió dejar las opciones ordenadas por
+otra columna sin moverlas una por una, como ya hacía «Ordenar A–Z». Se dibujó en el lienzo provisorio
+[Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), fila «Catálogos · ordenar las opciones por
+una columna», y eligió **OR1-A** («Apruebo OR1-A»). OR1-B, que además ordenaba tocando el encabezado de la columna, quedó
+descartada: el encabezado mostraría un orden que la tabla no tiene hasta guardar, o pediría ordenar el listado en el
+servidor con las mismas reglas.
+
+- **El ítem.** «Ordenar por…» reemplaza a «Ordenar A–Z» en el ⋮ de Opciones, en el mismo lugar. Apagado, con el motivo
+  adentro, en un catálogo sin guardar («Guardá el catálogo antes.») y con movimientos de las flechas pendientes («Primero
+  descartá los cambios de posición.»). Sin «Administrar catálogos» no aparece.
+- **El diálogo «Ordenar las opciones».** «Columna» es un selector con Texto, Código y cada campo activo ya guardado, en el
+  orden de la tabla; un campo recién agregado no aparece hasta guardarlo. «Orden» son dos radios que nombran el sentido
+  según el dato: «De la A a la Z» / «De la Z a la A» en un texto, un código o un campo de otro catálogo; «De menor a mayor»
+  / «De mayor a menor» en un número; «De la más antigua a la más reciente» / «De la más reciente a la más antigua» en una
+  fecha; «Primero «No»» / «Primero «Sí»» en un sí o no. La (i) de «Orden» dice que los empates quedan como están y lo
+  vacío va al final. Abre en Texto, de la A a la Z, o con el orden pendiente; «Ordenar» lo deja pendiente y «Cancelar» no
+  cambia nada. Al cerrarse, el foco vuelve a ⋮.
+- **Pendiente hasta guardar.** Como A–Z, la tabla no cambia: arriba de Opciones queda «Se ordenará por «Rubro», de la A a
+  la Z, al guardar.» con «Cancelar orden», y se apagan las flechas y eliminar. «Ordenar por…» vuelve a abrir el diálogo para
+  cambiarlo. Si en «Campos» se da de baja el campo elegido, el orden pendiente se cancela con él.
+- **Al guardar** el servidor ordena todas las opciones, también las de otras páginas y las dadas de baja, y las numera de
+  nuevo: los empates conservan el orden de antes (por «Rubro» se agrupa sin desarmar el orden de adentro), lo vacío va al
+  final en los dos sentidos, los números de un texto o un código se comparan por su valor (117 antes que 10030) y un campo
+  de otro catálogo se ordena por el texto de su opción. «Texto» usa el texto del idioma original, como antes A–Z.
+
+Es `CatalogSortDialog`, con `catalogSort.ts` para las columnas y las palabras del sentido; el borrador guarda `sort`
+(`catalogDraft.ts`) y el PUT lo manda como `sort` (`column`, `descending`) en lugar de `sortAlphabetically`. La escena
+`catalogSort` de `src/test/visual` recorre el diálogo, el aviso y el PUT en los dos idiomas, a 1440, 390 y 320 px.

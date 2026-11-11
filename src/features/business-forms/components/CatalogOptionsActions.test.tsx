@@ -16,7 +16,7 @@ afterEach(async () => { cleanup(); viewport.mobile = false; await act(async () =
 async function mount(node: ReactElement) { await act(async () => { renderWithProviders(node); }); }
 function props(overrides: Partial<CatalogOptionsActionsProps> = {}): CatalogOptionsActionsProps {
   return { canManage: true, busy: false, saved: true, importDisabledReason: null, hasPendingMoves: false,
-    sortPending: false, dialogOpen: false, focusRef: createRef<HTMLButtonElement>(), onImport: vi.fn(),
+    dialogOpen: false, focusRef: createRef<HTMLButtonElement>(), onImport: vi.fn(),
     onExport: vi.fn(), onSort: vi.fn(), onGenerateCodes: vi.fn(), ...overrides };
 }
 async function more(user: ReturnType<typeof userEvent.setup>) {
@@ -33,7 +33,8 @@ it("keeps desktop import and export visible, without a paste button beside them"
   await user.click(file); expect(value.onImport).toHaveBeenCalledExactlyOnceWith(); expect(value.focusRef.current).toBe(file);
   await user.click(screen.getByRole("button", { name: "Exportar" })); expect(value.onExport).toHaveBeenLastCalledWith(false);
   await more(user); await user.click(screen.getByRole("menuitem", { name: "Descargar la plantilla" })); expect(value.onExport).toHaveBeenLastCalledWith(true);
-  await more(user); await user.click(screen.getByRole("menuitem", { name: "Ordenar A–Z" })); expect(value.onSort).toHaveBeenCalledOnce();
+  const { trigger } = await more(user); await user.click(screen.getByRole("menuitem", { name: "Ordenar por…" }));
+  expect(value.onSort).toHaveBeenCalledOnce(); expect(value.focusRef.current).toBe(trigger);
   await more(user); await user.click(screen.getByRole("menuitem", { name: "Generar los códigos que faltan" })); expect(value.onGenerateCodes).toHaveBeenCalledOnce();
 });
 
@@ -102,12 +103,13 @@ it("blocks dirty import without disabling the saved catalog's export", async () 
   await user.click(exportButton); expect(value.onExport).toHaveBeenCalledWith(false);
 });
 
-it.each(["moves", "sortPending"])("explains and prevents unavailable sorting for %s", async state => {
-  const value = props({ hasPendingMoves: state === "moves", sortPending: state === "sortPending" });
+// A pending order does not turn «Ordenar por…» off: it opens the dialog again to change it (OR1-A). Arrow moves do.
+it("explains and prevents sorting while arrow moves are pending", async () => {
+  const value = props({ hasPendingMoves: true });
   await mount(<CatalogOptionsActions {...value} />); const user = userEvent.setup(); const { menu } = await more(user);
-  const sort = within(menu).getByRole("menuitem", { name: /Ordenar A–Z/ });
+  const sort = within(menu).getByRole("menuitem", { name: /Ordenar por…/ });
   expect(sort).toHaveAttribute("aria-disabled", "true");
-  expect(sort).toHaveTextContent(state === "moves" ? "Primero descartá los cambios de posición." : "Se ordenará A–Z al guardar.");
+  expect(sort).toHaveTextContent("Primero descartá los cambios de posición.");
   act(() => sort.focus()); await user.keyboard("{Enter}"); expect(value.onSort).not.toHaveBeenCalled(); expect(menu).toBeVisible();
 });
 
@@ -150,16 +152,18 @@ it("does not explain the disabled actions while its owner is busy", async () => 
   }
 });
 
-it("hands menu focus to the dialog without restoring it to More", async () => {
-  viewport.mobile = true;
+it.each([["Importar", true], ["Ordenar por…", false]] as const)("hands menu focus to the dialog of %s without restoring it to More, and keeps More for later", async (name, mobile) => {
+  viewport.mobile = mobile;
   function Host() {
     const [open, setOpen] = useState(false); const focusRef = useRef<HTMLButtonElement>(null);
-    return <><CatalogOptionsActions {...props()} focusRef={focusRef} dialogOpen={open} onImport={() => setOpen(true)} />
-      <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>Importar opciones</DialogTitle><Input aria-label="Archivo de prueba" /></DialogContent></Dialog></>;
+    return <><CatalogOptionsActions {...props()} focusRef={focusRef} dialogOpen={open} onImport={() => setOpen(true)} onSort={() => setOpen(true)} />
+      <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogTitle>Diálogo de prueba</DialogTitle><Input aria-label="Archivo de prueba" /></DialogContent></Dialog></>;
   }
-  await mount(<Host />); const user = userEvent.setup(); await more(user);
-  await user.click(screen.getByRole("menuitem", { name: "Importar" }));
-  await screen.findByRole("dialog", { name: "Importar opciones" });
+  await mount(<Host />); const user = userEvent.setup(); const { trigger } = await more(user);
+  await user.click(screen.getByRole("menuitem", { name }));
+  await screen.findByRole("dialog", { name: "Diálogo de prueba" });
+  // ⋮ keeps its element while the dialog is open, so the dialog can give the focus back to it.
+  expect(screen.getByRole("button", { name: "Más acciones de opciones", hidden: true })).toBe(trigger);
   await waitFor(() => expect(screen.getByRole("textbox", { name: "Archivo de prueba" })).toHaveFocus());
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
@@ -171,4 +175,5 @@ it("uses the existing English action labels", async () => {
   const user = userEvent.setup(), trigger = screen.getByRole("button", { name: "More option actions" });
   act(() => trigger.focus()); await user.keyboard("{Enter}");
   expect(await screen.findByRole("menuitem", { name: "Download the template" })).toBeEnabled();
+  expect(screen.getByRole("menuitem", { name: "Sort by…" })).toBeEnabled();
 });
