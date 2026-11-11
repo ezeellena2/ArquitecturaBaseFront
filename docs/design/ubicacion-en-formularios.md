@@ -234,3 +234,29 @@ que no sale se ve como cualquier mensaje («No se pudo enviar», «Envío sin co
 | Segundo mensaje con su botón | la lista de respuestas rápidas de `ChatTimeline` |
 | Ubicación que llega | la burbuja de `MessageBubble` con `MapPinIcon`, el punto y el enlace con `ExternalLinkIcon` |
 | El punto en la tarjeta de la respuesta | `FormReplyValues`, con el punto y «Ver en el mapa» |
+
+### El asistente también la manda (pedido del usuario, 2026-11-11)
+
+El mismo día el usuario pidió que el asistente también ofrezca formularios con ubicación, en esta tanda. Los tableros 8 a
+10 están en el lienzo, en la sección «W1-A · el asistente también manda formularios con ubicación», con una nota naranja
+de decisiones y una gris con la lista de chequeo. No hay textos nuevos: el pedido, «Seguir sin ubicación», la tarjeta y sus
+estados son los de W1-A, y el autor es «Asistente» o «Vos», como hoy.
+
+| Tablero | Qué define |
+| --- | --- |
+| **8 · El asistente lo manda** | Con «Asistente» activo, el asistente manda el formulario como hoy; como lleva ubicación, primero sale el pedido, del asistente. Con la ubicación sale solo el formulario, también del asistente, con lo que ya sabía. En el chat de la app, «Por qué lo mandó» va una vez, en el pedido; el formulario que sigue no lo repite. |
+| **9 · Mientras espera, el asistente sigue** | La espera no traba la conversación: un mensaje que no es la ubicación lo contesta el asistente, como siempre, y el pedido sigue en «Esperando la ubicación». La ubicación la toma el envío que la espera (el más viejo si hay dos) y el asistente no la contesta. Sin la ubicación, el envío vence a las 24 horas. |
+| **10 · Atención manual y tomar la conversación** | En atención manual el asistente sólo sugiere: con «Enviar formulario» en la sugerencia sale el pedido como un envío propio, con «Por qué lo sugirió» en el pedido. Si alguien toma la conversación mientras espera, la ubicación completa el pedido pero el formulario del asistente ya no sale y dice «No se pudo enviar», como cualquier mensaje suyo que quedó en camino; quien atiende puede mandarlo desde el chat, y vuelve a pedir la ubicación. |
+
+Decisiones de detalle, con la opción más simple:
+
+1. **Ofrecer, sugerir y aclarar:** los formularios con ubicación vuelven a contar para el asistente; la ubicación nunca es
+   una de las preguntas que prellena.
+2. **Una sola vez el porqué:** «Por qué lo mandó» o «Por qué lo sugirió» acompaña al pedido, que es lo que se mandó al
+   decidir. La respuesta lo conserva, como hoy.
+3. **Una oferta:** el pedido cuenta como la oferta del día; el formulario que lo sigue no suma otra.
+4. **Tomar la conversación frena al asistente:** lo que todavía no mandó no sale, también el formulario que esperaba la
+   ubicación.
+5. **Lo demás, como W1-A:** opcional, dos veces, vence, dos pedidos e inglés (tableros 2 a 7).
+
+Lista de chequeo de diseño: pasada (2026-11-11), con las diferencias aceptadas de W1-A.
