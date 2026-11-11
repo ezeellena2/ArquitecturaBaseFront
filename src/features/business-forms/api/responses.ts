@@ -285,7 +285,8 @@ export const responseDetailSchema = z.strictObject({
   values: z.array(historicalValue),
   history: z.array(
     z.strictObject({
-      kind: z.enum(["Sent", "Submitted", "Saved"]),
+      // W1-A: by WhatsApp, the location asked before the form and its answer go first.
+      kind: z.enum(["LocationRequested", "LocationReceived", "LocationSkipped", "Sent", "Submitted", "Saved"]),
       atUtc: utc,
       actor: author.nullable(),
     }),

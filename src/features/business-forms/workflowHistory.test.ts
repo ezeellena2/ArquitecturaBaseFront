@@ -88,3 +88,15 @@ it("does not invent a decision for an open task or a task without a decision ins
   expect(composeWorkflowHistory(response, { ...workflow, task: decision({ state: "Open", decidedAtUtc: null, decidedBy: null }) })).toEqual([]);
   expect(composeWorkflowHistory(response, { ...workflow, task: decision({ decidedAtUtc: null }) })).toEqual([]);
 });
+
+// W1-A: by WhatsApp, the location asked before the form and its answer go first, also at the same instant as the sending.
+it("puts the location asked and received by WhatsApp before the form sent", () => {
+  const response = record([
+    { kind: "Sent", atUtc: time("01"), actor: null },
+    { kind: "LocationReceived", atUtc: time("01"), actor: null },
+    { kind: "LocationRequested", atUtc: time("00"), actor: null },
+  ]);
+
+  expect(composeWorkflowHistory(response, { ...responseWorkflowFixture(response.id), task: null, actions: [] }).map(entry => entry.key))
+    .toEqual(["record:LocationRequested:" + time("00"), "record:LocationReceived:" + time("01"), "record:Sent:" + time("01")]);
+});

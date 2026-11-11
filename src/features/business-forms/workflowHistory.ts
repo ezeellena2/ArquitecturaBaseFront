@@ -9,7 +9,8 @@ export type WorkflowHistoryEntry =
   | { type: "action"; key: string; atUtc: string; action: ResponseAction };
 
 const typeOrder = { record: 0, decision: 1, action: 2 } as const;
-const recordOrder: Record<RecordHistoryEvent["kind"], number> = { Sent: 0, Submitted: 1, Saved: 2 };
+// W1-A: by WhatsApp the location is asked and answered before the form goes out.
+const recordOrder: Record<RecordHistoryEvent["kind"], number> = { LocationRequested: 0, LocationReceived: 1, LocationSkipped: 1, Sent: 2, Submitted: 3, Saved: 4 };
 const compareText = (left: string, right: string) => left < right ? -1 : left > right ? 1 : 0;
 
 export function composeWorkflowHistory(record: ResponseDetail, workflow?: ResponseWorkflow): WorkflowHistoryEntry[] {
