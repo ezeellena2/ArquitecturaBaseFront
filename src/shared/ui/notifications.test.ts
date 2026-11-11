@@ -19,3 +19,11 @@ it("keeps an actionable notice until its owner retires it", () => {
   dismissNotification("read:42");
   expect(dismiss).toHaveBeenCalledWith("read:42");
 });
+
+// Sonner applies every dismissal with flushSync, even of a notice it does not have, and that synchronous update restarts a
+// route still rendering: the editor stayed on «Cargando…» while an unobserved query was collected and retired over and over.
+it("leaves the toaster alone when the notice to retire is not shown", () => {
+  const dismiss = vi.spyOn(toast, "dismiss");
+  dismissNotification("query:never-shown");
+  expect(dismiss).not.toHaveBeenCalled();
+});

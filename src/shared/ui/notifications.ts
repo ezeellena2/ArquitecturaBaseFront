@@ -15,8 +15,10 @@ export function notify({ id, kind, message, description, action }: Notification)
   return toast[kind](message, { id, description, action, closeButton: true, duration: action ? Infinity : durations[kind] });
 }
 
+// Only a notice that is shown: sonner applies every dismissal with flushSync, and a query cache that retires the notice of each
+// collected query would otherwise restart, over and over, a route that is still rendering.
 export function dismissNotification(id: string) {
-  toast.dismiss(id);
+  if (toast.getToasts().some(shown => shown.id === id)) toast.dismiss(id);
 }
 
 // Returns true when this technical failure was handled, leaving local field/terminal states to the caller.

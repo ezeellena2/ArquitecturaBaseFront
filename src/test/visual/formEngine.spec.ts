@@ -21,9 +21,7 @@ const noPageScroll = async (page: Page, width: number) => expect(await page.eval
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
   test("CA1-A CO1-A BI1-A the invoice from the library in the editor " + language + " " + width, async ({ page }) => {
     await open(page, language, width, "/formularios/" + fixtureFormId, "forms-library-engine");
-    // The first load of this editor can stay on «Cargando…» with nothing pending on the network, as the editor of
-    // FormEditorOriginalPreview.test does since before this scene: reported to investigate. Usually it ends within seconds.
-    await expect(page.getByRole("heading", { name: text(language, "Factura", "Invoice"), exact: true })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole("heading", { name: text(language, "Factura", "Invoice"), exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
     // BI1-A: the header names the standard; each bound question has its padlock and its trash off, with the reason.
