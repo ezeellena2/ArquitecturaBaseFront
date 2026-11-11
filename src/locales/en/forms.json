@@ -17,6 +17,7 @@
     "addTitle": "Add “{{name}}”",
     "addAction": "Add as a draft",
     "adding": "Adding…",
+    "waitAdding": "Wait until it is added.",
     "name": "Name",
     "prefix": "Numbering prefix",
     "prefixHelp": "Each response is numbered with this prefix, like {{example}}. No other form uses it.",

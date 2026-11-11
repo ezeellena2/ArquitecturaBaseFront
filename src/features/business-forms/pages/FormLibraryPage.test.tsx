@@ -141,6 +141,32 @@ it("shows a taken prefix beside the field and repeats the same request when tryi
   expect(requestIds[1]).toBe(requestIds[0]);
 });
 
+// While it adds, the button waits and the × says why it does not close (premise 5.6); a folder that is gone leaves the list.
+it("waits while adding with the reason on the ×, and takes out of the list a folder that is gone", async () => {
+  setup(["formtemplates.read", "formtemplates.manage"]);
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let trees = 0;
+  server.use(
+    http.get("/api/forms/folders", () => { trees++; return HttpResponse.json({ folders: trees > 1 ? folders.slice(0, 1) : folders, canManage: false }); }),
+    http.post("/api/forms/library/:key/copies", async () => { await held; return HttpResponse.json({ title: "Not found", status: 404, code: "Forms.Folder.NotFound" }, { status: 404 }); }));
+  renderRouteWithProviders("/formularios/biblioteca");
+
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar «Remito»" }));
+  const dialog = await screen.findByRole("dialog", { name: "Agregar «Remito»" });
+  const folder = await within(dialog).findByRole("combobox", { name: /^Carpeta/ });
+  await userEvent.selectOptions(folder, north);
+  await userEvent.click(within(dialog).getByRole("button", { name: "Agregar como borrador" }));
+  const close = await within(dialog).findByRole("button", { name: "Cerrar" });
+  expect(close).toHaveAttribute("aria-disabled", "true");
+  expect(close).toHaveAccessibleDescription("Esperá a que termine de agregarse.");
+  release();
+
+  expect(await within(dialog).findByText("La carpeta elegida ya no existe. Elegí otra.")).toBeInTheDocument();
+  await waitFor(() => expect(within(folder).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas"]));
+  expect(folder).toHaveValue("");
+});
+
 it("adds the copy to the folder chosen, the standard's when none is", async () => {
   setup(["formtemplates.read", "formtemplates.manage"]);
   const bodies: Record<string, unknown>[] = [];
@@ -151,7 +177,8 @@ it("adds the copy to the folder chosen, the standard's when none is", async () =
   const dialog = await screen.findByRole("dialog", { name: "Agregar «Remito»" });
   const folder = await within(dialog).findByRole("combobox", { name: /^Carpeta/ });
   expect(folder).toHaveValue("");
-  expect(within(folder).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas", "Norte"]);
+  // Each folder says where it lives (premise 5.3): two folders with the same name read differently.
+  expect(within(folder).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas", "Ventas / Norte"]);
   await userEvent.selectOptions(folder, north);
   await userEvent.click(within(dialog).getByRole("button", { name: "Agregar como borrador" }));
 

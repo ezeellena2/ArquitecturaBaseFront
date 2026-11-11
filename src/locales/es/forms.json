@@ -17,6 +17,7 @@
     "addTitle": "Agregar «{{name}}»",
     "addAction": "Agregar como borrador",
     "adding": "Agregando…",
+    "waitAdding": "Esperá a que termine de agregarse.",
     "name": "Nombre",
     "prefix": "Prefijo de numeración",
     "prefixHelp": "Cada respuesta se numera con este prefijo, como {{example}}. No lo usa otro formulario.",

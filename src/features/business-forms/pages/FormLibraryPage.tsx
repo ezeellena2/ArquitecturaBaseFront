@@ -14,7 +14,7 @@ import { PlusIcon } from "@/shared/ui/icons";
 import { Surface } from "@/shared/ui/Surface";
 import type { FormStandard } from "../api/library";
 import { FormStandardAddDialog } from "../components/FormStandardAddDialog";
-import { treeOrder } from "../folderTree";
+import { folderPath, treeOrder } from "../folderTree";
 import { useFolderScope, useFolderTree } from "../hooks/useFormFolders";
 import { formLibraryKey, useFormLibrary } from "../hooks/useFormLibrary";
 
@@ -45,7 +45,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const tree = useFolderTree(useFolderScope(), "designs");
   // On a phone each standard is a card with «Agregar» as wide as the screen (DOC1 at 390 px); loading, failing and empty keep the table.
   const phone = useMediaQuery("(max-width: 639px)");
-  const folders = useMemo(() => treeOrder(tree.data?.folders ?? []).map(entry => ({ id: entry.folder.id, name: entry.folder.name, depth: entry.depth })), [tree.data]);
+  const folders = useMemo(() => { const all = tree.data?.folders ?? []; return treeOrder(all).map(entry => ({ id: entry.folder.id, path: folderPath(all, entry.folder.id).join(" / ") })); }, [tree.data]);
   const forbidden = library.error instanceof ApiError && (library.error.status === 403 || library.error.status === 401);
   useEffect(() => { if (forbidden) client.removeQueries({ queryKey: formLibraryKey(scope) }); }, [forbidden, client, scope]);
   if (forbidden) return <ForbiddenPage />;

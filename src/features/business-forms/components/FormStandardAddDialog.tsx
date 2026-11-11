@@ -12,12 +12,12 @@ import { Input } from "@/shared/ui/input";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { addFormStandard, type FormStandard } from "../api/library";
+import { useFolderRefresh, useFolderScope } from "../hooks/useFormFolders";
 
-/// A folder the copy can go to, with how deep it is in the tree so the list reads as one.
+/// A folder the copy can go to, named with where it lives («Ventas / Norte»), so two with the same name read differently.
 export interface FormStandardFolderOption {
   readonly id: string;
-  readonly name: string;
-  readonly depth: number;
+  readonly path: string;
 }
 
 const prefixPattern = /^[A-Z][A-Z0-9]{0,11}$/;
@@ -34,6 +34,8 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
   const navigate = useNavigate();
   const client = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose();
+  // Adding may create the standard's folder, and a folder that is gone leaves the list: the trees are read again.
+  const refreshFolders = useFolderRefresh(useFolderScope()).folders;
   const [requestId] = useState(() => crypto.randomUUID());
   const [name, setName] = useState(standard.name);
   const [prefix, setPrefix] = useState(standard.suggestedPrefix);
@@ -59,12 +61,18 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
       const created = await addFormStandard(standard, { requestId, name: name.trim(), prefix, ...(folderId ? { folderId } : {}) }, pending.signal);
       if (pending.signal.aborted) return;
       void client.invalidateQueries({ queryKey: ["form-library"] });
+      void refreshFolders();
       notify({ id: feedbackId + ":success", kind: "success", message: t("library.added", { name: name.trim() }) });
       // Opening the editor leaves the library, and the dialog with it.
       void navigate(`/formularios/${created.definition.id}`);
     } catch (error: unknown) {
       if (pending.signal.aborted || errorFeedback(error).kind === "cancelled") return;
-      if (error instanceof ApiError && error.code === "Forms.Folder.NotFound") { setErrors({ folder: t("library.folderGone") }); return; }
+      if (error instanceof ApiError && error.code === "Forms.Folder.NotFound") {
+        setErrors({ folder: t("library.folderGone") });
+        setFolderId("");
+        void refreshFolders();
+        return;
+      }
       if (error instanceof ApiError && error.status === 400 && error.errors) {
         const fields = Object.entries(error.errors);
         const message = (prefixOf: string) => fields.find(([key]) => key === prefixOf || key.startsWith(prefixOf + "."))?.[1][0];
@@ -84,7 +92,7 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
   }
 
   return <Dialog open onOpenChange={open => { if (!busy) onOpenChange(open); }}>
-    <DialogContent className="sm:max-w-xl" aria-describedby={undefined} onCloseAutoFocus={restoreFocus}>
+    <DialogContent className="sm:max-w-xl" aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={busy ? t("library.waitAdding") : undefined}>
       <DialogHeader>
         <DialogTitle>{t("library.addTitle", { name: standard.name })}</DialogTitle>
       </DialogHeader>
@@ -98,12 +106,12 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
         {folders && folders.length > 0 ? <FormField label={t("library.folder")} help={t("library.folderHelp")} error={errors.folder}>
           <NativeSelect value={folderId} onChange={event => setFolderId(event.target.value)} disabled={busy}>
             <option value="">{t("library.standardFolder")}</option>
-            {folders.map(folder => <option key={folder.id} value={folder.id}>{"  ".repeat(folder.depth) + folder.name}</option>)}
+            {folders.map(folder => <option key={folder.id} value={folder.id}>{folder.path}</option>)}
           </NativeSelect>
         </FormField> : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>{t("common:actions.cancel")}</Button>
-          <Button type="submit" disabled={busy}>{busy ? t("library.adding") : t("library.addAction")}</Button>
+          <Button type="submit" pending={busy}>{busy ? t("library.adding") : t("library.addAction")}</Button>
         </DialogFooter>
       </form>
     </DialogContent>
