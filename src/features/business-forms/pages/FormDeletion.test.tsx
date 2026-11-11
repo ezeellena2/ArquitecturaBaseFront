@@ -139,11 +139,12 @@ for(const publicationOpen of [false,true]) {
  });
 }
 
-it("does not create an empty lifecycle menu for a manager without publish when responses prevent deletion",async()=>{
+it("leaves only «Carpetas…» and why it cannot be deleted in the ⋮ of a manager without publish when responses prevent deletion",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:false,responseCount:null,deletionUnavailableReason:"HasResponses"}));
  renderRouteWithProviders("/formularios/"+fixtureFormId);
- await screen.findByLabelText("Nombre");
- expect(screen.queryByRole("button",{name:"Acciones del formulario"})).not.toBeInTheDocument();
+ const menu=await openEditorMenu();
+ expect(within(menu).getAllByRole("menuitem").map(item=>item.textContent)).toEqual(["Carpetas…"]);
+ expect(menu).toHaveTextContent("Tiene respuestas y no se puede eliminar.");
 });
 
 for (const source of ["row", "editor"] as const) {

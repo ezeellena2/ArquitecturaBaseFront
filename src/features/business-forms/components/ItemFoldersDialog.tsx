@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
@@ -18,10 +18,11 @@ const indent = ["", "", "pl-6", "pl-12", "pl-18", "pl-24"];
 
 /// «Carpetas…» of a form or a catalog (CP2-A): the tree with a box per folder, «Agregar carpeta» to create one right there
 /// (already ticked) and «Guardar». Unticking every box leaves it in «Sin carpeta». It saves the whole set with the one it read;
-/// if someone changed it in between, what is ticked stays and the notice offers to read again.
-export function ItemFoldersDialog({ kind, id, name, onClose }: { kind: FolderItemKind; id: string; name: string; onClose: () => void }) {
+/// if someone changed it in between, what is ticked stays and the notice offers to read again. Opened from an item of a ⋮,
+/// `focusFallback` is where the focus goes back, because the item is gone when the dialog closes.
+export function ItemFoldersDialog({ kind, id, name, onClose, focusFallback }: { kind: FolderItemKind; id: string; name: string; onClose: () => void; focusFallback?: RefObject<HTMLElement | null> }) {
   const { t } = useTranslation("formFolders");
-  const restoreFocus = useRestoreFocusOnClose();
+  const restoreFocus = useRestoreFocusOnClose(true, focusFallback);
   const scope = useFolderScope();
   const tree = useFolderTree(scope, kind === "definitions" ? "designs" : "catalogs");
   const { query, save } = useItemFolders(scope, kind, id);

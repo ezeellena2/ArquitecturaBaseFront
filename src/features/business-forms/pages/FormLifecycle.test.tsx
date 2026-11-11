@@ -207,3 +207,22 @@ it("applies the server Publish capability consistently to the main action and li
  const store=setup("forms-lifecycle-deactivated");store.lifecycles.set(fixtureFormId,{...store.lifecycles.get(fixtureFormId)!,responseCount:0,canDelete:true,deletionUnavailableReason:null});server.use(http.get("/api/forms/definitions/:id",async({request})=>{const result=await(await store.handle(request)).json() as ReturnType<typeof readFormDetail>;return HttpResponse.json({...result,publication:{...result.publication,currentOperation:null},capabilities:{...result.capabilities,canPublish:false}});}));
  renderRouteWithProviders("/formularios/"+fixtureFormId);await screen.findByLabelText("Nombre");expect(screen.queryByRole("button",{name:"Reactivar"})).not.toBeInTheDocument();const menu=await openEditorMenu();expect(within(menu).queryByRole("menuitem",{name:/Reactivar/})).not.toBeInTheDocument();expect(within(menu).getByRole("menuitem",{name:/Eliminar/})).toBeInTheDocument();
 });
+it("puts «Carpetas…» first in the editor ⋮ and returns the focus to ⋮ when its dialog closes (AC1-A, CP2-A)", async () => {
+ setup(); renderRouteWithProviders("/formularios/" + fixtureFormId);
+ await screen.findByLabelText("Nombre");
+ expect(screen.queryByRole("button", { name: "Carpetas…" })).not.toBeInTheDocument();
+ const menu = await openEditorMenu();
+ const first = within(menu).getAllByRole("menuitem")[0];
+ expect(first).toHaveTextContent("Carpetas…");
+ await userEvent.keyboard("{Home}"); await waitFor(() => expect(first).toHaveFocus());
+ await userEvent.keyboard("{Enter}");
+ expect(await screen.findByRole("dialog", { name: "Carpetas de «Registrar visita»" })).toBeVisible();
+ await userEvent.keyboard("{Escape}");
+ await waitFor(() => expect(screen.getByRole("button", { name: "Acciones del formulario" })).toHaveFocus());
+});
+it("leaves «Carpetas…» out of the editor ⋮ for whoever cannot manage forms", async () => {
+ setup("forms-lifecycle", ["formtemplates.read", "formtemplates.publish", "formrecords.read"]); renderRouteWithProviders("/formularios/" + fixtureFormId);
+ const menu = await openEditorMenu();
+ expect(within(menu).getByRole("menuitem", { name: /Dar de baja/ })).toBeInTheDocument();
+ expect(within(menu).queryByRole("menuitem", { name: /Carpetas…/ })).not.toBeInTheDocument();
+});
