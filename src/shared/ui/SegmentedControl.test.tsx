@@ -127,7 +127,11 @@ describe("SegmentedControl", () => {
     const group = screen.getByRole("group", { name: "Dónde se completa" });
     expect(group).toHaveClass("flex-wrap", "gap-1.5", "sm:inline-flex", "sm:divide-x", "sm:border");
     expect(group).not.toHaveClass("max-sm:h-11");
-    expect(screen.getByRole("button", { name: "En la app y por WhatsApp" })).toHaveClass("max-sm:h-11", "max-sm:border", "max-sm:bg-[var(--color-surface)]");
+    // A text longer than the line (2026-11-11) takes the whole width and goes down in even lines: the option grows down, at
+    // least 44 px high, and never out of its box.
+    const long = screen.getByRole("button", { name: "En la app y por WhatsApp" });
+    expect(long).toHaveClass("max-sm:min-h-11", "max-sm:max-w-full", "max-sm:py-2", "max-sm:whitespace-normal", "max-sm:text-balance", "max-sm:border", "max-sm:bg-[var(--color-surface)]");
+    expect(long).not.toHaveClass("max-sm:h-11");
     expect(screen.getByRole("button", { name: "Sólo en la app" })).toHaveClass("bg-[var(--color-brand-600)]", "max-sm:border-[var(--color-brand-600)]");
   });
 

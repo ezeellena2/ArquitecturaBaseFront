@@ -41,7 +41,8 @@ export function SegmentedControl({
   appearance?: "compact" | "public";
   disabled?: boolean;
   /// En el celular, las opciones van separadas y la que no entra baja de renglón; desde 640 px, unidas como siempre. Es para
-  /// opciones de textos largos que no entran juntas en un teléfono, como «Dónde se completa» (SA1-A, 2026-11-09).
+  /// opciones de textos largos que no entran juntas en un teléfono, como «Dónde se completa» (SA1-A, 2026-11-09). Una opción
+  /// más larga que el renglón ocupa todo el ancho y corta su texto en renglones, sin pasarse de su caja (2026-11-11).
   wrap?: boolean;
   "aria-label": string;
 }): ReactNode {
@@ -71,8 +72,10 @@ export function SegmentedControl({
             // vecinas para que ninguna lo tape. Las esquinas de la primera y la última siguen la curva del borde.
             appearance === "public" ? undefined : cn("px-3 text-sm transition-colors focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)] whitespace-nowrap first:rounded-l-[calc(var(--radius-control)-1px)] last:rounded-r-[calc(var(--radius-control)-1px)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:min-w-11"),
             fullWidth ? "flex-1" : "",
-            // Separada en el celular, cada opción lleva su borde; la elegida, el de su relleno.
-            wrap && appearance !== "public" ? cn("max-sm:h-11 max-sm:rounded-[var(--radius-control)] max-sm:border", option.pressed ? "max-sm:border-[var(--color-brand-600)]" : "max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)]") : "",
+            // Separada en el celular, cada opción lleva su borde; la elegida, el de su relleno. Mide al menos 44 px de alto y, si su
+            // texto no entra en el renglón, toma todo el ancho y lo corta en renglones parejos: crece hacia abajo, nunca hacia el
+            // costado.
+            wrap && appearance !== "public" ? cn("max-sm:min-h-11 max-sm:max-w-full max-sm:py-2 max-sm:whitespace-normal max-sm:text-balance max-sm:rounded-[var(--radius-control)] max-sm:border", option.pressed ? "max-sm:border-[var(--color-brand-600)]" : "max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)]") : "",
             appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-600)] font-semibold text-[var(--color-brand-ink)]"
               : "font-medium text-[var(--color-content)] enabled:hover:bg-[var(--color-surface-muted)] aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent",

@@ -22,5 +22,10 @@ for (const scene of ["chat", "chat-gone"] as const)
         }
         await page.evaluate(() => document.fonts.ready);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        // No option of «Desde» goes out of its box, not even the long one of the chat on a phone: the control is measured, not
+        // only the page's scroll.
+        const from = dialog.getByRole("group", { name: en ? "From" : "Desde", exact: true });
+        expect(await from.evaluate(group => group.scrollWidth <= group.clientWidth)).toBe(true);
+        expect(await from.getByRole("button").evaluateAll(buttons => buttons.every(button => button.scrollWidth <= button.clientWidth))).toBe(true);
         await expect(page).toHaveScreenshot(`catalog-assistant-import-${scene}-${language}-${width}.png`);
       });
