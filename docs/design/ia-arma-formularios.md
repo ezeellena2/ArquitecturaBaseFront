@@ -1,6 +1,7 @@
 # La IA arma formularios y catálogos: tableros elegidos
 
-Fecha: **2026-11-04**, con los tableros dibujados el 2026-11-03. Estado: **por programar**. El alcance y las decisiones
+Fecha: **2026-11-04**, con los tableros dibujados el 2026-11-03. Estado: **Etapas 1 y 2 programadas** (texto y audio el
+2026-11-05, planillas el 2026-11-11); la 3 (documentos) se planifica con la lectura de documentos. El alcance y las decisiones
 están en el [plan](../../../ArquitecturaBase/docs/plans/2026-11-04-ia-arma-formularios-y-catalogos.md) y las reglas, en el
 [ADR 0024](../../../ArquitecturaBase/docs/decisions/0024-ia-arma-formularios-y-catalogos.md). Las pantallas, los textos y los
 estados salen de acá.
