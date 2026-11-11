@@ -81,8 +81,9 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    [el estado, una vez](#el-estado-una-vez--2026-11-06), [el idioma](#el-idioma-sólo-cuando-es-el-otro--2026-11-03))
 8. **Botones y lo apagado:** ¿cada botón nombra su acción; Cancelar va junto a la principal, que va última, y una
    destructiva, separada a la izquierda? ¿Lo apagado no lleva texto al lado, no cambia de lugar ni de forma y, si el
-   motivo no es obvio, lo da sobre el control? ([diálogos](#formularios-y-diálogos), [íconos y acciones](#íconos-y-acciones),
-   [el motivo de lo apagado](#el-motivo-de-lo-apagado--2026-11-09))
+   motivo no es obvio, lo da sobre el control? ¿A la vista va sólo la tarea de la pantalla y lo que lleva a otro lado, y lo
+   demás que se hace con el objeto va en ⋮, con lo destructivo al final? ([diálogos](#formularios-y-diálogos),
+   [íconos y acciones](#íconos-y-acciones), [el motivo de lo apagado](#el-motivo-de-lo-apagado--2026-11-09))
 9. **Lo elegido y la espera:** ¿lo elegido se distingue por algo más que un tinte? ¿Toda acción que tarda muestra el aro
    y su gerundio, y lo que carga ocupa el lugar de lo que va a llegar sin mover lo que ya se ve?
    ([opción elegida](#opción-elegida--2026-11-03), [leyendas y carga](#leyendas-y-carga--2026-11-01),
@@ -270,6 +271,13 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   en botones deshabilitados. Un botón con texto visible no repite su nombre en un tooltip; si está apagado por un
   motivo que no es obvio, `DisabledReason` lo muestra sobre el mismo botón ([MA1-A](#el-motivo-de-lo-apagado--2026-11-09)).
 - En una fila, inocuas primero y destructiva última; el rojo aparece al interactuar. Sin permiso, no se renderiza.
+- **Qué va a la vista y qué en ⋮** (AC1-A, 2026-11-11, en toda la app). A la vista, con texto, la tarea de la pantalla:
+  guardar y descartar en un editor, publicar, crear o agregar en un listado, exportar la planilla, aprobar o rechazar lo
+  que espera una decisión; la principal, última. Ir a otro lado y bajar (pantalla completa, la conversación, el PDF): íconos
+  con su nombre en un panel y texto en la banda de una pantalla (TL3-A). En ⋮ (`ActionsMenu`), lo demás que se hace con el
+  objeto: corregir, anular, dar de baja, reactivar, eliminar, descargar la plantilla, ordenar; lo destructivo al final, en
+  rojo y después de una línea, y un ítem apagado con su motivo adentro. Quedan fuera el pie de un diálogo y las filas de una
+  tabla. El diseño y la tabla de las pantallas que cambiaron están en [acciones del encabezado](acciones-del-encabezado.md).
 
 ## Listados y filtros
 
