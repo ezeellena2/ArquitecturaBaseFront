@@ -16,6 +16,7 @@ import capturedOptionsRaw from "@/test/fixtures/catalogs-http/filters/options.js
 import { readCatalogFilterOptions } from "../api/catalogResponse";
 import * as catalogImports from "../api/catalogImports";
 import { catalogImportPreviewFixture } from "@/test/catalogImportFixtures";
+import { assistantImportState } from "../assistantImport";
 import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -1630,4 +1631,82 @@ it.each(["es", "en"] as const)("localizes discard cancellation and preserves the
   expect(router.state.location.search).toBe(previousLocation.search);
   expect(new URLSearchParams(router.state.location.search).get("valueType")).toBe("Decimal");
   await waitFor(() => expect(discard).toHaveFocus());
+});
+
+// IA2 and IA4: the import of a proposal's spreadsheet opens by itself, from the card, from WhatsApp's link or from the pending import.
+describe("the import of a proposal's spreadsheet", () => {
+  const requestId = "01990000-0000-7000-8000-000000000051", proposalId = "01990000-0000-7000-8000-000000000052";
+  const chatPreview = () => ({ ...catalogImportPreviewFixture(), catalogId: id, revision: 1 });
+  const routes = [{ path: "/catalogos/:catalogId", Component: CatalogEditorPage }, { path: "/catalogos", element: <p>Catalog list</p> }];
+  async function mountAt(entry: string | { pathname: string; state: unknown }) {
+    const router = createMemoryRouter(routes, { initialEntries: [entry] });
+    await act(async () => { render(<AppProviders><RouterProvider router={router} /></AppProviders>); });
+    return router;
+  }
+  const chatDialog = () => screen.findByRole("dialog", { name: "Importar opciones a «Clientes»" });
+
+  it("opens from the card's navigation state, reviewed, and takes it out of the state so reloading does not open it again", async () => {
+    setup();
+    const check = vi.spyOn(catalogImports, "previewAssistantCatalogImport").mockResolvedValue(chatPreview());
+    const pending = vi.spyOn(catalogImports, "fetchAssistantCatalogImport");
+    const router = await mountAt({ pathname: "/catalogos/" + id, state: assistantImportState({ requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 }) });
+    const dialog = await chatDialog();
+    expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
+    await within(dialog).findByText("Repetido: también está en otra fila.");
+    expect(check).toHaveBeenCalledExactlyOnceWith(id, { requestId, proposalId, expectedRevision: 1 }, expect.any(AbortSignal));
+    expect(pending).not.toHaveBeenCalled();
+    expect([router.state.location.pathname, router.state.location.state, router.state.historyAction]).toEqual(["/catalogos/" + id, null, "REPLACE"]);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(check).toHaveBeenCalledOnce();
+  });
+
+  it("opens from WhatsApp's link and takes its parameters out of the address without a new entry", async () => {
+    setup();
+    const check = vi.spyOn(catalogImports, "previewAssistantCatalogImport").mockResolvedValue(chatPreview());
+    const router = await mountAt("/catalogos/" + id + "?pedido=" + requestId.replaceAll("-", "") + "&propuesta=" + proposalId.replaceAll("-", ""));
+    const dialog = await chatDialog();
+    expect(within(dialog).getByRole("button", { name: "La planilla del chat" })).toHaveAttribute("aria-pressed", "true");
+    await within(dialog).findByText("Repetido: también está en otra fila.");
+    expect(check).toHaveBeenCalledExactlyOnceWith(id, { requestId, proposalId, expectedRevision: 1 }, expect.any(AbortSignal));
+    // The resolved page size stays in the address, as always; the link's parameters leave it.
+    await waitFor(() => expect(["pedido", "propuesta"].filter(key => new URLSearchParams(router.state.location.search).has(key))).toEqual([]));
+    expect([router.state.location.pathname, router.state.historyAction]).toEqual(["/catalogos/" + id, "REPLACE"]);
+  });
+
+  it("opens from the import still pending once per load, and only for whoever manages catalogs", async () => {
+    setup();
+    vi.spyOn(catalogImports, "previewAssistantCatalogImport").mockResolvedValue(chatPreview());
+    const pending = vi.spyOn(catalogImports, "fetchAssistantCatalogImport").mockResolvedValue({ requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 });
+    await mountAt("/catalogos/" + id);
+    const dialog = await chatDialog();
+    expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
+    expect(pending).toHaveBeenCalledExactlyOnceWith(id, expect.any(AbortSignal));
+    await within(dialog).findByText("Repetido: también está en otra fila.");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    // Opened by hand afterwards, it is the import of always.
+    await userEvent.click(screen.getByRole("button", { name: "Importar" }));
+    expect(within(await chatDialog()).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /La planilla del chat/ })).not.toBeInTheDocument();
+    expect(pending).toHaveBeenCalledOnce();
+    cleanup(); vi.restoreAllMocks(); queryClient.clear();
+    // Reading catalogs only: neither the pending import nor the link opens anything, and the link still leaves the address.
+    setup(["formcatalogs.read"]);
+    const reader = vi.spyOn(catalogImports, "fetchAssistantCatalogImport");
+    const router = await mountAt("/catalogos/" + id + "?pedido=" + requestId.replaceAll("-", "") + "&propuesta=" + proposalId.replaceAll("-", ""));
+    await screen.findByRole("heading", { name: "Clientes" });
+    await waitFor(() => expect(["pedido", "propuesta"].filter(key => new URLSearchParams(router.state.location.search).has(key))).toEqual([]));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(reader).not.toHaveBeenCalled();
+  });
+
+  it("opens nothing when nothing is pending", async () => {
+    setup();
+    const pending = vi.spyOn(catalogImports, "fetchAssistantCatalogImport").mockResolvedValue(null);
+    await mountAt("/catalogos/" + id);
+    await waitFor(() => expect(pending).toHaveBeenCalledOnce());
+    await screen.findByRole("button", { name: "Importar" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 });

@@ -88,7 +88,9 @@ export function createCatalogFixtureStore(culture: "es" | "en", scenario: string
     }
     return json(catalog);
   } };
-  return scenario.startsWith("catalogs-import") ? createCatalogImportVisualStore(culture, catalog, () => store) : store;
+  // IA2: `catalogs-import-chat` has the import of a proposal's spreadsheet pending; in `catalogs-import-chat-gone` its copy is gone.
+  const assistant = scenario === "catalogs-import-chat" ? "pending" : scenario === "catalogs-import-chat-gone" ? "gone" : null;
+  return scenario.startsWith("catalogs-import") ? createCatalogImportVisualStore(culture, catalog, () => store, assistant) : store;
 }
 
 function createFiltersFixtureStore(culture: "es" | "en", scenario: string) {

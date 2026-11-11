@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
@@ -25,19 +25,24 @@ import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchCatalog } from "../api/catalogs";
-import { applyCatalogImport, previewCatalogImport, type CatalogImportPreview } from "../api/catalogImports";
+import { applyAssistantCatalogImport, applyCatalogImport, previewAssistantCatalogImport, previewCatalogImport, type CatalogImportPreview } from "../api/catalogImports";
 import type { CatalogDetail } from "../api/catalogResponse";
+import type { AssistantImportSource } from "../assistantImport";
 import { catalogPasteColumns, catalogPasteCsv, catalogPasteExtraColumns, readCatalogPaste, type CatalogPastedSheet } from "../catalogPaste";
 import { catalogScalarText, catalogTypedValueTypes, isNumericType } from "../catalogValues";
 import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { CatalogRow as Row, CatalogRowHelp as Help, CatalogRowMessage as Message } from "./CatalogRow";
 
-export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void; downloadingTemplate?: boolean }
-type Source = "file" | "paste";
-function fresh(owner: string, revision: number, source: Source) {
-  return { owner, revision, source, sheet: null as CatalogPastedSheet | null, file: null as File | null, preview: null as CatalogImportPreview | null, busy: null as "preview" | "apply" | null, conflict: false, forbidden: false, fileError: null as string | null, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false };
+// `assistant` is the spreadsheet a Home proposal mapped (IA2, IA4): the dialog opens on it, already reviewed.
+export interface CatalogImportDialogProps { scope: CatalogReadScope; catalog: CatalogDetail; timeZoneId?: string; focusFallback?: RefObject<HTMLElement | null>; onClose: () => void; onApplied: (catalog: CatalogDetail) => void; onObserved: (catalog: CatalogDetail) => void; onTemplate: () => void; downloadingTemplate?: boolean; assistant?: AssistantImportSource | null }
+type Source = "file" | "paste" | "chat";
+// `chatGone` says why the chat spreadsheet is no longer offered: from then on the dialog asks for the file.
+function fresh(owner: string, revision: number, source: Source, chatGone: string | null = null) {
+  return { owner, revision, source, chatGone, sheet: null as CatalogPastedSheet | null, file: null as File | null, preview: null as CatalogImportPreview | null, busy: null as "preview" | "apply" | null, conflict: false, forbidden: false, fileError: null as string | null, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false };
 }
+// What the server answers when the copy the person saw in the chat cannot be imported any more.
+const chatUnavailable = ["Forms.Catalog.ProposalUnavailable", "Forms.CatalogImport.SheetUnavailable", "Forms.Catalog.ProposalReplaced"];
 // Another file or other rows leave the previous review behind.
 const unreviewed = { preview: null, conflict: false, fileError: null, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false };
 const band = "text-xs text-[var(--color-surface-header-foreground)]";
@@ -46,7 +51,7 @@ const rows = "flex flex-col divide-y divide-[var(--color-border)] [&>*]:px-4 [&>
 
 // IM1-A, IM2-A and IM3-A (2026-10-31): the origin and the review at sight, the help in the (i), a skeleton while reading and,
 // while applying, Cancel and the × in sight but off. What waits says so with the common busy button (LC1-A), the template too.
-export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate, downloadingTemplate = false }: CatalogImportDialogProps) {
+export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback, onClose, onApplied, onObserved, onTemplate, downloadingTemplate = false, assistant = null }: CatalogImportDialogProps) {
   const { t, i18n } = useTranslation("forms");
   const owner = JSON.stringify([scope.actorId, scope.culture, [...scope.permissions].sort(), catalog.id]);
   const fields = (catalog.fields ?? []).filter(field => field.isActive).sort((a, b) => a.position - b.position);
@@ -66,8 +71,9 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   const pasteLabels: Parameters<typeof catalogPasteColumns>[2] = { fixed: column => t("catalogs.import.columns." + column), field: field => administrativeName(field.name, scope.culture) || field.key };
   const pasteColumns = catalogPasteColumns(catalog.valueType, fields, pasteLabels);
   const allowed = !!scope.actorId && scope.permissions.includes("formcatalogs.read") && scope.permissions.includes("formcatalogs.manage");
-  const [state, setState] = useState(() => fresh(owner, catalog.revision, "file"));
-  if (state.owner !== owner) setState(fresh(owner, catalog.revision, "file"));
+  // The chat spreadsheet shows its review's wait from the start: it is reviewed as soon as the dialog opens.
+  const [state, setState] = useState<ReturnType<typeof fresh>>(() => ({ ...fresh(owner, catalog.revision, assistant ? "chat" : "file"), busy: assistant && allowed ? "preview" : null }));
+  if (state.owner !== owner) setState(fresh(owner, catalog.revision, assistant ? "chat" : "file"));
   const active = useRef(true), currentOwner = useRef(owner), operation = useRef<AbortController | null>(null), fileInput = useRef<HTMLInputElement>(null);
   const id = useId(), errorId = id + "error", feedbackId = "catalogs:import:" + id;
   useLayoutEffect(() => { currentOwner.current = owner; }, [owner]);
@@ -78,7 +84,12 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   const accepts = (controller: AbortController) => active.current && currentOwner.current === owner && operation.current === controller && !controller.signal.aborted;
   const failure = (error: unknown, controller: AbortController, writing: boolean) => {
     if (!accepts(controller)) return;
-    if (error instanceof ApiError && error.status === 403) { setState(value => ({ ...fresh(owner, value.revision, value.source), forbidden: true })); return; }
+    if (error instanceof ApiError && error.status === 403) { setState(value => ({ ...fresh(owner, value.revision, value.source, value.chatGone), forbidden: true })); return; }
+    // The chat spreadsheet is gone or another proposal replaced it: the dialog says so and asks for the file, as always.
+    if (error instanceof ApiError && chatUnavailable.includes(error.code ?? "")) {
+      setState(value => fresh(owner, value.revision, "file", error.code === "Forms.Catalog.ProposalReplaced" ? readErrorMessage(error, t) : t("catalogs.import.chatGone")));
+      return;
+    }
     if (error instanceof ApiError && ["Forms.CatalogImport.MissingColumn", "Forms.CatalogImport.DuplicateColumn"].includes(error.code ?? "") && typeof error.problem.column === "string") {
       setState(value => ({ ...value, busy: null, fileError: t(error.code === "Forms.CatalogImport.MissingColumn" ? "catalogs.import.missingColumn" : "catalogs.import.duplicateColumn", { column: columnLabel(error.problem.column as string) }) }));
       return;
@@ -92,41 +103,62 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
       notify({ id: feedbackId, kind: "error", message: sheet ? t("catalogs.import.sheetError", { sheet, message }) : message });
     }
   };
+  // Sends a review whose wait already shows, and writes the state only when its answer arrives. The chat spreadsheet is reviewed
+  // from the copy of its turn, replacing.
+  const chatReview = (chat: AssistantImportSource) => (revision: number, signal: AbortSignal) =>
+    previewAssistantCatalogImport(catalog.id, { requestId: chat.requestId, proposalId: chat.proposalId, expectedRevision: revision }, signal);
+  const send = async (reviewAt: (revision: number, signal: AbortSignal) => Promise<CatalogImportPreview>, refresh: boolean) => {
+    const controller = new AbortController(); operation.current = controller;
+    try {
+      let revision = state.revision;
+      if (refresh) { const current = await fetchCatalog(catalog.id, controller.signal); if (!accepts(controller)) return; revision = current.revision; onObserved(current); }
+      const preview = await reviewAt(revision, controller.signal);
+      if (accepts(controller)) setState(value => ({ ...value, revision, preview, busy: null, conflict: false, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false }));
+    } catch (error) { failure(error, controller, false); }
+    finally { if (operation.current === controller) operation.current = null; }
+  };
   // The pasted rows are reviewed as a CSV of the pasted columns only, so a column that was not pasted keeps its values.
   const review = async (refresh = false) => {
     if (!owned || state.forbidden || operation.current) return;
+    if (state.source === "chat") {
+      if (!assistant) return;
+      setState(value => ({ ...value, busy: "preview", fileError: null }));
+      await send(chatReview(assistant), refresh);
+      return;
+    }
     let file = state.file;
     if (state.source === "paste" && !file) {
       if (!state.sheet) { setState(value => ({ ...value, fileError: t("catalogs.import.pasteEmpty") })); return; }
       file = new File([catalogPasteCsv(state.sheet)], t("catalogs.import.pastedFileName"), { type: "text/csv" });
     }
     if (!file || !/\.(csv|xlsx)$/i.test(file.name) || file.size > 10 * 1024 * 1024) { setState(value => ({ ...value, fileError: t(state.source === "paste" ? "catalogs.import.pasteError.limit" : "catalogs.import.fileError") })); return; }
-    const capturedFile = file, controller = new AbortController(); operation.current = controller;
-    setState(value => ({ ...value, file: capturedFile, busy: "preview", fileError: null }));
-    try {
-      let revision = state.revision;
-      if (refresh) { const current = await fetchCatalog(catalog.id, controller.signal); if (!accepts(controller)) return; revision = current.revision; onObserved(current); }
-      const preview = await previewCatalogImport(catalog.id, { file: capturedFile, expectedRevision: revision, mode: state.source === "paste" ? "Append" : "Replace" }, controller.signal);
-      if (accepts(controller)) setState(value => ({ ...value, revision, preview, busy: null, conflict: false, confirmDeactivations: false, confirmEmpty: false, confirmErrors: false }));
-    } catch (error) { failure(error, controller, false); }
-    finally { if (operation.current === controller) operation.current = null; }
+    const sent = file, mode = state.source === "paste" ? "Append" as const : "Replace" as const;
+    setState(value => ({ ...value, file: sent, busy: "preview", fileError: null }));
+    await send((revision, signal) => previewCatalogImport(catalog.id, { file: sent, expectedRevision: revision, mode }, signal), refresh);
   };
   const preview = owned ? state.preview : null;
   const confirmed = !!preview && (!preview.confirmations.deactivations || state.confirmDeactivations) && (!preview.confirmations.emptySheet || state.confirmEmpty) && (!preview.confirmations.manyErrors || state.confirmErrors);
   const apply = async () => {
-    if (!owned || !preview || !state.file || !confirmed || state.conflict || state.forbidden || operation.current) return;
+    const chat = state.source === "chat" ? assistant : null;
+    if (!owned || !preview || (!state.file && !chat) || !confirmed || state.conflict || state.forbidden || operation.current) return;
     const controller = new AbortController(); operation.current = controller;
     setState(value => ({ ...value, busy: "apply" }));
     try {
-      const saved = await applyCatalogImport(catalog.id, { file: state.file, expectedRevision: state.revision, mode: preview.mode, sheetSha256: preview.sheetSha256,
-        confirmDeactivations: preview.confirmations.deactivations, confirmEmpty: state.confirmEmpty, confirmErrors: preview.counts.errorRows > 0 }, controller.signal);
+      const confirmations = { sheetSha256: preview.sheetSha256, confirmDeactivations: preview.confirmations.deactivations, confirmEmpty: state.confirmEmpty, confirmErrors: preview.counts.errorRows > 0 };
+      const saved = chat
+        ? await applyAssistantCatalogImport(catalog.id, { requestId: chat.requestId, proposalId: chat.proposalId, expectedRevision: state.revision, ...confirmations }, controller.signal)
+        : await applyCatalogImport(catalog.id, { file: state.file!, expectedRevision: state.revision, mode: preview.mode, ...confirmations }, controller.signal);
       if (!accepts(controller)) return;
       notify({ id: feedbackId + ":done", kind: "success", message: t("catalogs.import.applied") }); onApplied(saved.catalog); onClose();
     } catch (error) { failure(error, controller, true); }
     finally { if (operation.current === controller) { operation.current = null; if (active.current) setState(value => ({ ...value, busy: null })); } }
   };
-  const close = () => { if (applying) return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source)); onClose(); };
-  const changeSource = (source: Source) => { if (!busy) setState(fresh(owner, state.revision, source)); };
+  const close = () => { if (applying) return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source, state.chatGone)); onClose(); };
+  const changeSource = (source: Source) => { if (!busy) setState(fresh(owner, state.revision, source, state.chatGone)); };
+  // IA2: the chat spreadsheet opens already reviewed. In StrictMode the second run sends again what the first one's cleanup
+  // aborted.
+  const reviewOnOpen = useEffectEvent(() => { if (assistant && owned && state.source === "chat" && !operation.current) void send(chatReview(assistant), false); });
+  useEffect(() => { if (assistant) reviewOnOpen(); }, [assistant]);
   const chooseFile = (file: File) => { if (!busy) setState(value => ({ ...value, ...unreviewed, file })); };
   const paste = (text: string) => {
     if (busy) return;
@@ -141,8 +173,9 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   // and the rows read; the counts of the tabs are in the tabs, and what stays the same and what is reactivated, which have no
   // tab, go in their rows when there is any. While it reads, the sheet and the rows wait in their place.
   const count = (value: number) => new Intl.NumberFormat(i18n.language, { useGrouping: "always" }).format(value);
+  const fileName = state.file?.name ?? (state.source === "chat" ? assistant?.fileName : undefined);
   const readItems = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) => [
-    ...(state.file ? [{ key: "file", label: t("catalogs.import.file"), value: state.file.name }] : []),
+    ...(fileName ? [{ key: "file", label: t("catalogs.import.file"), value: fileName }] : []),
     { key: "sheet", label: t("catalogs.import.sheet"), value: sheet },
     { key: "rows", label: t("catalogs.import.rowsRead"), value: rowsRead },
     ...(counts?.unchanged ? [{ key: "unchanged", label: t("catalogs.import.unchanged"), value: count(counts.unchanged) }] : []),
@@ -151,10 +184,16 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   const readList = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) =>
     <div className="px-4 py-1"><DataList items={readItems(sheet, rowsRead, counts)} /></div>;
 
+  // The chat spreadsheet is a third origin while it can be imported, named with its file and rows when they are known.
+  const chatOffered = !!assistant && !state.chatGone;
+  const sources: readonly Source[] = chatOffered ? ["file", "paste", "chat"] : ["file", "paste"];
+  const sourceLabel = (source: Source) => source === "file" ? t("catalogs.import.upload") : source === "paste" ? t("catalogs.import.paste")
+    : assistant?.fileName && assistant.rowCount !== undefined ? t("catalogs.import.chatFile", { name: assistant.fileName, count: assistant.rowCount }) : t("catalogs.import.chat");
   const origin = <Surface title={t("catalogs.import.origin")} headingLevel={3} actions={state.source === "file" ? <Button type="button" variant="link" pending={downloadingTemplate} disabled={busy} onClick={onTemplate}>{t(downloadingTemplate ? "catalogs.actions.downloadingTemplate" : "catalogs.import.template")}</Button> : null}>
     <div className={rows}>
-      <Row label={<><Label>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t("catalogs.import.sourceHelp")} /></>}>
-        <div className="sm:self-start"><SegmentedControl fullWidth aria-label={t("catalogs.import.from")} disabled={busy} options={(["file", "paste"] as const).map(source => ({ key: source, label: t(source === "file" ? "catalogs.import.upload" : "catalogs.import.paste"), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
+      {state.chatGone ? <div><Banner tone="warning">{state.chatGone}</Banner></div> : null}
+      <Row label={<><Label>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t(chatOffered ? "catalogs.import.sourceHelpChat" : "catalogs.import.sourceHelp")} /></>}>
+        <div className="sm:self-start"><SegmentedControl fullWidth={!chatOffered} wrap={chatOffered} aria-label={t("catalogs.import.from")} disabled={busy} options={sources.map(source => ({ key: source, label: sourceLabel(source), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
       </Row>
       {state.source === "file" ? <Row label={<><Label htmlFor={id + "file"}>{t("catalogs.import.file")}</Label><Help label={t("catalogs.import.fileHelpLabel")} text={t("catalogs.import.fileHint")} /></>}>
         <div className="flex min-w-0 items-center gap-2">

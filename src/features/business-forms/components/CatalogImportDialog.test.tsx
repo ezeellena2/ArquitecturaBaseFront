@@ -570,3 +570,71 @@ it("shows the source option labels rather than their identities for added and ch
   expect(change(within(screen.getByRole("tabpanel")), "Zona")).toEqual(["Norte", "Centro"]);
   expect(screen.queryByText(new RegExp(sourceId))).not.toBeInTheDocument();
 });
+
+// IA2 and IA4: the spreadsheet a Home proposal mapped, imported from the copy of its turn.
+const chat = { requestId: "01990000-0000-7000-8000-000000000051", proposalId: "01990000-0000-7000-8000-000000000052", fileName: "contratistas.xlsx", rowCount: 86 };
+const savedChat = { catalog: { ...catalog, revision: 8 }, itemIdentityMap: {}, fieldIdentityMap: {} };
+
+it("opens on the chat spreadsheet already reviewed and applies it from the copy, replacing, with the confirmations of always", async () => {
+  const check = vi.spyOn(imports, "previewAssistantCatalogImport").mockResolvedValue(catalogImportPreviewFixture());
+  const apply = vi.spyOn(imports, "applyAssistantCatalogImport").mockResolvedValue(savedChat);
+  const upload = vi.spyOn(imports, "previewCatalogImport");
+  const { user, onApplied, onClose } = await mount("file", { assistant: chat });
+  const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
+  expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "false");
+  expect(within(dialog).queryByRole("button", { name: "Elegir archivo" })).not.toBeInTheDocument();
+  expect(within(dialog).queryByRole("button", { name: "Descargar la plantilla" })).not.toBeInTheDocument();
+  await within(dialog).findByText("Repetido: también está en otra fila.");
+  expect(check).toHaveBeenCalledExactlyOnceWith(catalog.id, { requestId: chat.requestId, proposalId: chat.proposalId, expectedRevision: 7 }, expect.any(AbortSignal));
+  expect(upload).not.toHaveBeenCalled();
+  // The summary names the spreadsheet of the chat as the file it reviewed.
+  expect(within(dialog).getByText("contratistas.xlsx")).toBeInTheDocument();
+  await user.click(screen.getByText("Sí, dar de baja 1 opción"));
+  await user.click(screen.getByText("Sí, aplicar sin las filas con errores"));
+  await user.click(screen.getByRole("button", { name: "Aplicar sin la fila con errores" }));
+  await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  expect(apply).toHaveBeenCalledExactlyOnceWith(catalog.id, { requestId: chat.requestId, proposalId: chat.proposalId, expectedRevision: 7,
+    sheetSha256: catalogImportPreviewFixture().sheetSha256, confirmDeactivations: 1, confirmEmpty: false, confirmErrors: true }, expect.any(AbortSignal));
+  expect(onApplied).toHaveBeenCalledWith(savedChat.catalog);
+});
+
+it("turns to uploading the file when the chat spreadsheet is no longer there, saying why without a notice", async () => {
+  const gone = "La planilla que viste en el chat ya no está disponible. Podés subir el archivo a mano.";
+  const refusals: [string, number, string][] = [["Forms.Catalog.ProposalUnavailable", 404, gone], ["Forms.CatalogImport.SheetUnavailable", 409, gone],
+    ["Forms.Catalog.ProposalReplaced", 409, "Esa propuesta ya cambió por una más nueva."]];
+  for (const [code, status, reason] of refusals) {
+    const notify = vi.spyOn(notifications, "notify");
+    vi.spyOn(imports, "previewAssistantCatalogImport").mockRejectedValue(new ApiError(status, { code, detail: "Esa propuesta ya cambió por una más nueva." }));
+    await mount("file", { assistant: chat });
+    const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
+    expect(await within(dialog).findByText(reason)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).queryByRole("button", { name: /La planilla del chat/ })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Elegir archivo" })).toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalled();
+    cleanup(); vi.restoreAllMocks(); queryClient.clear();
+  }
+});
+
+it("turns to uploading the file when the copy is gone at applying, too", async () => {
+  vi.spyOn(imports, "previewAssistantCatalogImport").mockResolvedValue({ ...catalogImportPreviewFixture(), counts: { ...catalogImportPreviewFixture().counts, errorRows: 0 }, issues: [], confirmations: quiet });
+  vi.spyOn(imports, "applyAssistantCatalogImport").mockRejectedValue(new ApiError(409, { code: "Forms.CatalogImport.SheetUnavailable", detail: "No está." }));
+  const { user, onApplied } = await mount("file", { assistant: chat });
+  await user.click(await screen.findByRole("button", { name: "Aplicar" }));
+  expect(await screen.findByText("La planilla que viste en el chat ya no está disponible. Podés subir el archivo a mano.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+  expect(onApplied).not.toHaveBeenCalled();
+});
+
+it("names only «La planilla del chat» without its file, and reviews it again with «Revisar» after leaving it", async () => {
+  const check = vi.spyOn(imports, "previewAssistantCatalogImport").mockResolvedValue(catalogImportPreviewFixture());
+  const { user } = await mount("file", { assistant: { requestId: chat.requestId, proposalId: chat.proposalId } });
+  await screen.findByText("Repetido: también está en otra fila.");
+  await user.click(screen.getByRole("button", { name: "Subir un archivo" }));
+  expect(screen.queryByText("Repetido: también está en otra fila.")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "La planilla del chat" }));
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  await screen.findByText("Repetido: también está en otra fila.");
+  expect(check).toHaveBeenCalledTimes(2);
+});

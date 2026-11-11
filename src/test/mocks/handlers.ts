@@ -71,4 +71,6 @@ export const handlers = [
   // Synthetic doubles: no folders yet (CP1-A) and nothing in the side menu (CP5-A). Tests of the folders bring their own.
   http.get("/api/forms/folders", () => HttpResponse.json({ folders: [], canManage: false })),
   http.get("/api/forms/menu", () => HttpResponse.json({ menus: [], forms: [], administration: [] })),
+  // No import of a proposal's spreadsheet pending in a catalog (IA2). Tests of that import bring their own.
+  http.get("/api/forms/catalogs/:id/assistant-import", ({ params }) => HttpResponse.json({ catalogId: params.id, pending: null })),
 ];

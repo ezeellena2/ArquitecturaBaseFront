@@ -81,6 +81,12 @@ Etapa 2 (2026-11-11), las tarjetas con planilla:
 - «Crear catálogo» y «Revisar la importación» abren el catálogo con el pedido y la propuesta en el estado de la navegación,
   nunca en la dirección. «Abrir el catálogo» de una tarjeta plegada no los lleva: la página encuentra sola la importación
   pendiente.
+- «Importar opciones» suma la planilla del chat como otro origen de «Desde», «La planilla del chat: contratistas.xlsx (86
+  filas)», y abre ya revisada; desde el enlace de WhatsApp, sin el nombre, dice «La planilla del chat». La página la abre sola
+  una vez por carga y después saca el estado y los parámetros del enlace, sin crear una entrada; abierta a mano, es la de
+  siempre.
+- Si la planilla ya no está o la propuesta cambió, el diálogo lo dice arriba del origen y queda en «Subir un archivo», sin la
+  opción del chat.
 
 ## Lo que cambia de lo que hay
 

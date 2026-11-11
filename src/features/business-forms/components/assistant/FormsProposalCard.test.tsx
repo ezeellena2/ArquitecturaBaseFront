@@ -142,7 +142,7 @@ it("shows a catalog with its spreadsheet: each column, three sample rows and how
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + createdId);
   expect(router.state.location.search).toBe("");
-  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId } });
+  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 } });
 });
 
 it("opens a catalog without a spreadsheet without an import, and shows a simple list's column once", async () => {
@@ -175,7 +175,7 @@ it("shows an import with its catalog, mapping, rows and sample, and reviews it i
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + catalogTarget);
   expect(router.state.location.search).toBe("");
-  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId } });
+  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 } });
   expect(posted).toEqual([]);
   cleanup(); queryClient.clear();
   await mount(props(proposalCapabilities.catalogImport, importing), ["formcatalogs.read"]);

@@ -17,7 +17,8 @@ const cardProblems = new Set(["Forms.Definition.NameTaken", "Forms.Definition.Pr
  * maps the turn's spreadsheet opens with the request and the proposal in the navigation state, never in the address, so its
  * page opens the import (IA2).
  */
-export function useAssistantProposalCreation(target: "draft" | "catalog", requestId: string, proposalId: string, importsSpreadsheet = false) {
+export function useAssistantProposalCreation(target: "draft" | "catalog", requestId: string, proposalId: string,
+  spreadsheet: { readonly fileName: string; readonly rowCount: number } | null = null) {
   const { t } = useTranslation("forms");
   const { data: user } = useCurrentUser();
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function useAssistantProposalCreation(target: "draft" | "catalog", reques
       const body = { requestId, proposalId };
       const id = target === "draft" ? (await createProposalDraft(body)).definitionId : (await createProposalCatalog(body)).catalogId;
       client.setQueryData(key, id);
-      if (id) void navigate(path(id), importsSpreadsheet ? { state: assistantImportState({ requestId, proposalId }) } : undefined);
+      if (id) void navigate(path(id), spreadsheet ? { state: assistantImportState({ requestId, proposalId, ...spreadsheet }) } : undefined);
     } catch (error) {
       if (error instanceof ApiError && error.code && cardProblems.has(error.code)) setProblem(readErrorMessage(error, t));
       else notify({ id: "forms:assistant-proposal:" + proposalId, kind: "error", message: readErrorMessage(error, t) });

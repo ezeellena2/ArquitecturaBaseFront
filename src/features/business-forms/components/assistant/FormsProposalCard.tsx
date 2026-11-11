@@ -88,7 +88,7 @@ function CatalogCard({ requestId, proposal, replaced, read }: AssistantProposalC
   const { data: user } = useCurrentUser();
   const sheet = read.kind === "catalog" ? read.content.spreadsheet : null;
   // A catalog that maps the spreadsheet opens with its import ready to review (IA2).
-  const creation = useAssistantProposalCreation("catalog", requestId, proposal.id, sheet !== null);
+  const creation = useAssistantProposalCreation("catalog", requestId, proposal.id, sheet && { fileName: sheet.fileName, rowCount: sheet.rowCount });
   const kind = t("assistantProposals.catalog.kind");
   const title = read.content.name;
   if (creation.created)
@@ -136,7 +136,7 @@ function ImportCard({ requestId, proposal, replaced, content }: AssistantProposa
     <AssistantProposalCard kind={kind} title={catalog.name}
       summary={[valueTypeName(t, catalog.valueType), t("assistantProposals.spreadsheet.rows", { count: sheet.rowCount })].join(" · ")}
       actions={user?.permissions.includes("formcatalogs.manage")
-        ? <Button size="sm" onClick={() => void navigate("/catalogos/" + catalog.id, { state: assistantImportState({ requestId, proposalId: proposal.id }) })}>
+        ? <Button size="sm" onClick={() => void navigate("/catalogos/" + catalog.id, { state: assistantImportState({ requestId, proposalId: proposal.id, fileName: sheet.fileName, rowCount: sheet.rowCount }) })}>
             {t("assistantProposals.import.review")}
           </Button>
         : undefined}>

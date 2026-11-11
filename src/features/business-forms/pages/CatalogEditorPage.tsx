@@ -6,6 +6,8 @@ import { CatalogFieldsDialog } from "../components/CatalogFieldsDialog";
 import { CatalogFieldsButton, CatalogFieldsNotice } from "../components/CatalogFieldsNotice";
 import { CatalogPresentationSection } from "../components/CatalogPresentationSection";
 import { CatalogImportDialog } from "../components/CatalogImportDialog";
+import { readAssistantImportQuery, readAssistantImportState, withoutAssistantImport, type AssistantImportSource } from "../assistantImport";
+import { useAssistantCatalogImport } from "../hooks/useAssistantCatalogImport";
 import { CatalogPreview } from "../components/CatalogPreview";
 import { CatalogOptionsActions } from "../components/CatalogOptionsActions";
 import { useCatalogExport } from "../hooks/useCatalogExport";
@@ -13,7 +15,7 @@ import { isCatalogValueType, parseCatalogValue, type CatalogValueType } from "..
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
@@ -21,6 +23,7 @@ import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Badge } from "@/shared/ui/badge";
@@ -154,6 +157,24 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); dismissNotification(fieldsNoticeId); }; }, [feedbackId, fieldsNoticeId]);
   const guard = useUnsavedChangesGuard(editor.dirty || editor.busy, { queryKeys: ["kind", "valueType"] });
   const canManage = scope.permissions.includes("formcatalogs.manage") && (initial?.kind ?? "Manual") === "Manual";
+  // IA2 and IA4: the import of a proposal's spreadsheet opens by itself once per load, only for whoever manages the catalog: from
+  // the card's navigation state, from WhatsApp's link (whose parameters then leave the address, without a new entry) or from the
+  // import still pending in a catalog created from a proposal. The state leaves too, so reloading does not open it again.
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const updateQuery = useQueryUpdate();
+  const [assistantImport, setAssistantImport] = useState<AssistantImportSource | null>(null);
+  const [assistantOpened, setAssistantOpened] = useState(false);
+  const requested = readAssistantImportState(location.state) ?? readAssistantImportQuery(searchParams);
+  const pendingImport = useAssistantCatalogImport(scope, draft?.id ?? null, canManage && !assistantOpened && !requested);
+  const assistantSource = assistantOpened || !draft?.id ? null : requested ?? pendingImport.data ?? null;
+  if (assistantSource) { setAssistantOpened(true); if (canManage) { setAssistantImport(assistantSource); setImportOpen(true); } }
+  // Once taken, the import leaves the state and the address, again if another write of the query string brings it back.
+  useEffect(() => {
+    if (!assistantOpened) return;
+    if (readAssistantImportState(location.state)) void navigate({ pathname: location.pathname, search: location.search, hash: location.hash }, { replace: true, state: withoutAssistantImport(location.state) });
+    else if (readAssistantImportQuery(searchParams)) updateQuery({ pedido: undefined, propuesta: undefined });
+  }, [assistantOpened, location, searchParams, navigate, updateQuery]);
   const readOnly = !editor.canSave;
   const fields = editor.error instanceof ApiError ? editor.error.errors ?? {} : {};
   const fieldFeedback = editor.error instanceof ApiError ? readCatalogFieldFeedback(editor.error.problem) : null;
@@ -365,7 +386,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
       onSelect={selectedId => setItemsDialog({ ...itemsDialog, selectedId })} onChange={editor.changeItem} onFieldBlur={touch} onGenerateCode={canManage ? item => generateCode(item.localId) : undefined}
       onAdd={addDialogItem} onRemove={item => editor.discardItem(item.localId)} onDelete={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, true); }} onRestore={item => { if (item.itemId) editor.changeItemDeletion(item.itemId, false); }}
       onDone={finishItems} onCancel={cancelItems} /> : null}
-    {importOpen && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportOpen(false)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setItemsDialog(null); }} onTemplate={() => void exported.download(true)} downloadingTemplate={exported.working === "template"} /> : null}
+    {importOpen && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} timeZoneId={timeZoneId} focusFallback={importFocus} assistant={assistantImport} onClose={() => { setImportOpen(false); setAssistantImport(null); }} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setItemsDialog(null); }} onTemplate={() => void exported.download(true)} downloadingTemplate={exported.working === "template"} /> : null}
     {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={administrativeName(errorField.name, culture) || t("catalogs.fields.new")} from={errorRows.from} field={errorField} culture={draft.culture} convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={errorField.isActive ? showErrorRows : undefined} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
     <CatalogReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} culture={culture} mine={{ name: draft.name, description: draft.description }} current={editor.current ? { name: editor.current.name, description: editor.current.description } : null}

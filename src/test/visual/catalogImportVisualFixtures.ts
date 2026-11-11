@@ -9,7 +9,7 @@ export interface CatalogImportVisualStore extends BaseStore { previews: ImportSu
 
 // Explicit simulated transport. No parser, database or actual producer evidence is claimed here.
 export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pick<CatalogDetail, "id" | "valueType" | "name">,
-  createBase: () => BaseStore): CatalogImportVisualStore {
+  createBase: () => BaseStore, assistant: "pending" | "gone" | null = null): CatalogImportVisualStore {
   const base = createBase(), catalogId = catalog.id, typed = catalog.valueType === "Decimal";
   const previews: ImportSubmission[] = [], applies: ImportSubmission[] = [];
   let applied = false, held: ImportStep | null = null, release = () => {};
@@ -35,6 +35,18 @@ export function createCatalogImportVisualStore(culture: "es" | "en", catalog: Pi
   // A scene holds the next preview or apply to show the dialog while it works (IM2-A), then releases it.
   return { writes: base.writes, reads: base.reads, previews, applies, hold(step) { held = step; }, release() { held = null; release(); }, async handle(request) {
     const url = new URL(request.url);
+    // IA2: the import of a proposal's spreadsheet, pending in this catalog, read from the copy of its turn (or gone).
+    if (assistant && url.pathname === "/api/forms/catalogs/" + catalogId + "/assistant-import")
+      return json({ catalogId, pending: { requestId: "01990000-0000-7000-8000-000000000071", proposalId: "01990000-0000-7000-8000-000000000072", fileName: "clientes.xlsx", rowCount: 27 } });
+    if (assistant && (url.pathname.endsWith("/assistant-import-previews") || url.pathname.endsWith("/assistant-imports"))) {
+      if (assistant === "gone") return json({ title: "Conflict", status: 409, code: "Forms.CatalogImport.SheetUnavailable", detail: culture === "es" ? "La copia ya no está." : "The copy is gone." }, 409);
+      const body = await request.json() as { expectedRevision: number };
+      const submission: ImportSubmission = { mode: "Replace", expectedRevision: body.expectedRevision, fileName: "clientes.xlsx", bytes: 0 };
+      if (url.pathname.endsWith("/assistant-import-previews")) { previews.push(submission); return json(preview("Replace")); }
+      applies.push(submission); applied = true;
+      const current = await base.handle(new Request(url.origin + "/api/forms/catalogs/" + catalogId));
+      return json({ catalog: { ...await current.json() as CatalogDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} });
+    }
     if (url.pathname.endsWith("/import-previews") || url.pathname.endsWith("/imports")) {
       if (request.method !== "POST") return json({ code: "MethodNotAllowed" }, 405);
       const form = await request.formData(); const file = form.get("file"), mode = form.get("mode");
