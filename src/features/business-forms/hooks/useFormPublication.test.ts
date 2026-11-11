@@ -53,6 +53,19 @@ describe("owned publication attempt", () => {
     expect(fetchFormPublication).toHaveBeenCalledTimes(1);
     expect(acceptFormPublication).toHaveBeenCalledTimes(1);
   });
+  // SA3-A: published only in the app, the receipt already says Published. Its status is read once, at once, for the languages it
+  // sealed, and nothing is polled after it.
+  it("reads the status of a publication only in the app at once and polls nothing after it", async () => {
+    vi.useFakeTimers();
+    vi.mocked(acceptFormPublication).mockResolvedValue({ ...receipt, state: "Published" });
+    vi.mocked(fetchFormPublication).mockResolvedValue({ ...status, state: "Published", stage: "Complete", cultures: ["es"] });
+    const { result } = renderHook(() => useFormPublication(scope));
+    await act(() => result.current.accept(definition.id, body, checked));
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    expect(result.current.status).toMatchObject({ state: "Published", cultures: ["es"] });
+    await act(() => vi.advanceTimersByTimeAsync(120000));
+    expect(fetchFormPublication).toHaveBeenCalledTimes(1);
+  });
   it("keeps its receipt when status belongs to another version", async () => {
     vi.mocked(acceptFormPublication).mockResolvedValue(receipt);
     vi.mocked(fetchFormPublication).mockResolvedValue({ ...status, versionId: "01990000-0000-7000-8000-000000000099" });

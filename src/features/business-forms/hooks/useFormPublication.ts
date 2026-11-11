@@ -107,13 +107,16 @@ export function useFormPublication(scope: FormReadScope) {
   const resetRejected = useCallback(() => {
     if (owns && current.current.phase === "Rejected" && !flight.current) update(empty());
   }, [owns, update]);
+  // SA3-A: published only in the app, the receipt already says Published; its status is read once, at once, for the languages it
+  // sealed and for the editor, which follows the status.
+  const publishedOnAcceptance = session.receipt?.state === "Published" && !session.status;
   useEffect(() => {
     const state = session.status?.state ?? session.receipt?.state;
-    if (!owns || session.phase !== "Accepted" || session.busy || session.error || state === "Published" || state === "Failed" || state === "Uncertain") return;
-    const delay = session.status?.nextCheckAtUtc ? Math.min(300000, Math.max(1000, Date.parse(session.status.nextCheckAtUtc) - Date.now())) : 30000;
+    if (!owns || session.phase !== "Accepted" || session.busy || session.error || !publishedOnAcceptance && (state === "Published" || state === "Failed" || state === "Uncertain")) return;
+    const delay = publishedOnAcceptance ? 0 : session.status?.nextCheckAtUtc ? Math.min(300000, Math.max(1000, Date.parse(session.status.nextCheckAtUtc) - Date.now())) : 30000;
     const timer = window.setTimeout(() => { void consult(); }, delay);
     return () => window.clearTimeout(timer);
-  }, [owns, session.phase, session.busy, session.error, session.status?.state, session.status?.nextCheckAtUtc, session.receipt?.state, consult]);
+  }, [owns, session.phase, session.busy, session.error, session.status?.state, session.status?.nextCheckAtUtc, session.receipt?.state, publishedOnAcceptance, consult]);
   const visible = owns ? session : empty();
   return { phase: visible.phase, receipt: visible.receipt, status: visible.status, error: visible.error, busy: visible.busy,
     aggregate: visible.reference, startedHere: visible.attempt !== null, canReplay: visible.canReplay, confirmed: visible.receipt !== null || visible.status !== null || visible.reference !== null, accept, consult, replay, resetRejected, resume };

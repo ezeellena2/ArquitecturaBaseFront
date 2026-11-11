@@ -42,7 +42,9 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
 const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision, offerWhen: z.string().min(1).max(1000).refine(value => value === value.trim()).nullable(),
   draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(41),
     // Section titles (CW15-B): omitted without them; each says how many questions go before it.
-    sections: z.array(z.strictObject({ start: z.number().int().min(0).max(41), title: text })).min(1).max(40).optional() }),
+    sections: z.array(z.strictObject({ start: z.number().int().min(0).max(41), title: text })).min(1).max(40).optional(),
+    // «Dónde se completa» (SA1-A): true is «Sólo en la app»; completed also by a channel, it is omitted.
+    appOnly: z.literal(true).optional() }),
 }).superRefine((value, context) => {
   const { culture, fields, submitLabel } = value.draft;
   const sections = value.draft.sections ?? [];
@@ -65,13 +67,16 @@ const author = z.strictObject({ userId: guid, displayName: z.string().nullable()
 const audit = z.strictObject({ createdAtUtc: utc, modifiedAtUtc: utc.nullable(), lastChangedAtUtc: utc, lastChangedBy: author.nullable() });
 const publicationState = z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
 const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
-const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1) });
+// A version published only in the app says so (SA3-A); one published by a channel omits it.
+const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1), appOnly: z.literal(true).optional() });
 const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
 const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
 const lifecycle = z.strictObject({ deprecationState: z.enum(["Pending", "Uncertain", "Deprecated", "NeedsAttention"]).nullable(), deprecatedAtUtc: utc.nullable(), lastOpenSessionExpiresAtUtc: utc.nullable(), canDelete: z.boolean(), deletionUnavailableReason: z.enum(["PublicationInProgress", "HasResponses", "OpenSends"]).nullable(), revision, deactivatedAtUtc: utc.nullable(), deactivatedBy: author.nullable(),
   responseCount: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable(), pendingApprovalCount: z.number().int().min(0).nullable(),
   nextRecordNumber: z.string().min(1).nullable(), nextVersionNumber: revision, canDeactivate: z.boolean(), canReactivate: z.boolean(),
-  unavailableReason: z.enum(["PublicationInProgress", "NotPublished"]).nullable() });
+  unavailableReason: z.enum(["PublicationInProgress", "NotPublished"]).nullable(),
+  // Every version was published only in the app: nothing of it is in WhatsApp (SA2-A).
+  publishedOnlyInApp: z.literal(true).optional() });
 const deactivation = z.strictObject({ definitionId: guid, revision, lifecycle });
 const deactivationPreview = deactivation.extend({ affectedSuggestions: z.array(z.strictObject({ definitionId: guid, name: nameText })) });
 const detail = z.strictObject({ definition, lifecycle, capabilities: z.strictObject({ canSave: z.boolean(), canPublish: z.boolean(), canPreview: z.boolean() }), audit, publication: publicationProjection });
@@ -82,8 +87,9 @@ const commit = z.strictObject({ requestId: guid, definition,
 }).refine(value => value.recovery.path === recoveryPath(value.requestId));
 const recovered = z.strictObject({ requestId: guid, kind: z.enum(["Create", "Update"]), status: z.literal("Committed"), committedAtUtc: utc, currentRevision: revision, result: commit })
   .refine(value => value.requestId === value.result.requestId && value.currentRevision >= value.result.definition.revision);
+// `appOnly`: the active version, or a form never published, its draft, is completed only in the app (SA3-A).
 const row = z.strictObject({ id: guid, name: nameText, prefix: z.string(), questionCount: z.number().int().min(0), activeVersionNumber: revision.nullable(),
-  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean(), lifecycle });
+  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean(), lifecycle, appOnly: z.literal(true).optional() });
 const checkedRow = row.refine(value => Object.values(value.name).some(name => !!name.trim()));
 const page = z.strictObject({ items: z.array(checkedRow), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: z.number().int().min(0),
   totalPages: z.number().int().min(0), hasPrevious: z.boolean(), hasNext: z.boolean() });
@@ -173,7 +179,8 @@ export function publicationPath(definitionId: string, requestId: string): string
 }
 const publicationIdentity = { requestId: guid, operationId: guid, definitionId: guid, versionId: guid,
   versionNumber: revision, draftRevision: revision, acceptedAtUtc: utc };
-const publicationReceipt = z.strictObject({ ...publicationIdentity, state: z.literal("Accepted"), recoveryPath: z.string() });
+// Published only in the app, the version is active when accepted (SA3-A): its receipt already says Published.
+const publicationReceipt = z.strictObject({ ...publicationIdentity, state: z.enum(["Accepted", "Published"]), recoveryPath: z.string() });
 const publicationStatus = z.strictObject({ ...publicationIdentity,
   state: z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]),
   stage: z.string().min(1), updatedAtUtc: utc, nextCheckAtUtc: utc.nullable(), canRetry: z.boolean(), requiresReview: z.boolean(), issues: z.array(publicationIssue), cultures: z.array(z.enum(["es", "en"])) });

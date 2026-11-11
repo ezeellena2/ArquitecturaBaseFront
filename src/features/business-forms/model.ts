@@ -71,6 +71,9 @@ export interface FormDraft<TQuestion, TSection = FormSection> {
   readonly submitLabel: LocalizedText;
   readonly fields: readonly TQuestion[];
   readonly sections?: readonly TSection[];
+  // «Dónde se completa» (SA1-A): `true` is «Sólo en la app». «En la app y por WhatsApp», the default, has no key, so a draft that
+  // never chose keeps its bytes. It travels with the draft to saving, checking and accepting.
+  readonly appOnly?: true;
 }
 export interface DraftEditorValue {
   readonly offerWhen: string | null;

@@ -28,7 +28,7 @@ describe("publication acceptance and own status", () => {
     expect(await fetchFormPublication(definition.id, requestId)).toMatchObject({ state: "Publishing", stage: "Validate" });
   });
   it.each([{ recoveryPath: "https://private.invalid/ticket" }, { requestId: "01990000-0000-7000-8000-000000000099" },
-    { definitionId: "01990000-0000-7000-8000-000000000099" }, { draftRevision: 2 }, { state: "Published" }])("rejects a mismatched acceptance receipt: %j", async change => {
+    { definitionId: "01990000-0000-7000-8000-000000000099" }, { draftRevision: 2 }, { state: "Preparing" }])("rejects a mismatched acceptance receipt: %j", async change => {
     server.use(http.post("/api/forms/definitions/:id/publications", () => HttpResponse.json({ ...receipt, ...change }, { status: 202 })));
     await expect(acceptFormPublication(definition.id, body)).rejects.toThrow("Unsupported form response.");
   });
