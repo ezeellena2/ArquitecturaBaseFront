@@ -39,7 +39,9 @@ para documentos, este documento congela lo elegido. Alcance, permisos y contrato
   migas lo nombran («Repartos / Hoja de ruta»); desde un enlace o desde «Formularios», todo sigue como hoy.
 - **Celular:** cada menú propio es un grupo del cajón con sus subcarpetas como grupos adentro; una carpeta puesta en un
   panel queda adentro del grupo de ese panel. **Contraído:** el ícono del menú propio, con su tooltip, abre el panel.
-- **Estados:** mientras se lee, los menús propios ocupan su lugar con un bloque de carga; si no se pudo leer, el aviso que
+- **Estados:** mientras se lee, los menús propios no ocupan lugar y aparecen al leerse: un bloque de carga desaparecería
+  cuando no hay ninguno, lo común, y haría subir al resto («Lo que carga no mueve lo que ya se ve», 2026-11-05, que es
+  posterior a CP5-A y gana; ajustado el 2026-11-11). Si no se pudo leer, el aviso que
   el menú ya tiene, con «Reintentar», y lo demás sigue andando. El cambio se ve enseguida para quien lo hizo.
 
 ## Estados (CP4)

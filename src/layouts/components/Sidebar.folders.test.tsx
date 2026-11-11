@@ -86,10 +86,13 @@ describe("the folders in the side menu (CP5-A)", () => {
     expect(screen.getByRole("button", { name: "Norte" })).toBeInTheDocument();
   });
 
-  it("holds the place with a loading block while reading and offers Reintentar when it could not", async () => {
+  // «Lo que carga no mueve lo que ya se ve» (2026-11-05): a block in the place of the menus of their own would leave when
+  // there are none, the usual case, and lift «Gestión de formularios» and everything below it.
+  it("keeps nothing in the place of the menus of their own while reading and offers Reintentar when it could not", async () => {
     const { unmount, container } = renderShell({ state: { pending: true } });
-    await screen.findByRole("link", { name: "Inicio" });
-    expect(container.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
+    // With the profile read, the rows that depend on it are there: the menu read alone adds no block.
+    await screen.findByRole("button", { name: "Gestión de formularios" });
+    expect(container.querySelectorAll("[data-slot='skeleton']")).toHaveLength(0);
     expect(screen.queryByRole("button", { name: "Repartos" })).not.toBeInTheDocument();
     unmount();
     const retry = vi.fn();

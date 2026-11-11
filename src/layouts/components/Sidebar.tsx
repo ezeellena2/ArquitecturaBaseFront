@@ -566,13 +566,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
-          {/* The menus of their own (CP5-A) go below Inicio, alphabetically as the server sends them. While the menu is read, a
-              loading block takes their place. */}
-          {folderMenu?.pending ? (
-            <div className={cn("mt-1", iconsOnly ? "flex justify-center" : "")}>
-              <Skeleton aria-hidden="true" className={cn("rounded-[var(--radius-control)]", iconsOnly ? "size-7.5" : "h-7.5")} />
-            </div>
-          ) : folderModel.own.length > 0 ? (
+          {/* The menus of their own (CP5-A) go below Inicio, alphabetically as the server sends them. While the menu is read
+              nothing takes their place: a block would leave when there are none, the usual case, and lift what is below it. */}
+          {!folderMenu?.pending && folderModel.own.length > 0 ? (
             <ul className={cn("mt-1 flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
               {folderModel.own.map(panel => (
                 <li key={panel.labelKey}>

@@ -257,8 +257,9 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   propio, debajo de Inicio y con los demás en orden alfabético, que abre su panel como Administración (sus formularios y
   un grupo por subcarpeta, nunca más de dos niveles), o ser un grupo más al final de «Gestión de formularios» o de
   Administración. Lleva sólo los formularios activos que la persona puede abrir y lo vacío no aparece. En el cajón, un
-  menú propio es un grupo con sus subcarpetas adentro; contraída, su ícono con tooltip abre el panel. Mientras se lee, un
-  bloque de carga ocupa su lugar; si falla, el aviso del menú con «Reintentar».
+  menú propio es un grupo con sus subcarpetas adentro; contraída, su ícono con tooltip abre el panel. Mientras se lee no
+  ocupa lugar (un bloque que desapareciera sin menús propios haría subir al resto); si falla, el aviso del menú con
+  «Reintentar».
 
 ## Íconos y acciones
 
