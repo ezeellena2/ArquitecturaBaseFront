@@ -1013,6 +1013,7 @@
     "operator": "Condition",
     "value": "Value",
     "missingQuestion": "Question unavailable",
+    "missingResult": "Data unavailable",
     "removeCondition": "Remove condition {{number}}",
     "addCondition": "Add condition",
     "noQuestions": "The form has no questions yet.",
@@ -1030,10 +1031,10 @@
     "addData": "Add data",
     "searchData": "Search for a question",
     "noData": "No data matches the search.",
-    "dataGroups": { "response": "From the response", "questions": "Questions" },
+    "dataGroups": { "response": "From the response", "questions": "Questions", "result": "From «{{name}}»" },
     "data": { "number": "Number", "reason": "Rejection reason" },
     "arrives": "How it arrives",
-    "samples": { "answer": "Example response", "reason": "Example reason" },
+    "samples": { "answer": "Example response", "reason": "Example reason", "result": "Example data" },
     "upAction": "Move action {{number}} up",
     "downAction": "Move action {{number}} down",
     "removeAction": "Remove action {{number}}",
@@ -1048,7 +1049,8 @@
       "RequestApproval": "Request approval from someone with a role",
       "GeneratePdf": "Generate PDF",
       "NotifyAuthor": "Message the response author",
-      "NotifyRole": "Notify people with a role"
+      "NotifyRole": "Notify people with a role",
+      "IssueDocument": "Issue a voucher"
     },
     "operators": {
       "in": "Is one of",
@@ -1071,7 +1073,12 @@
       "pdfOnApproval": "The PDF is attached only when a response is approved.",
       "tooMany": "The limit has been reached.",
       "tooLong": "The message exceeds the allowed length.",
-      "missingData": "Remove the data that is no longer in the form."
+      "missingData": "Remove the data that is no longer in the form.",
+      "issueOnEvent": "A voucher is issued when a response is received or approved.",
+      "issueOnce": "Each rule issues a single voucher.",
+      "issueBeforeMessages": "Issuing goes before the messages, which may use its data.",
+      "issuerUnavailable": "This action only applies to a form copied from its standard, with the module installed.",
+      "resultBeforeIssue": "That data only arrives after the action that brings it, in this rule."
     },
     "saveConflict": "Reload and choose what to keep before saving.",
     "chooseValues": "Choose values",

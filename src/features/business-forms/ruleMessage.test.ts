@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n";
-import { hasMissingRuleData, parseRuleMessage, ruleMessageData, ruleMessagePreview, ruleMessageText, serializeRuleMessage, type RuleMessageQuestion } from "./ruleMessage";
+import { hasMissingRuleData, hasUnavailableResults, parseRuleMessage, ruleMessageData, ruleMessageDataLabel, ruleMessagePreview, ruleMessageText, serializeRuleMessage, type RuleMessageQuestion, type RuleMessageResult } from "./ruleMessage";
 
 const remito = "0199a0c0-0000-7000-8000-000000000001", photo = "0199a0c0-0000-7000-8000-000000000002", supplier = "0199a0c0-0000-7000-8000-000000000003";
 const received = "0199a0c0-0000-7000-8000-000000000004", amount = "0199a0c0-0000-7000-8000-000000000005", complete = "0199a0c0-0000-7000-8000-000000000006", issues = "0199a0c0-0000-7000-8000-000000000007";
@@ -15,6 +15,30 @@ const questions: RuleMessageQuestion[] = [
 ];
 const choices = { [supplier]: [{ id: "0199a0c0-0000-7000-8000-000000000100", label: "Distribuidora Norte" }] };
 
+const voucher: RuleMessageResult[] = [
+  { source: "arca.invoice", sourceName: { es: "Emitir comprobante en ARCA", en: "Issue an ARCA voucher" }, key: "number", label: { es: "Número de comprobante", en: "Voucher number" }, kind: "text" },
+  { source: "arca.invoice", sourceName: { es: "Emitir comprobante en ARCA", en: "Issue an ARCA voucher" }, key: "total", label: { es: "Total", en: "Total" }, kind: "number" },
+];
+describe("rule message with the data of a result (RE1-A)", () => {
+  const t = i18n.getFixedT("es", "forms");
+  it("reads and writes a datum of a result by its source and key", () => {
+    const parts = parseRuleMessage("Comprobante {result:arca.invoice.number}");
+    expect(parts).toEqual([{ kind: "text", text: "Comprobante " }, { kind: "result", source: "arca.invoice", key: "number" }]);
+    expect(serializeRuleMessage(parts, "es")).toBe("Comprobante {result:arca.invoice.number}");
+    expect(parseRuleMessage("{result:sinclave}")).toEqual([{ kind: "text", text: "{result:sinclave}" }]);
+  });
+  it("offers the data of the earlier actions after the response data, and names them", () => {
+    expect(ruleMessageData([], "Received", voucher)).toEqual([{ kind: "number" }, { kind: "result", source: "arca.invoice", key: "number" }, { kind: "result", source: "arca.invoice", key: "total" }]);
+    expect(ruleMessageDataLabel({ kind: "result", source: "arca.invoice", key: "number" }, [], "es", "es", t, voucher)).toBe("Número de comprobante");
+    expect(ruleMessageDataLabel({ kind: "result", source: "arca.invoice", key: "cae" }, [], "es", "es", t, voucher)).toBeNull();
+  });
+  it("shows an example of its kind, and a datum no earlier action brings as missing", () => {
+    expect(ruleMessagePreview("Total {result:arca.invoice.total}", [], {}, "es", "es", "FAC", t, voucher)).toEqual([{ text: "Total " }, { text: "12.500,5", sample: true }]);
+    expect(ruleMessagePreview("{result:arca.invoice.number}", [], {}, "es", "es", "FAC", t)).toEqual([{ text: t("rules.missingResult"), missing: true }]);
+    expect(hasUnavailableResults("{result:arca.invoice.number}", voucher)).toBe(false);
+    expect(hasUnavailableResults("{result:arca.invoice.number}", [])).toBe(true);
+  });
+});
 describe("rule message", () => {
   it("reads the number and the reason in either language and a question by its identity, and keeps any other braces as text", () => {
     expect(parseRuleMessage(`Llegó {${remito}} de {número}, {reason}. {Proveedor}`)).toEqual([

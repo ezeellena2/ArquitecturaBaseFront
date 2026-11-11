@@ -1,21 +1,34 @@
 import { localizedValue } from "./editorModel";
 import type { FormCulture, LocalizedText } from "./model";
 import { normalizeResponseQuery, responseQuestionColumns, type ResponseColumn, type ResponseCondition, type ResponseType } from "./responses";
-import { hasMissingRuleData } from "./ruleMessage";
+import { hasMissingRuleData, hasUnavailableResults, type RuleMessageResult } from "./ruleMessage";
 export const ruleEvents = ["Received", "Approved", "Rejected"] as const;
-export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole"] as const;
+export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole", "IssueDocument"] as const;
 export type RuleEvent = typeof ruleEvents[number];
 export type RuleActionKind = typeof ruleActionKinds[number];
-export interface RuleAction { readonly id: string; readonly kind: RuleActionKind; readonly roleId: string | null; readonly text: LocalizedText | null; readonly includePdf: boolean }
+/** `issuerId`: the installed issuer of an «IssueDocument» action; the other kinds do not carry it. */
+export interface RuleAction { readonly id: string; readonly kind: RuleActionKind; readonly roleId: string | null; readonly text: LocalizedText | null; readonly includePdf: boolean; readonly issuerId?: string | null }
+/** An issuer the rule options offer (only on a form copied from its standard): its name and the data its result brings. */
+export interface RuleIssuer { readonly id: string; readonly name: LocalizedText; readonly resultFields: readonly { readonly key: string; readonly label: LocalizedText; readonly kind: string }[] }
 export interface FormRule { readonly id: string; readonly event: RuleEvent; readonly conditions: readonly ResponseCondition[]; readonly actions: readonly RuleAction[] }
 export interface RuleIssue { readonly path: string; readonly key: string }
 export type PdfAttachmentIssue = { readonly key: "pdfBeforeAttachment"; readonly fix: "move" | "add" } | { readonly key: "pdfOnApproval"; readonly fix: null };
 export const usesMessage = (kind: RuleActionKind) => kind === "NotifyAuthor" || kind === "NotifyRole";
 export const usesRole = (kind: RuleActionKind) => kind === "RequestApproval" || kind === "NotifyRole";
 export const newRule = (): FormRule => ({ id: crypto.randomUUID(), event: "Received", conditions: [], actions: [] });
-export const newRuleAction = (kind: RuleActionKind): RuleAction => ({ id: crypto.randomUUID(), kind, roleId: null, text: usesMessage(kind) ? { es: "", en: "" } : null, includePdf: false });
-// Changing the kind keeps what was written: the message, the role and the attachment come back with a kind that uses them.
-export const withRuleActionKind = (action: RuleAction, kind: RuleActionKind): RuleAction => ({ ...action, kind, text: action.text ?? (usesMessage(kind) ? { es: "", en: "" } : null) });
+export const newRuleAction = (kind: RuleActionKind, issuerId: string | null = null): RuleAction => ({ id: crypto.randomUUID(), kind, roleId: null,
+  text: usesMessage(kind) ? { es: "", en: "" } : null, includePdf: false, ...kind === "IssueDocument" ? { issuerId } : {} });
+// Changing the kind keeps what was written: the message, the role and the attachment come back with a kind that uses them. The
+// issuer goes only with «IssueDocument».
+export const withRuleActionKind = (action: RuleAction, kind: RuleActionKind, issuerId: string | null = null): RuleAction => {
+  const { issuerId: previous, ...rest } = action;
+  return { ...rest, kind, text: action.text ?? (usesMessage(kind) ? { es: "", en: "" } : null), ...kind === "IssueDocument" ? { issuerId: issuerId ?? previous ?? null } : {} };
+};
+/** The result data a message may use (RE1-A): those of the «IssueDocument» actions before it in its rule. */
+export const ruleResultsBefore = (rule: FormRule, index: number, issuers: readonly RuleIssuer[]): RuleMessageResult[] => rule.actions.slice(0, index).flatMap(action => {
+  const issuer = action.kind === "IssueDocument" ? issuers.find(item => item.id === action.issuerId) : undefined;
+  return issuer ? issuer.resultFields.map(field => ({ source: issuer.id, sourceName: issuer.name, key: field.key, label: field.label, kind: field.kind })) : [];
+});
 // Why a message cannot attach the PDF and which order fixes it (board RP1-A): the choice is never cleared for the user.
 export function pdfAttachmentIssue(rule: FormRule, index: number): PdfAttachmentIssue | null {
   const action = rule.actions[index];
@@ -55,7 +68,7 @@ export function conditionColumns(questions: readonly ConditionQuestion[], choice
   }
   return columns;
 }
-export function prepareRules(rules: readonly FormRule[], original: FormCulture, columns: readonly ResponseColumn[]) {
+export function prepareRules(rules: readonly FormRule[], original: FormCulture, columns: readonly ResponseColumn[], issuers: readonly RuleIssuer[] = []) {
   const issues: RuleIssue[] = [];
   const prepared = rules.map((rule, index): FormRule => {
     const path = "rules." + index;
@@ -67,6 +80,14 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
       if (action.kind === "RequestApproval" && actionIndex !== rule.actions.length - 1) issues.push({ path: actionPath, key: "approvalLast" });
       if (action.kind === "RequestApproval" && rule.event !== "Received") issues.push({ path: actionPath, key: "approvalOnReceived" });
       if (action.kind === "GeneratePdf" && rule.event !== "Approved") issues.push({ path: actionPath, key: "pdfAfterApproval" });
+      // An issuance goes when a response arrives or is approved, once per rule and before the messages, which may use its data.
+      if (action.kind === "IssueDocument") {
+        const before = rule.actions.slice(0, actionIndex);
+        if (rule.event !== "Received" && rule.event !== "Approved") issues.push({ path: actionPath, key: "issueOnEvent" });
+        else if (before.some(previous => previous.kind === "IssueDocument")) issues.push({ path: actionPath, key: "issueOnce" });
+        else if (before.some(previous => usesMessage(previous.kind))) issues.push({ path: actionPath, key: "issueBeforeMessages" });
+        if (!issuers.some(issuer => issuer.id === action.issuerId)) issues.push({ path: actionPath + ".issuerId", key: "issuerUnavailable" });
+      }
       const role = usesRole(action.kind);
       if (role && !action.roleId) issues.push({ path: actionPath + ".roleId", key: "required" });
       const attachment = pdfAttachmentIssue(rule, actionIndex);
@@ -80,7 +101,10 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
       // A datum whose question left the form would arrive empty: it is told under the message before saving (board MD1-A). A
       // question of the block is among them, and the server says that it is not a datum (RG5-A).
       for (const [culture, value] of Object.entries(text ?? {})) if (hasMissingRuleData(value, responseQuestionColumns(columns))) issues.push({ path: actionPath + ".text." + culture, key: "missingData" });
-      return { ...action, roleId: role ? action.roleId : null, text, includePdf: attached };
+      // A datum of a result only arrives after the action that brings it (RE1-A).
+      const results = ruleResultsBefore(rule, actionIndex, issuers);
+      for (const [culture, value] of Object.entries(text ?? {})) if (hasUnavailableResults(value, results)) issues.push({ path: actionPath + ".text." + culture, key: "resultBeforeIssue" });
+      return { ...action, roleId: role ? action.roleId : null, text, includePdf: attached, issuerId: action.kind === "IssueDocument" ? action.issuerId ?? null : undefined };
     });
     return { ...rule, conditions: normalized?.conditions ?? rule.conditions, actions };
   });
@@ -96,7 +120,8 @@ export function ruleFieldErrors(source: Readonly<Record<string, readonly string[
   }
   const fields = rules.flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
     const path = "rules." + index + ".actions." + position;
-    return [path, ...(usesRole(action.kind) ? [path + ".roleId"] : []), ...(usesMessage(action.kind) ? [path + ".text.es", path + ".text.en"] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : [])];
+    return [path, ...(usesRole(action.kind) ? [path + ".roleId"] : []), ...(usesMessage(action.kind) ? [path + ".text.es", path + ".text.en"] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : []),
+      ...(action.kind === "IssueDocument" ? [path + ".issuerId"] : [])];
   })]);
   const first = Object.keys(errors).find(path => errors[path].length > 0 && fields.includes(path));
   const index = first ? /^rules\.(\d+)\./.exec(first)?.[1] : undefined;

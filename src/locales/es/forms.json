@@ -1013,6 +1013,7 @@
     "operator": "Condición",
     "value": "Valor",
     "missingQuestion": "Pregunta no disponible",
+    "missingResult": "Dato no disponible",
     "removeCondition": "Quitar condición {{number}}",
     "addCondition": "Agregar condición",
     "noQuestions": "El formulario todavía no tiene preguntas.",
@@ -1030,10 +1031,10 @@
     "addData": "Agregar dato",
     "searchData": "Buscar una pregunta",
     "noData": "Ningún dato coincide con la búsqueda.",
-    "dataGroups": { "response": "De la respuesta", "questions": "Preguntas" },
+    "dataGroups": { "response": "De la respuesta", "questions": "Preguntas", "result": "De «{{name}}»" },
     "data": { "number": "Número", "reason": "Motivo del rechazo" },
     "arrives": "Así llega",
-    "samples": { "answer": "Ejemplo de respuesta", "reason": "Ejemplo de motivo" },
+    "samples": { "answer": "Ejemplo de respuesta", "reason": "Ejemplo de motivo", "result": "Ejemplo de dato" },
     "upAction": "Subir acción {{number}}",
     "downAction": "Bajar acción {{number}}",
     "removeAction": "Quitar acción {{number}}",
@@ -1048,7 +1049,8 @@
       "RequestApproval": "Pedir aprobación a una persona con un rol",
       "GeneratePdf": "Armar el PDF",
       "NotifyAuthor": "Mandarle un mensaje a quien la cargó",
-      "NotifyRole": "Avisar a las personas con un rol"
+      "NotifyRole": "Avisar a las personas con un rol",
+      "IssueDocument": "Emitir comprobante"
     },
     "operators": {
       "in": "Es una de",
@@ -1071,7 +1073,12 @@
       "pdfOnApproval": "El PDF se adjunta sólo cuando se aprueba una respuesta.",
       "tooMany": "Se alcanzó el límite.",
       "tooLong": "El mensaje supera el límite permitido.",
-      "missingData": "Quitá el dato que ya no está en el formulario."
+      "missingData": "Quitá el dato que ya no está en el formulario.",
+      "issueOnEvent": "El comprobante se emite cuando se recibe o se aprueba una respuesta.",
+      "issueOnce": "Cada regla emite un solo comprobante.",
+      "issueBeforeMessages": "Emitir va antes de los mensajes, que pueden usar sus datos.",
+      "issuerUnavailable": "Esta acción sólo vale en un formulario copiado de su estándar, con el módulo instalado.",
+      "resultBeforeIssue": "Ese dato llega sólo después de la acción que lo trae, en esta regla."
     },
     "saveConflict": "Releé y elegí qué conservar antes de guardar.",
     "chooseValues": "Elegí los valores",

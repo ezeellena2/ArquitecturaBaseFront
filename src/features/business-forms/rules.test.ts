@@ -3,6 +3,33 @@ import { conditionColumns, newRule, newRuleAction, fixPdfAttachment, pdfAttachme
 import type { ResponseColumn } from "./responses";
 const original = "es";
 const column: ResponseColumn = { fieldId: "0199a0c0-0000-7000-8000-000000000030", type: "decimal", label: "Importe", introducedInVersion: 1, options: [] };
+const issuer = { id: "arca.invoice", name: { es: "Emitir comprobante en ARCA", en: "Issue an ARCA voucher" }, resultFields: [{ key: "number", label: { es: "Número", en: "Number" }, kind: "text" }] };
+describe("issuing a document", () => {
+  const issue = () => newRuleAction("IssueDocument", issuer.id);
+  it("goes when a response arrives or is approved, once per rule and before the messages", () => {
+    const message = { ...newRuleAction("NotifyAuthor"), text: { es: "Listo", en: "" } };
+    expect(prepareRules([{ ...newRule(), actions: [issue(), message] }], original, [column], [issuer]).issues).toEqual([]);
+    expect(prepareRules([{ ...newRule(), event: "Approved", actions: [issue()] }], original, [column], [issuer]).issues).toEqual([]);
+    expect(prepareRules([{ ...newRule(), event: "Rejected", actions: [issue()] }], original, [column], [issuer]).issues).toEqual([{ path: "rules.0.actions.0", key: "issueOnEvent" }]);
+    expect(prepareRules([{ ...newRule(), actions: [issue(), issue()] }], original, [column], [issuer]).issues).toEqual([{ path: "rules.0.actions.1", key: "issueOnce" }]);
+    expect(prepareRules([{ ...newRule(), actions: [message, issue()] }], original, [column], [issuer]).issues).toEqual([{ path: "rules.0.actions.1", key: "issueBeforeMessages" }]);
+  });
+  it("needs an issuer the form offers, and only its action keeps it", () => {
+    expect(prepareRules([{ ...newRule(), actions: [issue()] }], original, [column]).issues).toEqual([{ path: "rules.0.actions.0.issuerId", key: "issuerUnavailable" }]);
+    const prepared = prepareRules([{ ...newRule(), event: "Approved", actions: [issue(), { ...newRuleAction("GeneratePdf"), issuerId: issuer.id }] }], original, [column], [issuer]);
+    expect(prepared.rules[0].actions.map(action => action.issuerId)).toEqual([issuer.id, undefined]);
+  });
+  it("uses a datum of the result only after the action that brings it", () => {
+    const message = { ...newRuleAction("NotifyAuthor"), text: { es: "Va {result:arca.invoice.number}", en: "" } };
+    expect(prepareRules([{ ...newRule(), actions: [issue(), message] }], original, [column], [issuer]).issues).toEqual([]);
+    expect(prepareRules([{ ...newRule(), actions: [message] }], original, [column], [issuer]).issues).toEqual([{ path: "rules.0.actions.0.text.es", key: "resultBeforeIssue" }]);
+  });
+  it("brings its issuer when the kind changes to it and leaves it behind when it changes back", () => {
+    const issuing = withRuleActionKind(newRuleAction("NotifyAuthor"), "IssueDocument", issuer.id);
+    expect(issuing).toMatchObject({ kind: "IssueDocument", issuerId: issuer.id });
+    expect(withRuleActionKind(issuing, "NotifyAuthor")).not.toHaveProperty("issuerId");
+  });
+});
 describe("rule preparation", () => {
   it("requires only the original message language and preserves the optional text", () => {
     const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: " Recibimos {número}. ", en: "" } }] };

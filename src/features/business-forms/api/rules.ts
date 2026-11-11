@@ -6,10 +6,12 @@ const guid = z.string().uuid();
 const text = z.record(z.string().refine(value => value === "es" || value === "en"), z.string());
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const condition = z.strictObject({ fieldId: guid, operator: z.enum(["in", "anyOf", "contains", "equals", "gte", "lte", "answered", "unanswered", "notAsked"]), values: z.array(z.string()).nullable() });
-const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean() });
+// The issuer goes only in an «IssueDocument» action: the server omits it in the others.
+const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean(), issuerId: z.string().min(1).optional() });
+const issuer = z.strictObject({ id: z.string().min(1), name: text, resultFields: z.array(z.strictObject({ key: z.string().min(1), label: text, kind: z.enum(["text", "date", "number"]) })) });
 const rule = z.strictObject({ id: guid, event: z.enum(ruleEvents), conditions: z.array(condition), actions: z.array(action) });
 const ruleSet = z.strictObject({ id: guid.nullable(), definitionId: guid, revision: z.number().int().nonnegative(), originalCulture: z.enum(["es", "en"]), rules: z.array(rule), createdAtUtc: z.iso.datetime().nullable(), author: author.nullable() });
-const options = z.strictObject({ definitionId: guid, name: text, originalCulture: z.enum(["es", "en"]), questions: z.array(canonicalFormFieldSchema), conditionChoices: z.record(z.string().uuid(), z.array(z.strictObject({ id: guid, label: z.string() }))), roles: z.array(z.strictObject({ id: guid, name: z.string() })) });
+const options = z.strictObject({ definitionId: guid, name: text, originalCulture: z.enum(["es", "en"]), questions: z.array(canonicalFormFieldSchema), conditionChoices: z.record(z.string().uuid(), z.array(z.strictObject({ id: guid, label: z.string() }))), roles: z.array(z.strictObject({ id: guid, name: z.string() })), issuers: z.array(issuer).optional() });
 const ruleChanges = z.strictObject({ addedRules: z.number().int().nonnegative(), updatedRules: z.number().int().nonnegative(), removedRules: z.number().int().nonnegative(), orderChanged: z.boolean() });
 const ruleRevision = z.strictObject({ id: guid, revision: z.number().int().positive(), createdAtUtc: z.iso.datetime(), author: author.nullable(), hasApproval: z.boolean(), changes: ruleChanges });
 const history = z.strictObject({ items: z.array(ruleRevision), page: z.number().int().positive(), pageSize: z.number().int().positive(), totalCount: z.number().int().nonnegative(), totalPages: z.number().int().nonnegative(), hasPrevious: z.boolean(), hasNext: z.boolean() });

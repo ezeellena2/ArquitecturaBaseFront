@@ -8,7 +8,8 @@ import { ChevronDownIcon } from "@/shared/ui/icons";
 import { FormField } from "@/shared/ui/FormField";
 import type { FormCulture } from "../model";
 import type { RuleEvent } from "../rules";
-import { parseRuleMessage, ruleMessageData, ruleMessageDataLabel, ruleMessagePreview, serializeRuleMessage, type RuleMessageData, type RuleMessagePart, type RuleMessageQuestion } from "../ruleMessage";
+import { localizedValue } from "../editorModel";
+import { parseRuleMessage, ruleMessageData, ruleMessageDataLabel, ruleMessagePreview, serializeRuleMessage, type RuleMessageData, type RuleMessagePart, type RuleMessageQuestion, type RuleMessageResult } from "../ruleMessage";
 
 interface Props {
   label: string;
@@ -26,20 +27,24 @@ interface Props {
   prefix: string;
   placeholder?: string;
   disabled?: boolean;
+  /** The data of a result an earlier action of the rule brings (RE1-A), grouped by their action in «Agregar dato». */
+  results?: readonly RuleMessageResult[];
 }
 
 /** The message of a rule action (board MD1-A): «Agregar dato» puts the number, the reason or a question where the cursor is,
  * as a tag that is erased whole, and «Así llega» shows the message with the examples of the PDF preview. */
-export function RuleMessageField({ label, help, hint, error, value, onChange, culture, original, questions, choices, event, prefix, placeholder, disabled }: Props) {
+export function RuleMessageField({ label, help, hint, error, value, onChange, culture, original, questions, choices, event, prefix, placeholder, disabled, results = [] }: Props) {
   const { t } = useTranslation("forms");
   const editor = useRef<EditorHandle>(null);
   const arrives = useId();
-  const name = (data: RuleMessageData) => ruleMessageDataLabel(data, questions, culture, original, t);
-  const preview = value.trim() ? ruleMessagePreview(value, questions, choices, culture, original, prefix, t) : [];
+  const name = (data: RuleMessageData) => ruleMessageDataLabel(data, questions, culture, original, t, results);
+  const preview = value.trim() ? ruleMessagePreview(value, questions, choices, culture, original, prefix, t, results) : [];
+  // Each action that brings data is its own group, named after it: «De «Emitir comprobante en ARCA»».
+  const sources = [...new Map(results.map(result => [result.source, localizedValue(result.sourceName, culture, original)])).entries()];
   return <div className="flex flex-col gap-3">
     <FormField label={label} help={help} hint={hint} error={error}
-      action={<DataMenu data={ruleMessageData(questions, event)} name={name} disabled={disabled} onChoose={data => editor.current?.insert(data)} />}>
-      <MessageEditor ref={editor} value={value} onChange={onChange} culture={culture} name={name} missing={t("rules.missingQuestion")} placeholder={placeholder} disabled={disabled} />
+      action={<DataMenu data={ruleMessageData(questions, event, results)} name={name} sources={sources} disabled={disabled} onChoose={data => editor.current?.insert(data)} />}>
+      <MessageEditor ref={editor} value={value} onChange={onChange} culture={culture} name={name} missing={t("rules.missingQuestion")} missingResult={t("rules.missingResult")} placeholder={placeholder} disabled={disabled} />
     </FormField>
     {preview.length ? <figure aria-labelledby={arrives} className="m-0 flex flex-col gap-1.5">
       <figcaption id={arrives} className="text-sm font-medium">{t("rules.arrives")}</figcaption>
@@ -60,8 +65,9 @@ interface EditorProps {
   onChange: (value: string) => void;
   culture: FormCulture;
   name: (data: RuleMessageData) => string | null;
-  /** The name of a question that is no longer in the form. */
+  /** The name of a question that is no longer in the form, and of a result no earlier action brings. */
   missing: string;
+  missingResult: string;
   placeholder?: string;
   disabled?: boolean;
   ref?: Ref<EditorHandle>;
@@ -71,8 +77,8 @@ const presentClass = "bg-[var(--color-brand-100)] text-[var(--color-brand-700)]"
 const missingClass = "bg-[var(--color-danger)]/10 text-[var(--color-danger)]";
 // Chrome cannot put the cursor after a tag that ends the box: a zero-width space after it takes the cursor, and is never saved.
 const caretHolder = "​";
-const dataOf = (tag: HTMLElement): RuleMessageData => tag.dataset.messageData === "question"
-  ? { kind: "question", fieldId: tag.dataset.fieldId! } : { kind: tag.dataset.messageData as "number" | "reason" };
+const dataOf = (tag: HTMLElement): RuleMessageData => tag.dataset.messageData === "question" ? { kind: "question", fieldId: tag.dataset.fieldId! }
+  : tag.dataset.messageData === "result" ? { kind: "result", source: tag.dataset.source!, key: tag.dataset.key! } : { kind: tag.dataset.messageData as "number" | "reason" };
 function partsOf(box: HTMLElement): RuleMessagePart[] {
   const parts: RuleMessagePart[] = [];
   const text = (value: string) => {
@@ -100,7 +106,7 @@ function tagNextTo(node: Node, offset: number, before: boolean) {
 
 /** A box like the textarea where text and tags mix. It shows `value` again only when it changes from outside: its own edits
  * keep the cursor where it is. */
-function MessageEditor({ id, value, onChange, culture, name, missing, placeholder, disabled, ref, ...aria }: EditorProps) {
+function MessageEditor({ id, value, onChange, culture, name, missing, missingResult, placeholder, disabled, ref, ...aria }: EditorProps) {
   const box = useRef<HTMLDivElement>(null);
   const shown = useRef<string | null>(null);
   const caret = useRef<Range | null>(null);
@@ -108,8 +114,9 @@ function MessageEditor({ id, value, onChange, culture, name, missing, placeholde
   const latest = useRef({ onChange, culture });
   useLayoutEffect(() => { latest.current = { onChange, culture }; });
   const paint = (tag: HTMLElement) => {
-    const label = name(dataOf(tag));
-    if (tag.textContent !== (label ?? missing)) tag.textContent = label ?? missing;
+    const data = dataOf(tag);
+    const label = name(data), fallback = data.kind === "result" ? missingResult : missing;
+    if (tag.textContent !== (label ?? fallback)) tag.textContent = label ?? fallback;
     tag.className = cn(tagClass, label === null ? missingClass : presentClass);
   };
   const tag = (data: RuleMessageData) => {
@@ -117,6 +124,7 @@ function MessageEditor({ id, value, onChange, culture, name, missing, placeholde
     element.setAttribute("contenteditable", "false");
     element.dataset.messageData = data.kind;
     if (data.kind === "question") element.dataset.fieldId = data.fieldId;
+    if (data.kind === "result") { element.dataset.source = data.source; element.dataset.key = data.key; }
     paint(element);
     return element;
   };
@@ -212,15 +220,19 @@ function MessageEditor({ id, value, onChange, culture, name, missing, placeholde
 
 const fold = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 /** «Agregar dato»: the list of data with its search box. Choosing gives the cursor back to the message, right after the tag. */
-function DataMenu({ data, name, disabled, onChoose }: { data: readonly RuleMessageData[]; name: (data: RuleMessageData) => string | null; disabled?: boolean; onChoose: (data: RuleMessageData) => void }) {
+function DataMenu({ data, name, sources, disabled, onChoose }: { data: readonly RuleMessageData[]; name: (data: RuleMessageData) => string | null; sources: readonly (readonly [string, string])[]; disabled?: boolean; onChoose: (data: RuleMessageData) => void }) {
   const { t } = useTranslation("forms");
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const chosen = useRef(false);
   const [open, setOpen] = useState(false), [search, setSearch] = useState(""), [active, setActive] = useState(0);
   const items = data.map(datum => ({ datum, label: name(datum) ?? "" })).filter(item => fold(item.label).includes(fold(search.trim())));
-  const groups = [["response", items.filter(item => item.datum.kind !== "question")], ["questions", items.filter(item => item.datum.kind === "question")]] as const;
-  const ordered = groups.flatMap(([, list]) => list);
+  const groups: readonly (readonly [string, string, typeof items])[] = [
+    ["response", t("rules.dataGroups.response"), items.filter(item => item.datum.kind === "number" || item.datum.kind === "reason")],
+    ...sources.map(([source, sourceName]) => ["result:" + source, t("rules.dataGroups.result", { name: sourceName }), items.filter(item => item.datum.kind === "result" && item.datum.source === source)] as const),
+    ["questions", t("rules.dataGroups.questions"), items.filter(item => item.datum.kind === "question")],
+  ];
+  const ordered = groups.flatMap(([, , list]) => list);
   const choose = (index: number) => {
     const item = ordered[index];
     if (!item) return;
@@ -240,11 +252,11 @@ function DataMenu({ data, name, disabled, onChoose }: { data: readonly RuleMessa
           else if (event.key === "Enter") { event.preventDefault(); choose(active); }
         }} />
       {ordered.length ? <div id={id} role="listbox" aria-label={t("rules.addData")} className="mt-1 max-h-72 overflow-y-auto">
-        {groups.map(([group, list]) => list.length ? <div key={group} role="group" aria-labelledby={id + "-" + group}>
-          <p id={id + "-" + group} className="px-2 pt-2 pb-1 text-xs font-semibold tracking-wide text-[var(--color-content-muted)] uppercase">{t("rules.dataGroups." + group)}</p>
+        {groups.map(([group, title, list], position) => list.length ? <div key={group} role="group" aria-labelledby={id + "-group-" + position}>
+          <p id={id + "-group-" + position} className="px-2 pt-2 pb-1 text-xs font-semibold tracking-wide text-[var(--color-content-muted)] uppercase">{title}</p>
           {list.map(item => {
             const index = ordered.indexOf(item);
-            return <div key={item.datum.kind === "question" ? item.datum.fieldId : item.datum.kind} id={id + "-" + index} role="option" aria-selected={index === active}
+            return <div key={item.datum.kind === "question" ? item.datum.fieldId : item.datum.kind === "result" ? item.datum.source + "." + item.datum.key : item.datum.kind} id={id + "-" + index} role="option" aria-selected={index === active}
               onMouseDown={event => event.preventDefault()} onMouseEnter={() => setActive(index)} onClick={() => choose(index)}
               className={cn("cursor-pointer rounded-md px-2 py-1.5 text-sm", index === active && "bg-[var(--color-surface-muted)]")}>{item.label}</div>;
           })}
