@@ -78,5 +78,4 @@ Catálogos, emisor, cola y PDF fiscal:
 
 ## Pendiente
 
-- Fecha, cliente, CUIT y condición no vienen en el resultado del emisor: salen de la respuesta o se suman, con el backend.
 - La prueba a mano, en la prueba integral.
