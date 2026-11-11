@@ -75,6 +75,11 @@ it("reactivates through the normal saved draft check and keeps the form deactiva
  expect(store.calls.filter(call => call.method === "POST" && call.path.endsWith("/deactivation"))).toHaveLength(0);
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());
 });
+it("names the active version in the editor header of a deactivated form", async () => {
+ setup("forms-lifecycle-deactivated"); renderRouteWithProviders("/formularios/" + fixtureFormId);
+ await screen.findByLabelText("Nombre");
+ expect(screen.getByText("Dado de baja · versión 1", { exact: true })).toBeVisible();
+});
 it("does not offer deactivation without Publish and preserves an unknown response count", async () => {
  const store=setup("forms-lifecycle", ["formtemplates.read", "formtemplates.manage"]);
  store.lifecycles.set(fixtureFormId, fixtureLifecycle(1, { responseCount: null }));

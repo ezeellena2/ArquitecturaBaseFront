@@ -1424,6 +1424,7 @@
     "reactivateVersion": "Reactivate with version {{version}}",
     "deactivateTitle": "Deactivate “{{name}}”",
     "reactivateTitle": "Reactivate “{{name}}”",
+    "state": "Deactivated · version {{version}}",
     "stateWithoutVersion": "Deactivated",
     "deprecationColumn": "Deprecation",
     "deprecationStates": {
