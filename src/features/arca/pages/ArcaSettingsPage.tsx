@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState, type ComponentType } from "react";
+import { useCallback, useMemo, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
+import { ActionsMenu } from "@/shared/ui/ActionsMenu";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -46,6 +47,8 @@ export function ArcaSettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  // AC1-A: «Desconectar» is in ⋮; closing its confirmation gives the focus back there.
+  const actionsTrigger = useRef<HTMLButtonElement>(null);
   const [completions, setCompletions] = useState<Record<string, (() => Promise<void>) | null>>({});
   // Los avisos de vencimiento se calculan con la hora en que se abrió la pantalla.
   const [now] = useState(() => Date.now());
@@ -103,7 +106,8 @@ export function ArcaSettingsPage() {
     {phase !== "empty" && !canManage ? <span className="text-xs text-[var(--color-content-muted)]">{t("readOnly")}</span> : null}
   </span>;
   const actions = !canManage ? undefined
-    : phase === "active" ? <Button variant="destructive-outline" onClick={() => setDisconnecting(true)}>{t("disconnect.action")}</Button>
+    : phase === "active" ? <ActionsMenu label={t("connectionActions")} triggerRef={actionsTrigger}
+      items={[{ label: t("disconnect.action"), destructive: true, onSelect: () => setDisconnecting(true) }]} />
     : connection.status === "Unverified" && families.length > 0 ? <Button pending={action.pending === "activate"} disabled={!canActivate || action.pending !== null} onClick={() => void activate()}>
       {t(action.pending === "activate" ? "activating" : "activate")}</Button>
     : undefined;
@@ -144,7 +148,7 @@ export function ArcaSettingsPage() {
         })}
       </> : null}
     </div>
-    <DisconnectDialog open={disconnecting} onOpenChange={setDisconnecting} revision={connection.revision} onConflict={openConflict}
+    <DisconnectDialog open={disconnecting} onOpenChange={setDisconnecting} revision={connection.revision} onConflict={openConflict} focusFallback={actionsTrigger}
       onDisconnected={() => { setLastTest(null); setStarting(false); void queryClient.invalidateQueries({ queryKey: arcaQueryKey }); }} />
   </Page>;
 }

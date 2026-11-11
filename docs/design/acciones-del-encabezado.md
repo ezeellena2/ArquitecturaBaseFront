@@ -46,7 +46,7 @@ Se leyeron los encabezados con acciones de las 22 pantallas que tienen. Cambian 
 | Editor de un catálogo y de uno con filtros (`CatalogEditorPage`, `CatalogFiltersEditorPage`) | «Dar de baja» o «Reactivar» a la vista | ⋮ con «Dar de baja» o «Reactivar», como el editor de formularios. La propuesta del asistente sigue a la vista. |
 
 Ya cumplen: el editor de formularios, «Opciones» de un catálogo, la planilla, los listados, los ajustes y editores con
-guardar, las reglas y sugerencias y el chat de WhatsApp. ARCA se repasó al programar: cada zona tiene a la vista su tarea, y sólo «Desconectar», a la vista en el encabezado de la conexión activa, va contra la regla; queda preguntado al usuario. Quedan fuera de la regla el pie de
+guardar, las reglas y sugerencias y el chat de WhatsApp. ARCA se repasó al programar: cada zona tiene a la vista su tarea, y sólo «Desconectar», a la vista en el encabezado de la conexión activa, iba contra la regla; el usuario eligió pasarlo al ⋮ «Acciones de la conexión» (2026-11-11). Quedan fuera de la regla el pie de
 un diálogo y las filas de una tabla.
 
 Al programarla (2026-11-11), a pedido de la sesión de carpetas, «Carpetas…» también pasó al ⋮ de los editores de

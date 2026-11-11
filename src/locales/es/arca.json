@@ -141,6 +141,7 @@
   },
   "activate": "Activar la conexión",
   "activating": "Activando…",
+  "connectionActions": "Acciones de la conexión",
   "disconnect": {
     "action": "Desconectar",
     "title": "¿Desconectar ARCA?",

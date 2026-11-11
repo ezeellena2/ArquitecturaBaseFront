@@ -49,7 +49,8 @@ Cada tarea arranca con su test en rojo (`vitest`) y cierra con `tsc`, `lint` y l
 - **Tarea 3:** «Acciones del catálogo» en los dos editores (f8a1c98a). A pedido de la sesión de carpetas, «Carpetas…»
   también va en ese ⋮ y en el del editor de formularios (9c7efea3), donde «Vista oficial» quedó antes del ⋮.
 - **Tarea 4:** la regla en íconos y acciones, en las premisas y en la pregunta 8; CW10-A ya decía que «Corregir» va en ⋮.
-- **Tarea 5:** ARCA cumple salvo «Desconectar», a la vista en el encabezado de la conexión activa: queda preguntado.
+- **Tarea 5:** ARCA cumplía salvo «Desconectar», a la vista en el encabezado de la conexión activa; el usuario eligió pasarlo
+  al ⋮ «Acciones de la conexión», en rojo.
 
 ## Cierre
 

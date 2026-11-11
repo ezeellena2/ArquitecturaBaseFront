@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -255,13 +255,33 @@ describe("ARCA settings", () => {
     server.use(http.delete("/api/arca/connection", ({ request }) => { deleted.push(new URL(request.url).search); current = none; return new HttpResponse(null, { status: 204 }); }));
     renderRouteWithProviders("/configuracion/arca");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Desconectar" }));
+    // AC1-A (2026-11-11): disconnecting is something done with the connection, in ⋮ and in red, not a button in sight.
+    const trigger = await screen.findByRole("button", { name: "Acciones de la conexión" });
+    expect(screen.queryByRole("button", { name: "Desconectar" })).not.toBeInTheDocument();
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    const item = within(await screen.findByRole("menu")).getByRole("menuitem", { name: "Desconectar" });
+    expect(item).toHaveAttribute("data-variant", "destructive");
+    await userEvent.click(item);
     const dialog = await screen.findByRole("dialog", { name: "¿Desconectar ARCA?" });
     expect(within(dialog).getByText(/Se borran la clave privada y los tickets de acceso/)).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Desconectar" }));
 
     expect(await screen.findByText("Sin conexión con ARCA")).toBeInTheDocument();
     expect(deleted).toEqual(["?expectedRevision=4"]);
+  });
+
+  it("gives the focus back to ⋮ when disconnecting is cancelled", async () => {
+    current = active;
+    renderRouteWithProviders("/configuracion/arca");
+
+    const trigger = await screen.findByRole("button", { name: "Acciones de la conexión" });
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitem", { name: "Desconectar" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Desconectar ARCA?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });
 
