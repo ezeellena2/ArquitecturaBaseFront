@@ -976,7 +976,7 @@
     "allColumns_other": "All questions ({{count}} columns)",
     "visibleColumns_one": "Visible only ({{count}} column)",
     "visibleColumns_other": "Visible only ({{count}} columns)",
-    "exportHint": "Number, received, submitted by and channel always go. Files go as their count and names.",
+    "exportHint": "Number, received, submitted by, channel and state always go. Files go as their count and names.",
     "exportLimit": "You can export up to 10,000 responses. Narrow the filters to continue.",
     "exportResponses": "Responses",
     "exportVoidedToo": "{{responses}} and the voided ones",

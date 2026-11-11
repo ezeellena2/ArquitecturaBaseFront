@@ -60,7 +60,7 @@ describe("ResponseExportDialog (EX1-A)", () => {
 
     expect(within(dialog).getByRole("radiogroup", { name: "Columnas" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Más información sobre Columnas" }))
-      .toHaveAccessibleDescription("Número, recibida, cargó y canal van siempre. De los archivos van la cantidad y los nombres.");
+      .toHaveAccessibleDescription("Número, recibida, cargó, canal y estado van siempre. De los archivos van la cantidad y los nombres.");
     const visible = within(dialog).getByRole("radio", { name: /Solo las visibles/ });
     expect(visible).toHaveAttribute("aria-disabled", "true");
     expect(visible).toHaveAccessibleDescription("Se ven todas las columnas.");

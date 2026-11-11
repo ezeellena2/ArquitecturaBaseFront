@@ -289,7 +289,7 @@ it("exports without a description, with the fixed columns in the (i) of Columnas
   await act(async () => { renderWithProviders(<Export/>); });
   const dialog = await screen.findByRole("dialog", { name: "Exportar respuestas a Excel" });
   expect(dialog).not.toHaveAccessibleDescription();
-  const fixed = "Número, recibida, cargó y canal van siempre. De los archivos van la cantidad y los nombres.";
+  const fixed = "Número, recibida, cargó, canal y estado van siempre. De los archivos van la cantidad y los nombres.";
   expect(screen.getByRole("button", { name: "Más información sobre Columnas" })).toHaveAccessibleDescription(fixed);
   for (const text of screen.getAllByText(fixed)) expect(text).not.toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
