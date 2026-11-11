@@ -56,6 +56,14 @@ describe("the app preview of a draft (SA2-A)", () => {
     expect(Object.keys(entry.questions[0]!)).not.toContain("repeated");
   });
 
+  // UB3-A (2026-11-11): a location carries nothing of its own; the app's control asks for the point only when it is pressed.
+  it("carries a location question bare, as the app loads it", () => {
+    const entry = appPreviewEntry(value([{ ...base, localId: "where", type: "location", label: { es: "Dónde estás" }, required: true }]), "es", words);
+    expect(entry.questions).toEqual([
+      { fieldId: "where", type: "location", label: "Dónde estás", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
+    ]);
+  });
+
   it("opens a zone with a section title at its first question, with the editor's name while it has no text", () => {
     const entry = appPreviewEntry(value([{ ...base, localId: "a", type: "date", label: { es: "Fecha" } }, { ...base, localId: "b", type: "date", label: { es: "Hora" } }],
       { sections: [{ localId: "s1", start: 0, title: { es: "Entrega" } }, { localId: "s2", start: 1, title: { es: "" } }] }), "es", words);
