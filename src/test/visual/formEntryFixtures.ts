@@ -73,7 +73,25 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       { fieldId: block.state, type: "boolean", label: en ? "Arrived in good condition?" : "¿Llegó en buen estado?", help: null, required: false, maxLength: null, options: null, selection: null, files: null, catalog: null, repeated: true },
       { fieldId: block.notes, type: "longText", label: en ? "Notes" : "Observaciones", help: null, required: false, maxLength: 600, options: null, selection: null, files: null, catalog: null, repeated: true },
     ] });
+  // CA1-A and CO1-A (`entries-engine`): an invoice whose period shows only for services, with the amount of each item and the total
+  // computed while it is loaded, on the page and next to the sheet.
+  const engine = scenario === "entries-engine" || scenario === "responses-app-engine";
+  const bill = { concept: id(632), goods: id(633), services: id(634), period: id(635), items: id(636), detail: id(637), quantity: id(638), price: id(639), amount: id(650), total: id(651) };
+  const plain = { help: null, maxLength: null, options: null, selection: null, files: null, catalog: null };
+  const invoice = (definitionId: string, versionId: string): FormEntry => ({ definitionId, versionId, versionNumber: 1, prefix: "FAC", name: en ? "Invoice" : "Factura",
+    culture: language, submitLabel: en ? "Send" : "Enviar", maxFileSizeMiB: 25, questions: [
+      { ...plain, fieldId: bill.concept, type: "choice", label: en ? "Concept" : "Concepto", required: true,
+        options: [{ id: bill.goods, label: en ? "Goods" : "Productos" }, { id: bill.services, label: en ? "Services" : "Servicios" }] },
+      { ...plain, fieldId: bill.period, type: "date", label: en ? "Period from" : "Período desde", required: true, showWhen: { questionId: bill.concept, values: [bill.services] } },
+      { ...plain, fieldId: bill.items, type: "group", label: en ? "Items" : "Artículos", required: true, rows: { minRows: 1, maxRows: 20 } },
+      { ...plain, fieldId: bill.detail, type: "shortText", label: en ? "Description" : "Descripción", required: true, maxLength: 80, repeated: true },
+      { ...plain, fieldId: bill.quantity, type: "decimal", label: en ? "Quantity" : "Cantidad", required: true, repeated: true },
+      { ...plain, fieldId: bill.price, type: "decimal", label: en ? "Unit price" : "Precio unitario", required: true, repeated: true },
+      { ...plain, fieldId: bill.amount, type: "decimal", label: en ? "Amount" : "Importe", required: false, repeated: true, calculation: { operation: "multiply", operands: [bill.quantity, bill.price] } },
+      { ...plain, fieldId: bill.total, type: "decimal", label: "Total", required: false, calculation: { operation: "sum", operands: [bill.amount] } },
+    ] });
   const entries = new Map(rows ? [[sowing.definitionId, reception(sowing.definitionId, id(604))], [sheetEntry.definitionId, reception(sheetEntry.definitionId, id(605))]]
+    : engine ? [[sowing.definitionId, invoice(sowing.definitionId, id(606))], [sheetEntry.definitionId, invoice(sheetEntry.definitionId, id(607))]]
     : [[sowing.definitionId, sowing], [sheetEntry.definitionId, sheetEntry]]);
   const createOnly = scenario === "entries-create-only";
   const names = en ? ["Sowing", "Rain", "Application", "Harvest", "Previous survey"] : ["Siembra", "Lluvia", "Aplicación", "Cosecha", "Relevamiento anterior"];

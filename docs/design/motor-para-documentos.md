@@ -29,3 +29,15 @@ congela lo elegido. El alcance y el backend están en el
 - Un cálculo se redondea a 2 decimales y no puede ser obligatorio.
 - Los datos de un cálculo y la pregunta de una condición van antes, así no hay ciclos.
 - La biblioteca no trae un estándar propio en esta etapa: el primero es la factura, que llega con la etapa 3.
+
+## En el código (front, 2026-11-11)
+
+- CA1-A: «Cálculo» en «Tipo de respuesta» y «Qué calcula» en `CalculationSettings`; la vista previa de la carga en `calculations.ts`
+  (`entryCalculations`), con decimales exactos y el redondeo half-even del servidor. Una alícuota de un catálogo no se calcula
+  al cargar (la opción no trae su valor): el campo queda vacío hasta enviar y su (i) lo dice.
+- CO1-A: «Se muestra» en `ConditionSettings`, la línea de la lista en `ConditionLine` y lo que se oculta al cargar en
+  `conditions.ts` (`entryHiddenQuestions`).
+- BI1-A (la parte del editor): el encabezado con el estándar (`useFormStandardName`), el candado y los controles apagados con
+  su motivo en `QuestionEditor` (`boundQuestions.ts`). El motivo dice «el estándar de la biblioteca»; nombrar el módulo
+  («la emisión en ARCA») espera el `source` de la biblioteca.
+- Escenas sin golden en `src/test/visual/formEngine.spec.ts`. Faltan la prueba manual y las capturas del backend.

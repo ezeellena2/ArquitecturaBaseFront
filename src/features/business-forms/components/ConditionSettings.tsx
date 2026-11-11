@@ -35,18 +35,19 @@ export function ConditionLine({ question, questions, culture, original, scope }:
 }) {
   const { t } = useTranslation("forms");
   const showWhen = question.showWhen;
-  const named = showWhen?.questionId ? questions.find(item => questionIdentity(item) === showWhen.questionId) : undefined;
-  const catalog = named?.type === "choice" && named.source?.catalog ? named.source.catalog : "";
-  const catalogLabel = useCatalogAnswerLabels(scope, catalog, showWhen?.values.slice(0, 1) ?? []);
   if (!showWhen) return null;
-  if (!named) return <>{t("condition.lineIncomplete")}</>;
+  const named = showWhen.questionId ? questions.find(item => questionIdentity(item) === showWhen.questionId) : undefined;
   const first = showWhen.values[0];
-  const answers = conditionAnswers(named);
-  const answer = first === undefined ? undefined : answers ? answers.find(item => item.id === first) : undefined;
-  const label = first === undefined ? null : catalog ? catalogLabel(first)
-    : answer ? answerLabel(answer, culture, original, t("yes"), t("no")) : t("condition.unavailable");
-  const name = localizedValue(named.label, culture, original);
-  return <>{label === null ? t("condition.lineIncomplete") : t(showWhen.values.length > 1 ? "condition.lineMore" : "condition.line", { question: name, answer: label })}</>;
+  if (!named || first === undefined) return <>{t("condition.lineIncomplete")}</>;
+  const line = (label: string) => t(showWhen.values.length > 1 ? "condition.lineMore" : "condition.line", { question: localizedValue(named.label, culture, original), answer: label });
+  // Only a catalog's option is read by id, and only then: its label comes from the catalog.
+  if (named.type === "choice" && named.source?.catalog) return <CatalogConditionLine scope={scope} catalog={named.source.catalog} value={first} line={line} />;
+  const answer = conditionAnswers(named)?.find(item => item.id === first);
+  return <>{line(answer ? answerLabel(answer, culture, original, t("yes"), t("no")) : t("condition.unavailable"))}</>;
+}
+function CatalogConditionLine({ scope, catalog, value, line }: { scope: CatalogReadScope; catalog: string; value: string; line: (label: string) => string }) {
+  const label = useCatalogAnswerLabels(scope, catalog, [value]);
+  return <>{line(label(value))}</>;
 }
 
 /** «es» for a catalog question: the chosen options as chips and a search among its active options, which adds or removes them. */

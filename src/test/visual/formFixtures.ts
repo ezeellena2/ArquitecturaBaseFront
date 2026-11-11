@@ -68,6 +68,29 @@ export function rowsCheckDefinition(scenario: RowsCheckScenario): FormDefinition
       ? [name, items, question(checked.diff.movedToRows![0]!, { type: "decimal", label: { es: "Cantidad", en: "Quantity" }, required: false, repeated: true })]
       : [name, items] } };
 }
+// CA1-A, CO1-A and BI1-A: an invoice copied from the library standard «arca.invoice». The period shows only for services; each
+// item multiplies its quantity by its price and the total adds the amounts of every item. The standard needs the client, the
+// concept, the block and the total, which keep everything but their text, help and place. Synthetic, for the editor's scenes.
+function engineDefinition(culture: FormCulture): FormDefinitionSnapshot {
+  const ids = { client: guid(901), concept: guid(902), period: guid(903), items: guid(904), detail: guid(905), quantity: guid(906), price: guid(907),
+    amount: guid(908), total: guid(909), notes: guid(910), goods: guid(911), services: guid(912), both: guid(913) };
+  const common = (fieldId: string, es: string, en: string, required = false) => ({ fieldId, key: key(fieldId), label: { es, en }, help: null, required });
+  return { ...fixtureDefinition(culture), name: { es: "Factura", en: "Invoice" }, prefix: "FAC",
+    standard: { key: "arca.invoice", version: 1, bound: { client: ids.client, concept: ids.concept, items: ids.items, total: ids.total } },
+    draft: { format: 1, culture, submitLabel: { es: "Enviar", en: "Submit" }, fields: [
+      { ...common(ids.client, "Cliente", "Customer", true), type: "shortText", maxLength: 80 },
+      { ...common(ids.concept, "Concepto", "Concept", true), type: "choice", options: [{ choiceId: ids.goods, label: { es: "Productos", en: "Goods" } },
+        { choiceId: ids.services, label: { es: "Servicios", en: "Services" } }, { choiceId: ids.both, label: { es: "Productos y servicios", en: "Goods and services" } }] },
+      { ...common(ids.period, "Período desde", "Period from", true), type: "date", showWhen: { questionId: ids.concept, values: [ids.services, ids.both] } },
+      { ...common(ids.items, "Artículos", "Items", true), type: "group", rows: { minRows: 1, maxRows: 20 } },
+      { ...common(ids.detail, "Descripción", "Description", true), type: "shortText", maxLength: 80, repeated: true },
+      { ...common(ids.quantity, "Cantidad", "Quantity", true), type: "decimal", repeated: true },
+      { ...common(ids.price, "Precio unitario", "Unit price", true), type: "decimal", repeated: true },
+      { ...common(ids.amount, "Importe", "Amount"), type: "decimal", repeated: true, calculation: { operation: "multiply", operands: [ids.quantity, ids.price] } },
+      { ...common(ids.total, "Total", "Total"), type: "decimal", calculation: { operation: "sum", operands: [ids.amount] } },
+      { ...common(ids.notes, "Observaciones", "Notes"), type: "longText", maxLength: 600 },
+    ] } };
+}
 export function wireDefinition(definition: FormDefinitionSnapshot) {
   return { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(q => ({ ...q,
     maxLength: "maxLength" in q ? q.maxLength : null, options: (q.type === "choice" || q.type === "multiChoice") && !q.source ? q.options : null,
@@ -112,6 +135,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   }
   // SA1-A: the visit completed only in the app, still a draft.
   if (scenario === "forms-publication-app-only") { const original = definitions.get(fixtureFormId)!; definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, appOnly: true } }); }
+  // CA1-A, CO1-A and BI1-A: an invoice copied from the library, with a condition, the amount of each item and the total.
+  if (scenario === "forms-library-engine") definitions.set(fixtureFormId, engineDefinition(culture));
   // CW15-B: three section titles between the questions of the visit.
   if (scenario === "forms-sections") {
     const original = definitions.get(fixtureFormId)!;
