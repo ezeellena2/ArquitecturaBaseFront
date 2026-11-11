@@ -32,6 +32,12 @@ function Harness({ initial = "", geolocation, onChange }: { initial?: string; ge
     onChange={next => { setValue(next); onChange?.(next); }}/>;
 }
 
+/** A phone's width, the one the field reads with `useMediaQuery`; undone by `vi.restoreAllMocks`. */
+function onPhone() {
+  vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
+    addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+}
+
 describe("EntryLocationField", () => {
   it("asks only when the button is pressed, shows the wait in the same button and keeps the point", async () => {
     const service = browser();
@@ -57,11 +63,28 @@ describe("EntryLocationField", () => {
     expect(screen.getByRole("link", { name: "Ver en el mapa" })).not.toHaveAttribute("data-slot", "button");
     unmount();
 
-    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
-      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+    onPhone();
     try {
       renderWithProviders(<Harness initial={point} geolocation={browser().geolocation}/>);
       expect(screen.getByRole("link", { name: "Ver en el mapa" })).toHaveAttribute("data-slot", "button");
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  // 44 px on a phone (premises review of 11/11): instead of the 26 px cross, «Quitar la ubicación» is a full-width touch
+  // button under the others, like the «Quitar» of a photo.
+  it("removes the point on a phone with a touch button instead of the small cross", async () => {
+    onPhone();
+    try {
+      const changes: string[] = [];
+      renderWithProviders(<Harness initial={point} geolocation={browser().geolocation} onChange={value => changes.push(value)}/>);
+      const remove = screen.getByRole("button", { name: "Quitar la ubicación" });
+      expect(remove).toHaveTextContent("Quitar la ubicación");
+      expect(remove).toHaveClass("min-h-11", "w-full");
+
+      await userEvent.click(remove);
+      expect(changes.at(-1)).toBe("");
     } finally {
       vi.restoreAllMocks();
     }

@@ -26,7 +26,8 @@ interface Props {
 /**
  * «Usar mi ubicación» (UB3-A): nothing is asked until the button is pressed, and the point travels with «Enviar». The point goes
  * in a box like a file, with its accuracy in grey (amber with its (i) above 100 m) and the cross to remove it; under it, «Ver en
- * el mapa» and «Volver a pedirla». Why the browser did not give it goes in a red line under the button.
+ * el mapa» and «Volver a pedirla». On a phone the cross becomes «Quitar la ubicación», a 44 px button after those two. Why the
+ * browser did not give it goes in a red line under the button.
  */
 export function EntryLocationField({ value, onChange, id, invalid, describedBy, disabled, geolocation }: Props) {
   const { t, i18n } = useTranslation("formEntries");
@@ -44,6 +45,11 @@ export function EntryLocationField({ value, onChange, id, invalid, describedBy, 
     setPending(false);
     if ("point" in result) onChange(locationAnswer(result.point));
     else setProblem(result.problem);
+  }
+
+  function remove() {
+    setProblem(null);
+    onChange("");
   }
 
   const described = [describedBy, problem ? problemId : undefined].filter(Boolean).join(" ") || undefined;
@@ -66,8 +72,8 @@ export function EntryLocationField({ value, onChange, id, invalid, describedBy, 
   const low = isLowAccuracy(point);
   const accuracy = point.accuracyMeters === undefined ? null : formatAccuracy(point.accuracyMeters, i18n.language);
   return <div className="flex flex-col gap-2">
-    <div data-location-point className="relative flex items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-border)] py-2 pr-9 pl-3"
-      aria-live="polite">
+    <div data-location-point className={"relative flex items-center gap-3 rounded-[var(--radius-control)] border border-[var(--color-border)] py-2 pl-3 "
+      + (mobile ? "pr-3" : "pr-9")} aria-live="polite">
       <MapPinIcon className="size-5 shrink-0"/>
       <div className="min-w-0">
         <p className="text-sm tabular-nums">{formatCoordinates(point)}</p>
@@ -76,8 +82,8 @@ export function EntryLocationField({ value, onChange, id, invalid, describedBy, 
             <span className="-my-1 inline-flex"><InfoTip label={t("location.lowAccuracyLabel")} text={t("location.lowAccuracy")}/></span></p>
           : <p className="text-xs text-[var(--color-content-muted)]">{accuracy}</p> : null}
       </div>
-      <span className="absolute top-1 right-1"><IconButton variant="destructive-outline" size="icon-sm" label={t("location.remove")} disabled={disabled || pending}
-        onClick={() => { setProblem(null); onChange(""); }}><CloseIcon className="size-3.5"/></IconButton></span>
+      {mobile ? null : <span className="absolute top-1 right-1"><IconButton variant="destructive-outline" size="icon-sm" label={t("location.remove")}
+        disabled={disabled || pending} onClick={remove}><CloseIcon className="size-3.5"/></IconButton></span>}
     </div>
     <div className={mobile ? "flex flex-col gap-2" : "flex flex-wrap items-center gap-2"}>
       {mobile
@@ -87,6 +93,8 @@ export function EntryLocationField({ value, onChange, id, invalid, describedBy, 
         : <a href={mapUrl(point)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-[var(--color-brand-700)] underline">
           {t("location.viewOnMap")}<ExternalLinkIcon className="size-3.5 shrink-0"/></a>}
       {button(t("location.askAgain"), id)}
+      {mobile ? <Button type="button" variant="destructive-outline" size="touch" className="w-full" disabled={disabled || pending} onClick={remove}>
+        {t("location.remove")}</Button> : null}
     </div>
     {problemLine}
   </div>;
