@@ -38,7 +38,8 @@ export function TreeList({ label, items, onSelect, onToggle }: {
         <li key={item.id} className={indent[Math.min(item.level, indent.length - 1)]}>
           {item.editor ?? (
             <div className={cn(
-              "group/tree relative flex min-h-7.5 items-center gap-0.5 rounded-[var(--radius-control)] pr-0.5 transition-colors",
+              // 44 px to touch on the phone, as the board asks of every target there.
+              "group/tree relative flex min-h-7.5 items-center gap-0.5 rounded-[var(--radius-control)] pr-0.5 transition-colors max-sm:min-h-11",
               item.selected
                 ? "bg-[var(--color-brand-50)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
                 : "hover:bg-[var(--color-surface-muted)]",
@@ -53,7 +54,7 @@ export function TreeList({ label, items, onSelect, onToggle }: {
                 aria-current={item.selected ? "true" : undefined}
                 onClick={() => onSelect(item.id)}
                 className={cn(
-                  "min-w-0 flex-1 rounded-[var(--radius-control)] py-1 text-left text-sm leading-4 break-words outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "flex min-w-0 flex-1 items-center self-stretch rounded-[var(--radius-control)] py-1 text-left text-sm leading-4 break-words outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
                   item.level === 0 ? "px-2" : "pr-2",
                   item.selected ? "font-medium text-[var(--color-content)]" : "text-[var(--color-content-muted)] hover:text-[var(--color-content)]",
                 )}

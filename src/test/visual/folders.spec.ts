@@ -63,12 +63,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: text.overview, exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     if (width === 1440) {
-      await page.getByRole("button", { name: text.delivery, exact: true }).click();
+      // The side menu, not the folder of the same name in the listing's panel.
+      await page.getByRole("complementary").getByRole("button", { name: text.delivery, exact: true }).click();
       await expect(page.getByRole("navigation", { name: text.delivery, exact: true })).toBeVisible();
       await shot(page, "own-menu-panel");
     } else {
       await page.getByRole("button", { name: text.navigation, exact: true }).click();
-      await page.getByRole("button", { name: text.delivery, exact: true }).click();
+      await page.getByRole("complementary").getByRole("button", { name: text.delivery, exact: true }).click();
       await expect(page.getByRole("button", { name: text.north, exact: true })).toBeVisible();
       await shot(page, "own-menu-drawer");
     }
