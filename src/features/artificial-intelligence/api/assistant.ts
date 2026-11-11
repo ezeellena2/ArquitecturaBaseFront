@@ -117,7 +117,8 @@ const bootstrap = z.strictObject({
   // Whether Home takes a recording: a provider that hears what the browser records, and private storage.
   audio: z.boolean(),
   // Whether this person may attach a spreadsheet (Stage 2): the server says it, the front never repeats the permissions.
-  attachments: z.boolean(),
+  // Optional until the joint export brings it to the captured bootstrap; without it, Home offers no clip.
+  attachments: z.boolean().optional(),
 });
 const summaryFields = {
   conversationId: id,

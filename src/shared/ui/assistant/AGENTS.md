@@ -18,7 +18,8 @@ oculto, que el dueño también abre desde una sugerencia (`inputRef`); con un ar
 (`showButton`). `AssistantFile` es el archivo con su nombre y lo que lo describe, que escribe el dueño: en el editor
 (`attachment`, arriba del texto) con la X, apagada mientras viaja, y en un mensaje sin ella. El motivo de uno que no
 sirve va en `error`, debajo del editor. Una regla de index.css para un botón de ícono no puede depender sólo de
-`data-slot=button`: habilitado, el disparador de su tooltip lo cambia por `tooltip-trigger` (la flecha cubre los dos).
+`data-slot=button`: habilitado, el disparador de su tooltip lo cambia por `tooltip-trigger` (el micrófono, el clip, la
+flecha y la X cubren los dos).
 No conoce sesión, contratos HTTP, proveedor ni features. La feature aporta textos, estado confirmado,
 fuentes, acciones y borrador. No incorporar HTML, Markdown arbitrario, imágenes ni tools ejecutables.
 Enter agrega línea; Ctrl/Meta+Enter envían y respetan IME. Scroll no roba la posición de lectura.

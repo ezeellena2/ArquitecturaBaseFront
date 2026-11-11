@@ -99,13 +99,18 @@ describe("assistant contract", () => {
     } finally { vi.unstubAllGlobals(); }
     await expect(assistantApi.audio(audioRequestId)).resolves.toMatchObject({ state: "completed", transcript: "Armame un formulario" });
   });
-  it("reads whether this person may attach a spreadsheet in the bootstrap, a field it always has", async () => {
+  it("reads whether this person may attach a spreadsheet in the bootstrap, and a bootstrap without it as not attaching", async () => {
     const bootstrap = { availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
       configurationDestination: null, audio: false, attachments: true };
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(bootstrap)));
     await expect(assistantApi.bootstrap()).resolves.toEqual(bootstrap);
+    // Until the joint export brings the field to the captured bootstrap, it may be missing: no clip then.
     const { attachments: _, ...withoutAttachments } = bootstrap;
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(withoutAttachments)));
+    const read = await assistantApi.bootstrap();
+    expect(read).toEqual(withoutAttachments);
+    expect(read.attachments ?? false).toBe(false);
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ ...bootstrap, attachments: "yes" })));
     await expect(assistantApi.bootstrap()).rejects.toThrow("Invalid assistant contract.");
   });
   it("reads the spreadsheet of the turn that brought it, with its name, kind, rows and size", async () => {

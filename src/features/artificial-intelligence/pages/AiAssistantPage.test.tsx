@@ -994,6 +994,15 @@ describe("spreadsheets in Home (Stage 2)", () => {
     expect(document.querySelector("input[type=file]")).toBeNull();
   });
 
+  // Until the joint export brings the field to the captured bootstrap, a bootstrap without it offers no clip.
+  it("offers no clip when the bootstrap does not say it", async () => {
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 7,
+      suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false })));
+    renderRouteWithProviders("/");
+    await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(screen.queryByRole("button", { name: "Adjuntar una planilla" })).not.toBeInTheDocument();
+  });
+
   it("sends the chosen file with the text, showing how much went up, and the message shows its file with its rows", async () => {
     server.use(withAttachments(true));
     let release!: () => void;
