@@ -132,6 +132,21 @@ describe("UserFormDialog", () => {
       }
     });
 
+    it("follows the fields with the invitation in the common pieces, without a separator line", async () => {
+      withCreate(whatsappLoginMethods);
+
+      const dialog = await openNewUser();
+      await userEvent.type(dialog.getByRole("textbox", { name: "Número de WhatsApp" }), "351 555-1234");
+      await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
+
+      // Lista de chequeo (2026-11-11): the checkbox, its options and the consent, with no line, box or margins of their
+      // own. The options are still named by what they choose, and the checkbox above says what they are about.
+      expect(dialog.queryByRole("separator")).not.toBeInTheDocument();
+      expect(dialog.getByRole("radiogroup", { name: "Por dónde" })).toBeInTheDocument();
+      expect(dialog.queryByText("Por dónde")).not.toBeInTheDocument();
+      expect(dialog.getByRole("checkbox", { name: "La persona aceptó recibir mensajes por WhatsApp." })).not.toBeChecked();
+    });
+
     it("hides the number and the WhatsApp channel when WhatsApp is off", async () => {
       withCreate({ google: true, whatsapp: false, whatsappCountries: [], whatsappNumber: null, registrationOpen: true });
 

@@ -185,8 +185,8 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
         }
       }}
     >
-      {/* Con la invitación abierta, el formulario no entra en una pantalla baja: el diálogo scrollea adentro. */}
-      <DialogContent onCloseAutoFocus={restoreFocus} className="max-h-[calc(100svh-2rem)] overflow-y-auto">
+      {/* Con la invitación abierta, el formulario no entra en una pantalla baja: el diálogo común scrollea adentro. */}
+      <DialogContent onCloseAutoFocus={restoreFocus}>
         {/* Sin descripción: los campos están a la vista y, si falta el correo o el número, lo dice el error del alta. */}
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
@@ -194,7 +194,7 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
 
         <form
           noValidate
-          className="flex flex-col gap-3.5"
+          className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             submit();
@@ -234,11 +234,10 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
 
           <RolesField value={draft.roles} onChange={(roles) => change({ roles })} />
 
-          <hr className="border-[var(--color-border)]" />
-
-          {/* Las casillas traen su propio margen interno (la fila se ilumina entera): se lo compensa para que queden
-              alineadas con los campos de arriba. */}
-          <div className="-mx-2.5 flex flex-col gap-1">
+          {/* La invitación, con las piezas comunes tal como son (lista de chequeo, 2026-11-11): la casilla y, al marcarla,
+              por dónde y, por WhatsApp, el consentimiento, juntos y sin línea, recuadro ni márgenes propios. Las opciones
+              no llevan título: de qué se tratan lo dice la casilla de arriba. */}
+          <div className="flex flex-col gap-1">
             <CheckboxField
               label={t("invitation.send")}
               checked={draft.invite}
@@ -246,27 +245,23 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
             />
 
             {draft.invite ? (
-              <div className="flex flex-col gap-2 pl-6.25">
-                <RadioGroupField
-                  label={t("invitation.channel")}
-                  options={channelOptions}
-                  value={channel}
-                  onValueChange={(next) => change({ channel: next === "WhatsApp" ? "WhatsApp" : "Email" }, "channel")}
-                  error={errors.fields.channel}
-                />
+              <RadioGroupField
+                label={t("invitation.channel")}
+                options={channelOptions}
+                value={channel}
+                onValueChange={(next) => change({ channel: next === "WhatsApp" ? "WhatsApp" : "Email" }, "channel")}
+                error={errors.fields.channel}
+              />
+            ) : null}
 
-                {asksConsent ? (
-                  <div className="ml-2.5 rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
-                    <CheckboxField
-                      label={consentLabel}
-                      help={t("invitation.consentHint")}
-                      error={errors.fields.consent}
-                      checked={draft.consent}
-                      onCheckedChange={(consent) => change({ consent }, "consent")}
-                    />
-                  </div>
-                ) : null}
-              </div>
+            {asksConsent ? (
+              <CheckboxField
+                label={consentLabel}
+                help={t("invitation.consentHint")}
+                error={errors.fields.consent}
+                checked={draft.consent}
+                onCheckedChange={(consent) => change({ consent }, "consent")}
+              />
             ) : null}
           </div>
 
