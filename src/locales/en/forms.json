@@ -408,6 +408,7 @@
       "remove": "Remove {{name}} from {{part}}", "yes": "Yes", "no": "No", "unavailable": "Unavailable field", "saveFieldFirst": "Save the field first"
     },
     "lifecycle": {
+      "actions": "Catalog actions",
       "deactivate": "Deactivate",
       "reactivate": "Reactivate",
       "deactivateHint": "When saved, this catalog cannot be chosen in new questions, and published forms using it cannot be sent. Previous responses are preserved.",
@@ -563,10 +564,9 @@
     "review": {
       "title": "Catalog review",
       "required": "The catalog may have changed. Review the current version before saving again.",
-      "description": "“{{action}}” discards unsaved changes, including pending options.",
-      "filtersDescription": "“{{action}}” discards unsaved changes.",
       "mine": "Your draft",
       "current": "The current revision",
+      "filters": "Filters",
       "reread": "Reread",
       "adopt": "Use the current revision"
     },

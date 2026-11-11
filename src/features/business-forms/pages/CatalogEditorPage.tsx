@@ -12,7 +12,7 @@ import { useCatalogExport } from "../hooks/useCatalogExport";
 import { isCatalogValueType, parseCatalogValue, type CatalogValueType } from "../catalogValues";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ItemFoldersButton } from "../components/ItemFoldersButton";
+import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
@@ -27,7 +27,6 @@ import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -37,15 +36,15 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { KeepHeight } from "@/shared/ui/KeepHeight";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import type { CatalogDetail } from "../api/catalogResponse";
 import { catalogItemFieldIssues, catalogItemValue, editedFieldIds, pendingFieldTexts } from "../catalogDraft";
 import { catalogFieldProblemText, catalogFieldRowReason, catalogStoredValueText, type CatalogFieldDraft, type CatalogFieldType } from "../catalogFields";
 import { administrativeName } from "../editorModel";
 import { catalogItemChanges, currentCatalogItem, isBlankCatalogItem, sameCatalogItemValue, type CatalogManualItemValue } from "../catalogItemEdits";
 import { CatalogItemsDialog } from "../components/CatalogItemsDialog";
+import { CatalogReviewDialog } from "../components/CatalogReviewDialog";
 import { CatalogManualItemsEditor } from "../components/CatalogManualItemsEditor";
-import { CatalogStateAction } from "../components/CatalogStateAction";
+import { CatalogActionsMenu } from "../components/CatalogActionsMenu";
 import { CatalogMetadataFields } from "../components/CatalogMetadataFields";
 import { useCatalogDraftEditor, type CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
@@ -124,6 +123,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const [discardOpen, setDiscardOpen] = useState(false);
   const [discardProposalOpen, setDiscardProposalOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // «Carpetas…» of ⋮ (AC1-A, CP2-A) mounts its dialog while it is open; closing it gives the focus back to ⋮.
+  const [foldersOpen, setFoldersOpen] = useState(false);
+  const actionsTrigger = useRef<HTMLButtonElement>(null);
   // The fields modal, opened from «Campos» or, on a field with an error, from «Revisar».
   const [fieldsDialog, setFieldsDialog] = useState<{ fieldId: string | null } | null>(null);
   const importFocus = useRef<HTMLButtonElement>(null);
@@ -324,7 +326,6 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const dialogItems = !itemsDialog ? [] : itemsDialog.mode === "new" ? itemsDialog.added.flatMap(localId => changedItems.filter(item => item.localId === localId))
     : [...rowItems, ...knownItems.filter(item => item.localId === itemsDialog.selectedId && !rowItems.some(row => row.localId === item.localId))];
   const pageRange = items.data?.totalCount ? t("common:pagination.range", { from: (items.data.page - 1) * items.data.pageSize + 1, to: Math.min(items.data.page * items.data.pageSize, items.data.totalCount), total: items.data.totalCount }) : undefined;
-  const restoreReviewFocus = useRestoreFocusOnClose(reviewOpen);
   // The catalog's languages, as the server counts them: the original and the other one once the name has it.
   const catalogCultures = (["es", "en"] as const).filter(language => language === original || !!draft?.name[language]?.trim());
   // After the option or the field with the error opens (and the option editor puts the cursor in Texto), as in the form editor.
@@ -341,8 +342,11 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const errorRowsChip = rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null;
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge> : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}
-    actions={canManage ? <>{draft.id && !pendingProposal ? <ItemFoldersButton kind="catalogs" id={draft.id} name={currentName} /> : null}{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : draft.id && (!proposal || proposal.state === "Approved") ? <CatalogStateAction isActive={draft.isActive} disabled={!editor.canSave} onChange={isActive => editor.changeMetadata({ isActive })} /> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button variant={pendingProposal ? "outline" : "default"} pending={saving} disabled={readOnly || !editor.dirty} onClick={() => void save()}>{t(saving ? "saving" : "common:actions.save")}</Button>
-      {pendingProposal ? <DisabledReason reason={editor.dirty ? t("catalogs.proposal.saveFirst") : null}><Button pending={editor.working === "approveProposal"} disabled={!editor.canSave || editor.dirty} onClick={() => void approveProposal()}>{t(editor.working === "approveProposal" ? "catalogs.proposal.approving" : "catalogs.proposal.approve")}</Button></DisabledReason> : null}</> : undefined}>
+    actions={canManage ? <>{pendingProposal ? <Button variant="outline" disabled={!editor.canSave} onClick={() => setDiscardProposalOpen(true)}>{t("catalogs.proposal.discard")}</Button> : null}<Button variant="outline" disabled={editor.busy} onClick={() => setDiscardOpen(true)}>{t("discard")}</Button><Button variant={pendingProposal ? "outline" : "default"} pending={saving} disabled={readOnly || !editor.dirty} onClick={() => void save()}>{t(saving ? "saving" : "common:actions.save")}</Button>
+      {pendingProposal ? <DisabledReason reason={editor.dirty ? t("catalogs.proposal.saveFirst") : null}><Button pending={editor.working === "approveProposal"} disabled={!editor.canSave || editor.dirty} onClick={() => void approveProposal()}>{t(editor.working === "approveProposal" ? "catalogs.proposal.approving" : "catalogs.proposal.approve")}</Button></DisabledReason> : null}
+      {/* AC1-A: the folders and deactivating or reactivating are something else done with the catalog, in ⋮ after the task of the editor. */}
+      <CatalogActionsMenu triggerRef={actionsTrigger} onFolders={draft.id && !pendingProposal ? () => setFoldersOpen(true) : undefined}
+        state={draft.id && (!proposal || proposal.state === "Approved") ? { isActive: draft.isActive, disabled: !editor.canSave, onChange: isActive => editor.changeMetadata({ isActive }) } : undefined} /></> : undefined}>
     <div ref={host} className="flex flex-col gap-4">
       {proposal ? <Banner>{/* EP1-A (2026-11-06): a pending proposal is the label of the header; the notice says who asked for it and when. */}{!pendingProposal ? <><strong>{t("catalogs.proposal.states." + proposal.state)}.</strong>{" "}</> : null}{t(proposal.requestedIn === "app" ? "catalogs.proposal.requestedInApp" : "catalogs.proposal.requested", { name: proposal.requestedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.requestedAtUtc, scope.culture, timeZoneId) })}{" "}{!pendingProposal && proposal.decidedBy && proposal.decidedAtUtc ? t("catalogs.proposal.decided", { name: proposal.decidedBy.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(proposal.decidedAtUtc, scope.culture, timeZoneId) }) : null}</Banner> : null}
       {editor.requiresReview ? <Surface title={t("catalogs.review.title")} padded actions={<Button variant="outline" disabled={editor.busy} onClick={() => setReviewOpen(true)}>{t("common:actions.review")}</Button>}><p className="text-sm">{t("catalogs.review.required")}</p></Surface> : null}
@@ -364,10 +368,9 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
     {importOpen && draft.id && canManage ? <CatalogImportDialog scope={scope} catalog={editor.confirmed ?? initial!} timeZoneId={timeZoneId} focusFallback={importFocus} onClose={() => setImportOpen(false)} onObserved={editor.observeCatalog} onApplied={catalog => { editor.observeCatalog(catalog); setItemsDialog(null); }} onTemplate={() => void exported.download(true)} downloadingTemplate={exported.working === "template"} /> : null}
     {errorRows?.open && errorField ? <CatalogFieldConversionDialog name={administrativeName(errorField.name, culture) || t("catalogs.fields.new")} from={errorRows.from} field={errorField} culture={draft.culture} convertedCount={errorRows.convertedCount} invalidCount={errorRows.invalidCount} rows={errorRows.rows} onClose={() => setErrorRows(current => current && { ...current, open: false })} onShowRows={errorField.isActive ? showErrorRows : undefined} /> : null}
     <ConfirmDialog open={discardOpen || guard.isBlocked} onOpenChange={open => { if (!open) { setDiscardOpen(false); guard.stay(); } }} title={t("discardTitle")} description={t("discardDescription")} confirmLabel={t("discard")} cancelLabel={t("stay")} destructive onConfirm={() => { if (guard.isBlocked) guard.leave(); else { guard.allowNextNavigation(); void navigate("/catalogos"); } }} />
-    <Dialog open={reviewOpen} onOpenChange={setReviewOpen}><DialogContent onCloseAutoFocus={restoreReviewFocus} className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t("catalogs.review.title")}</DialogTitle><DialogDescription>{t("catalogs.review.description", { action: t("catalogs.review.adopt") })}</DialogDescription></DialogHeader>
-      <div className="grid gap-4 sm:grid-cols-2">{([{ key: "mine", value: draft }, { key: "current", value: editor.current }] as const).map(entry => <Surface key={entry.key} title={t("catalogs.review." + entry.key)} padded>{entry.key === "current" && rereading ? <Spinner /> : entry.value ? <><p className="text-sm">{administrativeName(entry.value.name, culture)}</p><p className="text-xs text-[var(--color-content-muted)]">{administrativeName(entry.value.description, culture)}</p></> : <p className="text-sm">—</p>}</Surface>)}</div>
-      <DialogFooter><Button variant="outline" onClick={() => setReviewOpen(false)}>{t("common:actions.close")}</Button><Button variant="outline" pending={rereading} disabled={editor.busy || !draft.id} onClick={() => void editor.readCurrent()}>{t(rereading ? "rereading" : "catalogs.review.reread")}</Button><Button disabled={editor.busy || !editor.current} onClick={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setItemsDialog(null); setReviewOpen(false); }}>{t("catalogs.review.adopt")}</Button></DialogFooter>
-    </DialogContent></Dialog>
+    <CatalogReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} culture={culture} mine={{ name: draft.name, description: draft.description }} current={editor.current ? { name: editor.current.name, description: editor.current.description } : null}
+      rereading={rereading} busy={editor.busy} canReread={!!draft.id} onReread={() => void editor.readCurrent()} onAdopt={() => { editor.adoptCurrent(); setErrorRows(null); setAttempted(new Set()); setTouched(new Set()); setItemsDialog(null); }} />
     <ConfirmDialog open={discardProposalOpen} onOpenChange={setDiscardProposalOpen} title={t("catalogs.proposal.discardTitle")} description={t("catalogs.proposal.discardHint")} confirmLabel={t("catalogs.proposal.discard")} pending={editor.working === "discardProposal"} pendingLabel={t("catalogs.proposal.discarding")} destructive onConfirm={() => void discardProposal()} />
+    {foldersOpen && canManage && draft.id && !pendingProposal ? <ItemFoldersDialog kind="catalogs" id={draft.id} name={currentName} focusFallback={actionsTrigger} onClose={() => setFoldersOpen(false)} /> : null}
   </Page>;
 }

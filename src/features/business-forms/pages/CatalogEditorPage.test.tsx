@@ -61,6 +61,13 @@ const option = { value: null, id: itemId, code: "C1", text: { es: "Pérez", en: 
 function setup(permissions = ["formcatalogs.read", "formcatalogs.manage"], culture: "es" | "en" = "es") {
   server.use(http.get("/api/me", () => HttpResponse.json({ id: "actor", displayName: "Ana", email: "ana@example.com", emailConfirmed: true, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false, hasGoogleLogin: false, culture, timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null, roles: [], permissions })), http.get("/api/forms/catalogs/" + id, () => HttpResponse.json(initial)), http.get("/api/forms/catalogs/" + id + "/items", () => HttpResponse.json({ items: [option], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
 }
+// ⋮ of the editor opens from the keyboard, as every Radix menu in jsdom: focus and Enter (AC1-A).
+async function openCatalogActions() {
+  const trigger = await screen.findByRole("button", { name: "Acciones del catálogo" });
+  act(() => trigger.focus());
+  await userEvent.keyboard("{Enter}");
+  return { trigger, menu: await screen.findByRole("menu") };
+}
 async function mount(path: string) {
   // The route tests cover production registration; this harness focuses on editor behavior.
   const router = createMemoryRouter([{ path: "/catalogos/nuevo", Component: CatalogEditorPage }, { path: "/catalogos/:catalogId", Component: CatalogEditorPage }, { path: "/catalogos", element: <p>Catalog list</p> }], { initialEntries: [path] });
@@ -799,33 +806,37 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await act(async () => { done!({ blob: new Blob(["xlsx"]), fileName: "Clientes.xlsx", contentLanguage: "es" }); });
     expect(await screen.findByRole("button", { name: "Exportar" })).not.toHaveAttribute("aria-busy");
   });
-  it("rereads with Releyendo… on its button and a spinner in the current revision, under only the warning of adopting it", async () => {
+  // LR2-A, as «Revisión del borrador» (2026-11-11): the datum once and both versions side by side, without a legend.
+  it("compares the draft with the current revision side by side and rereads with Releyendo… while the current one waits in its place", async () => {
     setup();
     server.use(http.put("/api/forms/catalogs/" + id, () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
+    const nameInput = await screen.findByRole("textbox", { name: "Nombre" });
+    await pasteText(user, nameInput, " editado");
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await user.click(await screen.findByRole("button", { name: "Revisar" }));
     const dialog = await screen.findByRole("dialog", { name: "Revisión del catálogo" });
-    expect(dialog).toHaveAccessibleDescription("«Usar la revisión actual» descarta los cambios sin guardar, incluidas las opciones pendientes.");
-    const current = within(dialog).getByRole("region", { name: "La revisión actual" });
-    expect(current).toHaveTextContent("—");
-    expect(within(dialog).queryByText(/Releé para comparar/)).not.toBeInTheDocument();
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(within(dialog).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Dato", "La revisión actual", "Tu borrador"]);
+    expect(within(dialog).getAllByRole("rowheader").map(header => header.textContent)).toEqual(["Nombre", "Descripción"]);
+    const versions = (datum: string) => within(within(dialog).getByRole("rowheader", { name: datum }).closest("tr")!).getAllByRole("cell").map(cell => cell.textContent);
+    expect(versions("Nombre")).toEqual(["—", (nameInput as HTMLInputElement).value]);
+    expect(versions("Descripción")).toEqual(["—", "Visitas"]);
     let release: (() => void) | undefined;
     server.use(http.get("/api/forms/catalogs/" + id, async () => { await new Promise<void>(resolve => { release = resolve; }); return HttpResponse.json({ ...initial, revision: 2, name: { es: "Catálogo actual", en: "Current catalog" } }); }));
     await user.click(within(dialog).getByRole("button", { name: "Releer" }));
     expect(within(dialog).getByRole("button", { name: "Releyendo…" })).toHaveAttribute("aria-busy", "true");
-    expect(within(current).getByRole("status")).toBeInTheDocument();
+    expect(within(dialog).getByRole("status")).toBeInTheDocument();
     await waitFor(() => expect(release).toBeDefined());
     await act(async () => { release!(); });
-    expect(await within(current).findByText("Catálogo actual")).toBeInTheDocument();
+    await waitFor(() => expect(versions("Nombre")).toEqual(["Catálogo actual", (nameInput as HTMLInputElement).value]));
     expect(within(dialog).getByRole("button", { name: "Releer" })).not.toHaveAttribute("aria-busy");
   });
   it("reports a source in use without entering review", async () => {
     setup(); let writes = 0; const detail = "Un campo o un dato de las personas toma sus valores de este catálogo: no se puede dar de baja.";
     server.use(http.put("/api/forms/catalogs/" + id, () => { writes++; return HttpResponse.json({ code: "Forms.Catalog.SourceInUse", detail }, { status: 409 }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
+    await user.click(within((await openCatalogActions()).menu).getByRole("menuitem", { name: "Dar de baja" }));
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Dar de baja" }));
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.kind === "error" && notice.message === detail)).toBe(true));
@@ -833,7 +844,8 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(screen.queryByText("Revisión del catálogo")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Reactivar" })).toBeEnabled();
+    expect(within((await openCatalogActions()).menu).getByRole("menuitem", { name: "Reactivar" })).not.toHaveAttribute("aria-disabled");
+    await user.keyboard("{Escape}");
     expect(screen.getByRole("textbox", { name: "Nombre" })).not.toHaveAttribute("readonly");
   });
   it("shows the uses of a field that became in use and restores it without discarding the draft", async () => {
@@ -875,7 +887,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     await within(await screen.findByRole("table")).findByText("Pérez");
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Acciones del catálogo" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Editar Pérez" })).not.toBeInTheDocument();
   });
@@ -1144,6 +1156,33 @@ describe("Filters editor connected to current DTOs", () => {
     expect(within(band).getByRole("button", { name: "Revisar" })).toBeInTheDocument();
     expect(save).toBeDisabled();
   });
+  // The same dialog as the Manual editor (lista de chequeo, 2026-11-11), with the filters in their own row and «Cerrar».
+  it("reviews a conflict with the filters of both versions side by side and closes with Cerrar", async () => {
+    filterSetup();
+    server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
+      http.put("/api/forms/catalogs/" + id + "/filters", () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await user.selectOptions(await screen.findByRole("combobox", { name: "Detalle" }), "active");
+    await selectSample();
+    await user.click(screen.getByRole("button", { name: "Guardar" }));
+    const reviewButton = await screen.findByRole("button", { name: "Revisar" });
+    await user.click(reviewButton);
+    const dialog = await screen.findByRole("dialog", { name: "Revisión del catálogo" });
+    expect(dialog).not.toHaveAccessibleDescription();
+    expect(within(dialog).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Dato", "La revisión actual", "Tu borrador"]);
+    expect(within(dialog).getAllByRole("rowheader").map(header => header.textContent)).toEqual(["Nombre", "Descripción", "Filtros"]);
+    const filters = () => within(within(dialog).getByRole("rowheader", { name: "Filtros" }).closest("tr")!).getAllByRole("cell");
+    const detail = (cell: HTMLElement) => within(cell).getByText("Detalle", { selector: "dt" }).nextElementSibling?.textContent;
+    expect(detail(filters()[1]!)).toBe("Activo");
+    expect(filters()[0]).toHaveTextContent(/^—$/);
+    server.use(http.get("/api/forms/catalogs/" + id, () => HttpResponse.json({ ...filtersDetail, revision: 2 })));
+    await user.click(within(dialog).getByRole("button", { name: "Releer" }));
+    await waitFor(() => expect(filters()[0]).not.toHaveTextContent(/^—$/));
+    expect(detail(filters()[0]!)).toBe("Rol");
+    await user.click(within(dialog.querySelector<HTMLElement>("[data-slot='dialog-footer']")!).getByRole("button", { name: "Cerrar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(reviewButton).toHaveFocus();
+  });
 });
 
 it("edits fixed Users filters without source availability flags", async () => {
@@ -1229,7 +1268,7 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
       return HttpResponse.json({ catalog: detail, itemIdentityMap: {}, fieldIdentityMap: {} });
     }), http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })));
   await mount("/catalogos/" + id); const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Dar de baja" }));
+  await user.click(within((await openCatalogActions()).menu).getByRole("menuitem", { name: "Dar de baja" }));
   expect(within(screen.getByRole("dialog")).getByText(/tampoco se podrán mandar los formularios publicados/)).toBeInTheDocument();
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Dar de baja" }));
   expect(bodies).toHaveLength(0);
@@ -1237,12 +1276,74 @@ it.each([false, true])("saves and reloads deactivation and reactivation for Filt
   await waitFor(() => expect(detail.isActive).toBe(false));
   expect(await screen.findByText("Dado de baja", { exact: true })).toBeInTheDocument();
   cleanup(); queryClient.clear(); await mount("/catalogos/" + id);
-  await user.click(await screen.findByRole("button", { name: "Reactivar" }));
+  await user.click(within((await openCatalogActions()).menu).getByRole("menuitem", { name: "Reactivar" }));
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Reactivar" }));
   if (filters) await selectSample();
   await user.click(screen.getByRole("button", { name: "Guardar" }));
   await waitFor(() => expect(detail.isActive).toBe(true));
   expect(bodies).toMatchObject([{ expectedRevision: 1, isActive: false }, { expectedRevision: 2, isActive: true }]);
+});
+
+// AC1-A (2026-11-11): the task of the editor stays in sight (Descartar and Guardar); the folders of the catalog and
+// deactivating or reactivating it are something else done with it, so they wait in ⋮ after them, as in the form editor.
+describe("«Carpetas…», «Dar de baja» and «Reactivar» in ⋮ (AC1-A)", () => {
+  it.each([false, true])("puts them after Descartar and Guardar, opens the confirmation from the keyboard and gives the focus back to ⋮ for Filters=%s", async filters => {
+    if (filters) filterSetup(); else setup();
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    // The open menu hides the rest of the page from the accessibility tree: the header is read before opening it.
+    const actions = await screen.findByRole("button", { name: "Acciones del catálogo" });
+    expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
+    for (const name of ["Descartar", "Guardar"]) expect(screen.getByRole("button", { name }).compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const { trigger, menu } = await openCatalogActions();
+    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Carpetas…", "Dar de baja"]);
+    // Neither is destructive: in the editors only deleting is red.
+    expect(within(menu).queryByRole("separator")).not.toBeInTheDocument();
+    const deactivate = within(menu).getByRole("menuitem", { name: "Dar de baja" });
+    expect(deactivate).not.toHaveAttribute("data-variant", "destructive");
+    await user.keyboard("{End}");
+    await waitFor(() => expect(deactivate).toHaveFocus());
+    await user.keyboard("{Enter}");
+    const dialog = await screen.findByRole("dialog", { name: "Dar de baja" });
+    expect(dialog).toHaveAccessibleDescription(/tampoco se podrán mandar los formularios publicados/);
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    // Closing the menu without choosing also leaves the focus on ⋮.
+    await user.keyboard("{Enter}");
+    await screen.findByRole("menu");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    // Confirming stages the change for Save, and ⋮ then offers to reactivate.
+    await user.keyboard("{Enter}");
+    await user.click(within(await screen.findByRole("menu")).getByRole("menuitem", { name: "Dar de baja" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Dar de baja" })).getByRole("button", { name: "Dar de baja" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
+    expect(within((await openCatalogActions()).menu).getByRole("menuitem", { name: "Reactivar" })).toBeInTheDocument();
+  });
+  it.each([false, true])("opens «Carpetas…» from ⋮ with the keyboard and gives the focus back to ⋮ when its dialog closes for Filters=%s", async filters => {
+    if (filters) filterSetup(); else setup();
+    server.use(http.get("/api/forms/catalogs/" + id + "/folders", () => HttpResponse.json({ folderIds: [] })));
+    await mount("/catalogos/" + id); const user = userEvent.setup();
+    await screen.findByRole("button", { name: "Acciones del catálogo" });
+    expect(screen.queryByRole("button", { name: "Carpetas…" })).not.toBeInTheDocument();
+    const { trigger, menu } = await openCatalogActions();
+    const folders = within(menu).getByRole("menuitem", { name: "Carpetas…" });
+    await waitFor(() => expect(folders).toHaveFocus());
+    await user.keyboard("{Enter}");
+    const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Clientes»" });
+    expect(await within(dialog).findByText("Todavía no hay carpetas.")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it.each([false, true])("has no ⋮ without Manage for Filters=%s", async filters => {
+    if (filters) filterSetup(["formcatalogs.read"]); else setup(["formcatalogs.read"]);
+    await mount("/catalogos/" + id);
+    expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: "Acciones del catálogo" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dar de baja" })).not.toBeInTheDocument();
+  });
 });
 
 it("marks the complete unrepresentable person in the filter preview", async () => {

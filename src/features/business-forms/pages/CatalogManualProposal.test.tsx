@@ -48,7 +48,7 @@ it("marks a Manual proposal asked in the Home chat and approves it as it is, wit
   expect(screen.getByText("Propuesta del asistente", { selector: "span" })).toBeInTheDocument();
   // EP1-A (2026-11-06): the label says it is a proposal; the notice says who asked for it and when, without repeating it.
   expect(screen.queryByText("Propuesta del asistente.", { selector: "strong" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Reactivar" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Acciones del catálogo" })).not.toBeInTheDocument();
   await userEvent.click(approve);
   expect(await screen.findByText(/La resolvió Laura/)).toBeInTheDocument();
   expect(screen.getByText("Propuesta aprobada.", { selector: "strong" })).toBeInTheDocument();
@@ -64,5 +64,8 @@ it("discards a Manual proposal after confirming, and it stays inactive", async (
   await userEvent.click(within(dialog).getByRole("button", { name: "Descartar propuesta" }));
   expect(await screen.findByText(/Propuesta descartada\./)).toBeInTheDocument();
   expect(discards).toEqual([{ expectedRevision: 1 }]);
-  expect(screen.queryByRole("button", { name: "Reactivar" })).not.toBeInTheDocument();
+  // A discarded proposal is not reactivated: its ⋮ only has «Carpetas…» (AC1-A, CP2-A).
+  const actions = screen.getByRole("button", { name: "Acciones del catálogo" });
+  act(() => actions.focus()); await userEvent.keyboard("{Enter}");
+  expect(within(await screen.findByRole("menu")).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Carpetas…"]);
 });

@@ -408,6 +408,7 @@
       "remove": "Quitar {{name}} de {{part}}", "yes": "Sí", "no": "No", "unavailable": "Campo no disponible", "saveFieldFirst": "Guardá el campo primero"
     },
     "lifecycle": {
+      "actions": "Acciones del catálogo",
       "deactivate": "Dar de baja",
       "reactivate": "Reactivar",
       "deactivateHint": "Al guardar, este catálogo no se podrá elegir en preguntas nuevas y tampoco se podrán mandar los formularios publicados que lo usan. Las respuestas anteriores se conservan.",
@@ -563,10 +564,9 @@
     "review": {
       "title": "Revisión del catálogo",
       "required": "El catálogo puede haber cambiado. Revisá la versión actual antes de guardar de nuevo.",
-      "description": "«{{action}}» descarta los cambios sin guardar, incluidas las opciones pendientes.",
-      "filtersDescription": "«{{action}}» descarta los cambios sin guardar.",
       "mine": "Tu borrador",
       "current": "La revisión actual",
+      "filters": "Filtros",
       "reread": "Releer",
       "adopt": "Usar la revisión actual"
     },

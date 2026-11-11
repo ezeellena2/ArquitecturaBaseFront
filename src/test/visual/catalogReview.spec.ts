@@ -8,9 +8,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const label = (es: string, en: string) => language === "es" ? es : en;
     await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId,
       lang: language, scenario: filters ? "catalogs-filters" : "catalogs-manage" }));
-    const deactivate = page.getByRole("button", { name: label("Dar de baja", "Deactivate"), exact: true });
-    await deactivate.waitFor(); await page.evaluate(() => document.fonts.ready);
-    await deactivate.click();
+    // AC1-A (2026-11-11): deactivating and reactivating are in ⋮ of the header, «Acciones del catálogo».
+    const actions = page.getByRole("button", { name: label("Acciones del catálogo", "Catalog actions"), exact: true });
+    await actions.waitFor(); await page.evaluate(() => document.fonts.ready);
+    await actions.click();
+    await page.getByRole("menuitem", { name: label("Dar de baja", "Deactivate"), exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: label("Dar de baja", "Deactivate"), exact: true }).click();
     await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeEnabled();
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
@@ -18,7 +20,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.locator("header").filter({ has: page.getByRole("heading", { level: 1 }) }).getByText(label("Dado de baja", "Inactive"), { exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("catalog-inactive.png"), fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    await page.getByRole("button", { name: label("Reactivar", "Reactivate"), exact: true }).click();
+    await actions.click();
+    await page.getByRole("menuitem", { name: label("Reactivar", "Reactivate"), exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: label("Reactivar", "Reactivate"), exact: true }).click();
     if (filters) {
       await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click();
@@ -26,7 +29,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     }
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
     await expect(page.getByText(label("Cambios sin guardar", "Unsaved changes"), { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: label("Dar de baja", "Deactivate"), exact: true })).toBeVisible();
+    await actions.click();
+    await expect(page.getByRole("menuitem", { name: label("Dar de baja", "Deactivate"), exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(actions).toBeFocused();
     const writes = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { writes: { body: { expectedRevision: number; isActive: boolean } }[] } }).catalogsFixture.writes.map(write => write.body));
     expect(writes).toMatchObject([{ expectedRevision: 1, isActive: false }, { expectedRevision: 2, isActive: true }]);
     await page.screenshot({ path: info.outputPath("catalog-active.png"), fullPage: true });

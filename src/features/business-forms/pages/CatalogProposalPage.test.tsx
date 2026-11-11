@@ -45,7 +45,8 @@ it("marks a pending assistant proposal in the existing Filters editor with captu
  expect(screen.getByRole("textbox", { name: "Name" })).toHaveAccessibleDescription("Original (Spanish): Supervisores activos");
  expect(screen.queryByText("catalog-profile")).not.toBeInTheDocument();
  expect(screen.queryByText("catalog-instructions")).not.toBeInTheDocument();
- expect(screen.queryByRole("button", { name: "Reactivate" })).not.toBeInTheDocument();
+ // A pending proposal has neither «Folders…» nor reactivating: no ⋮ (AC1-A).
+ expect(screen.queryByRole("button", { name: "Catalog actions" })).not.toBeInTheDocument();
 });
 it("reviews a proposal in the menu language with its original as reference", async () => {
  await mount(undefined, "en");
@@ -92,7 +93,10 @@ it("cancels discarding at the exact trigger and records an explicit discard with
  await waitFor(() => expect(discarded).toEqual([{ expectedRevision: 1 }]));
  await screen.findByText(/Propuesta descartada/);
  expect(screen.queryByRole("button", { name: "Aprobar y activar" })).not.toBeInTheDocument();
- expect(screen.queryByRole("button", { name: "Reactivar" })).not.toBeInTheDocument();
+ // A discarded proposal is not reactivated: its ⋮ only has «Carpetas…» (AC1-A, CP2-A).
+ const actions = screen.getByRole("button", { name: "Acciones del catálogo" });
+ act(() => actions.focus()); await userEvent.keyboard("{Enter}");
+ expect(within(await screen.findByRole("menu")).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Carpetas…"]);
  expect(writes).toEqual([]);
 });
 // The confirmation waits open with «Descartando…» until the server answers, and takes no second request (LC1-A).
