@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useId, useState, type RefObject } from "react";
+import { useId, useState, type ComponentProps, type RefObject } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { notify, notifyOperationalError } from "@/shared/ui/notifications";
 import { z } from "zod";
@@ -20,7 +20,6 @@ import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
-import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { OtpInput } from "@/shared/ui/OtpInput";
 import { PhoneField } from "@/shared/ui/PhoneField";
@@ -53,6 +52,21 @@ type SentTo =
   | { readonly channel: "whatsapp"; readonly phone: string; readonly maskedPhone: string }
   | { readonly channel: "email"; readonly email: string };
 
+/// Las casillas del código adentro de su `FormField`. El campo les pasa su descripción (la (i) y el error) y acá se le
+/// suma a dónde llegó el código: la descripción del diálogo se lee al entrar en él, no cuando cambia, y el foco salta
+/// directo a la primera casilla; sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó ni que
+/// vence. El grupo se nombra con su etiqueta (`label`). El id y el `aria-invalid` del campo no van a `OtpInput`: las
+/// casillas se marcan sólo cuando el código estaba mal escrito (`invalid`), no ante cualquier problema.
+function CodeBoxes({
+  sentToId,
+  id: _fieldId,
+  "aria-invalid": _fieldInvalid,
+  "aria-describedby": fieldDescription,
+  ...boxes
+}: ComponentProps<typeof OtpInput> & { readonly sentToId: string; readonly id?: string; readonly "aria-invalid"?: boolean }) {
+  return <OtpInput {...boxes} aria-describedby={[sentToId, fieldDescription].filter(Boolean).join(" ")} />;
+}
+
 /// Lo que respondió una verificación que no prosperó.
 interface VerifyFailure {
   readonly message: string;
@@ -81,7 +95,6 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose(true, focusFallback);
   const sentToId = useId();
-  const noticeId = useId();
 
   const [country, setCountry] = useState(countries[0] ?? "");
   // El número o el correo, como lo escribió la persona. Se conserva al volver desde el código.
@@ -256,6 +269,17 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     setIsChangingDestination(true);
   }
 
+  // El error del código: el mensaje y, si los dijo el servidor, los intentos que le quedan.
+  const codeProblem =
+    failure === undefined || failure.taken
+      ? undefined
+      : [
+          failure.message,
+          failure.attemptsLeft === undefined ? undefined : t("common:code.attemptsLeft", { count: failure.attemptsLeft }),
+        ]
+          .filter(Boolean)
+          .join(" ");
+
   return (
     <Dialog
       open
@@ -357,32 +381,20 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               confirm.mutate(sentTo);
             }}
           >
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto self-start p-0 text-[var(--color-brand-600)]"
-              onClick={changeDestination}
-            >
+            <Button type="button" variant="link" size="inline" className="self-start" onClick={changeDestination}>
               {sentTo.channel === "whatsapp" ? t("common:code.otherPhone") : t("common:code.otherEmail")}
             </Button>
 
-            <div className="flex flex-col gap-1.5">
-              {/* El mensaje de WhatsApp lo escribe Meta y no dice para qué es el código: que llega al WhatsApp del
-                  celular, y no a WhatsApp Web, va en la (i) junto a «Código». La palabra ya es el nombre del grupo de
-                  casillas: a la vista, sólo para llevar la (i). */}
-              {sentTo.channel === "whatsapp" ? (
-                <span className="flex items-center justify-center gap-1 text-sm font-medium text-[var(--color-content)]">
-                  <span aria-hidden="true">{t("common:code.label")}</span>
-                  <span className="-my-1 inline-flex">
-                    <InfoTip
-                      id={noticeId}
-                      label={t("common:actions.moreInfo", { label: t("common:code.label") })}
-                      text={t("common:code.whatsappNotice")}
-                    />
-                  </span>
-                </span>
-              ) : null}
-              <OtpInput
+            {/* El campo común (lista de chequeo, 2026-11-11): «Código» a la vista y, por WhatsApp, la (i) con que llega
+                al WhatsApp del celular y no a WhatsApp Web, porque el mensaje lo escribe Meta y no dice para qué es el
+                código. Lo que respondió la verificación o el reenvío es su error; que el destino ya sea de otra cuenta
+                no es del código y sigue en su aviso. */}
+            <FormField
+              label={t("common:code.label")}
+              help={sentTo.channel === "whatsapp" ? t("common:code.whatsappNotice") : undefined}
+              error={codeProblem}
+            >
+              <CodeBoxes
                 length={CODE_LENGTH}
                 value={code}
                 onChange={(next) => {
@@ -394,23 +406,11 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
                 disabled={confirm.isPending}
                 invalid={failure?.wrong}
                 autoFocus
-                // La descripción del diálogo se lee al entrar en él, no cuando cambia: el foco salta a la primera
-                // casilla y, sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó, que vence ni
-                // que en WhatsApp Web no se ve (el texto de la (i)).
-                aria-describedby={sentTo.channel === "whatsapp" ? `${sentToId} ${noticeId}` : sentToId}
+                sentToId={sentToId}
               />
-            </div>
+            </FormField>
 
-            {failure === undefined ? null : failure.taken ? (
-              <Banner tone="danger">{failure.message}</Banner>
-            ) : (
-              <div role="alert" className="flex flex-col gap-1 text-center text-sm text-[var(--color-danger)]">
-                <p>{failure.message}</p>
-                {failure.attemptsLeft !== undefined ? (
-                  <p>{t("common:code.attemptsLeft", { count: failure.attemptsLeft })}</p>
-                ) : null}
-              </div>
-            )}
+            {failure?.taken ? <Banner tone="danger">{failure.message}</Banner> : null}
 
             <Button
               type="button"

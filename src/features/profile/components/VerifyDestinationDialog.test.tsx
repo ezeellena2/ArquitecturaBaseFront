@@ -190,6 +190,33 @@ describe("linking WhatsApp", () => {
     expect(within(code).getByRole("textbox", { name: "Código 1" })).toHaveFocus();
   });
 
+  it("labels the code as a common field, with the notice in its (i) and the problem under it", async () => {
+    linkWhatsAppServer();
+    server.use(
+      http.put("/api/me/whatsapp", () =>
+        problem(400, { code: "Auth.LoginCode.Invalid", detail: "El código no es válido.", attemptsLeft: 3 }),
+      ),
+    );
+
+    const dialog = await openAndSendNumber();
+    const code = await within(dialog).findByRole("group", { name: "Código" });
+    // «Código» is the label of its field, in sight (lista de chequeo, 2026-11-11), not a word drawn only to carry the (i).
+    expect(within(dialog).getByText("Código", { selector: "label" })).toBeVisible();
+    expect(within(dialog).getByRole("button", { name: "Más información sobre Código" })).toBeInTheDocument();
+    await typeCode(dialog, "482915");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
+
+    // The problem is the error of the field: under the boxes and part of what describes them.
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("El código no es válido. Te quedan 3 intentos");
+    expect(code.parentElement).toContainElement(alert);
+    expect(code).toHaveAccessibleDescription(
+      "Te mandamos un código al +54 9 11 •••• 6789. Vence en 10 minutos. " +
+        "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra. " +
+        "El código no es válido. Te quedan 3 intentos",
+    );
+  });
+
   it("says it is sending the code, and takes no second click, while it is on its way", async () => {
     const calls = linkWhatsAppServer();
     const answer = heldResponse();
@@ -611,6 +638,17 @@ describe("adding an email", () => {
 
     const region = screen.getByRole("region", { name: "Medios de ingreso" });
     expect(await within(region).findByText("ana@example.com")).toBeInTheDocument();
+  });
+
+  it("labels the code as a common field also when it went to an email, without the WhatsApp notice", async () => {
+    addEmailServer();
+
+    const dialog = await openAndSendEmail();
+    const code = await within(dialog).findByRole("group", { name: "Código" });
+
+    expect(within(dialog).getByText("Código", { selector: "label" })).toBeVisible();
+    expect(within(dialog).queryByRole("button", { name: "Más información sobre Código" })).not.toBeInTheDocument();
+    expect(code).toHaveAccessibleDescription("Te mandamos un código a ana@example.com. Vence en 10 minutos.");
   });
 
   it("moves the focus to the title of the surface, since the button that opened it is gone", async () => {
