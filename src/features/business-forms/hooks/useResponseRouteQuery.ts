@@ -65,9 +65,10 @@ export function useResponseRouteQuery(formId: string) {
   const setColumns = (
     columns: readonly ResponseColumn[],
     ids: readonly string[],
+    resultColumns: readonly { readonly id: string }[] = [],
   ) =>
     update({
-      columns: responseColumnSelection(columns, ids) ?? undefined,
+      columns: responseColumnSelection(columns, ids, resultColumns) ?? undefined,
     });
   const toggleSort = (field: string) => {
     const dynamic = guid.test(field);

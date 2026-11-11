@@ -119,11 +119,20 @@ export function visibleResponseColumnDescriptors(columns: readonly ResponseColum
   const selected = selection === null ? null : new Set(selection.split(","));
   return responseColumnDescriptors(columns).filter(column => selected ? selected.has(column.id) : !column.catalogField || column.catalogField.role === "data");
 }
-export function responseColumnSelection(columns: readonly ResponseColumn[], ids: readonly string[]): string | null {
+// RE1-A: a result column goes in «Columnas» as result:<id>, after the questions, and shows by default.
+export const responseResultColumnId = (id: string) => "result:" + id;
+export function responseColumnSelection(columns: readonly ResponseColumn[], ids: readonly string[], resultColumns: readonly { readonly id: string }[] = []): string | null {
   const selected = new Set(ids);
-  const ordered = responseColumnDescriptors(columns).filter(column => selected.has(column.id)).map(column => column.id);
-  const defaults = visibleResponseColumnDescriptors(columns, null).map(column => column.id);
+  const results = resultColumns.map(column => responseResultColumnId(column.id));
+  const ordered = [...responseColumnDescriptors(columns).map(column => column.id), ...results].filter(id => selected.has(id));
+  const defaults = [...visibleResponseColumnDescriptors(columns, null).map(column => column.id), ...results];
   return ordered.length === defaults.length && defaults.every(id => selected.has(id)) ? null : ordered.join(",") || "none";
+}
+export function visibleResponseResultColumns<T extends { readonly id: string }>(resultColumns: readonly T[] | undefined, selection: string | null): readonly T[] {
+  if (!resultColumns) return [];
+  if (selection === null) return resultColumns;
+  const ids = new Set(selection.split(","));
+  return resultColumns.filter(column => ids.has(responseResultColumnId(column.id)));
 }
 export function responseCatalogFieldText(field: ResponseCapturedCatalogField, culture: string, yes: string, no: string): string {
   if (field.type === "catalog") return field.text?.trim() ? field.text : "—";

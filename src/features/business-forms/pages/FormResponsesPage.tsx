@@ -37,7 +37,8 @@ import { FilterChip } from "@/shared/ui/FilterChip";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
-import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, visibleResponseColumnDescriptors, visibleResponseColumns } from "../responses";
+import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseResultColumnId, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
+import { responseResultColumnLabel, responseResultText } from "../responseResults";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
 import { responseCorrectionPath, responseFullPath } from "../responseNavigationPaths";
@@ -115,6 +116,8 @@ export function FormResponsesPage() {
   const data = query.data;
   const visible = visibleResponseColumns(data?.columns ?? [], route.selection);
   const displayColumns = visibleResponseColumnDescriptors(data?.columns ?? [], route.selection);
+  // RE1-A: a column per datum an external action left, after the questions; a dash in a response without it.
+  const resultColumns = visibleResponseResultColumns(data?.resultColumns, route.selection);
   const visibleCatalogFields = displayColumns.flatMap(column => column.catalogField ? [{ questionId: column.question.fieldId, fieldId: column.catalogField.fieldId }] : []);
   const hasFilters =
     !!route.query.state ||
@@ -203,6 +206,12 @@ export function FormResponsesPage() {
           onForbidden={deny} onError={onFileError} detailLink={recordPath(row.id)} onOpenDetail={() => rememberSheet(row.id)}
         />,
     })),
+    ...resultColumns.map(column => ({
+      id: responseResultColumnId(column.id),
+      header: responseResultColumnLabel(column, data?.resultColumns ?? []),
+      numeric: column.kind === "number",
+      cell: (row: ResponseRow) => responseResultText(column.kind, row.results?.[column.id], i18n.language) ?? t("responses.resultEmpty"),
+    })),
   ];
   const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions, route.names);
   const sort = route.query.sort?.replace(
@@ -232,7 +241,8 @@ export function FormResponsesPage() {
         <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} names={route.names} disabled={!data} onApply={route.setFilter}/>
         <div className="sm:ml-auto">
           <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
-            onChange={(ids) => route.setColumns(data?.columns ?? [], ids)}/>
+            resultColumns={data?.resultColumns} visibleResults={resultColumns}
+            onChange={(ids) => route.setColumns(data?.columns ?? [], ids, data?.resultColumns)}/>
         </div>
       </div>
       {hasFilters ? (
