@@ -414,8 +414,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
               label with its (i) over the segmented, which names itself: FormField takes a single labelable control. */}
           {channels ? <div className="flex flex-col gap-1.5">
             <span className="flex items-center gap-1 text-sm font-medium">{t("completedIn.label")}<span className="-my-1 inline-flex"><InfoTip text={t("completedIn.hint")} label={t("common:actions.moreInfo", { label: t("completedIn.label") })} /></span></span>
-            <SegmentedControl wrap aria-label={t("completedIn.label")} disabled={readOnly} options={(["channels", "app"] as const).map(key => ({ key, label: t("completedIn." + key), pressed: (key === "app") === appOnly,
-              onSelect: () => { const { appOnly: _chosen, ...draft } = value.draft; change({ ...value, draft: key === "app" ? { ...draft, appOnly: true } : draft }); } }))} />
+            {/* From 640 px, as wide as its texts; on the phone the option that does not fit goes to the next line. */}
+            <div className="sm:self-start"><SegmentedControl wrap aria-label={t("completedIn.label")} disabled={readOnly} options={(["channels", "app"] as const).map(key => ({ key, label: t("completedIn." + key), pressed: (key === "app") === appOnly,
+              onSelect: () => { const { appOnly: _chosen, ...draft } = value.draft; change({ ...value, draft: key === "app" ? { ...draft, appOnly: true } : draft }); } }))} /></div>
           </div> : null}
           {/* SA2-A: completed only in the app, the assistant does not offer it; what was written stays saved. */}
           {!appOnly ? <div className="sm:col-span-2"><FormField label={t("offerWhen")} help={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div> : null}

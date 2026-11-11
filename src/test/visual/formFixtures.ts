@@ -109,6 +109,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       return { ...common, source: { catalog: "01990000-0000-7000-8000-000000000080" } };
     }) } });
   }
+  // SA1-A: the visit completed only in the app, still a draft.
+  if (scenario === "forms-publication-app-only") { const original = definitions.get(fixtureFormId)!; definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, appOnly: true } }); }
   // CW15-B: three section titles between the questions of the visit.
   if (scenario === "forms-sections") {
     const original = definitions.get(fixtureFormId)!;
@@ -360,7 +362,9 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       values.sort((a, b) => (sort.includes("questionCount") ? a.draft.fields.length - b.draft.fields.length : administrativeName(a.name, culture).localeCompare(administrativeName(b.name, culture))) * (sort.startsWith("-") ? -1 : 1));
       const page = Number(url.searchParams.get("page") ?? 1); const pageSize = Number(url.searchParams.get("pageSize") ?? 20);
       return json({ items: values.slice((page - 1) * pageSize, page * pageSize).map(d => ({ id: d.id, name: d.name, prefix: d.prefix, questionCount: d.draft.fields.length,
-        activeVersionNumber: overview(d.id).activeVersion?.versionNumber ?? null, displayState: overview(d.id).displayState, lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave, lifecycle: lifecycleOf(d) })),
+        activeVersionNumber: overview(d.id).activeVersion?.versionNumber ?? null, displayState: overview(d.id).displayState, lastChangedAtUtc: audit.lastChangedAtUtc, lastChangedBy: audit.lastChangedBy, canEdit: canSave, lifecycle: lifecycleOf(d),
+        // SA3-A: a form never published says where its draft will be; the store publishes only by WhatsApp, which omits it.
+        ...!overview(d.id).activeVersion && d.draft.appOnly ? { appOnly: true as const } : {} })),
         page, pageSize, totalCount: values.length, totalPages: Math.ceil(values.length / pageSize), hasPrevious: page > 1, hasNext: page * pageSize < values.length });
     }
     if (request.method === "GET") {
