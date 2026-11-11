@@ -5,6 +5,7 @@ import {
   sourceDestination,
   isActiveTurn,
   proposalNeighbors,
+  attachmentProblem,
 } from "./model";
 import type { AssistantTurn } from "../api/assistant";
 const base = {
@@ -71,6 +72,22 @@ describe("assistant confirmed state", () => {
     expect(projectMessages([dictated]).map(message => [message.id, message.role])).toEqual([["t1:user", "user"], ["t1:assistant", "assistant"]]);
     expect(projectMessages([{ ...base, question: "" }]).map(message => message.role)).toEqual(["assistant"]);
   });
+  it("shows a turn that brought only a spreadsheet as the person's message", () => {
+    const withFile = { ...base, question: "", attachment: { name: "clientes.xlsx", kind: "xlsx", rows: 86, size: 24576 } } satisfies AssistantTurn;
+    expect(projectMessages([withFile]).map(message => [message.id, message.role])).toEqual([["t1:user", "user"], ["t1:assistant", "assistant"]]);
+  });
+  it("stops in the browser what it can see does not serve: an old Excel, one with macros, another type or more than 10 MB", () => {
+    const file = (name: string, size = 1024) => ({ name, size });
+    expect(attachmentProblem(file("clientes.xlsx"))).toBeUndefined();
+    expect(attachmentProblem(file("CLIENTES.CSV"))).toBeUndefined();
+    expect(attachmentProblem(file("clientes.xls"))).toBe("legacy");
+    expect(attachmentProblem(file("clientes.xlsm"))).toBe("macros");
+    expect(attachmentProblem(file("clientes.xlsb"))).toBe("macros");
+    expect(attachmentProblem(file("clientes.pdf"))).toBe("type");
+    expect(attachmentProblem(file("clientes"))).toBe("type");
+    expect(attachmentProblem(file("clientes.xlsx", 10 * 1024 * 1024))).toBeUndefined();
+    expect(attachmentProblem(file("clientes.xlsx", 10 * 1024 * 1024 + 1))).toBe("tooLarge");
+  });
   it("allows only known destinations and current source permissions", () => {
     expect(sourceDestination("users", ["users.read"])).toBe("/usuarios");
     expect(sourceDestination("users", [])).toBeUndefined();
@@ -95,6 +112,19 @@ describe("assistant confirmed state", () => {
     const turns = [second, unfinished, first, catalog, answer];
     expect(proposalNeighbors(turns, first)).toEqual({ previous: null, replaced: true });
     expect(proposalNeighbors(turns, second)).toEqual({ previous: first.proposal, replaced: false });
+    expect(proposalNeighbors(turns, catalog)).toEqual({ previous: null, replaced: false });
+  });
+  it("replaces a proposal with a later one of its module's group, or of its capability when the module gives none", () => {
+    const proposal = (id: string, capability: string) => ({ id, capability, version: 1, content: {} });
+    const turnWith = (ordinal: number, capability: string) => ({
+      ...base, turnId: "t" + ordinal, requestId: "r" + ordinal, ordinal, proposal: proposal("p" + ordinal, capability),
+    } satisfies AssistantTurn);
+    const catalog = turnWith(1, "fixture.propose-catalog"), form = turnWith(2, "fixture.propose-form"), importing = turnWith(3, "fixture.propose-import");
+    const turns = [catalog, form, importing];
+    const group = (item: { capability: string }) => item.capability === "fixture.propose-form" ? item.capability : "fixture.catalog-group";
+    expect(proposalNeighbors(turns, catalog, group)).toEqual({ previous: null, replaced: true });
+    expect(proposalNeighbors(turns, importing, group)).toEqual({ previous: catalog.proposal, replaced: false });
+    expect(proposalNeighbors(turns, form, group)).toEqual({ previous: null, replaced: false });
     expect(proposalNeighbors(turns, catalog)).toEqual({ previous: null, replaced: false });
   });
 });

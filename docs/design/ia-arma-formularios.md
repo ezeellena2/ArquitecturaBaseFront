@@ -63,6 +63,11 @@ Los tableros no lo dicen; se resolvió con la opción más simple que cumple el 
   va debajo del editor y el audio queda para mandarlo otra vez.
 - En el hilo, el audio de un mensaje se oye con «Escuchar», que baja la grabación sólo cuando la persona la quiere oír, como
   los audios del chat de WhatsApp; la transcripción en gris va siempre debajo.
+- Etapa 2, al programar el clip (2026-11-11): con un archivo elegido el clip se esconde, como el micrófono con un audio, y
+  para cambiarlo se quita con la X. El archivo dice en el editor su tipo y su tamaño («Excel · 24 KB») y en el mensaje,
+  también sus filas («Excel · 86 filas · 24 KB»). Lo que no se lee, lo vea el navegador o el servidor, queda debajo del
+  editor con el archivo, que no se vuelve a mandar hasta quitarlo o cambiarlo; mientras sube, la flecha dice cuánto
+  («Enviando… 40 %»). Quien ya no puede adjuntar recibe el remedio debajo del editor y el clip desaparece, sin cerrar Inicio.
 
 Etapa 2 (2026-11-11), las tarjetas con planilla:
 

@@ -45,6 +45,18 @@ dice el motivo debajo del editor y el próximo intento usa otro. El hilo muestra
 «Escuchar» baja la grabación por `audio/{id}/file`) y la transcripción en gris; un turno dictado sin texto también es un
 mensaje de la persona. Una grabación sin mandar cuenta como borrador para la guarda de salida.
 
+Planillas de Inicio (Etapa 2): con `bootstrap.attachments` el editor suma el clip, para un `.xlsx` o un `.csv` por mensaje;
+el elegido se ve con su nombre, su tipo y su tamaño y se quita con la X. Antes de mandar, `attachmentProblem` frena un Excel
+viejo, uno con macros, otro tipo o más de 10 MB, y el motivo queda debajo del editor mientras esté el archivo. Al mandar va
+primero la normalización del audio, si hay, y después `assistantApi.submitFile` (multipart a `file-turns` por `api.upload`,
+con los campos que tiene el turno); la flecha dice cuánto subió («Enviando… 40 %») y repetir el mismo pedido manda el mismo
+archivo. Un 400 en `file` deja el texto del servidor debajo del editor con el archivo, que no se vuelve a mandar hasta
+quitarlo o cambiarlo; el 403 `Ai.Assistant.AttachmentForbidden` muestra ahí su remedio y relee el bootstrap, sin cerrar
+Inicio; lo demás sigue el contrato común. El mensaje muestra el archivo con sus filas (`turn.attachment`) junto a lo escrito
+y lo dicho, y un archivo elegido cuenta como borrador para la guarda de salida. Una sugerencia del módulo con `attach` se
+ofrece sólo con `attachments`, escribe su pedido y abre el selector; `proposalNeighbors` agrupa por `replacementGroup` o, sin
+él, por capacidad.
+
 El panel interno usa useAssistantConversationList con usePagination/QueryCache privado (cuenta, idioma y revisión de permisos), 20 filas por defecto y GET acotados. conversationGroups recibe ahora UTC y zona del perfil; se recalcula al abrir/reanudar, sin timer paralelo. RuntimeProvider aísla la API experimental de threadList fijada en 0.15.23; callbacks sólo piden la navegación autorizada de AiAssistantPage. Nueva conversación no escribe hasta la aceptación; list/detail son autoridad de títulos. El borrado confirmado retira título y turnos del caché y luego invalida la página.
 
 Propuestas (IA1-A): el turno trae `proposal` sólo si cerró con una (Id, capacidad, versión y el contenido del dueño, que esta feature no lee). ConfirmedMessage muestra, debajo del texto, la tarjeta del módulo que la acepta por `AssistantProposalContext`, con la anterior de la misma capacidad y si una posterior la reemplazó (`proposalNeighbors`: por ordinal y sólo turnos completos; un catálogo pedido después de un formulario no lo reemplaza). Con una propuesta en el hilo, el editor dice «Pedí un cambio o hacé otra consulta…». Sin el módulo instalado, la respuesta se lee sola.

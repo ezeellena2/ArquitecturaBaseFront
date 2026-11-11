@@ -534,8 +534,10 @@ Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formul
 - Disponibilidad junto al editor, sin panel exterior ni banda Conversación. Sin regeneración. Desde el 2026-11-04 (IA4) el
   micrófono va a la izquierda de la flecha cuando Inicio acepta audio: «Grabando · 0:12» con «Descartar» y «Detener», el
   audio listo para escucharlo antes de mandarlo con «Agregá un texto, si querés…», y en el hilo el audio con «Escuchar» y la
-  transcripción en gris debajo (escena `assistant-audio`). El clip llega con la Etapa 2 de [la IA arma
-  formularios](ia-arma-formularios.md).
+  transcripción en gris debajo (escena `assistant-audio`). Desde el 2026-11-11 (Etapa 2 de [la IA arma
+  formularios](ia-arma-formularios.md)) el clip va junto al micrófono, para quien puede adjuntar: un Excel o un CSV por
+  mensaje, que se ve en el editor con su nombre, su tipo y su tamaño y se quita con la X; lo que no sirve lo dice debajo del
+  editor, y en el hilo el mensaje muestra el archivo con sus filas (escenas `assistant-attachment`).
 - Vive en `shared/ui/assistant` e `index.css`. Capturas `assistant-*.png`; verificación en el
   [registro de corrección](../verification/inicio-asistente-correccion-2026-10-04.md).
 

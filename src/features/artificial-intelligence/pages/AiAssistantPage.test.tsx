@@ -1,4 +1,4 @@
-import "./AiAssistantPage";
+import { AiAssistantPage } from "./AiAssistantPage";
 import {
   act,
   fireEvent,
@@ -21,6 +21,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { installMicrophone, removeMicrophone } from "@/test/mocks/mediaRecorder";
 import { captureUploads } from "@/test/mocks/xhrUpload";
+import { AssistantProposalContext, type AssistantProposalCardProps, type AssistantProposalExtension } from "@/shared/hooks/assistantProposalContext";
 import type {
   AssistantAccepted,
   AssistantTurn,
@@ -129,6 +130,7 @@ beforeEach(() => {
         limits: { questionMaxLength: 4000 },
         configurationDestination: null,
         audio: false,
+        attachments: false,
       }),
     ),
     http.get("/api/ai/assistant/conversations", () =>
@@ -802,7 +804,7 @@ describe("assistant waits", () => {
     let hold: Promise<void> | undefined;
     server.use(http.get("/api/ai/assistant/bootstrap", async () => {
       if (hold) await hold;
-      return HttpResponse.json({ availability: "capacityLimited", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false });
+      return HttpResponse.json({ availability: "capacityLimited", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false, attachments: false });
     }));
     renderRouteWithProviders("/");
     const availability = (await screen.findByText("La capacidad del asistente está ocupada")).closest("[role=status]") as HTMLElement;
@@ -880,7 +882,7 @@ describe("dictated turns (IA4)", () => {
     vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
     server.use(
       http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 7, suggestions: [],
-        limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: true })),
+        limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: true, attachments: false })),
       http.post("/api/ai/assistant/turns", async ({ request }) => {
         const body = (await request.json()) as AssistantSubmit;
         writes.push(body);
@@ -964,10 +966,187 @@ describe("dictated turns (IA4)", () => {
 
   it("offers no microphone when Home takes no recording or the browser cannot record", async () => {
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available", connectionRevision: 7, suggestions: [],
-      limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false })));
+      limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false, attachments: false })));
     installMicrophone();
     renderRouteWithProviders("/");
     await screen.findByRole("textbox", { name: "Tu pregunta" });
     expect(screen.queryByRole("button", { name: "Grabar un audio" })).not.toBeInTheDocument();
+  });
+});
+
+// Stage 2: one spreadsheet per message, from the clip or from a suggestion that attaches; the browser stops what it sees does
+// not serve and the server says the rest, under the composer and with the file kept.
+describe("spreadsheets in Home (Stage 2)", () => {
+  const withAttachments = (attachments: boolean) => http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available",
+    connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false, attachments }));
+  const fileInput = () => document.querySelector<HTMLInputElement>("input[type=file]")!;
+  const choose = (name: string, size = 1024) => {
+    const file = new File([new Uint8Array(size)], name);
+    fireEvent.change(fileInput(), { target: { files: [file] } });
+    return file;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("offers no clip to whoever the bootstrap says may not attach", async () => {
+    renderRouteWithProviders("/");
+    await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(screen.queryByRole("button", { name: "Adjuntar una planilla" })).not.toBeInTheDocument();
+    expect(document.querySelector("input[type=file]")).toBeNull();
+  });
+
+  it("sends the chosen file with the text, showing how much went up, and the message shows its file with its rows", async () => {
+    server.use(withAttachments(true));
+    let release!: () => void;
+    const answer = { status: 202, body: {} as unknown, progress: [0.4], release: new Promise<void>((resolve) => { release = resolve; }) };
+    const uploads = captureUploads([answer]);
+    renderRouteWithProviders("/");
+    const clip = await screen.findByRole("button", { name: "Adjuntar una planilla" });
+    expect(clip.compareDocumentPosition(screen.getByRole("button", { name: "Enviar" }))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const file = choose("clientes.xlsx", 24 * 1024);
+    expect(screen.getByText("clientes.xlsx")).toBeInTheDocument();
+    expect(screen.getByText("Excel · 24 KB")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Adjuntar una planilla" })).not.toBeInTheDocument();
+    const field = screen.getByRole("textbox", { name: "Tu pregunta" });
+    expect(field).toHaveAttribute("placeholder", "Agregá un texto, si querés…");
+    await pasteText(field, "Armame un catálogo");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByRole("button", { name: "Enviando… 40 %" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "Quitar clientes.xlsx" })).toBeDisabled();
+    expect(uploads[0].url).toBe("/api/ai/assistant/file-turns");
+    const requestId = String(uploads[0].body.get("requestId"));
+    expect(Object.fromEntries([...uploads[0].body.entries()].filter(([key]) => key !== "file")))
+      .toEqual({ requestId, expectedConnectionRevision: "7", question: "Armame un catálogo" });
+    expect((uploads[0].body.get("file") as File).name).toBe(file.name);
+    turn = { ...turn, requestId, question: "Armame un catálogo", attachment: { name: "clientes.xlsx", kind: "xlsx", rows: 86, size: 24 * 1024 } };
+    answer.body = acceptedOf(turn);
+    release();
+    expect(await screen.findByText("Excel · 86 filas · 24 KB")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Quitar clientes.xlsx" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Adjuntar una planilla" })).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("stops in the browser what it sees does not serve, says why under the composer and sends nothing until it is removed", async () => {
+    server.use(withAttachments(true));
+    const uploads = captureUploads([{ status: 202, body: {} }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar una planilla" });
+    choose("clientes.xls");
+    expect(screen.getByText("No se puede leer un Excel viejo (.xls). Guardalo como .xlsx o .csv.")).toBeInTheDocument();
+    expect(screen.getByText("XLS · 1 KB")).toBeInTheDocument();
+    // Writing does not hide the reason while the file is there.
+    await pasteText(screen.getByRole("textbox", { name: "Tu pregunta" }), "Armame un catálogo");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(screen.getByText("No se puede leer un Excel viejo (.xls). Guardalo como .xlsx o .csv.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Quitar clientes.xls" }));
+    expect(screen.queryByText(/Excel viejo/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Adjuntar una planilla" }));
+    choose("clientes.xlsx", 10 * 1024 * 1024 + 1);
+    expect(screen.getByText("La planilla pesa 10 MB y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Quitar clientes.xlsx" }));
+    choose("clientes.pdf");
+    expect(screen.getByText("Sólo se puede adjuntar un Excel (.xlsx) o un CSV.")).toBeInTheDocument();
+    expect(uploads).toHaveLength(0);
+    expect(writes).toHaveLength(0);
+  });
+
+  it("shows the server's reason for a file it did not read under the composer and keeps the file to remove or change it", async () => {
+    server.use(withAttachments(true));
+    const reason = "No se puede leer una planilla con contraseña. Quitale la contraseña y volvé a adjuntarla.";
+    const uploads = captureUploads([{ status: 400, body: { code: "Ai.Assistant.AttachmentProtected", detail: reason, errors: { file: [reason] } } }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar una planilla" });
+    choose("clientes.xlsx");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText(reason)).toBeInTheDocument();
+    expect(screen.getByText("clientes.xlsx")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("aria-invalid", "true");
+    // The same file is not sent again: it is removed or changed.
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+    await userEvent.click(screen.getByRole("button", { name: "Quitar clientes.xlsx" }));
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adjuntar una planilla" })).toBeInTheDocument();
+  });
+
+  it("asks before browser Back leaves a chosen file unsent, like a draft", async () => {
+    server.use(withAttachments(true));
+    const { router } = renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar una planilla" });
+    await act(async () => {
+      await router.navigate(`/?conversacion=${conversationId}`);
+    });
+    await screen.findByText("Hay tres usuarios activos.");
+    choose("clientes.csv");
+    expect(screen.getByText("CSV · 1 KB")).toBeInTheDocument();
+    await act(async () => {
+      await router.navigate(-1);
+    });
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
+    expect(screen.getByText("clientes.csv")).toBeInTheDocument();
+    expect(router.state.location.search).toContain(conversationId);
+  });
+});
+
+// A module's extension, without importing it: a suggestion that attaches and a card that says whether it was replaced.
+describe("what a module adds to Home (Stage 2)", () => {
+  function Card({ proposal, replaced }: AssistantProposalCardProps) {
+    return <p>{proposal.capability + (replaced ? " · Reemplazada" : "")}</p>;
+  }
+  function renderPage(extension: AssistantProposalExtension, path = "/") {
+    const router = createMemoryRouter([{ path: "/", element: <AssistantProposalContext value={extension}><AiAssistantPage /></AssistantProposalContext> }],
+      { initialEntries: [path] });
+    render(<AppProviders><RouterProvider router={router} /></AppProviders>);
+  }
+  const extension = (overrides: Partial<AssistantProposalExtension> = {}): AssistantProposalExtension => ({
+    accepts: () => true,
+    Card,
+    suggestions: () => [{ id: "fixture.attach", question: "Armame un catálogo con una planilla", draft: "Armame un catálogo con esta planilla", attach: true }],
+    ...overrides,
+  });
+  const bootstrapWith = (attachments: boolean) => server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ availability: "available",
+    connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 }, configurationDestination: null, audio: false, attachments })));
+
+  it("offers a suggestion that attaches only to whoever may attach; choosing it writes its request and opens the file picker", async () => {
+    bootstrapWith(true);
+    const open = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+    renderPage(extension());
+    await userEvent.click(await screen.findByRole("button", { name: "Armame un catálogo con una planilla" }));
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveValue("Armame un catálogo con esta planilla");
+    expect(open).toHaveBeenCalledOnce();
+    expect(open.mock.contexts[0]).toBe(document.querySelector("input[type=file]"));
+    expect(writes).toHaveLength(0);
+  });
+
+  it("leaves out a suggestion that attaches for whoever may not attach", async () => {
+    bootstrapWith(false);
+    renderPage(extension());
+    await screen.findByRole("textbox", { name: "Tu pregunta" });
+    expect(screen.queryByRole("button", { name: "Armame un catálogo con una planilla" })).not.toBeInTheDocument();
+  });
+
+  it("marks as replaced a proposal followed by another of its group, or of its capability when the module gives no group", async () => {
+    const proposalTurn = (ordinal: number, capability: string): AssistantTurn => ({ ...turn, turnId: `0199a0c0-0000-7000-8009-00000000000${ordinal}`,
+      requestId: `0199a0c0-0000-7000-800a-00000000000${ordinal}`, ordinal, answer: { kind: "proposal", text: "Propuesta " + ordinal, evidenceIds: [] },
+      evidences: [], proposal: { id: `0199a0c0-0000-7000-800b-00000000000${ordinal}`, capability, version: 1, content: {} } });
+    const turns = [proposalTurn(2, "fixture.propose-import"), proposalTurn(1, "fixture.propose-catalog")];
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", () => HttpResponse.json(pageOf(turns))));
+    bootstrapWith(false);
+    renderPage(extension({ replacementGroup: () => "fixture.catalogs" }), "/?conversacion=" + conversationId);
+    expect(await screen.findByText("fixture.propose-catalog · Reemplazada")).toBeInTheDocument();
+    expect(screen.getByText("fixture.propose-import")).toBeInTheDocument();
+  });
+
+  it("without a group, a proposal of another capability does not replace it", async () => {
+    const proposalTurn = (ordinal: number, capability: string): AssistantTurn => ({ ...turn, turnId: `0199a0c0-0000-7000-8009-00000000000${ordinal}`,
+      requestId: `0199a0c0-0000-7000-800a-00000000000${ordinal}`, ordinal, answer: { kind: "proposal", text: "Propuesta " + ordinal, evidenceIds: [] },
+      evidences: [], proposal: { id: `0199a0c0-0000-7000-800b-00000000000${ordinal}`, capability, version: 1, content: {} } });
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", () =>
+      HttpResponse.json(pageOf([proposalTurn(2, "fixture.propose-import"), proposalTurn(1, "fixture.propose-catalog")]))));
+    bootstrapWith(false);
+    renderPage(extension(), "/?conversacion=" + conversationId);
+    expect(await screen.findByText("fixture.propose-catalog")).toBeInTheDocument();
+    expect(screen.queryByText(/Reemplazada/)).not.toBeInTheDocument();
   });
 });

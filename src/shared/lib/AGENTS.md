@@ -10,6 +10,7 @@ Contiene formato de fechas por zona y de valores tipados, nombres de países y `
 - `formatDateOnly` valida una fecha sin hora y la escribe con el mismo formato, sin depender de la zona. No tiene estilos: hay uno solo.
 - `typedValue` es el único formato de valores tipados (entero, decimal, fecha sin hora, sí/no) en tablas, importación, resúmenes, respuestas y el chat: `formatTypedValue` agrupa los números exactos (es-AR o en-US) y muestra la fecha numérica, y devuelve null si el valor no es canónico; `formatYesNo` nombra sólo true y false. Las fechas con hora siguen con `formatDateInZone`/`formatDateTimeInZone`.
 - `cn` se reexporta desde `utils`; no agregar otra librería para combinar clases.
+- `formatFileSize` (`fileSize`) escribe el tamaño de un archivo: KB enteros bajo el mega (nunca cero) y MB con un decimal, en el idioma del menú; lo usan los archivos de una respuesta y los del asistente.
 - El front envía país y número al backend: no implementar normalización telefónica acá.
 - Una utilidad nueva necesita un consumidor compartido y pruebas de su comportamiento cuando tenga lógica.
 

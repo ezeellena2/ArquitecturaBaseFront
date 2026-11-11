@@ -212,6 +212,61 @@ describe("durable assistant acceptance", () => {
     expect(sent[1]).toEqual(sent[0]);
     expect(test.client.getMutationCache().getAll()).toHaveLength(0);
   });
+  it("sends a turn with a spreadsheet, says how much went up and repeats the same body and file only when asked", async () => {
+    const file = new File(["Código,Cliente"], "clientes.csv", { type: "text/csv" });
+    const sent: { body: AssistantSubmit; file: File }[] = [];
+    let release!: () => void;
+    vi.spyOn(assistantApi, "submitFile").mockImplementation(async (body, chosen, onProgress) => {
+      sent.push({ body, file: chosen });
+      onProgress(0.4);
+      if (sent.length === 1) throw ApiError.network();
+      await new Promise<void>((resolve) => { release = resolve; });
+      return { ...accepted, requestId: body.requestId };
+    });
+    const submit = vi.spyOn(assistantApi, "submit");
+    const test = setup();
+    await act(() => test.result.current.submit("", 7, undefined, undefined, file));
+    expect(test.result.current.uncertain).toBe(true);
+    expect(test.result.current.progress).toBeUndefined();
+    let retry!: Promise<boolean>;
+    act(() => { retry = test.result.current.retryIdentical(); });
+    await waitFor(() => expect(test.result.current.progress).toBe(0.4));
+    await act(async () => { release(); expect(await retry).toBe(true); });
+    expect(sent).toHaveLength(2);
+    expect(sent[1].body).toEqual(sent[0].body);
+    expect(sent[1].file).toBe(file);
+    expect(submit).not.toHaveBeenCalled();
+    expect(test.result.current.progress).toBeUndefined();
+    expect(test.onAccepted).toHaveBeenCalledOnce();
+  });
+  it("keeps why the server did not read the file for the composer, and the next attempt is another request", async () => {
+    const file = new File(["xls"], "clientes.xlsx", { type: "application/vnd.ms-excel" });
+    const reason = "No se puede leer un Excel viejo (.xls). Guardalo como Libro de Excel (.xlsx) o como CSV UTF-8.";
+    const submitFile = vi.spyOn(assistantApi, "submitFile")
+      .mockRejectedValueOnce(new ApiError(400, { code: "Ai.Assistant.AttachmentLegacy", detail: reason, errors: { file: [reason] } }))
+      .mockResolvedValue(accepted);
+    const test = setup();
+    expect(await act(() => test.result.current.submit("", 7, undefined, undefined, file))).toBe(false);
+    expect(test.result.current.fileError).toBe(reason);
+    expect(test.result.current.fieldError).toBeUndefined();
+    act(() => test.result.current.clearFileError());
+    expect(test.result.current.fileError).toBeUndefined();
+    await act(() => test.result.current.submit("", 7, undefined, undefined, file));
+    expect(submitFile.mock.calls[1]![0].requestId).not.toEqual(submitFile.mock.calls[0]![0].requestId);
+  });
+  it("says under the composer that this person can no longer attach, without closing Home", async () => {
+    const remedy = "Para adjuntar planillas, pedile a quien administra la instalación el permiso de administrar catálogos.";
+    vi.spyOn(assistantApi, "submitFile").mockRejectedValue(new ApiError(403, { code: "Ai.Assistant.AttachmentForbidden", detail: remedy }));
+    const onForbidden = vi.fn();
+    const client = createQueryClient();
+    const refresh = vi.spyOn(client, "invalidateQueries");
+    const test = renderHook(() => useAssistantTurnActions({ userId: "u1", onAccepted: vi.fn(), onForbidden }),
+      { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider> });
+    await act(() => test.result.current.submit("", 7, undefined, undefined, new File(["x"], "clientes.csv")));
+    expect(test.result.current.fileError).toBe(remedy);
+    expect(onForbidden).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledWith({ queryKey: ["assistant", "u1"] });
+  });
   it("blocks concurrent submit callbacks before React can render busy", async () => {
     let release!: () => void;
     const spy = vi

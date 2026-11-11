@@ -7,12 +7,18 @@ El marco ocupa el área disponible; hilo de 704 px con padding de 16 px (conteni
 bienvenida/editor centrados en vacío, sugerencias debajo y editor al pie tras el primer turno.
 ComposerPrimitive.Input conserva su forma propia, label accesible, ayuda oculta y error asociado;
 no FormField/Surface ni textarea rectangular dentro del editor. Radios/colores viven en index.css.
-Una condición durable va junto al editor, sin panel punteado exterior. No agregar adjuntos,
-regeneración o controles sin capacidad productiva para imitar una demo. La grabación ya la tiene (IA4):
+Una condición durable va junto al editor, sin panel punteado exterior. No agregar regeneración o
+controles sin capacidad productiva para imitar una demo. La grabación y los adjuntos ya la tienen (IA4):
 `AssistantRecorder` muestra «Grabando · 0:12» con «Descartar» y «Detener» o el audio listo con `PrivateAudio`; el
 compositor suma el micrófono (`record`) a la izquierda de la flecha, el grabador arriba del texto (`recorder`) y, con un
-audio listo, la flecha y Ctrl/Meta+Enter lo mandan por el dueño (`onSendRecording`), aun sin texto y fuera del runtime;
-`AssistantMessage.media` pone el audio y su transcripción dentro de la burbuja. Grabar es de `useAudioRecorder`.
+audio listo o un archivo elegido, la flecha y Ctrl/Meta+Enter los mandan por el dueño (`onSendMedia`), aun sin texto y
+fuera del runtime; `AssistantMessage.media` pone el audio y su transcripción, o el archivo, dentro de la burbuja. Grabar
+es de `useAudioRecorder`. `AssistantAttach` es el clip (`attach`, a la izquierda del micrófono) con su `input` de archivo
+oculto, que el dueño también abre desde una sugerencia (`inputRef`); con un archivo elegido el clip se esconde
+(`showButton`). `AssistantFile` es el archivo con su nombre y lo que lo describe, que escribe el dueño: en el editor
+(`attachment`, arriba del texto) con la X, apagada mientras viaja, y en un mensaje sin ella. El motivo de uno que no
+sirve va en `error`, debajo del editor. Una regla de index.css para un botón de ícono no puede depender sólo de
+`data-slot=button`: habilitado, el disparador de su tooltip lo cambia por `tooltip-trigger` (la flecha cubre los dos).
 No conoce sesión, contratos HTTP, proveedor ni features. La feature aporta textos, estado confirmado,
 fuentes, acciones y borrador. No incorporar HTML, Markdown arbitrario, imágenes ni tools ejecutables.
 Enter agrega línea; Ctrl/Meta+Enter envían y respetan IME. Scroll no roba la posición de lectura.

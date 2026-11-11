@@ -4,6 +4,7 @@ import type {
   AssistantSubmit,
   AssistantTurn,
 } from "../api/assistant";
+type Proposal = NonNullable<AssistantTurn["proposal"]>;
 export function isActiveTurn(
   turn:
     | {
@@ -14,17 +15,20 @@ export function isActiveTurn(
 ) {
   return turn?.state === "pending" || turn?.state === "running";
 }
-/** The proposal of the same capability before this one, and whether a later one replaced it: asking for a catalog after a
- *  form does not replace the form. The server refuses to create a replaced one too. */
+/** The proposal of the same replacement group before this one, and whether a later one replaced it: the module that owns the
+ *  card groups the proposals that replace each other (a catalog and importing a spreadsheet) and, without that, each capability
+ *  is its own group, so asking for a catalog after a form does not replace the form. The server refuses to create a replaced
+ *  one too. */
 export function proposalNeighbors(
   turns: readonly AssistantTurn[],
   turn: AssistantTurn,
+  group: (proposal: Proposal) => string = (proposal) => proposal.capability,
 ) {
+  const key = turn.proposal ? group(turn.proposal) : undefined;
   const same = turns
     .filter(
       (item) =>
-        item.state === "completed" &&
-        item.proposal?.capability === turn.proposal?.capability,
+        item.state === "completed" && !!item.proposal && group(item.proposal) === key,
     )
     .toSorted((left, right) => left.ordinal - right.ordinal);
   const index = same.findIndex((item) => item.turnId === turn.turnId);
@@ -59,8 +63,8 @@ export function projectMessages(
   return turns.flatMap((turn) => {
     if (turn.contentAccess !== "allowed") return [];
     const result: ThreadMessageLike[] = [];
-    // A dictated turn may carry no typed text: its recording and transcript still make the message.
-    if (turn.question || turn.audio)
+    // A dictated turn, or one that brought a spreadsheet, may carry no typed text: its recording or its file still make the message.
+    if (turn.question || turn.audio || turn.attachment)
       result.push({
         id: `${turn.turnId}:user`,
         role: "user",
@@ -110,3 +114,21 @@ export function sourceDestination(
   return item && permissions.includes(item.permission) ? item.path : undefined;
 }
 export const assistantKey = (userId: string) => ["assistant", userId] as const;
+/** The most a spreadsheet may weigh, as the server reads it (Stage 2). */
+export const attachmentMaximumBytes = 10 * 1024 * 1024;
+/** What the clip offers: one Excel workbook or one CSV per message. */
+export const attachmentAccept = ".xlsx,.csv";
+export type AttachmentProblem = "legacy" | "macros" | "type" | "tooLarge";
+/** What the browser can see does not serve before sending a file: an old Excel, one with macros, another type or more than the
+ *  limit. The server reads the kind from the bytes and says the rest (with a password, unreadable, empty). */
+export function attachmentProblem(file: { readonly name: string; readonly size: number }): AttachmentProblem | undefined {
+  const extension = fileExtension(file.name);
+  if (extension === "xls") return "legacy";
+  if (extension === "xlsm" || extension === "xlsb") return "macros";
+  if (extension !== "xlsx" && extension !== "csv") return "type";
+  return file.size > attachmentMaximumBytes ? "tooLarge" : undefined;
+}
+export function fileExtension(name: string) {
+  const dot = name.lastIndexOf(".");
+  return dot > 0 ? name.slice(dot + 1).toLowerCase() : "";
+}

@@ -38,13 +38,13 @@ describe("AssistantComposer with a recording (IA4)", () => {
   });
 
   it("sends a ready recording with the arrow or Ctrl+Enter, even without text, and not through the text runtime", async () => {
-    const onSendRecording = vi.fn();
-    const onNew = composer({ onSendRecording, value: "" });
+    const onSendMedia = vi.fn();
+    const onNew = composer({ onSendMedia, value: "" });
     const send = screen.getByRole("button", { name: "Enviar" });
     expect(send).toBeEnabled();
     await userEvent.click(send);
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Tu pregunta" }), { key: "Enter", ctrlKey: true });
-    expect(onSendRecording).toHaveBeenCalledTimes(2);
+    expect(onSendMedia).toHaveBeenCalledTimes(2);
     expect(onNew).not.toHaveBeenCalled();
   });
 

@@ -4,9 +4,11 @@
   "question": "Tu pregunta",
   "placeholder": "Preguntale al sistema…",
   "placeholderProposal": "Pedí un cambio o hacé otra consulta…",
+  "placeholderOptional": "Agregá un texto, si querés…",
   "keyboardHelp": "Enter agrega una línea. Ctrl+Enter o ⌘+Enter envían.",
   "send": "Enviar",
   "sending": "Enviando…",
+  "sendingFile": "Enviando… {{percent}} %",
   "history": "Historial",
   "newConversation": "Nueva conversación",
   "thread": "Conversación con el asistente",
@@ -98,7 +100,6 @@
     "stop": "Detener",
     "discard": "Descartar",
     "yours": "Tu audio",
-    "placeholder": "Agregá un texto, si querés…",
     "denied": "No se pudo usar el micrófono. Revisá el permiso del navegador.",
     "invalid": "El audio no se puede leer. Grabalo de nuevo.",
     "failed": "No se pudo entender el audio. Probá grabarlo de nuevo.",
@@ -106,5 +107,19 @@
     "loading": "Cargando…",
     "recording": "Audio del mensaje",
     "gone": "El audio ya no está disponible."
+  },
+  "attachment": {
+    "attach": "Adjuntar una planilla",
+    "remove": "Quitar {{name}}",
+    "kind": {
+      "xlsx": "Excel",
+      "csv": "CSV"
+    },
+    "rows_one": "{{rows}} fila",
+    "rows_other": "{{rows}} filas",
+    "legacy": "No se puede leer un Excel viejo (.xls). Guardalo como .xlsx o .csv.",
+    "macros": "No se puede leer un Excel con macros o binario (.xlsm o .xlsb). Guardalo como .xlsx o .csv.",
+    "type": "Sólo se puede adjuntar un Excel (.xlsx) o un CSV.",
+    "tooLarge": "La planilla pesa {{size}} y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla."
   }
 }

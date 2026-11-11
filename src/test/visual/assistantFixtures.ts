@@ -46,6 +46,7 @@ export function createAssistantVisualFixtures(
     connectionRevision: 7,
     configurationDestination: "aiConfiguration",
     audio: scenario.startsWith("assistant-audio"),
+    attachments: scenario.startsWith("assistant-attachment"),
     limits: { questionMaxLength: 4000 },
     suggestions: [
       {
@@ -161,6 +162,12 @@ export function createAssistantVisualFixtures(
   if (scenario === "assistant-audio")
     turn = { ...turn, question: "", audio: { requestId: "0199a0c0-0000-7000-8000-000000000555",
       transcript: en ? "Tell me how many users are active and how many are not." : "Decime cuántos usuarios están activos y cuántos no." } };
+  // Stage 2: a spreadsheet sent without text, shown in its message with its rows, and the question that comes back.
+  if (scenario === "assistant-attachment")
+    turn = { ...turn, question: "", evidences: [], attachment: { name: en ? "contractors.xlsx" : "contratistas.xlsx", kind: "xlsx", rows: 86, size: 24 * 1024 },
+      answer: { kind: "clarification", evidenceIds: [], text: en
+        ? "What do you want me to do with this spreadsheet? I can make a new catalog with it or import it into one that already exists."
+        : "¿Qué querés que haga con esta planilla? Puedo armar un catálogo nuevo con ella o importarla en uno que ya existe." } };
   const conversation = (): AssistantConversation => ({
     conversationId: assistantFixtureConversationId,
     title: turn.contentAccess === "allowed" ? bootstrap.suggestions[0].question : en ? "Private conversation" : "Conversación privada",

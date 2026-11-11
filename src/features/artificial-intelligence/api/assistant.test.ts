@@ -99,6 +99,45 @@ describe("assistant contract", () => {
     } finally { vi.unstubAllGlobals(); }
     await expect(assistantApi.audio(audioRequestId)).resolves.toMatchObject({ state: "completed", transcript: "Armame un formulario" });
   });
+  it("reads whether this person may attach a spreadsheet in the bootstrap, a field it always has", async () => {
+    const bootstrap = { availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
+      configurationDestination: null, audio: false, attachments: true };
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(bootstrap)));
+    await expect(assistantApi.bootstrap()).resolves.toEqual(bootstrap);
+    const { attachments: _, ...withoutAttachments } = bootstrap;
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(withoutAttachments)));
+    await expect(assistantApi.bootstrap()).rejects.toThrow("Invalid assistant contract.");
+  });
+  it("reads the spreadsheet of the turn that brought it, with its name, kind, rows and size", async () => {
+    const withFile = { ...turn, question: "", attachment: { name: "clientes.xlsx", kind: "xlsx", rows: 86, size: 24576 } };
+    server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json(withFile)));
+    await expect(assistantApi.turn(requestId)).resolves.toEqual(withFile);
+    server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json({ ...withFile, attachment: { ...withFile.attachment, kind: "xls" } })));
+    await expect(assistantApi.turn(requestId)).rejects.toThrow("Invalid assistant contract.");
+  });
+  it("sends a turn with a spreadsheet in multipart, with only the fields it has, and says how much went up", async () => {
+    const accepted = { conversationId: turn.conversationId, requestId, conversationRevision: 1, turnRevision: 1, state: "pending",
+      stage: "pending", submittedAtUtc: turn.submittedAtUtc, serverNowUtc: turn.serverNowUtc, pollingAfterSeconds: 1 };
+    const sends = captureUploads([{ status: 202, body: accepted, progress: [0.4, 1] }]);
+    const file = new File(["Código,Cliente"], "clientes.csv", { type: "text/csv" });
+    const progress: number[] = [];
+    try {
+      await expect(assistantApi.submitFile({ requestId, conversationId: null, expectedRevision: null, expectedConnectionRevision: 7,
+        question: "" }, file, fraction => progress.push(fraction))).resolves.toEqual(accepted);
+      expect(sends[0].url).toBe("/api/ai/assistant/file-turns");
+      expect([...sends[0].body.keys()].sort()).toEqual(["expectedConnectionRevision", "file", "question", "requestId"]);
+      expect(sends[0].body.get("requestId")).toBe(requestId);
+      expect(sends[0].body.get("expectedConnectionRevision")).toBe("7");
+      expect(sends[0].body.get("question")).toBe("");
+      const sent = sends[0].body.get("file") as File;
+      expect([sent.name, sent.size, sent.type]).toEqual(["clientes.csv", file.size, "text/csv"]);
+      expect(progress).toEqual([0.4, 1]);
+      await assistantApi.submitFile({ requestId, conversationId: turn.conversationId, expectedRevision: 2, expectedConnectionRevision: 7,
+        question: "Armame un catálogo", audioRequestId }, file, () => {});
+      expect(Object.fromEntries([...sends[1].body.entries()].filter(([key]) => key !== "file"))).toEqual({ requestId,
+        conversationId: turn.conversationId, expectedRevision: "2", expectedConnectionRevision: "7", question: "Armame un catálogo", audioRequestId });
+    } finally { vi.unstubAllGlobals(); }
+  });
   it("rejects a normalization status outside the contract", async () => {
     server.use(http.get("/api/ai/assistant/audio/:id", () => HttpResponse.json(
       { requestId: audioRequestId, state: "completed", transcript: "Hola", failure: null, pollingAfterSeconds: 1, text: "Hola" })));

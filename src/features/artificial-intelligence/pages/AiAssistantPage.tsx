@@ -20,6 +20,7 @@ import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { formatTimeInZone } from "@/shared/lib/dateTime";
+import { formatFileSize } from "@/shared/lib/fileSize";
 import { Page } from "@/shared/ui/Page";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -38,6 +39,7 @@ import { AssistantThread } from "@/shared/ui/assistant/AssistantThread";
 import { AssistantMessage } from "@/shared/ui/assistant/AssistantMessage";
 import { AssistantComposer } from "@/shared/ui/assistant/AssistantComposer";
 import { AssistantRecorder } from "@/shared/ui/assistant/AssistantRecorder";
+import { AssistantAttach, AssistantFile } from "@/shared/ui/assistant/AssistantAttachment";
 import { useAudioRecorder } from "@/shared/hooks/useAudioRecorder";
 import { AssistantSuggestions } from "@/shared/ui/assistant/AssistantSuggestions";
 import { notify } from "@/shared/ui/notifications";
@@ -46,8 +48,17 @@ import {
   type AssistantAccepted,
   type AssistantState,
   type AssistantTurn,
+  type AssistantTurnAttachment,
 } from "../api/assistant";
-import { assistantKey, isActiveTurn, proposalNeighbors } from "../assistant/model";
+import {
+  assistantKey,
+  attachmentAccept,
+  attachmentProblem,
+  fileExtension,
+  isActiveTurn,
+  proposalNeighbors,
+  type AttachmentProblem,
+} from "../assistant/model";
 import { useAssistantConversation } from "../hooks/useAssistantConversation";
 import { useAssistantTurnActions } from "../hooks/useAssistantTurnActions";
 import { useAssistantDictation } from "../hooks/useAssistantDictation";
@@ -66,6 +77,18 @@ const announcedStates: readonly AssistantState[] = [
   "uncertain",
   "expired",
 ];
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+/// What describes a file in the composer (its type and size) or in a message (also its rows), in the menu language.
+function describeFile(t: Translate, language: string, file: { kind: string; size: number; rows?: number }) {
+  const kind = file.kind === "xlsx" || file.kind === "csv" ? t(`attachment.kind.${file.kind}`) : file.kind.toUpperCase();
+  const rows = file.rows === undefined ? null
+    : t("attachment.rows", { count: file.rows, rows: new Intl.NumberFormat(language).format(file.rows) });
+  return [kind, rows, formatFileSize(file.size, language)].filter(Boolean).join(" · ");
+}
+function TurnFile({ attachment }: { attachment: AssistantTurnAttachment }) {
+  const { t, i18n } = useTranslation("assistant");
+  return <AssistantFile name={attachment.name} description={describeFile(t, i18n.language, attachment)} />;
+}
 const MessageContext = createContext<{
   turns: readonly AssistantTurn[];
   permissions: readonly string[];
@@ -82,7 +105,7 @@ function ConfirmedMessage() {
   const role = message.role === "user" ? "user" : "assistant";
   const proposal =
     role === "assistant" && turn.proposal && proposals?.accepts(turn.proposal)
-      ? { ...proposalNeighbors(value.turns, turn), Card: proposals.Card }
+      ? { ...proposalNeighbors(value.turns, turn, proposals.replacementGroup), Card: proposals.Card }
       : null;
   return (
     <AssistantMessage
@@ -95,7 +118,10 @@ function ConfirmedMessage() {
         value.timeZone,
       )}
       copyLabel={role === "assistant" ? t("copy") : undefined}
-      media={role === "user" && turn.audio ? <AssistantTurnAudio requestId={turn.audio.requestId} transcript={turn.audio.transcript} /> : undefined}
+      media={role === "user" && (turn.attachment || turn.audio) ? <>
+        {turn.attachment ? <TurnFile attachment={turn.attachment} /> : null}
+        {turn.audio ? <AssistantTurnAudio requestId={turn.audio.requestId} transcript={turn.audio.transcript} /> : null}
+      </> : undefined}
     >
       {proposal && turn.proposal ? (
         <proposal.Card
@@ -129,6 +155,9 @@ export function AiAssistantPage() {
   const location = useLocation();
   const [draft, setDraft] = useState(() => (conversationId ? "" : readAssistantDraft(location.state) ?? ""));
   const [localError, setLocalError] = useState<string>();
+  // Stage 2: one file per message, with what the browser saw that does not serve; the clip and a suggestion open the picker.
+  const [attachment, setAttachment] = useState<{ file: File; problem?: AttachmentProblem }>();
+  const fileInput = useRef<HTMLInputElement>(null);
   const [accepted, setAccepted] = useState<AssistantAccepted>();
   const [panelExpanded, setPanelExpanded] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -196,7 +225,7 @@ export function AiAssistantPage() {
   const recorder = useAudioRecorder(audioMaximumBytes);
   const dictation = useAssistantDictation({ userId, onForbidden: () => setForbidden(true) });
   const navigation = useUnsavedChangesGuard(
-    !!draft.trim() || actions.uncertain || recorder.state !== "idle",
+    !!draft.trim() || actions.uncertain || recorder.state !== "idle" || !!attachment,
     { queryKeys: ["conversacion"] },
   );
   useEffect(() => {
@@ -318,30 +347,48 @@ export function AiAssistantPage() {
   const hasProposal = data.turns.some(
     (turn) => !!turn.proposal && !!proposals?.accepts(turn.proposal),
   );
-  // An installed module adds its requests to empty Home, by this person's permissions, and may say so in the composer.
-  const moduleSuggestions = proposals?.suggestions?.(user?.permissions ?? []) ?? [];
+  // An installed module adds its requests to empty Home, by this person's permissions, and may say so in the composer. One that
+  // attaches a file is offered only to whoever may attach.
+  const moduleSuggestions = (proposals?.suggestions?.(user?.permissions ?? []) ?? [])
+    .filter((item) => !item.attach || !!bootstrap.data?.attachments);
   const emptyPlaceholder = proposals?.placeholder?.(user?.permissions ?? []) ?? null;
   // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
   const working = actions.working?.action;
   const cancelling = working === "cancel" ? actions.working?.target : undefined;
-  // IA4: a recording travels first and its turn after it; the arrow shows the spinner for both.
-  const sendingRecording = dictation.normalizing || (working === "submit" && recorder.state === "ready");
+  // IA4: a recording travels first and its turn after it, with the file if there is one; the arrow shows the spinner for both,
+  // and how much of the file went up.
+  const sendingMedia = dictation.normalizing || (working === "submit" && (recorder.state === "ready" || !!attachment));
   const composerDisabled = disabled || dictation.normalizing || recorder.state === "starting" || recorder.state === "recording";
-  async function sendRecording() {
-    const recording = recorder.recording;
-    if (!recording || composerDisabled || !bootstrap.data) return;
+  // What the browser saw that does not serve, or why the server did not take the file: it stays under the composer with the file.
+  const attachmentReason = attachment?.problem
+    ? t(`attachment.${attachment.problem}`, { size: formatFileSize(attachment.file.size, i18n.language) })
+    : attachment ? actions.fileError : undefined;
+  function chooseFile(file: File) {
+    actions.clearFileError();
+    setLocalError(undefined);
+    setAttachment({ file, problem: attachmentProblem(file) });
+  }
+  function removeFile() {
+    actions.clearFileError();
+    setAttachment(undefined);
+  }
+  async function sendMedia() {
+    if (composerDisabled || !bootstrap.data || attachmentReason) return;
     const max = bootstrap.data.limits.questionMaxLength;
     if (draft.trim().length > max) {
       setLocalError(t("questionTooLong", { max }));
       return;
     }
     setLocalError(undefined);
-    const audioRequestId = await dictation.normalize(recording);
-    if (!audioRequestId) return;
+    const recording = recorder.state === "ready" ? recorder.recording : undefined;
+    const audioRequestId = recording ? await dictation.normalize(recording) : undefined;
+    if (recording && !audioRequestId) return;
     const sent = await actions.submit(draft, bootstrap.data.connectionRevision,
-      conversationId && data.conversation.data ? { id: conversationId, revision: data.conversation.data.revision } : undefined, audioRequestId);
+      conversationId && data.conversation.data ? { id: conversationId, revision: data.conversation.data.revision } : undefined,
+      audioRequestId, attachment?.file);
     if (!sent) return;
-    recorder.discard();
+    if (recording) recorder.discard();
+    setAttachment(undefined);
     setDraft("");
   }
   async function submit(question: string) {
@@ -470,7 +517,13 @@ export function AiAssistantPage() {
                       ) : null
                     }
                     suggestions={<AssistantSuggestions items={[...moduleSuggestions, ...bootstrap.data.suggestions.slice(0, 3)]} disabled={disabled}
-                      onChoose={question => { setDraft(moduleSuggestions.find(item => item.question === question)?.draft ?? question); setLocalError(undefined); }} />}
+                      onChoose={question => {
+                        const suggestion = moduleSuggestions.find(item => item.question === question);
+                        setDraft(suggestion?.draft ?? question);
+                        setLocalError(undefined);
+                        // A request that brings a spreadsheet opens the picker, as the clip does.
+                        if (suggestion?.attach) fileInput.current?.click();
+                      }} />}
                     availability={bootstrap.data.availability !== "available" ? (
                       <div role="status" className="assistant-availability">
                         <span>{t(`availability.${bootstrap.data.availability}`)}</span>
@@ -575,9 +628,11 @@ export function AiAssistantPage() {
                       <AssistantComposer
                         label={t("question")}
                         hint={t("keyboardHelp")}
-                        placeholder={recorder.state === "ready" ? t("audio.placeholder")
+                        placeholder={recorder.state === "ready" || attachment ? t("placeholderOptional")
                           : hasProposal ? t("placeholderProposal") : (emptyPlaceholder ?? t("placeholder"))}
-                        sendLabel={t(working === "submit" || dictation.normalizing ? "sending" : "send")}
+                        sendLabel={t(working === "submit" && attachment && !dictation.normalizing ? "sendingFile"
+                          : working === "submit" || dictation.normalizing ? "sending" : "send",
+                          { percent: Math.round((actions.progress ?? 0) * 100) })}
                         sending={working === "submit" || dictation.normalizing}
                         value={draft}
                         onValueChange={(value) => {
@@ -585,16 +640,25 @@ export function AiAssistantPage() {
                           setLocalError(undefined);
                         }}
                         disabled={composerDisabled}
-                        error={localError ?? dictation.error ?? (recorder.denied ? t("audio.denied") : undefined) ?? actions.fieldError}
+                        error={localError ?? attachmentReason ?? dictation.error ?? (recorder.denied ? t("audio.denied") : undefined) ?? actions.fieldError}
+                        attach={bootstrap.data.attachments ? (
+                          <AssistantAttach label={t("attachment.attach")} accept={attachmentAccept} inputRef={fileInput}
+                            disabled={composerDisabled} showButton={!attachment} onChoose={chooseFile} />
+                        ) : undefined}
                         record={bootstrap.data.audio && recorder.supported && recorder.state === "idle"
                           ? { label: t("audio.record"), onStart: () => { dictation.clearError(); void recorder.start(); } } : undefined}
                         recorder={recorder.state === "recording" || recorder.state === "ready" ? (
                           <AssistantRecorder recording={recorder.state === "ready" ? recorder.recording : undefined}
                             status={t("audio.recordingStatus", { time: elapsed(recorder.seconds) })} audioLabel={t("audio.yours")}
-                            discardLabel={t("audio.discard")} stopLabel={t("audio.stop")} disabled={sendingRecording}
+                            discardLabel={t("audio.discard")} stopLabel={t("audio.stop")} disabled={sendingMedia}
                             onDiscard={() => { dictation.clearError(); recorder.discard(); }} onStop={recorder.stop} />
                         ) : undefined}
-                        onSendRecording={recorder.state === "ready" ? () => void sendRecording() : undefined}
+                        attachment={attachment ? (
+                          <AssistantFile name={attachment.file.name} removeLabel={t("attachment.remove", { name: attachment.file.name })}
+                            description={describeFile(t, i18n.language, { kind: fileExtension(attachment.file.name), size: attachment.file.size })}
+                            disabled={sendingMedia} onRemove={removeFile} />
+                        ) : undefined}
+                        onSendMedia={recorder.state === "ready" || attachment ? () => void sendMedia() : undefined}
                       />
                     }
                   />

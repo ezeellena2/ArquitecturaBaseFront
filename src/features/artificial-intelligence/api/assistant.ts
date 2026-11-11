@@ -91,6 +91,8 @@ const turn = z.strictObject({
     .optional(),
   // A dictated turn names its recording and carries what the server heard in it (IA4).
   audio: z.strictObject({ requestId: id, transcript: z.string() }).optional(),
+  // Only the turn that brought a spreadsheet shows it (Stage 2): the turns that inherit it keep their shape.
+  attachment: z.strictObject({ name: z.string(), kind: z.enum(["xlsx", "csv"]), rows: count, size: count }).optional(),
 });
 // Where the normalization of a recording is; the transcript once it completed (IA4).
 const audioStatus = z.strictObject({
@@ -114,6 +116,8 @@ const bootstrap = z.strictObject({
   configurationDestination: z.literal("aiConfiguration").nullable(),
   // Whether Home takes a recording: a provider that hears what the browser records, and private storage.
   audio: z.boolean(),
+  // Whether this person may attach a spreadsheet (Stage 2): the server says it, the front never repeats the permissions.
+  attachments: z.boolean(),
 });
 const summaryFields = {
   conversationId: id,
@@ -151,6 +155,7 @@ export type AssistantConversation = z.infer<typeof conversation>;
 export type AssistantConversationSummary = z.infer<typeof conversationSummary>;
 export type AssistantBootstrap = z.infer<typeof bootstrap>;
 export type AssistantAudioStatus = z.infer<typeof audioStatus>;
+export type AssistantTurnAttachment = NonNullable<AssistantTurn["attachment"]>;
 export interface AssistantSubmit {
   readonly requestId: string;
   readonly conversationId: string | null;
@@ -201,6 +206,19 @@ export const assistantApi = {
     ),
   submit: async (body: AssistantSubmit, signal?: AbortSignal) =>
     read(accepted, await api.post<unknown>(`${base}/turns`, body, { signal })),
+  // A turn with a spreadsheet goes in one multipart request: the fields it has and the file, whose kind the server reads from
+  // its bytes. The same body and file again recover the same turn.
+  submitFile: async (body: AssistantSubmit, file: File, onProgress: (fraction: number) => void, signal?: AbortSignal) => {
+    const form = new FormData();
+    form.append("requestId", body.requestId);
+    form.append("expectedConnectionRevision", String(body.expectedConnectionRevision));
+    if (body.conversationId !== null) form.append("conversationId", body.conversationId);
+    if (body.expectedRevision !== null) form.append("expectedRevision", String(body.expectedRevision));
+    form.append("question", body.question);
+    if (body.audioRequestId) form.append("audioRequestId", body.audioRequestId);
+    form.append("file", file, file.name);
+    return read(accepted, await api.upload<unknown>(`${base}/file-turns`, form, onProgress, { signal }));
+  },
   turn: async (requestId: string, signal?: AbortSignal) =>
     read(
       turn,

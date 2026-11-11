@@ -4,9 +4,11 @@
   "question": "Your question",
   "placeholder": "Ask the system…",
   "placeholderProposal": "Ask for a change or ask something else…",
+  "placeholderOptional": "Add some text, if you want…",
   "keyboardHelp": "Enter adds a line. Ctrl+Enter or ⌘+Enter send.",
   "send": "Send",
   "sending": "Sending…",
+  "sendingFile": "Sending… {{percent}}%",
   "history": "History",
   "newConversation": "New conversation",
   "thread": "Assistant conversation",
@@ -98,7 +100,6 @@
     "stop": "Stop",
     "discard": "Discard",
     "yours": "Your recording",
-    "placeholder": "Add some text, if you want…",
     "denied": "The microphone could not be used. Check the browser permission.",
     "invalid": "The recording cannot be read. Record it again.",
     "failed": "The recording could not be understood. Try recording it again.",
@@ -106,5 +107,19 @@
     "loading": "Loading…",
     "recording": "Message recording",
     "gone": "The recording is no longer available."
+  },
+  "attachment": {
+    "attach": "Attach a spreadsheet",
+    "remove": "Remove {{name}}",
+    "kind": {
+      "xlsx": "Excel",
+      "csv": "CSV"
+    },
+    "rows_one": "{{rows}} row",
+    "rows_other": "{{rows}} rows",
+    "legacy": "An old Excel file (.xls) cannot be read. Save it as .xlsx or .csv.",
+    "macros": "An Excel file with macros or in binary format (.xlsm or .xlsb) cannot be read. Save it as .xlsx or .csv.",
+    "type": "Only an Excel workbook (.xlsx) or a CSV file can be attached.",
+    "tooLarge": "The spreadsheet is {{size}} and the limit is 10 MB. Make it smaller or split it and attach it again."
   }
 }

@@ -20,6 +20,8 @@ import { assistantKey, createSubmission } from "../assistant/model";
 /// The request on its way and what it acts on (the turn it cancels, the conversation it deletes): only the control that
 /// sent it shows the spinner and its gerund.
 export type AssistantAction = "submit" | "retry" | "recover" | "cancel" | "remove";
+/// The frozen request: its body and, in a turn with a spreadsheet, the same file, so repeating it recovers the same turn.
+interface Submission { readonly body: AssistantSubmit; readonly file?: File }
 export function useAssistantTurnActions({
   userId,
   onAccepted,
@@ -34,7 +36,12 @@ export function useAssistantTurnActions({
   const [working, setWorking] = useState<{ action: AssistantAction; target?: string }>();
   const [uncertain, setUncertain] = useState(false);
   const [fieldError, setFieldError] = useState<string>();
-  const frozen = useRef<AssistantSubmit | null>(null);
+  // Why the server did not take the file (unreadable, or this person can no longer attach): it stays under the composer
+  // with the file, until the person removes or changes it.
+  const [fileError, setFileError] = useState<string>();
+  // How much of a file went up, from 0 to 1, while it travels.
+  const [progress, setProgress] = useState<number>();
+  const frozen = useRef<Submission | null>(null);
   const inFlight = useRef(false);
   const mounted = useRef(true);
   const generation = useRef(0);
@@ -66,11 +73,19 @@ export function useAssistantTurnActions({
     if (!isCurrent(version)) return;
     const feedback = errorFeedback(error, {
       writing: true,
-      fields: ["question"],
+      fields: ["question", "file"],
     });
     if (feedback.kind === "fields") {
       setFieldError(feedback.fields.question?.join(" "));
+      setFileError(feedback.fields.file?.join(" "));
       frozen.current = null;
+      return;
+    }
+    // Whoever lost the right to attach keeps Home: the remedy goes under the composer and the bootstrap hides the clip.
+    if (error instanceof ApiError && error.status === 403 && error.code === "Ai.Assistant.AttachmentForbidden") {
+      setFileError(error.detail);
+      frozen.current = null;
+      void client.invalidateQueries({ queryKey: assistantKey(userId) });
       return;
     }
     if (feedback.kind === "session") return;
@@ -127,14 +142,18 @@ export function useAssistantTurnActions({
       message: operationalErrorMessage(error, t),
     });
   }
-  async function send(body: AssistantSubmit, action: "submit" | "retry") {
+  async function send(submission: Submission, action: "submit" | "retry") {
     if (inFlight.current) return false;
     inFlight.current = true;
     setWorking({ action });
     setFieldError(undefined);
+    setFileError(undefined);
     const version = generation.current;
     try {
-      const response = await assistantApi.submit(body);
+      const { body, file } = submission;
+      const response = file
+        ? await assistantApi.submitFile(body, file, (fraction) => { if (isCurrent(version)) setProgress(fraction); })
+        : await assistantApi.submit(body);
       if (!isCurrent(version)) return false;
       accept(response, version);
       return true;
@@ -145,6 +164,7 @@ export function useAssistantTurnActions({
       if (isCurrent(version)) {
         inFlight.current = false;
         setWorking(undefined);
+        setProgress(undefined);
       }
     }
   }
@@ -156,15 +176,13 @@ export function useAssistantTurnActions({
       revision: number;
     },
     audioRequestId?: string,
+    file?: File,
   ) {
     if (inFlight.current || frozen.current || cooldown.isRunning) return false;
-    frozen.current = createSubmission(
-      crypto.randomUUID(),
-      question,
-      connectionRevision,
-      conversation,
-      audioRequestId,
-    );
+    frozen.current = {
+      body: createSubmission(crypto.randomUUID(), question, connectionRevision, conversation, audioRequestId),
+      ...(file ? { file } : {}),
+    };
     return send(frozen.current, "submit");
   }
   async function recover() {
@@ -173,7 +191,7 @@ export function useAssistantTurnActions({
     setWorking({ action: "recover" });
     const version = generation.current;
     try {
-      accept(await assistantApi.turn(frozen.current.requestId), version);
+      accept(await assistantApi.turn(frozen.current.body.requestId), version);
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         if (isCurrent(version))
@@ -260,6 +278,9 @@ export function useAssistantTurnActions({
     working,
     uncertain,
     fieldError,
+    fileError,
+    clearFileError: () => setFileError(undefined),
+    progress,
     cooldownSeconds: cooldown.seconds,
     submit,
     recover,
