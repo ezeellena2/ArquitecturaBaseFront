@@ -1,6 +1,6 @@
 # El robot de delegación de ARCA: tableros elegidos
 
-Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **registrado para programar**. El alcance y
+Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado** (front 5afcd50e y cde6d0dd). El alcance y
 las decisiones están en el [plan de la etapa 6](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-6-robot.md), el
 [ADR 0026](../../../ArquitecturaBase/docs/decisions/0026-robot-de-delegacion-arca.md) y la
 [regla de ARCA](../../../ArquitecturaBase/docs/features/arca.md#delegación-con-robot-modo-3). Se apoya en la delegación guiada
