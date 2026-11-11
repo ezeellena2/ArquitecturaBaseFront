@@ -870,6 +870,7 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "answer": "Respuesta",
+    "inAnyItem": "en algún ítem de {{block}}",
     "origin": "De dónde vino",
     "channel": "Canal",
     "sentBy": "Envió el formulario",

@@ -263,7 +263,11 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
       const operator = ({ anyOf: "anyOf", gte: "from", lte: "to", contains: "contains", answered: "answered", unanswered: "unanswered", notAsked: "notAsked" } as Record<string, string>)[item.operator];
       return [operator ? t("responses." + operator) : "", values].filter(Boolean).join(" ");
     });
-    labels.push({ key: fieldId, label: [column?.label, parts?.join(" · ")].filter(Boolean).join(": ") });
+    const label = [column?.label, parts?.join(" · ")].filter(Boolean).join(": ");
+    // EX2-A: a question of the block says its block at the end, with the words of the «Filtros» panel, so its chip is not
+    // confused with one of the response, and one item is enough.
+    const block = columns.find(item => item.questions?.some(question => question.fieldId === fieldId));
+    labels.push({ key: fieldId, label: block ? `${label} (${t("responses.inAnyItem", { block: block.label })})` : label });
   }
   if (query.state) labels.push({ key: "state", label: t("approvals.state") + ": " + t("approvals.states." + query.state) });
   if (query.enteredInApp != null) labels.push({ key: "channel", label: t("formEntries:sheet.channel") + ": " + t(query.enteredInApp ? "formEntries:sheet.channels.app" : "responses.whatsapp") });

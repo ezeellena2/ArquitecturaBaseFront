@@ -139,6 +139,26 @@ it("describes decimal and date conditions and the received range with the shared
   expect(responseFilterLabels({ page: 1, pageSize: 20, receivedFromUtc: "2026-10-16T03:00:00.000Z" }, [], key => key, "es", "America/Argentina/Buenos_Aires")).toEqual([{ key: "received", label: "responses.received · 16/10/2026 – …" }]);
 });
 
+// EX2-A: a question of the block says its block at the end, with the words of the «Filtros» panel, in the chips and in the export.
+it("ends the filter of a question of the block with the block it belongs to, after its values or its range", () => {
+  const status: ResponseColumn = { fieldId: "status", type: "choice", label: "Estado", options: [{ id: "damaged", label: "Dañado" }, { id: "good", label: "Bueno" }], introducedInVersion: 1 };
+  const quantity: ResponseColumn = { fieldId: "quantity", type: "decimal", label: "Cantidad", options: [], introducedInVersion: 1 };
+  const block: ResponseColumn = { fieldId: "items", type: "group", label: "Artículos", options: [], introducedInVersion: 1, questions: [status, quantity] };
+  const supplier: ResponseColumn = { fieldId: "supplier", type: "shortText", label: "Proveedor", options: [], introducedInVersion: 1 };
+  const t = (key: string, options?: Record<string, unknown>) => key === "responses.inAnyItem" ? `en algún ítem de ${String(options?.block)}` : key === "responses.from" ? "desde" : key;
+  const conditions = [
+    { fieldId: "status", operator: "in", values: ["damaged", "good"] },
+    { fieldId: "quantity", operator: "gte", values: ["100"] },
+    { fieldId: "supplier", operator: "contains", values: ["Norte"] },
+  ];
+
+  expect(responseFilterLabels({ page: 1, pageSize: 20, conditions }, [supplier, block], t, "es").map(item => item.label)).toEqual([
+    "Estado: Dañado, Bueno (en algún ítem de Artículos)",
+    "Cantidad: desde 100 (en algún ítem de Artículos)",
+    "Proveedor: responses.contains Norte",
+  ]);
+});
+
 it("describes a decimal condition typed with a comma, a plus sign or leading zeros like its canonical value", () => {
   const columns: ResponseColumn[] = [{ fieldId: "amount", type: "decimal", label: "Amount", options: [], introducedInVersion: 1 }];
   const label = (value: string) => responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "amount", operator: "gte", values: [value] }] }, columns, key => key, "es")[0].label;
@@ -273,15 +293,16 @@ describe("a block of rows", () => {
     expect(responseRowsSummary({ ...cell, state: "Unanswered", value: [] })).toBeNull();
     expect(responseRowsSummary(answered("text", "Sólo texto"))).toBeNull();
   });
-  it("normalizes and names a condition on a question of the block like any other", () => {
+  it("normalizes and names a condition on a question of the block like any other, ending with its block (EX2-A)", () => {
     const columns: ResponseColumn[] = [{ fieldId: "block", type: "group", label: "Artículos", introducedInVersion: 1, options: [],
       questions: [{ fieldId: "quantity", type: "decimal", label: "Cantidad", introducedInVersion: 1, options: [] }] }];
-    const t = (key: string) => ({ "responses.from": "desde" } as Record<string, string>)[key] ?? key;
+    const t = (key: string, options?: Record<string, unknown>) => key === "responses.inAnyItem" ? `en algún ítem de ${String(options?.block)}`
+      : ({ "responses.from": "desde" } as Record<string, string>)[key] ?? key;
 
     expect(normalizeResponseQuery({ page: 1, pageSize: 20, conditions: [{ fieldId: "quantity", operator: "gte", values: ["12,5"] }] }, columns)?.conditions)
       .toEqual([{ fieldId: "quantity", operator: "gte", values: ["12.5"] }]);
     expect(responseFilterLabels({ page: 1, pageSize: 20, conditions: [{ fieldId: "quantity", operator: "gte", values: ["200"] }] }, columns, t, "es"))
-      .toEqual([{ key: "quantity", label: "Cantidad: desde 200" }]);
+      .toEqual([{ key: "quantity", label: "Cantidad: desde 200 (en algún ítem de Artículos)" }]);
   });
 });
 describe("the conditions of a block of rows in a rule", () => {
