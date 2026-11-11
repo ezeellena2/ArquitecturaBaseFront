@@ -17,6 +17,8 @@ const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().
 export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional(), groupBy: guid.optional(), default: guid.optional() })
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 const rowQuestionTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
+// DOC1: the fixed validations of a question bound by a library standard: an account (CBU, CVU or alias) or a CUIT or CUIL.
+export const questionValidationSchema = z.enum(["bankAccount", "taxId"]);
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group", "location"]),
   label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullable(), source: canonicalCatalogSourceSchema.optional(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).optional(),
@@ -31,9 +33,12 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
   // whenOn and whenOff (IV1-A) are what the (i) of the question says in the entry with that value.
   toggles: z.array(z.strictObject({ key: z.string().min(1), label: text, help: text, value: z.boolean(), whenOn: text.optional(), whenOff: text.optional() })).min(1).max(10)
     .refine(toggles => new Set(toggles.map(toggle => toggle.key)).size === toggles.length).optional(),
+  // DOC1: omitted without one; only a short text has it (the account, the alias, the CUIT or the CUIL).
+  validation: questionValidationSchema.optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
     context.addIssue({ code: "custom", message: "Invalid rows configuration." });
+  if (value.validation && value.type !== "shortText") context.addIssue({ code: "custom", message: "Invalid validation." });
   // A calculation is an optional decimal with two operands to multiply or take a percentage; neither the block nor its questions show by a condition.
   if (value.calculation && (value.type !== "decimal" || value.required || value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)
     || value.showWhen && (value.type === "group" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid calculation or condition." });
@@ -51,12 +56,20 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     || (value.type === "choice" || value.type === "multiChoice" ? value.source ? value.options != null : value.options == null : value.options !== null || value.source != null)
     || value.key !== `field_${value.fieldId.replaceAll("-", "").toLowerCase()}`) context.addIssue({ code: "custom", message: "Invalid configuration." });
 });
+// DOC1: the reading of documents: whether it is on, «Cómo reconocerlo» (required while on) and up to five lookups in catalogs, each with
+// the catalog question it fills, the question read whose value is searched and what of the catalog is compared: the option's code,
+// its text or a catalog field by its id.
+const documentReading = z.strictObject({ enabled: z.boolean(), recognition: z.string().max(1000).refine(value => value === value.trim()),
+  lookups: z.array(z.strictObject({ questionId: guid, sourceQuestionId: guid, field: z.union([z.enum(["code", "text"]), guid]) })).max(5) })
+  .refine(reading => !reading.enabled || reading.recognition.length > 0);
 const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/), prefixLocked: z.boolean(), revision, offerWhen: z.string().min(1).max(1000).refine(value => value === value.trim()).nullable(),
   draft: z.strictObject({ format: z.literal(1), culture: z.enum(["es", "en"]), submitLabel: text, fields: z.array(canonicalFormFieldSchema).max(41),
     // Section titles (CW15-B): omitted without them; each says how many questions go before it.
     sections: z.array(z.strictObject({ start: z.number().int().min(0).max(41), title: text })).min(1).max(40).optional(),
     // «Dónde se completa» (SA1-A): true is «Sólo en la app»; completed also by a channel, it is omitted.
-    appOnly: z.literal(true).optional() }),
+    appOnly: z.literal(true).optional(),
+    // The reading of documents (DOC1): omitted without it.
+    documentReading: documentReading.optional() }),
   // BI1-A: a form added from the library says its standard, its version and which question holds each datum it needs.
   standard: z.strictObject({ key: z.string().min(1).max(64), version: z.number().int().positive(), bound: z.record(z.string().min(1), guid) }).optional(),
 }).superRefine((value, context) => {
@@ -76,13 +89,20 @@ const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string()
       || block >= 0 && section.start > block && section.start < end)) {
     context.addIssue({ code: "custom", message: "Invalid draft." });
   }
+  // Each lookup fills a different catalog question of the draft with what another question of it read.
+  const lookups = value.draft.documentReading?.lookups ?? [];
+  const question = (id: string) => fields.find(item => item.fieldId.toLowerCase() === id.toLowerCase());
+  if (lookups.some(lookup => !question(lookup.questionId)?.source || !question(lookup.sourceQuestionId) || lookup.sourceQuestionId.toLowerCase() === lookup.questionId.toLowerCase())
+    || new Set(lookups.map(lookup => lookup.questionId.toLowerCase())).size !== lookups.length) context.addIssue({ code: "custom", message: "Invalid document reading." });
 });
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const audit = z.strictObject({ createdAtUtc: utc, modifiedAtUtc: utc.nullable(), lastChangedAtUtc: utc, lastChangedBy: author.nullable() });
 const publicationState = z.enum(["Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
 const displayState = z.enum(["Draft", "Accepted", "Preparing", "Publishing", "Uncertain", "ActivationPending", "Published", "Failed"]);
-// A version published only in the app says so (SA3-A); one published by a channel omits it.
-const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1), appOnly: z.literal(true).optional() });
+// A version published only in the app says so (SA3-A); one published by a channel omits it. So does one published with the reading
+// of documents (DOC1).
+const activeVersion = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, cultures: z.array(z.enum(["es", "en"])).min(1), appOnly: z.literal(true).optional(),
+  documentReading: z.literal(true).optional() });
 const currentOperation = z.strictObject({ versionId: guid, versionNumber: revision, draftRevision: revision, state: publicationState, stage: z.string().min(1), requiresReview: z.boolean(), canRetry: z.literal(false), requestId: guid.nullable(), recoveryPath: z.string().nullable() });
 const publicationProjection = z.strictObject({ activeVersion: activeVersion.nullable(), currentOperation: currentOperation.nullable(), displayState });
 const lifecycle = z.strictObject({ deprecationState: z.enum(["Pending", "Uncertain", "Deprecated", "NeedsAttention"]).nullable(), deprecatedAtUtc: utc.nullable(), lastOpenSessionExpiresAtUtc: utc.nullable(), canDelete: z.boolean(), deletionUnavailableReason: z.enum(["PublicationInProgress", "HasResponses", "OpenSends"]).nullable(), revision, deactivatedAtUtc: utc.nullable(), deactivatedBy: author.nullable(),

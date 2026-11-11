@@ -4,7 +4,8 @@ import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { beginDraftSave, changeDraft, openDraftSession } from "../draftSession";
 import { configureHttpClient, resetHttpClient } from "@/shared/api/httpClient";
-import { createFormDraft, fetchFormDefinition, fetchFormDefinitions, fetchFormFacets, recoverFormDraft, updateFormDraft } from "./forms";
+import { acceptFormPublication, checkFormPublication, createFormDraft, fetchFormDefinition, fetchFormDefinitions, fetchFormFacets, recoverFormDraft, updateFormDraft } from "./forms";
+import { readFormDetail } from "./response";
 
 const id = "01990000-0000-7000-8000-000000000001";
 const requestId = "01990000-0000-7000-8000-000000000002";
@@ -144,4 +145,95 @@ it.each([null, "Cuando visita a un cliente"])("preserves the canonical monolingu
 it.each([undefined, { es: "PRIVATE" }, "", " not normalized ", "x".repeat(1001)])("rejects a missing or noncanonical offer instruction without exposing its content: %j", async offerWhen => {
   server.use(http.post("/api/forms/definitions", () => HttpResponse.json({ ...commit, definition: { ...definition, offerWhen } }, { status: 201 })));
   await expect(createFormDraft(body)).rejects.toThrow("Unsupported form response.");
+});
+
+// DOC1 (2026-11-11): the reading of documents in the draft and in the published version, and the fixed validation of a short text
+// bound by a library standard. Synthetic bodies: the backend omits all three when there is nothing, so today's forms keep their bytes.
+describe("document reading and fixed validations (DOC1)", () => {
+  const question = (n: number) => { const fieldId = "01990000-0000-7000-8000-" + String(500 + n).padStart(12, "0"); return { fieldId, key: `field_${fieldId.replaceAll("-", "")}` }; };
+  const catalog = (n: number) => ({ ...question(n), type: "choice", label: { es: `Catálogo ${n}` }, help: null, required: false, maxLength: null, options: null, source: { catalog: question(90).fieldId } });
+  const account = { ...question(20), type: "shortText", label: { es: "Cuenta de origen" }, help: null, required: true, maxLength: 80, options: null, validation: "bankAccount" };
+  const taxId = { ...question(21), type: "shortText", label: { es: "CUIT o CUIL de origen" }, help: null, required: false, maxLength: 13, options: null, validation: "taxId" };
+  const notes = definition.draft.fields[0]!;
+  const fields = [catalog(0), catalog(1), catalog(2), catalog(3), catalog(4), account, taxId, notes];
+  // The five lookups the reading admits: by the option's code, by its text or by a catalog field.
+  const lookups = [
+    { questionId: catalog(0).fieldId, sourceQuestionId: account.fieldId, field: "code" }, { questionId: catalog(1).fieldId, sourceQuestionId: taxId.fieldId, field: "text" },
+    { questionId: catalog(2).fieldId, sourceQuestionId: notes.fieldId, field: question(91).fieldId }, { questionId: catalog(3).fieldId, sourceQuestionId: account.fieldId, field: "text" },
+    { questionId: catalog(4).fieldId, sourceQuestionId: taxId.fieldId, field: "code" }];
+  const reading = { enabled: true, recognition: "Comprobante de una transferencia: cuenta, titular, monto y fecha.", lookups };
+  const audit = { createdAtUtc: "2026-11-11T12:00:00Z", modifiedAtUtc: null, lastChangedAtUtc: "2026-11-11T12:00:00Z", lastChangedBy: null };
+  const activeVersion = { versionId: question(80).fieldId, versionNumber: 1, draftRevision: 1, cultures: ["es"] };
+  const detail = (draft: object = {}, version: object | null = null, extra: object = {}) => ({ definition: { ...definition, ...extra, draft: { ...definition.draft, fields, ...draft } },
+    lifecycle: fixtureLifecycle(1), capabilities: { canSave: true, canPublish: true, canPreview: false }, audit,
+    publication: { activeVersion: version, currentOperation: null, displayState: version ? "Published" : "Draft" } });
+
+  it("reads the reading with its lookups, the version published with it and the fixed validations", () => {
+    const read = readFormDetail(detail({ documentReading: reading }, { ...activeVersion, documentReading: true }));
+    expect(read.definition.draft.documentReading).toEqual(reading);
+    expect(read.publication.activeVersion?.documentReading).toBe(true);
+    expect(read.definition.draft.fields[5]).toMatchObject({ type: "shortText", validation: "bankAccount" });
+    expect(read.definition.draft.fields[6]).toMatchObject({ type: "shortText", validation: "taxId" });
+    // Turned off, it keeps what was written; «Cómo reconocerlo» takes up to 1000 characters.
+    const off = { enabled: false, recognition: "", lookups: [] };
+    expect(readFormDetail(detail({ documentReading: off })).definition.draft.documentReading).toEqual(off);
+    expect(readFormDetail(detail({ documentReading: { ...reading, recognition: "x".repeat(1000) } })).definition.draft.documentReading?.recognition).toHaveLength(1000);
+  });
+
+  it("keeps reading today's forms, which bring none of them", () => {
+    const today = readFormDetail(detail({ fields: definition.draft.fields }, activeVersion));
+    expect(today.definition.draft).not.toHaveProperty("documentReading");
+    expect(today.publication.activeVersion).not.toHaveProperty("documentReading");
+    expect(today.definition.draft.fields[0]).not.toHaveProperty("validation");
+  });
+
+  it("sends the reading and the fixed validations back as they came in the draft it saves, checks and accepts", async () => {
+    const standard = { key: "forms.transfer-receipt", version: 1, bound: { sourceAccount: account.fieldId, sourceTaxId: taxId.fieldId } };
+    const session = openDraftSession({ actorId: "actor", editorId: "editor" }, readFormDetail(detail({ documentReading: reading }, null, { standard })).definition);
+    const publication = question(85).fieldId;
+    const check = { definitionId: id, draftRevision: 1, nextVersionNumber: 1, compatibility: "LocallyValidated", canAccept: true, acceptanceAvailability: "Available",
+      checkToken: "private-ticket", checkExpiresAtUtc: "2026-11-11T13:00:00Z", channels: [], cultures: [], issues: [], warnings: [],
+      diff: { baseVersionId: null, added: [], changed: [], removed: [], addedCultures: [], removedCultures: [] } };
+    const receipt = { requestId: publication, operationId: question(86).fieldId, definitionId: id, versionId: question(87).fieldId, versionNumber: 1, draftRevision: 1,
+      state: "Accepted", acceptedAtUtc: "2026-11-11T12:30:00Z", recoveryPath: `/api/forms/definitions/${id}/publications/${publication}` };
+    const sent: unknown[] = [];
+    server.use(
+      http.put(`/api/forms/definitions/${id}/draft`, async ({ request }) => { sent.push(await request.json()); return HttpResponse.json({ ...commit, definition: { ...definition, revision: 2 } }); }),
+      http.post(`/api/forms/definitions/${id}/publication-checks`, async ({ request }) => { sent.push(await request.json()); return HttpResponse.json(check); }),
+      http.post(`/api/forms/definitions/${id}/publications`, async ({ request }) => { sent.push(await request.json()); return HttpResponse.json(receipt, { status: 202 }); }));
+
+    await updateFormDraft(id, { ...beginDraftSave(session, requestId).pending!.body, expectedRevision: 1 });
+    await checkFormPublication(id, { ...session.value, expectedRevision: 1 });
+    await acceptFormPublication(id, { ...session.value, expectedRevision: 1, requestId: publication, checkToken: "private-ticket" });
+
+    expect(sent).toHaveLength(3);
+    for (const body of sent as { draft: { documentReading?: unknown; fields: { fieldId: string | null; validation?: string }[] } }[]) {
+      expect(body.draft.documentReading).toEqual(reading);
+      // Only the two bound short texts carry the key, with the kind they came with; every other question goes without it.
+      expect(body.draft.fields.filter(field => "validation" in field).map(field => [field.fieldId, field.validation])).toEqual([[account.fieldId, "bankAccount"], [taxId.fieldId, "taxId"]]);
+    }
+  });
+
+  it.each([
+    ["«Cómo reconocerlo» over 1000 characters", { documentReading: { ...reading, recognition: "x".repeat(1001) } }],
+    ["«Cómo reconocerlo» with spaces around it", { documentReading: { ...reading, recognition: ` ${reading.recognition}` } }],
+    ["the reading on without «Cómo reconocerlo»", { documentReading: { ...reading, recognition: "" } }],
+    ["six lookups", { fields: [...fields, catalog(5)], documentReading: { ...reading, lookups: [...lookups, { questionId: catalog(5).fieldId, sourceQuestionId: account.fieldId, field: "code" }] } }],
+    ["a lookup that fills a question without catalog", { documentReading: { ...reading, lookups: [{ ...lookups[0], questionId: taxId.fieldId }] } }],
+    ["a lookup that reads a question outside the draft", { documentReading: { ...reading, lookups: [{ ...lookups[0], sourceQuestionId: question(99).fieldId }] } }],
+    ["a lookup that reads the question it fills", { documentReading: { ...reading, lookups: [{ ...lookups[0], sourceQuestionId: catalog(0).fieldId }] } }],
+    ["two lookups that fill the same question", { documentReading: { ...reading, lookups: [lookups[0], { ...lookups[1], questionId: catalog(0).fieldId }] } }],
+    ["a lookup that compares something other than the code, the text or a field", { documentReading: { ...reading, lookups: [{ ...lookups[0], field: "detail" }] } }],
+    ["an unknown member in the reading", { documentReading: { ...reading, private: true } }],
+    ["an unknown validation kind", { fields: [{ ...account, validation: "cbu" }] }],
+    ["a validation on a long text", { fields: [{ ...account, type: "longText", maxLength: 2000 }] }],
+    ["a validation on a decimal", { fields: [{ ...account, type: "decimal", maxLength: null }] }],
+    ["a validation on a catalog question", { fields: [{ ...catalog(0), validation: "taxId" }] }],
+  ])("rejects %s", (_case, draft) => {
+    expect(() => readFormDetail(detail(draft))).toThrow("Unsupported form response.");
+  });
+
+  it("rejects a published version that says false instead of omitting the reading", () => {
+    expect(() => readFormDetail(detail({}, { ...activeVersion, documentReading: false }))).toThrow("Unsupported form response.");
+  });
 });

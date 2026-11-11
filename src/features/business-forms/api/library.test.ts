@@ -20,6 +20,35 @@ it.each([["an unknown field", { ...standard, folder: "arca" }], ["a culture othe
     expect(() => readFormLibrary({ standards: [body] })).toThrow("Invalid form library contract.");
   });
 
+// DOC1: a standard that reads documents says which data it reads and its fixed validations, and the library lists the standards of
+// the next stages, without a draft, as «Próximamente». Synthetic bodies: the backend omits the three keys when there is nothing.
+const receipt: FormStandard = { key: "forms.transfer-receipt", version: 1, name: "Comprobante de transferencia", description: "Lee el comprobante de una transferencia y lo carga.",
+  prefix: "REC", copies: 0, culture: "es", suggestedPrefix: "REC", reads: ["Banco o billetera de origen", "Cuenta de origen", "Monto", "Fecha"],
+  validations: [{ name: "Cuenta de origen", kind: "bankAccount" }, { name: "CUIT o CUIL de origen", kind: "taxId" }] };
+const upcoming = [{ key: "forms.credit-note", name: "Nota de crédito o débito", description: "Lee una nota de crédito o de débito." }];
+
+it("reads what a standard reads, its fixed validations and the standards still to come (DOC1)", () => {
+  expect(readFormLibrary({ standards: [standard, receipt], upcoming })).toEqual({ standards: [standard, receipt], upcoming });
+  expect(readFormLibrary({ standards: [standard], upcoming: [] }).upcoming).toEqual([]);
+});
+
+it("keeps reading today's library, which brings none of them", () => {
+  const today = readFormLibrary({ standards: [standard] });
+  expect(today).not.toHaveProperty("upcoming");
+  expect(today.standards[0]).not.toHaveProperty("reads");
+  expect(today.standards[0]).not.toHaveProperty("validations");
+});
+
+it.each([
+  ["an unknown validation kind", { standards: [{ ...receipt, validations: [{ name: "Cuenta de origen", kind: "cbu" }] }] }],
+  ["a standard that reads nothing", { standards: [{ ...receipt, reads: [] }] }],
+  ["a standard with an empty list of validations", { standards: [{ ...receipt, validations: [] }] }],
+  ["an upcoming standard without key", { standards: [standard], upcoming: [{ name: "Recibo", description: "Lee un recibo." }] }],
+  ["an upcoming standard with an unknown member", { standards: [standard], upcoming: [{ ...upcoming[0], prefix: "NC" }] }],
+])("rejects a library with %s rather than hiding it", (_case, body) => {
+  expect(() => readFormLibrary(body)).toThrow("Invalid form library contract.");
+});
+
 it("reads the library without caching and adds a copy with the name under the standard's culture and the folder only when chosen", async () => {
   const bodies: unknown[] = []; let paths: string[] = []; let cache: RequestCache | undefined;
   server.use(

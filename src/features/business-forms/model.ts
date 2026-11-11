@@ -53,6 +53,14 @@ export interface FormQuestionToggle {
   readonly key: string; readonly label: LocalizedText; readonly help: LocalizedText; readonly value: boolean;
   readonly whenOn?: LocalizedText; readonly whenOff?: LocalizedText;
 }
+// DOC1: the fixed validation of a question bound by a library standard: an account (CBU, CVU or alias) or a CUIT or CUIL. Only a
+// short text has it.
+export type FormQuestionValidation = "bankAccount" | "taxId";
+// DOC1: the reading of documents, a setting of the form like «Dónde se completa»: whether it is on, «Cómo reconocerlo» (up to 1000
+// characters, required while on) and up to five lookups in catalogs. Each fills a catalog question (`questionId`) with what another
+// question read (`sourceQuestionId`), compared with the option's code ("code"), its text ("text") or a catalog field, by its id.
+export interface FormDocumentLookup { readonly questionId: string; readonly sourceQuestionId: string; readonly field: string }
+export interface FormDocumentReading { readonly enabled: boolean; readonly recognition: string; readonly lookups: readonly FormDocumentLookup[] }
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 
@@ -64,7 +72,7 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestion
   readonly showWhen?: TShowWhen | null;
   readonly toggles?: readonly FormQuestionToggle[];
 } & (
-  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true }
+  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true; readonly validation?: FormQuestionValidation }
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }
   | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null; readonly repeated?: true; readonly calculation?: TCalculation | null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null; readonly repeated?: true }
@@ -102,6 +110,8 @@ export interface FormDraft<TQuestion, TSection = FormSection> {
   // «Dónde se completa» (SA1-A): `true` is «Sólo en la app». «En la app y por WhatsApp», the default, has no key, so a draft that
   // never chose keeps its bytes. It travels with the draft to saving, checking and accepting.
   readonly appOnly?: true;
+  // DOC1: the reading of documents; like `appOnly`, it is omitted without it and travels with the draft.
+  readonly documentReading?: FormDocumentReading;
 }
 export interface DraftEditorValue {
   readonly offerWhen: string | null;

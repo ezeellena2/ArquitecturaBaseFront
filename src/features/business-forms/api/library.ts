@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
-import { readFormCommit } from "./response";
+import { questionValidationSchema, readFormCommit } from "./response";
 
 // BI1-A: the standards the installed modules bring, in the language of the menu, with how many forms came from each, the language
 // a copy is written in and the module that brings it, when it says.
@@ -15,8 +15,13 @@ const standard = z.strictObject({
   source: z.string().min(1).optional(),
   // The prefix «Agregar» offers: the server knows the prefixes in use, deleted forms' too.
   suggestedPrefix: z.string().min(1).max(12),
+  // DOC1: a standard that reads documents names the data it reads and its fixed validations; without them, both are omitted.
+  reads: z.array(z.string().min(1)).min(1).max(40).optional(),
+  validations: z.array(z.strictObject({ name: z.string().min(1), kind: questionValidationSchema })).min(1).max(20).optional(),
 });
-const library = z.strictObject({ standards: z.array(standard) });
+// DOC1: the standards of the next stages, without a draft to add, listed as «Próximamente».
+const upcoming = z.strictObject({ key: z.string().min(1).max(64), name: z.string().min(1), description: z.string() });
+const library = z.strictObject({ standards: z.array(standard), upcoming: z.array(upcoming).max(40).optional() });
 
 export type FormStandard = z.infer<typeof standard>;
 export type FormLibrary = z.infer<typeof library>;
