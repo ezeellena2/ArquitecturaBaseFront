@@ -15,7 +15,8 @@ export const platformStepsOf = (delegated: readonly string[], authorized: readon
 ];
 
 /// Cada paso con su estado (RB2-A): hecho, en curso, frenado o pendiente. Un paso que no estaba previsto pero el robot hizo
-/// o está haciendo se suma al final, para que la lista no mienta.
+/// o está haciendo se suma al final, para que la lista no mienta. Un lado terminado tiene todo hecho, también lo que la
+/// persona hizo a mano con la guía (RB3-A).
 export function stepsOf(side: ArcaRobotSide | null, planned: readonly string[]): RobotStep[] {
   const keys = [...planned];
   for (const key of [...(side?.completedSteps ?? []), side?.currentStep, side?.failedStep]) if (key && !keys.includes(key)) keys.push(key);
@@ -23,7 +24,7 @@ export function stepsOf(side: ArcaRobotSide | null, planned: readonly string[]):
   const failedAt = side?.failedStep ?? (side?.state === "Interrupted" ? side.currentStep : null);
   return keys.map(key => ({
     key,
-    state: side?.completedSteps.includes(key) ? "done"
+    state: side?.state === "Succeeded" || side?.completedSteps.includes(key) ? "done"
       : stopped && key === failedAt ? "failed"
       : side?.state === "Running" && key === side.currentStep ? "running"
       : "pending",

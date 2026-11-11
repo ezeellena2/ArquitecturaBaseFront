@@ -26,6 +26,11 @@ describe("the robot steps", () => {
     expect(stepsOf(null, planned).every(step => step.state === "pending")).toBe(true);
   });
 
+  it("count every planned step of a finished side as done, also the ones the person did by hand with the guide", () => {
+    expect(stepsOf(side({ state: "Succeeded", completedSteps: ["company.login"] }), companyStepsOf(["wsfe"], ["company.point-of-sale"]))
+      .map(step => step.state)).toEqual(["done", "done", "done"]);
+  });
+
   it("treat an interrupted run as stopped at the step it was doing", () => {
     expect(stepsOf(side({ state: "Interrupted", currentStep: "company.delegate.wsfe", completedSteps: ["company.login"] }), companyStepsOf(["wsfe"], []))
       .map(step => step.state)).toEqual(["done", "failed"]);

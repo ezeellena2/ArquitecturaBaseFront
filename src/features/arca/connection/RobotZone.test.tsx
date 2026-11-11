@@ -63,6 +63,9 @@ describe("the robot zone", () => {
     const start = await screen.findByRole("button", { name: "Delegar con el robot" });
     expect(start).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(/«Facturación electrónica» en ArquitecturaBase \(CUIT 30-71888777-8\)/)).toBeInTheDocument();
+    // En la banda, arriba de los campos; la (i) explica la autorización junto a la casilla.
+    expect(start.compareDocumentPosition(screen.getByLabelText(/Entrás con/, { selector: "input" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("checkbox")).toHaveAccessibleDescription(/no se guarda en ningún lado/);
 
     await userEvent.type(screen.getByLabelText(/Entrás con/, { selector: "input" }), "20-28456789-0");
     await userEvent.type(screen.getByLabelText(/Clave fiscal/, { selector: "input" }), "clave-de-prueba");
@@ -123,6 +126,23 @@ describe("the robot zone", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Probar otra vez con el robot" }));
     expect(await screen.findByLabelText(/Clave fiscal/, { selector: "input" })).toHaveValue("");
+  });
+
+  it("lets the person follow the guide by hand and hands the rest to the platform (RB3-A)", async () => {
+    run = { enabled: true, company: side({ state: "Failed", failure: "Captcha", failedStep: "company.login" }), platform: side({ state: "Waiting" }) };
+    let completions = 0;
+    server.use(http.post("/api/arca/connection/robot-runs/current/manual-completion", () => {
+      completions++;
+      run = { enabled: true, company: side({ state: "Succeeded", completedSteps: [] }), platform: side({ state: "Waiting" }) };
+      return HttpResponse.json(run, { status: 202 });
+    }));
+    renderZone();
+
+    await userEvent.click(await screen.findByRole("button", { name: "Verificar la delegación" }));
+
+    expect(await screen.findByText("Falta que la plataforma acepte")).toBeInTheDocument();
+    expect(completions).toBe(1);
+    expect(within(screen.getByRole("region", { name: "Con tu clave" })).queryByText(/Pendiente/)).not.toBeInTheDocument();
   });
 
   it("tells that the platform finishes by hand when its side stopped", async () => {

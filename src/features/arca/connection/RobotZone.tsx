@@ -15,7 +15,7 @@ import { StepList } from "@/shared/ui/StepList";
 import { testArcaConnection, type ArcaConnection, type ArcaTest } from "./api";
 import { ArcaZone } from "./ArcaZone";
 import { formatCuit, normalizeCuit } from "./model";
-import { arcaRobotQueryKey, robotPointOfSaleStep, startArcaRobotRun, useArcaRobotRun, type ArcaRobotSide } from "./robot";
+import { arcaRobotQueryKey, completeArcaRobotByHand, robotPointOfSaleStep, startArcaRobotRun, useArcaRobotRun, type ArcaRobotSide } from "./robot";
 import { companyStepsOf, guideFallbackOf, platformStepsOf, robotViewOf, stepsOf, type RobotStep } from "./robotSteps";
 import { useArcaAction } from "./useArcaAction";
 import { useArcaFormat } from "./useArcaFormat";
@@ -43,7 +43,8 @@ export interface RobotZoneProps {
 }
 
 /// La delegación automática en el alta (ADR 0026 del backend): la autorización y la clave en la zona (RB1-A), el avance de
-/// los dos lados en pasos (RB2-A) y, si el robot se frena, la guía de la etapa 5 en ese paso (RB3-A).
+/// los dos lados en pasos (RB2-A) y, si el robot se frena, la guía de la etapa 5 en ese paso (RB3-A): la persona vuelve a
+/// probar con el robot o hace sus pasos a mano y, con «Verificar la delegación», la plataforma sigue con los suyos.
 export function RobotZone({ step, available = true, connection, canManage, platform, delegatedServices, authorizedServices, familySteps, renderGuide, onTested, onConflict }: RobotZoneProps) {
   const { t } = useTranslation(["arcaRobot", "arca"]);
   const queryClient = useQueryClient();
@@ -70,20 +71,27 @@ export function RobotZone({ step, available = true, connection, canManage, platf
     await queryClient.invalidateQueries({ queryKey: arcaRobotQueryKey });
   }
 
+  async function completeByHand() {
+    const next = await action.run("byHand", completeArcaRobotByHand);
+    if (next) queryClient.setQueryData(arcaRobotQueryKey, next);
+  }
+
   if (!available) return <ArcaZone step={step} title={t("title")} state="off" />;
   if (robot.isPending) return <ArcaZone step={step} title={t("title")} state="open"><Skeleton className="h-16" /></ArcaZone>;
 
   const badge = company?.state === "Running" ? <Badge variant="outline">{t("running")}</Badge>
     : view === "progress" && company?.state === "Succeeded" ? <Badge variant="warning">{t("waitingPlatform")}</Badge> : null;
 
-  if (view === "form" && canManage) return <ArcaZone step={step} title={t("title")} state="open" help={t("consentHelp")}>
-    <RobotForm connection={connection} platform={platform} services={delegatedServices.map(serviceName)}
-      rejected={!retrying && company?.failure === "LoginRejected"} onConflict={onConflict}
-      onStarted={run => { setRetrying(false); queryClient.setQueryData(arcaRobotQueryKey, run); }} />
-  </ArcaZone>;
+  if (view === "form" && canManage) return <RobotForm step={step} connection={connection} platform={platform} services={delegatedServices.map(serviceName)}
+    rejected={!retrying && company?.failure === "LoginRejected"} onConflict={onConflict}
+    onStarted={run => { setRetrying(false); queryClient.setQueryData(arcaRobotQueryKey, run); }} />;
 
   if (view === "guide" && company) return <ArcaZone step={step} title={t("title")} state="open"
-    actions={canManage ? <Button variant="outline" onClick={() => setRetrying(true)}>{t("retry")}</Button> : undefined}>
+    actions={canManage ? <>
+      <Button variant="outline" disabled={action.pending !== null} onClick={() => setRetrying(true)}>{t("retry")}</Button>
+      <Button variant="outline" pending={action.pending === "byHand"} disabled={action.pending !== null} onClick={() => void completeByHand()}>
+        {t(action.pending === "byHand" ? "arca:delegation.verifying" : "arca:delegation.verify")}</Button>
+    </> : undefined}>
     <Banner tone="warning">{t(`stopped.${company.failure ?? "Interrupted"}`)}</Banner>
     {renderGuide({ ...guideFallbackOf(company), doneLabel: t("doneByRobot") })}
   </ArcaZone>;
@@ -130,9 +138,10 @@ function RobotSteps({ title, steps, side, label, retryAt }: {
   </section>;
 }
 
-/// La autorización y la clave (RB1-A). La clave vive sólo en el campo: se vacía al enviar y no pasa a ningún otro estado.
-function RobotForm({ connection, platform, services, rejected, onConflict, onStarted }: {
-  connection: ArcaConnection; platform: { name: string; cuit: string }; services: string[]; rejected: boolean; onConflict: () => void;
+/// La autorización y la clave (RB1-A), con «Delegar con el robot» en la banda. La clave vive sólo en el campo: se vacía al
+/// enviar y no pasa a ningún otro estado.
+function RobotForm({ step, connection, platform, services, rejected, onConflict, onStarted }: {
+  step: number; connection: ArcaConnection; platform: { name: string; cuit: string }; services: string[]; rejected: boolean; onConflict: () => void;
   onStarted: (run: Awaited<ReturnType<typeof startArcaRobotRun>>) => void;
 }) {
   const { t, i18n } = useTranslation("arcaRobot");
@@ -159,7 +168,9 @@ function RobotForm({ connection, platform, services, rejected, onConflict, onSta
 
   const starting = action.pending === "start";
   const reason = !consent ? t("consentMissing") : null;
-  return <div className="flex flex-col gap-4">
+  return <ArcaZone step={step} title={t("title")} state="open" actions={<DisabledReason reason={reason}>
+    <Button pending={starting} disabled={!consent || starting} onClick={() => void start()}>{t(starting ? "starting" : "start")}</Button>
+  </DisabledReason>}><div className="flex flex-col gap-4">
     <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
       <FormField label={t("login")} help={t("loginHelp")} error={errors.login} required>
         <Input value={login} inputMode="numeric" autoComplete="off" maxLength={13} disabled={starting} onChange={event => setLogin(event.target.value)} />
@@ -168,12 +179,7 @@ function RobotForm({ connection, platform, services, rejected, onConflict, onSta
         <Input type="password" value={key} autoComplete="off" spellCheck={false} disabled={starting} onChange={event => setKey(event.target.value)} />
       </FormField>
     </div>
-    <CheckboxField label={t("consent", { services: serviceList, platform: platform.name, cuit: formatCuit(platform.cuit) })} checked={consent}
-      disabled={starting} onCheckedChange={setConsent} />
-    <div>
-      <DisabledReason reason={reason}>
-        <Button pending={starting} disabled={!consent || starting} onClick={() => void start()}>{t(starting ? "starting" : "start")}</Button>
-      </DisabledReason>
-    </div>
-  </div>;
+    <CheckboxField label={t("consent", { services: serviceList, platform: platform.name, cuit: formatCuit(platform.cuit) })} help={t("consentHelp")}
+      checked={consent} disabled={starting} onCheckedChange={setConsent} />
+  </div></ArcaZone>;
 }
