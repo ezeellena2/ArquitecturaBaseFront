@@ -1662,7 +1662,9 @@
     "incomplete": "Elegí la pregunta y al menos una respuesta.",
     "line": "Si {{question}} es {{answer}}",
     "lineMore": "Si {{question}} es {{answer}} o…",
-    "lineIncomplete": "Según otra respuesta"
+    "lineIncomplete": "Según otra respuesta",
+    "catalogSingle": "En WhatsApp, una pregunta de catálogo se compara con una sola respuesta. Con «Sólo en la app» se pueden elegir varias.",
+    "tooDeep": "En WhatsApp, una pregunta puede depender de otra hasta tres veces seguidas: elegí otra pregunta, o «Sólo en la app»."
   },
   "standard": {
     "origin": "De la biblioteca: {{name}}, versión {{version}}",

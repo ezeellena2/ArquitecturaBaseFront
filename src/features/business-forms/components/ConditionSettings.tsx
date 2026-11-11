@@ -8,7 +8,7 @@ import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Label } from "@/shared/ui/label";
 import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
-import { canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, toggleConditionAnswer, withCondition, type ConditionAnswer } from "../conditions";
+import { canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, conditionDepth, toggleConditionAnswer, withCondition, type ConditionAnswer } from "../conditions";
 import { questionIdentity } from "../dependentLists";
 import { administrativeName, localizedValue } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
@@ -50,15 +50,21 @@ function CatalogConditionLine({ scope, catalog, value, line }: { scope: CatalogR
   return <>{line(label(value))}</>;
 }
 
-/** «es» for a catalog question: the chosen options as chips and a search among its active options, which adds or removes them. */
-function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, onToggle }: {
-  scope: CatalogReadScope; catalog: string; values: readonly string[]; readOnly: boolean; lockedReason?: string | null; onToggle: (value: string, chosen: boolean) => void;
+/**
+ * «es» for a catalog question: the chosen options as chips and a search among its active options, which adds or removes them. In a
+ * form that goes through WhatsApp it takes one: the options of a catalog arrive with the message and cannot show a question for
+ * several (r13).
+ */
+function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, single, onToggle }: {
+  scope: CatalogReadScope; catalog: string; values: readonly string[]; readOnly: boolean; lockedReason?: string | null; single: boolean;
+  onToggle: (value: string, chosen: boolean) => void;
 }) {
   const { t } = useTranslation("forms");
   const id = useId();
   const [search, setSearch] = useState(""), [settled, setSettled] = useState("");
   useEffect(() => { const timer = setTimeout(() => setSettled(search), 300); return () => clearTimeout(timer); }, [search]);
-  const off = readOnly || !!lockedReason;
+  const reason = lockedReason ?? (single && values.length > 0 ? t("condition.catalogSingle") : null);
+  const off = readOnly || !!reason;
   const detail = useCatalogDetail(scope, off ? "" : catalog, "global");
   const items = useCatalogItems(scope, off ? "" : catalog, detail.data?.revision ?? null, { page: 1, pageSize: 20, search: settled, isActive: true, sort: "text" }, "global");
   const label = useCatalogAnswerLabels(scope, catalog, values);
@@ -69,7 +75,7 @@ function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, onTogg
     <Label htmlFor={id}>{t("condition.is")}</Label>
     {values.length ? <div className="flex flex-wrap gap-1.5">{values.map(value => off ? <FilterChip key={value}>{label(value)}</FilterChip>
       : <FilterChip key={value} removeLabel={t("condition.remove", { label: label(value) })} onRemove={() => onToggle(value, false)}>{label(value)}</FilterChip>)}</div> : null}
-    {readOnly ? null : <DisabledReason reason={lockedReason} className="grid w-full"><Autocomplete id={id} dropdown multiple disabled={off} value={search} placeholder={t("condition.search")}
+    {readOnly ? null : <DisabledReason reason={reason} className="grid w-full"><Autocomplete id={id} dropdown multiple disabled={off} value={search} placeholder={t("condition.search")}
       options={options} status={status} onValueChange={setSearch} onSelect={value => onToggle(value, !values.includes(value))} /></DisabledReason>}
   </div>;
 }
@@ -77,11 +83,13 @@ function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, onTogg
 /**
  * «Se muestra» of a question (CO1-A): «Siempre» or «Según otra respuesta», with «Si» (an earlier choose-one question, own or from a
  * catalog, or a yes or no, outside the block) and «es» (the answers that show it). Neither the block nor its questions have it.
- * Bound by the library standard (BI1-A), the condition stays, with its reason on each control.
+ * Bound by the library standard (BI1-A), the condition stays, with its reason on each control. In a form that goes through
+ * WhatsApp (`whatsApp`), what it cannot publish is stopped or said here: one answer of a catalog question, and a fourth condition
+ * in a row.
  */
-export function ConditionSettings({ question, questions, culture, original, readOnly, lockedReason, error, scope, onChange }: {
+export function ConditionSettings({ question, questions, culture, original, readOnly, lockedReason, error, scope, whatsApp = false, onChange }: {
   question: DraftQuestion; questions: readonly DraftQuestion[]; culture: FormCulture; original: FormCulture; readOnly: boolean;
-  lockedReason?: string | null; error?: string; scope: CatalogReadScope; onChange: (question: DraftQuestion) => void;
+  lockedReason?: string | null; error?: string; scope: CatalogReadScope; whatsApp?: boolean; onChange: (question: DraftQuestion) => void;
 }) {
   const { t } = useTranslation("forms");
   if (!canHaveCondition(question)) return null;
@@ -111,13 +119,14 @@ export function ConditionSettings({ question, questions, culture, original, read
         {candidates.map(item => <option key={item.id} value={item.id}>{t("condition.question", { label: item.label, number: item.number })}</option>)}
       </NativeSelect></DisabledReason></FormField>
       {candidate?.kind === "catalog" && candidate.catalog
-        ? <CatalogAnswers scope={scope} catalog={candidate.catalog} values={showWhen.values} readOnly={readOnly} lockedReason={lockedReason} onToggle={toggle} />
+        ? <CatalogAnswers scope={scope} catalog={candidate.catalog} values={showWhen.values} readOnly={readOnly} lockedReason={lockedReason} single={whatsApp} onToggle={toggle} />
         : <QuestionChips label={t("condition.is")} chips={showWhen.values.map(value => ({ id: value, label: labelOf(value) }))}
           options={(answers ?? []).filter(answer => !showWhen.values.includes(answer.id)).map(answer => ({ id: answer.id, label: answerLabel(answer, culture, original, t("yes"), t("no")) }))}
           addLabel={t("condition.add")} removeLabel={label => t("condition.remove", { label })} readOnly={readOnly} lockedReason={lockedReason}
           addReason={!candidate ? t("condition.chooseFirst") : (answers ?? []).every(answer => showWhen.values.includes(answer.id)) ? t("condition.allChosen") : null}
           onAdd={value => toggle(value, true)} onRemove={value => toggle(value, false)} />}
     </div> : null}
-    {error ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
+    {error ?? (whatsApp && showWhen && conditionDepth(questions, question) > 3 ? t("condition.tooDeep") : null)
+      ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error ?? t("condition.tooDeep")}</p> : null}
   </div>;
 }

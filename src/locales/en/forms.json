@@ -1662,7 +1662,9 @@
     "incomplete": "Choose the question and at least one answer.",
     "line": "If {{question}} is {{answer}}",
     "lineMore": "If {{question}} is {{answer}} or…",
-    "lineIncomplete": "Depending on another answer"
+    "lineIncomplete": "Depending on another answer",
+    "catalogSingle": "On WhatsApp, a catalog question is compared with a single answer. With “Only in the app” you can choose several.",
+    "tooDeep": "On WhatsApp, a question can depend on another up to three times in a row: choose another question, or “Only in the app”."
   },
   "standard": {
     "origin": "From the library: {{name}}, version {{version}}",

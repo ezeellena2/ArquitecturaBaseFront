@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
 import {
-  canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, conditionIncomplete, entryHiddenQuestions, toggleConditionAnswer, withCondition,
+  canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, conditionDepth, conditionIncomplete, entryHiddenQuestions, toggleConditionAnswer, withCondition,
 } from "./conditions";
 import type { EntryDraft } from "./entryForm";
 import type { DraftQuestion } from "./model";
@@ -61,6 +61,21 @@ describe("a condition in the editor (CO1-A)", () => {
     expect(conditionAnswers(concept)).toEqual([{ id: "choice-goods", label: { es: "Productos" } }, { id: "services", label: { es: "Servicios" } }]);
     expect(conditionAnswers(paid)).toEqual([{ id: "true", yes: true }, { id: "false", yes: false }]);
     expect(conditionAnswers(client)).toBeNull();
+  });
+
+  // WhatsApp nests up to three conditions in a row: the editor warns past that (CO1-A, r13).
+  it("counts how many conditions a question has in a row, its own included", () => {
+    const second: DraftQuestion = { ...paid, localId: "second", showWhen: { questionId: "paid", values: ["true"] } };
+    const third: DraftQuestion = { ...paid, localId: "third", showWhen: { questionId: "second", values: ["true"] } };
+    const fourth: DraftQuestion = { ...from, showWhen: { questionId: "third", values: ["true"] } };
+    const questions = [paid, second, third, fourth];
+    expect(conditionDepth(questions, paid)).toBe(0);
+    expect(conditionDepth(questions, second)).toBe(1);
+    expect(conditionDepth(questions, fourth)).toBe(3);
+    expect(conditionDepth([paid, second, third, { ...third, localId: "more", showWhen: { questionId: "third", values: ["true"] } }, { ...from, showWhen: { questionId: "more", values: ["true"] } }],
+      { ...from, showWhen: { questionId: "more", values: ["true"] } })).toBe(4);
+    // A question it names that is gone ends the chain.
+    expect(conditionDepth([from], { ...from, showWhen: { questionId: "gone", values: ["true"] } })).toBe(1);
   });
 
   it("cannot be saved without its question or an answer", () => {

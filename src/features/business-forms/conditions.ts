@@ -34,6 +34,22 @@ export function conditionCandidates(fields: readonly DraftQuestion[], localId: s
   });
 }
 
+/**
+ * How many conditions a question has in a row, its own included: 0 without one, 1 on a question shown always, and one more for
+ * each question above it that also has one. WhatsApp nests up to three (r13). A question named that is gone ends the chain.
+ */
+export function conditionDepth(fields: readonly DraftQuestion[], question: DraftQuestion): number {
+  const seen = new Set<string>();
+  let depth = 0;
+  for (let current: DraftQuestion | undefined = question; current?.showWhen && !seen.has(current.localId);) {
+    seen.add(current.localId);
+    depth++;
+    const named: string | null = current.showWhen.questionId;
+    current = named ? fields.find(item => questionIdentity(item) === named) : undefined;
+  }
+  return depth;
+}
+
 /** An answer a condition can choose: an own option (by its identity, or its local one while new) or yes or no. */
 export type ConditionAnswer = { readonly id: string; readonly label: LocalizedText } | { readonly id: "true" | "false"; readonly yes: boolean };
 

@@ -195,7 +195,7 @@ export function QuestionEditor({ question, position, number, total, culture, ori
       {/* CO1-A: every question but the block and its questions says when it shows. */}
       <ConditionSettings question={question} questions={questions ?? [question]} culture={culture} original={original} readOnly={readOnly} lockedReason={locked}
         error={fieldError("showWhen(?:\\.(?:questionId|values))?") ?? (showIncomplete && conditionIncomplete(question) ? t("condition.incomplete") : undefined)}
-        scope={catalogScope ?? { actorId: null, culture, permissions: [] }} onChange={onChange} />
+        scope={catalogScope ?? { actorId: null, culture, permissions: [] }} whatsApp={!appOnly} onChange={onChange} />
       <div className="flex justify-end"><Button type="button" variant="outline" onClick={() => { onExpand(false); editButton.current?.focus(); }}>{t("done")}</Button></div>
     </div> : null}
     <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</span>
