@@ -23,6 +23,8 @@ a827be0a (Formularios), 2e72b524 (Diseñar formularios), d3f315fd (Catálogos y 
 - Tarea 8: no se sumó un control en `designRules.ts`. Los casos eran composiciones (una etiqueta junto al dato, un renglón
   gris con un estado) que una regla de sintaxis no distingue de la excepción A, y una regla de «a · b» sólo habría visto
   dos. Queda a cargo de la revisión de cada cambio.
+- 2e72b524 había quitado `lifecycle.state`, que el encabezado del editor usa con un formulario dado de baja que tiene
+  versión activa, y se veía la clave. Volvió en 5ce9f31a, con su test en `FormLifecycle.test.tsx`.
 
 Verificación:
 
@@ -54,7 +56,7 @@ Igual a los tableros. Las columnas de cada vista, en orden:
 | Opciones de un catálogo, también sin permiso para editar y en el celular | #, Texto, Código, los campos, Valor, Detalle, Estado, Acciones | UD3 |
 | Planilla de respuestas | Número, Corregida, Recibida, Cargó, Canal, Estado, PDF y una por pregunta | UD4 |
 | Usuarios | Correo, WhatsApp, Verificado, Nombre, Roles, Creado, Acciones | UD5 |
-| Datos de las personas | Dato, Estado, Clave, Tipo, Catálogo, Lo usan, Editar | UD5 |
+| Datos de las personas | Dato, Estado, Clave, Tipo, Catálogo, Lo usan, Acciones | UD5 |
 | Formularios que faltan: Pendientes | Tema, Pedidos, Personas, Último pedido, Acciones | UD5 |
 | Formularios que faltan: Descartados | Tema, Descartó, Descartado, Pedidos, Personas, Último pedido, Acciones | UD5 |
 | Rol: permisos | Permiso, Descripción, Asignado; en la banda de un área, «2 de 5» va en «Asignado», junto a su casilla | UD6, E |
@@ -111,8 +113,9 @@ un commit.
 7. **Textos.** Se reusan las claves que ya existen («Recibida», «Estado», «Código», «Corregida») y se suman, en español y
    en inglés, «Estado del formulario», «Versión activa», «Cambió», «Deprecación» y sus estados, «Correo», «WhatsApp»,
    «Verificado», «Catálogo», «Descartó» y «Descartado». Se quitan las que dejan de usarse, como
-   `catalogs.items.textAndCode`, `publication.previousActive`, `lifecycle.state`, `missing.discardedBy`,
-   `identity.alsoWhatsApp` y las frases de `lifecycle.deprecation`. La paridad la controla `locales/parity.test.ts`.
+   `catalogs.items.textAndCode`, `publication.previousActive`, `lifecycle.reactivating`, `missing.discardedBy` e
+   `identity.alsoWhatsApp`. Quedan `lifecycle.state` y las frases de `lifecycle.deprecation`, que usan el encabezado
+   y el aviso del editor de un formulario dado de baja. La paridad la controla `locales/parity.test.ts`.
 8. **Un control para lo nuevo.** Evaluar en `src/test/architecture/designRules.ts` una regla, como `legend`, que marque la
    celda de una columna que arma «a · b» con dos valores, con casos positivos y negativos. Si da falsos positivos, queda
    a cargo de la revisión de cada cambio, como los párrafos sueltos.
