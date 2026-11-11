@@ -279,8 +279,8 @@ it("adds the voided responses to the Excel only when they are asked for", async 
   expect(body).toEqual({ filter: all, columns: null, catalogFields: null, includeVoided: true });
 });
 
-// The export says once what always goes in the (i) next to «Columnas a exportar», and its button waits with «Exportando…».
-it("exports without a description, with the fixed columns in the (i) of Columnas a exportar, and says Exportando… while it works", async () => {
+// The export says once what always goes in the (i) next to «Columnas» (EX1-A), and its button waits with «Exportando…».
+it("exports without a description, with the fixed columns in the (i) of Columnas, and says Exportando… while it works", async () => {
   setup();
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
@@ -289,8 +289,8 @@ it("exports without a description, with the fixed columns in the (i) of Columnas
   await act(async () => { renderWithProviders(<Export/>); });
   const dialog = await screen.findByRole("dialog", { name: "Exportar respuestas a Excel" });
   expect(dialog).not.toHaveAccessibleDescription();
-  const fixed = "Número, recibida, cargó y canal siempre se incluyen. De los archivos se exportan la cantidad y los nombres.";
-  expect(screen.getByRole("button", { name: "Más información sobre Columnas a exportar" })).toHaveAccessibleDescription(fixed);
+  const fixed = "Número, recibida, cargó y canal van siempre. De los archivos van la cantidad y los nombres.";
+  expect(screen.getByRole("button", { name: "Más información sobre Columnas" })).toHaveAccessibleDescription(fixed);
   for (const text of screen.getAllByText(fixed)) expect(text).not.toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
   expect(await screen.findByRole("button", { name: "Exportando…" })).toHaveAttribute("aria-busy", "true");

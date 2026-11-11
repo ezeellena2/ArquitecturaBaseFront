@@ -13,13 +13,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/ui/dialog";
+import { formatExactDecimal } from "@/shared/lib/decimal";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DataList } from "@/shared/ui/DataList";
+import { FilterChip } from "@/shared/ui/FilterChip";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
+
+/// The columns of the Excel (XL1-A): one per question with its catalog fields, and a block as «Ítem» and its questions.
+const exportedColumns = (columns: readonly ResponseColumn[]) => columns.reduce((count, column) => count + (column.type === "group"
+  ? 1 + (column.questions ?? []).reduce((inner, question) => inner + 1 + (question.fields?.length ?? 0), 0)
+  : 1 + (column.fields?.length ?? 0)), 0);
 export function ResponseExportDialog({
   formId,
   prefix,
@@ -47,7 +55,7 @@ export function ResponseExportDialog({
   onForbidden: () => void;
   filterLabels: readonly string[];
 }) {
-  const { t } = useTranslation("forms");
+  const { t, i18n } = useTranslation("forms");
   const [selection, setSelection] = useState("all");
   const [includeVoided, setIncludeVoided] = useState(false);
   const [pending, setPending] = useState(false);
@@ -55,6 +63,13 @@ export function ResponseExportDialog({
   const columnsGroup = useRef<HTMLDivElement | null>(null);
   const feedbackId = `responses:export:${formId}`;
   const restore = useRestoreFocusOnClose();
+  const count = formatExactDecimal(String(total), i18n.language) ?? String(total);
+  const voided = includeVoided && !filter.state;
+  const allColumns = exportedColumns(columns);
+  const visibleColumns = visible.reduce((sum, column) => sum + (column.type === "group" ? 1 + (column.questions?.length ?? 0) : 1), 0) + visibleCatalogFields.length;
+  const nothingHidden = visibleColumns === allColumns;
+  // The block that goes in the file: with «Solo las visibles», only if its column is visible.
+  const block = (selection === "visible" ? visible : columns).find(column => column.type === "group");
   useEffect(
     () => () => {
       controller.current?.abort();
@@ -127,36 +142,50 @@ export function ResponseExportDialog({
         <DialogHeader>
           <DialogTitle>{t("responses.exportTitle")}</DialogTitle>
         </DialogHeader>
-        <p>
-          {t("responses.count", { count: total })}
-        </p>
-        <p>{t("responses.appliedFilters", { count: filterLabels.length })}</p>
-        {filterLabels.length ? <ul className="list-disc pl-5 text-sm">{filterLabels.map(label => <li key={label}>{label}</li>)}</ul> : null}
-        {/* What always goes in the file is in the (i) next to the group's name, not in a line under the options. */}
-        <div ref={columnsGroup} className="flex flex-col gap-1.5">
-        <p className="flex items-center gap-1 text-sm font-medium">{t("responses.exportColumns")}<span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: t("responses.exportColumns") })} text={t("responses.exportHint")}/></span></p>
-        <RadioGroupField
-          label={t("responses.exportColumns")}
-          value={selection}
-          onValueChange={setSelection}
-          options={[
-            {
-              value: "all",
-              label: t("responses.allColumns", { count: columns.reduce((count, column) => count + 1 + (column.fields?.length ?? 0), 0) }),
-            },
-            {
-              value: "visible",
-              label: t("responses.visibleColumns", { count: visible.length + visibleCatalogFields.length }),
-            },
-          ]}
-        />
+        {/* EX1-A: what goes out on top, in two columns; the choices; the file at the foot, next to the action. */}
+        <DataList items={[
+          { key: "responses", label: t("responses.exportResponses"), value: voided ? t("responses.exportVoidedToo", { responses: count }) : count },
+          {
+            key: "filters",
+            label: t("responses.exportFilters"),
+            // The same chips of the sheet, without their cross: the filters are not removed here.
+            value: filterLabels.length
+              ? <span className="flex flex-wrap gap-1.5">{filterLabels.map(label => <FilterChip key={label}>{label}</FilterChip>)}</span>
+              : <span className="text-[var(--color-content-muted)]">{t("responses.exportNoFilters")}</span>,
+          },
+        ]} />
+        <div ref={columnsGroup}>
+          <RadioGroupField
+            label={t("responses.exportColumns")}
+            showLabel
+            help={t("responses.exportHint")}
+            value={selection}
+            onValueChange={setSelection}
+            options={[
+              { value: "all", label: t("responses.allColumns", { count: allColumns }) },
+              {
+                value: "visible",
+                label: t("responses.visibleColumns", { count: visibleColumns }),
+                // Without hidden columns both options give the same file.
+                disabled: nothingHidden,
+                disabledReason: nothingHidden ? t("responses.exportAllVisible") : null,
+              },
+            ]}
+          />
         </div>
-        {/* Voided responses stay out of the file unless they are asked for (CW11-A); with «Estado: Anulada» they are all there is. */}
-        {filter.state ? null : <CheckboxField label={t("responses.includeVoided")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
-        <p className="break-words text-sm">
-          {prefix}-{new Date().toISOString().slice(0, 10).replaceAll("-", "")}
-          .xlsx
-        </p>
+        {/* Voided responses stay out of the file unless they are asked for (CW11-A); with a state chosen, the state says which go. */}
+        {filter.state ? null : <CheckboxField label={t("responses.includeVoided")} help={t("responses.includeVoidedHelp")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
+        <DataList items={[
+          { key: "file", label: t("responses.exportFile"), value: `${prefix}-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}.xlsx` },
+          {
+            key: "rows",
+            // How the Excel comes out (XL1-A): a row per item of the exported block, or a row per response.
+            label: block ? <span className="flex items-center gap-1">{t("responses.exportRows")}
+              <span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: t("responses.exportRows") })} text={t("responses.exportRowsHelp")} /></span>
+            </span> : t("responses.exportRows"),
+            value: block ? t("responses.exportRowsPerItem", { block: block.label }) : t("responses.exportRowsPerResponse"),
+          },
+        ]} />
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             {t("common:actions.cancel")}
