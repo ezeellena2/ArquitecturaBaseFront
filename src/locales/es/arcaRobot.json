@@ -1,5 +1,7 @@
 {
   "title": "Delegación automática",
+  "mode": "Delegación automática",
+  "modeProductionOnly": "La delegación automática es sólo en producción: el Administrador de Relaciones no existe en homologación.",
   "summary": "Delegada · punto de venta {{pointOfSale}}",
   "summaryWithoutPoint": "Delegada",
   "running": "En curso",

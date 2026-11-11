@@ -1,5 +1,7 @@
 {
   "title": "Automated delegation",
+  "mode": "Automated delegation",
+  "modeProductionOnly": "The automated delegation only works in production: the Relations Manager does not exist in testing.",
   "summary": "Delegated · point of sale {{pointOfSale}}",
   "summaryWithoutPoint": "Delegated",
   "running": "Running",

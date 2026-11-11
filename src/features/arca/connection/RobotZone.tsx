@@ -25,6 +25,8 @@ export interface RobotGuideFallback { step: string | null; done: string[]; doneL
 
 export interface RobotZoneProps {
   step: number;
+  /// Apagada mientras «Datos» está abierta, como cualquier zona que sigue (AC1-A).
+  available?: boolean;
   connection: ArcaConnection;
   canManage: boolean;
   /// La plataforma configurada, en la que el cliente delega.
@@ -42,7 +44,7 @@ export interface RobotZoneProps {
 
 /// La delegación automática en el alta (ADR 0026 del backend): la autorización y la clave en la zona (RB1-A), el avance de
 /// los dos lados en pasos (RB2-A) y, si el robot se frena, la guía de la etapa 5 en ese paso (RB3-A).
-export function RobotZone({ step, connection, canManage, platform, delegatedServices, authorizedServices, familySteps, renderGuide, onTested, onConflict }: RobotZoneProps) {
+export function RobotZone({ step, available = true, connection, canManage, platform, delegatedServices, authorizedServices, familySteps, renderGuide, onTested, onConflict }: RobotZoneProps) {
   const { t } = useTranslation(["arcaRobot", "arca"]);
   const queryClient = useQueryClient();
   const robot = useArcaRobotRun();
@@ -68,6 +70,7 @@ export function RobotZone({ step, connection, canManage, platform, delegatedServ
     await queryClient.invalidateQueries({ queryKey: arcaRobotQueryKey });
   }
 
+  if (!available) return <ArcaZone step={step} title={t("title")} state="off" />;
   if (robot.isPending) return <ArcaZone step={step} title={t("title")} state="open"><Skeleton className="h-16" /></ArcaZone>;
 
   const badge = company?.state === "Running" ? <Badge variant="outline">{t("running")}</Badge>

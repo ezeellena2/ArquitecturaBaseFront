@@ -65,5 +65,7 @@ export const handlers = [
     end_session_endpoint: `${location.origin}/connect/logout`,
   })),
   http.get("/api/me", () => HttpResponse.json(currentUser)),
+  // El robot de delegación de ARCA, apagado: la pantalla de ARCA lo consulta para ofrecer el modo 3.
+  http.get("/api/arca/connection/robot-runs/current", () => HttpResponse.json({ enabled: false, company: null, platform: null })),
   http.get("/account/login-methods", () => HttpResponse.json(loginMethods)),
 ];

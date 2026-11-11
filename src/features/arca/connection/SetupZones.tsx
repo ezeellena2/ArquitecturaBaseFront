@@ -19,6 +19,8 @@ import { CertificatePicker } from "./CertificatePicker";
 import { DelegationGuide, type DelegationGuideProps } from "./DelegationGuide";
 import type { ArcaFamilyGuideStep } from "./families";
 import { arcaPortal, certificateOf, formatCuit, isDelegation, isValidAlias, normalizeCuit, platformOf, setupZonesOf } from "./model";
+import { useArcaRobotRun } from "./robot";
+import { RobotZone } from "./RobotZone";
 import { ServiceRows } from "./ServiceRows";
 import { useArcaAction } from "./useArcaAction";
 import { useArcaFormat } from "./useArcaFormat";
@@ -45,7 +47,9 @@ const isCertificateError = (error: unknown): error is ApiError =>
   error instanceof ApiError && !!error.code && (error.code.startsWith("Arca.Connection.Certificate") || error.code === "Arca.Connection.NoPendingRequest");
 
 /// El alta por zonas (AC1-A): datos, pedido, certificado y prueba; después, la zona de cada familia elegida. En
-/// delegación (DG1-A), el certificado es el de la plataforma y la prueba es la zona «Delegación», con la guía (DG2-A).
+/// delegación (DG1-A), el certificado es el de la plataforma y la prueba es la zona «Delegación», con la guía (DG2-A). En la
+/// del robot (etapa 6), la zona del robot reemplaza al pedido, al certificado y a la guía: los hace él, y la guía aparece
+/// sólo si se frena (RB1-A a RB3-A); la prueba se abre cuando terminó.
 export function SetupZones({ connection, canManage, lastTest, onChanged, onTested, onConflict, testDetail, guideSteps, guideProgress, children }: SetupZonesProps) {
   const { t, i18n } = useTranslation("arca");
   const format = useArcaFormat();
@@ -65,6 +69,9 @@ export function SetupZones({ connection, canManage, lastTest, onChanged, onTeste
     .format(services.map(service => t(`services.names.${service.code}`, { defaultValue: service.code })));
   const serviceNames = names(chosen);
   const consulted = chosen.filter(service => !service.delegated);
+  const automated = connection.mode === "PlatformDelegationAutomated";
+  const robot = useArcaRobotRun(automated);
+  const robotDone = robot.data?.company?.state === "Succeeded" && robot.data.platform?.state === "Succeeded";
   const portal = <Button variant="link" asChild>
     <a href={arcaPortal[environment]} target="_blank" rel="noreferrer">{t(environment === "Testing" && delegation ? "delegation.openWsass" : "certificate.openArca")}<ExternalLinkIcon className="size-4" /></a>
   </Button>;
@@ -95,6 +102,20 @@ export function SetupZones({ connection, canManage, lastTest, onChanged, onTeste
       summary={!connection.cuit ? undefined : delegation
         ? t("data.delegationSummary", { cuit: formatCuit(connection.cuit), environment: t(`environment.${environment}`), platform: platform.name })
         : t("data.summary", { cuit: formatCuit(connection.cuit), environment: t(`environment.${environment}`), alias })} />
+    {automated ? <>
+      <RobotZone step={2} available={zones.data !== "open"} connection={connection} canManage={canManage}
+        platform={{ name: platform.name, cuit: connection.platformCuit ?? connection.platform?.cuit ?? "" }}
+        delegatedServices={chosen.filter(service => service.delegated).map(service => service.code)} authorizedServices={consulted.map(service => service.code)}
+        familySteps={(guideSteps ?? []).map(step => step.key)} onTested={onTested} onConflict={onConflict}
+        renderGuide={fallback => <DelegationGuide connection={connection} alias={alias} familySteps={guideSteps} startAt={fallback.step} done={fallback.done}
+          doneLabel={fallback.doneLabel} />} />
+      <ArcaZone step={3} title={t("test.title")} state={zones.data !== "open" && robotDone ? "open" : "off"}
+        actions={canManage ? <Button variant="outline" pending={action.pending === "test"} disabled={action.pending !== null} onClick={() => void test()}>
+          {t(action.pending === "test" ? "test.running" : lastTest ? "test.again" : "test.run")}</Button> : undefined}>
+        <ServiceRows services={chosen} checks={lastTest?.checks} tested={connection.lastTestedAtUtc !== null} alias={alias} delegation />
+        {testDetail}
+      </ArcaZone>
+    </> : <>
     <ArcaZone step={2} title={t("request.title")} state={zones.request} summary={t("request.summary", { alias })}
       actions={canManage && pending && !pending.isLoaded ? <Button variant="outline" pending={action.pending === "download"} disabled={action.pending !== null}
         onClick={() => void download()}><DownloadIcon className="size-4" />{t(action.pending === "download" ? "request.downloading" : "request.downloadAgain")}</Button> : undefined} />
@@ -130,6 +151,7 @@ export function SetupZones({ connection, canManage, lastTest, onChanged, onTeste
       <ServiceRows services={chosen} checks={lastTest?.checks} tested={connection.lastTestedAtUtc !== null} alias={alias} />
       {testDetail}
     </ArcaZone>}
+    </>}
     {children}
   </div>;
 }
@@ -149,7 +171,7 @@ interface DataZoneProps {
 /// «Generar el pedido» crea la clave en el servidor y no llama a ARCA; en delegación, el pedido es de la CUIT de la
 /// plataforma. Con otro modo, otra CUIT u otro ambiente, la conexión del alta se reemplaza.
 function DataZone({ connection, state, canManage, editing, onEditingChange, onChanged, onConflict, summary }: DataZoneProps) {
-  const { t } = useTranslation("arca");
+  const { t } = useTranslation(["arca", "arcaRobot"]);
   const action = useArcaAction(onConflict);
   const pending = certificateOf(connection, "Pending");
   const [cuit, setCuit] = useState(connection.cuit ? formatCuit(connection.cuit) : "");
@@ -157,6 +179,8 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
   const [mode, setMode] = useState<ArcaAccessMode>(connection.mode ?? "CompanyCertificate");
   const delegation = isDelegation(mode);
   const platform = connection.platform ?? null;
+  // El robot de la etapa 6 se ofrece sólo prendido en la instalación y en producción, donde existe el Administrador de Relaciones.
+  const robotEnabled = useArcaRobotRun(platform !== null).data?.enabled === true;
   const [alias, setAlias] = useState(pending?.alias ?? "");
   const [services, setServices] = useState<string[]>(connection.status ? connection.enabledServices : connection.installedServices.map(service => service.code));
   const [errors, setErrors] = useState<{ cuit?: string; alias?: string }>({});
@@ -196,6 +220,11 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
           pressed: mode === "PlatformDelegation", onSelect: () => setMode("PlatformDelegation"),
           disabledReason: platform || locked ? undefined : t("data.platformMissing"),
         },
+        ...robotEnabled ? [{
+          key: "PlatformDelegationAutomated", label: t("arcaRobot:mode"),
+          pressed: mode === "PlatformDelegationAutomated", onSelect: () => setMode("PlatformDelegationAutomated"),
+          disabledReason: locked ? undefined : environment === "Testing" ? t("arcaRobot:modeProductionOnly") : undefined,
+        }] : [],
       ]} />
     </div>
     <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
@@ -211,7 +240,11 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
       <span className="flex items-center gap-1 text-sm font-medium">{t("data.environment")}
         <span className="-my-1 inline-flex"><InfoTip text={t("data.environmentHelp")} label={t("common:actions.moreInfo", { label: t("data.environment") })} /></span></span>
       <SegmentedControl aria-label={t("data.environment")} disabled={locked} options={(["Testing", "Production"] as const).map(option => ({
-        key: option, label: t(`environment.${option}`), pressed: environment === option, onSelect: () => setEnvironment(option),
+        key: option, label: t(`environment.${option}`), pressed: environment === option, onSelect: () => {
+          setEnvironment(option);
+          // En homologación no hay Administrador de Relaciones: el modo del robot pasa a la delegación guiada.
+          if (option === "Testing" && mode === "PlatformDelegationAutomated") setMode("PlatformDelegation");
+        },
       }))} />
     </div>
     <div role="group" aria-label={t("data.services")} className="flex flex-col gap-2">
