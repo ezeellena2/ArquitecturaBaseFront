@@ -5,6 +5,7 @@ import { Navigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { ActionsMenu } from "@/shared/ui/ActionsMenu";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -25,12 +26,13 @@ import { PointOfSaleZone } from "../invoicing/PointOfSaleZone";
 import { InvoicingSections } from "../invoicing/VoucherDataSection";
 import { CompanySection } from "../registry/CompanySection";
 
-/// Las familias que suman una zona propia, por su nombre en el servidor, y los pasos que suman a la guía de la delegación:
-/// quitar una es borrar su carpeta y su línea.
+/// Las familias que suman una zona propia, por su nombre en el servidor, los pasos que suman a la guía de la delegación y
+/// el motivo de «Activar la conexión» apagado mientras les falta lo suyo (MA1-A): quitar una es borrar su carpeta y su línea.
 const familyZones: Record<string, {
   Setup: ComponentType<ArcaFamilySetupProps>; Active: ComponentType<ArcaFamilyActiveProps>; guideSteps?: readonly ArcaFamilyGuideStep[];
+  missing: string;
 }> = {
-  Invoicing: { Setup: PointOfSaleZone, Active: InvoicingSections, guideSteps: [pointOfSaleGuideStep] },
+  Invoicing: { Setup: PointOfSaleZone, Active: InvoicingSections, guideSteps: [pointOfSaleGuideStep], missing: "invoicing.missing" },
 };
 
 /// La conexión con ARCA en una sola pantalla: sin conexión, el alta por zonas (AC1-A) o la conexión activa (AC2-A).
@@ -85,6 +87,12 @@ export function ArcaSettingsPage() {
   const families = [...new Set(connection.installedServices.filter(service => connection.enabledServices.includes(service.code)).map(service => service.family))]
     .filter(family => family in familyZones);
   const canActivate = connection.lastTestPassed === true && families.length > 0 && families.every(family => !!completions[family]);
+  // MA1-A: por qué sigue apagado, en el orden del alta; mientras trabaja, sin motivo.
+  const missing = families.find(family => !completions[family]);
+  const activateReason = canActivate || action.pending !== null ? null
+    : connection.lastTestPassed === null ? t("activateReason.notTested")
+    : connection.lastTestPassed === false ? t("activateReason.failed")
+    : missing ? t(familyZones[missing].missing) : null;
   const delegation = isDelegation(connection.mode);
   const guideSteps = families.flatMap(family => familyZones[family].guideSteps ?? []);
   // En delegación, la prueba de esta visita dice si la empresa revocó un servicio: el servidor guarda sólo el resultado general.
@@ -108,8 +116,9 @@ export function ArcaSettingsPage() {
   const actions = !canManage ? undefined
     : phase === "active" ? <ActionsMenu label={t("connectionActions")} triggerRef={actionsTrigger}
       items={[{ label: t("disconnect.action"), destructive: true, onSelect: () => setDisconnecting(true) }]} />
-    : connection.status === "Unverified" && families.length > 0 ? <Button pending={action.pending === "activate"} disabled={!canActivate || action.pending !== null} onClick={() => void activate()}>
-      {t(action.pending === "activate" ? "activating" : "activate")}</Button>
+    : connection.status === "Unverified" && families.length > 0 ? <DisabledReason reason={activateReason}>
+      <Button pending={action.pending === "activate"} disabled={!canActivate || action.pending !== null} onClick={() => void activate()}>
+        {t(action.pending === "activate" ? "activating" : "activate")}</Button></DisabledReason>
     : undefined;
 
   return <Page title={t("title")} status={status} actions={actions}>

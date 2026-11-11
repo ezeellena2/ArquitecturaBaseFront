@@ -141,6 +141,10 @@
   },
   "activate": "Activar la conexión",
   "activating": "Activando…",
+  "activateReason": {
+    "notTested": "Primero probá la conexión.",
+    "failed": "La última prueba no pasó: resolvé lo que marca y probá de nuevo."
+  },
   "connectionActions": "Acciones de la conexión",
   "disconnect": {
     "action": "Desconectar",
@@ -171,6 +175,7 @@
   },
   "invoicing": {
     "title": "Facturación · Punto de venta",
+    "missing": "Elegí el punto de venta.",
     "help": "Elegí uno que no use otro sistema: la numeración la lleva la plataforma.",
     "pointOfSale": "Punto de venta",
     "number": "Número",

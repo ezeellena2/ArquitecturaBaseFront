@@ -181,15 +181,34 @@ describe("ARCA settings", () => {
     renderRouteWithProviders("/configuracion/arca");
 
     expect(await screen.findByRole("heading", { name: "5 · Facturación · Punto de venta" })).toBeInTheDocument();
+    // MA1-A: apagado con su motivo, que se alcanza con Tab y el lector lee.
     const activate = screen.getByRole("button", { name: "Activar la conexión" });
-    expect(activate).toBeDisabled();
+    expect(activate).toHaveAttribute("aria-disabled", "true");
+    expect(activate).toHaveAccessibleDescription("Elegí el punto de venta.");
     expect(await screen.findByRole("radio", { name: "0003 · bloqueado en ARCA" })).toBeDisabled();
     await userEvent.click(screen.getByRole("radio", { name: "0005 · CAE - Factura" }));
-    await waitFor(() => expect(activate).toBeEnabled());
-    await userEvent.click(activate);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Activar la conexión" })).not.toHaveAttribute("aria-disabled"));
+    await userEvent.click(screen.getByRole("button", { name: "Activar la conexión" }));
 
     expect(await screen.findByText("Activa")).toBeInTheDocument();
     expect(chosen).toEqual([{ pointOfSale: 5 }]);
+  });
+
+  it("says the activation waits for a test while the connection was never tested", async () => {
+    current = unverified;
+    renderRouteWithProviders("/configuracion/arca");
+
+    const activate = await screen.findByRole("button", { name: "Activar la conexión" });
+    expect(activate).toHaveAttribute("aria-disabled", "true");
+    expect(activate).toHaveAccessibleDescription("Primero probá la conexión.");
+  });
+
+  it("says the activation waits for a test that passes after one that did not", async () => {
+    current = { ...unverified, lastTestPassed: false, lastTestedAtUtc: "2026-11-05T12:00:00Z", revision: 3 };
+    renderRouteWithProviders("/configuracion/arca");
+
+    expect(await screen.findByRole("button", { name: "Activar la conexión" }))
+      .toHaveAccessibleDescription("La última prueba no pasó: resolvé lo que marca y probá de nuevo.");
   });
 
   it("has no point of sale zone or activation without invoicing", async () => {
@@ -211,7 +230,9 @@ describe("ARCA settings", () => {
     // Probada en otra visita: sin el detalle por servicio, que vive en la prueba de esta visita.
     expect(screen.queryByText("Sin probar")).not.toBeInTheDocument();
     expect(screen.getAllByText("Lo usa esta empresa")).toHaveLength(2);
-    expect(screen.getByRole("switch", { name: "Lo usa esta empresa: Constancia de inscripción" })).toBeDisabled();
+    const required = screen.getByRole("switch", { name: "Lo usa esta empresa: Constancia de inscripción" });
+    expect(required).toBeDisabled();
+    expect(required).toHaveAccessibleDescription("Siempre: trae los datos de la empresa.");
     expect(screen.getByRole("switch", { name: "Lo usa esta empresa: Facturación electrónica" })).toBeChecked();
     expect(await screen.findByText("0005")).toBeInTheDocument();
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { DataList } from "@/shared/ui/DataList";
 import { FormField } from "@/shared/ui/FormField";
 import { DownloadIcon } from "@/shared/ui/icons";
@@ -81,10 +82,12 @@ function ServicesSection({ connection, canManage, lastTest, onChanged, onTested,
       before={delegation ? [{ key: "platform", label: t("delegation.platformRow"), value: `${platform.name} · ${platform.cuit}` }] : undefined}
       trailing={service => <span className="ml-auto inline-flex items-center gap-2 text-xs text-[var(--color-content-muted)]">
         <span aria-hidden="true">{t("services.usesLabel")}</span>
-        <Switch checked={service.required || connection.enabledServices.includes(service.code)}
-          disabled={!canManage || service.required || action.pending !== null}
-          aria-label={t("services.uses", { service: t(`services.names.${service.code}`, { defaultValue: service.code }) })}
-          onCheckedChange={checked => void toggle(service.code, checked)} />
+        {/* MA1-A: el obligatorio dice por qué no se apaga; sin permiso o mientras trabaja, sin motivo. */}
+        <DisabledReason reason={canManage && service.required ? t("data.requiredHelp") : null}>
+          <Switch checked={service.required || connection.enabledServices.includes(service.code)}
+            disabled={!canManage || service.required || action.pending !== null}
+            aria-label={t("services.uses", { service: t(`services.names.${service.code}`, { defaultValue: service.code }) })}
+            onCheckedChange={checked => void toggle(service.code, checked)} /></DisabledReason>
       </span>} />
   </Surface>;
 }
