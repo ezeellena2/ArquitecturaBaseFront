@@ -16,3 +16,7 @@ export interface ArcaFamilyActiveProps {
   canManage: boolean;
   onConflict: () => void;
 }
+
+/// Un paso que una familia suma a la guía de la delegación, del lado de la empresa, como dar de alta el punto de venta
+/// (DG2-A). `key` es la clave estable que comparte con el robot de la etapa 6; `textKey`, el texto en el espacio «arca».
+export interface ArcaFamilyGuideStep { key: string; textKey: string }

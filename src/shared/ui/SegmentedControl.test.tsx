@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { SegmentedControl } from "./SegmentedControl";
 
 describe("SegmentedControl", () => {
@@ -126,5 +127,25 @@ describe("SegmentedControl", () => {
     for (const name of ["Subir un archivo", "Pegar desde Excel"]) expect(screen.getByRole("button", { name })).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
     expect(onFile).not.toHaveBeenCalled();
+  });
+
+  it("keeps an option that is not available in the tab order and only shows why", async () => {
+    const onDelegation = vi.fn();
+    renderWithProviders(
+      <SegmentedControl
+        aria-label="Cómo se conecta"
+        options={[
+          { key: "company", label: "Certificado de la empresa", pressed: true, onSelect: vi.fn() },
+          { key: "delegation", label: "Delegación", pressed: false, onSelect: onDelegation, disabledReason: "Falta la plataforma." },
+        ]}
+      />,
+    );
+
+    // MA1-A: el motivo de lo apagado va sobre el mismo control y el clic sólo lo muestra.
+    const option = screen.getByRole("button", { name: "Delegación" });
+    expect(option).toHaveAttribute("aria-disabled", "true");
+    expect(option).toHaveAccessibleDescription("Falta la plataforma.");
+    await userEvent.click(option);
+    expect(onDelegation).not.toHaveBeenCalled();
   });
 });

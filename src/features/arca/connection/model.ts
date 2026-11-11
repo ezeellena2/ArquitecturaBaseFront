@@ -1,4 +1,4 @@
-import type { ArcaCertificate, ArcaConnection, ArcaEnvironment } from "./api";
+import type { ArcaAccessMode, ArcaCertificate, ArcaConnection, ArcaEnvironment, ArcaInstalledService } from "./api";
 
 const weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
 
@@ -43,10 +43,35 @@ export type ZoneState = "open" | "done" | "off";
 export interface SetupZones { data: ZoneState; request: ZoneState; certificate: ZoneState; test: ZoneState }
 
 /// La zona en curso abierta, las hechas plegadas con su resumen y las que siguen, apagadas. «Cambiar» reabre los datos.
-export function setupZonesOf(connection: ArcaConnection, editingData: boolean): SetupZones {
+/// En delegación, la zona de la prueba es la de la delegación: se pliega cuando la delegación llegó (DG2-A), salvo que se
+/// pida «Ver la guía».
+export function setupZonesOf(connection: ArcaConnection, editingData: boolean, showingGuide = false): SetupZones {
   if (connection.status === null || editingData) return { data: "open", request: "off", certificate: "off", test: "off" };
   if (connection.status === "AwaitingCertificate") return { data: "done", request: "done", certificate: "open", test: "off" };
-  return { data: "done", request: "done", certificate: "done", test: "open" };
+  const delegated = isDelegation(connection.mode) && connection.lastTestPassed === true && !showingGuide;
+  return { data: "done", request: "done", certificate: "done", test: delegated ? "done" : "open" };
+}
+
+/// Los modos en que la empresa delega sus servicios en la plataforma, que firma con su certificado (ADR 0027).
+export const isDelegation = (mode: ArcaAccessMode | null | undefined) => mode === "PlatformDelegation" || mode === "PlatformDelegationAutomated";
+
+/// Un paso de la guía de la delegación, con la clave estable que comparte con el robot de la etapa 6.
+export interface DelegationStep { key: string; service?: string }
+
+/// Los pasos de la delegación para los servicios elegidos (DG2-A). En producción, la empresa delega cada servicio que
+/// actúa en su nombre y la plataforma acepta y asigna cada uno a su alias; en homologación, la plataforma crea sola la
+/// autorización en WSASS. Las consultas no se delegan: la plataforma las autoriza para su alias (`authorize`).
+export function delegationStepsOf(chosen: readonly ArcaInstalledService[], environment: ArcaEnvironment) {
+  const delegated = chosen.filter(service => service.delegated);
+  const authorize: DelegationStep[] = chosen.filter(service => !service.delegated)
+    .map(service => ({ key: `platform.authorize.${service.code}`, service: service.code }));
+  const assign: DelegationStep[] = delegated.map(service => ({ key: `platform.assign.${service.code}`, service: service.code }));
+  if (environment === "Testing") return { authorize, company: [] as DelegationStep[], platform: assign };
+  return {
+    authorize,
+    company: delegated.map(service => ({ key: `company.delegate.${service.code}`, service: service.code })),
+    platform: delegated.length > 0 ? [{ key: "platform.accept" }, ...assign] : [],
+  };
 }
 
 /// Dónde se hacen los pasos en ARCA: en homologación, en WSASS.
@@ -54,3 +79,9 @@ export const arcaPortal: Record<ArcaEnvironment, string> = {
   Production: "https://auth.afip.gob.ar/contribuyente_/login.xhtml",
   Testing: "https://wsass-homo.afip.gob.ar/wsass/portal/main.aspx",
 };
+
+/// La plataforma de la conexión, con su nombre si la instalación la tiene configurada y su CUIT con guiones.
+export function platformOf(connection: ArcaConnection) {
+  const cuit = connection.platformCuit ?? connection.platform?.cuit ?? "";
+  return { name: connection.platform?.name ?? (cuit ? formatCuit(cuit) : ""), cuit: cuit ? formatCuit(cuit) : "" };
+}

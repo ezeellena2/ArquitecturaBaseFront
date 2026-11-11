@@ -15,7 +15,9 @@ import {
   type ArcaConnection, type ArcaTest,
 } from "./api";
 import { CertificatePicker } from "./CertificatePicker";
-import { certificateOf, expiryOf, isValidAlias } from "./model";
+import { DelegationGuide } from "./DelegationGuide";
+import type { ArcaFamilyGuideStep } from "./families";
+import { certificateOf, expiryOf, isDelegation, isValidAlias, platformOf } from "./model";
 import { ServiceRows } from "./ServiceRows";
 import { useArcaAction } from "./useArcaAction";
 import { useArcaFormat } from "./useArcaFormat";
@@ -29,9 +31,14 @@ interface ActiveSectionsProps {
   onChanged: (connection: ArcaConnection) => void;
   onTested: (test: ArcaTest) => void;
   onConflict: () => void;
+  /// En delegación, si la guía se ve dentro de «Delegación» y los pasos que suman las familias elegidas.
+  guideOpen?: boolean;
+  onGuideOpenChange?: (open: boolean) => void;
+  guideSteps?: readonly ArcaFamilyGuideStep[];
 }
 
-/// La conexión activa (AC2-A): los servicios con «Lo usa esta empresa» y la prueba, y el certificado con su renovación.
+/// La conexión activa (AC2-A): los servicios con «Lo usa esta empresa» y la prueba, y el certificado con su renovación. En
+/// delegación (DG3), «Delegación» con la plataforma en lugar de «Servicios», y el certificado de la plataforma.
 export function ActiveSections(props: ActiveSectionsProps) {
   return <>
     <ServicesSection {...props} />
@@ -39,11 +46,13 @@ export function ActiveSections(props: ActiveSectionsProps) {
   </>;
 }
 
-function ServicesSection({ connection, canManage, lastTest, onChanged, onTested, onConflict }: ActiveSectionsProps) {
+function ServicesSection({ connection, canManage, lastTest, onChanged, onTested, onConflict, guideOpen = false, onGuideOpenChange, guideSteps }: ActiveSectionsProps) {
   const { t } = useTranslation("arca");
   const format = useArcaFormat();
   const action = useArcaAction(onConflict);
   const alias = certificateOf(connection, "Active")?.alias ?? "";
+  const delegation = isDelegation(connection.mode);
+  const platform = platformOf(connection);
   async function test() {
     const result = await action.run("test", testArcaConnection);
     if (result) onTested(result);
@@ -53,17 +62,23 @@ function ServicesSection({ connection, canManage, lastTest, onChanged, onTested,
     const result = await action.run(`toggle:${code}`, () => chooseArcaServices(services, connection.revision));
     if (!result) return;
     onChanged(result);
-    // Un servicio nuevo se autoriza en ARCA antes de probarlo.
-    if (uses) notify({ id: "arca:service", kind: "info", message: t("services.authorize", { service: t(`services.names.${code}`, { defaultValue: code }) }) });
+    // Un servicio nuevo se autoriza en ARCA antes de probarlo; en delegación, la empresa lo delega en la plataforma.
+    const service = t(`services.names.${code}`, { defaultValue: code });
+    const delegated = delegation && connection.installedServices.some(item => item.code === code && item.delegated);
+    if (uses) notify({ id: "arca:service", kind: "info",
+      message: delegated ? t("delegation.delegateService", { service, platform: platform.name }) : t("services.authorize", { service }) });
   }
-  return <Surface title={t("services.title")} padded actions={<>
+  return <Surface title={t(delegation ? "delegation.title" : "services.title")} padded actions={<>
+    {delegation ? <Button variant="link" onClick={() => onGuideOpenChange?.(!guideOpen)}>{t(guideOpen ? "delegation.hideGuide" : "delegation.showGuide")}</Button> : null}
     {connection.lastTestedAtUtc ? <span className="text-xs text-[var(--color-content-muted)]">
       {t("test.lastTested", { date: format.date(connection.lastTestedAtUtc), time: format.time(connection.lastTestedAtUtc) })}</span> : null}
     {canManage ? <Button variant="outline" pending={action.pending === "test"} disabled={action.pending !== null} onClick={() => void test()}>
       {t(action.pending === "test" ? "test.running" : "test.run")}</Button> : null}
   </>}>
+    {delegation && guideOpen ? <DelegationGuide connection={connection} alias={alias} familySteps={guideSteps} /> : null}
     <ServiceRows services={connection.installedServices} checks={lastTest?.checks.filter(check => connection.enabledServices.includes(check.service))}
-      tested={connection.lastTestedAtUtc !== null} alias={alias}
+      tested={connection.lastTestedAtUtc !== null} alias={alias} delegation={delegation}
+      before={delegation ? [{ key: "platform", label: t("delegation.platformRow"), value: `${platform.name} · ${platform.cuit}` }] : undefined}
       trailing={service => <span className="ml-auto inline-flex items-center gap-2 text-xs text-[var(--color-content-muted)]">
         <span aria-hidden="true">{t("services.usesLabel")}</span>
         <Switch checked={service.required || connection.enabledServices.includes(service.code)}
@@ -80,7 +95,9 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
   const action = useArcaAction(onConflict);
   const active = certificateOf(connection, "Active");
   const pending = certificateOf(connection, "Pending");
-  const [alias, setAlias] = useState("");
+  const delegation = isDelegation(connection.mode);
+  // En delegación conviene renovar con el mismo alias: las delegaciones siguen asignadas a él.
+  const [alias, setAlias] = useState(delegation ? active?.alias ?? "" : "");
   const [aliasError, setAliasError] = useState<string>();
   const [certificateError, setCertificateError] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
@@ -91,8 +108,9 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
     setAliasError(undefined);
     const result = await action.run("renew", () => startArcaCertificateRequest({
       cuit: connection.cuit ?? "", environment: connection.environment ?? "Production", alias, services: connection.enabledServices, expectedRevision: connection.revision,
+      mode: connection.mode ?? undefined,
     }));
-    if (result) { onRenewingChange(false); setAlias(""); onChanged(result); }
+    if (result) { onRenewingChange(false); setAlias(delegation ? alias : ""); onChanged(result); }
   }
   async function download() {
     const file = await action.run("download", downloadArcaRequest);
@@ -113,7 +131,7 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
   }
 
   const expiry = active?.notAfterUtc ? format.date(active.notAfterUtc) : "—";
-  return <Surface title={t("certificate.title")} padded actions={canManage && !pending && !renewing
+  return <Surface title={t(delegation ? "certificate.platformTitle" : "certificate.title")} padded actions={canManage && !pending && !renewing
     ? <Button variant="outline" disabled={action.pending !== null} onClick={() => onRenewingChange(true)}>{t("certificate.renew")}</Button> : undefined}>
     {pending ? <>
       <DataList items={[
@@ -133,7 +151,7 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
       { key: "expires", label: t(expired ? "certificate.expired" : "certificate.expires"), value: expiry },
     ]} />}
     {renewing && !pending ? <div className="flex flex-wrap items-end gap-2">
-      <div className="min-w-0 flex-1 sm:max-w-sm"><FormField label={t("certificate.renewAlias")} help={t("data.aliasHelp")} error={aliasError} required>
+      <div className="min-w-0 flex-1 sm:max-w-sm"><FormField label={t("certificate.renewAlias")} help={t(delegation ? "certificate.renewAliasHelp" : "data.aliasHelp")} error={aliasError} required>
         <Input value={alias} autoComplete="off" spellCheck={false} autoCapitalize="none" maxLength={30} disabled={action.pending !== null} onChange={event => setAlias(event.target.value)} />
       </FormField></div>
       <Button variant="outline" disabled={action.pending !== null} onClick={() => onRenewingChange(false)}>{t("data.cancel")}</Button>

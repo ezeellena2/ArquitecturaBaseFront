@@ -33,7 +33,17 @@
     "generating": "Generando…",
     "change": "Cambiar",
     "cancel": "Cancelar",
-    "summary": "{{cuit}} · {{environment}} · alias «{{alias}}»"
+    "summary": "{{cuit}} · {{environment}} · alias «{{alias}}»",
+    "mode": "Cómo se conecta",
+    "modeHelp": "Con el certificado de la empresa, la empresa genera su certificado acá y lo da de alta en ARCA. Con delegación, la empresa delega sus servicios en la CUIT de la plataforma, que firma con su certificado.",
+    "modeCompany": "Certificado de la empresa",
+    "modeDelegation": "Delegación en {{platform}}",
+    "modeDelegationUnknown": "Delegación en la plataforma",
+    "platformMissing": "La instalación no tiene configurada la CUIT de la plataforma.",
+    "companyCuit": "CUIT de la empresa",
+    "platformAlias": "Alias de la plataforma",
+    "platformAliasHelp": "El nombre del certificado de {{platform}} para esta instalación. Conviene uno propio por instalación: ARCA asigna las delegaciones por alias.",
+    "delegationSummary": "{{cuit}} · {{environment}} · Delegación en {{platform}}"
   },
   "request": {
     "title": "Pedido de certificado",
@@ -68,7 +78,10 @@
     "cancelRenewal": "Cancelar la renovación",
     "cancelling": "Cancelando…",
     "soon": "El certificado vence el {{date}}. Renovalo antes para no cortar la facturación.",
-    "expiredBanner": "El certificado venció el {{date}}. No se puede emitir hasta renovarlo."
+    "expiredBanner": "El certificado venció el {{date}}. No se puede emitir hasta renovarlo.",
+    "platformTitle": "Certificado de la plataforma",
+    "platformBy": "Lo hace {{platform}}, con su clave fiscal",
+    "renewAliasHelp": "Conviene el mismo alias: las delegaciones siguen asignadas a él."
   },
   "test": {
     "title": "Prueba",
@@ -78,6 +91,29 @@
     "lastTested": "Probado el {{date}} a las {{time}}",
     "notTested": "Sin probar"
   },
+  "delegation": {
+    "title": "Delegación",
+    "company": "Lo hace la empresa, con su clave fiscal",
+    "platform": "Lo hace {{platform}}, con su clave fiscal",
+    "delegate": "En «Administrador de Relaciones de Clave Fiscal», «Nueva Relación»: elegí ARCA › WebServices › «{{service}}» y, en «Representante», la CUIT {{cuit}}.",
+    "pointOfSale": "En «Administración de puntos de ventas y domicilios» › «A/B/M de puntos de ventas», agregá uno de web service: «Factura Electrónica - Monotributo - Web Service» si es monotributista, o «RECE para aplicativo y Web Service» si es responsable inscripto.",
+    "accept": "En «Aceptación de Designación», aceptá la delegación de la CUIT {{cuit}}.",
+    "assign": "En «Administrador de Relaciones de Clave Fiscal», representando a la empresa, «Nueva Relación»: «{{service}}» con el computador fiscal «{{alias}}».",
+    "assignTesting": "En WSASS, «Crear autorización a servicio»: el alias «{{alias}}», la CUIT {{cuit}} como «CUIT representado» y el servicio «{{code}}».",
+    "authorize": "En «Administrador de Relaciones de Clave Fiscal», a nombre de {{platform}}, autorizá {{service}} para el alias: la plataforma la consulta con su CUIT.",
+    "copyCuit": "Copiar la CUIT {{cuit}}",
+    "copied": "Copiamos la CUIT.",
+    "current": "Seguí desde acá",
+    "verify": "Verificar la delegación",
+    "verifying": "Verificando…",
+    "summary": "Delegada en {{platform}}",
+    "showGuide": "Ver la guía",
+    "hideGuide": "Ocultar la guía",
+    "openWsass": "Abrir WSASS",
+    "platformRow": "Plataforma",
+    "revoked": "La empresa ya no delega {{services}} en {{platform}}. Hasta que vuelva a delegarlo, no se puede emitir.",
+    "delegateService": "Delegá {{service}} en {{platform}} y verificá la delegación."
+  },
   "checks": {
     "Ready": "Responde",
     "ticket": "Ticket vigente hasta las {{time}}",
@@ -85,7 +121,10 @@
     "Blocked": "ARCA no acepta otro pedido hasta las {{time}}",
     "ClockSkew": "La hora del servidor no coincide con la de ARCA",
     "Unavailable": "ARCA no respondió",
-    "Failed": "ARCA rechazó la consulta"
+    "Failed": "ARCA rechazó la consulta",
+    "NotDelegated": "Sin delegar",
+    "NotAssigned": "Sin asignar al alias «{{alias}}»",
+    "platformCuit": "Con la CUIT de la plataforma"
   },
   "services": {
     "title": "Servicios",
@@ -95,6 +134,9 @@
     "names": {
       "ws_sr_constancia_inscripcion": "Constancia de inscripción",
       "wsfe": "Facturación electrónica"
+    },
+    "arcaNames": {
+      "wsfe": "Facturacion Electronica"
     }
   },
   "activate": "Activar la conexión",

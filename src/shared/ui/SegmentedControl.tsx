@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import { cn } from "@/shared/lib/utils";
+import { DisabledReason } from "./DisabledReason";
 
 export interface SegmentedOption {
   key: string;
   label: ReactNode;
   pressed: boolean;
   onSelect: () => void;
+  /// Por qué la opción no está disponible: queda apagada, con el motivo sobre ella (MA1-A).
+  disabledReason?: string;
 }
 
 /// Un segmentado: pocas opciones fijas, a la vista y de un clic, en vez de un desplegable que pide dos. Lo usan
@@ -19,7 +22,8 @@ export interface SegmentedOption {
 /// `fullWidth` lo estira al ancho de su contenedor, en partes iguales: es la forma que tiene en una tarjeta
 /// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
 ///
-/// `disabled` apaga todas las opciones mientras su dueño trabaja, como el origen de una importación que revisa.
+/// `disabled` apaga todas las opciones mientras su dueño trabaja, como el origen de una importación que revisa. Una opción
+/// sola se apaga con `disabledReason`, que dice por qué, como la delegación de ARCA sin la plataforma configurada.
 ///
 /// La elegida va rellena con el color de los botones y su texto en blanco o negro, el que más contraste dé (OE1-A,
 /// 2026-11-03); las otras quedan blancas. Antes era un verde casi blanco sobre blanco y no se sabía cuál estaba elegida,
@@ -47,7 +51,8 @@ export function SegmentedControl({
         appearance === "public" ? undefined : fullWidth ? "flex w-full" : "inline-flex",
       )}
     >
-      {options.map((option) => (
+      {options.map((option) => {
+        const button = (
         <button
           key={option.key}
           // Sin `type`, adentro de un formulario (el editor de un rol) el botón lo enviaría.
@@ -62,12 +67,14 @@ export function SegmentedControl({
             fullWidth ? "flex-1" : "",
             appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-600)] font-semibold text-[var(--color-brand-ink)]"
-              : "font-medium text-[var(--color-content)] enabled:hover:bg-[var(--color-surface-muted)]",
+              : "font-medium text-[var(--color-content)] enabled:hover:bg-[var(--color-surface-muted)] aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent",
           )}
         >
           {option.label}
         </button>
-      ))}
+        );
+        return option.disabledReason ? <DisabledReason key={option.key} reason={option.disabledReason}>{button}</DisabledReason> : button;
+      })}
     </div>
   );
 }

@@ -15,8 +15,9 @@ const registry = "ws_sr_constancia_inscripcion";
 const invoicing = "wsfe";
 const day = 24 * 60 * 60 * 1000;
 const none: ArcaConnection = {
-  status: null, mode: null, environment: null, cuit: null, enabledServices: [], certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 0,
-  installedServices: [{ code: registry, family: "Registry", required: true }, { code: invoicing, family: "Invoicing", required: false }],
+  status: null, mode: null, environment: null, cuit: null, platformCuit: null, platform: null, enabledServices: [], certificates: [], lastTestPassed: null,
+  lastTestedAtUtc: null, revision: 0,
+  installedServices: [{ code: registry, family: "Registry", required: true, delegated: false }, { code: invoicing, family: "Invoicing", required: false, delegated: true }],
 };
 const pendingRequest = (alias = "plataforma"): ArcaCertificate => ({ role: "Pending", alias, isLoaded: false, notBeforeUtc: null, notAfterUtc: null, thumbprint: null });
 const activeCertificate = (notAfterUtc = new Date(Date.now() + 700 * day).toISOString()): ArcaCertificate =>
@@ -25,6 +26,11 @@ const awaiting: ArcaConnection = { ...none, status: "AwaitingCertificate", mode:
   enabledServices: [registry, invoicing], certificates: [pendingRequest()], revision: 1 };
 const unverified: ArcaConnection = { ...awaiting, status: "Unverified", certificates: [activeCertificate()], revision: 2 };
 const active: ArcaConnection = { ...unverified, status: "Active", lastTestPassed: true, lastTestedAtUtc: "2026-11-05T12:00:00Z", revision: 4 };
+const platform = { cuit: "30719998883", name: "Plataforma Ejemplo S.A." };
+const delegatedAwaiting: ArcaConnection = { ...awaiting, platform, mode: "PlatformDelegation", platformCuit: platform.cuit };
+const delegatedUnverified: ArcaConnection = { ...delegatedAwaiting, status: "Unverified", certificates: [activeCertificate()], lastTestPassed: false,
+  lastTestedAtUtc: "2026-11-05T12:00:00Z", revision: 3 };
+const delegatedActive: ArcaConnection = { ...delegatedUnverified, status: "Active", lastTestPassed: true, revision: 5 };
 
 let current: ArcaConnection;
 let permissions: string[];
@@ -42,7 +48,8 @@ beforeEach(() => {
       const body = await request.json() as StartArcaRequest;
       starts.push(body);
       current = current.status === null
-        ? { ...awaiting, environment: body.environment, cuit: body.cuit.replace(/-/g, ""), certificates: [pendingRequest(body.alias)] }
+        ? { ...(body.mode === "PlatformDelegation" ? delegatedAwaiting : awaiting), platform: current.platform, environment: body.environment,
+          cuit: body.cuit.replace(/-/g, ""), certificates: [pendingRequest(body.alias)] }
         : { ...current, certificates: [...current.certificates.filter(item => item.role === "Active"), pendingRequest(body.alias)], revision: current.revision + 1 };
       return HttpResponse.json(current);
     }),
@@ -93,7 +100,8 @@ describe("ARCA settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
 
     expect(await screen.findByText("20-00000006-0 · Producción · alias «plataforma»")).toBeInTheDocument();
-    expect(starts).toEqual([{ cuit: "20000000060", environment: "Production", alias: "plataforma", services: [registry, invoicing], expectedRevision: 0 }]);
+    expect(starts).toEqual([{ cuit: "20000000060", environment: "Production", alias: "plataforma", services: [registry, invoicing], expectedRevision: 0,
+      mode: "CompanyCertificate" }]);
     expect(screen.getByRole("button", { name: "Descargar de nuevo" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "3 · Certificado" })).toHaveFocus();
   });
@@ -254,5 +262,96 @@ describe("ARCA settings", () => {
 
     expect(await screen.findByText("Sin conexión con ARCA")).toBeInTheDocument();
     expect(deleted).toEqual(["?expectedRevision=4"]);
+  });
+});
+
+describe("ARCA settings by delegation", () => {
+  const notDelegated = { service: invoicing, status: "NotDelegated" as const, failureCode: null, ticketExpiresAtUtc: null, retryAfterUtc: null };
+
+  it("chooses the delegation in the details and requests the certificate for the platform", async () => {
+    current = { ...none, platform };
+    renderRouteWithProviders("/configuracion/arca");
+    await userEvent.click(await screen.findByRole("button", { name: "Conectar con ARCA" }));
+    await userEvent.click(within(screen.getByRole("group", { name: "Cómo se conecta" })).getByRole("button", { name: "Delegación en Plataforma Ejemplo S.A." }));
+    await userEvent.type(screen.getByRole("textbox", { name: "CUIT de la empresa" }), "20-00000006-0");
+    await userEvent.type(screen.getByRole("textbox", { name: "Alias de la plataforma" }), "plataforma");
+    await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
+
+    expect(await screen.findByText("20-00000006-0 · Producción · Delegación en Plataforma Ejemplo S.A.")).toBeInTheDocument();
+    expect(starts.at(-1)).toMatchObject({ cuit: "20000000060", alias: "plataforma", mode: "PlatformDelegation" });
+    expect(screen.getByRole("heading", { name: "3 · Certificado de la plataforma" })).toHaveFocus();
+    expect(screen.getByText("Lo hace Plataforma Ejemplo S.A., con su clave fiscal")).toBeInTheDocument();
+    // La constancia no se delega: la plataforma la autoriza para su alias y la consulta con su CUIT.
+    expect(screen.getByText(/a nombre de Plataforma Ejemplo S.A., autorizá Constancia de inscripción para el alias/)).toBeInTheDocument();
+  });
+
+  it("keeps the delegation off with its reason when the installation has no platform", async () => {
+    renderRouteWithProviders("/configuracion/arca");
+    await userEvent.click(await screen.findByRole("button", { name: "Conectar con ARCA" }));
+
+    const delegation = within(screen.getByRole("group", { name: "Cómo se conecta" })).getByRole("button", { name: "Delegación en la plataforma" });
+    expect(delegation).toHaveAttribute("aria-disabled", "true");
+    expect(delegation).toHaveAccessibleDescription("La instalación no tiene configurada la CUIT de la plataforma.");
+    await userEvent.click(delegation);
+    expect(screen.getByRole("textbox", { name: "CUIT" })).toBeInTheDocument();
+  });
+
+  it("guides the delegation in two lists and says which service has not arrived yet", async () => {
+    current = delegatedUnverified;
+    server.use(http.post("/api/arca/connection/test", () => HttpResponse.json(tested([ready(registry), notDelegated], delegatedUnverified))));
+    renderRouteWithProviders("/configuracion/arca");
+
+    expect(await screen.findByRole("heading", { name: "4 · Delegación" })).toBeInTheDocument();
+    const company = screen.getByRole("region", { name: "Lo hace la empresa, con su clave fiscal" });
+    expect(within(company).getByText(/elegí ARCA › WebServices › «Facturacion Electronica» y, en «Representante», la CUIT 30-71999888-3/)).toBeInTheDocument();
+    expect(within(company).getByText(/agregá uno de web service/)).toBeInTheDocument();
+    const platformSteps = screen.getByRole("region", { name: "Lo hace Plataforma Ejemplo S.A., con su clave fiscal" });
+    expect(within(platformSteps).getByText("En «Aceptación de Designación», aceptá la delegación de la CUIT 20-00000006-0.")).toBeInTheDocument();
+    expect(within(platformSteps).getByText(/«Facturacion Electronica» con el computador fiscal «plataforma»/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Verificar la delegación" }));
+
+    expect(await screen.findByText("Sin delegar")).toBeInTheDocument();
+    expect(screen.getByText("Con la CUIT de la plataforma")).toBeInTheDocument();
+  });
+
+  it("folds the delegation once it arrived, opens the point of sale and shows the guide again on request", async () => {
+    current = { ...delegatedUnverified, lastTestPassed: true };
+    renderRouteWithProviders("/configuracion/arca");
+
+    expect(await screen.findByText("Delegada en Plataforma Ejemplo S.A.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "5 · Facturación · Punto de venta" })).toBeInTheDocument();
+    expect(screen.queryByText("Lo hace la empresa, con su clave fiscal")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ver la guía" }));
+    expect(screen.getByText("Lo hace la empresa, con su clave fiscal")).toBeInTheDocument();
+  });
+
+  it("has a single step of the platform in WSASS in homologation", async () => {
+    current = { ...delegatedUnverified, environment: "Testing" };
+    renderRouteWithProviders("/configuracion/arca");
+
+    expect(await screen.findByText(/En WSASS, «Crear autorización a servicio»: el alias «plataforma», la CUIT 20-00000006-0 como «CUIT representado» y el servicio «wsfe»/))
+      .toBeInTheDocument();
+    expect(screen.queryByText("Lo hace la empresa, con su clave fiscal")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Abrir WSASS" })).toBeInTheDocument();
+  });
+
+  it("shows the active delegation with its platform, warns when the company revokes it and renews with the same alias", async () => {
+    current = delegatedActive;
+    server.use(http.post("/api/arca/connection/test", () => HttpResponse.json(tested([ready(registry), notDelegated],
+      { ...delegatedActive, status: "NeedsAttention", lastTestPassed: false, revision: 6 }))));
+    renderRouteWithProviders("/configuracion/arca");
+
+    for (const title of ["Delegación", "Certificado de la plataforma"]) expect(await screen.findByRole("heading", { name: title })).toBeInTheDocument();
+    expect(screen.getByText("Plataforma Ejemplo S.A. · 30-71999888-3")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Probar" }));
+    expect(await screen.findByText(/La empresa ya no delega Facturación electrónica en Plataforma Ejemplo S.A./)).toBeInTheDocument();
+    expect(screen.getByText("Requiere atención")).toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole("button", { name: "Ver la guía" })[0]);
+    expect(screen.getByText("Lo hace la empresa, con su clave fiscal")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Renovar" }));
+    expect(screen.getByRole("textbox", { name: "Alias del certificado nuevo" })).toHaveValue("plataforma");
   });
 });

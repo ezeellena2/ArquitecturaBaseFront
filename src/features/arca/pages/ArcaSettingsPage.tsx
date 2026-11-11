@@ -14,23 +14,27 @@ import { Surface } from "@/shared/ui/Surface";
 import { ActiveSections } from "../connection/ActiveSections";
 import { arcaConnectionQueryKey, arcaQueryKey, fetchArcaConnection, type ArcaConnection, type ArcaTest } from "../connection/api";
 import { DisconnectDialog } from "../connection/DisconnectDialog";
-import type { ArcaFamilyActiveProps, ArcaFamilySetupProps } from "../connection/families";
-import { certificateOf, expiryOf, phaseOf } from "../connection/model";
+import type { ArcaFamilyActiveProps, ArcaFamilyGuideStep, ArcaFamilySetupProps } from "../connection/families";
+import { certificateOf, expiryOf, isDelegation, phaseOf, platformOf } from "../connection/model";
 import { SetupZones } from "../connection/SetupZones";
 import { useArcaAction } from "../connection/useArcaAction";
 import { useArcaFormat } from "../connection/useArcaFormat";
+import { pointOfSaleGuideStep } from "../invoicing/guide";
 import { PointOfSaleSection, PointOfSaleZone } from "../invoicing/PointOfSaleZone";
 import { CompanySection } from "../registry/CompanySection";
 
-/// Las familias que suman una zona propia, por su nombre en el servidor: quitar una es borrar su carpeta y su línea.
-const familyZones: Record<string, { Setup: ComponentType<ArcaFamilySetupProps>; Active: ComponentType<ArcaFamilyActiveProps> }> = {
-  Invoicing: { Setup: PointOfSaleZone, Active: PointOfSaleSection },
+/// Las familias que suman una zona propia, por su nombre en el servidor, y los pasos que suman a la guía de la delegación:
+/// quitar una es borrar su carpeta y su línea.
+const familyZones: Record<string, {
+  Setup: ComponentType<ArcaFamilySetupProps>; Active: ComponentType<ArcaFamilyActiveProps>; guideSteps?: readonly ArcaFamilyGuideStep[];
+}> = {
+  Invoicing: { Setup: PointOfSaleZone, Active: PointOfSaleSection, guideSteps: [pointOfSaleGuideStep] },
 };
 
 /// La conexión con ARCA en una sola pantalla: sin conexión, el alta por zonas (AC1-A) o la conexión activa (AC2-A).
 /// Nada vive en la URL.
 export function ArcaSettingsPage() {
-  const { t } = useTranslation("arca");
+  const { t, i18n } = useTranslation("arca");
   const permissions = usePermissions();
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: arcaConnectionQueryKey, queryFn: ({ signal }) => fetchArcaConnection(signal), refetchOnMount: "always", retry: false });
@@ -40,6 +44,7 @@ export function ArcaSettingsPage() {
   const [conflict, setConflict] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [renewing, setRenewing] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [completions, setCompletions] = useState<Record<string, (() => Promise<void>) | null>>({});
   // Los avisos de vencimiento se calculan con la hora en que se abrió la pantalla.
   const [now] = useState(() => Date.now());
@@ -76,6 +81,11 @@ export function ArcaSettingsPage() {
   const families = [...new Set(connection.installedServices.filter(service => connection.enabledServices.includes(service.code)).map(service => service.family))]
     .filter(family => family in familyZones);
   const canActivate = connection.lastTestPassed === true && families.length > 0 && families.every(family => !!completions[family]);
+  const delegation = isDelegation(connection.mode);
+  const guideSteps = families.flatMap(family => familyZones[family].guideSteps ?? []);
+  // En delegación, la prueba de esta visita dice si la empresa revocó un servicio: el servidor guarda sólo el resultado general.
+  const revoked = delegation && phase === "active"
+    ? connection.installedServices.filter(service => lastTest?.checks.some(check => check.service === service.code && check.status === "NotDelegated")) : [];
 
   async function activate() {
     const done = await action.run("activate", async () => {
@@ -106,7 +116,7 @@ export function ArcaSettingsPage() {
       {phase === "empty" && !starting ? <EmptyState title={t("empty.title")}
         action={canManage ? <Button onClick={() => setStarting(true)}>{t("empty.connect")}</Button> : undefined} /> : null}
       {phase === "setup" || (phase === "empty" && starting) ? <SetupZones connection={connection} canManage={canManage} lastTest={lastTest}
-        onChanged={changed} onTested={tested} onConflict={openConflict} testDetail={<CompanySection cuit={connection.cuit} embedded />}>
+        onChanged={changed} onTested={tested} onConflict={openConflict} testDetail={<CompanySection cuit={connection.cuit} embedded />} guideSteps={guideSteps}>
         {families.map((family, index) => {
           const Zone = familyZones[family].Setup;
           return <Zone key={family} step={5 + index} connection={connection} canManage={canManage} open={connection.lastTestPassed === true} onReady={readyHandlers[family]} />;
@@ -117,9 +127,15 @@ export function ArcaSettingsPage() {
           action={canManage && !certificateOf(connection, "Pending") ? <Button variant="outline" onClick={() => setRenewing(true)}>{t("certificate.renew")}</Button> : undefined}>
           {t(expiry === "expired" ? "certificate.expiredBanner" : "certificate.soon", { date: format.date(active.notAfterUtc) })}
         </Banner> : null}
+        {revoked.length > 0 ? <Banner tone="danger" action={guideOpen ? undefined : <Button variant="outline" onClick={() => setGuideOpen(true)}>{t("delegation.showGuide")}</Button>}>
+          {t("delegation.revoked", {
+            services: new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(revoked.map(service => t(`services.names.${service.code}`, { defaultValue: service.code }))),
+            platform: platformOf(connection).name,
+          })}
+        </Banner> : null}
         <CompanySection cuit={connection.cuit} />
         <ActiveSections connection={connection} canManage={canManage} lastTest={lastTest} renewing={renewing} onRenewingChange={setRenewing}
-          onChanged={changed} onTested={tested} onConflict={openConflict} />
+          onChanged={changed} onTested={tested} onConflict={openConflict} guideOpen={guideOpen} onGuideOpenChange={setGuideOpen} guideSteps={guideSteps} />
         {families.map(family => {
           const Section = familyZones[family].Active;
           return <Section key={family} connection={connection} canManage={canManage} onConflict={openConflict} />;

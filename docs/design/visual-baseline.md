@@ -479,6 +479,8 @@ revisión pendiente como motivo. Recorridos:
   habilitan de a una (AC1-A) y la conexión activa, por zonas con su acción en la banda (AC2-A); los estados son los de AC3.
 - Cada familia de servicios suma su zona; hoy, Facturación con el punto de venta. Capturas `arca-*.png`.
 - Tableros, textos, lo que se fijó al registrar y piezas: [arca-conexion.md](arca-conexion.md).
+- La delegación guiada (2026-11-11, DG1-A y DG2-A): «Cómo se conecta» en «Datos», el certificado de la plataforma y la
+  zona «Delegación» con la guía en dos listas, por quien hace cada paso: [arca-delegacion.md](arca-delegacion.md).
 
 ### Chat de WhatsApp
 
