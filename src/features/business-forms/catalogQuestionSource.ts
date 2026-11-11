@@ -11,6 +11,8 @@ export function copyCatalogQuestionSource(source: DraftQuestionSource): DraftQue
       presentation: source.presentation ? { title: [...source.presentation.title], description: [...source.presentation.description] } : null,
     } : {}),
     ...(source.groupBy !== undefined ? { groupBy: source.groupBy } : {}),
+    // IV1-A: the option the standard makes a new answer start with travels as it came.
+    ...(source.default !== undefined ? { default: source.default } : {}),
   };
 }
 
@@ -23,6 +25,7 @@ export function normalizeCatalogQuestionSource(source: DraftQuestionSource): Dra
     ...(copied.match?.length ? { match: [...copied.match].sort((left, right) => left.fieldId < right.fieldId ? -1 : left.fieldId > right.fieldId ? 1 : 0) } : {}),
     ...(copied.presentation ? { presentation: copied.presentation } : {}),
     ...(copied.groupBy ? { groupBy: copied.groupBy } : {}),
+    ...(copied.default ? { default: copied.default } : {}),
   };
 }
 
@@ -34,7 +37,7 @@ export function groupByFields(fields: readonly CatalogField[]): readonly Catalog
 export function sameCatalogQuestionSource(left: DraftQuestionSource | null | undefined, right: DraftQuestionSource | null | undefined): boolean {
   if (!left || !right) return !left && !right;
   const a = normalizeCatalogQuestionSource(left), b = normalizeCatalogQuestionSource(right);
-  if (a.catalog !== b.catalog || (a.groupBy ?? null) !== (b.groupBy ?? null)) return false;
+  if (a.catalog !== b.catalog || (a.groupBy ?? null) !== (b.groupBy ?? null) || (a.default ?? null) !== (b.default ?? null)) return false;
   const aMatches = a.match ?? [], bMatches = b.match ?? [];
   if (aMatches.length !== bMatches.length || aMatches.some((match, index) => {
     const other = bMatches[index]!;

@@ -49,6 +49,14 @@ revisó con dos muestras dibujadas por el renderer real. La regla está en [ARCA
   vale al recibir o al aprobar, una por regla y antes de los mensajes, y los mensajes que siguen suman en «Agregar dato» el
   grupo «De «…»» con los datos de su resultado.
 
+## Lo que se fijó al programar
+
+- **IV2-A (2026-11-11).** La casilla es genérica: el estándar declara en la pregunta atada sus casillas (`toggles`: clave, texto y
+  (i) por idioma y el valor con que empiezan) y el editor dibuja una por cada una con el texto del estándar, sin textos propios
+  en `forms.json`. «El precio incluye IVA» llega al emisor como el dato `pricesIncludeVat` («true» o «false»).
+- **IV1-A, la alícuota en 21 % (2026-11-11).** El estándar declara por código la opción con que empieza «Alícuota» (el 5); la
+  carga la trae elegida en cada ítem nuevo y se puede cambiar. WhatsApp no la muestra elegida: el emisor toma 21 % si falta.
+
 ## Pendiente
 
 - La casilla de IV2-A en el editor y la columna «Alícuota» del estándar «Factura» (etapa 3, tarea 11).

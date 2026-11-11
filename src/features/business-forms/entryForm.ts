@@ -44,11 +44,18 @@ export function entryBlock(entry: FormEntry): { group: FormEntryQuestion; questi
   return { group: entry.questions[index], questions };
 }
 
+/**
+ * The option a catalog question starts with: the only one the filters leave or, IV1-A, the one the form's standard declares
+ * («Alícuota» in 21 %). Choosing just that is not loading anything yet.
+ */
+export const entryStartingOption = (question: FormEntryQuestion | undefined): FormEntryOption | null =>
+  question?.catalog?.onlyOption ?? question?.catalog?.default ?? null;
+
 let itemSequence = 0;
-// A new item, with the only option the filters leave already chosen, as a loose question starts.
+// A new item, with the option each list starts with already chosen, as a loose question starts.
 function newItem(questions: readonly FormEntryQuestion[]): EntryItem {
   const choices: Record<string, FormEntryOption[]> = {};
-  for (const question of questions) if (question.catalog?.onlyOption) choices[question.fieldId] = [question.catalog.onlyOption];
+  for (const question of questions) { const starting = entryStartingOption(question); if (starting) choices[question.fieldId] = [starting]; }
   return { key: "item-" + ++itemSequence, values: {}, choices };
 }
 const itemsOf = (draft: EntryDraft, blockId: string) => draft.rows?.[blockId] ?? [];
@@ -135,10 +142,13 @@ export function entryTextRows(question: FormEntryQuestion): number {
   return Math.min(6, Math.max(2, Math.ceil((question.maxLength ?? 600) / 100)));
 }
 
-/** Empty, except the only catalog option the filters leave for the person, which comes chosen; the block starts with its minimum of items. */
+/**
+ * Empty, except the option each catalog list starts with (the only one the filters leave for the person, or the one the standard
+ * declares), which comes chosen; the block starts with its minimum of items.
+ */
 export function initialEntryDraft(entry: FormEntry): EntryDraft {
   const choices: Record<string, FormEntryOption[]> = {};
-  for (const question of entry.questions) if (question.catalog?.onlyOption && !question.repeated) choices[question.fieldId] = [question.catalog.onlyOption];
+  for (const question of entry.questions) { const starting = entryStartingOption(question); if (starting && !question.repeated) choices[question.fieldId] = [starting]; }
   const draft: EntryDraft = { values: {}, choices, files: {} };
   const block = entryBlock(entry);
   if (block) draft.rows = { [block.group.fieldId]: Array.from({ length: block.group.rows?.minRows ?? 0 }, () => newItem(block.questions)) };
@@ -288,12 +298,12 @@ export function entryProblemQuestion(entry: FormEntry, key: string): { question:
   return group && question ? { question, group, row: Number(row) } : null;
 }
 
-/** Whether an item holds something besides the only option the filters leave: leaving with it asks first. */
+/** Whether an item holds something besides the option each list starts with: leaving with it asks first. */
 export function entryItemsLoaded(entry: FormEntry, draft: EntryDraft): boolean {
   const block = entryBlock(entry);
   return !!block && itemsOf(draft, block.group.fieldId).some(item => Object.values(item.values).some(value => value !== "")
     || Object.entries(item.choices).some(([fieldId, chosen]) => chosen.length > 0
-      && block.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id));
+      && entryStartingOption(block.questions.find(question => question.fieldId === fieldId))?.id !== chosen[0]?.id));
 }
 
 /** The files a question carries: the new ones and, in a correction, those of the replaced response that stay. */

@@ -11,7 +11,7 @@ import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { PencilIcon, ChevronDownIcon, LockIcon, TrashIcon } from "@/shared/ui/icons";
-import { keepsQuestionIdentity, localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
+import { administrativeName, keepsQuestionIdentity, localizedValue, missingQuestionTexts, moveItem, replaceQuestionType, questionEditorType, changeQuestionCatalog, type QuestionEditorType } from "../editorModel";
 import type { CatalogQuestionPreview, DraftQuestion, FormCulture } from "../model";
 import { localizedIssue, localizedIssueMessage, type DraftFieldIssue } from "../validationPaths";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
@@ -165,6 +165,9 @@ export function QuestionEditor({ question, position, number, total, culture, ori
           {/* A calculation is never required (CA1-A). */}
           {question.type !== "photo" && question.type !== "document" && question.type !== "group" && !calculated ? <CheckboxField label={t("required")} error={fieldError("required")} checked={question.required} disabled={readOnly || bound} disabledReason={locked} onCheckedChange={checked => onChange(question.type === "multiChoice" ? { ...question, required: checked, selection: { ...question.selection, minSelected: checked ? Math.max(1, question.selection.minSelected ?? 0) : 0 } } : { ...question, required: checked })} /> : null}
           {onRepeatedChange && canRepeat(question) ? <CheckboxField label={t("rows.repeated")} help={t("rows.repeatedHint")} error={fieldError("repeated")} checked={repeated} disabled={readOnly || bound} disabledReason={locked} onCheckedChange={onRepeatedChange} /> : null}
+          {/* IV2-A: what the standard lets each copy choose on this question, with its own text and (i) in the menu language. */}
+          {question.toggles?.map(toggle => <CheckboxField key={toggle.key} label={administrativeName(toggle.label, culture)} help={administrativeName(toggle.help, culture) || undefined} checked={toggle.value} disabled={readOnly}
+            onCheckedChange={value => onChange({ ...question, toggles: question.toggles?.map(item => item.key === toggle.key ? { ...item, value } : item) })} />)}
           {question.type === "shortText" || question.type === "longText" ? <FormField label={t("maxLength")} error={fieldError("maxLength")}><DisabledReason reason={locked}><Input type="number" min={1} max={10000} readOnly={readOnly} disabled={bound} value={question.maxLength ?? ""} onChange={e => onChange({ ...question, maxLength: e.target.value === "" ? null : Number(e.target.value) })} /></DisabledReason></FormField> : null}
         </div>
       </div>

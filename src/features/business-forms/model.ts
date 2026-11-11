@@ -18,17 +18,20 @@ export type FormCatalogMatch<TValue = string> = { readonly fieldId: string } & (
   | { readonly questionId: TValue; readonly value?: never; readonly personAttributeId?: never }
 );
 // LD1-A: `groupBy` is the catalog field whose value is chosen first; the list then brings only the options with that value.
+// IV1-A: `default` is the option a new answer starts with, which only a library standard declares; the editor keeps it as it came.
 export interface FormQuestionSource {
   readonly catalog: string;
   readonly match?: readonly FormCatalogMatch[] | null;
   readonly presentation?: FormCatalogPresentation | null;
   readonly groupBy?: string | null;
+  readonly default?: string | null;
 }
 export interface DraftQuestionSource {
   readonly catalog: string | null;
   readonly match?: readonly FormCatalogMatch<string | null>[] | null;
   readonly presentation?: FormCatalogPresentation | null;
   readonly groupBy?: string | null;
+  readonly default?: string | null;
 }
 // CA1-A: a calculation is a read-only number the server computes with one fixed operation over questions that go before it,
 // named like a filter by another answer: by their field identity once saved, by their local one while new. Only a decimal has it.
@@ -43,6 +46,9 @@ export interface FormShowWhen { readonly questionId: string; readonly values: re
 export interface DraftShowWhen { readonly questionId: string | null; readonly values: readonly string[] }
 // BI1-A: the library standard a form was copied from, its version and which question holds each datum it needs (datum → fieldId).
 export interface FormDefinitionStandard { readonly key: string; readonly version: number; readonly bound: Readonly<Record<string, string>> }
+// IV2-A: a yes-or-no setting the standard declares on a bound question («El precio incluye IVA»), with its text and its (i) in
+// both languages; only `value` changes, and the whole toggle goes back to the server as it came.
+export interface FormQuestionToggle { readonly key: string; readonly label: LocalizedText; readonly help: LocalizedText; readonly value: boolean }
 
 export type DraftFileSettings = Omit<FormFileSettings,"minFiles"|"maxFiles"> & { readonly minFiles:number|null; readonly maxFiles:number|null };
 
@@ -52,6 +58,7 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestion
   readonly help: THelp;
   readonly required: boolean;
   readonly showWhen?: TShowWhen | null;
+  readonly toggles?: readonly FormQuestionToggle[];
 } & (
   | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true }
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }

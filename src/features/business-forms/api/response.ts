@@ -13,7 +13,8 @@ const presentationPart = z.union([z.enum(["text", "code", "detail", "value"]), g
 const catalogPresentation = z.strictObject({ title: z.array(presentationPart).min(1).max(24), description: z.array(presentationPart).max(24) });
 const catalogMatch = z.union([z.strictObject({ fieldId: guid, value: z.string().min(1).max(300) }), z.strictObject({ fieldId: guid, personAttributeId: guid }),
   z.strictObject({ fieldId: guid, questionId: guid })]);
-export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional(), groupBy: guid.optional() })
+// IV1-A: `default` is the option a new answer starts with, which a library standard declares for a bound question.
+export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, match: z.array(catalogMatch).min(1).max(20).optional(), presentation: catalogPresentation.optional(), groupBy: guid.optional(), default: guid.optional() })
   .refine(source => !source.match || new Set(source.match.map(item => item.fieldId.toLowerCase())).size === source.match.length);
 const rowQuestionTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group", "location"]),
@@ -26,6 +27,9 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
   calculation: z.strictObject({ operation: z.enum(["multiply", "sum", "percent"]), operands: z.array(guid).min(1).max(20) }).optional(),
   // CO1-A: the earlier question and the answers that show this one (option identities, or "true"/"false").
   showWhen: z.strictObject({ questionId: guid, values: z.array(z.string().min(1).max(64)).min(1).max(50) }).optional(),
+  // IV2-A: the yes-or-no settings the library standard declares on a bound question, each with its text and (i) and the value chosen.
+  toggles: z.array(z.strictObject({ key: z.string().min(1), label: text, help: text, value: z.boolean() })).min(1).max(10)
+    .refine(toggles => new Set(toggles.map(toggle => toggle.key)).size === toggles.length).optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
     context.addIssue({ code: "custom", message: "Invalid rows configuration." });

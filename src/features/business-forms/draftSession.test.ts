@@ -425,3 +425,20 @@ it("opens a saved calculation and condition as they are and omits them where the
   expect(opened[0]).not.toHaveProperty("showWhen");
   expect(opened[1]).toMatchObject({ calculation: { operation: "sum", operands: ["field-paid"] }, showWhen: { questionId: "field-paid", values: ["true"] } });
 });
+
+it("sends the toggles of a bound question back with their value and confirms the save only with the values sent (IV2-A)", () => {
+  const toggle = { key: "pricesIncludeVat", label: { es: "El precio incluye IVA", en: "Prices include VAT" }, help: { es: "Marcala.", en: "Check it." }, value: false };
+  const saved = (value: boolean): FormDefinitionSnapshot => ({ ...result().definition, draft: { ...initial.draft, fields: [
+    { fieldId: "field-price", key: "field_price", type: "decimal", label: { es: "Precio" }, help: null, required: true, toggles: [{ ...toggle, value }] },
+  ] } });
+  const opened = openDraftSession(scope, saved(false));
+  expect(opened.value.draft.fields[0]?.toggles).toEqual([toggle]);
+  const price = opened.value.draft.fields[0]!;
+  const saving = beginDraftSave(changeDraft(opened, { ...opened.value, draft: { ...opened.value.draft, fields: [{ ...price, toggles: [{ ...toggle, value: true }] }] } }), "request-toggle");
+  expect(saving.pending!.body.draft.fields[0]?.toggles).toEqual([{ ...toggle, value: true }]);
+  const answer = (value: boolean): FormDraftSaveResult => ({ ...result("request-toggle", 2), definition: { ...saved(value), revision: 2 },
+    identityMap: { fields: [{ localId: "field-price", fieldId: "field-price", key: "field_price", replacesFieldId: null }], choices: [] } });
+  const identity = { ...scope, requestId: "request-toggle" };
+  expect(confirmDraftSave(saving, identity, answer(true)).value.draft.fields[0]?.toggles).toEqual([{ ...toggle, value: true }]);
+  expect(confirmDraftSave(saving, identity, answer(false)).phase).toBe("Unconfirmed");
+});

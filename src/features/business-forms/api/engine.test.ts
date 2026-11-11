@@ -32,6 +32,20 @@ describe("calculations, conditions and the library standard in the draft (CA1-A,
     expect(readFormDetail(detail([concept, net, total])).definition.standard).toBeUndefined();
   });
 
+  it("reads the toggles and the starting option a standard declares, and the editor sends them back as they came (IV1-A, IV2-A)", () => {
+    const toggles = [{ key: "pricesIncludeVat", label: { es: "El precio incluye IVA", en: "Prices include VAT" },
+      help: { es: "Marcala si cargás precios finales.", en: "Check it if you enter final prices." }, value: false }];
+    const rate = { fieldId: id(4), key: key(id(4)), type: "choice", label: { es: "Alícuota" }, help: null, required: false, maxLength: null, options: null,
+      source: { catalog: id(30), default: id(31) } };
+    const read = readFormDetail(detail([concept, { ...net, toggles }, rate], { standard: { key: "arca.invoice", version: 1, bound: { unitPrice: id(1), vatRate: id(4) } } })).definition;
+
+    const fields = openDraftSession({ actorId: "actor", editorId: "editor" }, read).value.draft.fields;
+    expect(fields[1]?.toggles).toEqual(toggles);
+    expect(fields[2]).toMatchObject({ source: { catalog: id(30), default: id(31) } });
+    expect(() => readFormDetail(detail([concept, { ...net, toggles: [...toggles, ...toggles] }, total]))).toThrow();
+    expect(() => readFormDetail(detail([concept, { ...net, toggles: [{ ...toggles[0], extra: true }] }, total]))).toThrow();
+  });
+
   it.each([
     ["a required calculation", [concept, net, { ...total, required: true }]],
     ["a calculation that is not a number", [concept, net, { ...concept, fieldId: id(3), key: key(id(3)), options: concept.options.map((option, index) => ({ ...option, choiceId: id(20 + index) })), calculation: total.calculation }]],

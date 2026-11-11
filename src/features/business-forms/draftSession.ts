@@ -32,9 +32,10 @@ function snapshot<T>(value: T): T {
 }
 
 function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId: (id: string) => string): DraftQuestion {
-  // CO1-A: a condition is omitted where there is none, so the question keeps its bytes.
+  // CO1-A: a condition is omitted where there is none, so the question keeps its bytes; so are the toggles of a bound question (IV2-A).
   const common = { localId, fieldId: field.fieldId, replacesFieldId: null, label: field.label, help: field.help, required: field.required,
-    ...field.showWhen ? { showWhen: { questionId: field.showWhen.questionId, values: [...field.showWhen.values] } } : {} };
+    ...field.showWhen ? { showWhen: { questionId: field.showWhen.questionId, values: [...field.showWhen.values] } } : {},
+    ...field.toggles ? { toggles: field.toggles.map(toggle => ({ ...toggle })) } : {} };
   const repeated = "repeated" in field && field.repeated ? { repeated: true as const } : {};
   switch (field.type) {
     case "multiChoice": return field.source ? { ...common, type: field.type, selection: { ...field.selection }, source: copyCatalogQuestionSource(field.source) } : { ...common, type: field.type, selection: { ...field.selection }, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
@@ -132,6 +133,9 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     const values = sent.values.map(value => owner !== undefined ? choiceMap.get(choiceKey(owner, value))?.choiceId ?? value : value);
     return fieldName(sent.questionId) === kept.questionId && sameList(values, kept.values);
   };
+  // IV2-A: the toggles come back with the values sent.
+  const sameToggles = (field: DraftQuestion, saved: CanonicalQuestion) => JSON.stringify((field.toggles ?? []).map(toggle => [toggle.key, toggle.value]))
+    === JSON.stringify((saved.toggles ?? []).map(toggle => [toggle.key, toggle.value]));
   if (fieldMap.size !== input.length || fieldMap.size !== result.identityMap.fields.length
     || canonicalFields.size !== canonical.length || canonical.length !== input.length
     || choiceMap.size !== result.identityMap.choices.length) return null;
@@ -152,7 +156,7 @@ function bindResult(attempt: DraftSaveAttempt, result: FormDraftSaveResult): Dra
     if (field.type === "group" && saved.type === "group"
       && (field.rows.minRows !== saved.rows.minRows || field.rows.maxRows !== saved.rows.maxRows)) return null;
     if (("repeated" in field && field.repeated === true) !== ("repeated" in saved && saved.repeated === true)) return null;
-    if (!sameCalculation(field, saved) || !sameCondition(field, saved)) return null;
+    if (!sameCalculation(field, saved) || !sameCondition(field, saved) || !sameToggles(field, saved)) return null;
     const options = new Map<string, string>();
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !sameCatalogQuestionSource(named(field.source), saved.source)) return null;
     if ((field.type === "choice" || field.type === "multiChoice") && (saved.type === "choice" || saved.type === "multiChoice") && !field.source && !saved.source) {

@@ -17,8 +17,10 @@ const questionSchema = z.strictObject({
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).nullable(),
   // A list that depends on other answers (CW7) names those questions and waits for them, with nothing chosen beforehand. One that
   // chooses first by a field (LD1-A) names that field: its values come first and the list brings only the options of the one chosen.
+  // `default` (IV1-A) is the option a new answer starts with, which the form's standard declares; it can be changed.
   catalog: z.strictObject({ onlyOption: entryOptionSchema.nullable(), issue: z.string().min(1).nullable(), missingData: z.string().min(1).nullable(),
-    dependsOn: z.array(z.string().uuid()).min(1).optional(), groupBy: z.strictObject({ fieldId: z.string().uuid(), name: z.string().min(1) }).optional() }).nullable(),
+    dependsOn: z.array(z.string().uuid()).min(1).optional(), groupBy: z.strictObject({ fieldId: z.string().uuid(), name: z.string().min(1) }).optional(),
+    default: entryOptionSchema.optional() }).nullable(),
   // The title of the section that starts at this question (CW15-B): the page opens a zone with it.
   section: z.string().min(1).max(80).optional(),
   // The block of rows (RG2-A) says how many items it takes; its questions follow it, marked as repeated.
@@ -35,6 +37,7 @@ const questionSchema = z.strictObject({
     || (!list && (value.options !== null || value.catalog !== null)) || (list && (value.options === null) === (value.catalog === null))
     || (value.catalog?.missingData != null && value.catalog.issue === null) || (value.catalog?.onlyOption != null && value.catalog.issue !== null)
     || (value.catalog?.dependsOn !== undefined && (value.catalog.onlyOption !== null || value.catalog.issue !== null))
+    || (value.catalog?.default !== undefined && (value.type !== "choice" || value.catalog.onlyOption !== null || value.catalog.issue !== null || value.catalog.dependsOn !== undefined))
     || (value.type === "group") !== (value.rows !== undefined) || (value.type === "group" && value.maxLength !== null)
     || (value.rows !== undefined && (value.rows.minRows > value.rows.maxRows || value.required !== value.rows.minRows > 0))
     || (value.repeated && !itemTypes.includes(value.type))

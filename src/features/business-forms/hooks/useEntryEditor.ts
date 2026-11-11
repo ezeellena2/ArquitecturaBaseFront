@@ -6,7 +6,7 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
 import { fetchFormIssuePreview, type FormEntry, type FormEntrySubmitted, type FormIssuePreview } from "../api/entries";
 import {
-  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, entrySignature, initialEntryDraft, toEntrySend,
+  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, entrySignature, entryStartingOption, initialEntryDraft, toEntrySend,
   validateEntry, type EntryDraft, type EntryProblem,
 } from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
@@ -73,7 +73,7 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   });
   const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
     : Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
-    || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entry?.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id)
+    || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entryStartingOption(entry?.questions.find(question => question.fieldId === fieldId))?.id !== chosen[0]?.id)
     || !!entry && entryItemsLoaded(entry, draft));
 
   const change = (next: EntryDraft) => {

@@ -55,6 +55,26 @@ describe("calculations, conditions and bound questions in the editor of a questi
     expect(onChange).toHaveBeenCalled();
   });
 
+  it("shows each toggle the standard declares below «Se carga varias veces», with its text and (i) in the menu language (IV2-A)", async () => {
+    const user = userEvent.setup();
+    const price: DraftQuestion = { localId: "field-price", fieldId: "field-price", replacesFieldId: null, type: "decimal", label: { es: "Precio unitario" }, help: null,
+      required: true, repeated: true, toggles: [{ key: "pricesIncludeVat", label: { es: "El precio incluye IVA", en: "Prices include VAT" },
+        help: { es: "Marcala si cargás precios finales.", en: "Check it if you enter final prices." }, value: false }] };
+    const onChange = await mount(price, { bound: true, onRepeatedChange: () => {} });
+
+    const repeated = screen.getByRole("checkbox", { name: "Se carga varias veces" });
+    const toggle = screen.getByRole("checkbox", { name: "El precio incluye IVA" });
+    expect(repeated.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(repeated).toHaveAttribute("aria-disabled", "true");
+    expect(toggle).toHaveAccessibleDescription("Marcala si cargás precios finales.");
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    expect(onChange).toHaveBeenCalledWith({ ...price, toggles: [{ ...price.toggles![0]!, value: true }] });
+
+    await mount({ ...price, localId: "english" }, { bound: true, culture: "en" });
+    expect(screen.getByRole("checkbox", { name: "Prices include VAT" })).toHaveAccessibleDescription("Check it if you enter final prices.");
+  });
+
   it("shows the standard's refusal of a change on top of the question", async () => {
     await mount(net, { issues: [{ path: "draft.fields[1]", messages: ["Esta pregunta la necesita el estándar del que viene el formulario."], fieldLocalId: "field-net" }] });
     expect(screen.getByRole("alert")).toHaveTextContent("Esta pregunta la necesita el estándar del que viene el formulario.");

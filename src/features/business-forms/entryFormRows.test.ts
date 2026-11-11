@@ -50,6 +50,18 @@ describe("loading the items of a block", () => {
     expect(draft.choices[ids.item]).toBeUndefined();
   });
 
+  it("starts each new item, and a loose list, at the option the standard declares, which can be changed (IV1-A)", () => {
+    const base = blockEntry(1, 3);
+    const entry: FormEntry = { ...base, questions: [question(ids.zone, "choice", { catalog: catalog({ default: urea }) }),
+      ...base.questions.map(item => item.fieldId === ids.item ? { ...item, catalog: catalog({ default: glifo }) } : item)] };
+
+    const draft = addEntryItem(entry, initialEntryDraft(entry));
+    expect(items(draft).map(item => item.choices[ids.item])).toEqual([[glifo], [glifo]]);
+    expect(draft.choices[ids.zone]).toEqual([urea]);
+    expect(entryItemsLoaded(entry, draft)).toBe(false);
+    expect(entryItemsLoaded(entry, { ...draft, rows: { [ids.block]: items(draft).map(item => ({ ...item, choices: { [ids.item]: [urea] } })) } })).toBe(true);
+  });
+
   it("draws the block across the whole row of its zone and its questions only inside it", () => {
     const entry = blockEntry();
     expect(entryBlock(entry)).toEqual({ group: entry.questions[1], questions: entry.questions.slice(2) });
