@@ -55,16 +55,17 @@ type SentTo =
 /// Las casillas del código adentro de su `FormField`. El campo les pasa su descripción (la (i) y el error) y acá se le
 /// suma a dónde llegó el código: la descripción del diálogo se lee al entrar en él, no cuando cambia, y el foco salta
 /// directo a la primera casilla; sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó ni que
-/// vence. El grupo se nombra con su etiqueta (`label`). El id y el `aria-invalid` del campo no van a `OtpInput`: las
+/// vence. El grupo se nombra con su etiqueta (`label`), y el id del campo va a la primera casilla, que así nombra la
+/// etiqueta del campo. El `aria-invalid` del campo no va a `OtpInput`: las
 /// casillas se marcan sólo cuando el código estaba mal escrito (`invalid`), no ante cualquier problema.
 function CodeBoxes({
   sentToId,
-  id: _fieldId,
+  id: fieldId,
   "aria-invalid": _fieldInvalid,
   "aria-describedby": fieldDescription,
   ...boxes
 }: ComponentProps<typeof OtpInput> & { readonly sentToId: string; readonly id?: string; readonly "aria-invalid"?: boolean }) {
-  return <OtpInput {...boxes} aria-describedby={[sentToId, fieldDescription].filter(Boolean).join(" ")} />;
+  return <OtpInput {...boxes} id={fieldId} aria-describedby={[sentToId, fieldDescription].filter(Boolean).join(" ")} />;
 }
 
 /// Lo que respondió una verificación que no prosperó.

@@ -217,6 +217,19 @@ describe("linking WhatsApp", () => {
     );
   });
 
+  it("points the label of the code at its first box, so that it names it and a click on it goes there", async () => {
+    linkWhatsAppServer();
+
+    const dialog = await openAndSendNumber();
+    const code = await within(dialog).findByRole("group", { name: "Código" });
+    const first = within(code).getByRole("textbox", { name: "Código 1" });
+    // The id of the field goes to the first box instead of getting lost on the way (lista de chequeo, 2026-11-11).
+    expect(within(dialog).getByLabelText("Código", { selector: "input" })).toBe(first);
+    await userEvent.click(within(code).getByRole("textbox", { name: "Código 2" }));
+    await userEvent.click(within(dialog).getByText("Código", { selector: "label" }));
+    expect(first).toHaveFocus();
+  });
+
   it("says it is sending the code, and takes no second click, while it is on its way", async () => {
     const calls = linkWhatsAppServer();
     const answer = heldResponse();

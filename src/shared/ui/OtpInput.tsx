@@ -2,6 +2,8 @@ import { useRef, type ChangeEvent, type ClipboardEvent, type KeyboardEvent } fro
 import { Input } from "./input";
 
 interface OtpInputProps {
+  /// El id del campo (`FormField`) va en la primera casilla: así su etiqueta la nombra y un clic en ella lleva el foco ahí.
+  id?: string;
   length: number;
   value: string;
   onChange: (value: string) => void;
@@ -20,6 +22,7 @@ interface OtpInputProps {
 /// Casilleros para un código de un solo uso: avanzan solos, aceptan pegar y vuelven con Backspace. Los usan el ingreso
 /// (`/login/codigo`) y el perfil, al comprobar un número o un correo.
 export function OtpInput({
+  id,
   length,
   value,
   onChange,
@@ -77,6 +80,7 @@ export function OtpInput({
           ref={(element: HTMLInputElement | null) => {
             boxes.current[index] = element;
           }}
+          id={index === 0 ? id : undefined}
           type="text"
           inputMode="numeric"
           autoComplete={index === 0 ? "one-time-code" : "off"}
