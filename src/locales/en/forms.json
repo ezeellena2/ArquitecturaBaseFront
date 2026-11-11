@@ -1375,7 +1375,9 @@
     "deactivated": "Deactivated",
     "deactivatedHint": "This form is deactivated. Remove the suggestion to save.",
     "deleted": "Deleted",
-    "deletedHint": "This form was deleted. Remove the suggestion to save."
+    "deletedHint": "This form was deleted. Remove the suggestion to save.",
+    "appOnly": "Only in the app",
+    "appOnlyHint": "This form is completed only in the app and WhatsApp doesn't suggest it. Remove the suggestion to save."
   },
   "missing": {
     "title": "Missing forms",

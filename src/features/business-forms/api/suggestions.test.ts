@@ -22,6 +22,12 @@ it("reads deactivated target metadata without making it an eligible destination"
  expect(()=>readSuggestionOptions({...body,unavailableDestinations:undefined})).toThrow();
 });
 
+// SA4-A: a target that moved to «Sólo en la app» is not offered by WhatsApp either, and says so with its own state.
+it("reads a target that moved to the app as unavailable, with its state",()=> {
+ const body={source:form,destinations:[],unavailableDestinations:[{definitionId:version,name:{es:"Facturar entrega",en:"Invoice delivery"},state:"AppOnly"}],conditionChoices:{}};
+ expect(readSuggestionOptions(body)).toEqual(body);
+});
+
 
 it("retains anyOf in the suggestion contract without broadening the grammar", () => {
   const condition = { fieldId: version, operator: "anyOf", values: [version] };

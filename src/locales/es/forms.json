@@ -1375,7 +1375,9 @@
     "deactivated": "Dado de baja",
     "deactivatedHint": "Este formulario está dado de baja. Quitá la sugerencia para guardar.",
     "deleted": "Eliminado",
-    "deletedHint": "Este formulario fue eliminado. Quitá la sugerencia para guardar."
+    "deletedHint": "Este formulario fue eliminado. Quitá la sugerencia para guardar.",
+    "appOnly": "Sólo en la app",
+    "appOnlyHint": "Este formulario se completa sólo en la app y WhatsApp no lo sugiere. Quitá la sugerencia para guardar."
   },
   "missing": {
     "title": "Formularios que faltan",

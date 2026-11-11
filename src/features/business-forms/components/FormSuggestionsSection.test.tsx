@@ -136,7 +136,13 @@ it("puts a conflict in its own titled surface with reread and the choices at the
   expect(screen.queryByRole("region",{name:"Revisión de las sugerencias"})).not.toBeInTheDocument();
   expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveValue("Cuando pide factura");
 });
-it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and removable only, blocking save until it is removed and restoring focus", async state => {
+// What each unavailable target says: its badge and, as the reason of Save, what to do (SA4-A adds the one that moved to the app).
+const unavailableTexts = {
+ Deactivated: { badge: "Dado de baja", hint: "Este formulario está dado de baja. Quitá la sugerencia para guardar." },
+ Deleted: { badge: "Eliminado", hint: "Este formulario fue eliminado. Quitá la sugerencia para guardar." },
+ AppOnly: { badge: "Sólo en la app", hint: "Este formulario se completa sólo en la app y WhatsApp no lo sugiere. Quitá la sugerencia para guardar." },
+} as const;
+it.each(["Deactivated", "Deleted", "AppOnly"] as const)("keeps a %s target named and removable only, blocking save until it is removed and restoring focus", async state => {
  setup();
  const otherId = "0199a0c0-0000-7000-8000-000000000021";
  const row = {id:version,destinationDefinitionId:destinationId,destinationVersionId:version,mode:"Assistant",when:"Cuando pide factura",isActive:true,conditions:[],mappings:[]};
@@ -147,12 +153,12 @@ it.each(["Deactivated", "Deleted"] as const)("keeps a %s target named and remova
  renderWithProviders(<FormSuggestionsSection {...props()}/>);
  const first=within(await screen.findByRole("region",{name:"Sugerencia 1"}));
  expect(first.getByText("Facturar entrega")).toBeVisible();
- expect(first.getByText(state === "Deleted" ? "Eliminado" : "Dado de baja")).toBeVisible();
+ expect(first.getByText(unavailableTexts[state].badge)).toBeVisible();
  expect(first.queryByRole("alert")).not.toBeInTheDocument();
  expect(first.queryByRole("button",{name:/Editar/})).not.toBeInTheDocument();
  expect(first.getAllByRole("button")).toHaveLength(1);
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAttribute("aria-disabled", "true");
- expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAccessibleDescription(state === "Deleted" ? "Este formulario fue eliminado. Quitá la sugerencia para guardar." : "Este formulario está dado de baja. Quitá la sugerencia para guardar.");
+ expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAccessibleDescription(unavailableTexts[state].hint);
  await userEvent.click(first.getByRole("button",{name:"Quitar sugerencia 1"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Quitar sugerencia 1"})).toHaveFocus());
  expect(screen.getByRole("button",{name:"Guardar sugerencias"})).toHaveAttribute("aria-disabled", "true");
