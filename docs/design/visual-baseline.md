@@ -587,6 +587,7 @@ Sin elección; no se implementan sin ella.
 | El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas; falta «Filas» en el diálogo |
 | Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [Propuesta](acciones-del-encabezado.md), sin elegir |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
+| La pregunta «Ubicación» · UB, UB3-A y UB4-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel | [Tableros elegidos, por programar](ubicacion-en-formularios.md) |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
