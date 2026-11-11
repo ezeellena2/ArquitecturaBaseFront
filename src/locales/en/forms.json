@@ -1438,12 +1438,11 @@
       "Unavailable": "This action is unavailable."
     },
     "delete": "Delete",
+    "deleteForm": "Delete form",
     "deleting": "Deleting…",
     "deleteTitle": "Delete “{{name}}”",
-    "deleteDescription": "It will no longer appear in lists and cannot be used again.",
-    "deleteHint": "This action cannot be undone.",
-    "reservedPrefix": "The {{prefix}} prefix remains reserved.",
-    "deletePublishedHint": "This cannot be undone on WhatsApp. Its Flows are deprecated once no open sends remain.",
+    "deleteDescription": "This cannot be undone: it will no longer appear in lists, it cannot be used again and the {{prefix}} prefix remains reserved.",
+    "deletePublishedHint": "Not on WhatsApp either: its Flows are deprecated once no open sends remain.",
     "deleteChanged": "The form’s situation changed. Close this dialog and review it before deleting it.",
     "deletedSuccess": "Deleted {{name}}.",
     "deletionReasons": {

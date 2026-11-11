@@ -1438,12 +1438,11 @@
       "Unavailable": "La acción no está disponible."
     },
     "delete": "Eliminar",
+    "deleteForm": "Eliminar formulario",
     "deleting": "Eliminando…",
     "deleteTitle": "Eliminar «{{name}}»",
-    "deleteDescription": "Deja de aparecer en los listados y no se puede volver a usar.",
-    "deleteHint": "Esta acción no se deshace.",
-    "reservedPrefix": "El prefijo {{prefix}} queda reservado.",
-    "deletePublishedHint": "En WhatsApp no se deshace. Sus Flows se deprecan cuando no quedan envíos abiertos.",
+    "deleteDescription": "No se deshace: deja de aparecer en los listados, no se puede volver a usar y el prefijo {{prefix}} queda reservado.",
+    "deletePublishedHint": "En WhatsApp tampoco: sus Flows se deprecan cuando no quedan envíos abiertos.",
     "deleteChanged": "Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.",
     "deletedSuccess": "Eliminamos {{name}}.",
     "deletionReasons": {

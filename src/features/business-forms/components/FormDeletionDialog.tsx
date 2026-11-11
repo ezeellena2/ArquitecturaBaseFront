@@ -59,15 +59,14 @@ export function FormDeletionDialog({ id, name, prefix, hasPublishedVersion, revi
  return <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
   <DialogContent mobileFullscreen aria-describedby={undefined} showCloseButton={!busy} onCloseAutoFocus={restoreFocus}>
    <DialogHeader className="shrink-0"><DialogTitle className="pr-6">{t("lifecycle.deleteTitle", { name })}</DialogTitle></DialogHeader>
-   {/* Only what deleting changes, in the body with the other consequences: no description under the title (2026-10-31). */}
+   {/* A confirmation like the others (DL, 2026-11-11): one sentence with what deleting affects, saying once that it cannot be
+       undone, and the WhatsApp warning only when a version was published there. No description under the title (2026-10-31). */}
    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
-   <p className="text-sm">{t("lifecycle.deleteDescription")}</p>
-   <p className="text-sm">{t("lifecycle.reservedPrefix", { prefix })}</p>
+   <p className="text-sm">{t("lifecycle.deleteDescription", { prefix })}</p>
    {hasPublishedVersion ? <Banner tone="warning">{t("lifecycle.deletePublishedHint")}</Banner> : null}
-   <p className="text-sm">{t("lifecycle.deleteHint")}</p>
    {blocked ? <p role="status" className="text-sm">{t(denied ? "lifecycle.noDeletePermission" : "lifecycle.deleteChanged")}</p> : null}
    </div>
-   <DialogFooter className="shrink-0"><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button>{/* The wait of a 429 is the reason of the disabled Delete, not a text in the dialog. */}<DisabledReason reason={busy || blocked || !cooldown.isRunning ? null : t("wait", { count: cooldown.seconds })} className="max-sm:*:flex-1"><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} pending={busy} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.delete")}</Button></DisabledReason></DialogFooter>
+   <DialogFooter className="shrink-0"><Button variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button>{/* The wait of a 429 is the reason of the disabled Delete, not a text in the dialog. */}<DisabledReason reason={busy || blocked || !cooldown.isRunning ? null : t("wait", { count: cooldown.seconds })} className="max-sm:*:flex-1"><Button variant="destructive" disabled={busy || blocked || cooldown.isRunning} pending={busy} onClick={() => void submit()}>{t(busy ? "lifecycle.deleting" : "lifecycle.deleteForm")}</Button></DisabledReason></DialogFooter>
   </DialogContent>
  </Dialog>;
 }

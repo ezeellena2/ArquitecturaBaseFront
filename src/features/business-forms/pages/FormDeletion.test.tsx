@@ -31,8 +31,8 @@ it("allows authoritative deletion with an unknown response count and preserves u
  const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- expect(within(dialog).getByText(/El prefijo VIS queda reservado/)).toBeVisible();
- expect(within(dialog).getByText(/En WhatsApp no se deshace. Sus Flows se deprecan cuando no quedan envíos abiertos/)).toBeVisible();
+ expect(within(dialog).getByText(/el prefijo VIS queda reservado/)).toBeVisible();
+ expect(within(dialog).getByText(/En WhatsApp tampoco: sus Flows se deprecan cuando no quedan envíos abiertos/)).toBeVisible();
  expect(store.calls.filter(call=>call.method==="DELETE")).toHaveLength(0);
  await userEvent.click(within(dialog).getByRole("button",{name:"Cancelar"}));
  await waitFor(()=>expect(screen.getByRole("button",{name:"Acciones del formulario"})).toHaveFocus());
@@ -46,11 +46,11 @@ it("keeps a failed deletion open with one error notice and preserves its draft",
  const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
  await waitFor(()=>expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="error")).toHaveLength(1));
  expect(dialog).toBeInTheDocument();expect(name).toHaveValue("Registrar visita sin guardar");
  expect(screen.queryByText("Falló esta eliminación.")).not.toBeInTheDocument();
- expect(within(dialog).getByRole("button",{name:"Eliminar"})).toBeEnabled();
+ expect(within(dialog).getByRole("button",{name:"Eliminar formulario"})).toBeEnabled();
 });
 it("deletes with the confirmed revision and returns to the list without a dirty-draft prompt",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true,deletionUnavailableReason:null}));
@@ -59,7 +59,7 @@ it("deletes with the confirmed revision and returns to the list without a dirty-
  const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
  await waitFor(()=>expect(router.state.location.pathname).toBe("/formularios"));
  expect(received).toEqual({expectedRevision:1});expect(store.definitions.has(fixtureFormId)).toBe(false);
  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -71,7 +71,7 @@ it("removes a deleted row and restores focus to the list search",async()=>{
  renderRouteWithProviders("/formularios");
  await userEvent.click(await screen.findByRole("button",{name:"Eliminar Registrar visita"}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
  await waitFor(()=>expect(store.definitions.has(fixtureFormId)).toBe(false));
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  expect(screen.queryByRole("link",{name:"Registrar visita"})).not.toBeInTheDocument();
@@ -114,8 +114,8 @@ it.each([403,409])("retains the dirty draft and prevents another DELETE after a 
  const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");
  const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));
  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});
- await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
- await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Eliminar"})).toBeDisabled());
+ await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Eliminar formulario"})).toBeDisabled());
  expect(name).toHaveValue("Registrar visita sin guardar");expect(attempts).toHaveBeenCalledOnce();
  if(status===403) expect(within(dialog).getByText("Ya no tenés permiso para eliminar este formulario.")).toBeVisible();
  else {expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="error")).toHaveLength(1);expect(screen.queryByText("El formulario ya tiene respuestas.")).not.toBeInTheDocument();}
@@ -162,7 +162,7 @@ for (const source of ["row", "editor"] as const) {
   await waitFor(()=>expect(navigation).toHaveBeenCalledOnce());
   if(source==="row") await userEvent.click(await screen.findByRole("button",{name:"Eliminar Registrar visita"}));
   else {const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));}
-  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+  const dialog=await screen.findByRole("dialog",{name:"Eliminar «Registrar visita»"});await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
   await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   await waitFor(()=>expect(navigation).toHaveBeenCalledTimes(2));
   const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-overview");
@@ -173,13 +173,13 @@ for (const source of ["row", "editor"] as const) {
 for(const failure of ["network","500"] as const) it("observes a deleted definition after a lost "+failure+" result before leaving",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true}));const writes=vi.fn();
  server.use(http.delete("/api/forms/definitions/:id",async({request})=>{writes();await store.handle(request);return failure==="network"?HttpResponse.error():HttpResponse.json({traceId:"lost-delete"},{status:500});}));
- const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
+ const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const name=await screen.findByLabelText("Nombre");await userEvent.click(name);await userEvent.paste(" sin guardar");const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
  await waitFor(()=>expect(router.state.location.pathname).toBe("/formularios"));expect(writes).toHaveBeenCalledOnce();expect(screen.queryByRole("dialog")).not.toBeInTheDocument();expect(screen.queryByText("Tenés cambios sin guardar")).not.toBeInTheDocument();
 });
 
 for(const readStatus of [403,404] as const) it("does not infer deletion from a recovery GET "+readStatus+" without its typed absence",async()=>{
  const store=setup();store.lifecycles.set(fixtureFormId,fixtureLifecycle(1,{canDelete:true}));let attempted=false;const writes=vi.fn();
  server.use(http.delete("/api/forms/definitions/:id",()=>{attempted=true;writes();return HttpResponse.error();}),http.get("/api/forms/definitions/:id",({request})=>attempted?HttpResponse.json({code:readStatus===403?"General.Forbidden":"Other.NotFound"},{status:readStatus}):store.handle(request)));
- const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar"}));
- if(readStatus===403) {await screen.findByRole("heading",{name:"No tenés permiso"});expect(screen.queryByLabelText("Nombre")).not.toBeInTheDocument();} else {await within(dialog).findByText("Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.");expect(within(dialog).getByRole("button",{name:"Eliminar"})).toBeDisabled();}expect(router.state.location.pathname).toBe("/formularios/"+fixtureFormId);expect(writes).toHaveBeenCalledOnce();expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
+ const {router}=renderRouteWithProviders("/formularios/"+fixtureFormId);const menu=await openEditorMenu();await userEvent.click(within(menu).getByRole("menuitem",{name:/Eliminar/}));const dialog=await screen.findByRole("dialog");await userEvent.click(within(dialog).getByRole("button",{name:"Eliminar formulario"}));
+ if(readStatus===403) {await screen.findByRole("heading",{name:"No tenés permiso"});expect(screen.queryByLabelText("Nombre")).not.toBeInTheDocument();} else {await within(dialog).findByText("Cambió la situación del formulario. Cerrá este diálogo y revisalo antes de eliminarlo.");expect(within(dialog).getByRole("button",{name:"Eliminar formulario"})).toBeDisabled();}expect(router.state.location.pathname).toBe("/formularios/"+fixtureFormId);expect(writes).toHaveBeenCalledOnce();expect(vi.mocked(notify).mock.calls.some(([notice])=>notice.kind==="success")).toBe(false);
 });
