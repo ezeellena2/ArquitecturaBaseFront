@@ -78,6 +78,12 @@ it.each(["es", "en"] as const)("asks where the options come from as the label of
   expect(dialog).not.toHaveAccessibleDescription();
   expect(within(dialog).getByText(question)).toBeVisible();
   expect(within(dialog).getByRole("radiogroup", { name: question })).toBeInTheDocument();
+  // Each group draws its own title with its (i) and is named by it, not by a hidden label (lista de chequeo, 2026-11-11).
+  for (const title of [question, es ? "Tipo de valor" : "Value type"]) {
+    const group = within(dialog).getByRole("radiogroup", { name: title });
+    expect(group).not.toHaveAttribute("aria-label");
+    expect(document.getElementById(group.getAttribute("aria-labelledby") ?? "")?.textContent).toBe(title);
+  }
   expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + question }))
     .toHaveAccessibleDescription(es ? "No se puede cambiar después: para otro origen, se arma otro catálogo." : "This cannot change later: use a new catalog for another source.");
   expect(within(dialog).getByRole("radio", { name: es ? "Escribirlas a mano" : "Write them manually" })).not.toHaveAccessibleDescription();
