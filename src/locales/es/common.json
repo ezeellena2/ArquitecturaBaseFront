@@ -58,6 +58,7 @@
   "unsavedChanges": {
     "title": "¿Descartar los cambios?",
     "description": "Los cambios todavía no están guardados.",
+    "languageDescription": "Cambiar el idioma descarta los cambios sin guardar.",
     "confirm": "Descartar cambios",
     "cancel": "Seguir editando"
   },

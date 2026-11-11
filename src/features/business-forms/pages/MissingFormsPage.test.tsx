@@ -167,6 +167,8 @@ it("keeps the discard confirmation open with «Descartando…» until the list i
  renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
  await userEvent.click(screen.getByRole("button",{name:"Descartar Reclamos de clientes"}));
  const dialog=await screen.findByRole("dialog",{name:"Descartar pedido"});
+ // One sentence with what is affected, a new request included (lista de chequeo, 2026-11-11).
+ expect(dialog).toHaveAccessibleDescription("«Reclamos de clientes» pasa a Descartados hasta que lo vuelvan a pedir.");
  await userEvent.click(within(dialog).getByRole("button",{name:"Descartar"}));
  const working=await within(dialog).findByRole("button",{name:"Descartando…"});
  expect(working).toHaveAttribute("aria-busy","true");

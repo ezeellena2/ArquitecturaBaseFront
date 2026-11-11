@@ -58,6 +58,7 @@
   "unsavedChanges": {
     "title": "Discard changes?",
     "description": "These changes have not been saved yet.",
+    "languageDescription": "Changing the language discards unsaved changes.",
     "confirm": "Discard changes",
     "cancel": "Keep editing"
   },

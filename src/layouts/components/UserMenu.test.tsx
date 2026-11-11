@@ -159,6 +159,8 @@ describe("UserMenu", () => {
     await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
 
     const dialog = await screen.findByRole("dialog", { name: "¿Descartar los cambios?" });
+    // It says the changes go because of the language (lista de chequeo, 2026-11-11).
+    expect(dialog).toHaveAccessibleDescription("Cambiar el idioma descarta los cambios sin guardar.");
     expect(i18n.language).toBe("es");
     await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

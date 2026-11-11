@@ -34,7 +34,7 @@
   "available": "Available",
   "paused": "Paused",
   "removeTitle": "Remove the key?",
-  "removeHint": "The connection will be paused when you save. You can discard this change before saving it.",
+  "removeHint": "The connection is paused when you save.",
   "providerChangeTitle": "Change provider?",
   "providerChangeHint": "The model and candidate key will be cleared. The previous provider's key will be removed when you save and the connection will be paused.",
   "changeProvider": "Change provider",

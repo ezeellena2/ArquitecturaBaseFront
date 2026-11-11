@@ -44,7 +44,7 @@
     "enable": "Switch to Assistant mode",
     "enableConfirm": "Switch to Assistant",
     "enabling": "Switching to Assistant…",
-    "assistantDescription": "The assistant will attend the conversation with {{name}}: it recognizes requests and sends prefilled forms. It never saves a response on its own. You can take manual attention whenever you want.",
+    "assistantDescription": "The assistant handles the conversation with {{name}} until you take it back manually.",
     "availability": {
       "notConfigured": "The assistant is unavailable: the AI connection needs to be configured.",
       "paused": "The assistant is paused.",
@@ -93,7 +93,7 @@
     "description": "Check WhatsApp on the phone: this message may have been sent. It will not be automatically repeated.",
     "action": "I checked WhatsApp",
     "title": "Confirm delivery review",
-    "confirmDescription": "This action enables new replies. It does not send this message again or mark it delivered. Confirm only after checking what arrived on the phone.",
+    "confirmDescription": "It enables new replies without sending this message again or marking it delivered.",
     "confirm": "Confirm I checked",
     "confirming": "Confirming…",
     "uncertain": "Could not confirm the review. Refresh the chat and check the delivery state before trying again."

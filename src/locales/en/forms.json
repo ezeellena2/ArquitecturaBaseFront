@@ -1362,7 +1362,7 @@
     "discarding": "Discarding…",
     "discardFor": "Discard {{name}}",
     "discardTitle": "Discard request",
-    "discardDescription": "“{{name}}” will move to Discarded. A new request will bring it back to Pending.",
+    "discardDescription": "“{{name}}” moves to Discarded until it is requested again.",
     "discardedByColumn": "Discarded by",
     "discardedAtColumn": "Discarded",
     "discardedNotice": "Request discarded.",

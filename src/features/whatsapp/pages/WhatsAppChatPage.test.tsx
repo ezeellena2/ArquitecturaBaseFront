@@ -287,6 +287,8 @@ it("keeps the Assistant confirmation open with its progress until the change ans
   await open();
   await userEvent.click(screen.getByRole("button", { name: "Pasar a modo Asistente" }));
   const dialog = screen.getByRole("dialog", { name: "Pasar a modo Asistente" });
+  // One sentence with what changes, without telling how the assistant works (lista de chequeo, 2026-11-11).
+  expect(dialog).toHaveAccessibleDescription(/^El asistente atiende la conversación con .+ hasta que tomes la atención manual\.$/);
   try {
     await userEvent.click(within(dialog).getByRole("button", { name: "Pasar a Asistente" }));
     expect(await within(dialog).findByRole("button", { name: "Pasando a Asistente…" })).toHaveAttribute("aria-busy", "true");
@@ -306,6 +308,8 @@ it("keeps the review confirmation open with its progress until the review answer
   await open();
   await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
   const dialog = screen.getByRole("dialog", { name: "Confirmar revisión del envío" });
+  // What confirming does, in one sentence and without instructions (lista de chequeo, 2026-11-11).
+  expect(dialog).toHaveAccessibleDescription("Habilita nuevas respuestas, sin volver a enviar este mensaje ni marcarlo como entregado.");
   try {
     await userEvent.click(within(dialog).getByRole("button", { name: "Confirmar que revisé" }));
     expect(await within(dialog).findByRole("button", { name: "Confirmando…" })).toHaveAttribute("aria-busy", "true");

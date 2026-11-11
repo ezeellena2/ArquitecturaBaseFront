@@ -157,7 +157,7 @@ export function UserMenu() {
         }
       }}
       title={t("unsavedChanges.title")}
-      description={t("unsavedChanges.description")}
+      description={t("unsavedChanges.languageDescription")}
       confirmLabel={t("unsavedChanges.confirm")}
       cancelLabel={t("unsavedChanges.cancel")}
       focusFallback={triggerRef}

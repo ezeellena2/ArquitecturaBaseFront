@@ -1362,7 +1362,7 @@
     "discarding": "Descartando…",
     "discardFor": "Descartar {{name}}",
     "discardTitle": "Descartar pedido",
-    "discardDescription": "«{{name}}» pasará a Descartados. Si lo vuelven a pedir, aparecerá otra vez en Pendientes.",
+    "discardDescription": "«{{name}}» pasa a Descartados hasta que lo vuelvan a pedir.",
     "discardedByColumn": "Descartó",
     "discardedAtColumn": "Descartado",
     "discardedNotice": "Pedido descartado.",

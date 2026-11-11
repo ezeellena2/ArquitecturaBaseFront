@@ -44,7 +44,7 @@
     "enable": "Pasar a modo Asistente",
     "enableConfirm": "Pasar a Asistente",
     "enabling": "Pasando a Asistente…",
-    "assistantDescription": "El asistente va a atender la conversación con {{name}}: reconoce pedidos y le manda formularios prellenados. Nunca guarda una respuesta solo. Podés tomar la atención manual cuando quieras.",
+    "assistantDescription": "El asistente atiende la conversación con {{name}} hasta que tomes la atención manual.",
     "availability": {
       "notConfigured": "El asistente no está disponible: falta configurar la conexión de IA.",
       "paused": "El asistente está pausado.",
@@ -93,7 +93,7 @@
     "description": "Revisá el WhatsApp del teléfono: el mensaje pudo haberse enviado. No se repetirá automáticamente.",
     "action": "Ya revisé el WhatsApp",
     "title": "Confirmar revisión del envío",
-    "confirmDescription": "Esta acción habilita nuevas respuestas. No vuelve a enviar este mensaje ni lo marca como entregado. Confirmá solo después de revisar qué llegó al teléfono.",
+    "confirmDescription": "Habilita nuevas respuestas, sin volver a enviar este mensaje ni marcarlo como entregado.",
     "confirm": "Confirmar que revisé",
     "confirming": "Confirmando…",
     "uncertain": "No se pudo confirmar la revisión. Actualizá el chat y revisá el estado del envío antes de volver a intentarlo."

@@ -200,7 +200,10 @@ describe("AI settings", () => {
   it("confirms removing a key, pauses the connection and sends no plaintext", async () => {
     renderRouteWithProviders("/configuracion/ia");
     await userEvent.click(await screen.findByRole("button", { name: "Quitar clave" }));
-    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Quitar clave" }));
+    // What removing does, without an instruction on how to undo it (lista de chequeo, 2026-11-11).
+    const removal = await screen.findByRole("dialog", { name: "¿Quitar la clave?" });
+    expect(removal).toHaveAccessibleDescription("La conexión queda pausada cuando guardes.");
+    await userEvent.click(within(removal).getByRole("button", { name: "Quitar clave" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]).toMatchObject({ credentialChange: "Remove", apiKey: null, enabled: false });

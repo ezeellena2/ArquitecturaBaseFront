@@ -34,7 +34,7 @@
   "available": "Disponible",
   "paused": "Pausada",
   "removeTitle": "¿Quitar la clave?",
-  "removeHint": "La conexión quedará pausada cuando guardes. Podés descartar este cambio antes de guardarlo.",
+  "removeHint": "La conexión queda pausada cuando guardes.",
   "providerChangeTitle": "¿Cambiar de proveedor?",
   "providerChangeHint": "Se vaciarán el modelo y la clave candidata. La clave del proveedor anterior se quitará al guardar y la conexión quedará pausada.",
   "changeProvider": "Cambiar proveedor",
