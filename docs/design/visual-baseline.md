@@ -252,6 +252,12 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   (2026-11-05; antes medían 40 y el menú se corría al llegar los permisos); el aviso de error va en un recuadro de 40,
   separador corto en lugar del rótulo y control de plegar de 20 px sobre el borde. Sin submenús: los hijos suben como
   íconos sueltos; Administración sigue siendo un botón que abre el panel.
+- **Carpetas en el menú** ([CP5-A, 2026-11-04](carpetas.md#el-menú-lateral-cp5-a)): una carpeta puede ir en un menú
+  propio, debajo de Inicio y con los demás en orden alfabético, que abre su panel como Administración (sus formularios y
+  un grupo por subcarpeta, nunca más de dos niveles), o ser un grupo más al final de «Gestión de formularios» o de
+  Administración. Lleva sólo los formularios activos que la persona puede abrir y lo vacío no aparece. En el cajón, un
+  menú propio es un grupo con sus subcarpetas adentro; contraída, su ícono con tooltip abre el panel. Mientras se lee, un
+  bloque de carga ocupa su lugar; si falla, el aviso del menú con «Reintentar».
 
 ## Íconos y acciones
 
