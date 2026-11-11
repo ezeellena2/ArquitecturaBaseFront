@@ -26,7 +26,9 @@ export interface ManualCatalogBody {
 }
 export interface CreateManualCatalogBody extends ManualCatalogBody { readonly valueType?: CatalogValueType }
 export interface CatalogItemMove { readonly itemId: string; readonly direction: "up" | "down" }
-export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sortAlphabetically?: boolean; readonly confirmFieldRemovals?: readonly string[]; readonly deleteItemIds?: readonly string[] }
+/** «Ordenar por…»: `column` is "text", "code" or the id of an active saved field. Ties keep their order and empty values go last. */
+export interface CatalogItemSort { readonly column: string; readonly descending: boolean }
+export interface UpdateManualCatalogBody extends ManualCatalogBody { readonly expectedRevision: number; readonly isActive?: boolean; readonly moves?: readonly CatalogItemMove[]; readonly sort?: CatalogItemSort; readonly confirmFieldRemovals?: readonly string[]; readonly deleteItemIds?: readonly string[] }
 export interface CatalogItemsQuery {
   readonly page: number;
   readonly pageSize: number;

@@ -374,11 +374,21 @@ it("exposes the confirmed catalog after saving, importing or adopting", async ()
   act(() => result.current.adoptCurrent());
   expect(result.current.confirmed).toEqual(current);
 });
-it("stages one alphabetical command and rejects mixing it with captured moves", () => {
+it("stages one «Ordenar por…» command and rejects mixing it with captured moves", () => {
  const {result}=renderHook(()=>useCatalogDraftEditor(scope,initial),harness());
  act(()=>result.current.loadItems([{id:itemId,code:"C1",value:null,text:{es:"Uno",en:null},detail:{},position:1,isActive:true, fields: {}, fieldTexts: {}}]));
- act(()=>result.current.changeSort(true));act(()=>result.current.changeMove(itemId,"down"));
- expect(result.current.draft).toMatchObject({sortAlphabetically:true,moves:[]});expect(result.current.dirty).toBe(true);
- act(()=>result.current.changeSort(false));act(()=>result.current.changeMove(itemId,"down"));act(()=>result.current.changeSort(true));
- expect(result.current.draft).toMatchObject({sortAlphabetically:false,moves:[{itemId,direction:"down"}]});
+ act(()=>result.current.changeSort({column:"text",descending:false}));act(()=>result.current.changeMove(itemId,"down"));
+ expect(result.current.draft).toMatchObject({sort:{column:"text",descending:false},moves:[]});expect(result.current.dirty).toBe(true);
+ act(()=>result.current.changeSort(null));act(()=>result.current.changeMove(itemId,"down"));act(()=>result.current.changeSort({column:"code",descending:true}));
+ expect(result.current.draft).toMatchObject({sort:null,moves:[{itemId,direction:"down"}]});
+});
+it("keeps a pending order by a field while it stays active and drops it with the field", () => {
+ const fieldId = "01990000-0000-7000-8000-000000000041";
+ const zone = { id: fieldId, key: "zone", name: { es: "Zona" }, type: "text" as const, sourceCatalogId: null, required: false, unique: false, min: null, max: null, maxLength: 300, role: "data" as const, position: 1, isActive: true, valuesCount: 1, usedBy: [] };
+ const {result}=renderHook(()=>useCatalogDraftEditor(scope,{...initial,fields:[zone]}),harness());
+ act(()=>result.current.changeSort({column:fieldId,descending:true}));
+ act(()=>result.current.changeFields(result.current.draft!.fields.map(field => ({ ...field, name: { ...field.name, es: "Zonas" } })), []));
+ expect(result.current.draft!.sort).toEqual({column:fieldId,descending:true});
+ act(()=>result.current.changeFields(result.current.draft!.fields.map(field => ({ ...field, isActive: false })), []));
+ expect(result.current.draft!.sort).toBeNull();
 });

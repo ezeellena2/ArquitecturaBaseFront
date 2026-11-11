@@ -109,10 +109,11 @@ it("keeps what an unedited saved option or yes/no showed while its field changes
   expect(pendingFieldTexts(pending, { ...option, localId: "new", itemId: null }, "es", labels)).toEqual({});
 });
 
-it("sends alphabetical ordering as one explicit command without reconstructing thousands of moves", () => {
-  const draft = { ...openCatalogDraft(catalog), sortAlphabetically: true };
-  expect(catalogDraftUpdateBody(draft)).toMatchObject({ sortAlphabetically: true, items: [] });
+it("sends «Ordenar por…» as one explicit command, with its column and direction, without reconstructing thousands of moves", () => {
+  const draft = { ...openCatalogDraft(catalog), sort: { column: "code", descending: true } };
+  expect(catalogDraftUpdateBody(draft)).toMatchObject({ sort: { column: "code", descending: true }, items: [] });
   expect(catalogDraftUpdateBody(draft)).not.toHaveProperty("moves");
+  expect(catalogDraftUpdateBody(openCatalogDraft(catalog))).not.toHaveProperty("sort");
 });
 
 // Changing the menu language keeps the draft: its integers and decimals are written in the new language with the same value.

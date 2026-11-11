@@ -2,10 +2,10 @@ import { parseCatalogValue, type CatalogValueType } from "../catalogValues";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
-import type { CatalogItemMove } from "../api/catalogs";
+import type { CatalogItemMove, CatalogItemSort } from "../api/catalogs";
 import { createManualCatalog, fetchCatalog, updateManualCatalog, createFiltersCatalog, updateFiltersCatalog, previewCatalogFilters, approveCatalogProposal, approveManualCatalogProposal, discardCatalogProposal } from "../api/catalogs";
 import type { CatalogDetail, CatalogItem, CatalogSave, CatalogFilterPreview } from "../api/catalogResponse";
-import { catalogDraftBody, catalogDraftInCulture, catalogDraftUpdateBody, catalogItemFieldIssues, discardCatalogDraftItem, loadCatalogDraftItems, markCatalogDraftItemDeleted, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
+import { catalogDraftBody, catalogDraftInCulture, catalogDraftUpdateBody, catalogItemFieldIssues, catalogSortColumnExists, discardCatalogDraftItem, loadCatalogDraftItems, markCatalogDraftItemDeleted, openCatalogDraft, stageCatalogDraftItem, stageCatalogDraftMove, type CatalogDraft } from "../catalogDraft";
 import { catalogItemChanges, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
 import { ownTexts } from "../editorModel";
@@ -86,7 +86,9 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
       // While the author has not edited the presentation, it follows the removals, so restoring a field puts it back.
       const followsRemovals = JSON.stringify(value.draft.presentation) === JSON.stringify(fromBaseline(value.draft.fields));
       const removed = removedFrom(value.draft.fields, fields);
-      return { ...value, error: null, draft: { ...value.draft, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals],
+      // A pending order by a field that stops being active is dropped with it: the notice never names a column that is gone.
+      const sort = value.draft.sort && catalogSortColumnExists(value.draft.sort, fields) ? value.draft.sort : null;
+      return { ...value, error: null, draft: { ...value.draft, sort, fields: fields.map(field => ({ ...field, name: { ...field.name }, usedBy: field.usedBy.map(use => ({ ...use })) })), confirmFieldRemovals: [...confirmFieldRemovals],
         presentation: followsRemovals ? fromBaseline(fields) : removed.length ? withoutPresentationFields(value.draft.presentation, removed) : value.draft.presentation } };
     });
   }, [owned, isCurrentOwner]);
@@ -112,9 +114,9 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
     setState(value => ({ ...value, error: null, draft: stageCatalogDraftMove(value.draft, itemId, direction) }));
   }, [owned, isCurrentOwner]);
-  const changeSort = useCallback((sortAlphabetically: boolean) => {
+  const changeSort = useCallback((sort: CatalogItemSort | null) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview || !stateRef.current.draft.id || stateRef.current.draft.moves.length) return;
-    setState(value => ({ ...value, error: null, draft: { ...value.draft, sortAlphabetically } }));
+    setState(value => ({ ...value, error: null, draft: { ...value.draft, sort: sort && { ...sort } } }));
   }, [owned, isCurrentOwner]);
   const clearMoves = useCallback(() => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.busy || stateRef.current.requiresReview) return;
@@ -235,7 +237,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const observeCatalog = useCallback((catalog: CatalogDetail) => {
     const current = stateRef.current, draft = current.draft, baseline = current.baseline;
     if (!owned || !isCurrentOwner() || operation.current || current.busy || catalog.id !== draft.id || catalog.revision < (draft.revision ?? 0)
-      || draft.sortAlphabetically || draft.moves.length || draft.deleteItems.length || Object.keys(draft.items.changes).length
+      || draft.sort || draft.moves.length || draft.deleteItems.length || Object.keys(draft.items.changes).length
       || draft.isActive !== baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(baseline.name) || JSON.stringify(draft.description) !== JSON.stringify(baseline.description)
       || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(baseline.presentation)) return;
     setState(fresh(owner, catalog, kind, valueType, scope.culture));
@@ -245,7 +247,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
   const dirty = !!draft && (draft.isActive !== state.baseline.isActive || JSON.stringify(draft.name) !== JSON.stringify(state.baseline.name)
     || JSON.stringify(draft.description) !== JSON.stringify(state.baseline.description)
     || JSON.stringify(catalogFieldsBody(draft.fields, draft.culture)) !== JSON.stringify(catalogFieldsBody(state.baseline.fields, draft.culture)) || JSON.stringify(draft.presentation) !== JSON.stringify(state.baseline.presentation)
-    || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.deleteItems.length > 0 || draft.sortAlphabetically);
+    || JSON.stringify(draft.filters ? catalogFiltersBody(draft.filters) : null) !== JSON.stringify(state.baseline.filters ? catalogFiltersBody(state.baseline.filters) : null) || Object.keys(draft.items.changes).length > 0 || draft.moves.length > 0 || draft.deleteItems.length > 0 || draft.sort !== null);
   return { draft, dirty, busy: owned && state.busy, working: owned && state.busy ? state.working : null, requiresReview: owned && state.requiresReview, current: owned ? state.current : null, confirmed: owned ? state.confirmed : null,
     saved: owned ? state.saved : null, previewResult: owned && canManage ? state.previewResult : null, error: owned ? state.error : null, canSave: owned && canManage && !state.busy && !state.requiresReview,
     changeSort, observeCatalog, changeMetadata, changeFilters, changeFields, changePresentation, clearPreview, preview, changeItem, discardItem, changeItemDeletion, changeMove, clearMoves, loadItems, save, approveManualProposal, discardProposal, readCurrent, adoptCurrent };

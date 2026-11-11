@@ -1441,7 +1441,7 @@ it("saves alphabetical ordering as a single command and no movements",async()=>{
  expect(screen.getByRole("status")).toHaveTextContent("Se ordenará A–Z al guardar.");expect(bodies).toEqual([]);
  expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeDisabled();
  await user.click(screen.getByRole("button",{name:"Guardar"}));await waitFor(()=>expect(bodies).toHaveLength(1));
- expect(bodies[0]).toMatchObject({expectedRevision:1,sortAlphabetically:true,items:[]});expect(bodies[0]).not.toHaveProperty("moves");
+ expect(bodies[0]).toMatchObject({expectedRevision:1,sort:{column:"text",descending:false},items:[]});expect(bodies[0]).not.toHaveProperty("moves");
 });
 it("applies an explicitly reviewed paste and adopts the returned clean baseline without saving the draft",async()=>{
  setup();const base=catalogImportPreviewFixture();const check=vi.spyOn(catalogImports,"previewCatalogImport").mockResolvedValue({...base,revision:1,mode:"Append",counts:{...base.counts,errorRows:0,deactivated:0},issues:[],deactivated:[],confirmations:{deactivations:0,emptySheet:false,manyErrors:false}});
