@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { formatDateOnly } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
@@ -17,7 +18,9 @@ const maxPeriods = 4;
 const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 interface Props { value: BusinessDetails["openingHours"]; onChange: (value: BusinessDetails["openingHours"]) => void; editable: boolean; locked: boolean; error?: string; legacy: React.ReactNode }
 export function BusinessHoursEditor({ value, onChange, editable, locked, error, legacy }: Props) {
-  const { t } = useTranslation("businessInformation");
+  const { t, i18n } = useTranslation("businessInformation");
+  // A special date is shown with numbers only, in the order of the language (2026-11-10), never as it is stored.
+  const shownDate = (date: string) => formatDateOnly(date, i18n.language) ?? date;
   const [special, setSpecial] = useState<SpecialDate | null>(null);
   const zones = useMemo(() => Array.from(new Set([value.timeZoneId, "UTC", ...Intl.supportedValuesOf("timeZone")])).sort(), [value.timeZoneId]);
   const disabled = !editable || locked;
@@ -40,8 +43,8 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
     <FormField label={t("timeZoneLabel")} help={t("timeZoneHint")}><NativeSelect value={value.timeZoneId} disabled={disabled} onChange={event => onChange({ ...value, timeZoneId: event.target.value })}>{zones.map(zone => <option key={zone}>{zone}</option>)}</NativeSelect></FormField>
     <div className="space-y-3 border-t border-[var(--color-border)] pt-3"><p className="text-sm font-medium">{t("exceptions")}</p>
       {!value.exceptions.length ? <p className="text-xs text-[var(--color-content-muted)]">{t("noExceptions")}</p> : value.exceptions.map(item => <div key={item.date} className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm">{item.date} · {t(item.status)}{item.status === "open" ? ` · ${item.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}` : ""}</p>
-        {editable ? <div className="flex items-center gap-2"><Button variant="muted-link" disabled={locked} onClick={() => setSpecial(structuredClone(item))}>{t("editDate")}</Button><IconButton label={t("removeDate", { date: item.date })} size="icon-sm" disabled={locked} onClick={() => onChange({ ...value, exceptions: value.exceptions.filter(previous => previous.date !== item.date) })}><TrashIcon className="size-4" /></IconButton></div> : null}
+        <p className="text-sm">{shownDate(item.date)} · {t(item.status)}{item.status === "open" ? ` · ${item.periods.map(period => `${period.start}–${period.end}${period.nextDay ? " (+1)" : ""}`).join(", ")}` : ""}</p>
+        {editable ? <div className="flex items-center gap-2"><Button variant="muted-link" disabled={locked} onClick={() => setSpecial(structuredClone(item))}>{t("editDate")}</Button><IconButton label={t("removeDate", { date: shownDate(item.date) })} size="icon-sm" disabled={locked} onClick={() => onChange({ ...value, exceptions: value.exceptions.filter(previous => previous.date !== item.date) })}><TrashIcon className="size-4" /></IconButton></div> : null}
       </div>)}
       {editable ? <DisabledReason reason={!locked && value.exceptions.length >= 32 ? t("exceptionsLimit", { count: 32 }) : null}><Button variant="outline" disabled={locked || value.exceptions.length >= 32} onClick={() => setSpecial({ date: "", status: "closed", periods: [] })}>{t("addException")}</Button></DisabledReason> : null}
     </div>

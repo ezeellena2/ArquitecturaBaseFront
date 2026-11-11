@@ -140,14 +140,16 @@ describe("business information editor", () => {
     expect(date).toHaveFocus();
     expect(within(dialog).getByText("Elegí apertura y cierre para cada franja.")).toHaveAttribute("role", "alert");
     // Después del intento, cada error se va mientras se corrige.
-    await userEvent.type(date, "2026-10-10");
+    await userEvent.type(date, "2026-10-24");
     expect(date).not.toHaveAccessibleDescription("Elegí la fecha.");
     await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Desde" }), "09:00");
     await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Hasta" }), "13:00");
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     await userEvent.click(confirm);
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.getByText("2026-10-10 · Abierto · 09:00–13:00")).toBeInTheDocument();
+    // The date with numbers only, day first in Spanish (2026-11-10), never as it is stored.
+    expect(screen.getByText("24/10/2026 · Abierto · 09:00–13:00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Quitar fecha 24/10/2026" })).toBeInTheDocument();
     expect(writes).toHaveLength(0);
   });
   it("labels the state and the hours of a special date as fields, with the error of the hours in its field", async () => {
@@ -194,7 +196,7 @@ describe("business information editor", () => {
     // La franja vacía del lunes no es de esta fecha: el diálogo no la marca y la fecha cerrada entra.
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.getByText("2026-10-10 · Cerrado")).toBeInTheDocument();
+    expect(screen.getByText("10/10/2026 · Cerrado")).toBeInTheDocument();
     const hours = screen.getByRole("group", { name: "Horario de atención" });
     expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
     // Lo que sí trae una fecha, como repetirla, se sigue marcando en el diálogo aunque el lunes siga incompleto.
