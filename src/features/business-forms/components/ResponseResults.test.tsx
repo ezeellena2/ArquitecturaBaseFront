@@ -8,7 +8,7 @@ const result = {
   source: "arca.invoice", name: "Comprobante de ARCA", recordedAtUtc: "2026-11-09T20:00:00Z",
   values: [
     { key: "voucher", label: "Comprobante", kind: "text" as const, value: "Factura C" },
-    { key: "caeDueOn", label: "Vencimiento del CAE", kind: "date" as const, value: "2026-11-19" },
+    { key: "caeDueOn", label: "Vence el CAE", kind: "date" as const, value: "2026-11-19" },
     { key: "total", label: "Total", kind: "number" as const, value: null },
   ],
 };

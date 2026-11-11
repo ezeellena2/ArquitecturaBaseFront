@@ -29,7 +29,7 @@ const invoice = { source: "arca.invoice", name: "Comprobante de ARCA", recordedA
   { key: "voucher", label: "Comprobante", kind: "text" as const, value: "Factura C" },
   { key: "number", label: "Número", kind: "text" as const, value: "00004-00000012" },
   { key: "cae", label: "CAE", kind: "text" as const, value: "75123456789012" },
-  { key: "caeDueOn", label: "Vencimiento del CAE", kind: "date" as const, value: "2026-11-19" },
+  { key: "caeDueOn", label: "Vence el CAE", kind: "date" as const, value: "2026-11-19" },
   { key: "total", label: "Total", kind: "number" as const, value: "605500" },
 ] };
 const fiscalPdf = { id: id(803), runId: issueRun, culture: "es" as const, name: "Factura C 00004-00000012.pdf", size: 2048, createdAtUtc: "2026-11-09T12:01:00Z" };
