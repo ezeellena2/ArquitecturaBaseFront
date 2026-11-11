@@ -1,6 +1,6 @@
 # Formularios sólo en la app: tableros elegidos
 
-Fecha: **2026-11-09**. Estado: **elegidos, por programar**. El usuario eligió las siete recomendadas el mismo día. El alcance,
+Fecha: **2026-11-09**. Estado: **elegidos y programados** (backend el 2026-11-09, front el 2026-11-11). El usuario eligió las siete recomendadas el mismo día. El alcance,
 las decisiones y el diseño técnico están en el [plan del backend](../../../ArquitecturaBase/docs/plans/2026-11-09-formularios-solo-en-la-app.md);
 las pantallas, los textos y los estados salen de acá.
 
@@ -75,3 +75,14 @@ El 2026-11-09 el usuario eligió las siete recomendadas («Sí, las recomendadas
 | Diálogo de publicar | `PublicationCheckDialog` con sus zonas (PU1-A) |
 | «Publicamos la versión 4.» | el aviso de éxito (AV1-A) |
 | Listado | `DataTable`, con «Dónde se completa» como una columna más |
+
+## Lo programado (2026-11-11)
+
+- El ajuste es un `SegmentedControl` con `wrap`, nuevo en `src/shared/ui`: en el celular las opciones van separadas y la que no
+  entra baja de renglón; desde 640 px van unidas y miden sus textos. Lleva su (i) y aparece sólo con un canal de formularios
+  instalado (`form-channels`).
+- La vista previa de la app es `FormAppPreview`: la carga armada desde el borrador, con las preguntas de catálogo apagadas,
+  porque el borrador no tiene versión que traiga sus opciones.
+- Publicar en la app no muestra «Publicación aceptada»: el aviso «Publicamos la versión N.» llega con el estado, que se lee enseguida.
+- La baja y la eliminación de un formulario publicado sólo en la app no hablan del chat, del asistente ni de los Flows.
+- Evidencia: `src/test/visual/formAppOnly.spec.ts` (el editor, el diálogo, el listado y SA5, en es y en a 1440, 390 y 320 px).

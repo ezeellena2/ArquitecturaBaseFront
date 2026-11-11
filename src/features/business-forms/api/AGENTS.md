@@ -5,6 +5,7 @@ Funciones HTTP de la feature y los guards que validan cada respuesta antes de qu
 Familias:
 
 - Formularios, ciclo de vida y publicación: `forms.ts` (listado y facetas, detalle, alta, guardado, recuperación del guardado, chequeo, aceptación y estado de la publicación, vista oficial, impacto y baja, eliminación) con sus guards en `response.ts`.
+- «Sólo en la app» (SA1-A a SA5): `appOnly` va sólo como `true` en el borrador, la versión activa y cada fila del listado, y `publishedOnlyInApp` en el ciclo de vida; el recibo de aceptación admite `Published`, una versión de la app publicada al aceptar (SA3-A).
 - Catálogos: `catalogs.ts` (listado, detalle, ítems, Manual, chequeo de la presentación de una pregunta, opciones y prueba de Filters, alta y guardado Filters, aprobar o descartar una propuesta) con guards en `catalogResponse.ts`.
 - Tabla MF1: `overview.ts` consume `/api/forms/overview`, con página y facetas hermanas. Los contadores privados son nullable requeridos: null no se convierte en cero ni habilita columnas. El guard es estricto también en cada fila, última respuesta y facetas; no conserva los issues ni su contenido al rechazar.
 - Planilla y detalle de respuestas: `responses.ts` (búsqueda POST, anclaje de vecinos por RecordId, detalle y conteos por filtro).
