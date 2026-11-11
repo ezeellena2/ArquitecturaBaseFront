@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSettledValue } from "@/shared/hooks/useSettledValue";
 import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FilterChip } from "@/shared/ui/FilterChip";
@@ -61,8 +62,8 @@ function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, single
 }) {
   const { t } = useTranslation("forms");
   const id = useId();
-  const [search, setSearch] = useState(""), [settled, setSettled] = useState("");
-  useEffect(() => { const timer = setTimeout(() => setSettled(search), 300); return () => clearTimeout(timer); }, [search]);
+  const [search, setSearch] = useState("");
+  const settled = useSettledValue(search);
   const reason = lockedReason ?? (single && values.length > 0 ? t("condition.catalogSingle") : null);
   const off = readOnly || !!reason;
   const detail = useCatalogDetail(scope, off ? "" : catalog, "global");
