@@ -39,7 +39,8 @@ it("lists each standard with its version, module and copies, and offers «Agrega
   setup(["formtemplates.read"]);
   renderRouteWithProviders("/formularios/biblioteca");
 
-  expect(await screen.findByText("Factura")).toBeInTheDocument();
+  // The first render pays the lazy page: with the machine loaded it takes more than a second.
+  expect(await screen.findByText("Factura", {}, { timeout: 10_000 })).toBeInTheDocument();
   expect(screen.getByText("Factura C con sus ítems y el total.")).toBeInTheDocument();
   // One piece of data per column (UD1): the version, the module that brings it and how many forms came from it.
   const table = screen.getByRole("table");
@@ -53,10 +54,40 @@ it("lists each standard with its version, module and copies, and offers «Agrega
   expect(screen.queryByRole("button", { name: /Agregar/ })).not.toBeInTheDocument();
 });
 
-it("says there are no standards when no installed module brings one", async () => {
+it("says there are no standards when no installed module brings one, with the title only", async () => {
   setup(["formtemplates.read"], []);
   renderRouteWithProviders("/formularios/biblioteca");
   expect(await screen.findByText("No hay formularios estándar")).toBeInTheDocument();
+  expect(screen.queryByText("Ningún módulo instalado trae formularios estándar.")).not.toBeInTheDocument();
+});
+
+// The (i) invites to add one only whoever can (premise 4.4): whoever only reads learns what the library is.
+it("invites to add a standard in its (i) only whoever manages forms", async () => {
+  setup(["formtemplates.read"]);
+  const { unmount } = renderRouteWithProviders("/formularios/biblioteca");
+  await screen.findByText("Factura");
+  await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Biblioteca" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Formularios listos que traen los módulos instalados, con las preguntas que necesitan.");
+  expect(screen.getByRole("tooltip")).not.toHaveTextContent("Agregá uno");
+  unmount();
+  queryClient.clear();
+  setup(["formtemplates.read", "formtemplates.manage"]);
+  renderRouteWithProviders("/formularios/biblioteca");
+  await screen.findByText("Factura");
+  await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Biblioteca" }));
+  expect(await screen.findByRole("tooltip")).toHaveTextContent("Agregá uno y queda como un formulario tuyo");
+});
+
+// A failure is said once by the common notice; the table keeps «Reintentar», which waits what the server asks after a 429.
+it("leaves a failure to the common notice and waits the 429 before «Reintentar»", async () => {
+  setup(["formtemplates.read"]);
+  server.use(http.get("/api/forms/library", () => HttpResponse.json({ title: "Too many requests", status: 429, code: "RateLimit", retryAfter: 30 }, { status: 429, headers: { "Retry-After": "30" } })));
+  renderRouteWithProviders("/formularios/biblioteca");
+  expect(await screen.findByText("No pudimos cargar la biblioteca.")).toBeInTheDocument();
+  const retry = screen.getByRole("button", { name: "Reintentar" });
+  expect(retry).toHaveAttribute("aria-disabled", "true");
+  expect(retry).toHaveAccessibleDescription(/Reintentá en (29|30) s/);
+  await waitFor(() => expect(vi.mocked(notify)).toHaveBeenCalled());
 });
 
 it("needs «Diseñar formularios» to see the library", async () => {

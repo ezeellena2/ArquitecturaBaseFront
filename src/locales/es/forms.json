@@ -3,7 +3,8 @@
   "library": {
     "title": "Biblioteca",
     "subtitle": "Formularios estándar",
-    "help": "Formularios listos que traen los módulos instalados, con las preguntas que necesitan. Agregá uno y queda como un formulario tuyo, en borrador, que cambiás como cualquier otro.",
+    "help": "Formularios listos que traen los módulos instalados, con las preguntas que necesitan.",
+    "helpAdd": "Agregá uno y queda como un formulario tuyo, en borrador, que cambiás como cualquier otro.",
     "standard": "Estándar",
     "version": "Versión",
     "source": "Origen",
@@ -23,7 +24,6 @@
     "folderHelp": "Dónde queda el formulario nuevo. Después lo podés poner en otras carpetas.",
     "standardFolder": "La del estándar",
     "emptyTitle": "No hay formularios estándar",
-    "emptyDescription": "Ningún módulo instalado trae formularios estándar.",
     "loadError": "No pudimos cargar la biblioteca.",
     "added": "Agregamos «{{name}}» como borrador.",
     "unavailable": "Este estándar ya no está en la biblioteca.",

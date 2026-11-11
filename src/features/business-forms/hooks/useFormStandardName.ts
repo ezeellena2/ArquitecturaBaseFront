@@ -1,10 +1,7 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchFormLibrary } from "../api/library";
 import { standardName } from "../boundQuestions";
 import type { FormDefinitionStandard } from "../model";
+import { useFormLibrary } from "./useFormLibrary";
 import type { FormReadScope } from "./useFormQueries";
-import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 
 /**
  * BI1-A: the name of the library standard a form was copied from, as «Biblioteca» lists it in the menu language, read with the
@@ -12,10 +9,6 @@ import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
  * the name is its key: it only names where the form came from, so a failure has no notice of its own.
  */
 export function useFormStandardName(scope: FormReadScope, standard: FormDefinitionStandard | undefined): string | null {
-  const root = useMemo(() => ["form-library", scope.actorId, scope.culture, [...scope.permissions].sort().join(",")] as const,
-    [scope.actorId, scope.culture, scope.permissions]);
-  useUnobservedQueryCleanup(root);
-  const library = useQuery({ queryKey: root, queryFn: ({ signal }) => fetchFormLibrary(signal), enabled: !!standard && scope.actorId !== null,
-    gcTime: 0, staleTime: 0, retry: false, meta: { errorOwner: "local" } });
+  const library = useFormLibrary(scope, { enabled: !!standard, silent: true });
   return standard ? standardName(standard, library.data?.standards) : null;
 }

@@ -1,3 +1,4 @@
+import { DisabledReason } from "./DisabledReason";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
@@ -34,6 +35,8 @@ interface DataTableProps<TRow> {
   /// Detalle extra del error (por ejemplo, el traceId para poder reportarlo).
   errorDescription?: string;
   onRetry?: () => void;
+  /** Why «Reintentar» waits, as the time the server asked after a 429: the button stays off with that reason. */
+  retryReason?: string | null;
   emptyTitle?: string;
   emptyDescription?: string;
   /// Lo que se puede hacer desde el vacío. Con filtros puestos, limpiarlos: un vacío que no ofrece salida
@@ -70,6 +73,7 @@ export function DataTable<TRow>({
   error,
   errorDescription,
   onRetry,
+  retryReason,
   emptyTitle,
   emptyDescription,
   emptyAction,
@@ -86,9 +90,11 @@ export function DataTable<TRow>({
         description={errorDescription}
         action={
           onRetry ? (
-            <Button type="button" variant="outline" onClick={onRetry}>
-              {t("actions.retry")}
-            </Button>
+            <DisabledReason reason={retryReason}>
+              <Button type="button" variant="outline" disabled={!!retryReason} onClick={onRetry}>
+                {t("actions.retry")}
+              </Button>
+            </DisabledReason>
           ) : undefined
         }
       />
