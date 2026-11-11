@@ -7,10 +7,12 @@ import type { ApprovalTask } from "../api/approvals";
 import { continueResponseAction, fetchResponseWorkflow, retryResponseRecipient, reviewResponseAction, type ResponseWorkflow } from "../api/workflow";
 import { sameWorkflowReviewTarget, workflowCanRetryRecipient, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 import { useResponseScope } from "./useResponseQueries";
+/** The flow of a response, by actor, form and response: the issuance of the zone «Comprobante» writes it too. */
+export const responseWorkflowKey = (owner: string, formId: string, recordId: string) => ["form-responses", owner, "workflow", formId, recordId];
 export function useResponseWorkflow(formId: string, recordId: string, retainPreviousForm = false) {
   const scope = useResponseScope();
   const client = useQueryClient();
-  const key = ["form-responses", scope.owner, "workflow", formId, recordId];
+  const key = responseWorkflowKey(scope.owner, formId, recordId);
   const owner = JSON.stringify(key);
   const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchResponseWorkflow(recordId, signal), enabled: scope.allowed && !!recordId,
     placeholderData: (previous, previousQuery) => previousQuery?.queryKey[1] === scope.owner && (retainPreviousForm || previousQuery.queryKey[3] === formId) ? keepPreviousData(previous) : undefined,

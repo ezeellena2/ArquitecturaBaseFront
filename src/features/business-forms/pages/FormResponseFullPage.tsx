@@ -29,7 +29,10 @@ import { ResponseMoments } from "../components/ResponseDetailContent";
 import { ResponseDocumentActions, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
 import { ResponseAmendActions } from "../components/ResponseAmendActions";
+import { ResponseFiscalPdf } from "../components/ResponseFiscalPdf";
+import { ResponseIssuance } from "../components/ResponseIssuance";
 import { VoidResponseDialog } from "../components/VoidResponseDialog";
+import { responseIssuance } from "../issuance";
 
 export function FormResponseFullPage() {
   const { formId = "", recordId = "" } = useParams();
@@ -76,6 +79,10 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
   const files = data.values.filter(value => value.type === "document").flatMap(responseFiles);
+  // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
+  const issuance = responseIssuance(current);
+  const fiscal = current?.documents.filter(document => issuance.fiscalRunIds.has(document.runId)) ?? [];
+  const copies = current?.documents.filter(document => !issuance.fiscalRunIds.has(document.runId)) ?? [];
   const activitySummary = composeWorkflowMoments(data, current).map(moment => t(moment.kind === "received" ? "responses.received" : moment.kind === "effects" ? "detail.events." + moment.event
     : moment.kind === "approval" ? moment.again ? "detail.pendingAgain" : "approvals.taskStates." + moment.task.state : moment.kind === "previousDecision" ? "approvals.taskStates." + moment.state
     : moment.kind === "corrected" ? "detail.corrected" : "approvals.states.Voided")).join(" · ");
@@ -85,12 +92,15 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     if (event.key === "ArrowUp" && navigation.previous && !loadingTarget) { event.preventDefault(); navigation.onMove(-1); }
     if (event.key === "ArrowDown" && navigation.next && !loadingTarget) { event.preventDefault(); navigation.onMove(1); }
   }}><Page title={data.number} backTo={backTo} status={<>{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge>
+    : issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge>
     : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}</>} actions={<>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
-    {current?.documents.length || files.length ? <ResponseDocumentDownloads documents={current?.documents ?? []} files={files} downloads={downloads}/> : null}
+    {/* «PDF fiscal» next to «Descargar ▾» (EM1-A, AC2), which keeps the other copies and the loaded files. */}
+    <ResponseFiscalPdf documents={fiscal} downloads={downloads}/>
+    {copies.length || files.length ? <ResponseDocumentDownloads documents={copies} files={files} downloads={downloads}/> : null}
     {/* ⋮ after «Descargar» (AC1-A): «Corregir» opens its page and «Anular» asks for the reason, for whoever may change it now. */}
-    {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))} onVoid={() => setVoiding(true)}/> : null}
+    {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))} onVoid={() => setVoiding(true)}/> : null}
     {navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
     {/* While another response loads, the spinner goes next to «1 de 2» and the previous sections stay dimmed and out of reach. */}
     {loadingTarget ? <Spinner/> : null}
@@ -102,6 +112,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
       {/* A replaced version is read as it was; the notice leads to the correction that stands for it (CW10-A). */}
       {data.replacedBy ? <Banner action={<Button variant="outline" size="sm" asChild><Link to={responseFullPath(formId, data.replacedBy.recordId, "")}>{t("detail.viewCurrent")}</Link></Button>}>
         {t("detail.replacedNotice", { number: data.number, date: formatDateTimeInZone(data.replacedBy.atUtc, i18n.language, detail.scope.user?.timeZoneId) })}</Banner> : null}
+      {/* EM1-A: the zone «Comprobante», first, before the moments and «Respuesta»; deciding there reads the list again. */}
+      <ResponseIssuance state={state} formId={formId} onChanged={navigation.refreshPending}/>
       {/* Whoever only loads sees where their response stands, as in the quick view, without the activity (CW6-C); a correction
           or a void are told the same way to everyone. */}
       {detail.scope.ownOnly || data.correction || data.void ? <ResponseMoments data={data} current={current} own={detail.scope.ownOnly} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
@@ -111,8 +123,9 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
       {detail.scope.ownOnly ? null : <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
         <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>
       </CollapsibleSection>}
-      {voiding ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} onClose={() => setVoiding(false)}
-        onVoided={() => { setVoiding(false); routerNavigate(navigation.backTo); }}/> : null}
+      {/* With a live issuance the void waits for its reversal (NC1-A): the page stays, reads the flow again and says «Anulándose». */}
+      {voiding ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} issuance={issuance.issued ? "issued" : issuance.live ? "live" : undefined} onClose={() => setVoiding(false)}
+        onVoided={() => { setVoiding(false); if (issuance.live) { void workflow.query.refetch(); void detail.query.refetch(); } else routerNavigate(navigation.backTo); }}/> : null}
       {current?.task && canDecide ? <ApprovalDecisionPanel key={current.task.id} embedded taskId={current.task.id} disabled={loadingTarget} actionsTarget={decisionTarget} onForbidden={navigation.denyDecision} onUnavailable={() => setUnavailableTask(taskKey)} onDecided={refresh}/> : null}
     </div>
   </Page></div>;

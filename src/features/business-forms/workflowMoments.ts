@@ -1,6 +1,5 @@
 import type { ResponseDetail } from "./api/responses";
 import type { ResponseAction, ResponseWorkflow } from "./api/workflow";
-import type { RuleEvent } from "./rules";
 import { composeWorkflowHistory } from "./workflowHistory";
 
 type ApprovalTask = NonNullable<ResponseWorkflow["task"]>;
@@ -8,7 +7,7 @@ type Correction = NonNullable<ResponseDetail["correction"]>;
 type Author = Correction["by"];
 export type WorkflowMoment =
   | { kind: "received"; key: string; atUtc: string; origin: ResponseDetail["origin"]; history: ResponseDetail["history"] }
-  | { kind: "effects"; key: string; event: RuleEvent; actions: ResponseAction[]; completedCount: number; totalCount: number }
+  | { kind: "effects"; key: string; event: ResponseAction["event"]; actions: ResponseAction[]; completedCount: number; totalCount: number }
   | { kind: "approval"; key: string; task: ApprovalTask; again: boolean }
   // How the version a correction replaced had been decided, with its PDF (CW10-A).
   | { kind: "previousDecision"; key: string; state: "Approved" | "Rejected"; atUtc: string; by: Author | null; pdfAtUtc: string | null }
@@ -44,7 +43,7 @@ export function composeWorkflowMoments(record: ResponseDetail, workflow?: Respon
   if (!observed) return voided ? [...moments, voided] : moments;
   // A task closed by a correction or a void decided nothing: the moment of the correction or the void tells it.
   const task = observed.task?.state === "Closed" ? null : observed.task;
-  const addEffects = (event: RuleEvent) => {
+  const addEffects = (event: ResponseAction["event"]) => {
     const actions = history.flatMap(entry => entry.type === "action" && entry.action.event === event &&
       entry.action.state !== "NotApplicable" && !(entry.action.kind === "RequestApproval" && entry.action.state === "Completed" && task) ? [entry.action] : []);
     if (actions.length > 0) moments.push({ kind: "effects", key: "effects:" + event, event, actions,
@@ -53,6 +52,8 @@ export function composeWorkflowMoments(record: ResponseDetail, workflow?: Respon
   addEffects("Received");
   if (task) moments.push({ kind: "approval", key: "approval:" + task.id, task, again: task.state === "Open" && correction?.previousState === "Approved" });
   if (observed.recordState === "Approved" || observed.recordState === "Rejected") addEffects(observed.recordState);
+  // Voiding a response with an issuance reverses it first (NC1-A): «Al anularla», before the void it ends in.
+  addEffects("Voided");
   if (voided) moments.push(voided);
   return moments;
 }

@@ -18,7 +18,9 @@ import { ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ResponseDetailContent } from "../components/ResponseDetailContent";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
 import { ResponseAmendActions } from "../components/ResponseAmendActions";
+import { ResponseFiscalPdf } from "../components/ResponseFiscalPdf";
 import { VoidResponseDialog } from "../components/VoidResponseDialog";
+import { responseIssuance } from "../issuance";
 
 function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
   return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
@@ -57,9 +59,13 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy, navigationError: navigation.error, retryNavigation: navigation.onRetry, retainPreviousForm });
   const { detail, workflow, data, current, downloads, unavailable, fileScope, allowed, loadingTarget, loading } = state;
   const [voiding, setVoiding] = useState<string | null>(null);
+  // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
+  const issuance = responseIssuance(current);
+  const fiscal = current?.documents.filter(document => issuance.fiscalRunIds.has(document.runId)) ?? [];
+  const copies = current?.documents.filter(document => !issuance.fiscalRunIds.has(document.runId)) ?? [];
   if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
-  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
+  return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge> : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge> : null}</>} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A). */}
     <IconButton label={t("detail.openFull")} asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
@@ -72,12 +78,15 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
       workspace.prepareFull(recordId);
     }}><ExpandIcon className="size-4"/></Link></IconButton>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <IconButton label={t("responses.openChat")} asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}><ChatIcon className="size-4"/></Link></IconButton> : null}
-    {current?.documents.length ? <ResponseDocumentDownloads compact documents={current.documents} downloads={downloads}/> : null}
+    {copies.length ? <ResponseDocumentDownloads compact documents={copies} downloads={downloads}/> : null}
+    {/* «PDF fiscal» goes with the icons that go elsewhere, right before ⋮ (EM1-A, AC2). */}
+    <ResponseFiscalPdf compact documents={fiscal} downloads={downloads}/>
     {/* ⋮ with «Corregir» and «Anular» after the icons, before ↑ ↓ × (AC1-A), for whoever may change it now: canAmend. */}
-    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => onCorrect(recordId)} onVoid={() => setVoiding(recordId)}/> : null}
+    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onCorrect={() => onCorrect(recordId)} onVoid={() => setVoiding(recordId)}/> : null}
   </>}>
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
-    {voiding === recordId ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} onClose={() => setVoiding(null)}
-      onVoided={() => { setVoiding(null); onVoided?.(); }}/> : null}
+    {/* With a live issuance the void waits for its reversal (NC1-A): the panel stays, reads the flow again and says «Anulándose». */}
+    {voiding === recordId ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} issuance={issuance.issued ? "issued" : issuance.live ? "live" : undefined} onClose={() => setVoiding(null)}
+      onVoided={() => { setVoiding(null); if (issuance.live) { void workflow.query.refetch(); void detail.query.refetch(); } else onVoided?.(); }}/> : null}
   </ResponsePanelFrame></ResponsePanelFilesScope>;
 }

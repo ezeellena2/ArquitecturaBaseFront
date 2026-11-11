@@ -1,0 +1,225 @@
+import { act, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { queryClient } from "@/shared/api/queryClient";
+import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
+import { notify } from "@/shared/ui/notifications";
+import { currentUser } from "@/test/mocks/handlers";
+import { server } from "@/test/mocks/server";
+import { responseDetailFixture, responseFormId, responseRecordId, responseSheetFixture, responseWorkflowFixture } from "@/test/responseFixtures";
+import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import type { ResponseDetail } from "../api/responses";
+import type { ResponseAction, ResponseWorkflow } from "../api/workflow";
+
+vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
+  useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
+vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+vi.mock("@/shared/hooks/usePrivateFormFile", async () => ({ ...await vi.importActual<typeof import("@/shared/hooks/usePrivateFormFile")>("@/shared/hooks/usePrivateFormFile"), savePrivateBlob: vi.fn() }));
+
+// Synthetic behavior DTOs for the zone «Comprobante» (EM1-A), its review and void (NC1-A) and «Esperando que lo confirmes» (EM2-A).
+const id = (value: number) => "0199a0c0-0000-7000-8000-" + String(value).padStart(12, "0");
+const sheet = "/formularios/" + responseFormId + "/respuestas";
+const issueRun = id(801), reversalRun = id(802);
+const action = (changes: Partial<ResponseAction>): ResponseAction => ({
+  id: issueRun, ruleId: id(800), kind: "IssueDocument", event: "Received", order: 0, revision: 3, state: "Completed", reasonCode: null, reason: null,
+  canConsult: false, canRetry: false, recipients: [], createdAtUtc: "2026-11-09T12:00:00Z", updatedAtUtc: "2026-11-09T12:01:00Z", completedAtUtc: "2026-11-09T12:01:00Z", ...changes,
+});
+const invoice = { source: "arca.invoice", name: "Comprobante de ARCA", recordedAtUtc: "2026-11-09T12:01:00Z", values: [
+  { key: "voucher", label: "Comprobante", kind: "text" as const, value: "Factura C" },
+  { key: "number", label: "Número", kind: "text" as const, value: "00004-00000012" },
+  { key: "cae", label: "CAE", kind: "text" as const, value: "75123456789012" },
+  { key: "caeDueOn", label: "Vencimiento del CAE", kind: "date" as const, value: "2026-11-19" },
+  { key: "total", label: "Total", kind: "number" as const, value: "605500" },
+] };
+const fiscalPdf = { id: id(803), runId: issueRun, culture: "es" as const, name: "Factura C 00004-00000012.pdf", size: 2048, createdAtUtc: "2026-11-09T12:01:00Z" };
+
+function setup(detail: Partial<ResponseDetail>, workflow: Partial<ResponseWorkflow>, permissions = ["formrecords.read", "formrecords.create"]) {
+  const posts: { path: string; body: unknown }[] = [];
+  const flow = { current: { ...responseWorkflowFixture(responseRecordId), ...workflow } as ResponseWorkflow };
+  const record = { current: { ...responseDetailFixture(responseRecordId), ...detail } as ResponseDetail };
+  const answer = (path: string, next?: Partial<ResponseWorkflow>) => async ({ request }: { request: Request }) => {
+    posts.push({ path, body: await request.json() });
+    if (next) flow.current = { ...flow.current, ...next };
+    return HttpResponse.json(flow.current, { status: 202 });
+  };
+  server.use(
+    http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
+    http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(responseSheetFixture())),
+    http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId, previousId: null, nextId: null, position: 1, totalCount: 2 })),
+    http.get("/api/forms/records/:id", () => HttpResponse.json(record.current)),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(flow.current)),
+    http.post("/api/forms/records/:id/actions/:runId/confirmation", ({ request, params }) => answer("confirmation:" + String(params.runId), { actions: [action({ state: "Running", completedAtUtc: null })], confirmation: undefined })({ request })),
+    http.post("/api/forms/records/:id/actions/:runId/review", ({ request, params }) => answer("review:" + String(params.runId), { actions: [action({ state: "Running", completedAtUtc: null })] })({ request })),
+    http.post("/api/forms/definitions/:formId/records/:recordId/void", async ({ request }) => {
+      posts.push({ path: "void", body: await request.json() });
+      flow.current = { ...flow.current, actions: [...flow.current.actions, action({ id: reversalRun, event: "Voided", state: "Waiting", completedAtUtc: null })] };
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.get("/api/forms/records/:recordId/documents/:documentId/content", () => new HttpResponse(new Uint8Array([37, 80, 68, 70]),
+      { headers: { "content-type": "application/pdf", "content-language": "es", "content-disposition": "attachment; filename=\"Factura C 00004-00000012.pdf\"" } })),
+  );
+  return { posts, flow, record };
+}
+// The first test pays the lazy route: under load its first reading takes longer than the default second.
+const zone = () => screen.findByRole("region", { name: "Comprobante" }, { timeout: 10_000 });
+
+beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); vi.mocked(savePrivateBlob).mockClear(); });
+
+describe("the zone «Comprobante» (EM1-A)", () => {
+  it("shows what was issued first, offers «PDF fiscal» before ⋮ and, in ⋮, voids it with a credit note", { timeout: 20_000 }, async () => {
+    setup({ canAmend: true, results: [invoice] }, { actions: [action({})], documents: [fiscalPdf] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const issued = within(await zone()).getByRole("group", { name: "Comprobante de ARCA" });
+    expect(within(issued).getByText("00004-00000012")).toBeInTheDocument();
+    expect(within(issued).getByText("19/11/2026")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Más acciones" }));
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["CorregirTiene un comprobante emitido o en curso: anulala y cargá otra.", "Anular con nota de crédito"]);
+    expect(within(menu).getAllByRole("menuitem")[0]).toHaveAttribute("aria-disabled", "true");
+    await user.keyboard("{Escape}");
+
+    // «PDF fiscal» is an icon before ⋮ and «Descargar ▾» keeps only the other copies: here there are none.
+    const pdf = screen.getByRole("button", { name: "PDF fiscal" });
+    expect(pdf.compareDocumentPosition(screen.getByRole("button", { name: "Más acciones" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Descargar" })).not.toBeInTheDocument();
+    await user.click(pdf);
+    await waitFor(() => expect(savePrivateBlob).toHaveBeenCalledWith(expect.anything(), "Factura C 00004-00000012.pdf"));
+  });
+
+  it("says the issuance is being issued while it runs, without data nor actions", async () => {
+    setup({}, { actions: [action({ state: "Running", completedAtUtc: null })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(within(await zone()).getByRole("status")).toHaveTextContent("Se está emitiendo el comprobante. La página se actualiza sola.");
+    expect(within(await zone()).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("says what the issuer refused, with its code when the server has no text for it, and that correcting sends it again", async () => {
+    setup({}, { actions: [action({ state: "Failed", reasonCode: "wsfe.10015", reason: "wsfe.10015", completedAtUtc: null })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    expect(within(await zone()).getByRole("alert")).toHaveTextContent("No se emitió el comprobante · wsfe.10015 No se emitió nada. Corregí la respuesta y el comprobante sale con la corrección.");
+  });
+});
+
+describe("an issuance in review (NC1-A)", () => {
+  const review = action({ state: "Uncertain", reasonCode: "arca.invoice.numberTaken", reason: "arca.invoice.numberTaken", completedAtUtc: null });
+
+  it("says why with the text tied to its code and decides it with «Revisar», without a person", { timeout: 20_000 }, async () => {
+    const { posts } = setup({}, { actions: [{ ...review, canReview: true }] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(within(section).getByRole("status")).toHaveTextContent("El número ya figura en ARCA con otros datos · Puede haber otro sistema usando el mismo punto de venta.");
+    await user.click(within(section).getByRole("button", { name: "Revisar" }));
+    const dialog = await screen.findByRole("dialog", { name: "Revisar la emisión de TEST-000002" });
+    expect(within(dialog).getByText("Antes de decidir, mirá «Mis comprobantes» en ARCA.")).toBeInTheDocument();
+    expect(within(dialog).getByRole("radio", { name: "Emitir con el número siguiente" })).toBeChecked();
+    await user.click(within(dialog).getByRole("button", { name: "Confirmar" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "review:" + issueRun, body: { expectedRevision: 3, wasSent: true } }]));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "info", message: "Se sigue con la emisión de TEST-000002." }));
+  });
+
+  it("tells who cannot decide that someone else resolves it, without «Revisar»", async () => {
+    setup({}, { actions: [review] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(within(section).getByRole("status")).toHaveTextContent("Lo resuelve alguien que puede emitir comprobantes.");
+    expect(within(section).queryByRole("button", { name: "Revisar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("«Esperando que lo confirmes» (EM2-A)", () => {
+  const waiting = action({ state: "Uncertain", reasonCode: "Forms.Action.AwaitingConfirmation", reason: "La emisión espera que la confirme quien cargó la respuesta.", completedAtUtc: null });
+  const confirmation = { runId: issueRun, document: { es: "Factura A", en: "Invoice A" }, receiver: "Agro del Sur S.A.", total: "605000",
+    info: { es: "Lo decide el sistema: sos responsable inscripto y tu cliente también.", en: "The system decides it." }, date: "2026-11-09",
+    amounts: [{ label: { es: "Importe neto gravado", en: "Net taxed amount" }, value: "500000" }, { label: { es: "IVA 21 %", en: "VAT 21 %" }, value: "105000" }] };
+
+  it("shows what «¿La emito?» said to whoever loaded it and issues it with «Emitir»", { timeout: 20_000 }, async () => {
+    const { posts } = setup({}, { actions: [waiting], confirmation });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    const summary = within(section).getByRole("group", { name: "Esperando que lo confirmes" });
+    for (const text of ["Factura A", "Agro del Sur S.A.", "09/11/2026", "Importe neto gravado", "$ 500.000", "IVA 21 %", "$ 105.000", "$ 605.000"]) expect(within(summary).getByText(text)).toBeInTheDocument();
+    expect(within(summary).getByRole("button", { name: "Por qué este comprobante" })).toBeInTheDocument();
+    await user.click(within(section).getByRole("button", { name: "Emitir" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: true } }]));
+    expect(await within(await zone()).findByText("Se está emitiendo el comprobante. La página se actualiza sola.")).toBeInTheDocument();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "info", message: "Se está emitiendo el comprobante de TEST-000002." }));
+  });
+
+  it("asks before «No emitir», which voids it without issuing", { timeout: 20_000 }, async () => {
+    const { posts } = setup({}, { actions: [waiting], confirmation });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    await user.click(within(await zone()).getByRole("button", { name: "No emitir" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "¿No emitir TEST-000002?" }).catch(() => screen.findByRole("dialog", { name: "¿No emitir TEST-000002?" }));
+    expect(within(dialog).getByText("TEST-000002 queda anulada, sin comprobante.")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "No emitir" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: false } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "TEST-000002 quedó anulada, sin comprobante." })));
+  });
+
+  it("tells anyone else that it waits for whoever loaded it, without deciding", async () => {
+    setup({}, { actions: [waiting] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(within(section).getByText("Espera que lo confirme quien la cargó.")).toBeInTheDocument();
+    expect(within(section).queryByRole("button")).not.toBeInTheDocument();
+  });
+});
+
+describe("voiding with a credit note (NC1-A)", () => {
+  it("asks for the reason, says it is being voided and keeps the detail with «Anulándose»", { timeout: 25_000 }, async () => {
+    const { posts } = setup({ canAmend: true, results: [invoice] }, { actions: [action({})], documents: [fiscalPdf] });
+    const user = userEvent.setup({ delay: null });
+    const { router } = renderRouteWithProviders(sheet + "/" + responseRecordId);
+    await zone();
+    await user.click(screen.getByRole("button", { name: "Más acciones" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Anular con nota de crédito" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Anular TEST-000002?" });
+    expect(within(dialog).getByText("Se emite una nota de crédito por el total del comprobante de TEST-000002, que lo anula. No se puede deshacer.")).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/^Motivo/), "Cliente equivocado.");
+    await user.click(within(dialog).getByRole("button", { name: "Anular con nota de crédito" }));
+    await waitFor(() => expect(posts).toEqual([{ path: "void", body: { reason: "Cliente equivocado." } }]));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "info", message: "Se está emitiendo la nota de crédito de TEST-000002." })));
+    expect(await screen.findByText("Anulándose")).toBeInTheDocument();
+    expect(within(await zone()).getByRole("status")).toHaveTextContent("Se está emitiendo la nota de crédito. La página se actualiza sola.");
+    expect(router.state.location.pathname).toBe(sheet + "/" + responseRecordId);
+
+    // Back from the dialog the focus is on ⋮ again: the keyboard opens it.
+    const more = screen.getByRole("button", { name: "Más acciones" });
+    act(() => more.focus());
+    await user.keyboard("{Enter}");
+    const items = within(await screen.findByRole("menu")).getAllByRole("menuitem");
+    expect(items.map(item => item.textContent)).toEqual(["CorregirLa respuesta se está anulando.", "Anular con nota de créditoLa respuesta se está anulando."]);
+    for (const item of items) expect(item).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("keeps the invoice issued with the notice of a credit note that did not go out", async () => {
+    setup({ canAmend: true, results: [invoice] }, { actions: [action({}), action({ id: reversalRun, event: "Voided", state: "Failed", reasonCode: "wsfe.10016", reason: "wsfe.10016", completedAtUtc: null })] });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const section = await zone();
+    expect(within(section).getByRole("alert")).toHaveTextContent("No se pudo anular · wsfe.10016");
+    expect(within(section).getByRole("group", { name: "Comprobante de ARCA" })).toBeInTheDocument();
+    expect(screen.queryByText("Anulándose")).not.toBeInTheDocument();
+  });
+
+  it("shows the invoice and its credit note once voided, and «PDF fiscal» offers both", { timeout: 20_000 }, async () => {
+    const creditNote = { ...invoice, recordedAtUtc: "2026-11-10T12:00:00Z", values: invoice.values.map(value => value.key === "voucher" ? { ...value, value: "Nota de crédito C" } : value) };
+    setup({ results: [invoice, creditNote], void: { atUtc: "2026-11-10T12:00:00Z", by: { userId: id(377), displayName: "Juan Gómez" }, reason: "Cliente equivocado." } },
+      { recordState: "Voided", actions: [action({}), action({ id: reversalRun, event: "Voided" })],
+        documents: [fiscalPdf, { ...fiscalPdf, id: id(804), runId: reversalRun, name: "Nota de crédito C 00004-00000003.pdf" }] });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const groups = within(await zone()).getAllByRole("group", { name: "Comprobante de ARCA" });
+    expect(groups.map(group => within(group).getAllByRole("definition")[0].textContent)).toEqual(["Factura C", "Nota de crédito C"]);
+    expect(screen.getAllByText("Anulada").length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: "PDF fiscal" }));
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Factura C 00004-00000012.pdf", "Nota de crédito C 00004-00000003.pdf"]);
+  });
+});

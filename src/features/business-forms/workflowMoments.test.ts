@@ -144,3 +144,10 @@ it("does not say «otra vez» when the replaced version had not been approved", 
   expect(moments.map(moment => moment.kind)).toEqual(["received", "corrected", "approval"]);
   expect(moments[2]).toMatchObject({ again: false });
 });
+
+it("tells the reversal of an issuance «Al anularla», after what it reverses and before the void it ends in (NC1-A)", () => {
+  const response = { ...record(), void: { atUtc: time("09"), by: { userId: "ana", displayName: "Ana" }, reason: "Cargada dos veces." } };
+  const issued = action("issue", { kind: "IssueDocument" }), reversal = action("reversal", { kind: "IssueDocument", event: "Voided", createdAtUtc: time("05"), updatedAtUtc: time("08"), completedAtUtc: time("08") });
+  const workflow: ResponseWorkflow = { ...responseWorkflowFixture(response.id), recordState: "Voided", actions: [issued, reversal] };
+  expect(composeWorkflowMoments(response, workflow).map(moment => moment.kind === "effects" ? "effects:" + moment.event : moment.kind)).toEqual(["received", "effects:Received", "effects:Voided", "voided"]);
+});

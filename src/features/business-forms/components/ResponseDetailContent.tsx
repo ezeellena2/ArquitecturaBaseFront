@@ -18,6 +18,7 @@ import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
 import { ResponseDocumentActions, ResponseDocuments } from "./ResponseDocuments";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
 import { ResponseAnswer } from "./ResponseAnswer";
+import { ResponseIssuance } from "./ResponseIssuance";
 
 export function ResponseDetailContent({ state, formId, recordId, onDecided, onDecisionForbidden, decisionAllowed = true }: {
   state: ResponseDetailState; formId: string; recordId: string; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean;
@@ -41,6 +42,8 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
   const tab = ["answer", ...(own ? [] : ["activity"]), ...(hasPhotos ? ["photos"] : [])].includes(params.get("tab") ?? "") ? params.get("tab")! : params.get("tab") === "pdf" && current?.documents.length ? "pdf" : "answer";
   const refresh = async (task?: ApprovalTask) => { if (task && !await workflow.observeApproval(task)) return; void workflow.query.refetch(); onDecided?.(); };
   return <div className={current?.task?.state === "Open" && decidable(current.task.id) ? "max-sm:pb-20" : undefined}>
+    {/* EM1-A: the zone «Comprobante» comes first, above the moments and the tabs; deciding there reads the sheet again. */}
+    <div className="mb-4 empty:hidden"><ResponseIssuance state={state} formId={formId} onChanged={onDecided}/></div>
     <ResponseMoments data={data} current={current} own={own} timeZoneId={detail.scope.user?.timeZoneId} onActivity={() => update({ tab: "activity" })}
       decision={task => decidable(task.id) ? <><ApprovalDecisionPanel embedded statusId={"approval-moment-" + task.id} taskId={task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} onUnavailable={() => { const key = decisionKey(task.id); setUnavailable(previous => previous.has(key) ? previous : new Set(previous).add(key)); }} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : null}/>
     <Tabs value={tab} onValueChange={value => update({ tab: value === "answer" ? undefined : value })}>

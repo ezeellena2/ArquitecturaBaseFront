@@ -1237,7 +1237,8 @@
     "events": {
       "Received": "Al recibirla",
       "Approved": "Al aprobarla",
-      "Rejected": "Al rechazarla"
+      "Rejected": "Al rechazarla",
+      "Voided": "Al anularla"
     },
     "actionsCompleted_one": "{{completed}} de {{count}} hecha",
     "actionsCompleted_other": "{{completed}} de {{count}} hechas",
@@ -1635,5 +1636,75 @@
     "locked": "La necesita el estándar de la biblioteca: no se cambia.",
     "lockedRemove": "La necesita el estándar de la biblioteca: no se puede quitar.",
     "lockedBlock": "Tiene preguntas que necesita el estándar de la biblioteca: no se puede quitar."
+  },
+  "issuance": {
+    "title": "Comprobante",
+    "issuing": "Se está emitiendo el comprobante. La página se actualiza sola.",
+    "voidingCreditNote": "Se está emitiendo la nota de crédito. La página se actualiza sola.",
+    "voidingCancel": "Se está anulando la emisión. La página se actualiza sola.",
+    "failedTitle": "No se emitió el comprobante",
+    "failedFix": "No se emitió nada. Corregí la respuesta y el comprobante sale con la corrección.",
+    "voidFailedTitle": "No se pudo anular",
+    "reviewTitle": "La emisión espera una revisión",
+    "reviewOthers": "Lo resuelve alguien que puede emitir comprobantes.",
+    "review": "Revisar",
+    "reviewDialogTitle": "Revisar la emisión de {{number}}",
+    "reviewChoice": "Qué hacer con la emisión",
+    "proceed": "Seguir con la emisión",
+    "stop": "No emitir",
+    "stopHelp": "No se emite el comprobante.",
+    "confirm": "Confirmar",
+    "confirming": "Confirmando…",
+    "awaiting": "Esperando que lo confirmes",
+    "awaitingOthers": "Espera que lo confirme quien la cargó.",
+    "issue": "Emitir",
+    "issuingAction": "Emitiendo…",
+    "skip": "No emitir",
+    "skipTitle": "¿No emitir {{number}}?",
+    "skipDescription": "{{number}} queda anulada, sin comprobante.",
+    "skipping": "Anulando…",
+    "document": "Comprobante",
+    "why": "Por qué este comprobante",
+    "receiver": "Cliente",
+    "date": "Fecha",
+    "total": "Total",
+    "failed": "No se pudo decidir la emisión de {{number}}",
+    "done": {
+      "issue": "Se está emitiendo el comprobante de {{number}}.",
+      "skip": "{{number}} quedó anulada, sin comprobante.",
+      "proceed": "Se sigue con la emisión de {{number}}.",
+      "stop": "No se emite el comprobante de {{number}}."
+    },
+    "fiscalPdf": "PDF fiscal",
+    "voidingStatus": "Anulándose",
+    "notAmendable": "Tiene un comprobante emitido o en curso: anulala y cargá otra.",
+    "voidingReason": "La respuesta se está anulando.",
+    "voidWithCreditNote": "Anular con nota de crédito",
+    "voidDescription": "Se emite una nota de crédito por el total del comprobante de {{number}}, que lo anula. No se puede deshacer.",
+    "voidRequested": "Se está anulando {{number}}.",
+    "creditNoteRequested": "Se está emitiendo la nota de crédito de {{number}}.",
+    "reasons": {
+      "arca": {
+        "invoice": {
+          "numberTaken": {
+            "title": "El número ya figura en ARCA con otros datos",
+            "detail": "Puede haber otro sistema usando el mismo punto de venta.",
+            "proceed": "Emitir con el número siguiente",
+            "advice": "Antes de decidir, mirá «Mis comprobantes» en ARCA."
+          },
+          "numberMissing": {
+            "title": "El número no figura en ARCA, pero ya hay uno igual o mayor",
+            "detail": "Puede haber otro sistema usando el mismo punto de venta.",
+            "proceed": "Emitir con el número siguiente",
+            "advice": "Antes de decidir, mirá «Mis comprobantes» en ARCA."
+          },
+          "dateOutOfRange": {
+            "title": "ARCA ya no acepta la fecha del comprobante",
+            "detail": "Con productos, puede estar hasta 5 días antes de hoy; con servicios, hasta 10.",
+            "proceed": "Emitir con la fecha de hoy"
+          }
+        }
+      }
+    }
   }
 }
