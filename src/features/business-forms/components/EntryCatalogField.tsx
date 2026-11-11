@@ -162,14 +162,19 @@ function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, de
     <Dialog open={open} onOpenChange={next => { if (!next) close(); }}>
       <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
-          <DialogTitle className="min-w-0 flex-1 truncate">{question.label}{multiple ? <>{" "}<span className="text-xs font-normal text-[var(--color-content-muted)]">{t("upTo", { count: max })}</span></> : null}</DialogTitle>
+          <DialogTitle className="min-w-0 flex-1 truncate">{question.label}</DialogTitle>
           <IconButton variant="ghost" label={t("catalog.close")} onClick={close}><CloseIcon className="size-5"/></IconButton>
         </header>
         <div className="border-b border-[var(--color-border)] p-3">
           <Input autoFocus aria-label={t("catalog.search", { label: question.label })} placeholder={t("catalog.search", { label: question.label })}
             value={list.search} onChange={event => list.setSearch(event.target.value)}/>
-          {list.total !== undefined && list.items.length > 0 ? <p className="mt-2 text-xs text-[var(--color-content-muted)]">{count(list.total)}</p> : null}
-          {full ? <p className="mt-1 text-xs text-[var(--color-content-muted)]">{t("catalog.chosenOf", { count: picked.length, max })}</p> : null}
+          {/* The limit goes out of the title (DL, 2026-11-11): one fixed row under the search holds both counts, the options on one
+              side and, choosing several, the limit on the other, which says «Elegiste N de N.» once it is reached. It keeps its
+              height while the options arrive, so the list does not move. */}
+          <div className="mt-2 flex min-h-4 items-center justify-between gap-3 text-xs text-[var(--color-content-muted)]">
+            <span>{list.total !== undefined && list.items.length > 0 ? count(list.total) : null}</span>
+            {multiple ? <span className="shrink-0">{full ? t("catalog.chosenOf", { count: picked.length, max }) : t("upTo", { count: max })}</span> : null}
+          </div>
         </div>
         <ul role="listbox" aria-label={question.label} aria-multiselectable={multiple || undefined} className="min-h-0 flex-1 overflow-y-auto">
           {list.items.map(option => {

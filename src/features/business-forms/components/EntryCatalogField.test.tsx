@@ -44,6 +44,10 @@ function setup(multiple = false) {
 beforeEach(() => queryClient.clear());
 afterEach(() => vi.restoreAllMocks());
 
+/** The width of a phone, where the list opens full screen. */
+const phone = () => vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
+  addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+
 describe("a catalog question while loading", () => {
   it("asks for the options when the list opens, searches in the server and brings fifty more", async () => {
     const { requests } = setup();
@@ -90,20 +94,40 @@ describe("a catalog question while loading", () => {
   });
 
   it("opens the list full screen on the phone and applies several choices with «Listo»", async () => {
-    vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null, addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
+    phone();
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
     await user.click(await screen.findByRole("button", { name: "Lotes hasta 2" }));
-    const dialog = await screen.findByRole("dialog", { name: "Lotes hasta 2" });
+    const dialog = await screen.findByRole("dialog", { name: "Lotes" });
     expect(within(dialog).queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: "Buscar en Lotes" })).toHaveFocus();
     await user.click(await within(dialog).findByRole("option", { name: /^Lote 1/ }));
     await user.click(within(dialog).getByRole("option", { name: "Lote 2" }));
     await user.click(within(dialog).getByRole("button", { name: "Listo · 2 elegidos" }));
-    expect(screen.queryByRole("dialog", { name: "Lotes hasta 2" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Lotes" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Quitar Lote 1" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Quitar Lote 2" })).toBeVisible();
+  });
+
+  // DL (2026-11-11): the title is the question alone. Under the search, one fixed row reads both counts: the options on one side
+  // and, on the other, the limit, which says «Elegiste N de N.» once it is reached.
+  it("keeps the limit out of the title on the phone and reads both counts in one row", async () => {
+    phone();
+    setup(true);
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    await user.click(await screen.findByRole("button", { name: "Lotes hasta 2" }));
+    const dialog = await screen.findByRole("dialog", { name: "Lotes" });
+    expect(within(dialog).getByRole("heading", { name: "Lotes" })).toHaveTextContent(/^Lotes$/);
+    const row = (await within(dialog).findByText("4 opciones")).parentElement!;
+    expect(within(row).getByText("hasta 2")).toBeVisible();
+    await user.click(within(dialog).getByRole("option", { name: /^Lote 1/ }));
+    await user.click(within(dialog).getByRole("option", { name: "Lote 2" }));
+    expect(within(row).getByText("4 opciones")).toBeVisible();
+    expect(within(row).getByText("Elegiste 2 de 2.")).toBeVisible();
+    expect(within(dialog).getAllByText(/^(4 opciones|Elegiste 2 de 2\.)$/).map(text => text.parentElement)).toEqual([row, row]);
+    expect(within(dialog).queryByText("hasta 2")).not.toBeInTheDocument();
   });
 
   it("says Cargando… on «Mostrar 50 más» while the next options arrive", async () => {

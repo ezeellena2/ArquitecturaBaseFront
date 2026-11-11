@@ -131,8 +131,8 @@ y hay 5 confirmaciones dudosas. Los cuatro primeros están dibujados en el table
 | Importar opciones (`CatalogImportDialog`) | El resumen de la revisión en un renglón con « · »; casillas armadas a mano. | Archivo, Hoja y Filas leídas en dos columnas; `CheckboxField`. |
 | Cambiar el tipo de un campo (`CatalogFieldConversionDialog`) | El cambio como título a mano y los conteos en una frase. | Tipo y conteos en dos columnas. |
 | Nuevo catálogo (`CatalogOriginDialog`) | Los títulos de sus dos grupos de opciones, armados a mano. | El grupo dibuja su título con su (i). |
-| ¿Aprobar N? (`ApprovalDecisionPanel`) | «Ana Pérez · 9 nov 2026, 14:00», sin decir qué es. | «La cargó Ana Pérez el 9 nov 2026, 14:00.» |
-| Foto (`PhotoViewer`) | Nombre, tamaño y fecha en tres párrafos; «Foto 2 de 5 · número» en la descripción. | El nombre y la línea gris «86 KB · 9 nov 2026». |
+| ¿Aprobar N? (`ApprovalDecisionPanel`) | «Ana Pérez · 9 nov 2026, 14:00», sin decir qué es. | «La cargó Ana Pérez el 09/11/2026, 14:00.» |
+| Foto (`PhotoViewer`) | Nombre, tamaño y fecha en tres párrafos; «Foto 2 de 5 · número» en la descripción. | El nombre y la línea gris «86 KB · 09/11/2026». |
 | Horario de una fecha especial (`BusinessHoursEditor`) | El estado y las franjas sin etiqueta visible; el error suelto. | `FormField` «Atención» y «Horario». |
 | Elegir opciones en el celular (`EntryCatalogField`) | «hasta 3» pegado al título; dos conteos en párrafos. | El tope fuera del título y los conteos en un renglón. |
 | Opciones y Campos de un catálogo (`CatalogItemsDialog`, `CatalogFieldsDialog`) | Lo pendiente al guardar en texto rojo y «Nuevo» en etiqueta; los usos como frases. | Los dos estados en etiqueta, con UD3; los usos en renglones. |
