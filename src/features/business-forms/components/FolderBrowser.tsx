@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ActionsMenu } from "@/shared/ui/ActionsMenu";
 import { Button } from "@/shared/ui/button";
@@ -35,6 +35,18 @@ export function FolderBrowser({ folders, variant, onChosen }: { folders: Listing
   // An action that leaves the focus in a field (adding, renaming) keeps the «…» menu from taking it back on closing.
   const keepFocus = useRef(false);
   const firstEntry = useRef<HTMLDivElement>(null);
+  // When a name stops being edited, the focus goes to that folder's row, or to the + after cancelling a folder at the top
+  // (premise 5.8): never to the page.
+  const host = useRef<HTMLDivElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const focusAfter = useRef<string | null>(null);
+  useEffect(() => {
+    if (editing || focusAfter.current === null) return;
+    const row = host.current?.querySelector<HTMLElement>(`[data-tree-id="${CSS.escape(focusAfter.current)}"]`);
+    (row ?? addButton.current ?? firstEntry.current)?.focus();
+    focusAfter.current = null;
+  }, [editing, tree.data]);
+  const stopEditing = (focus: string | null) => { focusAfter.current = focus ?? "add"; setEditing(null); };
   const opened = new Set(selection.kind === "folder" ? ancestorIds(all, selection.id) : []);
   const isExpanded = (id: string) => overrides.get(id) ?? opened.has(id);
   const expand = (id: string) => setOverrides(previous => new Map(previous).set(id, true));
@@ -44,18 +56,19 @@ export function FolderBrowser({ folders, variant, onChosen }: { folders: Listing
     if (!editing) return;
     const clean = name.trim();
     if (clean === "") { setEditing({ ...editing, error: t("name.required") }); return; }
-    if (editing.mode === "rename" && clean === editing.folder.name) { setEditing(null); return; }
+    if (editing.mode === "rename" && clean === editing.folder.name) { stopEditing(editing.folder.id); return; }
     try {
       if (editing.mode === "add") {
-        await writes.create.run(editing.parentId, clean);
+        const created = await writes.create.run(editing.parentId, clean);
         notify({ id: feedbackId, kind: "success", message: t("created", { name: clean }) });
+        stopEditing(created.id);
       } else {
         // The tree read last has the revision: after «Volver a leer», saving again goes with it.
         const latest = all.find(folder => folder.id === editing.folder.id) ?? editing.folder;
         await writes.update.run(latest.id, latest.revision, clean, latest.parentId);
         notify({ id: feedbackId, kind: "success", message: t("renamed", { name: clean }) });
+        stopEditing(latest.id);
       }
-      setEditing(null);
     } catch (error) {
       const fields = folderWriteFailure(error, { t, id: feedbackId, fields: ["name", "parentId"], reread: () => { void writes.reread(); } });
       if (fields) setEditing({ ...editing, error: fields.name ?? fields.parentId });
@@ -63,7 +76,7 @@ export function FolderBrowser({ folders, variant, onChosen }: { folders: Listing
   };
   const editor = (label: string, initial?: string) => editing
     ? <FolderNameEditor label={label} initial={initial} pending={writes.create.pending || writes.update.pending} error={editing.error}
-      onSubmit={name => { void submitName(name); }} onCancel={() => setEditing(null)} />
+      onSubmit={name => { void submitName(name); }} onCancel={() => stopEditing(editing.mode === "rename" ? editing.folder.id : editing.parentId)} />
     : null;
   const startAdd = (parentId: string | null) => {
     keepFocus.current = true;
@@ -123,7 +136,7 @@ export function FolderBrowser({ folders, variant, onChosen }: { folders: Listing
         </div>
       ) : canManage && (all.length === 0 || variant === "sheet") && editing?.mode !== "add" ? (
         <div className="px-1">
-          <Button type="button" variant="outline" size="sm" onClick={() => startAdd(null)}><PlusIcon className="size-3.5" aria-hidden="true" />{t("add")}</Button>
+          <Button ref={variant === "sheet" ? addButton : undefined} type="button" variant="outline" size="sm" onClick={() => startAdd(null)}><PlusIcon className="size-3.5" aria-hidden="true" />{t("add")}</Button>
         </div>
       ) : null}
     </div>
@@ -138,10 +151,10 @@ export function FolderBrowser({ folders, variant, onChosen }: { folders: Listing
   return (
     <>
       {variant === "panel" ? (
-        <Surface title={t("title")} actions={canManage ? <IconButton size="icon-sm" label={t("add")} onClick={() => startAdd(null)}><PlusIcon className="size-4" /></IconButton> : undefined}>
+        <div ref={host}><Surface title={t("title")} actions={canManage ? <IconButton ref={addButton} size="icon-sm" label={t("add")} onClick={() => startAdd(null)}><PlusIcon className="size-4" /></IconButton> : undefined}>
           {body}
-        </Surface>
-      ) : body}
+        </Surface></div>
+      ) : <div ref={host}>{body}</div>}
       {dialogs}
     </>
   );

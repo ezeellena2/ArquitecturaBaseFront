@@ -148,5 +148,21 @@ describe("the folders of a listing (CP1-A, CP3-A, CP4)", () => {
     await userEvent.click(folders.getByRole("button", { name: "Guardar el nombre" }));
     // The same notice changes from the conflict to the result, so it is read again until it says so.
     await waitFor(() => expect(screen.getByText("Ahora la carpeta se llama «Cobranzas».")).toBeInTheDocument());
+    // The focus goes back to the folder's row, not to the page (premise 5.8); this tree double keeps its first name.
+    await waitFor(() => expect(folders.getByRole("button", { name: "Facturación" })).toHaveFocus());
+  });
+
+  it("takes the focus back to the folder's row when a rename is cancelled", async () => {
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formcatalogs.read", "formcatalogs.manage"] })),
+      http.get("/api/forms/folders", () => HttpResponse.json({ folders: [folder(billing, null, "Facturación", 1)], canManage: true })));
+    renderWithProviders(<MemoryRouter initialEntries={["/catalogos"]}><Listing /></MemoryRouter>);
+    const folders = await panel();
+    const actions = await folders.findByRole("button", { name: "Acciones de «Facturación»" });
+    actions.focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Renombrar" }));
+    await folders.findByRole("textbox", { name: "Nombre de «Facturación»" });
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(folders.getByRole("button", { name: "Facturación" })).toHaveFocus());
   });
 });

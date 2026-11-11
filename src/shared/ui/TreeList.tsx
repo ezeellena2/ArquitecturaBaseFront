@@ -19,12 +19,26 @@ export interface TreeListItem {
   editor?: ReactNode;
 }
 
-// The indent of each level: the arrow of a level lines up under the name of the one above.
-const indent = ["", "", "pl-5", "pl-10", "pl-15", "pl-20", "pl-25"];
+// An entry with what is below it: the flat list in order, nested by level so that the levels are read, not only seen (premise
+// 5.3). Levels 0 and 1 are the root; each deeper entry goes under the closest shallower one before it.
+interface TreeNode { item: TreeListItem; children: TreeNode[] }
+function nest(items: readonly TreeListItem[]): TreeNode[] {
+  const root: TreeNode[] = [];
+  const open: TreeNode[] = [];
+  for (const item of items) {
+    const node: TreeNode = { item, children: [] };
+    const level = Math.max(item.level, 1);
+    while (open.length > 0 && Math.max(open[open.length - 1]!.item.level, 1) >= level) open.pop();
+    (open.length > 0 ? open[open.length - 1]!.children : root).push(node);
+    open.push(node);
+  }
+  return root;
+}
 
 /// A list to choose one entry among levels, like the folders of a listing (CP1-A, 2026-11-03): each row says its name, the arrow
-/// folds and unfolds what is below, and the chosen one has the brand tint with a bar at the start (OE1-A). It does not know
-/// what the entries are: its owner flattens the visible ones in order, decides what is chosen and puts the actions of each.
+/// folds and unfolds what is below, and the chosen one has the brand tint with a bar at the start (OE1-A). What is below an entry
+/// is a list nested in its item, indented: a screen reader says the level. It does not know what the entries are: its owner
+/// flattens the visible ones in order, decides what is chosen and puts the actions of each.
 export function TreeList({ label, items, onSelect, onToggle }: {
   label: string;
   items: readonly TreeListItem[];
@@ -32,10 +46,9 @@ export function TreeList({ label, items, onSelect, onToggle }: {
   onToggle: (id: string) => void;
 }): ReactNode {
   const { t } = useTranslation();
-  return (
-    <ul aria-label={label} className="flex flex-col gap-0.5">
-      {items.map(item => (
-        <li key={item.id} className={indent[Math.min(item.level, indent.length - 1)]}>
+  // The arrow of a level lines up under the name of the one above: each nested list is indented by one arrow.
+  const render = (nodes: readonly TreeNode[]): ReactNode => nodes.map(({ item, children }) => (
+        <li key={item.id}>
           {item.editor ?? (
             <div className={cn(
               // 44 px to touch on the phone, as the board asks of every target there.
@@ -44,13 +57,15 @@ export function TreeList({ label, items, onSelect, onToggle }: {
                 ? "bg-[var(--color-brand-50)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
                 : "hover:bg-[var(--color-surface-muted)]",
             )}>
-              {item.level === 0 ? null : item.expanded === undefined ? <span aria-hidden="true" className="size-6 shrink-0" /> : (
-                <IconButton size="icon-xs" label={t(item.expanded ? "treeList.collapse" : "treeList.expand", { label: item.label })} aria-expanded={item.expanded} onClick={() => onToggle(item.id)}>
+              {/* 44 px to touch the arrow on the phone too (premise 5.7). */}
+              {item.level === 0 ? null : item.expanded === undefined ? <span aria-hidden="true" className="size-6 shrink-0 max-sm:size-11" /> : (
+                <IconButton size="icon-xs" className="max-sm:size-11" label={t(item.expanded ? "treeList.collapse" : "treeList.expand", { label: item.label })} aria-expanded={item.expanded} onClick={() => onToggle(item.id)}>
                   <ChevronDownIcon className={cn("size-3.5 transition-transform", item.expanded ? "" : "-rotate-90")} />
                 </IconButton>
               )}
               <button
                 type="button"
+                data-tree-id={item.id}
                 aria-current={item.selected ? "true" : undefined}
                 onClick={() => onSelect(item.id)}
                 className={cn(
@@ -68,8 +83,8 @@ export function TreeList({ label, items, onSelect, onToggle }: {
               ) : null}
             </div>
           )}
+          {children.length > 0 ? <ul className="flex flex-col gap-0.5 pl-5 max-sm:pl-11">{render(children)}</ul> : null}
         </li>
-      ))}
-    </ul>
-  );
+      ));
+  return <ul aria-label={label} className="flex flex-col gap-0.5">{render(nest(items))}</ul>;
 }

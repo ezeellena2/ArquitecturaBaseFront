@@ -49,6 +49,9 @@ describe("«Carpetas…» of a catalog (CP2-A)", () => {
     renderDialog(() => <ItemFoldersDialog kind="catalogs" id={catalog} name="Artículos" onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
     expect(await within(dialog).findByRole("checkbox", { name: "Facturación" })).toBeChecked();
+    // A subfolder says where it lives (premise 5.3): two folders with the same name read differently.
+    expect(within(dialog).getByRole("checkbox", { name: "Norte" })).toHaveAccessibleDescription("En Repartos");
+    expect(within(dialog).getByRole("checkbox", { name: "Repartos" })).not.toHaveAccessibleDescription();
     const save = within(dialog).getByRole("button", { name: "Guardar" });
     expect(save).toBeDisabled();
     await userEvent.click(within(dialog).getByRole("checkbox", { name: "Facturación" }));

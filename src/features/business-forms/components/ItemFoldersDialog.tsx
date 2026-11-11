@@ -8,7 +8,7 @@ import { PlusIcon } from "@/shared/ui/icons";
 import { notify } from "@/shared/ui/notifications";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { FolderItemKind } from "../api/folders";
-import { treeOrder } from "../folderTree";
+import { folderPath, treeOrder } from "../folderTree";
 import { useFolderScope, useFolderTree, useFolderWrites, useItemFolders } from "../hooks/useFormFolders";
 import { folderWriteFailure } from "./folderFeedback";
 import { FolderNameEditor } from "./FolderNameEditor";
@@ -85,7 +85,9 @@ export function ItemFoldersDialog({ kind, id, name, onClose, focusFallback }: { 
               {adding ? <FolderNameEditor label={t("name.new")} pending={writes.create.pending} error={adding.error} onSubmit={value => { void create(value); }} onCancel={() => setAdding(null)} /> : null}
               {treeOrder(folders).map(({ folder, depth }) => (
                 <div key={folder.id} className={indent[Math.min(depth, indent.length - 1)]}>
-                  <CheckboxField label={folder.name} checked={draft?.has(folder.id) === true} disabled={pending} onCheckedChange={checked => toggle(folder.id, checked)} />
+                  {/* A subfolder says where it lives, so two with the same name read differently (premise 5.3). */}
+                  <CheckboxField label={folder.name} description={depth > 1 && folder.parentId ? t("moveDialog.inside", { path: folderPath(folders, folder.parentId).join(" / ") }) : undefined}
+                    checked={draft?.has(folder.id) === true} disabled={pending} onCheckedChange={checked => toggle(folder.id, checked)} />
                 </div>
               ))}
               {tree.data?.canManage && !adding ? (
