@@ -1,8 +1,8 @@
 # Motor para documentos: tableros elegidos
 
 Fecha: **2026-11-09**. Es la etapa 2 de ARCA: lo que el formulario necesita para armar una factura, sin emitir. El usuario
-eligió las cuatro recomendadas: **CA1-A, RE1-A, BI1-A y CO1-A**. Por programar; el front espera a que termine la prueba
-integral.
+eligió las cuatro recomendadas: **CA1-A, RE1-A, BI1-A y CO1-A**. Programado en el backend del 2026-11-09 al 2026-11-11 y en el
+front el 2026-11-11; faltan la prueba integral y las capturas del backend en los tests de contrato.
 
 Origen: el lienzo aparte [ARCA · motor para documentos](https://claude.ai/artifact/JPwMtoM9TqM8fyqGCr9QVP), una fila por
 pregunta con la recomendada primero. El Sistema visual es de otra cuenta y el lienzo provisorio lo comparten a la vez las
@@ -38,6 +38,11 @@ congela lo elegido. El alcance y el backend están en el
 - CO1-A: «Se muestra» en `ConditionSettings`, la línea de la lista en `ConditionLine` y lo que se oculta al cargar en
   `conditions.ts` (`entryHiddenQuestions`).
 - BI1-A (la parte del editor): el encabezado con el estándar (`useFormStandardName`), el candado y los controles apagados con
-  su motivo en `QuestionEditor` (`boundQuestions.ts`). El motivo dice «el estándar de la biblioteca»; nombrar el módulo
-  («la emisión en ARCA») espera el `source` de la biblioteca.
+  su motivo en `QuestionEditor` (`boundQuestions.ts`). El motivo dice «el estándar de la biblioteca», sin nombrar el módulo.
+- BI1-A (la pantalla): «Biblioteca» en Gestión de formularios sólo con `form-library` instalado, `FormLibraryPage` con la tabla
+  en la compu y una tarjeta por estándar con «Agregar» de todo el ancho en el celular, y `FormStandardAddDialog` con nombre,
+  prefijo y carpeta («La del estándar» o una de Diseñar formularios). Escena en `src/test/visual/forms-library.spec.ts`.
+- RE1-A: la zona `ResponseResults`, primera en `ResponseAnswer`, y una columna por dato en la planilla, agrupadas por acción en
+  «Columnas» (`responseResultColumnId`). El grupo «De «Emitir comprobante en ARCA»» de «Agregar dato» lo sumó la etapa 4 con
+  su acción.
 - Escenas sin golden en `src/test/visual/formEngine.spec.ts`. Faltan la prueba manual y las capturas del backend.
