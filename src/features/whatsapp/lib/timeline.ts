@@ -4,6 +4,7 @@ import type { AssistantExplanation } from "../api/assistant";
 import { toFormReplyPresentation, type FormReplyPresentation } from "./formReplyPresentation";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
+import type { MapPoint } from "@/shared/lib/mapPoint";
 import type { AccessEventKind, ChatMessage, MessageOrigin, MessagePurpose, Outgoing } from "../api/chat";
 
 const deliveryStates = {
@@ -29,6 +30,8 @@ interface TimelineContent {
   body: string | null;
   kind: string;
   form: ChatFormMetadata | null;
+  /** W1-A: the point of a received location, or null once the history was cleared. */
+  location: MapPoint | null;
   formReply: FormReplyPresentation | null;
   origin: MessageOrigin;
   purpose: MessagePurpose;
@@ -49,7 +52,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     assistant: message.purpose === "Access" ? null : message.assistant,
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
     direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
-    form: message.kind === "Flow" && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
+    form: (message.kind === "Flow" || message.kind === "LocationRequest") && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
+    location: message.kind === "Location" ? message.location ?? null : null,
     formReply: message.kind === "FlowReply" && message.purpose !== "Access" ? toFormReplyPresentation(message.formReply ?? null) : null,
     origin: message.origin,
     purpose: message.purpose ?? "Unclassified", accessEventKind: message.accessEventKind ?? null,
@@ -63,7 +67,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
-    direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" ? readFormMetadata(operation.form) : null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
+    direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" || operation.kind === "LocationRequest" ? readFormMetadata(operation.form) : null, location: null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
     origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,
     delivery: deliveryStatus(operation.state),
   });

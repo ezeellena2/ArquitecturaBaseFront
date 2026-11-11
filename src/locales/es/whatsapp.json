@@ -113,7 +113,9 @@
     "Interactive": "interactivo",
     "Template": "de plantilla",
     "Audio": "audio",
-    "Spreadsheet": "planilla"
+    "Spreadsheet": "planilla",
+    "Location": "de ubicación",
+    "LocationRequest": "de pedido de ubicación"
   },
   "spreadsheet": {
     "label": "Planilla",
@@ -253,5 +255,17 @@
     "noTranscript": "No hay una transcripción disponible.",
     "waiting_one": "Esperá {{count}} segundo para volver a escuchar.",
     "waiting_other": "Esperá {{count}} segundos para volver a escuchar."
+  },
+  "location": {
+    "viewOnMap": "Ver en el mapa"
+  },
+  "locationRequest": {
+    "title": "Pedido de ubicación",
+    "states": {
+      "Requested": "Esperando la ubicación",
+      "Received": "Ubicación recibida",
+      "Skipped": "Siguió sin la ubicación",
+      "Expired": "Venció sin la ubicación"
+    }
   }
 }

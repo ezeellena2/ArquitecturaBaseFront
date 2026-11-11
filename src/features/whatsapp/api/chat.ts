@@ -10,6 +10,7 @@ export type AssistantAvailability = z.infer<typeof assistantAvailabilitySchema>;
 export type ChatMode = "Assistant" | "Manual";
 const messageOriginSchema = z.enum(["Conversation", "FormAction", "Assistant"]);
 export type MessageOrigin = z.infer<typeof messageOriginSchema>;
+const locationPointSchema = z.strictObject({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180) });
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
@@ -29,9 +30,11 @@ export interface ChatMessage {
   formReply?: FormReply | null;
   /** The normalized name of a received spreadsheet; the other messages do not bring it. */
   spreadsheetName?: string;
+  /** W1-A: the point of a received location; it goes with the body when the history is cleared. */
+  location?: { latitude: number; longitude: number };
 }
 export interface Outgoing {
-  assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
+  assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies" | "LocationRequest"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
   id: string; requestId: string; operatorUserId: string | null; body: string | null; requestedAtUtc: string;
   state: OutgoingState; waMessageId: string | null;
 }
@@ -44,7 +47,7 @@ export const listChats = (page: number, search: string, unreadOnly: boolean, sig
 export const getThread = async (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) => {
   const thread = await api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal });
   const availability = assistantAvailabilitySchema.safeParse(thread?.assistantAvailability);
-  if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
+  if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success || row.location !== undefined && !locationPointSchema.safeParse(row.location).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });

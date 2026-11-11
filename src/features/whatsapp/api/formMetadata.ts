@@ -1,5 +1,8 @@
 import { z } from "zod";
 export const formTextSchema = z.record(z.string(), z.string()).refine(map => Object.keys(map).every(key => key === "es" || key === "en") && Object.values(map).some(text => !!text.trim()));
-export const formMetadataSchema = z.strictObject({ definitionId: z.string().uuid(), versionId: z.string().uuid(), versionNumber: z.number().int().positive(), name: formTextSchema, culture: z.enum(["es", "en"]) }).refine(value => !!value.name[value.culture]?.trim());
+// W1-A: a location request says how its send stands, and until when it waits.
+const locationRequestSchema = z.strictObject({ state: z.enum(["Requested", "Received", "Skipped"]), expiresAtUtc: z.iso.datetime({ offset: true }) });
+export const formMetadataSchema = z.strictObject({ definitionId: z.string().uuid(), versionId: z.string().uuid(), versionNumber: z.number().int().positive(), name: formTextSchema, culture: z.enum(["es", "en"]),
+  location: locationRequestSchema.optional() }).refine(value => !!value.name[value.culture]?.trim());
 export type ChatFormMetadata = z.infer<typeof formMetadataSchema>;
 export function readFormMetadata(value: unknown): ChatFormMetadata | null { const parsed = formMetadataSchema.safeParse(value); return parsed.success ? parsed.data : null; }

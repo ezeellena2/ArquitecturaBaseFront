@@ -139,3 +139,11 @@ it("preserves a null omitted optional multi answer separately from an explicit e
   install(completed([row]));
   expect((await getThread(id)).messages[0].formReply).toEqual(completed([row]));
 });
+// W1-A: a reply keeps the point its send received before the Flow, without accuracy, and refuses a point out of range.
+it("preserves a location answer and refuses a point out of range", async () => {
+  const row = { fieldId: id, key: "place", type: "location", label: "Where you are", value: { latitude: -34.603722, longitude: -58.381592 } };
+  install(completed([row]));
+  expect((await getThread(id)).messages[0].formReply).toEqual(completed([row]));
+  install(completed([{ ...row, value: { latitude: 95, longitude: 0 } }]));
+  expect((await getThread(id)).messages[0].formReply).toBeNull();
+});

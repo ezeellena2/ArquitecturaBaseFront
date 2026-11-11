@@ -37,6 +37,9 @@ const value = z.discriminatedUnion('type', [
   z.strictObject({ ...field, type: z.literal('multiChoice'), value: z.array(choice).max(20)
     .refine(choices => new Set(choices.map(choice => choice.choiceId)).size === choices.length).nullable() }),
   z.strictObject({ ...field, type: z.literal('group'), value: z.array(item) }),
+  // W1-A: the point the send asked for before the Flow; WhatsApp gives no accuracy, an answer from the app may.
+  z.strictObject({ ...field, type: z.literal('location'), value: z.strictObject({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180),
+    accuracyMeters: z.number().int().min(0).max(100_000).optional() }).nullable() }),
 ]);
 const values = z.array(value).refine(rows => new Set(rows.map(row => row.fieldId)).size === rows.length && new Set(rows.map(row => row.key)).size === rows.length);
 const fileMetadata = { fileCount:z.number().int().nonnegative().optional(), receivedAtUtc:z.iso.datetime().optional() };

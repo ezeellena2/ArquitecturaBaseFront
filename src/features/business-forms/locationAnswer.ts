@@ -1,3 +1,6 @@
+// The point and its map link are shared with the chat, where a location also arrives by WhatsApp (W1-A).
+export { formatCoordinates, mapUrl } from "@/shared/lib/mapPoint";
+
 /**
  * The location question (UB1-A to UB4-A): a point the device reports when the form is loaded. It travels as the text of an
  * object, `{"latitude":…,"longitude":…,"accuracyMeters":…}`, and the server checks it again. It is what the device said: nothing
@@ -57,11 +60,6 @@ export function locationFromPosition(coords: Pick<GeolocationCoordinates, "latit
   return { latitude: round6(coords.latitude), longitude: round6(coords.longitude), accuracyMeters };
 }
 
-/** «-34.603722, -58.381592»: a point and six decimals, the same in every language. */
-export function formatCoordinates(point: LocationPoint): string {
-  return point.latitude.toFixed(6) + ", " + point.longitude.toFixed(6);
-}
-
 /** «± 15 m», «± 2.400 m» in Spanish and «± 2,400 m» in English. */
 export function formatAccuracy(meters: number, language: string): string {
   return "± " + meters.toLocaleString(language === "en" ? "en-US" : "es-AR", { maximumFractionDigits: 0 }) + " m";
@@ -69,11 +67,6 @@ export function formatAccuracy(meters: number, language: string): string {
 
 export function isLowAccuracy(point: LocationPoint): boolean {
   return point.accuracyMeters !== undefined && point.accuracyMeters > lowAccuracyMeters;
-}
-
-/** The fixed destination of «Ver en el mapa»: Google Maps with the point, without asking any service. */
-export function mapUrl(point: LocationPoint): string {
-  return "https://www.google.com/maps?q=" + point.latitude.toFixed(6) + "," + point.longitude.toFixed(6);
 }
 
 /** Whether this browser can give the point at all: it needs the API and a secure page. */

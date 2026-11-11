@@ -85,3 +85,15 @@ it.each(["es", "en"] as const)("shows a multi-choice catalog once and associates
   expect(screen.queryByText("Fallas de heladeras")).not.toBeInTheDocument();
   expect(screen.queryByText("No enfría")).not.toBeInTheDocument();
 });
+
+// W1-A: the point the send asked for before the Flow, with «Ver en el mapa»; WhatsApp gives no accuracy.
+it("shows a location as its point with the map link, and an unanswered one as unanswered", async () => {
+  await act(async () => { renderWithProviders(<FormReplyValues rows={[
+    { id: "place", label: "Dónde estás", answer: { type: "location", value: { latitude: -34.603722, longitude: -58.381592 } } },
+    { id: "other", label: "Otro lugar", answer: { type: "location", value: null } },
+  ]}/>); });
+
+  expect(screen.getByText("-34.603722, -58.381592")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Ver en el mapa" })).toHaveAttribute("href", "https://www.google.com/maps?q=-34.603722,-58.381592");
+  expect(screen.getByText("Sin respuesta", { exact: true })).toBeInTheDocument();
+});

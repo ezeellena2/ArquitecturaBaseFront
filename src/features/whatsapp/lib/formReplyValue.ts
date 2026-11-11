@@ -1,4 +1,5 @@
 import type { PrivateFormFile } from "@/shared/api/formFiles";
+import { formatCoordinates, type MapPoint } from "@/shared/lib/mapPoint";
 import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 
 // Presentation input only, not a wire DTO. Choice text is the authorized historical label.
@@ -9,6 +10,8 @@ export type FormReplyDisplayValue =
   | { readonly type: "multiChoice"; readonly value: readonly { readonly label: string; readonly catalogName?: string; readonly detail?: string | null }[] | null }
   | { readonly type: "decimal" | "date"; readonly value: string | null }
   | { readonly type: "boolean"; readonly value: boolean | null }
+  // W1-A: the point the send asked for before the Flow, with «Ver en el mapa».
+  | { readonly type: "location"; readonly value: MapPoint | null }
   // A block of rows: each item with the answers of its questions, in order (RG4-A).
   | { readonly type: "group"; readonly value: readonly (readonly FormReplyDisplayValue[])[] };
 
@@ -18,6 +21,7 @@ export function formatFormReplyValue(answer: FormReplyDisplayValue, language: st
   if (answer.type === "group") return answer.value.length ? "" : labels.missing;
   if (answer.value === null) return labels.missing;
   if (answer.type === "multiChoice") return answer.value.length ? answer.value.map(choice => choice.label).join(", ") : labels.missing;
+  if (answer.type === "location") return formatCoordinates(answer.value);
   switch (answer.type) {
     case "decimal":
     case "date": return formatTypedValue(answer.type, answer.value, language);
