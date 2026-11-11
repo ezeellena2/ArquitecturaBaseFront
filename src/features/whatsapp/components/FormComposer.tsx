@@ -6,9 +6,10 @@ import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
+import { DataList, type DataListItem } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { FormIcon } from "@/shared/ui/icons";
-import { InfoTip } from "@/shared/ui/InfoTip";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
@@ -30,7 +31,6 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   // dialog stays closable and the footer shows its progress.
   const busy = assistantOpen ? assistant?.busyAction === "send" : state.sending;
   const prefilledTitleId = useId();
-  const prefilledHelpId = useId();
   useEffect(() => { onAvailabilityChange?.(state.canOpen && !assistant?.attempt && !assistantOpen); },[onAvailabilityChange,state.canOpen,assistant?.attempt,assistantOpen]);
   const openRequested = useEffectEvent(() => { if (!assistantOpen && !assistant?.attempt) state.show(); });
   useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
@@ -77,6 +77,15 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
     ?? (state.sending||state.checking ? null : checkInFooter ? (state.denied ? blockedReason : null) : blockedReason);
   const consulting = assistant?.busyAction === "consult";
   const sendingSuggestion = assistant?.busyAction === "send";
+  // What goes out reads in two columns, the same in both branches (DL, 2026-11-11), never in loose paragraphs: the form and its
+  // version where nothing else names them (in the list, the chosen card does), the language only when it is not the menu's
+  // (NI1-A) and until when it can be sent, in the profile's zone.
+  const sendData = (culture: string | undefined, chosen?: { name: string; version: number }) => {
+    const items: DataListItem[] = chosen ? [{ key: "form", label: t("forms.formLabel"), value: chosen.name }, { key: "version", label: t("forms.versionLabel"), value: chosen.version }] : [];
+    if (culture && culture !== menu) items.push({ key: "language", label: t("common:language.label"), value: t("common:language." + culture) });
+    if (!state.contextChanged && !state.denied) items.push({ key: "deadline", label: t("forms.deadlineLabel"), value: formatDateTimeInZone(deadline, language, timeZone) });
+    return items.length ? <DataList items={items} /> : null;
+  };
   return <>
     {canSend ? <div className="min-w-0">
       <div className="flex flex-wrap gap-2"><DisabledReason reason={accountReason}><Button variant="outline" size="sm" disabled={Boolean(state.disabledReason)||state.denied||frozen||state.sending||Boolean(assistant?.attempt)||assistantOpen} onClick={state.show}><FormIcon />{t("forms.action")}</Button></DisabledReason>
@@ -86,13 +95,15 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
       <DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus} className="sm:max-w-150" showCloseButton={!busy} onEscapeKeyDown={event=>{if(busy)event.preventDefault();}} onPointerDownOutside={event=>{if(busy)event.preventDefault();}}>
         <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle></DialogHeader>
         {assistantOpen && assistant?.proposal ? <>
-          <p className="break-words text-sm font-medium">{t("assistant.version", { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}</p>
-          {assistant.proposal.culture !== menu ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+assistant.proposal.culture)})}</p> : null}
-          {assistant.proposal.fields.length ? <fieldset aria-labelledby={prefilledTitleId} aria-describedby={prefilledHelpId} disabled={assistant.busy || Boolean(assistant.attempt)}>
-            {/* The (i) goes in the legend, next to its title: there it stays usable while the boxes are off. */}
-            <legend className="mb-2 flex items-center gap-1 text-xs font-medium uppercase text-[var(--color-content-muted)]"><span id={prefilledTitleId}>{t("assistant.prefilledTitle")}</span><span className="-my-1 inline-flex"><InfoTip id={prefilledHelpId} text={t("assistant.prefilledHelp", { name })} label={t("common:actions.moreInfo", { label: t("assistant.prefilledTitle") })} /></span></legend>
-            {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
-          </fieldset> : null}
+          {sendData(assistant.proposal.culture, { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}
+          {/* The group draws its title with its (i) and is named by it (DL, 2026-11-11). The title goes outside the boxes: its (i)
+              stays usable while they are off. */}
+          {assistant.proposal.fields.length ? <div className="flex flex-col gap-1.5">
+            <GroupLabel id={prefilledTitleId} help={t("assistant.prefilledHelp", { name })}>{t("assistant.prefilledTitle")}</GroupLabel>
+            <fieldset aria-labelledby={prefilledTitleId} disabled={assistant.busy || Boolean(assistant.attempt)} className="min-w-0">
+              {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
+            </fieldset>
+          </div> : null}
           <DialogFooter>
             <Button variant="outline" disabled={busy} onClick={() => assistant.setOpen(false)}>{t("forms.cancel")}</Button>
             <DisabledReason reason={waitReason(assistant.busy, assistant.waiting, assistant.waitSeconds)} className={footerReason}>{assistant.attempt && assistant.recovery === "consult" && !sendingSuggestion ? <Button variant="outline" pending={consulting} disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t(consulting ? "send.checking" : "send.check")}</Button> : <Button pending={sendingSuggestion} disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(sendingSuggestion ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}</DisabledReason>
@@ -111,16 +122,15 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
                   return {value:formOptionKey(option),label:formOptionName(option,culture),description:dependent?t("forms.dependsOnAnswer",{question:dependent}):t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:!!dependent||frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)};})} /></fieldset></DisabledReason>}
           {!state.forms.isPending&&!state.forms.isError&&!items.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.noResults")}</p> : null}
           {state.forms.data ? <DisabledReason reason={retryReason} className={regionReason}><fieldset disabled={state.waiting}><Pagination {...state.forms.data.page} onPageChange={page=>{focusPage.current=true;state.setPage(page);}} /></fieldset></DisabledReason> : null}
-          {presentationCulture && presentationCulture !== menu ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.language",{language:t("forms.culture."+presentationCulture)})}</p> : null}
         </div> : null}
+        {sendData(state.mayReadOptions ? presentationCulture : undefined)}
         {recipientChanged ? <Banner tone="danger">{t("forms.recipientChanged")}</Banner>
           : state.mayReadOptions&&!state.contextChanged&&selected&&!frozen ? !state.presentationReady && state.preparation.isSuccess ? <div role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("forms.preparing")}</div> : <FormCatalogPreparation hasCatalogQuestions={selected.hasCatalogQuestions===true} query={state.preparation} waitReason={retryReason} recipientName={name} /> : null}
-        {/* Required, without a legend under it: what the person reads above «Abrir formulario» goes in the (i). */}
-        <FormField label={t("forms.messageLabel")} required error={state.fieldError} help={state.mayReadOptions&&selected&&presentationCulture&&state.presentationReady?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[presentationCulture]}):undefined}>
+        {/* Required, without a legend under it: what the person reads above «Abrir formulario» goes in the (i). Its count is the
+            datum of the field (DL, 2026-11-11), which an error replaces. */}
+        <FormField label={t("forms.messageLabel")} required error={state.fieldError} hint={t("forms.messageLength",{length:form?.message.length??0})} help={state.mayReadOptions&&selected&&presentationCulture&&state.presentationReady?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[presentationCulture]}):undefined}>
           <Textarea ref={message} aria-required value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,messageEdited:true,touched:true}));state.setFieldError(undefined);}} />
         </FormField>
-        <p className="text-right text-xs text-[var(--color-content-muted)]">{form?.message.length??0} / 1024</p>
-        {!state.contextChanged&&!state.denied ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.deadline",{deadline:formatDateTimeInZone(deadline,language,timeZone)})}</p> : null}
         {state.versionChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.formUnavailable")}</p> : null}
         <DialogFooter>
           <Button variant="outline" disabled={state.sending} onClick={()=>state.setOpen(false)}>{t("forms.cancel")}</Button>

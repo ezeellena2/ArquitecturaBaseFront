@@ -17,6 +17,8 @@ const receipt=(request:FormMessageRequest,culture=contact.formEligibility?.recip
 const formsPage=(items=options,page=1,totalPages=1,totalCount=options.length)=>({page:{items,page,pageSize:4,totalCount,totalPages,hasPrevious:page>1,hasNext:page<totalPages},recipientCulture:contact.formEligibility?.recipientCulture,recipientContextRevision:contact.formEligibility?.recipientContextRevision});
 // A response held until the test releases it, to see what the dialog shows while it waits.
 function held(){let release!:()=>void;const answer=new Promise<void>(resolve=>{release=resolve;});return {answer,release:()=>act(async()=>release())};}
+/// The value next to a datum of a `DataList`.
+const valueOf=(scope:HTMLElement,label:string)=>within(scope).getByText(label,{selector:"dt"}).nextElementSibling;
 async function openDialog(){await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));return screen.findByRole("dialog");}
 beforeEach(()=>{
  queryClient.clear();posts=[];options=[{definitionId,versionId,versionNumber:1,prefix:"VIS",name:{es:"Registrar visita",en:"Register visit"},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}];
@@ -38,9 +40,25 @@ describe("WhatsApp form sending with simulated server",()=>{
 
 it.each(["InactiveAccount","NoEligibleForms"] as const)("keeps ordinary messages enabled for form-only restriction %s",async status=>{contact.formEligibility={...contact.formEligibility!,status};if(status==="InactiveAccount")contact.linkedAccount!.isActive=false;const text=await openChat();expect(text).toBeEnabled();expect(screen.getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");expect(posts).toEqual([]);});
 it("supports an eligible account without email",async()=>{contact.linkedAccount!.email=null;await openChat();expect(screen.getByText(/sin correo/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled();});
-it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);expect(within(dialog).getByText("Le llega en inglés.")).toBeInTheDocument();expect(posts).toEqual([]);});
-// NI1-A (2026-11-03): «Le llega en …» names the language only when it is not the menu's.
-it("does not say it arrives in the menu language",async()=>{const dialog=await openForm();expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();});
+it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);expect(valueOf(dialog,"Idioma")).toHaveTextContent(/^Inglés$/);expect(posts).toEqual([]);});
+// NI1-A (2026-11-03): the language is named only when it is not the menu's, now in its row (DL, 2026-11-11).
+it("does not say it arrives in the menu language",async()=>{const dialog=await openForm();expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");expect(within(dialog).queryByText("Idioma",{selector:"dt"})).not.toBeInTheDocument();expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();});
+// DL (2026-11-11): the language (only the other one) and until when it can be sent read in two columns, not in loose paragraphs
+// of two sizes; the chosen card already names the form and its version, so the list does not say them again. The count of the
+// message is the datum of its field.
+it("reads the language and the deadline in two columns, without repeating the chosen form, and counts the message under its field",async()=>{contact.formEligibility!.recipientCulture="en";await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");
+ expect(valueOf(dialog,"Se puede mandar hasta")).toHaveTextContent(/^\d{2}\/\d{2}\/\d{4}, \d{1,2}:\d{2}$/);
+ expect(within(dialog).queryByText(/^Se puede mandar hasta .+\.$/)).not.toBeInTheDocument();
+ await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ expect(valueOf(dialog,"Idioma")).toHaveTextContent(/^Inglés$/);
+ expect(within(dialog).getByText("Idioma",{selector:"dt"}).closest("dl")).toBe(within(dialog).getByText("Se puede mandar hasta",{selector:"dt"}).closest("dl"));
+ expect(within(dialog).queryByText("Formulario",{selector:"dt"})).not.toBeInTheDocument();
+ expect(within(dialog).queryByText("Versión",{selector:"dt"})).not.toBeInTheDocument();
+ expect(within(dialog).getByText("35 / 1024 caracteres")).toBeVisible();
+ expect(within(dialog).queryByText(/^\d+ \/ 1024$/)).not.toBeInTheDocument();
+ fireEvent.change(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"}),{target:{value:"Hola"}});
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/4 \/ 1024 caracteres$/);
+});
 // The opening names the chosen form and follows the choice, without touching what the operator wrote (2026-11-07).
 it("names the chosen form and follows another choice until the operator edits the opening",async()=>{
  options=[options[0],{...options[0],definitionId:"019abcde-1000-7000-8000-000000000011",versionId:"019abcde-1000-7000-8000-000000000012",prefix:"INS",name:{es:"Recepción de insumos",en:"Supplies received"}}];
@@ -435,15 +453,16 @@ it("opens the form dialog without explanations, with the message required and it
  const message = within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" });
  expect(within(dialog).getByText("Mensaje que lo acompaña", { selector: "label" })).toHaveTextContent(/^Mensaje que lo acompaña \*$/);
  expect(message).toHaveAttribute("aria-required", "true");
- expect(message).not.toHaveAccessibleDescription();
+ // Only its count describes it, as the datum of the field (DL, 2026-11-11).
+ expect(message).toHaveAccessibleDescription("25 / 1024 caracteres");
  expect(within(dialog).queryByText(/El mensaje es obligatorio/)).not.toBeInTheDocument();
  await userEvent.click(await within(dialog).findByRole("radio", { name: "Registrar visita" }));
  await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
  const help = "Es lo que lee arriba del botón «Abrir formulario». El botón final del formulario es otro: «Confirmar visita».";
- expect(message).toHaveAccessibleDescription(help);
+ expect(message).toHaveAccessibleDescription(help + " 42 / 1024 caracteres");
  expect(within(dialog).getByRole("button", { name: "Más información sobre Mensaje que lo acompaña" })).toHaveAccessibleDescription(help);
  for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
- expect(within(dialog).getByText(/^Se puede mandar hasta .+\.$/)).toBeVisible();
+ expect(valueOf(dialog, "Se puede mandar hasta")).toBeVisible();
  expect(within(dialog).queryByText(/24 horas después/)).not.toBeInTheDocument();
 });
 

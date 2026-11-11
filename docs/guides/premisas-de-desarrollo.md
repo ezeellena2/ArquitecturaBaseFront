@@ -162,7 +162,7 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   `MultiSelect` y `NativeSelect`; estos últimos sirven para listas extensas y selección nativa.
   Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
-  (Español): …», «En inglés: …», «· Inglés», «Le llega en inglés.». Lo que está en el idioma del menú (un error, un
+  (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
   problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,
   no habla de idiomas ([detalle](../design/visual-baseline.md#el-idioma-sólo-cuando-es-el-otro--2026-11-03)).
 - Los campos heredan fondo, borde, foco y validación. Conservar `aria-invalid`, `aria-describedby`,

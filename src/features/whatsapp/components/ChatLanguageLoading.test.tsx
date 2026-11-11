@@ -46,10 +46,11 @@ it("waits for presentation resources when a Spanish account receives a complete 
  renderWithProviders(<SelectedChat/>); const ordinary=await screen.findByLabelText("Respuesta al cliente");
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog");
  await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
- await within(dialog).findByText("Le llega en inglés."); await waitFor(()=>expect(finish).toBeTypeOf("function"));
+ // The language goes in its row (DL, 2026-11-11), and until the English resources arrive only the count describes the message.
+ expect((await within(dialog).findByText("Inglés",{selector:"dd"})).previousElementSibling).toHaveTextContent(/^Idioma$/); await waitFor(()=>expect(finish).toBeTypeOf("function"));
  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");
- expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).not.toHaveAccessibleDescription();
+ expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription("42 / 1024 caracteres");
  await act(async()=>{finish!(null,en);});
  await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");

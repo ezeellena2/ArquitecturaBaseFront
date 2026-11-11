@@ -47,15 +47,36 @@ async function openSuggestion() { renderWithProviders(<Harness />); const action
 // A response held until the test releases it, to see what the chat shows while it waits.
 function held() { let release!: () => void; const answer = new Promise<void>(resolve => { release = resolve; }); return { answer, release: () => act(async () => release()) }; }
 
-// No explanation under the title (2026-11-01): what happens with the prefilled data goes in the (i) of its group.
+/// The value next to a datum of a `DataList`.
+const valueOf = (scope: HTMLElement, label: string) => within(scope).getByText(label, { selector: "dt" }).nextElementSibling;
+// No explanation under the title (2026-11-01): what happens with the prefilled data goes in the (i) of its group. The group draws
+// its title with the common piece and is named by it (DL, 2026-11-11), not by a legend made by hand.
 it("reviews a suggestion without explanations under the title, with the prefilled help in the information icon", async () => {
  const { dialog } = await openSuggestion();
  expect(dialog).not.toHaveAttribute("aria-describedby");
  expect(within(dialog).queryByText(/Revisá los datos propuestos/)).not.toBeInTheDocument();
  const help = "Juan los ve cargados y los puede cambiar. Lo que destildes va vacío.";
  expect(within(dialog).getByRole("button", { name: "Más información sobre Datos que van prellenados" })).toHaveAccessibleDescription(help);
- expect(within(dialog).getByRole("group", { name: "Datos que van prellenados" })).toHaveAccessibleDescription(help);
+ const group = within(dialog).getByRole("group", { name: "Datos que van prellenados" });
+ for (const name of ["Cliente", "Fecha"]) expect(within(group).getByRole("checkbox", { name })).toBeChecked();
+ expect(group.querySelector("legend")).toBeNull();
  for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
+});
+// DL (2026-11-11): the form, its version and until when it can be sent read in two columns, not «Registrar visita · versión 2»
+// in a paragraph; the language only when it is not the menu's (NI1-A).
+it("reads the suggested form, its version and until when it can be sent in two columns", async () => {
+ const { dialog } = await openSuggestion();
+ expect(valueOf(dialog, "Formulario")).toHaveTextContent(/^Registrar visita$/);
+ expect(valueOf(dialog, "Versión")).toHaveTextContent(/^2$/);
+ expect(valueOf(dialog, "Se puede mandar hasta")).toHaveTextContent(/^\d{2}\/\d{2}\/\d{4}, \d{1,2}:\d{2}$/);
+ expect(within(dialog).queryByText("Idioma", { selector: "dt" })).not.toBeInTheDocument();
+ expect(within(dialog).queryByText(/· versión/)).not.toBeInTheDocument();
+});
+it("names the language of a suggestion in its row only when it is not the menu's", async () => {
+ body.proposal.culture = "en";
+ const { dialog } = await openSuggestion();
+ expect(valueOf(dialog, "Idioma")).toHaveTextContent(/^Inglés$/);
+ expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();
 });
 // Board LR1: the prefilled data of a suggestion read in two columns under their title, not as «Cliente: Ana · Fecha: …».
 it("reads the prefilled data of a suggestion in two columns", async () => {
@@ -312,8 +333,8 @@ it("preserves the active pointer selection and dialog when AI becomes unavailabl
 it("does not name the menu language when an English account receives the complete original form", async () => {
  recipientCulture = "en"; const { dialog } = await openSuggestion();
  // NI1-A (2026-11-03): it arrives in Spanish, the menu language, so it is not named.
- expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();
- expect(within(dialog).getByText(/Registrar visita/)).toBeInTheDocument();
+ expect(within(dialog).queryByText("Idioma", { selector: "dt" })).not.toBeInTheDocument();
+ expect(valueOf(dialog, "Formulario")).toHaveTextContent(/^Registrar visita$/);
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" })); await waitFor(() => expect(sends).toHaveLength(1));
  expect(Object.keys(sends[0]).sort()).toEqual(["includedFieldIds", "requestId"]);
 });
