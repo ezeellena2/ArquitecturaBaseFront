@@ -49,6 +49,10 @@ import { FormLifecycleNotice } from "../components/FormLifecycleNotice";
 import { PublicationCheckDialog } from "../components/PublicationCheckDialog";
 import { DraftReview, DraftReviewChanges } from "../components/DraftReview";
 import { localizedIssue, localizedIssueMessage, publicationFieldIssues } from "../validationPaths";
+import { boundQuestionIds, isBoundQuestion, removesBoundQuestion } from "../boundQuestions";
+import { calculationIncomplete } from "../calculations";
+import { conditionIncomplete } from "../conditions";
+import { useFormStandardName } from "../hooks/useFormStandardName";
 import { localizedValue, missingFormTexts, newQuestion, suggestedPrefix } from "../editorModel";
 import { addBlock, moveInRows, questionCount, questionNumbers, rowsBlock } from "../rowsQuestions";
 import { addRowQuestionWithTitles, addSectionTitle, listEntries, listPosition, markRepeatedWithTitles, moveListEntry, removeQuestionWithTitles } from "../sectionTitles";
@@ -62,6 +66,14 @@ import { missingFormInitial } from "../missingFormSeed";
 
 const FormSuggestionsSection = lazy(() => import("../components/FormSuggestionsSection").then(module => ({ default: module.FormSuggestionsSection })));
 const FormRulesSection = lazy(() => import("../components/FormRulesSection").then(module => ({ default: module.FormRulesSection })));
+
+// CA1-A and CO1-A: what to complete in a calculation or a condition: an empty list, then «+ Agregar» of its chips, then its operation.
+function engineControl(container: HTMLElement | undefined, zone: string): HTMLElement | null {
+  const root = container?.querySelector<HTMLElement>(`[data-question-control="${zone}"]`);
+  return [...root?.querySelectorAll<HTMLSelectElement>("select:not(:disabled)") ?? []].find(select => select.value === "")
+    ?? root?.querySelector<HTMLElement>('[data-chips-add]:not([aria-disabled="true"]):not(:disabled)')
+    ?? root?.querySelector<HTMLElement>('button[aria-pressed]:not([aria-disabled="true"])') ?? null;
+}
 
 export function FormEditorPage() {
   const { t, i18n } = useTranslation("forms");
@@ -242,7 +254,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   useEffect(() => {
     if (!editor.issue) { dismissNotification(feedbackId); return; }
     const issue = editor.issue;
+    // A calculation or a condition (CA1-A, CO1-A) and the standard's refusal of a change to a question (BI1-A) go to that question.
     const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|offerWhen|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
+      || /\.(calculation|showWhen)(?:\.|$)/.test(field.path) || /^draft\.fields\[\d+\]$/.test(field.path)
       || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path) || /\.source(?:\.|$)/.test(field.path)
       || !!field.sectionLocalId).map(field => field.path) ?? [];
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
@@ -265,10 +279,19 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
       action: conflict ? { label: t("review"), onClick: () => { if (active.current) { reviewReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; void readCurrent.current().then(success => { if (success && active.current) setReviewOpen(true); }); } } } : undefined });
   }, [editor.issue, feedbackId, t, session?.phase, restartCooldown]);
   // Save stays enabled with an invalid range: trying it opens the first question with one and focuses its first marked control, without sending.
-  const invalidRangeQuestion = () => value?.draft.fields.find(q => hasInvalidFileCounts([q]) || hasInvalidSelectionCounts([q]));
+  // A calculation or a condition still to complete stops it the same way, and says so from then on (CA1-A, CO1-A).
+  const invalidRangeQuestion = () => value?.draft.fields.find(q => hasInvalidFileCounts([q]) || hasInvalidSelectionCounts([q]) || calculationIncomplete(q) || conditionIncomplete(q));
+  const [incompleteShown, setIncompleteShown] = useState(false);
+  const standard = session?.confirmed?.standard;
+  const standardTitle = useFormStandardName(scope, standard);
   async function operate(action: () => Promise<FormDefinitionSnapshot | undefined>) {
     const invalidRange = action === editor.save ? invalidRangeQuestion() : undefined;
-    if (invalidRange) { revealQuestion(invalidRange.localId, container => container?.querySelector<HTMLElement>("[aria-invalid='true']")); return; }
+    if (invalidRange) {
+      setIncompleteShown(true);
+      const zone = calculationIncomplete(invalidRange) ? "calculation" : conditionIncomplete(invalidRange) ? "showWhen" : null;
+      revealQuestion(invalidRange.localId, container => container?.querySelector<HTMLElement>("[aria-invalid='true']") ?? (zone ? engineControl(container, zone) : null));
+      return;
+    }
     setLocatedIssue(null);
     const saved = await action();
     if (!saved || !active.current) return;
@@ -335,7 +358,10 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
       const selectionInput = issue.path.includes(".selection") ? container?.querySelectorAll<HTMLInputElement>('[data-question-control="selection"] input')[issue.path.endsWith(".maxSelected") ? 1 : 0] : undefined;
       // LD1-A: a field to choose first that no longer serves is fixed in its own control, not in the catalog.
       const groupByInput = issue.path.endsWith(".source.groupBy") ? container?.querySelector<HTMLElement>('[data-question-control="groupBy"] select') : undefined;
-      return optionInput ?? selectionInput ?? groupByInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".source") ? '[data-question-control="catalog"]' : issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]');
+      // CA1-A and CO1-A: a calculation or a condition to fix takes the focus to its first control.
+      const engineZone = /\.(calculation|showWhen)$/.exec(issue.path)?.[1];
+      const engineInput = engineZone ? engineControl(container, engineZone) : undefined;
+      return optionInput ?? selectionInput ?? groupByInput ?? engineInput ?? container?.querySelector<HTMLElement>(issue.path.includes(".source") ? '[data-question-control="catalog"]' : issue.path.includes(".help") ? '[data-question-control="help"]' : '[data-question-control="label"]');
     });
   }
   async function confirmDeactivation(result: FormDeactivation, expectedRevision: number) {
@@ -347,6 +373,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }
   // RG10-D: a form has one block; with it, «Agregar bloque» is off and says why.
   const hasBlock = rowsBlock(value.draft.fields) !== null;
+  // BI1-A: the questions the library standard needs keep everything but their text, help and place.
+  const bound = boundQuestionIds(standard);
   const removingBlock = (() => {
     const block = value && removeId ? rowsBlock(value.draft.fields) : null;
     const group = block ? value!.draft.fields[block.index] : undefined;
@@ -374,7 +402,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     change({ ...value!, draft: { ...value!.draft, sections: sections.filter(section => section.localId !== localId) } });
     requestAnimationFrame(() => (next?.querySelector<HTMLButtonElement>('[data-question-action="edit"], [data-section-action="edit"]') ?? addTitleButton.current)?.focus());
   }
-  return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<span aria-live="polite"><Badge variant="outline" className={lifecycleLabel ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{lifecycleLabel ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge></span>} actions={<>
+  return <div ref={host}><Page title={displayName || t("new")} backTo={{ to: "/formularios", label: t("title") }} status={<><span aria-live="polite"><Badge variant="outline" className={lifecycleLabel ? undefined : publicationState === "Published" ? "bg-[var(--color-success-50)] text-[var(--color-success-700)]" : publicationState === "Failed" ? "border-danger/30 bg-danger/5 text-[var(--color-danger)]" : publicationPending || publicationState === "Uncertain" ? "border-[var(--color-warning)]/45 bg-[var(--color-warning-50)] text-[var(--color-warning-700)]" : undefined}>{lifecycleLabel ? t(projection?.activeVersion ? "lifecycle.state" : "lifecycle.stateWithoutVersion", { version: projection?.activeVersion?.versionNumber }) : publicationLabel ? t(publicationLabel, { version: publicationVersion }) : t("draft")}</Badge></span>{standard && standardTitle
+      ? <span className="text-sm text-[var(--color-content-muted)]">{"· " + t("standard.origin", { name: standardTitle, version: standard.version })}</span> : null}</>} actions={<>
     {!readOnly || dirty || rulesDirty || suggestionsDirty ? <Button type="button" variant="outline" disabled={frozen || publicationPending} onClick={() => { if (dirty || rulesDirty || suggestionsDirty) setDiscardOpen(true); else leave(); }}>{t("discard")}</Button> : null}
     {scope.permissions.includes("formtemplates.manage") ? <DisabledReason reason={saveEnabled ? waitReason : null}><Button ref={saveButton} type="button" variant={scope.permissions.includes("formtemplates.publish") && session.confirmed ? "outline" : "default"} disabled={!saveEnabled || cooldown.isRunning} pending={saving} onClick={() => void operate(editor.save)}>{t(saving ? "saving" : "save")}</Button></DisabledReason> : null}
     {canPublish && session.confirmed ? <PublicationActions publication={publication} progress={progress} onReplay={() => void publication.replay()} /> : null}
@@ -441,7 +470,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
                 { question: () => localId, choice: () => crypto.randomUUID(), block: () => crypto.randomUUID() }) } });
               setExpanded(q.fieldId ? localId : q.localId);
             };
-            const editorFor = (q: DraftQuestion, index: number) => <QuestionEditor key={q.localId} questions={fields} catalogScope={scope} definitionId={session.confirmed?.id ?? null} previewCulture={contentCulture !== value.draft.culture && missingFormTexts(value, contentCulture) ? value.draft.culture : contentCulture} onPreviewChange={observeCatalogPreview} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} appOnly={appOnly} question={q} number={numbers[index]} position={inBlock(index) ? index - block!.index : listPosition(fields, sections, q.localId).position} total={inBlock(index) ? block!.end - block!.index - 1 : listPosition(fields, sections, q.localId).total} rowCount={q.type === "group" && block ? block.end - block.index - 1 : 0} onRepeatedChange={readOnly ? undefined : repeated => markQuestion(q, repeated)} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalidId === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, ...inBlock(index) ? { fields: moveInRows(fields, q.localId, delta) } : moveListEntry(fields, sections, q.localId, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }} />;
+            const editorFor = (q: DraftQuestion, index: number) => <QuestionEditor key={q.localId} questions={fields} catalogScope={scope} definitionId={session.confirmed?.id ?? null} previewCulture={contentCulture !== value.draft.culture && missingFormTexts(value, contentCulture) ? value.draft.culture : contentCulture} onPreviewChange={observeCatalogPreview} filesAvailable={presentation.data?.installedFeatures?.includes("form-files") ?? false} appOnly={appOnly} question={q} number={numbers[index]} position={inBlock(index) ? index - block!.index : listPosition(fields, sections, q.localId).position} total={inBlock(index) ? block!.end - block!.index - 1 : listPosition(fields, sections, q.localId).total} rowCount={q.type === "group" && block ? block.end - block.index - 1 : 0} onRepeatedChange={readOnly ? undefined : repeated => markQuestion(q, repeated)} culture={contentCulture} original={value.draft.culture} expanded={expanded === q.localId || expanded === null && firstInvalidId === q.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.fieldLocalId === q.localId)} onChange={question => updateQuestion(q.localId, question)} onExpand={open => setExpanded(open ? q.localId : null)} onMove={delta => change({ ...value, draft: { ...value.draft, ...inBlock(index) ? { fields: moveInRows(fields, q.localId, delta) } : moveListEntry(fields, sections, q.localId, delta) } })} onRemove={() => { if (q.fieldId || Object.values(q.label).some(Boolean)) setRemoveId(q.localId); else removeQuestion(q.localId); }}
+              bound={isBoundQuestion(q, bound)} showIncomplete={incompleteShown}
+              removeReason={removesBoundQuestion(fields, q.localId, bound) ? t(isBoundQuestion(q, bound) ? "standard.lockedRemove" : "standard.lockedBlock") : null} />;
             const titleFor = (section: DraftSection) => <SectionTitleEditor key={section.localId} section={section} {...listPosition(fields, sections, section.localId)} culture={contentCulture} original={value.draft.culture}
               expanded={expanded === section.localId || expanded === null && firstInvalidId === section.localId} readOnly={readOnly} issues={visibleIssues.filter(issue => issue.sectionLocalId === section.localId)}
               onChange={next => change({ ...value, draft: { ...value.draft, sections: sections.map(item => item.localId === section.localId ? next : item) } })}

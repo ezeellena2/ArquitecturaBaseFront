@@ -149,3 +149,18 @@ describe("the block of rows in the review", () => {
     ]);
   });
 });
+
+describe("draftReviewLines of a calculation and a condition (CA1-A, CO1-A)", () => {
+  it("reads another operation and a condition added as their lines", () => {
+    const amount = { fieldId: "amount", key: "amount", type: "decimal" as const, label: { es: "Cantidad", en: "Quantity" }, help: null, required: false,
+      calculation: { operation: "sum" as const, operands: ["notes"] } };
+    const calculated: FormDefinitionSnapshot = { ...definition, draft: { ...definition.draft, fields: definition.draft.fields.map(field => field.fieldId === "amount" ? amount : field) } };
+    const mine = openDraftSession({ actorId: "actor", editorId: "editor" }, calculated).value;
+    const changed = { ...mine, draft: { ...mine.draft, fields: mine.draft.fields.map(field => field.fieldId === "amount" && field.type === "decimal"
+      ? { ...field, calculation: { operation: "multiply" as const, operands: ["notes", "notes"] }, showWhen: { questionId: "unit", values: ["liters"] } } : field) } };
+    expect(lines(changed, calculated)).toEqual([
+      { key: "calculation", label: { kind: "key", key: "calculation.operation" }, before: { kind: "key", key: "calculation.operations.sum" }, after: { kind: "key", key: "calculation.operations.multiply" } },
+      { key: "showWhen", label: { kind: "key", key: "condition.shows" }, before: { kind: "key", key: "condition.always" }, after: { kind: "key", key: "condition.byAnswer" } },
+    ]);
+  });
+});

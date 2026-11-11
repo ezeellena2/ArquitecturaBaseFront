@@ -23,7 +23,8 @@ export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion
   const previewCulture = missing ? value.draft.culture : culture;
   const { t: content } = useTranslation("forms", { lng: previewCulture });
   // Illustrative answers are strings: decimal precision, DateOnly and absent/false stay distinct.
-  const screens = previewScreens(value.draft.fields);
+  // CA1-A: WhatsApp does not show a calculation: the answer arrives with it computed by the server.
+  const screens = previewScreens(value.draft.fields.filter(question => !(question.type === "decimal" && question.calculation)));
   const [selectedScreen, setSelectedScreen] = useState(0);
   const [seenOpen, setSeenOpen] = useState(openQuestion);
   if (openQuestion !== seenOpen) {
@@ -67,6 +68,8 @@ export function FormPreview({ value, culture, catalogPreviews = {}, openQuestion
         const answer = answers[q.localId] ?? "";
         const setAnswer = (next: string) => setAnswers(previous => ({ ...previous, [q.localId]: next }));
         const help = text(q.help) || undefined;
+        // UB2-A: WhatsApp cannot ask for a location, so its preview does not show it; checking the publication says so.
+        if (q.type === "location") return null;
         if (q.type === "photo" || q.type === "document") return <div key={q.localId} className="flex flex-col gap-2"><p className="text-sm font-medium">{label}</p>{help ? <p className="text-sm text-[var(--color-content-muted)]">{help}</p> : null}<Button type="button" variant="outline" disabled>{content(q.type === "document" ? "files.attachDocument" : q.files.photoSource === "camera" ? "files.takePhoto" : "files.addPhotos")}</Button><p className="text-xs text-[var(--color-content-muted)]">{content("files.range", { minimum: q.files.minFiles, maximum: q.files.maxFiles })}</p></div>;
         if ((q.type === "choice" || q.type === "multiChoice") && q.source) {
           const candidate = catalogPreviews[q.localId];

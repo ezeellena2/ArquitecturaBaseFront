@@ -25,8 +25,8 @@ const text = (value: string): ReviewValue => ({ kind: "text", text: value });
 const count = (value: number | null) => value === null ? { kind: "none" } as const : text(String(value));
 const identity = (question: DraftQuestion) => question.fieldId ?? `new:${question.localId}`;
 const choiceIdentity = (choice: DraftChoice) => choice.choiceId ?? `new:${choice.localId}`;
-const order = ["type", "required", "repeated", "help", "catalog", "filter:", "filters", "presentation", "presentation.title", "presentation.description", "options", "multiple",
-  "groupBy", "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength", "rows.minimum", "rows.maximum"];
+const order = ["type", "calculation", "required", "repeated", "help", "catalog", "filter:", "filters", "presentation", "presentation.title", "presentation.description", "options", "multiple",
+  "groupBy", "selection.minimum", "selection.maximum", "files.minimum", "files.maximum", "files.source", "maxLength", "rows.minimum", "rows.maximum", "showWhen"];
 const rank = (fact: string) => order.findIndex(item => item.endsWith(":") ? fact.startsWith(item) : fact === item);
 
 // The data of a question with the names of its editor. `whole` adds what only a question that one version lacks needs:
@@ -36,6 +36,10 @@ function questionFacts(question: DraftQuestion, culture: FormCulture, original: 
   const facts: Fact[] = [{ key: "type", label: key("type"), value: key(`types.${questionEditorType(question)}`) },
     ...question.type === "group" ? [] : [{ key: "required", label: key("required"), value: key(question.required ? "yes" : "no") }]];
   if ("repeated" in question && question.repeated) facts.push({ key: "repeated", label: key("rows.repeated"), value: key("yes") });
+  // CA1-A: what a calculation does, by its operation; CO1-A: whether it shows always or according to another answer.
+  if (question.type === "decimal" && question.calculation) facts.push({ key: "calculation", label: key("calculation.operation"), value: key(`calculation.operations.${question.calculation.operation}`) });
+  // A whole question only says it when it has a condition; two versions compare it always, so adding or removing one shows.
+  if (question.type !== "group" && !("repeated" in question && question.repeated) && (question.showWhen || !options.whole)) facts.push({ key: "showWhen", label: key("condition.shows"), value: key(question.showWhen ? "condition.byAnswer" : "condition.always") });
   const help = options.whole ? localizedValue(question.help, culture, original) : "";
   if (help) facts.push({ key: "help", label: key("help"), value: text(help) });
   if (question.type === "choice" || question.type === "multiChoice") {
@@ -127,7 +131,9 @@ export function draftReviewLines(review: DraftReview, row: DraftReviewRow, { cul
     const facts = (question: DraftQuestion, side: "current" | "mine", whole: boolean) => questionFacts(question, culture, sides[side].draft.culture, { whole, catalogs, listsOptions });
     if (!theirs || !ours) return theirs ? oneSided(facts(theirs, "current", true), empty, "after") : ours ? oneSided(facts(ours, "mine", true), empty, "before") : [];
     const lines = compared(facts(theirs, "current", false), facts(ours, "mine", false));
-    return lines.length ? lines : compared(facts(theirs, "current", false), facts(ours, "mine", false), true);
+    // Without a distinct datum it shows what both share, except «Se muestra: Siempre», which says nothing (CO1-A).
+    return lines.length ? lines : compared(facts(theirs, "current", false), facts(ours, "mine", false), true)
+      .filter(line => line.key !== "showWhen" || JSON.stringify(line.after) !== JSON.stringify({ kind: "key", key: "condition.always" }));
   }
   const theirs = current !== null && typeof current === "object" ? "label" in current && typeof current.label === "object" ? (current as DraftChoice).label : current as LocalizedText : null;
   const ours = mine !== null && typeof mine === "object" ? "label" in mine && typeof mine.label === "object" ? (mine as DraftChoice).label : mine as LocalizedText : null;

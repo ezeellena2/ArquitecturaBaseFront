@@ -27,7 +27,7 @@ export function QuestionChips({ label, chips, options, addLabel, removeLabel, on
         : <FilterChip key={chip.id} removeLabel={removeLabel(chip.label)} onRemove={() => onRemove(chip.id)}>{chip.label}</FilterChip>)}
       {readOnly ? null : reason || options.length === 0
         ? <DisabledReason reason={reason}><Button type="button" variant="outline" size="sm" disabled>{addLabel}</Button></DisabledReason>
-        : <DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" size="sm">{addLabel}</Button></DropdownMenuTrigger>
+        : <DropdownMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" size="sm" data-chips-add="">{addLabel}</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="start">{options.map(option => <DropdownMenuItem key={option.id} onSelect={() => onAdd(option.id)}>{option.label}</DropdownMenuItem>)}</DropdownMenuContent>
         </DropdownMenu>}
     </div>
