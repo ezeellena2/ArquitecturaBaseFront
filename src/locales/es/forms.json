@@ -1138,6 +1138,7 @@
     "rejected": "Respuesta rechazada.",
     "rejectTitle": "Rechazar {{number}}",
     "approveTitle": "¿Aprobar {{number}}?",
+    "approveDescription": "La cargó {{name}} el {{date}}.",
     "reason": "Motivo",
     "reasonCount": "{{count}} / 500 caracteres",
     "ownResponse": "No podés aprobar ni rechazar tu propia respuesta.",

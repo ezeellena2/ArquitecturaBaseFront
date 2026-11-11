@@ -170,8 +170,9 @@ function DecisionEditor({ taskId, scope, onDecided, onForbidden, onUnavailable, 
         setReject(false);
         setReason("");
     } }} onSubmit={() => void decide("Rejected")} disabled={disabled || cooldown.isRunning} fallback={summary} waitReason={waitReason}/> : null}
-  {/* It waits open with Aprobando… (board LC1-A) and closes with the answer, whatever it is. */}
-  {confirming ? <ConfirmDialog open onOpenChange={open => { if (!open) setConfirming(false); }} title={t("approvals.approveTitle", { number: task.number })} description={t("approvals.decisionBy", { name: task.author.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.requestedAtUtc, i18n.language, scope.user?.timeZoneId) })} confirmLabel={t("approvals.approve")} pending={deciding === "Approved"} pendingLabel={t("approvals.approving")} focusFallback={summary} onConfirm={() => void decide("Approved")}/> : null}
+  {/* It waits open with Aprobando… (board LC1-A) and closes with the answer, whatever it is. Who loaded it and when is a sentence
+      that says what it is (DL, 2026-11-11), not «name · date». */}
+  {confirming ? <ConfirmDialog open onOpenChange={open => { if (!open) setConfirming(false); }} title={t("approvals.approveTitle", { number: task.number })} description={t("approvals.approveDescription", { name: task.author.displayName ?? t("responses.unknownPerson"), date: formatDateTimeInZone(task.requestedAtUtc, i18n.language, scope.user?.timeZoneId) })} confirmLabel={t("approvals.approve")} pending={deciding === "Approved"} pendingLabel={t("approvals.approving")} focusFallback={summary} onConfirm={() => void decide("Approved")}/> : null}
  </div>;
 }
 function RejectDialog({ number, reason, setReason, busy, onClose, onSubmit, disabled, fallback, waitReason, fieldError }: {

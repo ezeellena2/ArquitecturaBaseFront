@@ -124,7 +124,8 @@ function decided(state: "Approved" | "Rejected", reason: string | null = null) {
   return { taskId: task.id, recordId: task.recordId, revision: 2, state, decidedAtUtc: "2026-10-17T13:00:00Z", decidedBy: { userId: currentUser.id, displayName: "Luz" }, reason };
 }
 // Aprobar asks first, with the number, who loaded it and when (board AP1-A): a habitual click on the same place does not
-// decide the next response. The dialog starts on Cancelar, so Enter does not approve either.
+// decide the next response. The dialog starts on Cancelar, so Enter does not approve either. Who and when is a sentence that
+// says what it is (DL, 2026-11-11), with the date and time of the common formatter in the account's zone.
 it("asks to confirm an approval with its number, author and date, starting on Cancelar", async () => {
   const decisions = vi.fn();
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
@@ -133,7 +134,7 @@ it("asks to confirm an approval with its number, author and date, starting on Ca
   renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Aprobar" }));
   const dialog = await screen.findByRole("dialog", { name: "¿Aprobar VIS-00001?" });
-  expect(dialog).toHaveAccessibleDescription(/^Ana · 16\/10\/2026/);
+  expect(dialog).toHaveAccessibleDescription("La cargó Ana el 16/10/2026, 9:00.");
   await waitFor(() => expect(within(dialog).getByRole("button", { name: "Cancelar" })).toHaveFocus());
   await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -141,6 +142,16 @@ it("asks to confirm an approval with its number, author and date, starting on Ca
   await approveAndConfirm();
   await waitFor(() => expect(decisions).toHaveBeenCalledOnce());
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+it("says who loaded the response and when in English, with the date in its order", async () => {
+  await act(() => i18n.changeLanguage("en"));
+  try {
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+      http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())));
+    renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
+    await userEvent.click(await screen.findByRole("button", { name: "Approve" }));
+    expect(await screen.findByRole("dialog", { name: "Approve VIS-00001?" })).toHaveAccessibleDescription(/^Submitted by Ana on 10\/16\/2026, 9:00\sAM\.$/);
+  } finally { await act(() => i18n.changeLanguage("es")); }
 });
 it("waits in the approval dialog with Aprobando… and its close turned off, and closes it with the answer", async () => {
   let release!: () => void;

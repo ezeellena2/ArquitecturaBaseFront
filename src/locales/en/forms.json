@@ -1138,6 +1138,7 @@
     "rejected": "Response rejected.",
     "rejectTitle": "Reject {{number}}",
     "approveTitle": "Approve {{number}}?",
+    "approveDescription": "Submitted by {{name}} on {{date}}.",
     "reason": "Reason",
     "reasonCount": "{{count}} / 500 characters",
     "ownResponse": "You cannot approve or reject your own response.",
