@@ -7,7 +7,7 @@ export const entryOptionSchema = z.strictObject({ id: z.string().uuid(), title: 
 const itemTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 const questionSchema = z.strictObject({
   fieldId: z.string().uuid(),
-  type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group"]),
+  type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group", "location"]),
   label: z.string().min(1),
   help: z.string().min(1).nullable(),
   required: z.boolean(),
@@ -41,7 +41,9 @@ const questionSchema = z.strictObject({
     // A calculation is an optional number: two operands for multiply and percent; a condition never goes on the block or in it.
     || (value.calculation !== undefined && (value.type !== "decimal" || value.required
       || (value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)))
-    || (value.showWhen !== undefined && (value.type === "group" || value.repeated === true)))
+    || (value.showWhen !== undefined && (value.type === "group" || value.repeated === true))
+    // UB1-A: a location is only required or optional, without a length or a condition of its own.
+    || (value.type === "location" && (value.maxLength !== null || value.showWhen !== undefined)))
     context.addIssue({ code: "custom", message: "Invalid entry question." });
 });
 export const formEntrySchema = z.strictObject({

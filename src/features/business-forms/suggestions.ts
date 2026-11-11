@@ -9,7 +9,8 @@ export interface PublishedSuggestionForm { readonly definitionId: string; readon
 export interface SuggestionIssue { readonly path: string; readonly key: string }
 export const newSuggestion = (): FormSuggestion => ({ id: crypto.randomUUID(), destinationDefinitionId: "", destinationVersionId: null, mode: "Assistant", when: null, isActive: true, conditions: [], mappings: [] });
 // A question of a block of rows has one answer per row, so it neither gives nor receives a value.
-export const mappableSource = (field: SuggestionQuestion) => field.type!=="photo"&&field.type!=="document"&&field.type!=="multiChoice"&&field.type!=="group"&&!field.repeated;
+// A location (UB1-A) is not mapped either: only scalars carry over to the next form.
+export const mappableSource = (field: SuggestionQuestion) => field.type!=="photo"&&field.type!=="document"&&field.type!=="multiChoice"&&field.type!=="group"&&field.type!=="location"&&!field.repeated;
 export function mappingTargets(source: SuggestionMapping["source"], questions: readonly SuggestionQuestion[], destination: readonly SuggestionQuestion[]): readonly SuggestionQuestion[] {
   if(source.kind==="RecordNumber") return destination.filter(field=>(field.type==="shortText"||field.type==="longText")&&!field.repeated);
   const field=questions.find(field=>field.fieldId===source.fieldId);

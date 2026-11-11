@@ -8,6 +8,7 @@ import type { FormEntry, FormEntryOption, FormEntryQuestion, FormEntrySubmitted 
 import { entryCalculations } from "../calculations";
 import { entryHiddenQuestions } from "../conditions";
 import { entryBlock, type EntryDraft } from "../entryForm";
+import { formatCoordinates, parseLocationAnswer } from "../locationAnswer";
 
 /**
  * After sending (CW5): what was sent, read from what the person loaded. Whoever only completes forms cannot read the
@@ -40,6 +41,8 @@ export function FormEntrySent({ entry, draft, result, timeZone, actions }: {
     if (!value) return t("sent.none");
     if (question.type === "date") return formatDateOnly(value, i18n.language) ?? value;
     if (question.type === "boolean") return t(value === "true" ? "sent.yes" : "sent.no");
+    // UB4-A: the point that was sent, as the sheet shows it.
+    if (question.type === "location") { const point = parseLocationAnswer(value); return point ? formatCoordinates(point) : t("sent.none"); }
     return value;
   };
   // The block reads as in the sheet (RG4-A): how many items, in grey, and the first answer of each.

@@ -367,6 +367,7 @@ export function BellIcon(props: IconProps) { return <Icon {...props}><path d="M1
 export function ExternalLinkIcon(props: IconProps) { return <Icon {...props}><path d="M14 4h6v6M10 14 20 4"/><path d="M18 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4.5"/></Icon>; }
 
 export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";
+export { MapPin as MapPinIcon } from "lucide-react";
 
 /// The generic icons a folder's own menu can take (CP5-A, 2026-11-04), with the stroke of the set; «users» is `UsersIcon`.
 export function FolderIcon({ className }: IconProps) { return <Folder className={className} strokeWidth={1.75} aria-hidden="true" />; }

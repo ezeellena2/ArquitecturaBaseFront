@@ -1,5 +1,6 @@
 import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryGroup, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
 import { entryHiddenQuestions } from "./conditions";
+import { formatCoordinates, parseLocationAnswer } from "./locationAnswer";
 
 /**
  * What the person has loaded, by question: typed values, the chosen options (with the title they saw) and the files.
@@ -475,6 +476,8 @@ export function entryAnswerText(question: FormEntryQuestion, draft: EntryDraft, 
   if (isList(question)) return (draft.choices[question.fieldId] ?? []).map(option => option.title).join(", ");
   const value = draft.values[question.fieldId] ?? "";
   if (question.type === "boolean") return value === "true" ? words.yes : value === "false" ? words.no : "";
+  // UB4-A: a point reads as its coordinates, the same in every language.
+  if (question.type === "location") { const point = parseLocationAnswer(value); return point ? formatCoordinates(point) : ""; }
   return question.type === "date" && value ? words.date(value) : value;
 }
 

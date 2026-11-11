@@ -30,7 +30,7 @@ import { CalculationFormula, CalculationSettings } from "./CalculationSettings";
 import { ConditionLine, ConditionSettings } from "./ConditionSettings";
 
 // RG10-D: the block is not a type of answer; it is added with «Agregar bloque» or «Se carga varias veces». «Cálculo» (CA1-A) is one more.
-const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "calculation", "date", "boolean", "choice", "catalogChoice", "photo", "document"];
+const types: readonly QuestionEditorType[] = ["shortText", "longText", "decimal", "calculation", "date", "boolean", "choice", "catalogChoice", "photo", "document", "location"];
 const validRows = (rows: { minRows: number | null; maxRows: number | null }) => rows.minRows !== null && rows.maxRows !== null
   && Number.isInteger(rows.minRows) && Number.isInteger(rows.maxRows) && rows.minRows >= 0 && rows.maxRows >= 1 && rows.maxRows <= 100 && rows.minRows <= rows.maxRows;
 export function QuestionEditor({ question, position, number, total, culture, original, expanded, readOnly, issues, onChange, onExpand, onMove, onRemove, catalogScope, definitionId = null, previewCulture = culture, onPreviewChange, filesAvailable = false, questions, rowCount = 0, onRepeatedChange, appOnly = false, bound = false, removeReason = null, showIncomplete = false }: {
@@ -121,7 +121,7 @@ export function QuestionEditor({ question, position, number, total, culture, ori
   // The standard's refusal names the question itself (`draft.fields[i]`): it goes on top of what can be fixed.
   const questionError = localizedError(issue => /^draft\.fields\[\d+\]$/.test(issue.path));
   // RG9-A: an option that cannot be chosen says why after «·», as files without storage already do.
-  const typeReason = (type: QuestionEditorType) => (type === "photo" || type === "document") && repeated ? t("rows.notRepeated")
+  const typeReason = (type: QuestionEditorType) => (type === "photo" || type === "document" || type === "location") && repeated ? t("rows.notRepeated")
     : (type === "photo" || type === "document") && !filesAvailable ? t("files.storageMissing") : null;
   // RG12-A: the block's line says its items by the minimum and the maximum, and its questions.
   const items = question.type === "group" ? rowsItems(question.rows) : null;

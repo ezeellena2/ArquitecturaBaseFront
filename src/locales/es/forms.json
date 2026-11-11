@@ -152,6 +152,7 @@
     "catalogChoice": "Elegir de un catálogo",
     "photo": "Foto",
     "document": "Documento",
+    "location": "Ubicación",
     "multiChoice": "Elegir varias",
     "group": "Bloque",
     "calculation": "Cálculo"
@@ -912,6 +913,7 @@
     "all": "Todas",
     "answered": "Con respuesta",
     "unanswered": "Sin respuesta",
+    "viewOnMap": "Ver en el mapa",
     "notAsked": "La pregunta no existía",
     "yes": "Sí",
     "no": "No",

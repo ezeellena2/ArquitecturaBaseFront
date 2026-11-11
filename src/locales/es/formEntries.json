@@ -104,6 +104,18 @@
     "removeShort": "Quitar",
     "kept": "Ya cargado · {{size}}"
   },
+  "location": {
+    "use": "Usar mi ubicación",
+    "finding": "Buscando tu ubicación…",
+    "viewOnMap": "Ver en el mapa",
+    "askAgain": "Volver a pedirla",
+    "remove": "Quitar la ubicación",
+    "lowAccuracyLabel": "Más información sobre la precisión",
+    "lowAccuracy": "Es una ubicación aproximada: sin GPS, el navegador la calcula por la red y puede errar por kilómetros. Desde un celular sale más precisa.",
+    "denied": "No hay permiso para usar tu ubicación. Permitilo en la configuración del sitio, en el navegador, y volvé a tocar «Usar mi ubicación».",
+    "unavailable": "No se pudo obtener tu ubicación. Revisá que la ubicación del dispositivo esté activada y volvé a tocar «Usar mi ubicación».",
+    "unsupported": "Este navegador no da la ubicación. Abrí el formulario en otro navegador o en el celular."
+  },
   "send": {
     "sending": "Enviando… {{percent}} %",
     "notSaved": "No se guardó",

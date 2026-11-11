@@ -60,7 +60,8 @@ function ReceivedRange({ query, zone, onApply }: { query: ResponseQuery; zone: s
  * «Filtros» of the sheet (board PL1-A): Recibida, each question in the form's order, Cargó and Versión. Each change applies at
  * once, as in «Columnas»: there is no draft, «Ver N respuestas» nor Cancelar, and the sheet shows it reads again. A question with
  * options, Cargó and Versión are a combo where one is chosen (PL2-A), whose name goes with the change for the owner to remember
- * (`names`): a catalog question's column does not have it. A photo or a document has nothing to filter since «Respuesta» left.
+ * (`names`): a catalog question's column does not have it. A photo, a document or a location (UB4-A) has nothing to filter since
+ * «Respuesta» left.
  */
 export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, disabled, onApply }: {
   formId: string; query: ResponseQuery; columns: readonly ResponseColumn[]; zone: string; names?: Names; disabled?: boolean;
@@ -104,7 +105,7 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
       onClear: () => apply({ receivedFromUtc: undefined, receivedToUtc: undefined }),
       content: <ReceivedRange query={query} zone={zone} onApply={(receivedFromUtc, receivedToUtc) => apply({ receivedFromUtc, receivedToUtc })}/> },
     // A block of rows is not filtered itself: its questions are, under its name, each by any item (RG4-A).
-    ...columns.flatMap(column => (column.questions ?? [column]).filter(item => item.type !== "photo" && item.type !== "document").map(item => ({
+    ...columns.flatMap(column => (column.questions ?? [column]).filter(item => item.type !== "photo" && item.type !== "document" && item.type !== "location").map(item => ({
       key: item.fieldId, label: item.label, applied: conditions.some(condition => condition.fieldId === item.fieldId),
       ...(column.questions ? { group: column.label, note: t("responses.inSomeItem", { block: column.label }) } : {}),
       onClear: () => apply({ conditions: conditions.filter(condition => condition.fieldId !== item.fieldId) }), content: question(item) }))),

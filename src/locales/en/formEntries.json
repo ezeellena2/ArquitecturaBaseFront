@@ -104,6 +104,18 @@
     "removeShort": "Remove",
     "kept": "Already attached · {{size}}"
   },
+  "location": {
+    "use": "Use my location",
+    "finding": "Finding your location…",
+    "viewOnMap": "View on the map",
+    "askAgain": "Ask for it again",
+    "remove": "Remove the location",
+    "lowAccuracyLabel": "More about the accuracy",
+    "lowAccuracy": "It is an approximate location: without GPS, the browser estimates it from the network and can be off by kilometers. A phone gives a more precise one.",
+    "denied": "There is no permission to use your location. Allow it in the browser's site settings and press “Use my location” again.",
+    "unavailable": "Your location could not be obtained. Check that the device's location is on and press “Use my location” again.",
+    "unsupported": "This browser does not provide the location. Open the form in another browser or on a phone."
+  },
   "send": {
     "sending": "Sending… {{percent}}%",
     "notSaved": "It was not saved",

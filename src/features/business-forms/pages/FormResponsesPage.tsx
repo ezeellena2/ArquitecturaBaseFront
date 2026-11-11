@@ -197,7 +197,7 @@ export function FormResponsesPage() {
       id,
       // A header names one thing (UD4): since which version a question is asked is said in «Columnas».
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label,
-      sortable: !catalogField && column.type !== "multiChoice" && column.type !== "group",
+      sortable: !catalogField && column.type !== "multiChoice" && column.type !== "group" && column.type !== "location",
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}

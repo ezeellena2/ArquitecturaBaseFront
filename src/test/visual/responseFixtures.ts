@@ -191,7 +191,8 @@ export function createResponseVisualFixtures(
           const value =
             cell.value &&
             typeof cell.value === "object" &&
-            !Array.isArray(cell.value)
+            !Array.isArray(cell.value) &&
+            "choiceId" in cell.value
               ? cell.value.choiceId
               : String(cell.value ?? "");
           if (condition.operator === "in") return values.includes(value);

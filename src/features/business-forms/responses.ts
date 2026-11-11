@@ -3,6 +3,7 @@ import type { CatalogValueType } from "./catalogValues";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
+import { formatCoordinates, toLocationPoint } from "./locationAnswer";
 export type ResponseType =
   | "shortText"
   | "longText"
@@ -13,7 +14,8 @@ export type ResponseType =
   | "multiChoice"
   | "photo"
   | "document"
-  | "group";
+  | "group"
+  | "location";
 export interface ResponseCatalogField { readonly fieldId: string; readonly key: string; readonly label: string; readonly type: CatalogFieldType; readonly role: "data" | "filter" }
 export interface ResponseCapturedCatalogField extends Omit<ResponseCatalogField, "key"> { readonly value: string; readonly text?: string }
 export interface ResponseCatalogFieldSelection { readonly questionId: string; readonly fieldId: string }
@@ -34,8 +36,10 @@ export interface ResponseItemCells { readonly cells: readonly ResponseCell[] }
 export interface ResponseItemValues {
   readonly values: readonly { readonly fieldId: string; readonly key: string; readonly type: ResponseType; readonly label: string; readonly value: ResponseValue }[];
 }
+/** UB4-A: a point is one datum, with its accuracy in whole meters when it came. */
+export interface ResponseLocation { readonly latitude: number; readonly longitude: number; readonly accuracyMeters?: number }
 export type ResponseValue =
-  string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | readonly ResponseItemCells[] | readonly ResponseItemValues[] | null;
+  string | boolean | ResponseChoice | ResponseChoice[] | PrivateFormFile[] | ResponseLocation | readonly ResponseItemCells[] | readonly ResponseItemValues[] | null;
 export interface ResponseCell {
   fieldId: string;
   type: ResponseType;
@@ -169,6 +173,9 @@ export function responseValueText(
   if (cell.state === "Unanswered") return unanswered;
   if (typeof cell.value === "boolean") return formatYesNo(cell.value, { yes, no }) ?? "—";
   if (typeof cell.value === "string") return cell.value;
+  // UB4-A: a point reads as its coordinates, the same in every language.
+  const point = cell.type === "location" ? toLocationPoint(cell.value) : null;
+  if (point) return formatCoordinates(point);
   return selectedResponseChoices(cell).map(choice => choice.label).join(", ");
 }
 

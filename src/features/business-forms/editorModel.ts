@@ -44,10 +44,10 @@ export function replaceQuestionType(question: DraftQuestion, type: QuestionEdito
     return type === "calculation" ? { ...number, required: false, calculation: calculation ?? newCalculation() } : { ...number, required: false };
   }
   const next = newQuestion(type, culture, localId);
-  // CO1-A: the condition stays with the question, except on the block, which takes none.
-  const condition = question.showWhen && next.type !== "group" ? { showWhen: question.showWhen } : {};
+  // CO1-A: the condition stays with the question, except on the block and a location, which take none (UB1-A).
+  const condition = question.showWhen && next.type !== "group" && next.type !== "location" ? { showWhen: question.showWhen } : {};
   // A question of the block stays in it while its new type fits a row; the block's required follows its minimum.
-  const repeated = "repeated" in question && question.repeated && next.type !== "photo" && next.type !== "document" && next.type !== "group";
+  const repeated = "repeated" in question && question.repeated && next.type !== "photo" && next.type !== "document" && next.type !== "group" && next.type !== "location";
   return { ...next, ...(next.type === "photo" || next.type === "document" ? { files: { ...next.files, minFiles: question.required ? 1 : 0 } } : {}), label: question.label, help: question.help,
     required: next.type === "group" || type === "calculation" ? next.required : question.required, ...(repeated ? { repeated: true } : {}), ...condition,
     replacesFieldId: question.fieldId ?? question.replacesFieldId } as DraftQuestion;

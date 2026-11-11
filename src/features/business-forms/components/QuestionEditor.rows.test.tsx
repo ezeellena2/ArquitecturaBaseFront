@@ -27,7 +27,7 @@ describe("the block of rows in the editor of a question", () => {
     await mount(contact);
     const types = screen.getAllByRole("option").map(item => item.textContent ?? "");
 
-    expect(types.at(-1)).toBe("Documento");
+    expect(types.at(-1)).toBe("Ubicación");
     expect(types.filter(type => /Bloque|Renglones/.test(type))).toEqual([]);
   });
   it("turns off, in a question of the block, what an item does not hold, each with its reason", async () => {
@@ -35,6 +35,7 @@ describe("the block of rows in the editor of a question", () => {
 
     expect(option("Foto · No se carga varias veces")).toBeDisabled();
     expect(option("Documento · No se carga varias veces")).toBeDisabled();
+    expect(option("Ubicación · No se carga varias veces")).toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "Permitir elegir varias" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("checkbox", { name: "Permitir elegir varias" })).toHaveAccessibleDescription("En un bloque se elige una sola opción.");
     expect(screen.getByRole("checkbox", { name: "Se carga varias veces" })).toBeChecked();

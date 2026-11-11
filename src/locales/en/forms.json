@@ -152,6 +152,7 @@
     "catalogChoice": "Choose from a catalog",
     "photo": "Photo",
     "document": "Document",
+    "location": "Location",
     "multiChoice": "Choose several",
     "group": "Block",
     "calculation": "Calculation"
@@ -912,6 +913,7 @@
     "all": "All",
     "answered": "Answered",
     "unanswered": "Unanswered",
+    "viewOnMap": "View on the map",
     "notAsked": "Question did not exist",
     "yes": "Yes",
     "no": "No",

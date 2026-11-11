@@ -16,6 +16,7 @@ const type = z.enum([
   "photo",
   "document",
   "group",
+  "location",
 ]);
 // The questions that go in a block of rows (RG1-A): never a file, a multiple choice or another block.
 const rowType = z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice"]);
@@ -70,12 +71,19 @@ const choice = z.strictObject({
 }).refine(value => (value.value === undefined) === (value.valueType === undefined)
   && (value.valueType === undefined || isCanonicalCatalogValue(value.valueType, value.value ?? null)));
 const choiceList = z.array(choice).max(20).refine(choices => new Set(choices.map(choice => choice.choiceId)).size === choices.length);
+// UB4-A: a point is one datum, with its accuracy in whole meters when it came.
+const location = z.strictObject({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  accuracyMeters: z.number().int().min(0).max(100_000).optional(),
+});
 const value = z.union([
   z.string(),
   z.boolean(),
   choice,
   choiceList,
   fileList,
+  location,
   z.null(),
 ]);
 function validResponseValue(kind: z.infer<typeof type>, input: z.infer<typeof value>): boolean {
@@ -83,6 +91,7 @@ function validResponseValue(kind: z.infer<typeof type>, input: z.infer<typeof va
   if (kind === "choice") return choice.safeParse(input).success;
   if (kind === "multiChoice") return choiceList.safeParse(input).success;
   if (kind === "photo" || kind === "document") return fileList.safeParse(input).success;
+  if (kind === "location") return location.safeParse(input).success;
   return typeof input === "string";
 }
 const cellState = z.enum(["NotAsked", "Unanswered", "Answered"]);

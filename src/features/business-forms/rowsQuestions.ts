@@ -13,7 +13,8 @@ export function rowsBlock(fields: readonly DraftQuestion[]): RowsBlock | null {
 }
 const isRepeated = (question: DraftQuestion) => "repeated" in question && question.repeated === true;
 /** What a row holds: neither several choices, files nor another block. */
-export const canRepeat = (question: DraftQuestion) => question.type !== "photo" && question.type !== "document" && question.type !== "multiChoice" && question.type !== "group";
+export const canRepeat = (question: DraftQuestion) => question.type !== "photo" && question.type !== "document" && question.type !== "multiChoice" && question.type !== "group"
+  && question.type !== "location";
 /** The block is not one of the forty questions. */
 export const questionCount = (fields: readonly DraftQuestion[]) => fields.filter(field => field.type !== "group").length;
 

@@ -63,6 +63,8 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestion
     | { readonly source: TSource; readonly options?: null }
   ))
   | { readonly type: "group"; readonly rows: TRows; readonly source?: null }
+  // UB1-A: a point the device reports when the form is loaded; only required or optional, never in the block.
+  | { readonly type: "location"; readonly source?: null }
 );
 export type DraftChoice = { readonly localId: string; readonly choiceId: string | null; readonly label: LocalizedText };
 export type CanonicalChoice = { readonly choiceId: string; readonly label: LocalizedText };

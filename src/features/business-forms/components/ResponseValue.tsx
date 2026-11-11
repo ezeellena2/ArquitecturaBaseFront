@@ -4,6 +4,8 @@ import { Link } from "react-router";
 import { CellText } from "@/shared/ui/CellText";
 import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
+import { ExternalLinkIcon } from "@/shared/ui/icons";
+import { formatAccuracy, formatCoordinates, mapUrl, toLocationPoint } from "../locationAnswer";
 import { responseCatalogFieldText, responseFiles, responseRowsSummary, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 // The captured fields of an option, aligned under its value (board TL1-A): the field in grey and its value in the text color,
@@ -75,6 +77,20 @@ export function ResponseValue({
         onError={onError}
       />
     );
+  }
+  // UB4-A: a point is one datum. In the sheet the point itself is the link to the map, without its accuracy; in the detail «Ver
+  // en el mapa» goes next to it and the accuracy, in grey, under it. The map opens in another tab.
+  const point = cell.type === "location" ? toLocationPoint(cell.value) : null;
+  if (point) {
+    const coordinates = formatCoordinates(point);
+    const external = { href: mapUrl(point), target: "_blank", rel: "noopener noreferrer" } as const;
+    if (!detail) return <a {...external} className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums text-[var(--color-brand-700)] underline">
+      {coordinates}{" "}<ExternalLinkIcon className="size-3.5 shrink-0"/><span className="sr-only">{t("responses.viewOnMap")}</span></a>;
+    return <div className="min-w-0">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1"><span className="tabular-nums">{coordinates}</span>
+        <a {...external} className="inline-flex items-center gap-1 text-[var(--color-brand-700)] underline">{t("responses.viewOnMap")}<ExternalLinkIcon className="size-3.5 shrink-0"/></a></p>
+      {point.accuracyMeters !== undefined ? <p className="text-xs text-[var(--color-content-muted)]">{formatAccuracy(point.accuracyMeters, i18n.language)}</p> : null}
+    </div>;
   }
   const choices = selectedResponseChoices(cell);
   if (cell.type === "multiChoice" && detail)

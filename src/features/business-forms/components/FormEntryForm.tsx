@@ -25,6 +25,7 @@ import { useCalculationWords } from "../hooks/useCalculationWords";
 import { useEntryGroupChoice } from "../hooks/useFormEntry";
 import { EntryCatalogField, EntryGroupField } from "./EntryCatalogField";
 import { EntryFilesField } from "./EntryFilesField";
+import { EntryLocationField } from "./EntryLocationField";
 
 interface Props {
   entry: FormEntry;
@@ -313,6 +314,9 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
     invalid={!!error} describedBy={describedBy} disabled={disabled} kept={draft.kept?.[question.fieldId]}
     onKeptChange={kept => onChange({ ...draft, kept: { ...draft.kept, [question.fieldId]: kept } })}
     onChange={files => onChange({ ...draft, files: { ...draft.files, [question.fieldId]: files } })}/>, false);
+  // UB3-A: «Usar mi ubicación»; the label names the question and the point travels as the text the server reads.
+  if (question.type === "location") return grouped(<EntryLocationField id={id} value={value} onChange={setValue} invalid={!!error}
+    describedBy={describedBy} disabled={disabled}/>, false);
   // Up to five options in a row however long they are, and those that do not fit wrap; more, a dropdown list (AR1-A). A cell
   // of the table of items always takes the list.
   if (question.type === "choice" && (cell || !entryChoiceInRow(question))) return field(<NativeSelect value={choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
