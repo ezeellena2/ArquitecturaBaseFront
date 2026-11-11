@@ -2,7 +2,8 @@ import { expect, it, vi } from "vitest";
 import { api } from "@/shared/api/httpClient";
 import { catalogImportPreviewFixture, importCatalogId as id } from "@/test/catalogImportFixtures";
 import { readCatalogSave } from "./catalogResponse";
-import { readCatalogImportPreview, previewCatalogImport, applyCatalogImport, exportCatalog } from "./catalogImports";
+import { readCatalogImportPreview, previewCatalogImport, applyCatalogImport, exportCatalog, previewAssistantCatalogImport, applyAssistantCatalogImport,
+  fetchAssistantCatalogImport } from "./catalogImports";
 const preview = catalogImportPreviewFixture();
 it("reads the complete strict import preview without keeping zod issues or accepting another revision/mode/catalog", () => {
   expect(readCatalogImportPreview(preview, id, 7, "Replace")).toEqual(preview);
@@ -72,4 +73,40 @@ it("reads localized source option labels separately from the canonical identity 
   expect(readCatalogImportPreview(body, id, 7, "Replace")).toEqual(body);
   expect(() => readCatalogImportPreview({ ...body, added: [{ ...body.added[0]!, fieldTexts: { [fieldId]: true } }] }, id, 7, "Replace")).toThrow("Unsupported catalog response.");
   expect(() => readCatalogImportPreview({ ...body, changed: [{ ...body.changed[0]!, changes: [{ ...body.changed[0]!.changes[0]!, beforeText: { private: "value" } }] }] }, id, 7, "Replace")).toThrow("Unsupported catalog response.");
+});
+
+// IA2 and IA4: importing the spreadsheet a Home proposal mapped, from the copy of its turn, always replacing.
+const proposal = { requestId: "01990000-0000-7000-8000-000000000051", proposalId: "01990000-0000-7000-8000-000000000052" };
+const savedCatalog = { valueType: "Text", proposal: null, id, key: id.replaceAll("-", ""), name: { es: "Lista" }, description: {}, kind: "Manual", revision: 8, isActive: false, itemsCount: 1, usageCount: 0, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
+it("reviews and applies the import of a proposal's spreadsheet in JSON, replacing, with only the fields of each route", async () => {
+  const post = vi.spyOn(api, "post").mockResolvedValue(preview);
+  const signal = new AbortController().signal;
+  try {
+    expect(await previewAssistantCatalogImport(id, { ...proposal, expectedRevision: 7 }, signal)).toEqual(preview);
+    expect(post.mock.calls[0]).toEqual(["/api/forms/catalogs/" + id + "/assistant-import-previews", { ...proposal, expectedRevision: 7 }, { signal, cache: "no-store" }]);
+    post.mockResolvedValue({ ...preview, mode: "Append" });
+    await expect(previewAssistantCatalogImport(id, { ...proposal, expectedRevision: 7 })).rejects.toThrow("Unsupported catalog response.");
+    post.mockResolvedValue({ catalog: savedCatalog, itemIdentityMap: {}, fieldIdentityMap: {} });
+    const apply = { ...proposal, expectedRevision: 7, sheetSha256: preview.sheetSha256, confirmDeactivations: 1, confirmEmpty: false, confirmErrors: true };
+    expect((await applyAssistantCatalogImport(id, apply, signal)).catalog.revision).toBe(8);
+    expect(post.mock.calls[2]).toEqual(["/api/forms/catalogs/" + id + "/assistant-imports", apply, { signal, cache: "no-store" }]);
+    post.mockResolvedValue({ catalog: { ...savedCatalog, revision: 6 }, itemIdentityMap: {}, fieldIdentityMap: {} });
+    await expect(applyAssistantCatalogImport(id, apply)).rejects.toThrow("Unsupported catalog response.");
+  } finally { post.mockRestore(); }
+});
+it("reads the pending import of a catalog created from a proposal, or none, and no other shape or catalog", async () => {
+  const pending = { ...proposal, fileName: "contratistas.xlsx", rowCount: 86 };
+  const get = vi.spyOn(api, "get").mockResolvedValue({ catalogId: id, pending });
+  const signal = new AbortController().signal;
+  try {
+    expect(await fetchAssistantCatalogImport(id, signal)).toEqual(pending);
+    expect(get.mock.calls[0]).toEqual(["/api/forms/catalogs/" + id + "/assistant-import", { signal, cache: "no-store" }]);
+    get.mockResolvedValue({ catalogId: id, pending: null });
+    expect(await fetchAssistantCatalogImport(id)).toBeNull();
+    for (const body of [{ catalogId: id }, { catalogId: id, pending: { ...pending, extra: true } }, { catalogId: id, pending: { ...pending, rowCount: -1 } },
+      { catalogId: "01990000-0000-7000-8000-000000000099", pending }, { catalogId: id, pending, extra: true }]) {
+      get.mockResolvedValue(body);
+      await expect(fetchAssistantCatalogImport(id)).rejects.toThrow("Unsupported catalog response.");
+    }
+  } finally { get.mockRestore(); }
 });

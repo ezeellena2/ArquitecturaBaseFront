@@ -37,6 +37,34 @@ export async function applyCatalogImport(id: string, body: CatalogImportApply, s
   if (saved.catalog.revision < body.expectedRevision) throw new UnsupportedCatalogResponse();
   return saved;
 }
+// IA2 and IA4: the spreadsheet a Home proposal mapped, imported from the copy of its turn in JSON instead of a file. The server
+// rereads the proposal and always replaces, as uploading a file does; the review and the confirmations are the same.
+export interface AssistantCatalogImport { readonly requestId: string; readonly proposalId: string; readonly expectedRevision: number }
+export interface AssistantCatalogImportApply extends AssistantCatalogImport {
+  readonly sheetSha256: string; readonly confirmDeactivations: number; readonly confirmEmpty: boolean; readonly confirmErrors: boolean;
+}
+const pendingSchema = z.strictObject({
+  catalogId: guid, pending: z.strictObject({ requestId: guid, proposalId: guid, fileName: z.string().min(1), rowCount: count }).nullable(),
+});
+export type AssistantCatalogImportPending = NonNullable<z.infer<typeof pendingSchema>["pending"]>;
+export async function previewAssistantCatalogImport(id: string, body: AssistantCatalogImport, signal?: AbortSignal) {
+  const request = { requestId: body.requestId, proposalId: body.proposalId, expectedRevision: body.expectedRevision };
+  return readCatalogImportPreview(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/assistant-import-previews", request, { signal, cache: "no-store" }),
+    id, body.expectedRevision, "Replace");
+}
+export async function applyAssistantCatalogImport(id: string, body: AssistantCatalogImportApply, signal?: AbortSignal) {
+  const request = { requestId: body.requestId, proposalId: body.proposalId, expectedRevision: body.expectedRevision, sheetSha256: body.sheetSha256,
+    confirmDeactivations: body.confirmDeactivations, confirmEmpty: body.confirmEmpty, confirmErrors: body.confirmErrors };
+  const saved = readCatalogSave(await api.post<unknown>("/api/forms/catalogs/" + catalogId(id) + "/assistant-imports", request, { signal, cache: "no-store" }), [], id);
+  if (saved.catalog.revision < body.expectedRevision) throw new UnsupportedCatalogResponse();
+  return saved;
+}
+/** The import still pending in a catalog created from a proposal with a spreadsheet, only for whoever asked for it; or null. */
+export async function fetchAssistantCatalogImport(id: string, signal?: AbortSignal): Promise<AssistantCatalogImportPending | null> {
+  const parsed = pendingSchema.safeParse(await api.get<unknown>("/api/forms/catalogs/" + catalogId(id) + "/assistant-import", { signal, cache: "no-store" }));
+  if (!parsed.success || parsed.data.catalogId.toLowerCase() !== id.toLowerCase()) throw new UnsupportedCatalogResponse();
+  return parsed.data.pending;
+}
 export async function exportCatalog(id: string, template: boolean, signal?: AbortSignal): Promise<ApiFile> {
   const file = await api.file("/api/forms/catalogs/" + catalogId(id) + "/export?template=" + template, { signal, headers: { accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } });
   if (file.blob.type.split(";")[0] !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || file.blob.size === 0) throw new UnsupportedCatalogResponse();
