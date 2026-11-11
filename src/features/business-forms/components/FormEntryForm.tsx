@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
@@ -36,6 +37,8 @@ interface Props {
   /** The page shows data and files in two folding zones of up to three per row (CW16); the panel, the same zones in one column (AR1-A). */
   layout: "page" | "panel";
   disabled?: boolean;
+  /** MA1-A: the preview's reason for a catalog question it leaves off, over its control; the load says it above instead. */
+  catalogReason?: string;
   /** Grows with each send that found something to correct: the folded zones that hold it open again. */
   reveal?: number;
   /** While correcting (CW10-A): what each changed question had before, shown under its control. */
@@ -51,7 +54,7 @@ const boxColumnsClass = { 1: "columns-1", 2: "columns-2", 3: "columns-3" } as co
  * The questions of the active version in the editor's order, each with the control and width of its type (CW12, CW16).
  * A catalog that cannot be used by whoever loads stays disabled; the page says why above.
  */
-export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled, reveal = 0, before }: Props) {
+export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled, catalogReason, reveal = 0, before }: Props) {
   const { t } = useTranslation("formEntries");
   const [folded, setFolded] = useState<Readonly<Record<string, boolean>>>({});
   const [revealed, setRevealed] = useState(reveal);
@@ -90,9 +93,9 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   const narrowClass = layout === "panel" ? "w-full sm:w-37.5" : columns === 1 ? undefined : "w-full max-w-37.5";
   // The block is a table where the zone has columns, and boxes in one column: the panel and the phone (RG2-A).
   const question = (item: FormEntryQuestion) => item.type === "group" && block
-    ? <EntryBlock key={item.fieldId} entry={entry} group={item} questions={block.questions} draft={draft} onChange={onChange} errors={errors} disabled={disabled}
+    ? <EntryBlock key={item.fieldId} entry={entry} group={item} questions={block.questions} draft={draft} onChange={onChange} errors={errors} disabled={disabled} catalogReason={catalogReason}
       cards={columns === 1} narrowClass={narrowClass} boxColumns={boxColumns} calculated={calculated}/>
-    : <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled}
+    : <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled} catalogReason={catalogReason}
       narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]} pairInRow={columns > 1} calculated={calculated}/>;
 
   // A calculation is not answered by the person: the band counts the others.
@@ -131,9 +134,9 @@ function cellWidth(question: FormEntryQuestion): string | undefined {
  * The block of rows (RG2-A): its name and its items, as a table or in boxes, each with the questions of the block. A problem of
  * an item goes under its row in the table and under its question in a box; the block's own, under the block.
  */
-function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, cards, narrowClass, boxColumns, calculated }: {
+function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, catalogReason, cards, narrowClass, boxColumns, calculated }: {
   entry: FormEntry; group: FormEntryQuestion; questions: readonly FormEntryQuestion[]; draft: EntryDraft; onChange: (draft: EntryDraft) => void;
-  errors: Readonly<Record<string, string>>; disabled?: boolean; cards: boolean; narrowClass?: string; boxColumns: 1 | 2 | 3; calculated: EntryCalculations;
+  errors: Readonly<Record<string, string>>; disabled?: boolean; catalogReason?: string; cards: boolean; narrowClass?: string; boxColumns: 1 | 2 | 3; calculated: EntryCalculations;
 }) {
   const formula = useEntryFormula(entry);
   const id = entryQuestionId(group.fieldId), messageId = id + "-message";
@@ -159,13 +162,13 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
     <Label asChild><span id={id + "-label"}>{group.label}{group.required ? <span aria-hidden="true"> *</span> : null}</span></Label>
     {cards
       ? <ItemCards {...list}>{(item, index) => questions.map(question => <EntryQuestion key={question.fieldId} entry={entry} question={question} draft={draft}
-        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}
+        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} catalogReason={catalogReason} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}
         calculated={calculated}/>)}</ItemCards>
       : <ItemTable {...list} label={group.label} columns={tableColumns} error={(_, column, index) => errors[entryItemPath(group.fieldId, index, column.key)]}
         cell={(item, column, context) => {
           const value = column.key.startsWith(groupColumn);
           const question = questions.find(current => current.fieldId === (value ? column.key.slice(groupColumn.length) : column.key))!;
-          return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} boxColumns={boxColumns}
+          return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} catalogReason={catalogReason} boxColumns={boxColumns}
             item={item} path={path(context.index, question)} cell={context} part={value ? "group" : "options"} calculated={calculated}/>;
         }}/>}
     {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
@@ -224,7 +227,7 @@ function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { bef
     {before === undefined ? null : <p className="text-xs text-[var(--color-content-muted)]">{before === "" ? t("correction.beforeEmpty") : t("correction.before", { value: before })}</p>}</div>;
 }
 
-function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, narrowClass, boxColumns, item, path, cell, pairInRow = false, part, calculated }: {
+function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, catalogReason, narrowClass, boxColumns, item, path, cell, pairInRow = false, part, calculated }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
@@ -241,6 +244,8 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   part?: "group" | "options";
   /** CA1-A: what each calculation would be with what is loaded. */
   calculated?: EntryCalculations;
+  /** MA1-A: the preview's reason for a catalog question it leaves off. */
+  catalogReason?: string;
 }) {
   const { t, i18n } = useTranslation("formEntries");
   const formula = useEntryFormula(entry);
@@ -268,7 +273,7 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   // A list, a group or the files carry their own controls: the label names the group and the message goes below it.
   const grouped = (control: ReactNode, labelled = true) => {
     if (cell) return control;
-    const label = labelled ? <Label htmlFor={id}>{labelText}</Label> : <Label asChild><span id={id + "-label"}>{labelText}</span></Label>;
+    const label = labelled ? <Label htmlFor={id} id={id + "-label"}>{labelText}</Label> : <Label asChild><span id={id + "-label"}>{labelText}</span></Label>;
     return <div className="flex flex-col gap-1.5" data-entry-question={key}>
       {help ? <div className="flex items-center gap-1">{label}<span className="-my-1 inline-flex"><InfoTip id={helpId} label={t("common:actions.moreInfo", { label: question.label })} text={help}/></span></div> : label}
       {control}
@@ -307,9 +312,12 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
       invalid={cell ? cell.invalid : !!error} describedBy={cell ? cell.describedBy : message ? messageId : undefined} disabled={blocked || !answers}
       answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined} chosen={choices[question.fieldId] ?? []} onChoose={chooseOptions}
       cell={cell} part={part} pairInRow={pairInRow} label={labelText} message={message} messageId={messageId} error={error} questionKey={key}/>;
-    return grouped(<EntryCatalogField entry={entry} question={question} chosen={choices[question.fieldId] ?? []} id={id} label={cell?.label}
+    const catalogField = <EntryCatalogField entry={entry} question={question} chosen={choices[question.fieldId] ?? []} id={id} label={cell?.label}
       invalid={cell ? cell.invalid : !!error} describedBy={cell ? cell.describedBy : message ? messageId : undefined} disabled={blocked || !answers}
-      answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined} onChange={chooseOptions}/>);
+      answers={answers ?? undefined} waitingFor={waitingFor} answerTitle={answerTitle || undefined} onChange={chooseOptions}/>;
+    // MA1-A: the preview says over the control why it leaves a catalog off, named by its label; the load says it above the form.
+    return grouped(catalogReason && question.catalog.issue != null
+      ? <DisabledReason reason={catalogReason} id={id} className="grid w-full">{catalogField}</DisabledReason> : catalogField);
   }
   if (isFile(question)) return grouped(<EntryFilesField question={question} files={draft.files[question.fieldId] ?? []} maxFileSizeMiB={entry.maxFileSizeMiB} id={id}
     invalid={!!error} describedBy={describedBy} disabled={disabled} kept={draft.kept?.[question.fieldId]}

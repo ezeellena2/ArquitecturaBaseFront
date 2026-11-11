@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import type { FormEntry } from "../api/entries";
 import { appPreviewEntry } from "../appPreview";
@@ -12,7 +13,8 @@ import { FormEntryForm } from "./FormEntryForm";
 
 // SA2-A (2026-11-09): with «Sólo en la app», the preview next to the editor is the app's «Nueva respuesta» instead of the WhatsApp
 // phone: the pieces of loading, in one column and with a box per item of the block. Like the phone it is illustrative (it sends and
-// saves nothing, in one language) and says so in the (i) of its heading. What was typed stays while the draft changes.
+// saves nothing, in one language) and says so in the (i) of its heading. What was typed stays while the draft changes. What it
+// leaves off says why over the control (MA1-A): a catalog question, whose options come when loading, and the final button.
 export function FormAppPreview({ value, culture }: { value: DraftEditorValue; culture: FormCulture }) {
   const { t, i18n } = useTranslation("forms");
   const missing = culture === value.draft.culture ? 0 : missingFormTexts(value, culture);
@@ -30,8 +32,8 @@ export function FormAppPreview({ value, culture }: { value: DraftEditorValue; cu
     <div className="flex items-center gap-1"><h2 className="text-xs font-semibold uppercase tracking-wide">{heading}</h2><span className="-my-1 inline-flex"><InfoTip label={t("common:actions.moreInfo", { label: heading })} text={[t("appPreviewHint"), t("previewMissingHint"), t("previewOnly")].join(" ")} /></span></div>
     {missing ? <Banner>{t("previewFallback", { count: missing, requested: t("cultureNamesInText." + culture), actual: t("cultureNamesInText." + previewCulture) })}</Banner> : null}
     <div lang={previewCulture} className="flex flex-col gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-      <FormEntryForm entry={state.entry} draft={state.draft} onChange={draft => setState(current => ({ ...current, draft }))} errors={{}} layout="panel" />
-      <div className="flex justify-end"><Button type="button" disabled>{state.entry.submitLabel}</Button></div>
+      <FormEntryForm entry={state.entry} draft={state.draft} onChange={draft => setState(current => ({ ...current, draft }))} errors={{}} layout="panel" catalogReason={t("appPreviewCatalog")} />
+      <div className="flex justify-end"><DisabledReason reason={t("previewOnly")}><Button type="button" disabled>{state.entry.submitLabel}</Button></DisabledReason></div>
     </div>
   </section>;
 }

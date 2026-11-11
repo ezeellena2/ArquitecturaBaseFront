@@ -19,15 +19,20 @@ it("shows the draft as the app loads it, with a box per item and the final butto
   const preview = screen.getByRole("region", { name: "Vista previa" });
   expect(within(preview).getByRole("textbox", { name: "Cliente" })).toBeEnabled();
   expect(within(preview).getByText("Ítem 1")).toBeInTheDocument();
-  expect(within(preview).getByRole("button", { name: "Enviar remito" })).toBeDisabled();
+  // MA1-A: the final button is off with its reason over it, reachable with Tab.
+  const submit = within(preview).getByRole("button", { name: "Enviar remito" });
+  expect(submit).toHaveAttribute("aria-disabled", "true");
+  expect(submit).toHaveAccessibleDescription("Esta vista no envía ni guarda respuestas.");
   expect(within(preview).queryByText("Vista previa orientativa. La vista oficial de WhatsApp estará disponible al publicar.")).not.toBeInTheDocument();
   await userEvent.click(within(preview).getByRole("button", { name: "Más información sobre Vista previa" }));
   expect(await screen.findAllByText(/Vista previa orientativa de la carga en la app/)).not.toHaveLength(0);
 });
 
-it("leaves a catalog question waiting for its options, without asking the server for them", async () => {
+it("leaves a catalog question waiting for its options, without asking the server for them, and says why over it", async () => {
   await act(async () => { renderWithProviders(<FormAppPreview culture="es" value={value([question("client", "Cliente", { type: "choice", source: { catalog: "01990000-0000-7000-8000-000000000001" } } as Partial<DraftQuestion>)])} />); });
   expect(screen.getByRole("combobox", { name: "Cliente" })).toBeDisabled();
+  // MA1-A: the reason goes over the control, which takes the focus in its place.
+  expect(screen.getByRole("group", { name: "Cliente" })).toHaveAccessibleDescription("Las opciones del catálogo se ven al cargar.");
 });
 
 // UB3-A (2026-11-11): as in the app, nothing is asked until «Usar mi ubicación» is pressed; the point stays in the preview, which
