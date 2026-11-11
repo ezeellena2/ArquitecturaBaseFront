@@ -29,3 +29,5 @@ Las migas del diseño PDF usan el nombre confirmado que aporta su pantalla: Inic
 «Formularios que faltan» es un destino fijo de Formularios, debajo de Catálogos, con formtemplates.manage exacto. Sus migas usan la entrada propia y no enlazan al listado de diseño sin permiso de lectura.
 
 Datos de las personas es una entrada plana de Administración, con formpersondata.manage. La lectura de personas exige además users.read dentro de la pantalla; ese requisito no oculta la administración de definiciones.
+
+Carpetas en el menú (CP5-A): `folderMenuNavigation` es el contrato neutral; `app` lo llena y el menú dibuja cada menú propio como un panel debajo de Inicio y cada carpeta puesta en un panel como un grupo al final de «Gestión de formularios» o de Administración. Un formulario abierto desde el menú (`entry`) deja su panel abierto y marcado, y las migas dicen «Menú / Formulario», mientras se siga en sus pantallas.

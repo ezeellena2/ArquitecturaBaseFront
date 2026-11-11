@@ -65,8 +65,12 @@ para documentos, este documento congela lo elegido. Alcance, permisos y contrato
   diálogo a pantalla completa en el celular. La carpeta abierta lleva el tinte de la marca y la barra al inicio (OE1-A).
 - **Agregar y renombrar** son un campo en el mismo renglón: Enter guarda, Escape cancela y el error va debajo. La carpeta
   nueva se abre y queda elegida en el árbol del diálogo de CP2-A.
-- **Mover a…** lista las carpetas en orden de árbol con su sangría; las que no se pueden elegir (la carpeta, sus subcarpetas
-  y las que pasarían de cinco niveles) quedan apagadas con su motivo (MA1-A).
+- **Mover a…** lista las carpetas en orden de árbol, cada una con su carpeta madre debajo, en gris («En Repartos»); las que
+  no se pueden elegir (la carpeta, sus subcarpetas y las que pasarían de cinco niveles) quedan apagadas con su motivo (MA1-A).
+- **El ícono de un menú propio** se elige en un desplegable con el dibujo y el nombre de cada uno: es un valor de una lista.
+- **Lo vacío en una carpeta:** sin búsqueda ni filtros, el título solo; con alguno, «Buscar en todas» y «Limpiar filtros».
+- **Desde el menú** se recuerda por qué carpeta se entró mientras se siga en las pantallas de ese formulario (la planilla, lo
+  que cuelga de ella y la carga); al salir, todo vuelve a como era. Las migas nombran el menú en la planilla y en la carga.
 - **La dirección:** `?carpeta=<id>` o `?carpeta=sin-carpeta`. Elegir vuelve a la página 1 y conserva búsqueda y filtros.
 - **Conflictos:** un 409 de revisión (`Forms.Folder.RevisionConflict`) o de conjunto cambiado (`Forms.Folder.SetChanged`)
   conserva lo elegido o escrito y avisa abajo con «Volver a leer».
@@ -76,5 +80,7 @@ para documentos, este documento congela lo elegido. Alcance, permisos y contrato
 ## Correspondencia con `shared/ui`
 
 `Surface` (panel), `ActionsMenu` («…»), `IconButton` (+), `Input` en el renglón (como `CatalogInlineInput`),
-`CheckboxField` (CP2-A), `RadioGroupField` con `level` (mover y lugar en el menú), `DialogContent mobileFullscreen` (hoja del
-celular), `Button outline` con su flecha, como un filtro (selector), `EmptyState` (vacíos), `Skeleton` (carga) y el aviso común (resultados y errores).
+`TreeList` (la lista con niveles del panel y de la hoja, nueva), `CheckboxField` (CP2-A), `RadioGroupField` con
+`disabledReason` (mover y lugar en el menú), `Select` (el ícono), `DialogContent mobileFullscreen` (hoja del celular),
+`Button outline` con su flecha, como un filtro (selector), `EmptyState` (vacíos), `Skeleton` (carga) y el aviso común
+(resultados y errores). En el caparazón, el menú propio usa `PanelTrigger` y los grupos, `NavBranch`, como Administración.
