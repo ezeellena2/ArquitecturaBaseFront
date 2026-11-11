@@ -22,9 +22,16 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
   selection: z.strictObject({ minSelected: z.number().int().min(0).max(20), maxSelected: z.number().int().min(1).max(20) }).optional(),
   rows: z.strictObject({ minRows: z.number().int().min(0).max(100), maxRows: z.number().int().min(1).max(100) }).optional(),
   repeated: z.literal(true).optional(),
+  // CA1-A: a read-only decimal the server computes; its operands are earlier questions, by their field identity once sealed.
+  calculation: z.strictObject({ operation: z.enum(["multiply", "sum", "percent"]), operands: z.array(guid).min(1).max(20) }).optional(),
+  // CO1-A: the earlier question and the answers that show this one (option identities, or "true"/"false").
+  showWhen: z.strictObject({ questionId: guid, values: z.array(z.string().min(1).max(64)).min(1).max(50) }).optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
     context.addIssue({ code: "custom", message: "Invalid rows configuration." });
+  // A calculation is an optional decimal with two operands to multiply or take a percentage; neither the block nor its questions show by a condition.
+  if (value.calculation && (value.type !== "decimal" || value.required || value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)
+    || value.showWhen && (value.type === "group" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid calculation or condition." });
   if (value.repeated && !rowQuestionTypes.includes(value.type)) context.addIssue({ code: "custom", message: "Invalid row question." });
   const fileType = value.type === "photo" || value.type === "document";
   if (fileType ? !value.files || value.files.minFiles > value.files.maxFiles || value.required !== (value.files.minFiles > 0) || (value.type === "photo" ? !value.files.photoSource : value.files.photoSource != null) : value.files !== undefined) context.addIssue({ code: "custom", message: "Invalid file configuration." });
@@ -45,6 +52,8 @@ const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string()
     sections: z.array(z.strictObject({ start: z.number().int().min(0).max(41), title: text })).min(1).max(40).optional(),
     // «Dónde se completa» (SA1-A): true is «Sólo en la app»; completed also by a channel, it is omitted.
     appOnly: z.literal(true).optional() }),
+  // BI1-A: a form added from the library says its standard, its version and which question holds each datum it needs.
+  standard: z.strictObject({ key: z.string().min(1).max(64), version: z.number().int().positive(), bound: z.record(z.string().min(1), guid) }).optional(),
 }).superRefine((value, context) => {
   const { culture, fields, submitLabel } = value.draft;
   const sections = value.draft.sections ?? [];
