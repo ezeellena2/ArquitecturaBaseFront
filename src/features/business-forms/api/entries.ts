@@ -50,6 +50,8 @@ export const formEntrySchema = z.strictObject({
   definitionId: z.string().uuid(), versionId: z.string().uuid(), versionNumber: z.number().int().positive(),
   prefix: z.string().min(1), name: z.string().min(1), culture: z.enum(["es", "en"]), submitLabel: z.string().min(1),
   maxFileSizeMiB: z.number().int().min(1).max(25), questions: z.array(questionSchema).max(41),
+  /** EM2-A: sending issues a document, so «Enviar» first shows what would be issued; without it the field does not come. */
+  issuePreview: z.literal(true).optional(),
 }).superRefine((value, context) => {
   // At most one block, which does not count among the 40 questions, followed without gaps by its repeated questions.
   const groups = value.questions.flatMap((question, index) => question.type === "group" ? [index] : []);
@@ -81,7 +83,16 @@ const correctionSchema = z.strictObject({
   files: z.array(z.strictObject({ fileId: z.string().uuid(), fieldId: z.string().uuid(), name: z.string().min(1), contentType: z.string().min(1),
     size: z.number().int().positive(), hasThumbnail: z.boolean() })),
 });
+const localized = z.record(z.string().refine(key => key === "es" || key === "en"), z.string());
+// «¿La emito?» (EM2-A, IV3): the document the issuer decided with why (`info`), the receiver, the date, the amounts it itemizes
+// and the total, in canonical form; or why it cannot be issued as it is.
+const issuePreviewSchema = z.strictObject({
+  document: localized.nullable(), receiver: z.string().nullable(), total: z.string().nullable(),
+  failureCode: z.string().min(1).nullable(), failureMessage: z.string().nullable(),
+  info: localized.optional(), date: z.string().optional(), amounts: z.array(z.strictObject({ label: localized, value: z.string() })).optional(),
+});
 export type FormEntry = z.infer<typeof formEntrySchema>;
+export type FormIssuePreview = z.infer<typeof issuePreviewSchema>;
 export type FormEntryCorrection = z.infer<typeof correctionSchema>;
 export type FormEntryKeptFile = FormEntryCorrection["files"][number];
 export type FormEntryQuestion = FormEntry["questions"][number];
@@ -106,6 +117,7 @@ export const readFormEntryOptions = (body: unknown) => read(optionsPageSchema, b
 export const readFormEntryGroups = (body: unknown) => read(groupsSchema, body);
 export const readFormEntrySubmitted = (body: unknown) => read(submittedSchema, body);
 export const readFormEntryCorrection = (body: unknown) => read(correctionSchema, body);
+export const readFormIssuePreview = (body: unknown) => read(issuePreviewSchema, body);
 
 const uuid = z.string().uuid();
 function entryPath(formId: string): string {
@@ -167,6 +179,10 @@ export async function submitFormEntryCorrection(formId: string, recordId: string
 /** Voids a response with its reason (CW11-A); it keeps its number and stops counting. */
 export async function voidFormRecord(formId: string, recordId: string, reason: string): Promise<void> {
   await api.post<unknown>(`/api/forms/definitions/${uuid.parse(formId)}/records/${uuid.parse(recordId)}/void`, { reason });
+}
+/** What sending these answers would issue (EM2-A), without saving anything: the answers go as in the send, without files. */
+export async function fetchFormIssuePreview(formId: string, send: Pick<FormEntrySend, "versionId" | "answers">, signal?: AbortSignal): Promise<FormIssuePreview> {
+  return readFormIssuePreview(await api.post<unknown>(entryPath(formId) + "/issue-preview", { versionId: uuid.parse(send.versionId), answers: send.answers }, { signal }));
 }
 /** The send in multipart, with the upload's progress. Repeating the same `requestId` and answers returns the first result. */
 export async function submitFormEntry(formId: string, send: FormEntrySend, onProgress: (fraction: number) => void, signal?: AbortSignal): Promise<FormEntrySubmitted> {

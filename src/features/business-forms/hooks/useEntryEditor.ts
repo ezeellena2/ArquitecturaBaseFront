@@ -1,16 +1,27 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
-import type { FormEntry, FormEntrySubmitted } from "../api/entries";
+import { fetchFormIssuePreview, type FormEntry, type FormEntrySubmitted, type FormIssuePreview } from "../api/entries";
 import {
-  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, initialEntryDraft, validateEntry,
-  type EntryDraft, type EntryProblem,
+  carryEntryDraft, entryDraftKey, entryItemsLoaded, entryProblemKeys, entryProblemQuestion, entryQuestionId, entrySignature, initialEntryDraft, toEntrySend,
+  validateEntry, type EntryDraft, type EntryProblem,
 } from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
 
 export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
+
+/** The answers of a preview are those of the send, without files and without a request of their own. */
+const previewSend = (entry: FormEntry, draft: EntryDraft) => toEntrySend(entry, draft, crypto.randomUUID());
+/** IV1-A: the totals are asked again a moment after the loaded answers stop changing, never on each keystroke. */
+const totalsDelay = 1200;
+function useSettled<T>(value: T, delay: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => { const timer = window.setTimeout(() => setSettled(value), delay); return () => window.clearTimeout(timer); }, [value, delay]);
+  return settled;
+}
 
 /** How a correction sends (CW10-A), with its own progress; without it the editor sends a new response. */
 export interface EntrySubmission { submit: (entry: FormEntry, draft: EntryDraft) => Promise<FormEntrySubmitted>; progress: number | null; sending: boolean }
@@ -30,6 +41,9 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const [reveal, setReveal] = useState(0);
   const own = useFormEntrySubmit(formId);
   const { submit, progress, sending } = options?.submission ?? own;
+  // EM2-A: «Enviar» on a form that issues opens «¿La emito?» with what would be issued; «Emitir» sends it as always.
+  const [issue, setIssue] = useState<{ preview: FormIssuePreview; signature: string } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
   // A new reading of the entry (another version after «Pasar a la versión nueva») keeps the answers that still apply.
   if (entry && state?.entry !== entry) {
     setState({ entry, draft: state ? carryEntryDraft(state.entry, state.draft, entry) : initial ?? initialEntryDraft(entry) });
@@ -49,6 +63,14 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   if (attempted) for (const [fieldId, problem] of Object.entries(problems)) errors[fieldId] = problemMessage(problem, fieldId);
   Object.assign(errors, serverErrors);
   const missing = entry?.questions.find(question => question.catalog?.issue === "Forms.Record.RecipientDataMissing");
+  // IV1-A: with a form that issues and nothing missing, the «Total» itemized by the issuer; the server recalculates on sending.
+  const signature = entry?.issuePreview && draft && Object.keys(problems).length === 0 ? entrySignature(entry, draft) : null;
+  const settled = useSettled(signature, totalsDelay);
+  const totals = useQuery({
+    queryKey: ["form-issue-preview", owner, formId, settled],
+    queryFn: ({ signal }) => fetchFormIssuePreview(formId, previewSend(entry!, draft!), signal),
+    enabled: !!settled && settled === signature && !!entry && !!draft, staleTime: Infinity, gcTime: 30_000, retry: false, meta: { errorOwner: "local" },
+  });
   const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
     : Object.values(draft.values).some(value => value !== "") || Object.values(draft.files).some(files => files.length > 0)
     || Object.entries(draft.choices).some(([fieldId, chosen]) => chosen.length > 0 && entry?.questions.find(question => question.fieldId === fieldId)?.catalog?.onlyOption?.id !== chosen[0]?.id)
@@ -79,17 +101,34 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     target?.focus();
   });
 
-  /** Sends when nothing is missing; otherwise marks every problem and focuses the first one. */
-  const send = async (): Promise<FormEntrySubmitted | null> => {
-    if (!entry || !draft || sending || conflict) return null;
+  /**
+   * Sends when nothing is missing; otherwise marks every problem and focuses the first one. On a form that issues, the first
+   * «Enviar» only asks what would be issued and opens «¿La emito?»; `confirmed` is «Emitir», which sends.
+   */
+  const send = async (confirmed = false): Promise<FormEntrySubmitted | null> => {
+    if (!entry || !draft || sending || previewing || conflict) return null;
     setAttempted(true);
     const first = entryProblemKeys(entry, draft).find(key => problems[key]);
     if (first) { setReveal(value => value + 1); focus(first); return null; }
     try {
+      if (entry.issuePreview && !confirmed) {
+        const current = entrySignature(entry, draft);
+        if (totals.data && settled === current) { setIssue({ preview: totals.data, signature: current }); return null; }
+        setPreviewing(true);
+        try {
+          setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft)), signature: current });
+          return null;
+        } catch (error) {
+          // A form that stopped issuing sends as any other.
+          if (!(error instanceof ApiError && error.code === "Forms.Entry.NoIssuance")) throw error;
+        } finally { setPreviewing(false); }
+      }
       const result = await submit(entry, draft);
       setServerErrors({});
+      setIssue(null);
       return result;
     } catch (error) {
+      setIssue(null);
       if (!(error instanceof ApiError)) throw error;
       if (error.code === "Forms.Entry.VersionChanged") setConflict("version");
       else if (error.code === "Forms.Entry.Unavailable") setConflict("deactivated");
@@ -126,7 +165,20 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const restart = (next?: EntryDraft) => {
     if (!entry) return;
     setState({ entry, draft: next ?? initialEntryDraft(entry) });
-    setAttempted(false); setServerErrors({}); setConflict(null);
+    setAttempted(false); setServerErrors({}); setConflict(null); setIssue(null);
   };
-  return { draft, change, errors, send, restart, focus, progress, sending, conflict, missing, dirty, reveal, blocked: !!missing || !!conflict };
+  /** «Volver» in «¿La emito?»: nothing is sent and the answers stay as they are. */
+  const closeIssue = () => setIssue(null);
+  /** «Volver a probar» when the issuer could not answer: asks again with the same answers. */
+  const retryIssue = async () => {
+    if (!entry || !draft || previewing) return;
+    setPreviewing(true);
+    try { setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft)), signature: entrySignature(entry, draft) }); }
+    catch { notify({ id: `entries:send:${owner}:${formId}`, kind: "error", message: t("send.failed"), description: t("send.failedHint", { submit: entry.submitLabel }) }); }
+    finally { setPreviewing(false); }
+  };
+  // The totals shown are those of what is loaded now: while it changes, the zone waits for the new ones.
+  const issueTotals = signature && settled === signature && totals.data && !totals.data.failureCode ? totals.data : null;
+  return { draft, change, errors, send, restart, focus, progress, sending, conflict, missing, dirty, reveal, blocked: !!missing || !!conflict,
+    issue: issue?.preview ?? null, closeIssue, retryIssue, previewing, issueTotals, totalsPending: !!signature && !issueTotals && (settled !== signature || totals.isFetching) };
 }

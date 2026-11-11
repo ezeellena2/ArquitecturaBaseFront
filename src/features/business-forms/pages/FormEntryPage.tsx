@@ -20,6 +20,8 @@ import { Surface } from "@/shared/ui/Surface";
 import type { FormEntry, FormEntrySubmitted } from "../api/entries";
 import { approvalStateVariant } from "../approvals";
 import { FormEntryForm } from "../components/FormEntryForm";
+import { IssueConfirmDialog } from "../components/IssueConfirmDialog";
+import { IssueTotals } from "../components/IssueTotals";
 import { FormEntrySent } from "../components/FormEntrySent";
 import { entryZones, keepForNextEntry, type EntryDraft } from "../entryForm";
 import { takeEntryDraft } from "../entryHandoff";
@@ -72,9 +74,10 @@ export function FormEntryPage() {
   const sendLabel = editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…";
   // Kept, the form stays for the next one as in the panel (AR2-A): the notice says the number, the files start empty and
   // the focus goes back to the first question. Otherwise, «Enviada».
-  const submit = async () => {
+  // EM2-A: on a form that issues, the first «Enviar» opens «¿La emito?»; «Emitir factura» is `confirmed`.
+  const submit = async (confirmed = false) => {
     const draft = editor.draft;
-    const result = await editor.send();
+    const result = await editor.send(confirmed);
     if (!result || !entry || !draft) return;
     if (!keep) { setSent({ result, entry, draft }); return; }
     notify({ id: `entries:saved:${scope.owner}:${formId}`, kind: "success", message: t("send.saved", { number: result.number }),
@@ -86,7 +89,7 @@ export function FormEntryPage() {
   const keepBox = <CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/>;
   const sendButton = (touch = false) => <DisabledReason reason={submitReason}>
     <Button type="button" size={touch ? "touch" : "default"} className={touch ? "w-full" : undefined} disabled={!entry || editor.blocked || unavailable}
-      pending={editor.sending} onClick={() => void submit()}>{sendLabel}</Button>
+      pending={editor.sending || editor.previewing} onClick={() => void submit()}>{sendLabel}</Button>
   </DisabledReason>;
   const actions = mobile || !entry ? undefined : <>
     {keepBox}
@@ -101,7 +104,10 @@ export function FormEntryPage() {
         {t("send.newVersion", { name: entry.name })}</Banner> : null}
       {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
       {missingForm ? <EmptyState title={t("forms:responses.unavailableForm")} action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}/>
-        : entry && editor.draft ? <FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="page" disabled={editor.sending || unavailable} reveal={editor.reveal}/>
+        : entry && editor.draft ? <><FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="page" disabled={editor.sending || unavailable} reveal={editor.reveal}/>
+          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending}/>
+          <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} onConfirm={() => void submit(true)}
+            onRetry={() => void editor.retryIssue()} onClose={editor.closeIssue}/></>
         // Reintentar goes back to the skeleton below while it reads the form again.
         : query.isError && !unavailable ? <Surface padded><EmptyState title={t("page.loadFailed")}
           action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/></Surface>

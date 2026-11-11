@@ -131,6 +131,24 @@
     "saved": "{{number}} was saved",
     "savedDetail": "{{name}} · {{state}}"
   },
+  "issue": {
+    "title": "Shall we issue the invoice?",
+    "document": "Voucher",
+    "why": "Why this voucher",
+    "receiver": "Customer",
+    "date": "Date",
+    "total": "Total",
+    "onlyCreditNote": "Once issued, it can only be voided with a credit note.",
+    "back": "Back",
+    "confirm": "Issue invoice",
+    "issuing": "Issuing…",
+    "retry": "Try again",
+    "retrying": "Trying…",
+    "failed": "It cannot be issued like this.",
+    "wait": "Wait until it finishes.",
+    "totalsTitle": "Total",
+    "totalsLoading": "Calculating the total"
+  },
   "sent": {
     "title": "Sent",
     "loadAnother": "Load another",

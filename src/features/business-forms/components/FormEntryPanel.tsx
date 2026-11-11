@@ -17,6 +17,8 @@ import { handOverEntryDraft } from "../entryHandoff";
 import { useEntryEditor } from "../hooks/useEntryEditor";
 import { useFormEntry } from "../hooks/useFormEntry";
 import { FormEntryForm } from "./FormEntryForm";
+import { IssueConfirmDialog } from "./IssueConfirmDialog";
+import { IssueTotals } from "./IssueTotals";
 
 /**
  * Loading next to the sheet (CW2-B), only on the computer. The sheet stays in view: the saved response shows on top,
@@ -34,9 +36,10 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
   const guard = useUnsavedChangesGuard(editor.dirty);
   useLayoutEffect(() => { if (!panel.current?.contains(document.activeElement)) panel.current?.focus(); }, []);
   const close = () => { if (editor.dirty) setClosing(true); else onClose(); };
-  const submit = async () => {
+  // EM2-A: on a form that issues, the first «Enviar» opens «¿La emito?»; «Emitir factura» is `confirmed`.
+  const submit = async (confirmed = false) => {
     const draft = editor.draft;
-    const result = await editor.send();
+    const result = await editor.send(confirmed);
     if (!result || !entry || !draft) return;
     notify({ id: `entries:saved:${scope.owner}:${formId}`, kind: "success", message: t("send.saved", { number: result.number }),
       description: t("send.savedDetail", { name: entry.name, state: t("forms:approvals.states." + result.state) }) });
@@ -68,7 +71,8 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
         {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" pending={query.isFetching} onClick={() => void query.refetch()}>{t(query.isFetching ? "send.updating" : "send.useNewVersion")}</Button>}>
           {t("send.newVersion", { name: entry.name })}</Banner> : null}
         {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
-        {entry && editor.draft ? <FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="panel" disabled={editor.sending}/>
+        {entry && editor.draft ? <><FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="panel" disabled={editor.sending}/>
+          <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending}/></>
           : query.isError ? <EmptyState title={t("page.loadFailed")}
             action={<Button type="button" variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>}/>
           : <div role="status" aria-label={t("page.opening")} className="flex flex-col gap-4">{[0, 1, 2].map(index => <div key={index} className="flex flex-col gap-2"><Skeleton className="h-4 w-32"/><Skeleton className="h-8 w-full"/></div>)}</div>}
@@ -77,9 +81,11 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
     <footer className="flex shrink-0 flex-wrap items-center gap-3 border-t border-[var(--color-border)] px-4 py-3">
       <div className="min-w-0 flex-1"><CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/></div>
       <Button type="button" variant="outline" disabled={editor.sending} onClick={close}>{t("common:actions.cancel")}</Button>
-      <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending} onClick={() => void submit()}>
+      <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending || editor.previewing} onClick={() => void submit()}>
         {editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : entry?.submitLabel ?? "…"}</Button></DisabledReason>
     </footer>
+    <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} onConfirm={() => void submit(true)}
+      onRetry={() => void editor.retryIssue()} onClose={editor.closeIssue}/>
     <ConfirmDialog open={closing || guard.isBlocked} onOpenChange={open => { if (!open) { setClosing(false); guard.stay(); } }}
       title={t("panel.closeTitle")} description={t("panel.closeDescription")} cancelLabel={t("leave.stay")} confirmLabel={t("panel.closeConfirm")} destructive
       onConfirm={() => { if (closing) { setClosing(false); guard.allowNextNavigation(); onClose(); } else guard.leave(); }}/>

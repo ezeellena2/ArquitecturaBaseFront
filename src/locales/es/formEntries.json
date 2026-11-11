@@ -131,6 +131,24 @@
     "saved": "Se guardó {{number}}",
     "savedDetail": "{{name}} · {{state}}"
   },
+  "issue": {
+    "title": "¿Emitimos la factura?",
+    "document": "Comprobante",
+    "why": "Por qué este comprobante",
+    "receiver": "Cliente",
+    "date": "Fecha",
+    "total": "Total",
+    "onlyCreditNote": "Una vez emitida, sólo se anula con una nota de crédito.",
+    "back": "Volver",
+    "confirm": "Emitir factura",
+    "issuing": "Emitiendo…",
+    "retry": "Volver a probar",
+    "retrying": "Probando…",
+    "failed": "No se puede emitir así.",
+    "wait": "Esperá a que termine.",
+    "totalsTitle": "Total",
+    "totalsLoading": "Calculando el total"
+  },
   "sent": {
     "title": "Enviada",
     "loadAnother": "Cargar otra",

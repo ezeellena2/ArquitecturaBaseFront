@@ -35,8 +35,21 @@ editor con «Los precios se cargan: Sin IVA · Con IVA».
 No tiene tablero: el diseño fijo es el de la factura C y el contenido lo fija la norma (RG 1415, RG 5003 y RG 5614). Se
 revisó con dos muestras dibujadas por el renderer real. La regla está en [ARCA](../../../ArquitecturaBase/docs/features/arca.md).
 
+## Lo que se fijó al programar
+
+- **El «¿La emito?» de la app** (EM2-A con IV3) es `components/IssueConfirmDialog.tsx`: la carga con `issuePreview` pide al
+  tocar «Enviar» la vista previa del emisor (`POST api/forms/entries/{id}/issue-preview`) y abre el resumen; «Emitir factura»
+  manda el envío de siempre. Los importes, sus etiquetas y la (i) los trae el emisor, así que la A, la B y la C usan el mismo
+  diálogo. Si el emisor no puede (un cliente que ARCA no tiene, ARCA sin responder), el diálogo dice su mensaje con «Volver a
+  probar».
+- **El total discriminado de IV1-A** es `components/IssueTotals.tsx`, debajo de las preguntas: la misma vista previa, pedida un
+  momento después de que la carga deja de cambiar y sólo cuando no falta nada. Los cálculos del formulario no saben el
+  porcentaje de cada alícuota (se calculan al enviar), así que el desglose sale del emisor. La C no discrimina: no hay zona.
+- **La acción en el editor de reglas** (`FormRulesSection`): cada emisor del formulario es un tipo de acción con su nombre;
+  vale al recibir o al aprobar, una por regla y antes de los mensajes, y los mensajes que siguen suman en «Agregar dato» el
+  grupo «De «…»» con los datos de su resultado.
+
 ## Pendiente
 
-- Programar IV1-A, IV2-A e IV3 sobre el estándar «Factura» de la etapa 3 y su front (la zona «Comprobante», la anulación y
-  el «¿La emito?»). Lo que se fije al programar se anota acá.
+- La casilla de IV2-A en el editor y la columna «Alícuota» del estándar «Factura» (etapa 3, tarea 11).
 - La prueba a mano, en la prueba integral.
