@@ -24,13 +24,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   const phone = width < 640;
   const suffix = "-" + language + "-" + width;
   const correct = text(language, "Corregir", "Correct");
+  const moreActions = text(language, "Más acciones", "More actions");
 
   test("CW10-A correcting a response " + language + " " + width, async ({ page }) => {
     await open(page, language, width, response(ids.pending, phone), "responses-full-amend");
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    await page.getByRole("button", { name: correct, exact: true }).click();
+    // «Corregir» is the first item of ⋮ (AC1-A).
+    await page.getByRole("button", { name: moreActions, exact: true }).click();
+    await page.getByRole("menuitem", { name: correct, exact: true }).click();
     // Where D2 was on the computer; from the full view and on the phone, on its own page.
     const scope = phone ? page.locator("body")
       : page.getByRole("region", { name: text(language, "Corregir TEST-000002 de Informe de entregas", "Correct TEST-000002 of Delivery report"), exact: true });
@@ -87,8 +90,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    // «Anular», at the end of «⋯», in red.
-    await page.getByRole("button", { name: text(language, "Más acciones", "More actions"), exact: true }).click();
+    // «Anular», at the end of ⋮, in red after a line (AC1-A).
+    await page.getByRole("button", { name: moreActions, exact: true }).click();
     const item = page.getByRole("menuitem", { name: text(language, "Anular", "Void"), exact: true });
     await expect(item).toBeVisible();
     await capture(page, "cw11-menu" + suffix);
@@ -133,15 +136,18 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    await expect(page.getByRole("button", { name: correct, exact: true })).toBeVisible();
+    // «Corregir» waits in ⋮ (AC1-A).
+    await page.getByRole("button", { name: moreActions, exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: correct, exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
     await noPageScroll(page, width);
     await capture(page, "cw10-own" + suffix);
     // Once decided, it is no longer theirs to change.
     if (phone) await open(page, language, width, response(ids.approved, phone), "responses-full-amend-own");
     else await page.getByRole("link", { name: "TEST-000001", exact: true }).click();
     await expect(page.getByRole("heading", { name: "TEST-000001", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: correct, exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: text(language, "Más acciones", "More actions"), exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: moreActions, exact: true })).toHaveCount(0);
   });
 
   test("CW10-A and CW11-A the chat card says what happened later " + language + " " + width, async ({ page }) => {
