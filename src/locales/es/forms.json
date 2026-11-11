@@ -1602,7 +1602,13 @@
     "sumFull": "Una suma lleva hasta {{count}} preguntas.",
     "noNumbers": "No hay preguntas de número antes de esta.",
     "allAdded": "Ya se suman todas las preguntas que puede.",
-    "incomplete": "Elegí las preguntas que usa el cálculo."
+    "incomplete": "Elegí las preguntas que usa el cálculo.",
+    "formula": {
+      "multiply": "{{first}} por {{second}}",
+      "percent": "Porcentaje: {{rate}} de {{base}}",
+      "sum": "Suma de {{questions}}",
+      "allItems": "{{label}} de todos los ítems"
+    }
   },
   "condition": {
     "shows": "Se muestra",

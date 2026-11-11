@@ -206,7 +206,7 @@ function EntryGroupedCatalog({ entry, question, draft, onChange, item, id, inval
 /** How a calculation of the form reads, for its (i): with a rate from a catalog it also says that it is computed on sending. */
 function useEntryFormula(entry: FormEntry) {
   const { t } = useTranslation("formEntries");
-  const words = useCalculationWords();
+  const words = useCalculationWords("formEntries");
   return (question: FormEntryQuestion) => {
     const { operands, catalogRate } = entryFormulaOperands(entry, question);
     const formula = calculationFormula(question.calculation!.operation, operands, words);

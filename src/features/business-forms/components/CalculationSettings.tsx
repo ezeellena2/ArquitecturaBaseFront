@@ -14,7 +14,7 @@ const repeated = (question: DraftQuestion) => "repeated" in question && question
 
 /** How a calculation of the draft reads, for its line in the list: «Suma de Importe de todos los ítems». */
 export function CalculationFormula({ question, questions, culture, original }: { question: DraftQuestion; questions: readonly DraftQuestion[]; culture: FormCulture; original: FormCulture }) {
-  const words = useCalculationWords();
+  const words = useCalculationWords("forms");
   if (question.type !== "decimal" || !question.calculation) return null;
   return <>{calculationFormula(question.calculation.operation, draftFormulaOperands(questions, question, culture, original), words)}</>;
 }

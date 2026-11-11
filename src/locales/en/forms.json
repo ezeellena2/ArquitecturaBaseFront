@@ -1602,7 +1602,13 @@
     "sumFull": "A sum takes up to {{count}} questions.",
     "noNumbers": "There are no number questions before this one.",
     "allAdded": "Every question it can add is already added.",
-    "incomplete": "Choose the questions the calculation uses."
+    "incomplete": "Choose the questions the calculation uses.",
+    "formula": {
+      "multiply": "{{first}} times {{second}}",
+      "percent": "Percentage: {{rate}} of {{base}}",
+      "sum": "Sum of {{questions}}",
+      "allItems": "{{label}} of all items"
+    }
   },
   "condition": {
     "shows": "Shown",
