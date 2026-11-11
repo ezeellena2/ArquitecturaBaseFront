@@ -656,15 +656,11 @@
       "waitApply": "Wait until it finishes applying.",
       "applyWithoutErrors_one": "Apply without the row with errors",
       "applyWithoutErrors_other": "Apply without the {{count}} rows with errors",
-      "rowsRead_one": "1 row read",
-      "rowsRead_other": "{{count}} rows read",
+      "sheet": "Sheet",
+      "rowsRead": "Rows read",
+      "unchanged": "Unchanged",
+      "reactivated": "Reactivated",
       "truncatedShort": "Showing 100 per list",
-      "counts": {
-        "unchanged_one": "1 unchanged",
-        "unchanged_other": "{{count}} unchanged",
-        "reactivated_one": "1 reactivated",
-        "reactivated_other": "{{count}} reactivated"
-      },
       "tabs": {
         "issues": "Errors and warnings",
         "added": "New",
@@ -680,7 +676,7 @@
       "severity": "Type",
       "error": "Error",
       "warning": "Warning",
-      "relatedRow": "Row {{row}}",
+      "relatedRow": "Related row",
       "columns": {
         "code": "Code",
         "text": "Text",
@@ -693,7 +689,6 @@
         "value": "Value"
       },
       "beforeApply": "Before applying",
-      "deactivationsHelpLabel": "What deactivating means",
       "replaceHint": "Options missing from the spreadsheet are deactivated, not deleted. They become available again if included in another import.",
       "confirmEmpty": "Yes, apply this sheet without valid rows",
       "confirmErrors": "Yes, apply without the rows with errors",

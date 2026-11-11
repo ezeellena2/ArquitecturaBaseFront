@@ -8,7 +8,8 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Banner } from "@/shared/ui/Banner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
+import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DataList } from "@/shared/ui/DataList";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { DocumentIcon } from "@/shared/ui/icons";
@@ -133,10 +134,22 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     setState(value => ({ ...value, ...unreviewed, file: null, sheet: read.valid ? read.sheet : null, fileError: read.valid ? null : t("catalogs.import.pasteError." + read.reason) }));
   };
   const clear = () => { if (!busy) setState(value => ({ ...value, ...unreviewed, file: null, sheet: null })); };
-  const confirmation = (key: "confirmDeactivations" | "confirmEmpty" | "confirmErrors", label: string, help?: ReactNode) => <div key={key} className="flex items-center gap-2">
-    <Checkbox id={id + key} checked={state[key]} disabled={busy} onCheckedChange={value => setState(current => ({ ...current, [key]: value === true }))} />
-    <Label htmlFor={id + key} className="font-normal">{label}</Label>{help}
-  </div>;
+  // A confirmation is the common checkbox, with what it means in its (i).
+  const confirmation = (key: "confirmDeactivations" | "confirmEmpty" | "confirmErrors", label: string, help?: string) =>
+    <CheckboxField key={key} label={label} help={help} checked={state[key]} disabled={busy} onCheckedChange={value => setState(current => ({ ...current, [key]: value }))} />;
+  // What was read, in two columns (lista de chequeo, 2026-11-11): the file it reviews (the pasted rows go as one too), its sheet
+  // and the rows read; the counts of the tabs are in the tabs, and what stays the same and what is reactivated, which have no
+  // tab, go in their rows when there is any. While it reads, the sheet and the rows wait in their place.
+  const count = (value: number) => new Intl.NumberFormat(i18n.language, { useGrouping: "always" }).format(value);
+  const readItems = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) => [
+    ...(state.file ? [{ key: "file", label: t("catalogs.import.file"), value: state.file.name }] : []),
+    { key: "sheet", label: t("catalogs.import.sheet"), value: sheet },
+    { key: "rows", label: t("catalogs.import.rowsRead"), value: rowsRead },
+    ...(counts?.unchanged ? [{ key: "unchanged", label: t("catalogs.import.unchanged"), value: count(counts.unchanged) }] : []),
+    ...(counts?.reactivated ? [{ key: "reactivated", label: t("catalogs.import.reactivated"), value: count(counts.reactivated) }] : []),
+  ];
+  const readList = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) =>
+    <div className="px-4 py-1"><DataList items={readItems(sheet, rowsRead, counts)} /></div>;
 
   const origin = <Surface title={t("catalogs.import.origin")} headingLevel={3} actions={state.source === "file" ? <Button type="button" variant="link" pending={downloadingTemplate} disabled={busy} onClick={onTemplate}>{t(downloadingTemplate ? "catalogs.actions.downloadingTemplate" : "catalogs.import.template")}</Button> : null}>
     <div className={rows}>
@@ -174,8 +187,10 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     </div> : null}
   </Surface> : null;
 
-  // While reading, the review zone is already there with a skeleton where the tabs and the rows go: the dialog does not jump.
-  const reading = state.busy === "preview" ? <Surface title={t("catalogs.import.reviewTitle")} headingLevel={3} actions={state.file ? <span className={band}>{state.file.name}</span> : null}>
+  // While reading, the review zone is already there with a skeleton where the sheet, the tabs and the rows go: the dialog does not jump.
+  const waiting = <Skeleton aria-hidden="true" className="my-1 h-3 w-24" />;
+  const reading = state.busy === "preview" ? <Surface title={t("catalogs.import.reviewTitle")} headingLevel={3}>
+    {readList(waiting, waiting)}
     <div role="status" aria-label={t("catalogs.import.reviewing")}>
       <div aria-hidden="true" className="flex h-[var(--height-control)] items-center gap-5 border-b border-[var(--color-border)] px-4">{[0, 1, 2, 3].map(index => <Skeleton key={index} className="h-3 w-20" />)}</div>
       <div aria-hidden="true" className="flex h-[var(--height-table-header)] items-center gap-6 border-b border-[var(--color-surface-header-border)] bg-[var(--color-surface-header)] px-4">{["w-12", "w-28", "w-40", "w-80"].map(width => <Skeleton key={width} className={cn("h-2.5", width)} />)}</div>
@@ -185,11 +200,12 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     </div>
   </Surface> : null;
 
-  const summary = preview ? [state.file?.name, preview.sheetName, t("catalogs.import.rowsRead", { count: preview.rowsRead }), t("catalogs.import.counts.unchanged", { count: preview.counts.unchanged }),
-    preview.counts.reactivated ? t("catalogs.import.counts.reactivated", { count: preview.counts.reactivated }) : null, preview.listsTruncated ? t("catalogs.import.truncatedShort") : null].filter(Boolean).join(" · ") : "";
   const tabCounts = preview ? { issues: preview.issues.length, added: preview.counts.added, changed: preview.counts.changed, deactivated: preview.counts.deactivated } : null;
+  // A related row (the other one with the same code) has its own column, only when some problem has one.
+  const relatedRows = !!preview?.issues.some(issue => issue.relatedRow !== null);
   const reviewed = preview && tabCounts && !reading ? <div className={cn("flex flex-col gap-4 transition-opacity", applying && "opacity-55")}>
-    <Surface title={t("catalogs.import.reviewTitle")} headingLevel={3} actions={<span className={band}>{summary}</span>}>
+    <Surface title={t("catalogs.import.reviewTitle")} headingLevel={3} actions={preview.listsTruncated ? <span className={band}>{t("catalogs.import.truncatedShort")}</span> : null}>
+      {readList(preview.sheetName, count(preview.rowsRead), preview.counts)}
       {state.conflict || preview.alreadyAppliedAtUtc ? <div className="flex flex-col gap-2 px-4 pt-3">
         {state.conflict ? <Banner tone="warning">{t("catalogs.import.conflict")}</Banner> : null}
         {preview.alreadyAppliedAtUtc ? <Banner>{t("catalogs.import.alreadyApplied", { date: formatDateTimeInZone(preview.alreadyAppliedAtUtc, i18n.language, timeZoneId) })}</Banner> : null}
@@ -198,7 +214,7 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
         <TabsList className="px-4">{(["issues", "added", "changed", "deactivated"] as const).map(key => <TabsTrigger key={key} value={key}>
           {t("catalogs.import.tabs." + key)} <span className={cn("text-xs font-semibold", key === "issues" && preview.counts.errorRows ? "text-[var(--color-danger)]" : "text-[var(--color-content-muted)]")}>{tabCounts[key]}</span>
         </TabsTrigger>)}</TabsList>
-        <TabsContent value="issues"><Table><TableHeader><TableRow><TableHead numeric>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.severity")}</TableHead><TableHead>{t("catalogs.import.column")}</TableHead><TableHead>{t("catalogs.import.what")}</TableHead></TableRow></TableHeader><TableBody>{preview.issues.map((issue, index) => <TableRow key={index}><TableCell numeric>{issue.row}</TableCell><TableCell><Badge variant={issue.severity === "Error" ? "danger" : "warning"}>{t("catalogs.import." + (issue.severity === "Error" ? "error" : "warning"))}</Badge></TableCell><TableCell>{issue.code === "Forms.CatalogImport.UnknownColumn" ? issue.column : columnLabel(issue.column)}</TableCell><TableCell className="whitespace-normal">{issue.message}{issue.relatedRow !== null ? <span className="block text-xs text-[var(--color-content-muted)]">{t("catalogs.import.relatedRow", { row: issue.relatedRow })}</span> : null}</TableCell></TableRow>)}</TableBody></Table></TabsContent>
+        <TabsContent value="issues"><Table><TableHeader><TableRow><TableHead numeric>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.severity")}</TableHead><TableHead>{t("catalogs.import.column")}</TableHead><TableHead>{t("catalogs.import.what")}</TableHead>{relatedRows ? <TableHead numeric>{t("catalogs.import.relatedRow")}</TableHead> : null}</TableRow></TableHeader><TableBody>{preview.issues.map((issue, index) => <TableRow key={index}><TableCell numeric>{issue.row}</TableCell><TableCell><Badge variant={issue.severity === "Error" ? "danger" : "warning"}>{t("catalogs.import." + (issue.severity === "Error" ? "error" : "warning"))}</Badge></TableCell><TableCell>{issue.code === "Forms.CatalogImport.UnknownColumn" ? issue.column : columnLabel(issue.column)}</TableCell><TableCell className="whitespace-normal">{issue.message}</TableCell>{relatedRows ? <TableCell numeric>{issue.relatedRow ?? "—"}</TableCell> : null}</TableRow>)}</TableBody></Table></TabsContent>
         <TabsContent value="added"><Table scrollLabel={t("catalogs.import.tabs.added")}><TableHeader><TableRow><TableHead numeric>{t("catalogs.import.row")}</TableHead><TableHead>{t("catalogs.import.columns.code")}</TableHead>{fields.map(field => <TableHead key={field.id} numeric={numericColumn(field.id)}>{columnLabel(field.id)}</TableHead>)}<TableHead>{t("catalogs.import.columns.text")}</TableHead>{catalog.valueType !== "Text" ? <TableHead numeric={numericColumn("value")}>{t("catalogs.import.columns.value")}</TableHead> : null}</TableRow></TableHeader><TableBody>{preview.added.map(item => <TableRow key={item.row}><TableCell numeric>{item.row}</TableCell><TableCell>{item.code}</TableCell>{fields.map(field => <TableCell key={field.id} numeric={numericColumn(field.id)}>{displayColumn(field.id, item.fields?.[field.id], item.fieldTexts?.[field.id])}</TableCell>)}<TableCell>{item.text}</TableCell>{catalog.valueType !== "Text" ? <TableCell numeric={numericColumn("value")}>{displayColumn("value", item.value)}</TableCell> : null}</TableRow>)}</TableBody></Table></TabsContent>
         {/* Each changed column once, before and after in their own columns (LR2-A); on the phone, the code and its row head them. */}
         <TabsContent value="changed"><ComparisonTable columns={{ identity: [{ key: "row", header: t("catalogs.import.row"), numeric: true }, { key: "code", header: t("catalogs.import.columns.code") }], label: t("catalogs.import.column"), before: t("catalogs.import.before"), after: t("catalogs.import.after") }}
@@ -208,8 +224,8 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
       </Tabs>
     </Surface>
     {preview.confirmations.deactivations > 0 || preview.confirmations.emptySheet || preview.confirmations.manyErrors ? <Surface title={t("catalogs.import.beforeApply")} headingLevel={3}>
-      <div className={rows}>
-        {preview.confirmations.deactivations > 0 ? confirmation("confirmDeactivations", t("catalogs.import.confirmDeactivations", { count: preview.confirmations.deactivations }), <Help label={t("catalogs.import.deactivationsHelpLabel")} text={t("catalogs.import.replaceHint")} />) : null}
+      <div className="flex flex-col gap-1 p-2">
+        {preview.confirmations.deactivations > 0 ? confirmation("confirmDeactivations", t("catalogs.import.confirmDeactivations", { count: preview.confirmations.deactivations }), t("catalogs.import.replaceHint")) : null}
         {preview.confirmations.emptySheet ? confirmation("confirmEmpty", t("catalogs.import.confirmEmpty")) : null}
         {preview.confirmations.manyErrors ? confirmation("confirmErrors", t("catalogs.import.confirmErrors")) : null}
       </div>

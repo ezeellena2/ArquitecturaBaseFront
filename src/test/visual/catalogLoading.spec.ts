@@ -122,7 +122,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(review.getByRole("columnheader", { name: label("Columna", "Column"), exact: true })).toBeVisible();
     await expect(review.getByRole("columnheader", { name: label("Tipo", "Type"), exact: true })).toBeVisible();
     await expect(review.getByRole("cell", { name: label("Responsable", "Supervisor"), exact: true })).toHaveCount(1);
-    await expect(review.getByText(label("Fila 2", "Row 2"), { exact: true })).toHaveCount(24);
+    // The related row has its own column, the last one (lista de chequeo, 2026-11-11).
+    await expect(review.getByRole("columnheader", { name: label("Fila relacionada", "Related row"), exact: true })).toBeVisible();
+    await expect(review.locator("tbody tr > :last-child").filter({ hasText: /^2$/ })).toHaveCount(24);
     await expect(review.getByText(label("Aviso", "Warning"), { exact: true })).toHaveCount(1);
     const apply = dialog.getByRole("button", { name: label("Aplicar sin las 24 filas con errores", "Apply without the 24 rows with errors"), exact: true });
     await expect(apply).toBeDisabled();
@@ -203,7 +205,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // Every table draws the line, the list of errors and warnings too, and its row numbers go to the right.
     await expectColumnLines(review.getByRole("table"));
     await expectRightAligned(review.getByRole("columnheader", { name: label("Fila", "Row"), exact: true }));
-    const related = review.getByText(label("Fila 2", "Row 2"), { exact: true });
+    await expectRightAligned(review.getByRole("columnheader", { name: label("Fila relacionada", "Related row"), exact: true }));
+    const related = review.locator("tbody tr > :last-child").filter({ hasText: /^2$/ });
     await expect(related).toHaveCount(24); await related.first().scrollIntoViewIfNeeded();
     await expect(related.first()).toBeVisible();
     await expect(dialog.getByText("Error", { exact: true }).first()).toBeVisible();

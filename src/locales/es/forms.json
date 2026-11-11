@@ -656,15 +656,11 @@
       "waitApply": "Esperá a que termine de aplicar.",
       "applyWithoutErrors_one": "Aplicar sin la fila con errores",
       "applyWithoutErrors_other": "Aplicar sin las {{count}} filas con errores",
-      "rowsRead_one": "1 fila leída",
-      "rowsRead_other": "{{count}} filas leídas",
+      "sheet": "Hoja",
+      "rowsRead": "Filas leídas",
+      "unchanged": "Sin cambios",
+      "reactivated": "Reactivadas",
       "truncatedShort": "Se muestran 100 por lista",
-      "counts": {
-        "unchanged_one": "1 sin cambios",
-        "unchanged_other": "{{count}} sin cambios",
-        "reactivated_one": "1 reactivada",
-        "reactivated_other": "{{count}} reactivadas"
-      },
       "tabs": {
         "issues": "Errores y avisos",
         "added": "Altas",
@@ -680,7 +676,7 @@
       "severity": "Tipo",
       "error": "Error",
       "warning": "Aviso",
-      "relatedRow": "Fila {{row}}",
+      "relatedRow": "Fila relacionada",
       "columns": {
         "code": "Código",
         "text": "Texto",
@@ -693,7 +689,6 @@
         "value": "Valor"
       },
       "beforeApply": "Antes de aplicar",
-      "deactivationsHelpLabel": "Qué es dar de baja",
       "replaceHint": "Lo que no viene en la planilla se da de baja, no se borra. Vuelve a ofrecerse si aparece en otra importación.",
       "confirmEmpty": "Sí, aplicar esta planilla sin filas válidas",
       "confirmErrors": "Sí, aplicar sin las filas con errores",

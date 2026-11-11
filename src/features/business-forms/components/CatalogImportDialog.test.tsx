@@ -2,6 +2,7 @@ import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { queryClient } from "@/shared/api/queryClient";
 import i18n from "@/shared/i18n";
 import * as notifications from "@/shared/ui/notifications";
@@ -222,12 +223,14 @@ it("reviews a file in Replace mode and requires both empty-sheet and exact deact
   expect(screen.getByText("Vacia.csv")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const button = await screen.findByRole("button", { name: "Aplicar" }); expect(button).toBeDisabled();
-  // Confirming is in its zone; what deactivating means is the help of its (i).
+  // Confirming is in its zone, with the common checkboxes; what deactivating means is the help of its (i).
   expect(screen.getByRole("heading", { name: "Antes de aplicar" })).toBeInTheDocument();
-  await user.hover(screen.getByRole("button", { name: "Qué es dar de baja" }));
+  const deactivations = screen.getByRole("checkbox", { name: "Sí, dar de baja 1 opción" });
+  expect(deactivations).toHaveAccessibleDescription(/^Lo que no viene en la planilla se da de baja, no se borra\./);
+  await user.hover(screen.getByRole("button", { name: "Más información sobre Sí, dar de baja 1 opción" }));
   expect(await screen.findByRole("tooltip")).toHaveTextContent("Lo que no viene en la planilla se da de baja, no se borra.");
-  await user.click(screen.getByText("Sí, dar de baja 1 opción")); expect(button).toBeDisabled();
-  await user.click(screen.getByText("Sí, aplicar esta planilla sin filas válidas")); expect(button).toBeEnabled();
+  await user.click(deactivations); expect(button).toBeDisabled();
+  await user.click(screen.getByRole("checkbox", { name: "Sí, aplicar esta planilla sin filas válidas" })); expect(button).toBeEnabled();
   expect(apply).not.toHaveBeenCalled(); await user.click(button); await waitFor(() => expect(apply).toHaveBeenCalledOnce());
   expect(apply.mock.calls[0]![1]).toMatchObject({ mode: "Replace", file, confirmDeactivations: 1, confirmEmpty: true, confirmErrors: false });
 });
@@ -240,18 +243,32 @@ it("removes the pasted rows and review on a forbidden write without retrying", a
   expect(await screen.findByText("Ya no tenés permiso para importar opciones.")).toBeInTheDocument(); expect(screen.queryByRole("region", { name: "Filas pegadas" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Aplicar" })).not.toBeInTheDocument(); expect(apply).toHaveBeenCalledOnce();
 });
 
-// The counts go in the tabs and the band, not as loose chips.
-it("names the file, its sheet and the rows read in the band and puts each count in its tab", async () => {
+// What was read goes in two columns (lista de chequeo, 2026-11-11), never in a line joined with « · »; the counts of the tabs
+// are in the tabs, and what stays the same and what is reactivated, which have none, are rows of their own when there is any.
+it("reads the file, its sheet, the rows read and what stays the same or is reactivated in two columns, and leaves each count of a tab in its tab", async () => {
   const base = catalogImportPreviewFixture();
-  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append" });
+  vi.spyOn(imports, "previewCatalogImport").mockResolvedValue({ ...base, mode: "Append", rowsRead: 1200, counts: { ...base.counts, unchanged: 3, reactivated: 1 } });
   const { user } = await mount();
   await paste(user, "Code\tText\nN\tNorte");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   const review = (await screen.findByRole("heading", { name: "Revisión" })).closest("section")!;
-  expect(within(review).getByText(new RegExp("^Pegado\\.csv · " + base.sheetName + " · "))).toBeInTheDocument();
+  expect(within(review).getAllByRole("term").map(term => [term.textContent, term.nextElementSibling?.textContent])).toEqual([
+    ["Archivo", "Pegado.csv"], ["Hoja", base.sheetName], ["Filas leídas", "1.200"], ["Sin cambios", "3"], ["Reactivadas", "1"]]);
+  expect(within(review).queryByText(/ · /)).not.toBeInTheDocument();
   expect(within(review).getByRole("tab", { name: "Errores y avisos " + base.issues.length })).toBeInTheDocument();
   expect(within(review).getByRole("tab", { name: "Altas " + base.counts.added })).toBeInTheDocument();
   expect(screen.queryByText(/^\d+ altas?$/)).not.toBeInTheDocument();
+});
+
+it("keeps the place of what was read while reviewing, with the file it reads", async () => {
+  vi.spyOn(imports, "previewCatalogImport").mockImplementation(() => new Promise(() => undefined));
+  const { user } = await mount();
+  await paste(user, "N\tNorte");
+  await user.click(screen.getByRole("button", { name: "Revisar" }));
+  const review = screen.getByRole("heading", { name: "Revisión" }).closest("section")!;
+  expect(within(review).getAllByRole("term").map(term => term.textContent)).toEqual(["Archivo", "Hoja", "Filas leídas"]);
+  expect(within(review).getByText("Archivo", { selector: "dt" }).nextElementSibling).toHaveTextContent("Pegado.csv");
+  expect(within(review).getByRole("status", { name: "Revisando…" })).toBeInTheDocument();
 });
 
 it.each([
@@ -299,7 +316,12 @@ it.each([["es", "Supervisor"], ["en", "Supervisor"], ["es", "textEn"], ["en", "t
   expect(within(warningRow).getByText(warningMessage)).toBeInTheDocument();
   const errorRow = panel.getByText(errorMessage).closest("tr")!;
   expect(within(errorRow).getByText("Error")).toBeInTheDocument();
-  expect(within(errorRow).getByText(english ? "Row 2" : "Fila 2")).toBeInTheDocument();
+  // The related row has its own column, not a grey line under the sentence (lista de chequeo, 2026-11-11).
+  const table = panel.getByRole("table"), related = english ? "Related row" : "Fila relacionada";
+  expect(cellUnder(table, errorRow, english ? "What happened" : "Qué pasa")).toHaveTextContent(new RegExp("^" + errorMessage + "$"));
+  expect(cellUnder(table, errorRow, related)).toHaveTextContent(/^2$/);
+  expect(cellUnder(table, errorRow, related)).toHaveClass("text-right");
+  expect(cellUnder(table, warningRow, related)).toHaveTextContent(/^—$/);
   expect(apply).not.toHaveBeenCalled();
 });
 
