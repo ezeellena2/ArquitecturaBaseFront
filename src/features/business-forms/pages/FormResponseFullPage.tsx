@@ -87,15 +87,15 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   }}><Page title={data.number} backTo={backTo} status={<>{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge>
     : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}</>} actions={<>
-    {/* «Corregir» opens its page and «⋯ › Anular» asks for the reason (CW10-A, CW11-A), for whoever may change it now. */}
+    {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
+    {current?.documents.length || files.length ? <ResponseDocumentDownloads documents={current?.documents ?? []} files={files} downloads={downloads}/> : null}
+    {/* ⋮ after «Descargar» (AC1-A): «Corregir» opens its page and «Anular» asks for the reason, for whoever may change it now. */}
     {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))} onVoid={() => setVoiding(true)}/> : null}
     {navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
     {/* While another response loads, the spinner goes next to «1 de 2» and the previous sections stay dimmed and out of reach. */}
     {loadingTarget ? <Spinner/> : null}
     <IconButton label={t("responses.previous")} disabled={!navigation.previous || loadingTarget} onClick={() => navigation.onMove(-1)}><ArrowUpIcon className="size-4"/></IconButton>
     <IconButton label={t("responses.next")} disabled={!navigation.next || loadingTarget} onClick={() => navigation.onMove(1)}><ArrowDownIcon className="size-4"/></IconButton>
-    {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
-    {current?.documents.length || files.length ? <ResponseDocumentDownloads documents={current?.documents ?? []} files={files} downloads={downloads}/> : null}
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>

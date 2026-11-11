@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -59,7 +59,8 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     const { sends } = setup();
     const user = userEvent.setup({ delay: null });
     const { router } = renderRouteWithProviders(sheet + "/" + responseRecordId);
-    await user.click(await screen.findByRole("button", { name: "Corregir" }));
+    await user.click(await screen.findByRole("button", { name: "Más acciones" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Corregir" }));
     const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
     const amount = await within(panel).findByLabelText(/^Importe/);
     expect(amount).toHaveValue("12,5");
@@ -86,11 +87,12 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     setup();
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
-    await user.click(await screen.findByRole("button", { name: "Corregir" }));
+    await user.click(await screen.findByRole("button", { name: "Más acciones" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Corregir" }));
     const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
     await within(panel).findByLabelText(/^Importe/);
     await user.click(within(panel).getByRole("button", { name: "Cancelar" }));
-    expect(await screen.findByRole("button", { name: "Corregir" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Más acciones" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "¿Descartar la corrección?" })).not.toBeInTheDocument();
   });
 
@@ -98,7 +100,8 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     setup();
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
-    await user.click(await screen.findByRole("button", { name: "Corregir" }));
+    await user.click(await screen.findByRole("button", { name: "Más acciones" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Corregir" }));
     const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
     const amount = await within(panel).findByLabelText(/^Importe/);
     await user.clear(amount);
@@ -114,7 +117,6 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     setup(false);
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     expect(await screen.findByRole("heading", { name: "TEST-000002" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Corregir" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Más acciones" })).not.toBeInTheDocument();
   });
 });
@@ -157,7 +159,30 @@ describe("reading what a correction or a void left (CW10-A, CW11-A)", () => {
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     expect(await screen.findByRole("heading", { name: "Anulada", level: 3 })).toBeInTheDocument();
     expect(screen.getByText("Juan Gómez · «Cargada dos veces.»")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Corregir" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Más acciones" })).not.toBeInTheDocument();
+  });
+
+  // AC1-A: «Corregir» and «Anular» live in ⋮, after the icons; the keyboard reaches them and the focus comes back to ⋮.
+  it("reaches «Corregir» and «Anular» in ⋮ with the keyboard, and the focus goes back to ⋮ when the menu closes", async () => {
+    setup();
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const more = await screen.findByRole("button", { name: "Más acciones" });
+    act(() => more.focus());
+    await user.keyboard("{Enter}");
+    let menu = await screen.findByRole("menu");
+
+    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Corregir", "Anular"]);
+    await waitFor(() => expect(within(menu).getByRole("menuitem", { name: "Corregir" })).toHaveFocus());
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(more).toHaveFocus());
+    await user.keyboard("{Enter}");
+    menu = await screen.findByRole("menu");
+    await user.keyboard("{End}");
+    await waitFor(() => expect(within(menu).getByRole("menuitem", { name: "Anular" })).toHaveFocus());
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByRole("dialog", { name: "¿Anular TEST-000002?" })).toBeInTheDocument();
   });
 
   it("tells how an approved response ended, who corrected it and why, and that it is to approve again", async () => {

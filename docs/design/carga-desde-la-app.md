@@ -265,9 +265,9 @@ cuando el servidor dice que esa persona puede cambiarla ahora (`canAmend`): quie
 cualquiera con «Corregir y anular respuestas». La regla está en
 [formularios](../../../ArquitecturaBase/docs/features/formularios.md#corregir-y-anular--etapa-3-2026-11-05).
 
-- **Las acciones.** «Corregir» (con el lápiz) y «⋯ Más acciones» van en la fila del título de la vista rápida (D2) y de la
-  pantalla completa (DC1), junto a los demás íconos (TL3-A), también en la planilla de lo propio. «⋯» tiene un solo ítem,
-  «Anular», en rojo.
+- **Las acciones.** «⋯ Más acciones» va en la fila del título de la vista rápida (D2) y de la pantalla completa (DC1),
+  junto a los demás íconos (TL3-A), también en la planilla de lo propio, con «Corregir» (con el lápiz) y, después de una
+  línea, «Anular» en rojo. Hasta AC1-A (2026-11-11), «Corregir» iba a la vista, con texto (CW10-A).
 - **Corregir, en la computadora,** abre el panel «Corregir TEST-000002» donde estaba D2, del ancho del panel de carga, con la
   respuesta como estaba llevada a la versión activa: las mismas zonas y anchos de la carga (AR1-A), y debajo de cada pregunta
   que cambió, en gris, «Antes: 1250,5» («Antes: sin respuesta» si no tenía). El bloque de renglones vuelve con sus ítems en

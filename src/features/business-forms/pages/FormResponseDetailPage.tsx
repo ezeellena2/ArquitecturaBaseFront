@@ -61,8 +61,6 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
   return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge> : null}</>} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
-    {/* «Corregir» and «⋯ › Anular» for whoever may change it now (CW10-A, CW11-A); the server says so in canAmend. */}
-    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => onCorrect(recordId)} onVoid={() => setVoiding(recordId)}/> : null}
     {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A). */}
     <IconButton label={t("detail.openFull")} asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -75,6 +73,8 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
     }}><ExpandIcon className="size-4"/></Link></IconButton>
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <IconButton label={t("responses.openChat")} asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}><ChatIcon className="size-4"/></Link></IconButton> : null}
     {current?.documents.length ? <ResponseDocumentDownloads compact documents={current.documents} downloads={downloads}/> : null}
+    {/* ⋮ with «Corregir» and «Anular» after the icons, before ↑ ↓ × (AC1-A), for whoever may change it now: canAmend. */}
+    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} onCorrect={() => onCorrect(recordId)} onVoid={() => setVoiding(recordId)}/> : null}
   </>}>
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
     {voiding === recordId ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} onClose={() => setVoiding(null)}
