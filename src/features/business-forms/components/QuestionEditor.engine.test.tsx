@@ -55,6 +55,28 @@ describe("calculations, conditions and bound questions in the editor of a questi
     expect(onChange).toHaveBeenCalled();
   });
 
+  // «Mínimo», «Máximo» and the files of a bound question say why they are off too (premise 5.4), like «Largo máximo».
+  it("gives the reason on the range of choices and on the files of a bound question", async () => {
+    const reason = "La necesita el estándar de la biblioteca: no se cambia.";
+    const crops: DraftQuestion = { localId: "field-crops", fieldId: "field-crops", replacesFieldId: null, type: "multiChoice", label: { es: "Cultivos" }, help: null, required: false,
+      selection: { minSelected: 0, maxSelected: 2 }, options: [{ localId: "soy", choiceId: "soy", label: { es: "Soja" } }, { localId: "corn", choiceId: "corn", label: { es: "Maíz" } }] };
+    await mount(crops, { bound: true });
+    for (const name of ["Mínimo", "Máximo"]) {
+      const field = screen.getByRole("spinbutton", { name: new RegExp("^" + name) });
+      expect(field).toBeDisabled();
+      // The field keeps its own help before the reason.
+      expect(field).toHaveAccessibleDescription(expect.stringContaining(reason));
+    }
+    const photo: DraftQuestion = { localId: "field-photo", fieldId: "field-photo", replacesFieldId: null, type: "photo", label: { es: "Foto" }, help: null, required: true,
+      files: { minFiles: 1, maxFiles: 3, photoSource: "cameraOrGallery" } };
+    await mount(photo, { bound: true });
+    for (const name of ["Mínimo", "Máximo"]) {
+      const field = screen.getAllByRole("spinbutton", { name: new RegExp("^" + name) }).at(-1)!;
+      expect(field).toBeDisabled();
+      expect(field).toHaveAccessibleDescription(expect.stringContaining(reason));
+    }
+  });
+
   it("shows each toggle the standard declares below «Se carga varias veces», with its text and (i) in the menu language (IV2-A)", async () => {
     const user = userEvent.setup();
     const price: DraftQuestion = { localId: "field-price", fieldId: "field-price", replacesFieldId: null, type: "decimal", label: { es: "Precio unitario" }, help: null,
