@@ -1,6 +1,6 @@
 # La pregunta «Ubicación» en los formularios: tableros elegidos
 
-Fecha: **2026-11-11**. Estado: **elegidos, por programar** (Etapa 1, en la app). El usuario eligió UB1-A a UB4-A el
+Fecha: **2026-11-11**. Estado: **elegidos y programados** (Etapa 1, en la app; 2026-11-11, para la prueba integral final). El usuario eligió UB1-A a UB4-A el
 2026-11-11. El alcance, las reglas por defecto y las tareas están en el
 [plan del backend](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación);
 las pantallas, los textos y los estados salen de acá.
@@ -49,7 +49,7 @@ El 2026-11-11 el usuario eligió las cuatro recomendadas:
 | **UB · Hoy** | El tipo de respuesta termina en «Documento». El detalle de una respuesta dice «Recibida», «Cargó» y «Canal», y una dirección se escribe a mano en un texto. Una ubicación mandada al chat de WhatsApp queda como un mensaje más (el webhook la clasifica como «otro»). |
 | **UB3-A · «Usar mi ubicación», al cargar** (elegida) | En «Nueva respuesta», la pregunta va en «Datos», en una columna, como una fecha. Ocho estados: sin pedir (el botón, sin texto al lado); pidiendo (el aro y «Buscando tu ubicación…» en el mismo botón, sin atenuarse; la primera vez el navegador pide permiso con su propio cartel); con el punto (un recuadro con el pin, el punto y la precisión en gris, la cruz roja para quitarlo y, debajo, «Ver en el mapa» y «Volver a pedirla»); precisión baja (más de 100 m: la precisión en ámbar con el triángulo y la (i); se puede enviar igual); permiso denegado y sin señal o tiempo agotado (el botón sigue y, debajo, un renglón rojo con el motivo y qué hacer); el navegador no la da (el botón apagado con el motivo encima, MA1-A); obligatoria y vacía al enviar («Completá esta respuesta.» bajo el campo y el foco en el botón). En el celular, los botones van a lo ancho, con 44 px: «Ver en el mapa» y «Volver a pedirla», uno debajo del otro, como «Tomar foto» y «Elegir de la galería». |
 | **UB3-A · El editor y la publicación** (elegida) | «Ubicación» va al final de «Tipo de respuesta», después de «Documento». La pregunta abierta tiene «Pregunta», «Tipo de respuesta», «Ayuda para el empleado (opcional)» y sólo «Obligatoria»: sin opciones, sin largo máximo y sin «Se carga varias veces». Su línea dice «Ubicación · Obligatoria». Dentro de un bloque el tipo aparece apagado: «Ubicación · No se carga varias veces», como una foto o un documento. Pasar una pregunta guardada a «Ubicación» pide confirmar, como todo cambio de tipo. En un formulario «En la app y por WhatsApp», el chequeo de publicar da un problema con «Ir a la pregunta» y «Publicar» queda apagado; con «Sólo en la app» publica al instante («Publicamos la versión 1.» y «Publicado · versión 1»). |
-| **UB4-A · Un punto es un solo dato** (elegida) | En la planilla, la columna de la pregunta muestra el punto subrayado con el ícono de enlace externo: es el enlace al mapa, en otra pestaña, y su nombre accesible es «Ver en el mapa»; sin respuesta, «Sin respuesta» en gris; si la pregunta no existía en esa versión, «—». En el detalle, el punto con «Ver en el mapa» al lado y la precisión en gris debajo. «Enviada» muestra el punto. El PDF escribe el punto con «Ver en el mapa» como enlace del PDF. Un mensaje de una regla lleva el punto y, en el renglón de abajo, el enlace del mapa. El Excel tiene tres columnas numéricas: «<Pregunta> · Latitud», «· Longitud» y «· Precisión (m)»; sin respuesta van vacías y, si la pregunta no existía, «—» en las tres. |
+| **UB4-A · Un punto es un solo dato** (elegida) | En la planilla, la columna de la pregunta muestra el punto subrayado con el ícono de enlace externo: es el enlace al mapa, en otra pestaña, y su nombre accesible dice el punto y «Ver en el mapa»; sin respuesta, «Sin respuesta» en gris; si la pregunta no existía en esa versión, «—». En el detalle, el punto con «Ver en el mapa» al lado y la precisión en gris debajo. «Enviada» muestra el punto. El PDF escribe el punto con «Ver en el mapa» como enlace del PDF. Un mensaje de una regla lleva el punto y, en el renglón de abajo, el enlace del mapa. El Excel tiene tres columnas numéricas: «<Pregunta> · Latitud», «· Longitud» y «· Precisión (m)»; sin respuesta van vacías y, si la pregunta no existía, «—» en las tres. |
 
 ## Los textos
 
@@ -92,7 +92,8 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
 9. **«Filtros» de la planilla:** la pregunta no aparece, como una foto o un documento (desde que salió «Respuesta»); el
    backend acepta igual «con respuesta» y «sin respuesta».
 10. **Cómo se pide:** una vez por toque, con `navigator.geolocation.getCurrentPosition` en alta precisión, sin una ubicación
-    guardada (`maximumAge: 0`) y hasta 20 s; vencido el tiempo, es el caso «sin señal».
+    guardada (`maximumAge: 0`) y hasta 20 s; vencido el tiempo, es el caso «sin señal». Una precisión de más de 100 km, que el
+    servidor no toma, también cuenta como «sin señal» (detalle resuelto al programar).
 
 ## Lo que vale con cualquier estado
 
@@ -100,7 +101,8 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
 - La ayuda que escribe el autor va donde va en cualquier pregunta.
 - Al corregir una respuesta, la pregunta arranca con el punto guardado; «Volver a pedirla» lo cambia y debajo aparece
   «Antes: -34.603722, -58.381592», como cualquier pregunta corregida.
-- La vista previa de la app en el editor muestra la pregunta con «Usar mi ubicación», sin pedir nada.
+- La vista previa de la app en el editor muestra la pregunta con «Usar mi ubicación», como la carga: no pide nada hasta tocar
+  el botón. La vista previa de WhatsApp no la muestra, porque por WhatsApp no se pide.
 - El resultado de pedirla (el punto, la precisión o el motivo) se anuncia al lector de pantalla (`aria-live="polite"`).
 
 ## Piezas de `src/shared/ui`
