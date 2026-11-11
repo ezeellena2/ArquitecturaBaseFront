@@ -82,7 +82,11 @@ El 2026-11-09 el usuario eligió las siete recomendadas («Sí, las recomendadas
   entra baja de renglón; desde 640 px van unidas y miden sus textos. Lleva su (i) y aparece sólo con un canal de formularios
   instalado (`form-channels`).
 - La vista previa de la app es `FormAppPreview`: la carga armada desde el borrador, con las preguntas de catálogo apagadas,
-  porque el borrador no tiene versión que traiga sus opciones.
+  porque el borrador no tiene versión que traiga sus opciones. Ellas y «Enviar» dicen por qué sobre el control (MA1-A).
+- Una pregunta de catálogo no muestra «En WhatsApp»: la app lista las opciones como dice la presentación guardada (la del
+  catálogo, salvo que la pregunta ya tuviera una propia).
+- Una sugerencia hacia un formulario que pasó a la app se ve «Sólo en la app», como una dada de baja: hay que quitarla para
+  guardar. Estos tres ajustes salieron de la revisión contra el código del 2026-11-11.
 - Publicar en la app no muestra «Publicación aceptada»: el aviso «Publicamos la versión N.» llega con el estado, que se lee enseguida.
 - La baja y la eliminación de un formulario publicado sólo en la app no hablan del chat, del asistente ni de los Flows.
 - Evidencia: `src/test/visual/formAppOnly.spec.ts` (el editor, el diálogo, el listado y SA5, en es y en a 1440, 390 y 320 px).
