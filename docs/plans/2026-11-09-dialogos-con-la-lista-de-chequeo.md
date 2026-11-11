@@ -91,6 +91,9 @@ El usuario eligió las recomendadas por medio del chat que coordina la tanda fin
 - **Tarea 7:** las cinco confirmaciones dudosas, en una frase con lo que se afecta (bdc810f1).
 - **Tarea 8:** no se agregó: la sintaxis no distingue una viñeta con datos de una lista de cosas (diez archivos con listas
   legítimas dentro de un diálogo), así que los falsos positivos no se acotan. RF1 a RF3 quedaron en `visual-baseline.md`.
+- **test:visual de estas escenas** (una copia de HEAD, en otro puerto): nueve referencias regeneradas y revisadas una por
+  una (0977a90f), con «1 de 2 ↑ ↓» juntos en la pantalla completa (c738e0a5); las escenas de evidencia de los editores, los
+  catálogos y la carga pasan (259 de 259).
 - Cada commit pasó `tsc`, oxlint y vitest de lo tocado, con los tests de arquitectura y la paridad de idiomas. El cierre de
   abajo va en la verificación conjunta de la tanda.
 
