@@ -6,6 +6,7 @@ import { operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFee
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { DataList } from "@/shared/ui/DataList";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
@@ -51,8 +52,10 @@ export function PersonAttributeDialog({ scope, attribute, takenKeys, onClose, on
  const removalAnswered = error instanceof ApiError && error.code === "Forms.PersonAttribute.ValueRemovalNotConfirmed" && (confirmValues || !removalPending);
  const errors = error instanceof ApiError ? error.errors ?? {} : {}, message = (path: string) => removalAnswered && (path === "type" || path === "sourceCatalogId") ? undefined : errors[path]?.join(" ");
  const usedBy = attribute?.usedBy ?? [], inUse = usedBy.length > 0;
- // Without formtemplates.read the forms come unnamed: the dialog says only that it is blocked and by how many, without links.
- const namedUses = usedBy.every(use => use.name !== null);
+ // The forms that use it go in their row of a DataList, «Se usa en», and why that turns off the type, the catalog and the state is
+ // their reason (DL, 2026-11-11; MA1-A), never a sentence or bullets in the dialog. Without formtemplates.read the forms come
+ // unnamed: the row says only how many, without links.
+ const namedUses = usedBy.every(use => use.name !== null), inUseReason = inUse ? t("personData.inUseReason") : null;
  // Someone else saved this attribute: saving again needs the current revision, so only reloading (or cancelling) goes on.
  const conflict = error instanceof ApiError && error.code === "Forms.PersonAttribute.RevisionConflict";
  const reload = () => {
@@ -103,14 +106,14 @@ export function PersonAttributeDialog({ scope, attribute, takenKeys, onClose, on
    <Input id={keyId} value={key} readOnly={!!attribute} disabled={busy} maxLength={40} aria-invalid={keyError ? true : undefined} aria-describedby={keyError ? keyId + "-message" : undefined} onChange={event => { setKey(event.target.value); setKeyEdited(true); }} />
    {keyError ? <p id={keyId + "-message"} role="alert" className="text-sm text-[var(--color-danger)]">{keyError}</p> : null}
   </div>
-  <FormField label={t("personData.type")} required error={message("type")}><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></FormField>
+  <FormField label={t("personData.type")} required error={message("type")}><DisabledReason reason={inUseReason} className="grid w-full"><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></DisabledReason></FormField>
   {type === "Catalog" ? <FormField label={t("catalogQuestion.catalog")} required error={message("sourceCatalogId") ?? required("sourceCatalogId")}>
-   {canReadCatalogs ? <CatalogFieldSourceInput scope={scope} value={sourceCatalogId} label={t("catalogQuestion.catalog")} readOnly={busy || inUse} onChange={changeSource} />
+   {canReadCatalogs ? <DisabledReason reason={inUseReason} className="grid w-full"><CatalogFieldSourceInput scope={scope} value={sourceCatalogId} label={t("catalogQuestion.catalog")} readOnly={busy || inUse} onChange={changeSource} /></DisabledReason>
     : <DisabledReason reason={t("catalogQuestion.requiresRead")} className="grid w-full"><Input disabled value={attribute?.sourceCatalogName ?? ""} /></DisabledReason>}
   </FormField> : null}
   {removalCount !== null && removalPending ? <CheckboxField label={t("personData.confirmValueRemoval", { count: removalCount })} checked={confirmValues} disabled={busy} onCheckedChange={setConfirmValues} /> : null}
-  {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} error={message("isActive")} onCheckedChange={setActive} /> : null}
-  {inUse ? <div className="text-sm">{namedUses ? <><p>{t("personData.inUse")}</p><ul className="list-inside list-disc">{usedBy.map(use => <li key={use.definitionId}>{use.name}</li>)}</ul></> : <p>{t("personData.inUseCount", { count: usedBy.length })}</p>}</div> : null}
+  {attribute ? <CheckboxField label={t("personData.attributeActive")} checked={isActive} disabled={busy || inUse} disabledReason={inUseReason} error={message("isActive")} onCheckedChange={setActive} /> : null}
+  {inUse ? <DataList items={[{ label: t("personData.usedIn"), value: namedUses ? usedBy.map(use => use.name).join(", ") : t("personData.formCount", { count: usedBy.length }) }]} /> : null}
   {error && !Object.keys(errors).length ? <div className="space-y-2"><p role="alert" className="text-sm text-[var(--color-danger)]">{operationalErrorMessage(error, t, "save")}{reloadError ? " " + readErrorMessage(reloadError, t) : null}</p>{conflict ? <Button type="button" variant="outline" pending={reloading} disabled={busy} onClick={reload}>{t(reloading ? "personData.reloading" : "personData.reloadAttribute")}</Button> : null}</div> : null}
  {/* What waits says so with the common busy button (LC1-A): saving and rereading the attribute. */}
  </div><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={onClose}>{t("common:actions.cancel")}</Button><Button type="button" pending={busy} disabled={conflict} onClick={() => void save()}>{t(busy ? "saving" : "common:actions.save")}</Button></DialogFooter></DialogContent></Dialog>;

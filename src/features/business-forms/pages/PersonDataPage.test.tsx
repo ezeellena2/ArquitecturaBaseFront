@@ -466,25 +466,44 @@ it("explains the limit of attributes on the disabled Add attribute", async () =>
  expect(await screen.findByRole("tooltip")).toHaveTextContent("Se pueden definir hasta 20 datos.");
 });
 // Point 11: without formtemplates.read the forms are not named; the attribute shows only that it is blocked and by how many.
+// DL (2026-11-11): «Se usa en» is its row of a DataList, without bullets, and why the type and the state are off is their
+// reason (MA1-A), never a sentence in the dialog.
+const inUseReason = "Mientras se use, no se puede cambiar su tipo o catálogo ni darlo de baja.";
+/// The value next to a datum of a `DataList`.
+const valueOf = (scope: HTMLElement, label: string) => within(scope).getByText(label, { selector: "dt" }).nextElementSibling;
 it.each([
- ["named", [{ definitionId: "01990000-0000-7000-8000-000000000008", name: "Pedir repuesto" }, { definitionId: "01990000-0000-7000-8000-000000000009", name: "Control" }], "Pedir repuesto, Control"],
- ["redacted", [{ definitionId: null, name: null }, { definitionId: null, name: null }], "En uso en 2 formularios"],
-] as const)("shows an attribute in use with %s forms in the table and in its dialog", async (variant, usedBy, usage) => {
+ ["named", [{ definitionId: "01990000-0000-7000-8000-000000000008", name: "Pedir repuesto" }, { definitionId: "01990000-0000-7000-8000-000000000009", name: "Control" }], "Pedir repuesto, Control", "Pedir repuesto, Control"],
+ ["redacted", [{ definitionId: null, name: null }, { definitionId: null, name: null }], "En uso en 2 formularios", "2 formularios"],
+] as const)("shows an attribute in use with %s forms in the table and in its dialog", async (_variant, usedBy, usage, usedIn) => {
  await mount(["formpersondata.manage"], [{ ...attribute, usedBy }]);
  const definitions = (await screen.findByRole("heading", { name: "Datos" })).closest("section")!;
  expect(await within(definitions).findByRole("cell", { name: usage })).toBeInTheDocument();
  await userEvent.click(within(definitions).getByRole("button", { name: "Editar Sucursal" }));
  const dialog = await screen.findByRole("dialog", { name: "Editar dato" });
- expect(within(dialog).getByRole("combobox", { name: "Tipo" })).toBeDisabled();
- expect(within(dialog).getByRole("checkbox", { name: "Dato activo" })).toBeDisabled();
+ expect(valueOf(dialog, "Se usa en")).toHaveTextContent(new RegExp("^" + usedIn + "$"));
+ expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
  expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
- if (variant === "named") {
-  expect(within(dialog).getByText("Se usa en estos formularios. Mientras se use, no se puede cambiar su tipo o catálogo ni darlo de baja.")).toBeInTheDocument();
-  expect(within(dialog).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Pedir repuesto", "Control"]);
- } else {
-  expect(within(dialog).getByText("En uso en 2 formularios. Mientras se use, no se puede cambiar su tipo o catálogo ni darlo de baja.")).toBeInTheDocument();
-  expect(within(dialog).queryByRole("listitem")).not.toBeInTheDocument();
- }
+ expect(within(dialog).getByRole("combobox", { name: "Tipo" })).toBeDisabled();
+ expect(within(dialog).getByRole("group", { name: "Tipo" })).toHaveAccessibleDescription(inUseReason);
+ const active = within(dialog).getByRole("checkbox", { name: "Dato activo" });
+ expect(active).toHaveAttribute("aria-disabled", "true");
+ expect(active).toHaveAccessibleDescription(inUseReason);
+ for (const text of within(dialog).getAllByText(inUseReason)) expect(text).not.toBeVisible();
+ await userEvent.hover(within(dialog).getByRole("group", { name: "Tipo" }));
+ expect(await screen.findByRole("tooltip")).toHaveTextContent(inUseReason);
+});
+it("gives why the catalog of an attribute in use is off as its reason", async () => {
+ const zones = "01990000-0000-7000-8000-000000000004";
+ const zone = { ...attribute, type: "Catalog", sourceCatalogId: zones, sourceCatalogName: "Zonas", usedBy: [{ definitionId: "01990000-0000-7000-8000-000000000008", name: "Pedir repuesto" }] };
+ await mount(["formpersondata.manage", "formcatalogs.read"], [zone]);
+ server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [{ valueType: "Text", id: zones, name: "Zonas", description: null, origin: "Manual", optionsCount: 2, usageCount: null, state: "Active", stateReason: null, canEdit: true }],
+  page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
+ await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
+ const dialog = await screen.findByRole("dialog", { name: "Editar dato" });
+ await waitFor(() => expect(within(dialog).getByRole("combobox", { name: "Catálogo" })).toHaveValue("Zonas"));
+ expect(within(dialog).getByRole("combobox", { name: "Catálogo" })).toBeDisabled();
+ expect(within(dialog).getByRole("group", { name: "Catálogo" })).toHaveAccessibleDescription(inUseReason);
+ expect(valueOf(dialog, "Se usa en")).toHaveTextContent(/^Pedir repuesto$/);
 });
 it("counts a single redacted use in the singular in English", async () => {
  await act(() => i18n.changeLanguage("en"));
@@ -492,7 +511,9 @@ it("counts a single redacted use in the singular in English", async () => {
   await mount(["formpersondata.manage"], [{ ...attribute, usedBy: [{ definitionId: null, name: null }] }]);
   expect(await screen.findByRole("cell", { name: "In use in 1 form" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Edit Branch" }));
-  expect(await screen.findByText("In use in 1 form. While in use, its type and source cannot change and it cannot be deactivated.")).toBeInTheDocument();
+  const dialog = await screen.findByRole("dialog", { name: "Edit attribute" });
+  expect(valueOf(dialog, "Used in")).toHaveTextContent(/^1 form$/);
+  expect(within(dialog).getByRole("checkbox", { name: "Active attribute" })).toHaveAccessibleDescription("While in use, its type and source cannot change and it cannot be deactivated.");
  } finally { await act(() => i18n.changeLanguage("es")); }
 });
 
