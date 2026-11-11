@@ -8,6 +8,7 @@ import {
   acceptsProposal,
   formsAssistantPlaceholder,
   formsAssistantSuggestions,
+  proposalReplacementGroup,
 } from "@/features/business-forms/assistantProposalCapabilities";
 import {
   AssistantProposalContext,
@@ -36,13 +37,15 @@ function FormsProposalCard(props: AssistantProposalCardProps) {
   );
 }
 // Home shows the cards and suggestions of the installed modules; without forms, a proposal answer reads alone. The module's
-// texts load with its namespace, here, so its suggestions read in the menu language.
+// texts load with its namespace, here, so its suggestions read in the menu language. The module groups the proposals that
+// replace each other (a catalog and an import).
 function FormsProposals({ children }: { children: ReactNode }) {
   const { t } = useTranslation("forms");
   const value = useMemo<AssistantProposalExtension>(
     () => ({
       accepts: acceptsProposal,
       Card: FormsProposalCard,
+      replacementGroup: proposalReplacementGroup,
       suggestions: (permissions) => formsAssistantSuggestions(permissions, t),
       placeholder: (permissions) => formsAssistantPlaceholder(permissions, t),
     }),

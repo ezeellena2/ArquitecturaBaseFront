@@ -7,12 +7,17 @@ import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
 import { createProposalCatalog, createProposalDraft, fetchProposalCatalog, fetchProposalDraft } from "../api/assistantProposals";
+import { assistantImportState } from "../assistantImport";
 
 // A name or a prefix in use, or a catalog that is gone, is said by the card (IA2); anything else, by the common notice.
 const cardProblems = new Set(["Forms.Definition.NameTaken", "Forms.Definition.PrefixTaken", "Forms.Definition.CatalogUnavailable", "Forms.Catalog.NameTaken"]);
 
-/** Whether this person's proposal already created its draft or catalog, and creating it once, then opening it. */
-export function useAssistantProposalCreation(target: "draft" | "catalog", requestId: string, proposalId: string) {
+/**
+ * Whether this person's proposal already created its draft or catalog, and creating it once, then opening it. A catalog that
+ * maps the turn's spreadsheet opens with the request and the proposal in the navigation state, never in the address, so its
+ * page opens the import (IA2).
+ */
+export function useAssistantProposalCreation(target: "draft" | "catalog", requestId: string, proposalId: string, importsSpreadsheet = false) {
   const { t } = useTranslation("forms");
   const { data: user } = useCurrentUser();
   const navigate = useNavigate();
@@ -35,7 +40,7 @@ export function useAssistantProposalCreation(target: "draft" | "catalog", reques
       const body = { requestId, proposalId };
       const id = target === "draft" ? (await createProposalDraft(body)).definitionId : (await createProposalCatalog(body)).catalogId;
       client.setQueryData(key, id);
-      if (id) void navigate(path(id));
+      if (id) void navigate(path(id), importsSpreadsheet ? { state: assistantImportState({ requestId, proposalId }) } : undefined);
     } catch (error) {
       if (error instanceof ApiError && error.code && cardProblems.has(error.code)) setProblem(readErrorMessage(error, t));
       else notify({ id: "forms:assistant-proposal:" + proposalId, kind: "error", message: readErrorMessage(error, t) });

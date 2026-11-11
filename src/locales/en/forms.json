@@ -1533,7 +1533,7 @@
   "assistantProposals": {
     "replaced": "Replaced",
     "placeholder": "Ask the system or have it build a form…",
-    "suggestions": { "form": "Build me a form for…" },
+    "suggestions": { "form": "Build me a form for…", "catalog": "Build me a catalog from a spreadsheet" },
     "entries": { "label": "Build with AI", "form": "Build me a form for ", "catalog": "Build me a catalog of ", "missing": "Build me a form to record {{topic}}", "labelFor": "Build with AI a form for {{name}}" },
     "form": {
       "kind": "Form",
@@ -1560,6 +1560,16 @@
       "code": "Code",
       "option": "Option",
       "people": "People"
+    },
+    "import": { "kind": "Import", "review": "Review the import" },
+    "spreadsheet": {
+      "rows_one": "{{count}} row",
+      "rows_other": "{{count}} rows",
+      "column": "column {{letter}}",
+      "header": "Column {{letter}}",
+      "sample": "Sample rows",
+      "more_one": "and {{count}} more row",
+      "more_other": "and {{count}} more rows"
     }
   },
   "calculation": {

@@ -48,7 +48,7 @@ Fixtures: `fixtures` (común), `assistantFixtures`, `formFixtures`, `chatFormFix
 
 `itemTable` (RG2-A) recorre sin golden, en es/en a 1440, 390 y 320, las dos piezas de la carga de ítems en el catálogo (`?scenario=item-table`): la tabla vacía, con el máximo y con errores (la línea entre columnas, los números a la derecha y el problema bajo su fila, sin desplazar la página) y los recuadros en una columna; sus capturas van a `test-results`.
 
-IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320.
+IA1-A e IA2: `assistant-proposal` arma una propuesta reemplazada, un catálogo ya creado y el ajuste abierto con su pregunta nueva, más «Ver cómo queda»; `catalogs-manual-proposal`, la banda de un Manual propuesto. Ambas en es/en a 1440, 390 y 320. Con planilla (Etapa 2), `assistantSpreadsheets` (escenas de `assistantSpreadsheetFixtures`) muestra en es/en a 1440, 390 y 320 el catálogo con sus columnas y su muestra (`assistant-proposal-sheet`) y la tarjeta «Importación» (`assistant-proposal-import`).
 
 IA4: `assistantEntries` recorre sin golden, en es/en a 1440, 390 y 320, «Armar con la IA» en Diseñar formularios, Catálogos y Formularios que faltan (`*-assistant-entry`, que también contestan Inicio): el pedido empezado queda en el editor de una conversación nueva y la ruta no lo lleva. `assistant-entries` es Inicio vacío con la sugerencia y el texto del editor del módulo. Sus capturas van a `test-results` para compararlas con el tablero.
 

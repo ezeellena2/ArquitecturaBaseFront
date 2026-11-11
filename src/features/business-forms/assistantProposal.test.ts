@@ -14,6 +14,15 @@ const formContent = { culture: "es", name: "Control de carga", prefix: "CCC", su
 ] };
 const catalogContent = { culture: "es", name: "Transportistas", description: "Empresas que traen la carga", valueType: "text", code: "CUIT",
   option: "Razón social", fields: [{ name: "Teléfono", type: "text" }] };
+// Stage 2: the catalog that maps the turn's spreadsheet and the import into a catalog that exists, as the server serializes them.
+const code = { target: "code", field: null, key: null, letter: "A", header: "CUIT" };
+const option = { target: "option", field: null, key: null, letter: "B", header: "Razón social" };
+const sheet = { fileName: "contratistas.xlsx", sheetName: "Hoja1", rowCount: 86, hasHeaders: true,
+  columns: [code, option, { target: "field", field: "Rubro", key: null, letter: "C", header: "Rubro" }],
+  sample: [["20-11111111-1", "Transportes Sur", "Granos"], ["20-22222222-2", "Logística Pampa", "Hacienda"], ["20-33333333-3", "Fletes del Oeste", "Granos"]] };
+const mappedContent = { ...catalogContent, fields: [{ name: "Rubro", type: "text" }], spreadsheet: sheet };
+const importContent = { catalog: { id: catalogId, name: "Contratistas", valueType: "text" },
+  spreadsheet: { ...sheet, columns: [code, option, { target: "field", field: "Rubro", key: "rubro", letter: "C", header: "Rubro" }] } };
 const peopleContent = { metadataReadOrdinal: 2, name: "Supervisores", description: "Supervisores activos", limitations: [],
   filters: { textColumn: "name", detailColumn: "role", conditions: [{ column: "active", operator: "equals", value: "true" }], excludeRecipient: false, sortColumn: "name", sortDescending: false } };
 const proposal = (capability: string, content: unknown, version = 1) => ({ id: "01990000-0000-7000-8000-000000000041", capability, version, content });
@@ -24,7 +33,7 @@ function readForm(content: unknown) {
 }
 
 describe("assistant proposals of the forms module", () => {
-  it("reads the three proposals it owns, and no other capability, version or shape", () => {
+  it("reads the proposals it owns, and no other capability, version or shape", () => {
     expect(readProposal(proposal(proposalCapabilities.form, formContent))?.kind).toBe("form");
     expect(readProposal(proposal(proposalCapabilities.catalog, catalogContent))?.kind).toBe("catalog");
     expect(readProposal(proposal(proposalCapabilities.people, peopleContent))?.kind).toBe("people");
@@ -32,6 +41,23 @@ describe("assistant proposals of the forms module", () => {
     expect(readProposal(proposal("fixture.propose", formContent))).toBeNull();
     expect(readProposal(proposal(proposalCapabilities.form, { ...formContent, extra: true }))).toBeNull();
     expect(readProposal(proposal(proposalCapabilities.catalog, formContent))).toBeNull();
+  });
+
+  it("reads the catalog with its spreadsheet (version 2), without one, and version 1 as a catalog without a spreadsheet", () => {
+    expect(readProposal(proposal(proposalCapabilities.catalog, mappedContent, 2))).toEqual({ kind: "catalog", content: mappedContent });
+    expect(readProposal(proposal(proposalCapabilities.catalog, { ...mappedContent, spreadsheet: null }, 2))).toEqual({ kind: "catalog", content: { ...mappedContent, spreadsheet: null } });
+    expect(readProposal(proposal(proposalCapabilities.catalog, catalogContent))).toEqual({ kind: "catalog", content: { ...catalogContent, spreadsheet: null } });
+    expect(readProposal(proposal(proposalCapabilities.catalog, mappedContent))).toBeNull();
+    expect(readProposal(proposal(proposalCapabilities.catalog, catalogContent, 2))).toBeNull();
+    expect(readProposal(proposal(proposalCapabilities.catalog, { ...mappedContent, spreadsheet: { ...sheet, extra: true } }, 2))).toBeNull();
+    expect(readProposal(proposal(proposalCapabilities.catalog, { ...mappedContent, spreadsheet: { ...sheet, columns: [{ ...code, target: "other" }, option] } }, 2))).toBeNull();
+  });
+
+  it("reads the import into a catalog that exists, with its mapping, and no other version or shape", () => {
+    expect(readProposal(proposal(proposalCapabilities.catalogImport, importContent))).toEqual({ kind: "import", content: importContent });
+    expect(readProposal(proposal(proposalCapabilities.catalogImport, importContent, 2))).toBeNull();
+    expect(readProposal(proposal(proposalCapabilities.catalogImport, { ...importContent, spreadsheet: null }))).toBeNull();
+    expect(readProposal(proposal(proposalCapabilities.catalogImport, { ...importContent, catalog: { ...importContent.catalog, kind: "manual" } }))).toBeNull();
   });
 
   it("accepts its capabilities before loading the card, by name and version only", () => {
@@ -58,5 +84,6 @@ describe("assistant proposals of the forms module", () => {
     expect([...newQuestions(content, proposal(proposalCapabilities.form, before))]).toEqual([1, 2, 3, 4, 5, 6]);
     expect([...newQuestions(content, null)]).toEqual([]);
     expect([...newQuestions(content, proposal(proposalCapabilities.catalog, catalogContent))]).toEqual([]);
+    expect([...newQuestions(content, proposal(proposalCapabilities.catalogImport, importContent))]).toEqual([]);
   });
 });

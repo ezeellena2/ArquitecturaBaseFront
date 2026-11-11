@@ -6,6 +6,7 @@ import type {
   AssistantSubmit,
   AssistantTurn,
 } from "@/features/artificial-intelligence/api/assistant";
+import { spreadsheetProposalScene } from "./assistantSpreadsheetFixtures";
 declare global {
   interface Window { assistantHistoryTestState: { reads: string[]; writes: number } }
 }
@@ -210,7 +211,9 @@ export function createAssistantVisualFixtures(
       : [];
   if (previousTurns.length) turn = { ...turn, ordinal: 11 };
   // IA1-A (2026-11-04): a form proposal replaced by its adjustment, and a catalog proposal that already created its catalog.
-  const scene = scenario === "assistant-proposal" ? proposalScene(turn, en) : null;
+  // Stage 2: `assistant-proposal-sheet` and `assistant-proposal-import`, the spreadsheet proposals.
+  const scene = scenario === "assistant-proposal" ? proposalScene(turn, en)
+    : scenario.startsWith("assistant-proposal-") ? spreadsheetProposalScene(turn, en, scenario) : null;
   if (scene) { previousTurns.push(...scene.previous); turn = scene.current; }
   let turnReads = 0;
   let removed = false;

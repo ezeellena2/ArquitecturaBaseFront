@@ -1,10 +1,10 @@
 import { z } from "zod";
 import type { AssistantProposal } from "@/shared/hooks/assistantProposalContext";
-import { proposalCapabilities } from "./assistantProposalCapabilities";
+import { acceptsProposal, proposalCapabilities } from "./assistantProposalCapabilities";
 import { emptyForm } from "./editorModel";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture } from "./model";
 
-// The three proposals the Home assistant can close on for this module, as the server normalized them.
+// The proposals the Home assistant can close on for this module, as the server normalized them: one strict shape per version.
 const culture = z.enum(["es", "en"]);
 const proposedQuestion = z.strictObject({
   label: z.string().min(1),
@@ -17,11 +17,24 @@ const formProposal = z.strictObject({
   culture, name: z.string().min(1), prefix: z.string().min(1), submitLabel: z.string().min(1),
   questions: z.array(proposedQuestion).min(1).max(40),
 });
-const catalogProposal = z.strictObject({
-  culture, name: z.string().min(1), description: z.string(), valueType: z.enum(["text", "integer", "decimal", "date"]),
-  code: z.string().min(1), option: z.string().min(1),
+const valueType = z.enum(["text", "integer", "decimal", "date"]);
+const catalogShape = {
+  culture, name: z.string().min(1), description: z.string(), valueType, code: z.string().min(1), option: z.string().min(1),
   fields: z.array(z.strictObject({ name: z.string().min(1), type: z.enum(["text", "integer", "decimal", "date", "boolean"]) })).max(20),
+};
+const catalogProposal = z.strictObject(catalogShape);
+// Stage 2: what a proposal takes from the turn's spreadsheet, ordered as the catalog (code, option, value, detail and fields):
+// each column with its letter and its header, and up to three rows of data with one text per column.
+const spreadsheet = z.strictObject({
+  fileName: z.string().min(1), sheetName: z.string(), rowCount: z.number().int().nonnegative(), hasHeaders: z.boolean(),
+  columns: z.array(z.strictObject({
+    target: z.enum(["code", "option", "value", "detail", "field"]), field: z.string().min(1).nullable(), key: z.string().min(1).nullable(),
+    letter: z.string().regex(/^[A-Z]{1,3}$/), header: z.string().nullable(),
+  })).min(2),
+  sample: z.array(z.array(z.string())).max(3),
 });
+const mappedCatalogProposal = z.strictObject({ ...catalogShape, spreadsheet: spreadsheet.nullable() });
+const importProposal = z.strictObject({ catalog: z.strictObject({ id: z.string().uuid(), name: z.string().min(1), valueType }), spreadsheet });
 const peopleProposal = z.strictObject({
   metadataReadOrdinal: z.number().int().positive(), name: z.string().min(1), description: z.string(),
   filters: z.strictObject({
@@ -33,29 +46,38 @@ const peopleProposal = z.strictObject({
 });
 export type FormProposal = z.infer<typeof formProposal>;
 export type ProposedQuestion = FormProposal["questions"][number];
-export type CatalogProposal = z.infer<typeof catalogProposal>;
+/** A catalog proposal: version 1 reads as one without a spreadsheet. */
+export type CatalogProposal = z.infer<typeof mappedCatalogProposal>;
+export type ProposalSpreadsheet = z.infer<typeof spreadsheet>;
+export type ImportProposal = z.infer<typeof importProposal>;
 export type PeopleProposal = z.infer<typeof peopleProposal>;
 export type ReadProposal =
   | { readonly kind: "form"; readonly content: FormProposal }
   | { readonly kind: "catalog"; readonly content: CatalogProposal }
+  | { readonly kind: "import"; readonly content: ImportProposal }
   | { readonly kind: "people"; readonly content: PeopleProposal };
 
 /** The proposal as this module reads it, or null when it is another capability, version or shape: then no card shows. */
 export function readProposal(proposal: AssistantProposal): ReadProposal | null {
-  if (proposal.version !== 1) return null;
+  if (!acceptsProposal(proposal)) return null;
   if (proposal.capability === proposalCapabilities.form) {
     const parsed = formProposal.safeParse(proposal.content);
     return parsed.success ? { kind: "form", content: parsed.data } : null;
   }
-  if (proposal.capability === proposalCapabilities.catalog) {
+  if (proposal.capability === proposalCapabilities.catalog && proposal.version === 1) {
     const parsed = catalogProposal.safeParse(proposal.content);
+    return parsed.success ? { kind: "catalog", content: { ...parsed.data, spreadsheet: null } } : null;
+  }
+  if (proposal.capability === proposalCapabilities.catalog) {
+    const parsed = mappedCatalogProposal.safeParse(proposal.content);
     return parsed.success ? { kind: "catalog", content: parsed.data } : null;
   }
-  if (proposal.capability === proposalCapabilities.people) {
-    const parsed = peopleProposal.safeParse(proposal.content);
-    return parsed.success ? { kind: "people", content: parsed.data } : null;
+  if (proposal.capability === proposalCapabilities.catalogImport) {
+    const parsed = importProposal.safeParse(proposal.content);
+    return parsed.success ? { kind: "import", content: parsed.data } : null;
   }
-  return null;
+  const parsed = peopleProposal.safeParse(proposal.content);
+  return parsed.success ? { kind: "people", content: parsed.data } : null;
 }
 
 /** The questions that did not exist, the same, in the proposal this one replaced: the card marks them «Nueva». */

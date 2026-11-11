@@ -1533,7 +1533,7 @@
   "assistantProposals": {
     "replaced": "Reemplazada",
     "placeholder": "Preguntale al sistema o pedile que arme un formulario…",
-    "suggestions": { "form": "Armame un formulario para…" },
+    "suggestions": { "form": "Armame un formulario para…", "catalog": "Armame un catálogo con una planilla" },
     "entries": { "label": "Armar con la IA", "form": "Armame un formulario para ", "catalog": "Armame un catálogo de ", "missing": "Armame un formulario para registrar {{topic}}", "labelFor": "Armar con la IA un formulario para {{name}}" },
     "form": {
       "kind": "Formulario",
@@ -1560,6 +1560,16 @@
       "code": "Código",
       "option": "Opción",
       "people": "Personas"
+    },
+    "import": { "kind": "Importación", "review": "Revisar la importación" },
+    "spreadsheet": {
+      "rows_one": "{{count}} fila",
+      "rows_other": "{{count}} filas",
+      "column": "columna {{letter}}",
+      "header": "Columna {{letter}}",
+      "sample": "Filas de muestra",
+      "more_one": "y {{count}} fila más",
+      "more_other": "y {{count}} filas más"
     }
   },
   "calculation": {

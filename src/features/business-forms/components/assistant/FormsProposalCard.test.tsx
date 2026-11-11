@@ -23,11 +23,21 @@ const form = { culture: "es", name: "Control de carga", prefix: "CCC", submitLab
 ] };
 const catalog = { culture: "es", name: "Transportistas", description: "Empresas que traen la carga", valueType: "text", code: "CUIT", option: "Razón social",
   fields: [{ name: "Teléfono", type: "text" }] };
+// Stage 2: the catalog that maps the turn's spreadsheet and the import into a catalog that exists, as the server serializes them.
+const catalogTarget = "01990000-0000-7000-8000-000000000061";
+const code = { target: "code", field: null, key: null, letter: "A", header: "CUIT" };
+const option = { target: "option", field: null, key: null, letter: "B", header: "Razón social" };
+const sample = [["20-11111111-1", "Transportes Sur", "Granos"], ["20-22222222-2", "Logística Pampa", "Hacienda"], ["20-33333333-3", "Fletes del Oeste", "Granos"]];
+const sheet = { fileName: "contratistas.xlsx", sheetName: "Hoja1", rowCount: 86, hasHeaders: true,
+  columns: [code, option, { target: "field", field: "Rubro", key: null, letter: "C", header: "Rubro" }], sample };
+const mapped = { ...catalog, name: "Contratistas", fields: [{ name: "Rubro", type: "text" }], spreadsheet: sheet };
+const importing = { catalog: { id: catalogTarget, name: "Contratistas", valueType: "text" },
+  spreadsheet: { ...sheet, columns: [code, option, { target: "field", field: "Rubro", key: "rubro", letter: "C", header: "Rubro" }] } };
 let created: string | null;
 let posted: unknown[];
 let failure: { status: number; code: string; detail: string } | null;
-function props(capability: string, content: unknown, extra: Partial<AssistantProposalCardProps> = {}): AssistantProposalCardProps {
-  return { requestId, proposal: { id: proposalId, capability, version: 1, content }, previous: null, replaced: false, ...extra };
+function props(capability: string, content: unknown, extra: Partial<AssistantProposalCardProps> = {}, version = 1): AssistantProposalCardProps {
+  return { requestId, proposal: { id: proposalId, capability, version, content }, previous: null, replaced: false, ...extra };
 }
 async function mount(card: AssistantProposalCardProps, permissions = ["formtemplates.read", "formtemplates.manage", "formcatalogs.read", "formcatalogs.manage"]) {
   const status = (key: string) => () => HttpResponse.json({ proposalId, [key]: created });
@@ -114,4 +124,76 @@ it("creates a Manual catalog and opens it; without managing catalogs there is no
   await mount(props(proposalCapabilities.catalog, catalog), ["formcatalogs.read"]);
   const readOnly = await screen.findByRole("region", { name: "Catálogo: Transportistas" });
   expect(within(readOnly).queryByRole("button", { name: "Crear catálogo" })).not.toBeInTheDocument();
+});
+
+it("shows a catalog with its spreadsheet: each column, three sample rows and how many more, and opens it ready to import", async () => {
+  const router = await mount(props(proposalCapabilities.catalog, mapped, {}, 2));
+  const card = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
+  expect(within(card).getByText("Texto · 1 campo · 86 filas")).toBeInTheDocument();
+  expect(within(card).getByText("Código · CUIT · columna A")).toBeInTheDocument();
+  expect(within(card).getByText("Opción · Razón social · columna B")).toBeInTheDocument();
+  expect(within(card).getByText("Rubro · Texto · columna C")).toBeInTheDocument();
+  const table = within(card).getByRole("table");
+  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["CUIT", "Razón social", "Rubro"]);
+  expect(within(table).getAllByRole("row")).toHaveLength(4);
+  expect(within(table).getByText("Logística Pampa")).toBeInTheDocument();
+  expect(within(card).getByText("y 83 filas más")).toBeInTheDocument();
+  await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
+  expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe("/catalogos/" + createdId);
+  expect(router.state.location.search).toBe("");
+  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId } });
+});
+
+it("opens a catalog without a spreadsheet without an import, and shows a simple list's column once", async () => {
+  const router = await mount(props(proposalCapabilities.catalog, { ...mapped, spreadsheet: null }, {}, 2));
+  const card = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
+  expect(within(card).getByText("Texto · 1 campo")).toBeInTheDocument();
+  expect(within(card).queryByRole("table")).not.toBeInTheDocument();
+  await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
+  expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
+  expect(router.state.location.state).toBeNull();
+  cleanup(); queryClient.clear(); created = null;
+  const list = { ...sheet, rowCount: 2, hasHeaders: false, columns: [{ ...code, header: null }, { ...option, letter: "A", header: null }], sample: [["Norte", "Norte"], ["Sur", "Sur"]] };
+  await mount(props(proposalCapabilities.catalog, { ...mapped, fields: [], spreadsheet: list }, {}, 2));
+  const simple = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
+  expect(within(simple).getByText("Opción · Razón social · columna A")).toBeInTheDocument();
+  expect(within(within(simple).getByRole("table")).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Columna A"]);
+  expect(within(simple).queryByText(/filas? más/)).not.toBeInTheDocument();
+});
+
+it("shows an import with its catalog, mapping, rows and sample, and reviews it in that catalog with the request in the navigation state", async () => {
+  const router = await mount(props(proposalCapabilities.catalogImport, importing));
+  const card = await screen.findByRole("region", { name: "Importación: Contratistas" });
+  expect(within(card).getByText("Texto · 86 filas")).toBeInTheDocument();
+  expect(within(card).getByText("Código · columna A")).toBeInTheDocument();
+  expect(within(card).getByText("Opción · columna B")).toBeInTheDocument();
+  expect(within(card).getByText("Rubro · columna C")).toBeInTheDocument();
+  expect(within(within(card).getByRole("table")).getAllByRole("row")).toHaveLength(4);
+  expect(within(card).getByText("y 83 filas más")).toBeInTheDocument();
+  await userEvent.click(within(card).getByRole("button", { name: "Revisar la importación" }));
+  expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe("/catalogos/" + catalogTarget);
+  expect(router.state.location.search).toBe("");
+  expect(router.state.location.state).toEqual({ assistantImport: { requestId, proposalId } });
+  expect(posted).toEqual([]);
+  cleanup(); queryClient.clear();
+  await mount(props(proposalCapabilities.catalogImport, importing), ["formcatalogs.read"]);
+  const readOnly = await screen.findByRole("region", { name: "Importación: Contratistas" });
+  expect(within(readOnly).queryByRole("button", { name: "Revisar la importación" })).not.toBeInTheDocument();
+});
+
+it("folds a replaced import, and marks nothing new against a previous proposal of another capability of its group", async () => {
+  await mount(props(proposalCapabilities.catalogImport, importing, { replaced: true }));
+  const folded = await screen.findByRole("region", { name: "Importación: Contratistas" });
+  expect(within(folded).getByText("Reemplazada")).toBeInTheDocument();
+  expect(within(folded).queryByRole("button")).not.toBeInTheDocument();
+  cleanup(); queryClient.clear();
+  const previous = { id: "01990000-0000-7000-8000-000000000054", capability: proposalCapabilities.catalogImport, version: 1, content: importing };
+  await mount(props(proposalCapabilities.catalog, mapped, { previous }, 2));
+  const card = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
+  expect(within(card).queryByText("Nueva")).not.toBeInTheDocument();
+  cleanup(); queryClient.clear();
+  await mount(props(proposalCapabilities.catalogImport, importing, { previous: { ...previous, capability: proposalCapabilities.catalog, version: 2, content: mapped } }));
+  expect(within(await screen.findByRole("region", { name: "Importación: Contratistas" })).queryByText("Nueva")).not.toBeInTheDocument();
 });

@@ -64,6 +64,19 @@ Los tableros no lo dicen; se resolvió con la opción más simple que cumple el 
 - En el hilo, el audio de un mensaje se oye con «Escuchar», que baja la grabación sólo cuando la persona la quiere oír, como
   los audios del chat de WhatsApp; la transcripción en gris va siempre debajo.
 
+Etapa 2 (2026-11-11), las tarjetas con planilla:
+
+- «Armame un catálogo con una planilla» deja ese mismo pedido en el editor y abre el selector de archivos.
+- El catálogo con planilla también lista el valor y el detalle cuando salen de una columna («Valor · columna C»). La muestra
+  va en una `Table` que se desplaza adentro de la tarjeta en el celular, con los encabezados de la planilla o, sin ellos,
+  «Columna A»; una lista simple, con el código y la opción en la misma columna, la muestra una sola vez.
+- La tarjeta «Importación» lleva de título el catálogo destino, con su tipo y las filas («Texto · 86 filas»), cada parte con su
+  columna («Código · columna A») y la muestra. «Revisar la importación», como «Crear catálogo», aparece con el permiso de
+  administrar catálogos; no crea nada y la tarjeta no se pliega salvo que otra la reemplace.
+- «Crear catálogo» y «Revisar la importación» abren el catálogo con el pedido y la propuesta en el estado de la navegación,
+  nunca en la dirección. «Abrir el catálogo» de una tarjeta plegada no los lleva: la página encuentra sola la importación
+  pendiente.
+
 ## Lo que cambia de lo que hay
 
 Al programar cada etapa se reescribe lo que hoy dice lo contrario:
