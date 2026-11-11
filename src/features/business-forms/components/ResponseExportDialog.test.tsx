@@ -73,6 +73,15 @@ describe("ResponseExportDialog (EX1-A)", () => {
     expect(within(dialog).getByRole("radio", { name: "Solo las visibles (1 columna)" })).not.toHaveAttribute("aria-disabled");
   });
 
+  it("counts the value of a catalog with values as one more column, also among the visible ones", async () => {
+    // The file writes «Producto» and «Producto · valor» (FormExportService), so the option counts both.
+    const product: ResponseColumn = { fieldId: "product", type: "choice", label: "Producto", options: [], introducedInVersion: 1, valueType: "Decimal" };
+    const dialog = await show({ columns: [supplier, product], visible: [product] });
+
+    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (3 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (2 columnas)" })).not.toHaveAttribute("aria-disabled");
+  });
+
   it("counts a location as its three columns, Latitud, Longitud and Precisión, also among the visible ones", async () => {
     const place: ResponseColumn = { fieldId: "place", type: "location", label: "Lugar", options: [], introducedInVersion: 1 };
     const dialog = await show({ columns: [supplier, place], visible: [place] });
