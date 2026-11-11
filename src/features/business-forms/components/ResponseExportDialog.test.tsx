@@ -73,6 +73,14 @@ describe("ResponseExportDialog (EX1-A)", () => {
     expect(within(dialog).getByRole("radio", { name: "Solo las visibles (1 columna)" })).not.toHaveAttribute("aria-disabled");
   });
 
+  it("counts a location as its three columns, Latitud, Longitud and Precisión, also among the visible ones", async () => {
+    const place: ResponseColumn = { fieldId: "place", type: "location", label: "Lugar", options: [], introducedInVersion: 1 };
+    const dialog = await show({ columns: [supplier, place], visible: [place] });
+
+    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (4 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (3 columnas)" })).not.toHaveAttribute("aria-disabled");
+  });
+
   it("says the file and how its rows go: one per item of the block, with its (i), or one per response when the block stays out", async () => {
     const dialog = await show({ visible: [supplier] });
 

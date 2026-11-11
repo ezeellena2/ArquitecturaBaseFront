@@ -25,9 +25,12 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { ResponseCatalogFieldSelection, ResponseColumn, ResponseQuery } from "../responses";
 
 /// The columns of the Excel (XL1-A): one per question with its catalog fields, and a block as «Ítem» and its questions.
+// A location goes in the file as Latitud, Longitud and Precisión; any other question, as its value and its catalog fields.
+const locationColumns = 3;
+const questionColumns = (question: ResponseColumn) => question.type === "location" ? locationColumns : 1 + (question.fields?.length ?? 0);
 const exportedColumns = (columns: readonly ResponseColumn[]) => columns.reduce((count, column) => count + (column.type === "group"
-  ? 1 + (column.questions ?? []).reduce((inner, question) => inner + 1 + (question.fields?.length ?? 0), 0)
-  : 1 + (column.fields?.length ?? 0)), 0);
+  ? 1 + (column.questions ?? []).reduce((inner, question) => inner + questionColumns(question), 0)
+  : questionColumns(column)), 0);
 export function ResponseExportDialog({
   formId,
   prefix,
@@ -66,7 +69,8 @@ export function ResponseExportDialog({
   const count = formatExactDecimal(String(total), i18n.language) ?? String(total);
   const voided = includeVoided && !filter.state;
   const allColumns = exportedColumns(columns);
-  const visibleColumns = visible.reduce((sum, column) => sum + (column.type === "group" ? 1 + (column.questions?.length ?? 0) : 1), 0) + visibleCatalogFields.length;
+  const visibleColumns = visible.reduce((sum, column) => sum + (column.type === "group" ? 1 + (column.questions?.length ?? 0) : column.type === "location" ? locationColumns : 1), 0)
+    + visibleCatalogFields.length;
   const nothingHidden = visibleColumns === allColumns;
   // The block that goes in the file: with «Solo las visibles», only if its column is visible.
   const block = (selection === "visible" ? visible : columns).find(column => column.type === "group");
