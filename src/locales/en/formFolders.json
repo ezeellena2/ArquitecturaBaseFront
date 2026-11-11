@@ -1,0 +1,96 @@
+{
+  "title": "Folders",
+  "all": "All",
+  "withoutFolder": "No folder",
+  "add": "Add folder",
+  "addSubfolder": "Add subfolder",
+  "rename": "Rename",
+  "move": "Move to…",
+  "menu": "In the menu…",
+  "delete": "Delete",
+  "actions": "Actions of “{{name}}”",
+  "tooDeep": "Folders go up to five levels.",
+  "loadFailed": "We couldn't load the folders.",
+  "missing": "The folder in the address no longer exists. Showing everything.",
+  "selector": "Folder: {{name}}",
+  "reread": "Read again",
+  "name": {
+    "new": "Name of the new folder",
+    "rename": "Name of “{{name}}”",
+    "required": "Enter a name.",
+    "save": "Save the name",
+    "saving": "Saving the name",
+    "cancel": "Cancel"
+  },
+  "created": "We added the folder “{{name}}”.",
+  "renamed": "The folder is now called “{{name}}”.",
+  "moveDialog": {
+    "title": "Move “{{name}}” to…",
+    "label": "Where it goes",
+    "top": "At the top",
+    "inside": "In {{path}}",
+    "save": "Move",
+    "saving": "Moving…",
+    "done": "We moved “{{name}}”."
+  },
+  "deleteDialog": {
+    "title": "Delete “{{name}}”?",
+    "subfolders_one": "Its subfolder is deleted too.",
+    "subfolders_other": "Its {{count}} subfolders are deleted too.",
+    "forms_one": "The form stays in its other folders or in “No folder”.",
+    "forms_other": "The {{count}} forms stay in their other folders or in “No folder”.",
+    "catalogs_one": "The catalog stays in its other folders or in “No folder”.",
+    "catalogs_other": "The {{count}} catalogs stay in their other folders or in “No folder”.",
+    "items_other": "The {{count}} forms and catalogs stay in their other folders or in “No folder”.",
+    "empty": "It has no forms or catalogs.",
+    "loadFailed": "We couldn't count what the folder has.",
+    "confirm": "Delete folder",
+    "pending": "Deleting…",
+    "done": "We deleted the folder “{{name}}”."
+  },
+  "menuDialog": {
+    "title": "“{{name}}” in the menu",
+    "placement": "Place in the menu",
+    "placements": {
+      "None": "Out of the menu",
+      "Own": "A menu of its own",
+      "Forms": "Inside “Form management”",
+      "Administration": "Inside “Administration”"
+    },
+    "icon": "Icon",
+    "iconHelp": "It is what shows with the menu collapsed.",
+    "save": "Save",
+    "saving": "Saving…",
+    "done": "We saved the place of “{{name}}” in the menu."
+  },
+  "icons": {
+    "folder": "Folder",
+    "truck": "Truck",
+    "package": "Package",
+    "receipt": "Receipt",
+    "users": "People",
+    "calendar": "Calendar",
+    "clipboard": "Clipboard",
+    "chart": "Chart",
+    "wrench": "Wrench",
+    "store": "Store",
+    "leaf": "Leaf",
+    "file": "File"
+  },
+  "item": {
+    "action": "Folders…",
+    "actionFor": "Folders of “{{name}}”",
+    "title": "Folders of “{{name}}”",
+    "empty": "There are no folders yet.",
+    "loadFailed": "We couldn't read its folders.",
+    "save": "Save",
+    "saving": "Saving…",
+    "done": "We saved the folders of “{{name}}”."
+  },
+  "empty": {
+    "formsIn": "There are no forms in “{{name}}”",
+    "catalogsIn": "There are no catalogs in “{{name}}”",
+    "matchesIn": "No matches in “{{name}}”",
+    "searchAll": "Search in all"
+  }
+}

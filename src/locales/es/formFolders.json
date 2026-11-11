@@ -1,0 +1,96 @@
+{
+  "title": "Carpetas",
+  "all": "Todos",
+  "withoutFolder": "Sin carpeta",
+  "add": "Agregar carpeta",
+  "addSubfolder": "Agregar subcarpeta",
+  "rename": "Renombrar",
+  "move": "Mover a…",
+  "menu": "En el menú…",
+  "delete": "Borrar",
+  "actions": "Acciones de «{{name}}»",
+  "tooDeep": "Las carpetas llegan hasta cinco niveles.",
+  "loadFailed": "No pudimos cargar las carpetas.",
+  "missing": "La carpeta de la dirección ya no existe. Te mostramos todos.",
+  "selector": "Carpeta: {{name}}",
+  "reread": "Volver a leer",
+  "name": {
+    "new": "Nombre de la carpeta nueva",
+    "rename": "Nombre de «{{name}}»",
+    "required": "Escribí un nombre.",
+    "save": "Guardar el nombre",
+    "saving": "Guardando el nombre",
+    "cancel": "Cancelar"
+  },
+  "created": "Agregamos la carpeta «{{name}}».",
+  "renamed": "Ahora la carpeta se llama «{{name}}».",
+  "moveDialog": {
+    "title": "Mover «{{name}}» a…",
+    "label": "Dónde va",
+    "top": "Arriba de todo",
+    "inside": "En {{path}}",
+    "save": "Mover",
+    "saving": "Moviendo…",
+    "done": "Movimos «{{name}}»."
+  },
+  "deleteDialog": {
+    "title": "¿Borrar «{{name}}»?",
+    "subfolders_one": "También se borra su subcarpeta.",
+    "subfolders_other": "También se borran sus {{count}} subcarpetas.",
+    "forms_one": "El formulario queda en sus otras carpetas o en «Sin carpeta».",
+    "forms_other": "Los {{count}} formularios quedan en sus otras carpetas o en «Sin carpeta».",
+    "catalogs_one": "El catálogo queda en sus otras carpetas o en «Sin carpeta».",
+    "catalogs_other": "Los {{count}} catálogos quedan en sus otras carpetas o en «Sin carpeta».",
+    "items_other": "Los {{count}} formularios y catálogos quedan en sus otras carpetas o en «Sin carpeta».",
+    "empty": "No tiene formularios ni catálogos.",
+    "loadFailed": "No pudimos contar lo que tiene la carpeta.",
+    "confirm": "Borrar carpeta",
+    "pending": "Borrando…",
+    "done": "Borramos la carpeta «{{name}}»."
+  },
+  "menuDialog": {
+    "title": "«{{name}}» en el menú",
+    "placement": "Lugar en el menú",
+    "placements": {
+      "None": "Fuera del menú",
+      "Own": "Un menú propio",
+      "Forms": "Adentro de «Gestión de formularios»",
+      "Administration": "Adentro de «Administración»"
+    },
+    "icon": "Ícono",
+    "iconHelp": "Es lo que se ve con el menú contraído.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "done": "Guardamos el lugar de «{{name}}» en el menú."
+  },
+  "icons": {
+    "folder": "Carpeta",
+    "truck": "Camión",
+    "package": "Paquete",
+    "receipt": "Recibo",
+    "users": "Personas",
+    "calendar": "Calendario",
+    "clipboard": "Portapapeles",
+    "chart": "Gráfico",
+    "wrench": "Llave",
+    "store": "Negocio",
+    "leaf": "Hoja",
+    "file": "Archivo"
+  },
+  "item": {
+    "action": "Carpetas…",
+    "actionFor": "Carpetas de «{{name}}»",
+    "title": "Carpetas de «{{name}}»",
+    "empty": "Todavía no hay carpetas.",
+    "loadFailed": "No pudimos leer sus carpetas.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "done": "Guardamos las carpetas de «{{name}}»."
+  },
+  "empty": {
+    "formsIn": "No hay formularios en «{{name}}»",
+    "catalogsIn": "No hay catálogos en «{{name}}»",
+    "matchesIn": "No hay coincidencias en «{{name}}»",
+    "searchAll": "Buscar en todas"
+  }
+}
