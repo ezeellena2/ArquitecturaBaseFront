@@ -1674,7 +1674,7 @@
     "issuing": "The document is being issued. The page updates on its own.",
     "voidingCreditNote": "The credit note is being issued. The page updates on its own.",
     "voidingCancel": "The issuance is being voided. The page updates on its own.",
-    "queuedTitle": "Waiting to issue",
+    "queuedTitle": "Not issued yet",
     "queuedAt": "We try again at {{time}}.",
     "queuedOn": "We try again on {{date}} at {{time}}.",
     "queuedTried_one": "We tried once.",

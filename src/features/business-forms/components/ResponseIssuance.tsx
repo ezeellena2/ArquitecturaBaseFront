@@ -87,15 +87,13 @@ function BandNotice({ band, action, reversal, issued, timeZoneId }: { band: Issu
   const { t, i18n } = useTranslation("forms");
   const titled = (title: string, detail: ReactNode) => <><span className="font-semibold">{title}</span>{detail ? <>{" · "}{detail}</> : null}</>;
   // «En cola»: the issuer did not answer; it says when it tries again (the time today, or the date and time) and how many times it
-  // tried. The title is the reason the server sends («ARCA no responde»), which names the issuer; without it, a generic one.
-  if (band === "queued" && action.nextAttemptAtUtc) {
+  // tried. The title is its own: the reason of the wait asks to try again later, and here the system tries again by itself.
+  if (band === "queued" && action.nextAttemptAtUtc && action.attempts) {
     const next = action.nextAttemptAtUtc;
     const time = formatTimeInZone(next, i18n.language, timeZoneId);
     const today = calendarDateInZone(next, timeZoneId) === calendarDateInZone(new Date().toISOString(), timeZoneId);
     const when = today ? t("issuance.queuedAt", { time }) : t("issuance.queuedOn", { date: formatDateInZone(next, i18n.language, timeZoneId), time });
-    const tried = action.attempts ? " " + t("issuance.queuedTried", { count: action.attempts }) : "";
-    const title = action.reason && action.reason !== action.reasonCode ? action.reason : t("issuance.queuedTitle");
-    return <Banner tone="warning">{titled(title, when + tried)}</Banner>;
+    return <Banner tone="warning">{titled(t("issuance.queuedTitle"), when + " " + t("issuance.queuedTried", { count: action.attempts }))}</Banner>;
   }
   if (band === "issuing" || band === "queued")
     return <p role="status" className="flex items-center gap-2 text-sm"><Spinner decorative/>{t(!reversal ? "issuance.issuing" : issued ? "issuance.voidingCreditNote" : "issuance.voidingCancel")}</p>;

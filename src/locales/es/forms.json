@@ -1674,7 +1674,7 @@
     "issuing": "Se está emitiendo el comprobante. La página se actualiza sola.",
     "voidingCreditNote": "Se está emitiendo la nota de crédito. La página se actualiza sola.",
     "voidingCancel": "Se está anulando la emisión. La página se actualiza sola.",
-    "queuedTitle": "Esperando para emitir",
+    "queuedTitle": "Todavía no se pudo emitir",
     "queuedAt": "Volvemos a probar a las {{time}}.",
     "queuedOn": "Volvemos a probar el {{date}} a las {{time}}.",
     "queuedTried_one": "Ya probamos una vez.",

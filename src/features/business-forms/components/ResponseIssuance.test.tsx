@@ -120,18 +120,18 @@ describe("the zone «Comprobante» (EM1-A)", () => {
   // «En cola» (falla 7): while the issuer does not answer, a yellow notice with its reason, when it tries again and how many
   // times it tried, instead of «Se está emitiendo…».
   it("says when an issuance the issuer did not answer tries again and how many times it tried", async () => {
-    setup({}, { actions: [action({ state: "Running", completedAtUtc: null, reasonCode: "Arca.Connection.Unavailable", reason: "ARCA no responde",
+    // The reason of the wait asks to try again later; here the system tries again by itself, so the title is the zone's own.
+    setup({}, { actions: [action({ state: "Running", completedAtUtc: null, reasonCode: "Arca.Connection.Unavailable", reason: "ARCA no respondió. Probá de nuevo en unos minutos.",
       nextAttemptAtUtc: "2026-01-02T13:45:00Z", attempts: 3 })] });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
-    const notice = within(await zone()).getByRole("status");
-    expect(notice).toHaveTextContent("ARCA no responde · Volvemos a probar el 02/01/2026 a las 10:45. Ya probamos 3 veces.");
-    expect(within(await zone()).queryByText(/Se está emitiendo/)).not.toBeInTheDocument();
+    expect(within(await zone()).getByRole("status")).toHaveTextContent(/^Todavía no se pudo emitir · Volvemos a probar el 02\/01\/2026 a las 10:45\. Ya probamos 3 veces\.$/);
+    expect(within(await zone()).queryByText(/Se está emitiendo|Probá de nuevo/)).not.toBeInTheDocument();
   });
 
-  it("titles «En cola» on its own when the server sends no reason, and leaves out the tries it does not know", async () => {
-    setup({}, { actions: [action({ state: "Waiting", completedAtUtc: null, nextAttemptAtUtc: "2026-01-02T13:45:00Z" })] });
+  it("says it is being issued when it keeps a next attempt without tries, as an authorized one while its PDF is made", async () => {
+    setup({}, { actions: [action({ state: "Running", completedAtUtc: null, nextAttemptAtUtc: "2026-01-02T13:45:00Z" })] });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
-    expect(within(await zone()).getByRole("status")).toHaveTextContent(/^Esperando para emitir · Volvemos a probar el 02\/01\/2026 a las 10:45\.$/);
+    expect(within(await zone()).getByRole("status")).toHaveTextContent("Se está emitiendo el comprobante. La página se actualiza sola.");
   });
 });
 

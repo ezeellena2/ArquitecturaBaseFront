@@ -35,7 +35,9 @@ const inFlight = (action: ResponseAction) => action.state === "Waiting" || actio
 
 function stageOf(action: ResponseAction): IssuanceStage | null {
   switch (action.state) {
-    case "Waiting": case "Running": return action.nextAttemptAtUtc ? "queued" : "issuing";
+    // Only a wait that already tried is «En cola»: an issuance already authorized can keep its next attempt, without tries, while
+    // its PDF is made.
+    case "Waiting": case "Running": return action.nextAttemptAtUtc && action.attempts ? "queued" : "issuing";
     case "Completed": return "issued";
     case "Failed": return "failed";
     case "Uncertain": return action.reasonCode === awaitingConfirmationCode ? "awaiting" : "review";

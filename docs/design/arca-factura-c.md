@@ -51,8 +51,9 @@ dice y se relee la actividad.
 
 - **«Esperando que lo confirmes»** no tiene dibujo; lo más simple es la banda de la zona, como los demás estados.
 - **«En cola» y «Rechazada» al programarse (2026-11-11):** formularios no nombra módulos, así que los títulos los da el
-  servidor: «En cola» usa su motivo («ARCA no responde») o, sin él, «Esperando para emitir», y sigue «Volvemos a probar a las
-  10:45. Ya probamos 3 veces.» (la fecha también, si no es hoy). Sin «te avisamos por WhatsApp»: el front no sabe por qué
+  servidor. «En cola» dice «Todavía no se pudo emitir» · «Volvemos a probar a las 10:45. Ya probamos 3 veces.» (la fecha
+  también, si no es hoy): el motivo de la espera pide probar más tarde y acá el sistema vuelve a probar solo. Sin intentos
+  (una factura ya autorizada que espera su PDF) sigue «Emitiendo». Sin «te avisamos por WhatsApp»: el front no sabe por qué
   canal llega el aviso. El aviso lleva el ícono de su tono (AV1-A), no un reloj. «Rechazada» dice «No se emitió el
   comprobante» · el texto de ARCA que manda el servidor («10015 · …»); lo mismo «No se pudo anular».
 - **El cliente nuevo** (decisión 4 del plan) tampoco: «Otro: escribir la CUIT» y, si ARCA no la tiene o no responde, el
