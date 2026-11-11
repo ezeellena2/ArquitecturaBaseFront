@@ -51,13 +51,32 @@ Los tableros no lo dicen, o el contrato no lo permite; se resolvió con la opci�
 - **Los errores de ARCA de una acción** (no los de la prueba) van al aviso común con el texto del servidor.
 - **En el celular** las bandas apilan su acción debajo del título y los renglones bajan el valor; a 320 px nada desborda.
 
+## AC4 · Datos del comprobante — 2026-11-11
+
+Ingresos brutos e inicio de actividades van en el PDF de cada factura y el padrón de ARCA no los trae: se cargan a mano.
+No hubo elección: el [tablero AC4](evidence/arca-ac4/ac4-tablero.png) sigue a AC2-A, por zonas, y quedó registrado acá
+cuando se cerró la etapa 1, a pedido del chat que coordina la tanda del 11/11.
+
+- **Dónde:** una zona propia, «Facturación · Datos del comprobante», debajo de «Facturación · Punto de venta», sólo con la
+  conexión activa. No es un paso del alta: no completa la familia ni frena «Activar la conexión».
+- **Lectura:** `DataList` con «Ingresos brutos» e «Inicio de actividades», el día sólo con números (dd/MM/yyyy). Lo que
+  falta dice «Sin cargar». La (i) explica para qué son: «Van en el PDF de cada factura. El padrón de ARCA no los trae.»
+- **Editar:** en la banda, «Cargar» si no hay ninguno o «Cambiar» si ya hay algo. Abre los dos campos con lo guardado,
+  uno debajo del otro, con «Cancelar» y «Guardar»; «Guardar» se habilita cuando cambia algo. Un número vacío o de más de
+  30 caracteres y una fecha vacía se marcan en su campo, con el foco en el primero, sin llamar al servidor; si el
+  servidor rechaza uno, el error va al mismo campo. Lo demás va al Toaster, como en el resto de la conexión.
+- **Sin `arca.manage`:** la lectura, sin botones.
+- **Código:** `VoucherDataSection` e `InvoicingSections` en `features/arca/invoicing`, sobre
+  `PUT /api/arca/invoicing/voucher-data`; `VoucherDataSection.test.tsx` fija los tres casos.
+
 ## Correspondencia con `shared/ui`
 
 | En el tablero | Pieza |
 | --- | --- |
 | Zona con número, banda y resumen plegado, apagada o abierta | `Surface`, por `ArcaZone` de `features/arca/connection` |
 | Estado y ambiente | `Badge` en `Page.status` |
-| Datos de la empresa, servicios, certificado y punto de venta activo | `DataList` |
+| Datos de la empresa, servicios, certificado, punto de venta activo y datos del comprobante | `DataList` |
+| Ingresos brutos e inicio de actividades al editar | `FormField` con `Input` (el inicio, `type="date"`) |
 | Ambiente | `SegmentedControl`, con su ayuda en `InfoTip` |
 | «Servicios que usa» | `CheckboxField` |
 | Lo que se hace en ARCA | `StepList` |
