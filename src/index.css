@@ -146,6 +146,10 @@
   --chart-3: var(--color-warning);
   --chart-4: var(--color-danger);
   --chart-5: var(--color-content-muted);
+  /* DOC7-A: el tono suave de un balde sin respuestas y la pista de una barra de reparto salen del color de los gráficos,
+     así siguen a Apariencia como las barras. */
+  --chart-quiet: color-mix(in oklab, var(--chart-1) 30%, var(--color-surface));
+  --chart-track: color-mix(in oklab, var(--chart-1) 12%, var(--color-surface));
   --sidebar: var(--color-nav-surface);
   --sidebar-foreground: var(--color-nav-foreground);
   --sidebar-primary: var(--color-nav-accent);
@@ -180,6 +184,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-quiet: var(--chart-quiet);
+  --color-chart-track: var(--chart-track);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);

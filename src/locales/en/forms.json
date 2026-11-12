@@ -927,7 +927,9 @@
     "clear": "Clear all",
     "tabs": {
       "pending": "To approve ({{count}})",
-      "all": "All"
+      "all": "All",
+      "responses": "Responses ({{count}})",
+      "dashboard": "Dashboard"
     },
     "receivedFrom": "Received from",
     "receivedTo": "Received until",
@@ -1734,5 +1736,69 @@
     "voidDescription": "A credit note for the total of the voucher of {{number}} is issued, which voids it. It cannot be undone.",
     "voidRequested": "{{number}} is being voided.",
     "creditNoteRequested": "The credit note of {{number}} is being issued."
+  },
+  "dashboard": {
+    "period": "Period",
+    "periods": { "day": "Day", "week": "Week", "month": "Month" },
+    "numbers": "Numbers",
+    "cards": "Charts",
+    "titles": {
+      "received": { "day": "How many arrived, by day", "week": "How many arrived, by week", "month": "How many arrived, by month" },
+      "receivedTotal": { "day": "Total of {{number}}, by day", "week": "Total of {{number}}, by week", "month": "Total of {{number}}, by month" },
+      "date": { "day": "By day of {{question}}", "week": "By week of {{question}}", "month": "By month of {{question}}" },
+      "dateTotal": { "day": "Total of {{number}}, by day of {{question}}", "week": "Total of {{number}}, by week of {{question}}", "month": "Total of {{number}}, by month of {{question}}" },
+      "choice": "By {{question}}",
+      "choiceTotal": "Total of {{number}}, by {{question}}",
+      "actors": "Who submitted",
+      "states": "By state"
+    },
+    "catalogQuestion": "{{question}} ({{catalog}} catalog)",
+    "numberCurrency": "{{number}} ({{currency}})",
+    "numberWithoutCurrency": "{{number}} (no currency)",
+    "stats": {
+      "count": "Responses",
+      "total": "Total of {{number}}",
+      "average": "Average of {{number}}",
+      "range": "Minimum and maximum of {{number}}",
+      "rangeValue": "{{minimum}} · {{maximum}}",
+      "change": "{{change}} vs {{period}}",
+      "zero": "0 in {{period}}",
+      "overflow": "Too big to calculate."
+    },
+    "range": "{{from}} – {{to}}",
+    "menu": {
+      "label": "Actions for “{{title}}”",
+      "count": "Count",
+      "quantity": "Number of responses",
+      "total": "Total of {{number}}",
+      "table": "See as table",
+      "chart": "See as chart",
+      "remove": "Remove from dashboard"
+    },
+    "add": "Add chart",
+    "addNone": "Every chart is already on the dashboard.",
+    "addResponses": "From the responses",
+    "addQuestions": "From a question",
+    "addReceived": "How many arrived",
+    "describe": {
+      "received": { "day": "Count by day", "week": "Count by week", "month": "Count by month" },
+      "number": { "day": "Total by day", "week": "Total by week", "month": "Total by month" },
+      "date": { "day": "Count by day", "week": "Count by week", "month": "Count by month" },
+      "dateTotal": { "day": "Count or total, by day", "week": "Count or total, by week", "month": "Count or total, by month" },
+      "choice": "Count by option",
+      "choiceTotal": "Count or total, by option",
+      "actors": "Count by person",
+      "states": "Count by state"
+    },
+    "automatic": "Back to automatic",
+    "table": { "option": "Option", "person": "Person", "state": "State", "count": "Count", "share": "%" },
+    "others_one": "Another option",
+    "others_other": "{{count}} other options",
+    "otherPeople_one": "Another person",
+    "otherPeople_other": "{{count}} other people",
+    "noAnswers": "No responses",
+    "truncated": { "day": "Showing the last {{count}} days.", "week": "Showing the last {{count}} weeks.", "month": "Showing the last {{count}} months." },
+    "overflowNote": "Some totals are too big to calculate and show “—”.",
+    "loadFailed": "We couldn't load the dashboard."
   }
 }

@@ -294,3 +294,9 @@ export function responseFilterLabels(query: ResponseQuery, columns: readonly Res
   if (query.search) labels.push({ key: "search", label: t("responses.search") + ": " + query.search });
   return labels;
 }
+
+/** Whether the sheet's search has a filter: «Respuestas» and «Tablero» tell nothing yet from nothing that matches (DOC7-A). */
+export function responseHasFilters(query: ResponseQuery): boolean {
+  return !!query.state || query.enteredInApp != null || !!query.search || !!query.conditions?.length || !!query.actorIds?.length
+    || !!query.versionIds?.length || !!query.receivedFromUtc || !!query.receivedToUtc;
+}

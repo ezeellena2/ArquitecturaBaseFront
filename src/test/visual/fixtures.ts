@@ -20,6 +20,7 @@ import { createChatAssistantVisualFixtures } from "./chatAssistantFixtures";
 import { createFormFixtureStore } from "./formFixtures";
 import { createMissingRequestVisualFixtures } from "./missingRequestFixtures";
 import { createLibraryVisualFixtures } from "./libraryFixtures";
+import { createDashboardVisualFixtures } from "./dashboardVisualFixtures";
 import { initialAppearance } from "@/shared/lib/appearance";
 import type { CurrentUser } from "@/auth/useCurrentUser";
 import type { UserDetail, UserFilterCounts, UserListItem } from "@/features/users/api/users";
@@ -54,6 +55,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (approvalsFixture) Object.assign(globalThis,{ approvalsFixture });
   const responsesScenario = scenario?.startsWith("responses-") ?? false;
   const responseFixtures = responsesScenario && !formResponseFullFixture ? createResponseVisualFixtures(language, scenario!) : undefined;
+  // DOC7-A: «Pagos de clientes», with the sheet that names its questions and the dashboard of the period asked.
+  const dashboardFixture = scenario?.startsWith("responses-dashboard") ? createDashboardVisualFixtures(language) : undefined;
   if (responseFixtures) Object.assign(globalThis, { responseFixtures });
   const catalogQuestionsScenario = scenario?.startsWith("forms-catalog") ?? false;
   const catalogsScenario = (scenario?.startsWith("catalogs-") ?? false) || catalogQuestionsScenario;
@@ -233,6 +236,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (formEntryFixture && path.startsWith("/api/forms/")) { const result = await formEntryFixture.handle(request); if (result) return result; }
     if (pdfsFixture && path.startsWith("/api/forms/")) { const result = await pdfsFixture.handle(request); if(result) return result; }
     if (approvalsFixture && path.startsWith("/api/forms/")) { const result = await approvalsFixture.handle(request); if(result) return result; }
+    const dashboardResponse = await dashboardFixture?.(request); if (dashboardResponse) return dashboardResponse;
     if (responseFixtures && path.startsWith("/api/forms/")) return responseFixtures.handle(request);
     if (scenario === "file-cards" && /^\/api\/forms\/records\//.test(path)) return new Response(await fileImage(),{headers:{"content-type":"image/jpeg"}});
     if (catalogsFixture && (path.startsWith("/api/forms/catalogs") || path === "/api/forms/catalog-filter-options" || path === "/api/forms/catalog-previews")) return catalogsFixture.handle(request);

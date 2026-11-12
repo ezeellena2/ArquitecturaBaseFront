@@ -3,7 +3,8 @@
 Fecha: **2026-10-22**. **Elegidos DOC5-A y DOC7-A, con DOC1–DOC4 y DOC6**, de la versión 116 del lienzo; la 117 los marca
 y suma las correcciones al elegir (abajo), la 118 agranda DOC5-A para que entren sus notas y la 119 deja DOC2 y DOC4 como
 quedaron en el plan. Por programar, salvo la pantalla «Biblioteca» de DOC1, sin la lectura de documentos, que llegó con la
-etapa 2 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)).
+etapa 2 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)). DOC7-A, el tablero de cada formulario, quedó
+programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
 
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
@@ -60,3 +61,106 @@ lienzo) y la maqueta ya lo muestran, y las capturas de arriba son las corregidas
 - **Para revisar acá (DOC5-A).** Junta los propuestos que vencieron sin que la persona los confirmara en WhatsApp, como el
   comprobante del Macro de Pablo, y las filas de una planilla que pasaron el tope. Los pasa al formulario alguien con
   «Revisar documentos».
+
+## Cómo quedó
+
+Lo programado se compara con su tablero, y cada diferencia lleva su motivo. Los tableros son del 2026-10-22, anteriores a la
+[lista de chequeo de diseño](visual-baseline.md#lista-de-chequeo-de-diseño) (2026-11-09): al programarlos se contesta la lista y se
+aplica lo que piden ella y las reglas más nuevas, sin volver a preguntar lo que decidió el
+[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#implementación-lectura-carga-bandeja-etapa-3-de-la-ia-y-tableros).
+
+### DOC7-A · Tarjetas armadas solas (2026-11-11)
+
+Tarea 16 del plan (decisiones 22 a 24 y sus [diferencias](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#diferencias-con-los-tableros)),
+contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se exporte la cohorte `forms-dashboard-http`:
+`FormDashboard` es la pestaña «Tablero» de `FormResponsesPage`, con las piezas nuevas de `shared/ui/charts` (`StatCard`,
+`BarChart`, `BarList` y `ChartRefreshing`). Las escenas `formDashboard.spec.ts` y `charts.spec.ts` (catálogo,
+`?scenario=charts`) dejan las capturas es/en a 1440, 390 y 320 en `test-results/dashboard` y `test-results/charts` (sin golden).
+
+**La lista de chequeo:**
+
+1. **Entero y armado.** Pestañas, la barra de filtros de la planilla, el segmentado, `Surface`, ⋮ (`ActionsMenu`, que suma
+   `choice` para «Contar»), el desplegable de «Agregar gráfico», `DataTable` para «Ver como tabla», `EmptyState`, `Skeleton` y
+   `DisabledReason`, más las piezas de gráfico, con su ficha en el catálogo. Estados: carga, sin respuestas, sin coincidencias, error
+   con «Reintentar» y la espera de un 429, vuelve a leer, «Agregar gráfico» apagado y sin permiso. No hay diálogos.
+2. **Una tarea, zonas que se entienden solas.** Ver qué llegó con los filtros de la planilla: la barra (con el período y «Agregar
+   gráfico», que ajustan lo que se ve, como «Columnas»), los números y una zona por gráfico.
+3. **El control según el dato.** El período, tres opciones fijas: segmentado. «Contar», una entre pocas: opciones con su tilde
+   dentro del ⋮. Los filtros, los de la planilla. Cada gráfico tiene su tabla.
+4. **Lo que se lee, en su lugar.** Cada número con su nombre arriba y su variación debajo; un reparto, renglones con el nombre, su
+   barra y sus números en columnas fijas; la tabla, un dato por columna.
+5. **Un dato por columna.** Las tablas: «Día», «Semana» o «Mes» y «Cantidad» o el total; «Opción», «Persona» o «Estado», el valor y
+   «%». El reparto no es una tabla (excepción F) y dice «38 · 31 %», como lo pide el plan.
+6. **Sin leyendas.** Sin subtítulos en las tarjetas ni descripción en los vacíos. Las líneas grises son datos: la variación, por
+   qué un valor dice «—» y «Se ven los últimos 400 días».
+7. **Textos ciertos, una sola vez.** Los títulos siguen al período de la respuesta a la vista (no al pedido que todavía no llegó) y
+   a lo que se cuenta; la cantidad está en la pestaña y en el
+   primer número, no tres veces; la variación aparece sólo con un rango de fechas; «—», sólo cuando un valor no entra (con su motivo)
+   o nadie respondió.
+8. **Botones y lo apagado.** «Agregar gráfico» apagado con su motivo cuando todo está en el tablero, y sin motivo mientras no hay nada
+   que graficar (la zona de abajo dice por qué), en el mismo lugar y con la misma forma; lo que se hace con una tarjeta va en su ⋮;
+   nada destructivo.
+9. **Lo elegido y la espera.** El período relleno (OE1-A), «Contar» con su tilde; la carga ocupa el lugar de los números y las
+   tarjetas, con la barra ya en su lugar desde la primera vez; al volver a leer, los gráficos quedan atenuados bajo la línea que corre (LC2-A); «Reintentar» con su aro.
+10. **Estados y mensajes.** Un fallo: la zona con «Reintentar» y la causa en el aviso común (un dueño); un 403 retira la lectura como
+    la planilla; un 429, la espera como motivo de «Reintentar». No escribe nada: no hay conflictos ni avisos de éxito.
+11. **Lo mismo, igual en toda la app.** La misma barra y los mismos chips de «Respuestas»; zonas con banda; ⋮ común; los colores de
+    gráfico de `index.css` (dos tokens nuevos: el tono suave de un día sin respuestas y la pista de una barra de reparto); los cinco
+    niveles de letra; medidas en `rem`; fechas con números.
+12. **Celular, teclado e idiomas.** Desde 320 px nada se desplaza de costado, ni con 400 días en una tarjeta (las escenas miden cada
+    caja que desplaza alrededor del gráfico, no el documento); pestañas y segmentado de 44 px en el
+    celular; las tarjetas una debajo de la otra y los filtros detrás de «Filtros»; cada balde dice su período y su valor al lector;
+    es/en; la pestaña, el período y los ajustes en la dirección (`view`, `period`, `cards`).
+
+**Diferencias con el tablero:**
+
+- **Un solo período para todo el tablero** (lo eligió el usuario el 2026-11-11): DOC7-A dibuja una tarjeta por día y otra por
+  semana; todas siguen a «Día · Semana · Mes».
+- **Los filtros viven en memoria, no en la dirección** (decisión 23): son los filtros privados de la planilla, compartidos con
+  «Respuestas». La dirección lleva la pestaña, el período y los ajustes de las tarjetas; «Volver al automático» los saca.
+- **La barra es la de «Respuestas»** (PL1-A, posterior al tablero): la búsqueda (con textos largos), el canal y el estado a la vista
+  y lo demás en «Filtros», con los chips y «Limpiar todo»; no «Recibida: octubre 2026 · Cargó · Estado · … · Más filtros».
+- **«Agregar gráfico» va en la barra**, al final, junto al período, como «Columnas» en «Respuestas»; el encabezado conserva las
+  acciones del formulario (exportar y agregar una respuesta), iguales en las dos pestañas.
+- **Las pestañas de quien también aprueba** son «Por aprobar (N) · Todas · Tablero» (PL1-A); las demás, «Respuestas (N) ·
+  Tablero». «123 respuestas» al lado del período no está: lo dicen la pestaña y el primer número.
+- **El período anterior se nombra con sus fechas** («+18 % que 01/09/2026 – 30/09/2026», fechas sólo con números): no «que
+  septiembre». «Mínimo y máximo» no dice «En octubre»: el chip ya dice el rango.
+- **La variación va en gris, con su signo**: el tablero la pinta de verde, pero si subir es bueno depende del formulario.
+- **Los montos van sin símbolo** («14.381.300»), con su moneda en el nombre: «Total de Monto (pesos)» (diferencias del plan).
+- **Cada tarjeta es una `Surface` con su banda** y el ⋮ a la derecha, como toda zona de la app; no lleva el subtítulo gris («De la
+  pregunta … · cantidad»), que repetía el título: lo que cuenta va en el título («Total de Monto (pesos), por Banco …», «Por Cliente
+  (catálogo Clientes)»).
+- **Las tarjetas por período ocupan todo el renglón** (DOC7-A, dos tercios y un tercio): con un solo período tienen los mismos
+  baldes y las barras y sus fechas necesitan el ancho. Los repartos van de a tres.
+- **El eje nombra pocas fechas, enteras y con números** (la primera y la última, debajo de su barra mientras entran, y más a
+  medida que la tarjeta crece), no «1 … 22» ni «5 al 11»; cada balde dice su período al pasar el mouse, al lector y en la tabla
+  («05/10/2026 – 11/10/2026»).
+- **Un día sin respuestas es una barrita en el tono suave**, como dice la regla («los días sin actividad»): DOC7-A pinta así los
+  días flojos, que acá son barras como las demás.
+- **La cifra va sobre la barra sólo si entra**, corta («4,4 M», «820 k»); con muchos días en el celular no hay cifras y el valor va
+  al pasar el mouse y en la tabla.
+- **Con muchos baldes las barras se juntan**: el espacio entre ellas se achica (un cuarto del ancho como mucho), así los 400 días que
+  manda el servidor entran en un teléfono. Un total negativo no tiene barra: su cifra va sobre la línea de base, sin el tono suave.
+- **Una tarjeta cuyo número o moneda no vino con estos filtros** cuenta las respuestas, con su título y «Contar» en «Cantidad», y la
+  dirección conserva su total: lo vuelve a sumar cuando los filtros lo dejan entrar.
+- **Un reparto lleva una línea entre renglones** y, donde no entra, la barra debajo del nombre; dice «38 · 31 %» también en el
+  celular, donde DOC7-A dejaba sólo la cantidad.
+- **Lo que queda va en gris y con un nombre común**: «Otras 7 opciones» (DOC7-A, «Otros 7 clientes» en verde); «Otras N
+  personas» en «Quién cargó».
+- **Los estados se llaman como en la planilla**, en singular («Aprobada», «Por aprobar», «Rechazada»), con los colores de su rol y
+  «Recibida» y «Anulada» en gris; la tarjeta aparece en un formulario con aprobación.
+- **«Contar» es una elección dentro del ⋮**, con su tilde: la cantidad o el total de un número por moneda, nunca la suma de dos
+  monedas (DOC7-A, un ítem «Contar: cantidad · total de Monto»). «Ver como tabla» pasa a «Ver como gráfico».
+- **«Quitar del tablero» no va en rojo**: no destruye nada y «Agregar gráfico» lo devuelve.
+- **El automático muestra todo** lo que sale de los tipos de las preguntas (decisión 22 y la tarea): también cada pregunta de fecha,
+  que DOC7-A ofrecía en «Agregar gráfico». Por eso «Agregar gráfico» arranca apagado, con su motivo, y se llena al quitar
+  tarjetas; agrupa «De las respuestas» y «De una pregunta», y «Volver al automático» aparece después de un ajuste.
+- **Los vacíos no explican**: «Todavía no hay respuestas», sin «El tablero se arma solo…»; sin coincidencias, «Ninguna respuesta
+  coincide» con «Limpiar todo», el mismo título y el mismo botón que la planilla de al lado (DOC7-A: «Ninguna respuesta con estos
+  filtros», «Probá con otro período o quitá filtros.» y «Limpiar filtros»).
+- **La carga ocupa su lugar** (ES1–ES3): cuatro números y tres tarjetas, no tres bloques sueltos; DOC7-A no dibuja el error, que
+  queda con «Reintentar».
+- **En el celular** «Filtros» también lleva la búsqueda, el canal y el estado; lo aplicado son chips, como en la planilla (DOC7-A,
+  «Filtros · Recibida: octubre»), y los números van de a dos (de a uno a 320 px).
+- **En inglés** «Quién cargó» es «Who submitted», como «Cargó» («Submitted by») en la planilla; DOC7-A decía «Who loaded».

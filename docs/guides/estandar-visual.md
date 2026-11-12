@@ -47,6 +47,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Ayuda contextual | `ActionTooltip` | Texto y control alcanzable con teclado; sin `title` nativo |
 | Explicación de un campo, una sección o una opción | `InfoTip`, `help` de `FormField`, `Surface`, `Page`, `CheckboxField` y `RadioGroupField` | La (i) con su tooltip; nunca un texto debajo o al costado (`hint` y `description`, sólo datos) |
 | Acción que tarda | `Button`/`IconButton` con `pending`, `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` | Aro y gerundio en el botón, confirmación abierta hasta la respuesta, filas atenuadas con la línea que corre; nunca sólo apagar el botón |
+| Gráficos de un tablero (DOC7-A) | `StatCard`, `BarChart`, `BarList` y `ChartRefreshing` (`shared/ui/charts`) | El número y su variación ya escritos, los baldes o las opciones con sus valores y fechas formateados, el título de la tarjeta y «Ver como tabla»; los colores salen de `--chart-1..5`, `--chart-quiet` y `--chart-track` |
 | Motivo de un deshabilitado | `DisabledReason`, `disabledReason` de `CheckboxField` y de una opción de `RadioGroupField`, y `disabledLabel` de `IconButton` | Motivo traducido, sólo si no es obvio, sobre el mismo control: se abre con el mouse, el foco, un clic o un toque; sin íconos ni textos al lado ni debajo (MA1-A) |
 | Conversación | `MessageHistory`, `MessageBubble`, `MessageDateDivider` | Orden/origen de los mensajes, día del perfil, formato común, estado confirmado y acciones permitidas |
 
@@ -126,6 +127,7 @@ La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el fo
 Los diálogos de baja, reactivación y eliminación de formularios aplican esta variante en móvil, con el cuerpo desplazable y el pie fuera del scroll.
 La variante `?scenario=item-table` muestra la tabla de ítems de un bloque y sus recuadros (RG2-A): vacía, con el máximo, con errores y en una columna.
 La variante `?scenario=assistant-attachment` muestra el clip y el archivo del asistente (IA4): elegido en el editor con su X, mientras viaja y en un mensaje con sus filas.
+La variante `?scenario=charts` muestra las piezas de un tablero (DOC7-A): el número con su variación, con «—» y su motivo y mientras carga; las barras por día con los días sin respuestas y sus fechas, y cuatrocientos días en una tarjeta; los repartos, los estados y sus tablas; vacío y mientras vuelve a leer.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.
 
 Preparación en otra instalación:

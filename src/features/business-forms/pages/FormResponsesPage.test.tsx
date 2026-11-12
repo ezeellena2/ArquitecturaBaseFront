@@ -15,7 +15,9 @@ import {
 } from "@/test/responseFixtures";
 import { notify } from "@/shared/ui/notifications";
 import { approvalTaskFixture, approvalTaskId, approveAndConfirm } from "@/test/approvalFixtures";
+import { dashboardFixture } from "@/test/dashboardFixtures";
 import type { ApprovalPage, ApprovalTask } from "../api/approvals";
+import type { FormDashboard } from "../api/dashboard";
 import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api/workflow";
 vi.mock("react-oidc-context", async () => ({
   ...(await vi.importActual<typeof import("react-oidc-context")>(
@@ -1124,6 +1126,23 @@ it("keeps one workflow read notification in the detail without repeating its cau
     expect(notify).toHaveBeenCalledOnce();
     expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "success", message: decision === "Approved" ? "Respuesta aprobada." : "Respuesta rechazada." });
   });
+  // DOC7-A: a decision changes what the dashboard adds up, as it changes the sheet.
+  it("reads the dashboard in sight again after a decision on the response beside it", async () => {
+    const { fixture } = setupDetailDecision();
+    let dashboards = 0;
+    server.use(http.post("/api/forms/definitions/:id/dashboard/search", async ({ request }) => {
+      dashboards++;
+      const { period } = await request.json() as { period: FormDashboard["period"] };
+      return HttpResponse.json({ ...dashboardFixture(), period });
+    }));
+    renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId + "?view=dashboard");
+    await screen.findByRole("region", { name: "Números" }, { timeout: 10_000 });
+    expect(dashboards).toBe(1);
+
+    await approveAndConfirm(within(await screen.findByRole("region", { name: "Detalle de la respuesta" })));
+    await waitFor(() => expect(fixture.writes).toHaveLength(1));
+    await waitFor(() => expect(dashboards).toBe(2));
+  }, 20_000);
   it("keeps a conflicting detail decision visible and focuses the authoritative result after one rejection attempt", async () => {
     const { fixture, complete } = setupDetailDecision();
     server.use(http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { fixture.writes.push(await request.json()); complete("Rejected", "Rocío", "La visita ya fue evaluada."); return HttpResponse.json({ code: "Forms.Approval.RevisionConflict", detail: "Otra persona ya decidió." }, { status: 409 }); }));

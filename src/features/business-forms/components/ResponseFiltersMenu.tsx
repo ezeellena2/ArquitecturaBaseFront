@@ -4,6 +4,7 @@ import { calendarDateInZone } from "@/shared/lib/dateTime";
 import { FilterPanel, type FilterPanelSection } from "@/shared/ui/FilterPanel";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { normalizeResponseQuery, receivedDateBoundary, replaceResponseCondition, type ResponseColumn, type ResponseFilter, type ResponseQuery } from "../responses";
 import { useResponseFeedback, useResponseScope } from "../hooks/useResponseQueries";
 import { ResponseFacetControl } from "./ResponseFacetControl";
@@ -61,13 +62,15 @@ function ReceivedRange({ query, zone, onApply }: { query: ResponseQuery; zone: s
  * once, as in «Columnas»: there is no draft, «Ver N respuestas» nor Cancelar, and the sheet shows it reads again. A question with
  * options, Cargó and Versión are a combo where one is chosen (PL2-A), whose name goes with the change for the owner to remember
  * (`names`): a catalog question's column does not have it. A photo, a document or a location (UB4-A) has nothing to filter since
- * «Respuesta» left.
+ * «Respuesta» left. With `quick`, the search (when the form has long texts), the channel and the state come first, for the
+ * dashboard on the phone, whose filters stay behind this one button (DOC7-A).
  */
-export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, disabled, onApply }: {
+export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, disabled, onApply, quick }: {
   formId: string; query: ResponseQuery; columns: readonly ResponseColumn[]; zone: string; names?: Names; disabled?: boolean;
   onApply: (filter: ResponseFilter, versionIds: readonly string[], names?: Names) => void;
+  quick?: { readonly search: boolean; readonly hasApproval: boolean };
 }) {
-  const { t } = useTranslation("forms");
+  const { t } = useTranslation(["forms", "formEntries"]);
   const scope = useResponseScope();
   const [facetErrors, setFacetErrors] = useState<Record<string, unknown>>({});
   const onReadError = useCallback((key: string, error: unknown) => setFacetErrors(previous => previous[key] === error ? previous : { ...previous, [key]: error }), []);
@@ -100,8 +103,26 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
     return <TypedFilter label={t("responses.contains")} maxLength={600} value={value("contains")} onCommit={text => set("contains", text.trim() ? [text] : [])}/>;
   };
   const actor = query.actorIds?.[0] ?? null, version = query.versionIds?.[0] ?? null;
+  // The quick filters of the bar, here when they cannot stay in sight (the dashboard on the phone).
+  const quickSections: FilterPanelSection[] = quick ? [
+    ...(quick.search ? [{ key: "search", label: t("responses.search"), applied: !!query.search, onClear: () => apply({ search: undefined }),
+      content: <TypedFilter label={t("responses.contains")} maxLength={100} value={query.search ?? ""} onCommit={text => apply({ search: text.trim() ? text : undefined })}/> }] : []),
+    { key: "channel", label: t("formEntries:sheet.channel"), applied: query.enteredInApp != null, onClear: () => apply({ enteredInApp: undefined }),
+      content: <NativeSelect aria-label={t("formEntries:sheet.channel")} value={query.enteredInApp == null ? "" : String(query.enteredInApp)}
+        onChange={event => apply({ enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
+        <option value="">{t("formEntries:sheet.allChannels")}</option>
+        <option value="true">{t("formEntries:sheet.channels.app")}</option>
+        <option value="false">{t("responses.whatsapp")}</option>
+      </NativeSelect> },
+    { key: "state", label: t("approvals.state"), applied: !!query.state, onClear: () => apply({ state: undefined }),
+      content: <NativeSelect aria-label={t("approvals.state")} value={query.state ?? ""} onChange={event => apply({ state: (event.target.value || undefined) as ResponseQuery["state"] })}>
+        <option value="">{t("approvals.allStates")}</option>
+        {([...quick.hasApproval ? ["Received", "PendingApproval", "Approved", "Rejected"] as const : [], "Voided"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}
+      </NativeSelect> },
+  ] : [];
   const sections: FilterPanelSection[] = [
-    { key: "received", label: t("responses.received"), applied: !!query.receivedFromUtc || !!query.receivedToUtc,
+    ...quickSections,
+    { key: "received", label: t("responses.received"), separated: quickSections.length > 0, applied: !!query.receivedFromUtc || !!query.receivedToUtc,
       onClear: () => apply({ receivedFromUtc: undefined, receivedToUtc: undefined }),
       content: <ReceivedRange query={query} zone={zone} onApply={(receivedFromUtc, receivedToUtc) => apply({ receivedFromUtc, receivedToUtc })}/> },
     // A block of rows is not filtered itself: its questions are, under its name, each by any item (RG4-A).

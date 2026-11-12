@@ -1,5 +1,5 @@
-import type { ComponentType, ReactNode, Ref } from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./dropdown-menu";
+import { useId, type ComponentType, type ReactNode, type Ref } from "react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./dropdown-menu";
 import { IconButton } from "./IconButton";
 import { MoreVerticalIcon } from "./icons";
 
@@ -16,8 +16,17 @@ export interface ActionsMenuItem {
   onSelect: () => void;
 }
 
+/// Una elección entre pocas, con su nombre y la tilde en la elegida (OE1-A): «Contar» de una tarjeta del tablero (DOC7-A).
+export interface ActionsMenuChoice {
+  choice: true;
+  label: string;
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onValueChange: (value: string) => void;
+}
+
 /// Una línea entre grupos de ítems; la de antes de lo destructivo la pone el menú.
-export type ActionsMenuEntry = ActionsMenuItem | { separator: true };
+export type ActionsMenuEntry = ActionsMenuItem | { separator: true } | ActionsMenuChoice;
 
 interface ActionsMenuProps {
   /// El nombre de ⋮: «Más acciones», «Acciones del formulario».
@@ -35,14 +44,15 @@ interface ActionsMenuProps {
   onCloseAutoFocus?: (event: Event) => void;
 }
 
-const isSeparator = (entry: ActionsMenuEntry): entry is { separator: true } => entry.separator === true;
+const isSeparator = (entry: ActionsMenuEntry): entry is { separator: true } => "separator" in entry && entry.separator === true;
+const isChoice = (entry: ActionsMenuEntry): entry is ActionsMenuChoice => "choice" in entry;
 
 /// La línea antes del primer ítem destructivo, si no la tiene.
 function withLineBeforeDestructive(items: readonly ActionsMenuEntry[]): ActionsMenuEntry[] {
   const entries: ActionsMenuEntry[] = [];
   for (const entry of items) {
     const previous = entries.at(-1);
-    if (!isSeparator(entry) && entry.destructive && previous && !isSeparator(previous) && !previous.destructive) entries.push({ separator: true });
+    if (!isSeparator(entry) && !isChoice(entry) && entry.destructive && previous && !isSeparator(previous) && (isChoice(previous) || !previous.destructive)) entries.push({ separator: true });
     entries.push(entry);
   }
   return entries;
@@ -62,10 +72,24 @@ export function ActionsMenu({ label, items, note, triggerRef, pending, disabled,
       <DropdownMenuContent align="end" onCloseAutoFocus={onCloseAutoFocus}>
         {withLineBeforeDestructive(items).map((entry, index) => isSeparator(entry)
           ? <DropdownMenuSeparator key={`separator-${index}`} />
+          : isChoice(entry) ? <ActionsMenuChoiceGroup key={`${entry.label}-${index}`} choice={entry} />
           : <ActionsMenuEntryItem key={`${entry.label}-${index}`} item={entry} />)}
         {note ? <DropdownMenuLabel className="max-w-64 whitespace-normal">{note}</DropdownMenuLabel> : null}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/// El nombre de la elección, alineado con el texto de sus opciones, nombra el grupo; elegir una cierra el menú.
+function ActionsMenuChoiceGroup({ choice }: { choice: ActionsMenuChoice }): ReactNode {
+  const id = useId();
+  return (
+    <>
+      <DropdownMenuLabel id={id} inset className="text-xs text-[var(--color-content-muted)]">{choice.label}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup aria-labelledby={id} value={choice.value} onValueChange={choice.onValueChange}>
+        {choice.options.map(option => <DropdownMenuRadioItem key={option.value} value={option.value}>{option.label}</DropdownMenuRadioItem>)}
+      </DropdownMenuRadioGroup>
+    </>
   );
 }
 

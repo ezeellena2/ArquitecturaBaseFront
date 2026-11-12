@@ -33,6 +33,7 @@ import { AssistantRecorder } from "@/shared/ui/assistant/AssistantRecorder";
 import { CatalogDisabledReasons } from "./CatalogDisabledReasons";
 import { CatalogItemTable } from "./CatalogItemTable";
 import { CatalogAssistantAttachment } from "./CatalogAssistantAttachment";
+import { CatalogCharts } from "./CatalogCharts";
 
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
@@ -43,6 +44,7 @@ export function Catalog() {
   const itemPieces = new URLSearchParams(location.search).get("scenario") === "item-table";
   const reasonPieces = new URLSearchParams(location.search).get("scenario") === "disabled-reasons";
   const attachmentPieces = new URLSearchParams(location.search).get("scenario") === "assistant-attachment";
+  const chartPieces = new URLSearchParams(location.search).get("scenario") === "charts";
   const [confirm, setConfirm] = useState(false);
   const [recording] = useState(() => new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], { type: "audio/webm" }));
   const [formOpen, setFormOpen] = useState(false);
@@ -163,6 +165,8 @@ export function Catalog() {
       {reasonPieces ? <CatalogDisabledReasons /> : null}
       {/* IA4 (Stage 2): the clip and the file, in the composer and in a message. */}
       {attachmentPieces ? <CatalogAssistantAttachment /> : null}
+      {/* DOC7-A: the pieces of a chart, the number with its change, the bars by period and the bars of a distribution. */}
+      {chartPieces ? <CatalogCharts /> : null}
       <Surface title={pieces.dialogs} padded actions={<>
         <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
         <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>

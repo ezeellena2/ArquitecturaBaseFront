@@ -927,7 +927,9 @@
     "clear": "Limpiar todo",
     "tabs": {
       "pending": "Por aprobar ({{count}})",
-      "all": "Todas"
+      "all": "Todas",
+      "responses": "Respuestas ({{count}})",
+      "dashboard": "Tablero"
     },
     "receivedFrom": "Recibida desde",
     "receivedTo": "Recibida hasta",
@@ -1734,5 +1736,69 @@
     "voidDescription": "Se emite una nota de crédito por el total del comprobante de {{number}}, que lo anula. No se puede deshacer.",
     "voidRequested": "Se está anulando {{number}}.",
     "creditNoteRequested": "Se está emitiendo la nota de crédito de {{number}}."
+  },
+  "dashboard": {
+    "period": "Período",
+    "periods": { "day": "Día", "week": "Semana", "month": "Mes" },
+    "numbers": "Números",
+    "cards": "Gráficos",
+    "titles": {
+      "received": { "day": "Cuántas llegaron, por día", "week": "Cuántas llegaron, por semana", "month": "Cuántas llegaron, por mes" },
+      "receivedTotal": { "day": "Total de {{number}}, por día", "week": "Total de {{number}}, por semana", "month": "Total de {{number}}, por mes" },
+      "date": { "day": "Por día de {{question}}", "week": "Por semana de {{question}}", "month": "Por mes de {{question}}" },
+      "dateTotal": { "day": "Total de {{number}}, por día de {{question}}", "week": "Total de {{number}}, por semana de {{question}}", "month": "Total de {{number}}, por mes de {{question}}" },
+      "choice": "Por {{question}}",
+      "choiceTotal": "Total de {{number}}, por {{question}}",
+      "actors": "Quién cargó",
+      "states": "Por estado"
+    },
+    "catalogQuestion": "{{question}} (catálogo {{catalog}})",
+    "numberCurrency": "{{number}} ({{currency}})",
+    "numberWithoutCurrency": "{{number}} (sin moneda)",
+    "stats": {
+      "count": "Respuestas",
+      "total": "Total de {{number}}",
+      "average": "Promedio de {{number}}",
+      "range": "Mínimo y máximo de {{number}}",
+      "rangeValue": "{{minimum}} · {{maximum}}",
+      "change": "{{change}} que {{period}}",
+      "zero": "0 en {{period}}",
+      "overflow": "Demasiado grande para calcularlo."
+    },
+    "range": "{{from}} – {{to}}",
+    "menu": {
+      "label": "Acciones de «{{title}}»",
+      "count": "Contar",
+      "quantity": "Cantidad",
+      "total": "Total de {{number}}",
+      "table": "Ver como tabla",
+      "chart": "Ver como gráfico",
+      "remove": "Quitar del tablero"
+    },
+    "add": "Agregar gráfico",
+    "addNone": "Todos los gráficos ya están en el tablero.",
+    "addResponses": "De las respuestas",
+    "addQuestions": "De una pregunta",
+    "addReceived": "Cuántas llegaron",
+    "describe": {
+      "received": { "day": "Cantidad por día", "week": "Cantidad por semana", "month": "Cantidad por mes" },
+      "number": { "day": "Total por día", "week": "Total por semana", "month": "Total por mes" },
+      "date": { "day": "Cantidad por día", "week": "Cantidad por semana", "month": "Cantidad por mes" },
+      "dateTotal": { "day": "Cantidad o total, por día", "week": "Cantidad o total, por semana", "month": "Cantidad o total, por mes" },
+      "choice": "Cantidad por opción",
+      "choiceTotal": "Cantidad o total, por opción",
+      "actors": "Cantidad por persona",
+      "states": "Cantidad por estado"
+    },
+    "automatic": "Volver al automático",
+    "table": { "option": "Opción", "person": "Persona", "state": "Estado", "count": "Cantidad", "share": "%" },
+    "others_one": "Otra opción",
+    "others_other": "Otras {{count}} opciones",
+    "otherPeople_one": "Otra persona",
+    "otherPeople_other": "Otras {{count}} personas",
+    "noAnswers": "Sin respuestas",
+    "truncated": { "day": "Se ven los últimos {{count}} días.", "week": "Se ven las últimas {{count}} semanas.", "month": "Se ven los últimos {{count}} meses." },
+    "overflowNote": "Algunos totales son demasiado grandes para calcularlos y van con «—».",
+    "loadFailed": "No pudimos cargar el tablero."
   }
 }

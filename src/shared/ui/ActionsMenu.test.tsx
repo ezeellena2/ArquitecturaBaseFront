@@ -67,6 +67,25 @@ describe("ActionsMenu", () => {
     expect(within(menu).getByText("No se puede eliminar: tiene respuestas.")).toBeVisible();
   });
 
+  // DOC7-A: «Contar» of a card of the dashboard is one choice among a few, with the tick on the chosen one (OE1-A).
+  it("offers a choice by its name, with the chosen one ticked, and gives the one picked", async () => {
+    const onValueChange = vi.fn();
+    renderWithProviders(<ActionsMenu label="Acciones de «Por banco»" items={[
+      { choice: true, label: "Contar", value: "count", options: [{ value: "count", label: "Cantidad" }, { value: "amount", label: "Total de Monto (pesos)" }], onValueChange },
+      { separator: true },
+      { label: "Ver como tabla", onSelect: vi.fn() },
+      { label: "Anular", destructive: true, onSelect: vi.fn() },
+    ]} />);
+
+    const { menu } = await open("Acciones de «Por banco»");
+    const group = within(menu).getByRole("group", { name: "Contar" });
+    expect(within(group).getByRole("menuitemradio", { name: "Cantidad" })).toHaveAttribute("aria-checked", "true");
+    expect(within(menu).getAllByRole("separator")).toHaveLength(2);
+    await userEvent.click(within(group).getByRole("menuitemradio", { name: "Total de Monto (pesos)" }));
+
+    expect(onValueChange).toHaveBeenCalledWith("amount");
+  });
+
   it("gives the focus back to ⋮ when it closes", async () => {
     renderWithProviders(<ActionsMenu label="Más acciones" items={[{ label: "Corregir", onSelect: vi.fn() }]} />);
 

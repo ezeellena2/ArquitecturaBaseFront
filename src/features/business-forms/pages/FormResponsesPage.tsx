@@ -1,9 +1,8 @@
-import { useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useContext, useLayoutEffect, useRef, useState } from "react";
 import { Link, Navigate, useMatch, useNavigate, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { DocumentIcon } from "@/shared/ui/icons";
 import { fetchResponseSheet } from "../api/responses";
 import { FormPendingApprovals } from "../components/FormPendingApprovals";
@@ -21,8 +20,6 @@ import { Surface } from "@/shared/ui/Surface";
 import { CellText } from "@/shared/ui/CellText";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
-import { FilterBar } from "@/shared/ui/FilterBar";
-import { SearchInput } from "@/shared/ui/SearchInput";
 import { Button } from "@/shared/ui/button";
 import { PublicWhatsAppIcon } from "@/shared/ui/icons";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -33,21 +30,27 @@ import { useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueri
 import { useRereadSignal } from "../hooks/useRereadSignal";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
-import { FilterChip } from "@/shared/ui/FilterChip";
+import { formDashboardKeyRoot } from "../hooks/formDashboardKey";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
-import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseResultColumnId, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
+import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseHasFilters, responseResultColumnId, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
 import { responseResultColumnLabel, responseResultText } from "../responseResults";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
 import { responseCorrectionPath, responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
-import { ResponseFiltersMenu } from "../components/ResponseFiltersMenu";
+import { ResponseFilterBar } from "../components/ResponseFilterBar";
+import { DashboardFilterBar } from "../components/dashboard/DashboardFilterBar";
+import { DashboardSkeleton } from "../components/dashboard/DashboardSkeleton";
+import { dashboardFrame } from "../components/dashboard/dashboardLayout";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
 import { FormEntryPanel } from "../components/FormEntryPanel";
 import { FormEntryCorrectionPanel } from "../components/FormEntryCorrectionPanel";
+// The dashboard (DOC7-A) loads when its tab opens: the sheet does not pay for its charts. Its bar is not in that chunk: while
+// the charts arrive the page draws it over the skeleton, as the dashboard does, so nothing jumps on the first open.
+const FormDashboard = lazy(async () => ({ default: (await import("../components/dashboard/FormDashboard")).FormDashboard }));
 export function FormResponsesPage() {
   const { formId = "" } = useParams();
   const { t, i18n } = useTranslation(["forms", "formEntries"]);
@@ -81,7 +84,8 @@ export function FormResponsesPage() {
   // rows, Reintentar goes back to the first load's spinner.
   const reread = useRereadSignal(query);
   const refreshing = query.isPlaceholderData || query.isError && query.isFetching || reread.rereading;
-  const readAgain = () => { reread.mark(); void query.refetch(); };
+  // A decision or a saved response also changes what the dashboard adds up (DOC7-A).
+  const readAgain = () => { reread.mark(); void query.refetch(); void client.invalidateQueries({ queryKey: formDashboardKeyRoot(scope.owner, formId) }); };
   const canCreate = !!scope.user?.permissions.includes("formrecords.create");
   const addResponse = () => mobile
     ? navigate("/formularios/" + formId + "/cargar", { state: { from: "sheet" } })
@@ -90,12 +94,18 @@ export function FormResponsesPage() {
   const workspace = useContext(ResponseWorkspaceContext);
   // Who sees responses and approves has two tabs (board PL1-A): «Por aprobar (N)», the same query as its table, and «Todas».
   // The sheet opens in «Por aprobar» when there is something to decide and otherwise in «Todas»; the tab goes in the address.
+  // «Tablero» follows (DOC7-A): for whoever reads or loads; next to «Respuestas (N)» when there is nothing to approve.
   const decide = !!scope.user?.permissions.includes("formapprovals.decide");
   const pending = useFormPendingApprovals(formId, Math.max(1, Number(route.params.get("approvalPage") ?? 1) || 1),
     Math.max(1, Number(route.params.get("approvalPageSize") ?? 20) || 20), route.params.get("approval") ?? undefined, decide);
   const pendingCount = pending.query.data?.totalCount;
   const tabs = decide && !pending.forbidden;
-  const view = route.params.get("view") ?? (route.params.get("approval") ? "pending" : pendingCount !== undefined ? pendingCount > 0 ? "pending" : "all" : pending.query.isError ? "all" : undefined);
+  const view = route.params.get("view") === "dashboard" ? "dashboard" : !tabs ? "all"
+    : route.params.get("view") ?? (route.params.get("approval") ? "pending" : pendingCount !== undefined ? pendingCount > 0 ? "pending" : "all" : pending.query.isError ? "all" : undefined);
+  // The dashboard opens without a response or a load beside it; going back to the sheet without approvals takes `view` away.
+  const changeView = (next: string) => next === "dashboard"
+    ? update({ view: next, approval: undefined, tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas" })
+    : update({ view: next === "all" && !tabs ? undefined : next, approval: undefined, tab: undefined });
   useBreadcrumbLeaf(query.data?.name);
   useLayoutEffect(() => {
     if (!baseMatch || recordId || workspace?.fullEntry?.locationKey === null || workspace?.navigation?.origin !== "sheet" || !workspace.fullEntry || !query.data || query.isPlaceholderData) return;
@@ -119,15 +129,7 @@ export function FormResponsesPage() {
   // RE1-A: a column per datum an external action left, after the questions; a dash in a response without it.
   const resultColumns = visibleResponseResultColumns(data?.resultColumns, route.selection);
   const visibleCatalogFields = displayColumns.flatMap(column => column.catalogField ? [{ questionId: column.question.fieldId, fieldId: column.catalogField.fieldId }] : []);
-  const hasFilters =
-    !!route.query.state ||
-    route.query.enteredInApp != null ||
-    !!route.query.search ||
-    !!route.query.conditions?.length ||
-    !!route.query.actorIds?.length ||
-    !!route.query.versionIds?.length ||
-    !!route.query.receivedFromUtc ||
-    !!route.query.receivedToUtc;
+  const hasFilters = responseHasFilters(route.query);
   const rememberSheet = (recordId: string, page?: number, intent?: "pdf") => {
     const params = new URLSearchParams(route.params); params.delete("approval");
     if (page !== undefined) { if (page === 1) params.delete("page"); else params.set("page", String(page)); }
@@ -218,48 +220,14 @@ export function FormResponsesPage() {
     "field",
     route.query.sortFieldId ?? "field",
   );
-  // The search, the channel and the state stay in sight, side by side; the rest goes in «Filtros», which applies each change
-  // at once, and what is applied is a chip under the bar with «Limpiar todo», as in Usuarios. The count is at the foot.
+  // The filters are the ones «Tablero» shares (ResponseFilterBar); «Columnas» goes at the end. The count is at the foot.
   const sheet = <>
-    <FilterBar className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        {!data || data.columns.some((column) => column.type === "longText") ? (
-          <div className="w-full sm:w-72">
-            <SearchInput maxLength={100} value={route.query.search ?? ""} label={t("responses.search")}
-              onChange={(search) => route.setFilter({ ...route.query, search: search || undefined })}/>
-          </div>
-        ) : null}
-        {/* «Canal» is one more quick filter (CW6-A): App or WhatsApp. */}
-        <div className="w-full sm:w-44"><NativeSelect aria-label={t("formEntries:sheet.channel")} value={route.query.enteredInApp == null ? "" : String(route.query.enteredInApp)}
-          onChange={event => route.setFilter({ ...route.query, enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
-          <option value="">{t("formEntries:sheet.allChannels")}</option>
-          <option value="true">{t("formEntries:sheet.channels.app")}</option>
-          <option value="false">{t("responses.whatsapp")}</option>
-        </NativeSelect></div>
-        {/* Voided responses only show with «Estado: Anulada» (CW11-A); the approval states, when the form asks for approval. */}
-        <div className="w-full sm:w-44"><NativeSelect aria-label={t("approvals.state")} value={route.query.state ?? ""} onChange={event => route.setFilter({ ...route.query, state: (event.target.value || undefined) as typeof route.query.state })}><option value="">{t("approvals.allStates")}</option>{([...data?.hasApproval ? ["Received", "PendingApproval", "Approved", "Rejected"] as const : [], "Voided"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}</NativeSelect></div>
-        <ResponseFiltersMenu formId={formId} query={route.query} columns={data?.columns ?? []} zone={scope.user?.timeZoneId ?? "UTC"} names={route.names} disabled={!data} onApply={route.setFilter}/>
-        <div className="sm:ml-auto">
-          <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
-            resultColumns={data?.resultColumns} visibleResults={resultColumns}
-            onChange={(ids) => route.setColumns(data?.columns ?? [], ids, data?.resultColumns)}/>
-        </div>
-      </div>
-      {hasFilters ? (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-3">
-          {appliedFilters.map(filter => <FilterChip key={filter.key} removeLabel={t("responses.remove", { name: filter.label })} onRemove={() => {
-            if (filter.key === "version") route.setFilter(route.query, []);
-            else if (filter.key === "state") route.setFilter({ ...route.query, state: undefined });
-            else if (filter.key === "channel") route.setFilter({ ...route.query, enteredInApp: undefined });
-            else if (filter.key === "actor") route.setFilter({ ...route.query, actorIds: [] });
-            else if (filter.key === "received") route.setFilter({ ...route.query, receivedFromUtc: undefined, receivedToUtc: undefined });
-            else if (filter.key === "search") route.setFilter({ ...route.query, search: undefined });
-            else route.setFilter({ ...route.query, conditions: route.query.conditions?.filter(item => item.fieldId !== filter.key) });
-          }}>{filter.label}</FilterChip>)}
-          <Button type="button" variant="muted-link" size="inline" onClick={() => route.setFilter({}, [])}>{t("responses.clear")}</Button>
-        </div>
-      ) : null}
-    </FilterBar>
+    <ResponseFilterBar formId={formId} route={route} columns={data?.columns ?? []} loaded={!!data} versions={data?.versions} hasApproval={!!data?.hasApproval}
+      zone={scope.user?.timeZoneId ?? "UTC"} trailing={<div className="sm:ml-auto">
+        <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
+          resultColumns={data?.resultColumns} visibleResults={resultColumns}
+          onChange={(ids) => route.setColumns(data?.columns ?? [], ids, data?.resultColumns)}/>
+      </div>}/>
     <Surface>
       <DataTable
         columns={columns}
@@ -326,17 +294,22 @@ export function FormResponsesPage() {
         </> : undefined
       }
     >
-      {/* Changing tab closes a chosen task, but keeps the page of each one. Both stay mounted: losing the permission to
-          decide takes the tabs away and leaves the notice of the queue, with the response being read, over the sheet. */}
-      {decide ? <Tabs value={view ?? ""} onValueChange={next => update({ view: next, approval: undefined, tab: undefined })}>
-        {tabs ? <TabsList aria-label={t("responses.title")}>
-          <TabsTrigger value="pending">{pendingCount === undefined ? t("overview.pendingColumn") : t("responses.tabs.pending", { count: pendingCount })}</TabsTrigger>
-          <TabsTrigger value="all">{t("responses.tabs.all")}</TabsTrigger>
-        </TabsList> : null}
+      {/* Changing tab closes a chosen task, but keeps the page of each one. The approvals and the sheet stay mounted: losing the
+          permission to decide takes their tabs away and leaves the notice of the queue, with the response being read, over the
+          sheet. «Tablero» reads only while it is open (DOC7-A). */}
+      <Tabs value={view ?? ""} onValueChange={changeView}>
+        <TabsList aria-label={t("responses.title")}>
+          {tabs ? <TabsTrigger value="pending">{pendingCount === undefined ? t("overview.pendingColumn") : t("responses.tabs.pending", { count: pendingCount })}</TabsTrigger> : null}
+          <TabsTrigger value="all">{tabs ? t("responses.tabs.all") : data ? t("responses.tabs.responses", { count: data.records.totalCount }) : t("responses.title")}</TabsTrigger>
+          <TabsTrigger value="dashboard">{t("responses.tabs.dashboard")}</TabsTrigger>
+        </TabsList>
         {tabs && view === undefined ? <Spinner/> : null}
-        <TabsContent value="pending" forceMount hidden={tabs && view !== "pending"}><FormPendingApprovals formId={formId} onDecided={readAgain} inTab={tabs} pending={pending}/></TabsContent>
-        <TabsContent value="all" forceMount hidden={tabs && view !== "all"}>{sheet}</TabsContent>
-      </Tabs> : sheet}
+        {decide ? <TabsContent value="pending" forceMount hidden={view === "dashboard" || tabs && view !== "pending"}><FormPendingApprovals formId={formId} onDecided={readAgain} inTab={tabs} pending={pending}/></TabsContent> : null}
+        <TabsContent value="all" forceMount hidden={view === "dashboard" || tabs && view !== "all"}>{sheet}</TabsContent>
+        <TabsContent value="dashboard">{view === "dashboard" ? <Suspense fallback={<div className={dashboardFrame}><DashboardFilterBar formId={formId} route={route} sheet={data}/><DashboardSkeleton/></div>}>
+          <FormDashboard formId={formId} route={route} sheet={data}/>
+        </Suspense> : null}</TabsContent>
+      </Tabs>
       {panel === "export" && data ? (
         <ResponseExportDialog
           formId={formId}
