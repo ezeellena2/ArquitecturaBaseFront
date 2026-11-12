@@ -131,7 +131,7 @@ explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `
 `appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
-(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `FormField beside` y `FormSkeleton stacked` (IA1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
+(OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `FormField beside` y `FormSkeleton stacked` (IA1-A), el tooltip que conserva sus renglones (RO1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
 de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`, `AlertTriangle`, `Clock`, `Ban`, `Eye`,
 `CheckCheck`, `Send`, `Link`, `Bell`, `ExternalLink`; tokens `success-*`, `warning-*`, `danger-700`; y las piezas posteriores al 2026-10-02.
 
@@ -415,15 +415,20 @@ crecen todos a 44 px en móvil.
 ### Roles
 
 - Listado: Rol muestra solo el nombre, sin “Del sistema”. `RowActions`: Admin “Ver”, User “Editar”, ninguno “Eliminar”.
-- Editor: datos en `Surface padded`, Descripción debajo de Nombre (672 px máximo), sin insignia para Admin y User;
-  búsqueda y filtro Elegidos en una barra como `UsersFilterBar`. Una tabla con encabezados Permiso, Descripción y Asignado una vez; cada
-  área es un `tbody` con `aria-labelledby`, abierto o cerrado. En móvil, 520 px mínimos con scroll contenido.
-- Cancelar y Guardar en la banda de `Page`. Guardar se habilita solo con cambios, sin «Cambios sin guardar» junto al título.
-- El check de sección admite vacío, parcial y completo; actúa sobre toda el área, aun cerrada o filtrada, y no toca otras.
-  Admin ve los checks deshabilitados.
-- Encabezados de área con `TableRow tone="section"` (derivado de la cabecera de Apariencia), igual abiertos o cerrados.
-- Un `Button` outline con `ChevronDownIcon` alterna Expandir todo / Contraer todo sobre todas las áreas. Una búsqueda
-  nueva abre los resultados, que se pueden plegar enseguida; sin coincidencias se deshabilita.
+- Editor: datos en `Surface padded`, Descripción debajo de Nombre (672 px máximo), sin insignia para Admin y User; la
+  descripción lleva un ejemplo como placeholder. Cancelar y Guardar en la banda de `Page`; Guardar se habilita solo con
+  cambios, sin «Cambios sin guardar» junto al título.
+- **Los permisos, en una matriz** ([RO1-A, 2026-11-11](roles-y-permisos.md)): una fila por área con Área, Ver
+  (`<área>.read`), Administrar (`<área>.manage`) y «Otros permisos» (el resto, con su nombre); «—» donde el área no tiene
+  ese permiso, y sin módulos la columna de otros permisos no aparece. Sin buscador, filtros ni áreas que se pliegan: con
+  todos los módulos son 13 filas y el rol entra en una pantalla. «Área» tiene ancho fijo y la última columna se queda con
+  el sobrante; Ver y Administrar, con la casilla al principio de la celda.
+- La casilla del área, al principio de la fila, admite vacío, parcial y completo y actúa sobre toda el área; un área de
+  un solo permiso no la tiene. Qué permite cada permiso va en la (i) del área, un permiso por renglón.
+- Desde 768 px la matriz; más angosto, una banda por área (`TableRow tone="section"`) con su (i) y la casilla del área a
+  la derecha, y sus permisos debajo, con el nombre entero y 44 px para tocar, sin desplazar de costado.
+- Admin se lee: una tilde donde tiene el permiso, sin casillas ni botones, y por qué no se cambia en la (i) del título.
+  User: el nombre de solo lectura, con el porqué en la (i) de «Nombre».
 
 ### Configuración general (2026-09-30)
 
@@ -584,7 +589,8 @@ Sin elección; no se implementan sin ella.
 | Avisos | Toaster y estados comunes | Adopción parcial; el tipo de cada aviso, [AV1-A implementado](#avisos-según-el-tipo--2026-11-08) |
 | Anatomía; Encabezados, íconos y color; Las mismas piezas | `index.css`, `shared/ui`, 17 íconos | Implementado; biblioteca pendiente |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno |
-| Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado |
+| Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado; los permisos del editor los reemplaza RO1-A |
+| Roles y permisos · RO1-A y RO2, en el lienzo aparte «Roles y permisos: rediseño» | `PermissionPicker` y `RoleEditorPage` | [Implementado](roles-y-permisos.md) el 2026-11-11; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | WhatsApp · Ingreso, Perfil, Usuarios con teléfono | `/login`, `/perfil`, diálogos de usuario | Implementado; mensajes por adoptar. El perfil y los medios de ingreso de usuario los reemplaza PF1-A |
 | Mi perfil · PF1-A, en el lienzo provisorio «Formularios desde la app» | `/perfil` y «Editar usuario» | [Implementado](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03); falta pasarlo al lienzo del sistema visual |
 | WhatsApp · El enlace del chat | `/ingresar` (`Spinner` de 20 px; el tablero, 28) | Compatibilidad: ya no se emiten enlaces |
@@ -638,6 +644,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Acciones de fila | **Un grupo**, rojo al interactuar |
 | Paso de página | **Flechas** con nombre completo en `aria-label` |
 | Alta y edición de un rol | **Pantalla propia** |
+| Permisos de un rol | **Matriz** Área · Ver · Administrar · Otros permisos (RO1-A, 2026-11-11), sobre un nivel por área (RO1-B) y la lista de áreas con sus permisos (RO1-C) |
 | Chat de Inicio | **assistant-ui** |
 
 
@@ -932,9 +939,9 @@ deshabilitada».
 | Catálogos: Estado; Respuestas: Canal y Estado | Ya eran desplegables simples; no cambian | `CatalogsPage`, `FormResponsesPage` |
 | Segmentados de Usuarios (estado), Catálogos (origen), Formularios, Diseñar formularios, Formularios que faltan y WhatsApp | Quedan, con la cantidad de cada conjunto donde la tenían, rellenos en la elegida (OE1-A) | `SegmentedControl` |
 
-No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven), las condiciones de una regla o
-una sugerencia, que pueden elegir varias opciones, y «Elegidos · N» del selector de permisos de un rol, que dice cuántos
-permisos se eligieron.
+No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven) y las condiciones de una regla o
+una sugerencia, que pueden elegir varias opciones. «Elegidos · N», el filtro del selector de permisos de un rol, se fue con
+la matriz (RO1-A, 2026-11-11).
 
 ## Comparaciones lado a lado — 2026-11-03
 

@@ -148,7 +148,8 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   Tokens en memoria. Los permisos del front son experiencia; decide el backend.
 - Tailwind y tokens de `index.css`; `shared/ui` sin colores propios. Clases con `cn` (de `shared/lib/utils`), sin `clsx` ni `tailwind-merge`.
 - Un `fieldset` con rótulo propio deja el `legend` en `sr-only` y dibuja la banda con `aria-hidden`. Nunca `fieldset` en
-  una tabla: en `PermissionPicker` cada área es un `tbody` con `aria-labelledby`.
+  una tabla: en las bandas de `PermissionPicker` (el celular) cada área es un `tbody` con `aria-labelledby`, y en su matriz
+  (escritorio) la nombra un `TableRowHeader`.
 - **Tests:** Vitest y Testing Library por rol y texto; MSW para HTTP. Radix se abre con teclado (foco y `{Enter}`), no con
   `userEvent.click`. `src/test/setup.ts` simula `matchMedia`, `ResizeObserver` y `scrollIntoView`. Una ruta `lazy` no pinta
   sincrónicamente: `findBy*` o `waitFor`.

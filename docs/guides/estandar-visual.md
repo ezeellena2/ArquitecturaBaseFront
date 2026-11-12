@@ -52,17 +52,17 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 
 `Surface` no recibe clases ni estilos de apariencia. Su banda puede crecer con el título en móvil.
 `DataTable` vive en esa superficie; sus vacíos y errores usan `EmptyState embedded`, sin otro borde dentro.
-Configuración reúne preferencias regionales, listados y registro en tres `Surface` con banda y margen interno, y una única cabecera con guardado explícito. La revisión compara los cuatro ajustes con la tabla común. Roles separa los datos del rol, los filtros y la tabla de permisos en sus contenedores compartidos.
+Configuración reúne preferencias regionales, listados y registro en tres `Surface` con banda y margen interno, y una única cabecera con guardado explícito. La revisión compara los cuatro ajustes con la tabla común. Roles separa los datos del rol y sus permisos en dos `Surface`, sin barra de filtros entre ellas.
 El pedido del 2026-10-01 delimita los campos con borde y margen interno, sin exigir una banda
 ni repetir el título de Page. El cuerpo de las tablas alterna blanco y el tono Campo suave con
-`table-row-alternate`; `table-row-hover` marca la interacción y selección/bandas mantienen prioridad. Por elección del
-2026-10-03, el selector de permisos de Roles usa TableBody striped=false para los permisos blancos.
-La aclaración posterior diferencia encabezados de área con TableRow tone="section" y
-highlightExpanded=false: tono más suave que el encabezado principal, adaptado a la paleta global.
+`table-row-alternate`; `table-row-hover` marca la interacción y selección/bandas mantienen prioridad. Los permisos de un
+rol son una matriz con el alternado común, una fila por área con `TableRowHeader` (RO1-A, 2026-11-11, en
+[roles y permisos](../design/roles-y-permisos.md)). En el celular cada área es una banda `TableRow tone="section"` con
+`highlightExpanded=false` y sus permisos blancos debajo (`TableBody striped=false`), como eligió el usuario el 2026-10-03
+para la tabla anterior.
 Mi perfil se arma como Configuración (PF1-A, 2026-11-03): sus zonas una debajo de la otra, con `Surface`, los campos del
 ancho de lo que llevan (en el celular, todo el ancho) y Guardar en la banda, apagado sin cambios. Los medios de ingreso y el
 chat de WhatsApp se leen en `AccountRows`, la misma pieza que «Editar usuario».
-El resumen lateral anterior de Roles se retiró con su componente y sus tests: la selección vive en la tabla aprobada.
 
 ## Medidas y variantes
 
