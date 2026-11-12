@@ -5,7 +5,7 @@ import { toFormReplyPresentation, type FormReplyPresentation } from "./formReply
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import type { MapPoint } from "@/shared/lib/mapPoint";
-import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing } from "../api/chat";
+import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing, ReceivedDocument } from "../api/chat";
 
 const deliveryStates = {
   Pending: "pending", Sending: "pending", Accepted: "sent", Sent: "sent", Delivered: "delivered",
@@ -22,6 +22,10 @@ interface TimelineContent {
   audio: ChatAudio | null;
   /** A received spreadsheet: its name, or null once its content expired. */
   spreadsheetName: string | null;
+  /** Task 8 of the documents: what a received document is, or null once its content expired and in every other message. */
+  document: ReceivedDocument | null;
+  /** DOC4: whether «No se leyó…» goes under it: the last of the documents a number without a linked account sent in a row. */
+  notReadLine: boolean;
   assistant: AssistantExplanation | null;
   /** AS4: «Por qué respondió esto» of a reply of the agent, as the server keeps it. */
   assistantReply: AssistantReply | null;
@@ -54,6 +58,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
   const items: TimelineItem[] = messages.map(message => ({
     audio: message.kind === "Audio" ? message.audio : null,
     spreadsheetName: message.kind === "Spreadsheet" ? message.spreadsheetName ?? null : null,
+    document: message.kind === "ReceivedDocument" ? message.document ?? null : null,
+    notReadLine: false,
     messageId: message.id,
     quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
     assistant: message.purpose === "Access" ? null : message.assistant,
@@ -72,6 +78,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
   for (const operation of outgoing) items.push({
     audio: null,
     spreadsheetName: null,
+    document: null,
+    notReadLine: false,
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     assistantReply: operation.assistantReply ?? null,
@@ -80,7 +88,11 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,
     delivery: deliveryStatus(operation.state),
   });
-  return items.sort(byInstant);
+  items.sort(byInstant);
+  // DOC4: what a number without a linked account sends in a row is said once, under the last of its documents.
+  const notRead = (item: TimelineItem | undefined) => item?.document?.reasonCode === "notLinked" && item.purpose !== "Access";
+  for (const [index, item] of items.entries()) item.notReadLine = notRead(item) && !notRead(items[index + 1]);
+  return items;
 }
 
 /** AS4: the lines of what the assistant decided without a message go in the history by their instant. Without them, the same list. */

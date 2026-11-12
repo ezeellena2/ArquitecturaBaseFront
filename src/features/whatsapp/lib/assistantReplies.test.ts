@@ -49,6 +49,8 @@ describe("why the assistant handed off", () => {
     ["unknown", null, "No encontró la respuesta en lo cargado"],
     ["button", "Hablar con alguien", "Tocó «Hablar con alguien»"],
     ["button", null, "Lo derivó el asistente"],
+    // Task 8 of the documents: a linked account that can neither load nor build forms sent a document.
+    ["documentNotAllowed", null, "La cuenta no puede cargar documentos"],
     ["somethingNew", "PRIVATE", "Lo derivó el asistente"],
   ])("says the reason of %s without «Motivo:»", (code, reason, expected) => {
     expect(handoffReasonText(t, code, reason)).toBe(expected);
@@ -56,5 +58,6 @@ describe("why the assistant handed off", () => {
   it("says what was tapped in English too", async () => {
     await i18n.loadLanguages("en");
     expect(handoffReasonText(i18n.getFixedT("en", "whatsappAssistant") as TFunction<"whatsappAssistant">, "button", "Talk to someone")).toBe("They tapped «Talk to someone»");
+    expect(handoffReasonText(i18n.getFixedT("en", "whatsappAssistant") as TFunction<"whatsappAssistant">, "documentNotAllowed", null)).toBe("The account can't load documents");
   });
 });

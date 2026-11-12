@@ -78,3 +78,31 @@ it("attributes Assistant explicitly across pending and confirmed messages withou
 it("does not infer Assistant from a system message without a human operator", () => {
   expect(buildTimeline([{ ...message("system", "2026-10-17T12:00:00Z"), origin: "Conversation" }], [])[0].author).toBe("automatic");
 });
+
+// Task 8 of the documents: only a received document carries its name, its kind and its pages into the history.
+it("carries the descriptor of a received document only on a received document", () => {
+  const document = { name: "comprobante-la-posta.pdf", kind: "pdf" as const, pages: 2 };
+  const [received, text, pending] = buildTimeline([
+    { ...message("received", "2026-11-12T12:00:00Z"), direction: "Inbound", kind: "ReceivedDocument", body: "Te paso el pago de La Posta", document },
+    { ...message("text", "2026-11-12T12:01:00Z"), document },
+  ], [outgoing("pending", "2026-11-12T12:02:00Z")]);
+  expect(received).toMatchObject({ kind: "ReceivedDocument", body: "Te paso el pago de La Posta", document });
+  expect(text.document).toBeNull();
+  expect(pending.document).toBeNull();
+});
+
+// DOC4: what a number without a linked account sends in a row is said once, under the last of its documents.
+it("draws the line of DOC4 only under the last of consecutive documents that were not read", () => {
+  const notRead = (id: string, at: string): ChatMessage => ({ ...message(id, at), direction: "Inbound", kind: "ReceivedDocument", body: null,
+    document: { kind: "jpeg", pages: 1, reasonCode: "notLinked" } });
+  const items = buildTimeline([
+    notRead("first", "2026-11-12T12:00:00Z"),
+    notRead("second", "2026-11-12T12:01:00Z"),
+    { ...message("text", "2026-11-12T12:02:00Z"), direction: "Inbound" },
+    notRead("third", "2026-11-12T12:03:00Z"),
+    { ...message("read", "2026-11-12T12:04:00Z"), direction: "Inbound", kind: "ReceivedDocument", document: { name: "presupuesto.pdf", kind: "pdf", pages: 1 } },
+    notRead("fourth", "2026-11-12T12:05:00Z"),
+  ], [outgoing("reply", "2026-11-12T12:06:00Z")]);
+  expect(items.map(item => [item.key, item.notReadLine])).toEqual([["message:first", false], ["message:second", true], ["message:text", false],
+    ["message:third", true], ["message:read", false], ["message:fourth", true], ["outgoing:reply", false]]);
+});

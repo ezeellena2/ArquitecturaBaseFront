@@ -115,11 +115,22 @@
     "Audio": "audio",
     "Spreadsheet": "planilla",
     "Location": "de ubicación",
-    "LocationRequest": "de pedido de ubicación"
+    "LocationRequest": "de pedido de ubicación",
+    "ReceivedDocument": "documento"
   },
   "spreadsheet": {
     "label": "Planilla",
     "gone": "Ya no está disponible."
+  },
+  "receivedDocument": {
+    "label": "Documento",
+    "gone": "Ya no está disponible.",
+    "pdf": "PDF",
+    "pdfPages_one": "PDF · {{count}} página",
+    "pdfPages_other": "PDF · {{count}} páginas",
+    "photo": "Foto",
+    "word": "Word",
+    "notLinked": "No se leyó: el número no tiene una cuenta vinculada. Lo atiende un operador."
   },
   "access": {
     "label": "Acceso al sistema",

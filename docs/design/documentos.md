@@ -505,6 +505,43 @@ programa a la vez: `FormDocumentReadingZone` después de «Preguntas» en el edi
   validados; qué se valida va en la (i) del título.
 - **El segmentado en el celular** baja de renglón, en lugar de cortarse.
 
+### DOC2 y DOC4 · El documento en el chat del operador (2026-11-12)
+
+Tarea 8 en el front: el chat del operador muestra el documento que llega, sobre el contrato de la tarea 8 del backend y con dobles
+sintéticos hasta la exportación conjunta. Escena `chat-document` (`chatDocumentFixtures`), con golden es/en a 1440, 390 y 320: una
+conversación con cuenta vinculada, también con el historial arriba, y la de un número sin cuenta.
+
+**La lista de chequeo**, para la tarjeta del documento y la línea de DOC4:
+
+1. **Entero y armado.** Piezas de la biblioteca: `MessageBubble` y `MessageCard`, con el ícono de foto o de documento. Estados: un
+   PDF con sus páginas y antes de contarlas, una foto con nombre y una sin nombre de archivo, un Word, uno de otro tipo, uno vencido,
+   con y sin `caption`, y lo de un número sin cuenta con la línea de DOC4. No es un diálogo.
+2. **Una tarea, zonas que se entienden solas.** Es un mensaje del historial: la tarjeta dice qué llegó y el `caption` va debajo, en
+   el mismo mensaje.
+3. **El control según el dato.** No tiene controles: el chat no baja ni abre el archivo.
+4. **Lo que se lee, en su lugar.** El nombre arriba y lo que es debajo, en gris («PDF · 2 páginas», «Foto», «Word»), sin «Rótulo:
+   valor»; una foto sin nombre es sólo «Foto», sin segunda línea.
+5. **Un dato por columna.** No hay tablas.
+6. **Sin leyendas.** La línea de DOC4 no explica cómo funciona algo: dice qué pasó con lo que llegó.
+7. **Textos ciertos, una sola vez.** Una foto no dice «1 página»; la línea va una vez, debajo del último de lo que el número mandó
+   seguido; vencido, ya no están el nombre ni el `caption`, y lo dice («Ya no está disponible.»).
+8. **Botones y lo apagado.** No tiene botones.
+9. **Lo elegido y la espera.** Sin selección ni esperas propias: llega con el historial, que carga como siempre.
+10. **Estados y mensajes.** La carga, el error y los permisos son los del chat; vencido es un estado del mensaje, con su texto.
+11. **Lo mismo, igual en toda la app.** Es la tarjeta de la planilla recibida, con el ícono de foto o de documento de «Documentos
+    recibidos»; la línea, como las del asistente; las páginas con los miles de su idioma (`1.250`, `1,250`); tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px sin desplazar de costado (un nombre largo baja de renglón dentro de la tarjeta); la
+    línea describe su mensaje (`aria-describedby`), así el lector la dice con él; es/en; nada en la dirección.
+
+**Diferencias con los tableros:**
+
+- **Sin miniatura.** El chat no baja el archivo: el documento es su nombre en una tarjeta, como la planilla, con lo que es debajo, y
+  el `caption` va debajo de la tarjeta, en el mismo mensaje, no en otra burbuja. Una foto que WhatsApp manda sin nombre de archivo es
+  «Foto», sin segunda línea; los tableros la nombran («comprobante.jpg»).
+- **Lo que DOC2 y DOC4 no dibujan en el chat del operador:** un PDF con sus páginas, un Word, uno de otro tipo y uno vencido, que
+  siguen la tarjeta de la planilla, y varios seguidos de un número sin cuenta, con la línea una vez, debajo del último.
+- «Por qué lo propuso» y «Por qué preguntó» debajo del documento llegan con el circuito (tarea 9).
+
 ### UC1-A · Ubicación y contacto en el editor (2026-11-12)
 
 Tarea 19 en su primera parte (el guard de `receives`; los del hilo y de la actividad quedan para la segunda) y tarea 21 del

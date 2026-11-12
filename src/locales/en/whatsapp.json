@@ -115,11 +115,22 @@
     "Audio": "audio",
     "Spreadsheet": "spreadsheet",
     "Location": "location",
-    "LocationRequest": "location request"
+    "LocationRequest": "location request",
+    "ReceivedDocument": "document"
   },
   "spreadsheet": {
     "label": "Spreadsheet",
     "gone": "It is no longer available."
+  },
+  "receivedDocument": {
+    "label": "Document",
+    "gone": "It is no longer available.",
+    "pdf": "PDF",
+    "pdfPages_one": "PDF · {{count}} page",
+    "pdfPages_other": "PDF · {{count}} pages",
+    "photo": "Photo",
+    "word": "Word",
+    "notLinked": "Not read: the number has no linked account. An operator will handle it."
   },
   "access": {
     "label": "System access",

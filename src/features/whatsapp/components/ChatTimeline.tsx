@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { Fragment, memo, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateInZone, formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
@@ -9,6 +9,7 @@ import { FormIcon } from "@/shared/ui/icons";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
 import { ChatAudio } from "./ChatAudio";
 import { ChatSpreadsheet } from "./ChatSpreadsheet";
+import { ChatReceivedDocument, ChatReceivedDocumentNotRead } from "./ChatReceivedDocument";
 import { ChatLocation } from "./ChatLocation";
 import { FormReplyCard } from "./FormReplyCard";
 import { LocationRequestCard } from "./LocationRequestCard";
@@ -34,6 +35,8 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
   useTranslation("whatsapp", { lng: "en", useSuspense: false });
   useTranslation("whatsapp", { lng: "es", useSuspense: false });
   const language = i18n.resolvedLanguage ?? "es";
+  // DOC4: the line under a document that was not read describes its message, by an id of this history.
+  const notReadId = useId();
   const groups = useMemo(() => groupTimelineByDay(items, timeZone), [items, timeZone]);
   const { viewport: viewportRef, onScroll, loadOlder: prependHistory, preserveViewport } = useChatHistoryViewport(items, atBottom, onAtBottomChange);
   return <MessageHistory ref={viewportRef} label={t("history")} onScroll={onScroll}>
@@ -41,13 +44,14 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
     {historyError ? <p className="mb-3 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
-      {group.items.map(item => item.source === "event" ? <AssistantEventLine key={item.key} reply={item.reply} /> : <MessageBubble key={item.key} direction={item.direction}
-        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" || item.kind === "Spreadsheet" || item.kind === "Location" && item.location ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
-        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.source === "message" && item.kind === "Spreadsheet" && item.purpose !== "Access" ? <ChatSpreadsheet name={item.spreadsheetName} caption={item.body} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.kind === "Location" && item.location && item.purpose !== "Access" ? <ChatLocation point={item.location} /> : item.kind === "LocationRequest" && item.form ? <LocationRequestCard form={item.form} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
+      {group.items.map(item => item.source === "event" ? <AssistantEventLine key={item.key} reply={item.reply} /> : <Fragment key={item.key}><MessageBubble direction={item.direction}
+        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" || item.kind === "Spreadsheet" || item.kind === "ReceivedDocument" || item.kind === "Location" && item.location ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
+        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.source === "message" && item.kind === "Spreadsheet" && item.purpose !== "Access" ? <ChatSpreadsheet name={item.spreadsheetName} caption={item.body} /> : item.source === "message" && item.kind === "ReceivedDocument" && item.purpose !== "Access" ? <ChatReceivedDocument document={item.document} caption={item.body} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.kind === "Location" && item.location && item.purpose !== "Access" ? <ChatLocation point={item.location} /> : item.kind === "LocationRequest" && item.form ? <LocationRequestCard form={item.form} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "assistant" ? "author.assistant" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
-        delivery={item.delivery ? { state: item.delivery.state, label: t(`status.${item.delivery.code}`) } : undefined}>
+        delivery={item.delivery ? { state: item.delivery.state, label: t(`status.${item.delivery.code}`) } : undefined}
+        describedBy={item.notReadLine ? notReadId + item.key : undefined}>
         {item.assistant && !formValuesRevoked && item.purpose !== "Access" ? <section className="rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] p-3 text-sm">
           <p className="font-medium">{t(item.origin === "Assistant" ? "assistant.whySent" : "assistant.whySuggested")}</p>
           {/* The body reads from the left, as «Por qué respondió esto» (AS4): the title follows the side of the message. */}
@@ -64,7 +68,9 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
         </> : null}
         {item.origin === "Conversation" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.kind !== "LocationRequest" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}
-      </MessageBubble>)}
+      </MessageBubble>
+      {/* DOC4: why what a number without a linked account sent was not read, a line of the history under the last of its documents. */}
+      {item.notReadLine ? <ChatReceivedDocumentNotRead id={notReadId + item.key} /> : null}</Fragment>)}
     </div>)}
   </MessageHistory>;
 });

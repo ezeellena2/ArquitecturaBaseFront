@@ -295,6 +295,8 @@ export function handoffReasonText(t: TFunction<"whatsappAssistant">, code: strin
     case "replyTooLong": case "replyNotAllowed": return t("test.handoff.limits");
     case "blockedTopic": return t("test.handoff.blockedTopic");
     case "unknown": return t("test.handoff.unknown");
+    // Task 8 of the documents: a linked account that can neither load nor build forms sent a document.
+    case "documentNotAllowed": return t("test.handoff.documentNotAllowed");
     default: return t("test.handoff.other");
   }
 }

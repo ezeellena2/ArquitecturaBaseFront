@@ -31,6 +31,13 @@ const sharedContactSchema = z.strictObject({ name: z.string().min(1).nullable(),
 export type SharedContact = z.infer<typeof sharedContactSchema>;
 const prefillSchema = z.array(z.strictObject({ label: z.string().min(1), value: z.string().min(1) })).min(1).max(3);
 export type PrefilledValue = z.infer<typeof prefillSchema>[number];
+// Task 8 of the documents: a photo, a PDF or a Word the person sends is a `ReceivedDocument` with its normalized name (absent only in a
+// photo WhatsApp sent without a file name), its kind (absent when it is none of them), its pages (a PDF's once counted; a photo is
+// one) and `notLinked` when the number has no linked account (DOC4). Absent once its content was cleared; its caption is the body.
+const receivedDocumentSchema = z.strictObject({ name: z.string().min(1).optional(), kind: z.enum(["pdf", "jpeg", "png", "docx"]).optional(),
+  pages: z.number().int().min(1).optional(), reasonCode: z.literal("notLinked").optional() })
+  .refine(document => document.name !== undefined || document.kind === "jpeg" || document.kind === "png");
+export type ReceivedDocument = z.infer<typeof receivedDocumentSchema>;
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
@@ -60,6 +67,8 @@ export interface ChatMessage {
   contact?: SharedContact;
   /** W3: «Prellenado con» of a resend of the form, only with `formrecords.read`, like «Por qué lo mandó». */
   prefill?: PrefilledValue[];
+  /** Task 8 of the documents: what a `ReceivedDocument` is; it goes with the body when the history is cleared. */
+  document?: ReceivedDocument;
 }
 export interface Outgoing {
   assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies" | "LocationRequest"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
@@ -96,6 +105,7 @@ export const getThread = async (id: string, cursor?: { at: string; id: string },
   // «Prellenado con» is validated only for whoever may see it; for the others it is dropped unread (`withoutFormReplyValues`).
   if (thread.messages.some(row => !sharedContactSchema.optional().safeParse(row.contact).success) || thread.canReadFormRecords === true
     && [...thread.messages, ...thread.outgoing].some(row => !prefillSchema.optional().safeParse(row.prefill).success)) return unsupported();
+  if (thread.messages.some(row => !receivedDocumentSchema.optional().safeParse(row.document).success)) return unsupported();
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });
