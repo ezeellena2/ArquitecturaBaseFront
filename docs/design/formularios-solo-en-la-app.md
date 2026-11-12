@@ -87,6 +87,8 @@ El 2026-11-09 el usuario eligió las siete recomendadas («Sí, las recomendadas
   catálogo, salvo que la pregunta ya tuviera una propia).
 - Una sugerencia hacia un formulario que pasó a la app se ve «Sólo en la app», como una dada de baja: hay que quitarla para
   guardar. Estos tres ajustes salieron de la revisión contra el código del 2026-11-11.
+- La revisión de un 409 lista «Dónde se completa» como un cambio más, con el valor de cada versión, y conserva el elegido
+  (2026-11-12): antes, al conservar lo propio se rearmaba el borrador desde el guardado y ese cambio se perdía.
 - Publicar en la app no muestra «Publicación aceptada»: el aviso «Publicamos la versión N.» llega con el estado, que se lee enseguida.
 - La baja de un formulario cuya versión activa es de la app, aunque una anterior haya sido de WhatsApp, muestra sólo «App · No
   se carga más» (sin «Chat», «Asistente» ni «Sugerencias») y suma el aviso con la fecha del último envío abierto únicamente si
