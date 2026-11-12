@@ -106,6 +106,9 @@ export function draftReviewLines(review: DraftReview, row: DraftReviewRow, { cul
   };
   const { current, mine } = row;
   // The section titles in order, each marked when its text or its place differs from the other version's (CW15-B).
+  // SA1-A: «Dónde se completa», one value on each side in the words of the editor.
+  if (row.kind === "appOnly") return [{ key: "value", before: key(current === "app" ? "completedIn.app" : "completedIn.channels"),
+    after: key(mine === "app" ? "completedIn.app" : "completedIn.channels") }];
   if (row.kind === "sections") {
     const titles = (side: "current" | "mine"): ReviewValue => {
       const own = row[side] as readonly DraftSection[], other = row[side === "mine" ? "current" : "mine"] as readonly DraftSection[];

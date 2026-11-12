@@ -80,7 +80,7 @@ const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
-  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections" | "documentReading";
+  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections" | "documentReading" | "appOnly";
   readonly parentId?: string;
   readonly optionId?: string;
   readonly culture?: FormCulture;
@@ -102,6 +102,9 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
   localizedRows("name", "name", mine.name, saved.name);
   localizedRows("submit", "submit", mine.draft.submitLabel, saved.draft.submitLabel);
   if (mine.prefix !== saved.prefix) rows.push({ id: "prefix", kind: "prefix", mine: mine.prefix, current: saved.prefix, canKeep: !definition.prefixLocked });
+  // SA1-A: «Dónde se completa» is one value, next to the prefix as in the editor, compared and kept as a whole.
+  const completedIn = (value: DraftEditorValue) => value.draft.appOnly ? "app" : "channels";
+  if (completedIn(mine) !== completedIn(saved)) rows.push({ id: "appOnly", kind: "appOnly", mine: completedIn(mine), current: completedIn(saved), canKeep: true });
   if (mine.offerWhen !== saved.offerWhen) rows.push({ id: "offerWhen", kind: "offerWhen", mine: mine.offerWhen, current: saved.offerWhen, canKeep: true });
   const theirs = new Map(saved.draft.fields.map(q => [fieldIdentity(q), q]));
   const ours = new Map(mine.draft.fields.map(q => [fieldIdentity(q), q]));
@@ -199,6 +202,11 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
   if (choices.documentReading === "mine") {
     const { documentReading: _current, ...draft } = result.draft;
     result.draft = review.mine.draft.documentReading ? { ...result.draft, documentReading: review.mine.draft.documentReading } : draft;
+  }
+  // SA1-A: «Dónde se completa» as chosen; «En la app y por WhatsApp» has no key.
+  if (choices.appOnly === "mine") {
+    const { appOnly: _current, ...draft } = result.draft;
+    result.draft = review.mine.draft.appOnly ? { ...draft, appOnly: true } : draft;
   }
   return result;
 }

@@ -4,6 +4,7 @@ import { server } from "@/test/mocks/server";
 import { resetHttpClient } from "@/shared/api/httpClient";
 import { fixtureDefinition, fixtureFormId, fixtureLifecycle, wireDefinition } from "@/test/visual/formFixtures";
 import { openDraftSession } from "../draftSession";
+import { createDraftReview, resolveDraftReview } from "../editorModel";
 import { acceptFormPublication } from "./forms";
 import { readFormDeactivation, readFormDetail, readFormPage } from "./response";
 
@@ -55,5 +56,17 @@ describe("forms completed only in the app", () => {
     server.use(http.post("/api/forms/definitions/:id/publications", () => HttpResponse.json(receipt, { status: 202 })));
     const body = { ...openDraftSession({ actorId: "a", editorId: "e" }, fixtureDefinition()).value, expectedRevision: 1, requestId, checkToken: "private-ticket" };
     expect((await acceptFormPublication(definition.id, body)).state).toBe("Published");
+  });
+
+  // A 409 lists «Dónde se completa» as one change and keeps the value chosen: the review rebuilds the draft from the saved one.
+  it("compares «Dónde se completa» in a conflict and keeps the chosen value", () => {
+    const saved = readFormDetail(detail).definition;
+    const opened = openDraftSession({ actorId: "a", editorId: "e" }, saved).value;
+    const review = createDraftReview({ ...opened, draft: { ...opened.draft, appOnly: true } }, saved);
+    expect(review.rows.find(item => item.kind === "appOnly")).toMatchObject({ id: "appOnly", mine: "app", current: "channels", canKeep: true });
+    const choose = (choice: "mine" | "current") => resolveDraftReview(review, Object.fromEntries(review.rows.map(item => [item.id, item.id === "appOnly" ? choice : "current"])));
+    expect(choose("mine")?.draft.appOnly).toBe(true);
+    expect(choose("current")?.draft).not.toHaveProperty("appOnly");
+    expect(createDraftReview(opened, saved).rows.some(item => item.kind === "appOnly")).toBe(false);
   });
 });

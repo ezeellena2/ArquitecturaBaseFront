@@ -163,4 +163,12 @@ describe("draftReviewLines of a calculation and a condition (CA1-A, CO1-A)", () 
       { key: "showWhen", label: { kind: "key", key: "condition.shows" }, before: { kind: "key", key: "condition.always" }, after: { kind: "key", key: "condition.byAnswer" } },
     ]);
   });
+
+  // SA1-A: «Dónde se completa» is one value on each side, in the words of the editor.
+  it("reads «Dónde se completa» as one value on each side", () => {
+    const value = opened();
+    expect(lines({ ...value, draft: { ...value.draft, appOnly: true } }, definition, "appOnly")).toEqual([
+      { key: "value", before: { kind: "key", key: "completedIn.channels" }, after: { kind: "key", key: "completedIn.app" } },
+    ]);
+  });
 });

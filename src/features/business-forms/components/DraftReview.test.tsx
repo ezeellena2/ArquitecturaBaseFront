@@ -128,3 +128,12 @@ it("names a multi-choice translation with the label of the selected display cult
     open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
   expect(within(screen.getByRole("dialog")).getByRole("rowheader", { name: "Customer · la opción «North» · Español" })).toBeInTheDocument();
 });
+
+// SA1-A: «Dónde se completa» is a change of its own, with the value of each version in the words of the editor.
+it("names «Dónde se completa» with the value of each version", async () => {
+  const saved = openDraftSession({ actorId: "actor", editorId: "editor" }, definition).value;
+  await act(async () => { renderWithProviders(<DraftReview value={{ ...saved, draft: { ...saved.draft, appOnly: true } }} definition={definition} culture="es"
+    open onOpenChange={vi.fn()} onUseCurrent={vi.fn()} onResolve={vi.fn()} />); });
+  const row = within(screen.getByRole("dialog")).getByRole("rowheader", { name: "Dónde se completa" }).closest("tr")!;
+  expect(within(row).getAllByRole("cell").map(cell => cell.textContent)).toEqual(["En la app y por WhatsApp", "Sólo en la app"]);
+});
