@@ -982,6 +982,8 @@
     "historyLocationRequested": "Se pidió la ubicación",
     "historyLocationReceived": "Llegó la ubicación",
     "historyLocationSkipped": "Siguió sin la ubicación",
+    "historyContactReceived": "Llegó el contacto",
+    "historySentAgain": "Se volvió a mandar el formulario",
     "export": "Exportar a Excel",
     "exportTitle": "Exportar respuestas a Excel",
     "exportColumns": "Columnas",

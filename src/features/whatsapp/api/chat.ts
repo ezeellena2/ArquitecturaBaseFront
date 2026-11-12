@@ -24,6 +24,13 @@ const assistantReplySchema = z.strictObject({
 export type AssistantReply = z.infer<typeof assistantReplySchema>;
 const assistantEventsSchema = z.array(z.strictObject({ id: z.string().uuid(), atUtc: instant, reply: assistantReplySchema })).min(1);
 export type AssistantEvent = z.infer<typeof assistantEventsSchema>[number];
+// W3: what the person shares while a form is open. A contact brings the name and the phones of its first card, as they came (one
+// without a phone or without a name is a real case); a resend of the form brings «Prellenado con», what went into each question
+// with its label (one per datum: the location, the contact's name and its phone). Both absent when they do not apply.
+const sharedContactSchema = z.strictObject({ name: z.string().min(1).nullable(), phones: z.array(z.string().min(1)).max(10) });
+export type SharedContact = z.infer<typeof sharedContactSchema>;
+const prefillSchema = z.array(z.strictObject({ label: z.string().min(1), value: z.string().min(1) })).min(1).max(3);
+export type PrefilledValue = z.infer<typeof prefillSchema>[number];
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
@@ -49,6 +56,10 @@ export interface ChatMessage {
   location?: { latitude: number; longitude: number };
   /** AS4: «Por qué respondió esto» of a reply of the agent. */
   assistantReply?: AssistantReply;
+  /** W3: the first card of a received `Contact`; it goes with the body when the history is cleared. */
+  contact?: SharedContact;
+  /** W3: «Prellenado con» of a resend of the form, only with `formrecords.read`, like «Por qué lo mandó». */
+  prefill?: PrefilledValue[];
 }
 export interface Outgoing {
   assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies" | "LocationRequest"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
@@ -56,6 +67,8 @@ export interface Outgoing {
   state: OutgoingState; waMessageId: string | null;
   /** AS4: «Por qué respondió esto» of a queued reply of the agent. */
   assistantReply?: AssistantReply;
+  /** W3: «Prellenado con» of a queued resend of the form, only with `formrecords.read`, like «Por qué lo mandó». */
+  prefill?: PrefilledValue[];
 }
 /** `assistantEvents` (AS4): what the assistant decided without a message in the page's span, oldest first. */
 export interface Thread { assistantSuggestion: AssistantSuggestionPointer | null; assistantAvailability: AssistantAvailability; contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean; assistantEvents?: AssistantEvent[] }
@@ -80,6 +93,9 @@ export const getThread = async (id: string, cursor?: { at: string; id: string },
   if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success || row.location !== undefined && !locationPointSchema.safeParse(row.location).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
   if (!needsPersonSchema.optional().safeParse(thread.contact?.needsPerson).success || !assistantEventsSchema.optional().safeParse(thread.assistantEvents).success
     || [...thread.messages, ...thread.outgoing].some(row => !assistantReplySchema.optional().safeParse(row.assistantReply).success)) return unsupported();
+  // «Prellenado con» is validated only for whoever may see it; for the others it is dropped unread (`withoutFormReplyValues`).
+  if (thread.messages.some(row => !sharedContactSchema.optional().safeParse(row.contact).success) || thread.canReadFormRecords === true
+    && [...thread.messages, ...thread.outgoing].some(row => !prefillSchema.optional().safeParse(row.prefill).success)) return unsupported();
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });

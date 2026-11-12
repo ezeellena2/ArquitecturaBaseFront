@@ -17,6 +17,7 @@ import type { ResponseAction, ResponseRecipient, ResponseWorkflow } from "../api
 import type { useResponseWorkflow } from "../hooks/useResponseWorkflow";
 import { approvalStateVariant } from "../approvals";
 import { composeWorkflowMoments } from "../workflowMoments";
+import { recordEventKey } from "../workflowHistory";
 import { sameWorkflowReviewTarget, workflowCanRetryRecipient, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
 
 type IssuedDocument = ResponseWorkflow["documents"][number];
@@ -59,7 +60,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
     const who = event.kind === "Submitted" && record.channel === "app" ? t("detail.inApp", { name: name ?? unknown })
       : event.kind === "Submitted" && record.channel === "phone" ? t("detail.byWhatsApp", { name: name ?? unknown })
       : event.kind === "Sent" && !event.actor && record.origin?.senderKind === "Assistant" ? t("detail.assistant") : name;
-    return { key: "record:" + event.kind + ":" + event.atUtc, atUtc: event.atUtc, text: t("responses.history" + event.kind), detail: who ? <Detail>{who}</Detail> : null };
+    return { key: recordEventKey(record.history, event), atUtc: event.atUtc, text: t("responses.history" + event.kind), detail: who ? <Detail>{who}</Detail> : null };
   };
   // The state goes once, in its column: the decision is a row, with the reason of a rejection under it in its box.
   const approvalRows = (task: ApprovalTask): ActivityRow[] => [

@@ -53,7 +53,8 @@ const schema = z.discriminatedUnion('state', [
   z.strictObject({ state: z.literal('Pending'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
   z.strictObject({ state: z.literal('Downloading'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
   z.strictObject({ state: z.literal('RetryingFiles'), ...optionalHistorical, ...fileMetadata, ...noRecord }),
-  z.strictObject({ state: z.literal('Rejected'), ...optionalHistorical, ...fileMetadata, ...noRecord, rejectionCode:text.optional(), rejectedQuestion:text.optional() }),
+  // W3: the second response of a send is not saved (`Forms.Record.ReplayConflict`) and says the number of the one that was kept.
+  z.strictObject({ state: z.literal('Rejected'), ...optionalHistorical, ...fileMetadata, ...noRecord, rejectionCode:text.optional(), rejectedQuestion:text.optional(), savedNumber: number.optional() }),
   z.strictObject({ state: z.literal('Unrecognized'), definitionId: z.null(), versionId: z.null(), versionNumber: z.null(), name: z.null(), ...fileMetadata, ...noRecord }),
 ]);
 export type FormReply = z.infer<typeof schema>;

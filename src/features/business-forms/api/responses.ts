@@ -283,14 +283,14 @@ export const responseDetailSchema = z.strictObject({
   assistance: assistance.nullable(),
   chain: z.array(z.strictObject({ id: guid, definitionId: guid, originRecordId: guid.nullable(), number: z.string(), name: z.string(), submittedAtUtc: utc })),
   values: z.array(historicalValue),
-  history: z.array(
-    z.strictObject({
-      // W1-A: by WhatsApp, the location asked before the form and its answer go first.
-      kind: z.enum(["LocationRequested", "LocationReceived", "LocationSkipped", "Sent", "Submitted", "Saved"]),
-      atUtc: utc,
-      actor: author.nullable(),
-    }),
-  ),
+  // W1-A: by WhatsApp, the location asked before the form and its answer go first. W3: the location or the contact the person
+  // shared while the form was open says the questions it completed (the labels of the version), and the form came back
+  // («SentAgain»); the location of W1-A comes without them.
+  history: z.array(z.discriminatedUnion("kind", [
+    z.strictObject({ kind: z.enum(["LocationRequested", "LocationSkipped", "Sent", "SentAgain", "Submitted", "Saved"]), atUtc: utc, actor: author.nullable() }),
+    z.strictObject({ kind: z.literal("LocationReceived"), atUtc: utc, actor: author.nullable(), questions: z.array(z.string().min(1)).length(1).optional() }),
+    z.strictObject({ kind: z.literal("ContactReceived"), atUtc: utc, actor: author.nullable(), questions: z.array(z.string().min(1)).min(1).max(2) }),
+  ])),
   // A correction (CW10-A): who and why, and how the version it replaced had ended.
   correction: z.strictObject({
     previousRecordId: guid, atUtc: utc, by: author, reason: z.string().min(1),

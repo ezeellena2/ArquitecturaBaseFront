@@ -67,6 +67,7 @@ Familias:
 - Cada documento del workflow exige `runId`, el identificador persistido de la acción que lo generó. La historia relaciona por esa identidad; no se reconstruye el origen por fecha, idioma ni posición. Los escenarios sintéticos lo declaran y las capturas HTTP sólo se renuevan con el export del productor.
 - Los bytes de PDF exigen `application/pdf` y `Content-Language` es o en, que indica el idioma real de la copia.
 - Reglas y sugerencias comparten la gramática de condiciones de la planilla y validan las preguntas con `canonicalFormFieldSchema`. Cada condición guardada de una regla trae `values`, null o una lista. `rules/options` trae preguntas, roles y opciones de condición bajo `formrules.manage`, sin exigir leer roles, catálogos ni respuestas. Las opciones de sugerencias son versiones publicadas: `destinations` son los destinos elegibles y `unavailableDestinations` conserva nombre y estado de los dados de baja, los eliminados y los que pasaron a la app.
+- El historial del detalle (W3) suma por WhatsApp `questions` en `LocationReceived` (opcional: la etiqueta de la pregunta que completó la ubicación compartida; sin ella es la de W1-A), `ContactReceived` con una o dos y `SentAgain` sin ellas; un tipo desconocido o `questions` en otro tipo se rechaza. `sharedContentHistory.test.ts` usa cuerpos sintéticos hasta la exportación conjunta.
 
 ### Carga desde la app
 

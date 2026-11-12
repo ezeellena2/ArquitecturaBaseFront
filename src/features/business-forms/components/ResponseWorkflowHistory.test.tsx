@@ -9,6 +9,7 @@ import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { responseDetailFixture, responseFormId, responseRecordId, responseWorkflowFixture } from "@/test/responseFixtures";
 import type { ReactNode } from "react";
 import type { ResponseAction, ResponseWorkflow } from "../api/workflow";
+import type { ResponseDetail } from "../api/responses";
 import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
 
@@ -403,4 +404,27 @@ it("tells who rejected it and the reason in its box, without repeating the state
   expect(approval.getByText("La dosis no coincide con la receta.")).toBeInTheDocument();
   expect(approval.getAllByText("Rechazada")).toHaveLength(1);
   expect(screen.queryByText(/→/)).not.toBeInTheDocument();
+});
+
+// W3: the location and the contact can each bring the form back at the same instant: two rows, each with its own key.
+function RecordActivity({ record }: { record: ResponseDetail }) {
+  const workflow = useResponseWorkflow(responseFormId, responseRecordId);
+  return <ResponseWorkflowHistory record={record} workflow={workflow} timeZoneId="UTC" />;
+}
+it("shows two forms sent again at the same instant as two rows without repeating a key", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const at = instant("05");
+    const record: ResponseDetail = { ...responseDetailFixture(), history: [{ kind: "Sent", atUtc: instant("00"), actor: null },
+      { kind: "LocationReceived", atUtc: at, actor: null, questions: ["Dirección de entrega"] }, { kind: "ContactReceived", atUtc: at, actor: null, questions: ["Recibió"] },
+      { kind: "SentAgain", atUtc: at, actor: null }, { kind: "SentAgain", atUtc: at, actor: null }] };
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+      http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
+    renderWithProviders(<RecordActivity record={record} />);
+    const received = within(await screen.findByRole("listitem", { name: "Al recibirla" }));
+    expect(received.getAllByText("Se volvió a mandar el formulario")).toHaveLength(2);
+    expect(errors.mock.calls.some(call => call.some(part => /same key/i.test(String(part))))).toBe(false);
+  } finally {
+    errors.mockRestore();
+  }
 });

@@ -100,3 +100,35 @@ it("puts the location asked and received by WhatsApp before the form sent", () =
   expect(composeWorkflowHistory(response, { ...responseWorkflowFixture(response.id), task: null, actions: [] }).map(entry => entry.key))
     .toEqual(["record:LocationRequested:" + time("00"), "record:LocationReceived:" + time("01"), "record:Sent:" + time("01")]);
 });
+
+// W3: what the person shares while the form is open goes before the form that comes back with it, also at the same instant.
+it("puts the location and the contact shared by WhatsApp before the form sent again", () => {
+  const response = record([
+    { kind: "Submitted", atUtc: time("03"), actor: null },
+    { kind: "SentAgain", atUtc: time("02"), actor: null },
+    { kind: "ContactReceived", atUtc: time("02"), actor: null, questions: ["Recibió", "Teléfono de quien recibe"] },
+    { kind: "SentAgain", atUtc: time("01"), actor: null },
+    { kind: "LocationReceived", atUtc: time("01"), actor: null, questions: ["Dirección de entrega"] },
+    { kind: "Sent", atUtc: time("00"), actor: null },
+  ]);
+
+  expect(composeWorkflowHistory(response).map(entry => entry.key)).toEqual(["record:Sent:" + time("00"), "record:LocationReceived:" + time("01"),
+    "record:SentAgain:" + time("01"), "record:ContactReceived:" + time("02"), "record:SentAgain:" + time("02"), "record:Submitted:" + time("03")]);
+});
+
+// W3: the location and the contact can each bring the form back at the same instant; the second of a kind takes its occurrence,
+// and a lone one keeps its key.
+it("gives two events of a kind at the same instant their own keys and keeps the key of a lone one", () => {
+  const response = record([
+    { kind: "Sent", atUtc: time("00"), actor: null },
+    { kind: "LocationReceived", atUtc: time("01"), actor: null, questions: ["Dirección de entrega"] },
+    { kind: "ContactReceived", atUtc: time("01"), actor: null, questions: ["Recibió"] },
+    { kind: "SentAgain", atUtc: time("01"), actor: null },
+    { kind: "SentAgain", atUtc: time("01"), actor: null },
+  ]);
+
+  const keys = composeWorkflowHistory(response).map(entry => entry.key);
+  expect(keys).toEqual(["record:Sent:" + time("00"), "record:LocationReceived:" + time("01"), "record:ContactReceived:" + time("01"),
+    "record:SentAgain:" + time("01"), "record:SentAgain:" + time("01") + ":1"]);
+  expect(new Set(keys).size).toBe(keys.length);
+});
