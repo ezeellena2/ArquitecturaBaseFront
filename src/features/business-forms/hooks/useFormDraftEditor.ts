@@ -8,6 +8,7 @@ import type { DraftEditorValue } from "../model";
 import { draftFieldIssues, type DraftFieldIssue } from "../validationPaths";
 import { canReadForms, formActorKey, formDetailKey, type FormReadScope } from "./useFormQueries";
 import { createDraftReview, resolveDraftReview } from "../editorModel";
+import { withoutDanglingLookups } from "../documentReading";
 
 export interface FormEditorIssue {
   readonly kind: "validation" | "conflict" | "uncertain" | "missing" | "expired" | "forbidden" | "read";
@@ -163,7 +164,8 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
   }
   return { session: owns ? session : null, issue: owns ? issue : null, review: owns ? review : null, busy: owns && busy,
     canSave: owns && !knownDeleted && capability && deniedPermissions !== permissionsStamp && scope.permissions.includes("formtemplates.manage") && session?.phase === "Editing" && !busy,
-    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, value)); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
+    // DOC1: a lookup of the reading never names a question no longer there, whether the reading is on, off or hidden.
+    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, withoutDanglingLookups(value))); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
     discard: () => { if (alive()) { publish(discardDraft(current.current!)); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
     useCurrent: () => {
       if (!alive() || !review || current.current?.phase !== "ReviewRequired" || busy) return;
@@ -176,7 +178,7 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       if (!alive() || !review || current.current?.phase !== "ReviewRequired" || busy) return;
       const resolved = resolveDraftReview(createDraftReview(current.current.value, review.definition), choices);
       if (!resolved) return;
-      publish(changeDraft(openDraftSession(current.current.scope, review.definition), resolved));
+      publish(changeDraft(openDraftSession(current.current.scope, review.definition), withoutDanglingLookups(resolved)));
       manageDenied.current = !review.capabilities.canSave;
       if (!review.capabilities.canSave) setDeniedPermissions(permissionsStamp);
       setIssue(null); setReview(null);

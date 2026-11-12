@@ -90,3 +90,15 @@ it("attaches the errors of the rows and of the mark to the block and to the ques
     .toEqual([{ path: "draft.fields[0].rows", fieldLocalId: "block", messages: ["Revisá los renglones."] },
       { path: "draft.fields[1].repeated", fieldLocalId: "quantity", messages: ["Esta pregunta no se carga varias veces."] }]);
 });
+
+// DOC1: «Lectura de documentos» is a setting of the whole form: its errors stay on its own paths, under the zone's controls, and a
+// problem of a lookup found when publishing goes to the lookup, not to the catalog question it names.
+it("keeps the errors of the reading of documents on their paths, out of the questions", () => {
+  const original = openDraftSession({ actorId: "actor", editorId: "editor" }, fixtureDefinition()).value;
+  const body = { ...original, requestId: "request" };
+  expect(draftFieldIssues(body, { "draft.documentReading.recognition": ["Escribí cómo reconocerlo."], "draft.documentReading.lookups[1].field": ["Elegí un campo del catálogo."] }))
+    .toEqual([{ path: "draft.documentReading.recognition", messages: ["Escribí cómo reconocerlo."] }, { path: "draft.documentReading.lookups[1].field", messages: ["Elegí un campo del catálogo."] }]);
+  const client = original.draft.fields[0]!;
+  const issue = { fieldId: client.fieldId, choiceId: null, path: "draft.documentReading.lookups[0].field", culture: null, message: "El campo no se puede comparar con lo que se lee." };
+  expect(publicationFieldIssues(original, [issue])).toEqual([{ path: issue.path, messages: [issue.message] }]);
+});

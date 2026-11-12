@@ -52,6 +52,8 @@ import { localizedIssue, localizedIssueMessage, publicationFieldIssues } from ".
 import { boundQuestionIds, isBoundQuestion, removesBoundQuestion } from "../boundQuestions";
 import { calculationIncomplete } from "../calculations";
 import { conditionIncomplete } from "../conditions";
+import { documentReadingIncomplete, withoutIncompleteLookups } from "../documentReading";
+import { FormDocumentReadingZone } from "../components/FormDocumentReadingZone";
 import { useFormStandardName } from "../hooks/useFormStandardName";
 import { folderActorKey } from "../hooks/useFormFolders";
 import { localizedValue, missingFormTexts, newQuestion, suggestedPrefix } from "../editorModel";
@@ -208,6 +210,12 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const feedbackId = `forms:editor:${editor.session?.scope.editorId}`;
   const session = editor.session;
   const value = session?.value;
+  // DOC1: «Lectura de documentos» shows where WhatsApp completes the form, as «Dónde se completa» says (SA2-A), and with the AI that
+  // reads (the assistant's module); hidden, it keeps what was saved and an error of it goes to the common notice.
+  const readingShown = !!value && value.draft.appOnly !== true && (presentation.data?.installedFeatures
+    ? presentation.data.installedFeatures.includes("form-channels") && presentation.data.installedFeatures.includes("assistant") : true);
+  // Off, the zone shows only its switch: a problem of what it hides goes to the common notice.
+  const readingOn = readingShown && !!value?.draft.documentReading?.enabled;
   // Once a question is drawn, focuses the control `control` picks inside it.
   const focusQuestion = useCallback((localId: string, control: (container: HTMLElement | undefined) => HTMLElement | null | undefined) => requestAnimationFrame(() => {
     if (!active.current) return;
@@ -260,7 +268,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     const visiblePaths = issue.fields?.filter(field => /^(name(?:\.(es|en))?|prefix|offerWhen|draft\.fields|draft\.submitLabel(?:\.(es|en))?)$/.test(field.path)
       || /\.(calculation|showWhen)(?:\.|$)/.test(field.path) || /^draft\.fields\[\d+\]$/.test(field.path)
       || /\.(label|help)(?:\.(es|en))?$/.test(field.path) || /\.(type|required|maxLength|options|selection(?:\.(?:minSelected|maxSelected))?)$/.test(field.path) || /\.source(?:\.|$)/.test(field.path)
-      || !!field.sectionLocalId).map(field => field.path) ?? [];
+      || !!field.sectionLocalId || readingShown && field.path === "draft.documentReading" || readingOn && field.path.startsWith("draft.documentReading.")).map(field => field.path) ?? [];
     const feedback = errorFeedback(issue.error, { writing: session?.phase === "Unconfirmed", fields: visiblePaths });
     if (issue.kind === "validation" && visiblePaths.length) {
       const first = issue.fields?.find(field => visiblePaths.includes(field.path));
@@ -279,7 +287,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     notify({ id: feedbackId, kind: feedback.kind === "wait" ? "warning" : "error", message,
       description: feedback.traceId && issue.kind !== "uncertain" ? t("common:errors.traceId", { traceId: feedback.traceId }) : undefined,
       action: conflict ? { label: t("review"), onClick: () => { if (active.current) { reviewReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; void readCurrent.current().then(success => { if (success && active.current) setReviewOpen(true); }); } } } : undefined });
-  }, [editor.issue, feedbackId, t, session?.phase, restartCooldown]);
+  }, [editor.issue, feedbackId, t, session?.phase, restartCooldown, readingShown, readingOn]);
   // Save stays enabled with an invalid range: trying it opens the first question with one and focuses its first marked control, without sending.
   // A calculation or a condition still to complete stops it the same way, and says so from then on (CA1-A, CO1-A).
   const invalidRangeQuestion = () => value?.draft.fields.find(q => hasInvalidFileCounts([q]) || hasInvalidSelectionCounts([q]) || calculationIncomplete(q) || conditionIncomplete(q));
@@ -292,6 +300,13 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
       setIncompleteShown(true);
       const zone = calculationIncomplete(invalidRange) ? "calculation" : conditionIncomplete(invalidRange) ? "showWhen" : null;
       revealQuestion(invalidRange.localId, container => container?.querySelector<HTMLElement>("[aria-invalid='true']") ?? (zone ? engineControl(container, zone) : null));
+      return;
+    }
+    // DOC1: the reading on without «Cómo reconocerlo» or with a lookup still to complete stops it the same way: the zone opens and the
+    // first control it lacks takes the focus. Off, a lookup left half chosen already went.
+    if (action === editor.save && readingShown && documentReadingIncomplete(value?.draft.documentReading)) {
+      setIncompleteShown(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>("[data-reading-control][aria-invalid='true']")?.focus(); }));
       return;
     }
     setLocatedIssue(null);
@@ -347,6 +362,13 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   }
   function locatePublicationIssue(issue: FormPublicationCheck["issues"][number]) {
     setPublicationOpen(false);
+    // DOC1: a problem of the reading opens its zone and takes the focus to its control, a lookup's although it names its question.
+    if (issue.path.startsWith("draft.documentReading")) {
+      const control = issue.path.slice("draft.documentReading.".length);
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (active.current) (host.current?.querySelector<HTMLElement>(`[data-reading-control="${control.replaceAll('"', "")}"]`)
+        ?? host.current?.querySelector<HTMLElement>("[data-reading-control][aria-invalid='true']"))?.focus(); }));
+      return;
+    }
     const section = publicationFieldIssues(value!, [issue])[0]?.sectionLocalId;
     if (section) { revealQuestion(section, container => container?.querySelector<HTMLElement>('[data-section-control="title"]')); return; }
     const question = value!.draft.fields.find(q => q.fieldId === issue.fieldId);
@@ -449,7 +471,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
             <span className="flex items-center gap-1 text-sm font-medium">{t("completedIn.label")}<span className="-my-1 inline-flex"><InfoTip text={t("completedIn.hint")} label={t("common:actions.moreInfo", { label: t("completedIn.label") })} /></span></span>
             {/* From 640 px, as wide as its texts; on the phone the option that does not fit goes to the next line. */}
             <div className="sm:self-start"><SegmentedControl wrap aria-label={t("completedIn.label")} disabled={readOnly} options={(["channels", "app"] as const).map(key => ({ key, label: t("completedIn." + key), pressed: (key === "app") === appOnly,
-              onSelect: () => { const { appOnly: _chosen, ...draft } = value.draft; change({ ...value, draft: key === "app" ? { ...draft, appOnly: true } : draft }); } }))} /></div>
+              // DOC1: the reading does not show in the app, so a lookup left half chosen goes with it; what was saved stays.
+              onSelect: () => { const { appOnly: _chosen, ...draft } = value.draft; change(key === "app" ? withoutIncompleteLookups({ ...value, draft: { ...draft, appOnly: true } }) : { ...value, draft }); } }))} /></div>
           </div> : null}
           {/* SA2-A: completed only in the app, the assistant does not offer it; what was written stays saved. */}
           {!appOnly ? <div className="sm:col-span-2"><FormField label={t("offerWhen")} help={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div> : null}
@@ -492,6 +515,9 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
           {errorFor("draft.fields") ? <p role="alert" className="p-4 text-sm text-[var(--color-danger)]">{errorFor("draft.fields")}</p> : null}
 
         </Surface>
+        {/* DOC1: after «Preguntas», saved with the draft; only where WhatsApp completes the form. */}
+        {readingShown ? <FormDocumentReadingZone value={value} onChange={change} readOnly={readOnly} scope={scope} standard={standard} definitionId={session.confirmed?.id ?? null}
+          culture={contentCulture} timeZoneId={timeZoneId} issues={visibleIssues} showIncomplete={incompleteShown} /> : null}
       </div>
       {/* SA2-A: the preview of where it is completed: the app's «Nueva respuesta», or the WhatsApp phone. */}
       {appOnly ? <FormAppPreview key={session.scope.editorId} value={value} culture={contentCulture} />
@@ -513,7 +539,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     void acceptance.then(receipt => { if (receipt?.state === "Accepted" && active.current) notify({ id: `forms:publication-accepted:${scope.actorId}:${receipt.operationId}`, kind: "success", message: t("publication.accepted", { version: receipt.versionNumber }) }); });
   }} onOpenChange={setPublicationOpen} onSave={() => {
     // With an invalid range the dialog closes without taking the focus back: Save leads it to the marked control.
-    publicationLeadsToRange.current = !!invalidRangeQuestion();
+    publicationLeadsToRange.current = !!invalidRangeQuestion() || readingShown && documentReadingIncomplete(value.draft.documentReading);
     setPublicationOpen(false);
     void operate(editor.save).then(saved => { if (saved && active.current) setPublicationOpen(true); });
   }} onConflict={error => { setPublicationOpen(false); editor.requireReview(error); }} onGoToIssue={goToPublicationIssue} onCompleteTranslation={locatePublicationIssue} /> : null}

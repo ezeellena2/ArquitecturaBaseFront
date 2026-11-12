@@ -2,9 +2,10 @@
 
 Fecha: **2026-10-22**. **Elegidos DOC5-A y DOC7-A, con DOC1–DOC4 y DOC6**, de la versión 116 del lienzo; la 117 los marca
 y suma las correcciones al elegir (abajo), la 118 agranda DOC5-A para que entren sus notas y la 119 deja DOC2 y DOC4 como
-quedaron en el plan. Por programar, salvo la pantalla «Biblioteca» de DOC1, sin la lectura de documentos, que llegó con la
-etapa 2 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)). DOC7-A, el tablero de cada formulario, quedó
-programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
+quedaron en el plan. Por programar, salvo DOC1: la pantalla «Biblioteca», sin la lectura de documentos, llegó con la etapa 2
+de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)), y la lectura en el editor y lo que lee cada estándar, al front
+el 2026-11-11 ([cómo quedó](#doc1--la-biblioteca-y-la-lectura-2026-11-11)), mientras se programa su backend. DOC7-A, el
+tablero de cada formulario, quedó programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
 
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
@@ -164,3 +165,103 @@ contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se
 - **En el celular** «Filtros» también lleva la búsqueda, el canal y el estado; lo aplicado son chips, como en la planilla (DOC7-A,
   «Filtros · Recibida: octubre»), y los números van de a dos (de a uno a 320 px).
 - **En inglés** «Quién cargó» es «Who submitted», como «Cargó» («Submitted by») en la planilla; DOC7-A decía «Who loaded».
+
+### DOC1 · La biblioteca y la lectura (2026-11-11)
+
+Tarea 6 del plan (decisiones 5, 6, 7 y 13), contra el contrato de la tarea 5 y con dobles sintéticos, porque el backend se
+programa a la vez: `FormDocumentReadingZone` después de «Preguntas» en el editor y `FormLibraryPage` en «Biblioteca». La escena
+`formDocumentReading.spec.ts` deja las capturas es/en a 1440, 390 y 320 en `test-results/visual` (sin golden).
+
+**La lista de chequeo**, para la zona del editor y para la biblioteca:
+
+1. **Entero y armado.** Piezas de la biblioteca (`CollapsibleSection`, `CheckboxField`, `FormField`, `GroupLabel`, `Table` dentro de
+   `Surface`, `NativeSelect`, `DataList`, `ComparisonTable`, `DataTable`, `FilterBar`, `SearchInput`, `SegmentedControl`, `Badge`).
+   Estados de la zona: plegada y abierta, apagada, sólo lectura (sin cruces, sin su renglón), «Cómo reconocerlo» vacía o un cruce
+   sin completar al guardar, los campos del catálogo cargando, sin «Ver catálogos», los errores de guardar y de publicar, un 409, y
+   «Cómo viene leyendo» cargando, con error, con la espera de un 429, sin permiso, sin correcciones y sin «Ver respuestas». De la
+   biblioteca: carga, error con
+   «Reintentar» y la espera de un 429, sin estándares, sin coincidencias y sin permiso. «Ver los ejemplos» es un diálogo: una
+   consulta breve sobre la zona.
+2. **Una tarea, zonas que se entienden solas.** La lectura se configura y se guarda junta: una sola zona, en renglones con una
+   línea entre ellos (IA1-A) y en el orden en que se usa: prenderla, cómo reconocerlo, qué datos lee, los cruces, los repetidos y
+   cómo viene leyendo. La biblioteca resuelve encontrar un estándar y agregarlo.
+3. **El control según el dato.** Prender, una casilla; «Cómo reconocerlo», un texto largo; los datos del estándar, los cruces, lo
+   confirmado por pregunta y los estándares, tablas; cada parte de un cruce, un desplegable; todos, disponibles o próximamente, un
+   segmentado con su cantidad.
+4. **Lo que se lee, en su lugar.** «Cómo viene leyendo» en `DataList` (documentos, desde y la que más se corrige) y una tabla por
+   pregunta; los ejemplos, lo leído y lo confirmado lado a lado (`ComparisonTable`, una respuesta por grupo); en la tarjeta del
+   celular, «Qué lee» y «Validaciones fijas» en `DataList`.
+5. **Un dato por columna.** La biblioteca separa «Qué lee», «Validaciones fijas», «Versión», «Origen», «En tus formularios» y, sólo
+   en «Todos», «Estado». Una columna aparece sólo si algún estándar del filtro tiene su dato: ninguna va llena de «—», y
+   «Próximamente» muestra sólo «Estándar», sin «Acciones». El tipo de una pregunta y la descripción de un estándar van en gris
+   debajo (excepción A).
+6. **Sin leyendas.** Pasaron a la (i): la descripción bajo la casilla y que se publica como siempre (la de la zona), la ayuda de
+   «Cómo reconocerlo», las frases del cruce y de los duplicados, «Es la base para cargar solo…», «Le cambiaste el nombre: sigue
+   leyendo…» (la de «Datos del estándar») y la introducción de la biblioteca (la de su título, con qué se valida sin IA).
+7. **Textos ciertos, una sola vez.** El estándar y su versión ya los dice el encabezado del editor (BI1-A): la zona no los repite y
+   los nombra la (i) de «Datos del estándar». La banda plegada dice lo configurado («Prendida · 1 cruce con catálogos», «Apagada»).
+   «Estado» no aparece en el filtro que ya lo dice, y sin estándares próximos no están ni «Estado» ni el segmentado. «Ver los
+   ejemplos» abre «Últimas correcciones»: son las últimas, hasta diez, no todas las de los 30 días. Sin documentos, la lectura dice
+   0, sin tabla; lo confirmado sin cambios se redondea para abajo, así nunca dice 100 % cuando hubo correcciones.
+8. **Botones y lo apagado.** «Agregar cruce» apagado con su motivo (cinco cruces, ninguna pregunta de catálogo para completar o todas
+   con su cruce);
+   «Ver los ejemplos (0)» apagado con «No hubo correcciones en los últimos 30 días.» (HI1-A); «Se busca por», sin «Ver catálogos»,
+   apagado con «Necesitás permiso para leer catálogos y ver sus campos.» cuando no puede nombrar el campo; «Reintentar» apagado
+   con la espera de un 429; quitar un cruce, en rojo y sin preguntar, como un ítem; un próximo, sin acción.
+9. **Lo elegido y la espera.** El segmentado relleno (OE1-A); los repetidos y «Cómo viene leyendo» cargan con barras en su lugar;
+   «Se busca por» dice «Cargando…» mientras llegan los campos del catálogo, en lugar de «Campo no disponible»; «Reintentar» con su
+   aro; la tabla de la biblioteca, con el suyo (ES1-A).
+10. **Estados y mensajes.** Validación junto al campo: con la lectura prendida, «Cómo reconocerlo» vacía («Escribí cómo reconocer el
+    documento.», un texto propio) y cada parte de un cruce frenan Guardar y el diálogo de publicar, y llevan el foco a lo que falta;
+    un error de guardar queda bajo su control, y el campo de un cruce al publicar, con «Ir al cruce» que lo enfoca. Apagada, un cruce
+    a medio elegir se va y un error de lo que no se ve va al aviso común: nada frena en silencio. Un cruce nunca nombra una pregunta
+    quitada, con otra identidad, adentro del bloque o que dejó de ser de catálogo: se va con ella. Un 409 lista la lectura como un
+    cambio y «Conservar mis cambios» la conserva. El fallo de «Cómo viene leyendo» va al aviso común y deja «Reintentar» en su
+    lugar; con un 429 queda apagado y su motivo dice cuánto esperar, y un 401 o un 403 lo saca (el 403 también de la caché). Sin
+    «Administrar formularios» se lee sin cambiar; sin «Ver catálogos», «Se busca por» dice por qué no nombra el campo. Sin canal o
+    sin la IA que lee (`assistant`), la zona no está y lo guardado se conserva.
+11. **Lo mismo, igual en toda la app.** La zona sigue a ZP1-A (plegada con su resumen y abierta por un problema); los cruces, a la
+    tabla de ítems (tabla en escritorio, recuadros en el celular, tacho rojo); las fechas, con números; tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px sin desplazar la página (lo mide la escena); los datos del estándar, un bloque por
+    dato con la pregunta que lo recibe y su candado, como en el tablero; los cruces en recuadros; «Agregar cruce», «Quitar», «Ver los
+    ejemplos», «Reintentar» y los desplegables de un cruce miden 44 px (`size="touch"`, también en `NativeSelect`; lo mide la
+    escena); los encabezados de las tablas bajan de renglón; el segmentado de la biblioteca también (`wrap`); cada control con su
+    nombre («Cruce 1 · Dato leído»); es/en; la búsqueda y el filtro de la biblioteca en la dirección (`search`, `availability`).
+
+**Diferencias con el tablero:**
+
+- **Qué pregunta recibe cada dato** no se elige (DOC1 dibuja un desplegable por dato): lo fijó «Agregar» (BI1-A) y la tabla es de
+  sólo lectura, con las tres columnas del tablero, «Dato del estándar», «Pregunta que lo recibe» y «Validación fija». Para eso el
+  contrato cambió el 2026-11-11, al programarla: la biblioteca manda cada dato con su clave (`reads: [{ key, name }]`, en el orden
+  del estándar), la misma de `standard.bound` del formulario (clave → pregunta), y la tabla une por esa clave cada dato con su
+  pregunta. Así una pregunta renombrada o movida sigue recibiendo su dato («Titular de origen» → «Quién transfirió») y un dato cuya
+  pregunta ya no está dice «Sin pregunta» en gris. Que renombrarla no corta la lectura lo dice la (i). El tipo va en gris debajo del
+  dato. El comprobante no es un dato que se lee (`reads` no lo trae): va entero a su pregunta.
+- **«De dónde viene»** (DOC1, la línea con el estándar y su versión al principio de la zona) no está: el encabezado del editor ya
+  dice de qué estándar y versión es la copia (BI1-A), y la (i) de «Datos del estándar» los nombra.
+- **Las validaciones fijas** de la tabla son las de cada pregunta de la copia (`validation`, que fijó «Agregar»), y las de la
+  biblioteca, las que el estándar declara (`validations`): la cuenta y el CUIT o CUIL. DOC1 también llamaba validación a que el
+  banco sale de la cuenta (lo completa el servidor), al formato de montos y fechas (lo valida su tipo), al repetido (está en
+  «Repetidos») y al documento adjunto (va a su pregunta).
+- **Los ejemplos** («Se suman como ejemplos las correcciones de la bandeja…», bajo «Cómo reconocerlo») pasan a «Ver los ejemplos
+  (N)» en «Cómo viene leyendo», sólo con «Ver respuestas»: las correcciones se muestran a quien diseña, que mejora «Cómo
+  reconocerlo» a mano (decisión 3 del usuario), y no se suman solas.
+- **El cruce con catálogos** deja la tarjeta con su frase por una tabla de hasta cinco: «Dato leído», «Completa» y «Se busca por»
+  (el código, el texto o un campo del catálogo de la pregunta que completa que se pueda comparar con lo leído), en ese orden porque
+  el campo depende de ese catálogo.
+- **Duplicados y cómo viene leyendo** dejan de ser tarjetas lado a lado: son renglones de la zona. «Duplicados» se llama
+  «Repetidos» y nombra las preguntas que lo marcan (`duplicateQuestionIds`). «Cómo viene leyendo» no tiene el porcentaje general de
+  DOC1 (el contrato lo da por pregunta): da los documentos, desde cuándo, la que más se corrige y lo confirmado sin cambios de cada
+  pregunta.
+- **Un formulario propio** muestra la casilla, «Cómo reconocerlo» y los cruces; la línea «Cada pregunta del formulario es un dato a
+  leer…» es una leyenda y no está.
+- **La zona arranca plegada** (DOC1 la muestra abierta), con lo configurado en la banda, como las del editor de una pregunta
+  (ZP1-A); un problema la abre.
+- **«En tus formularios»** es la cantidad (`copies`): el contrato no trae la lista de copias que DOC1 dibuja como enlaces. La
+  tarjeta del celular dice «En N de tus formularios».
+- **La biblioteca no tiene paginado** (DOC1, «1–13 de 13 · Filas por página»): llega entera.
+- **«Próximamente»** no es un botón gris en «Acciones»: es un estado, en «Estado» (sólo en «Todos») y en la tarjeta del celular;
+  su filtro lista el nombre y lo que es, sin las columnas que un próximo no tiene.
+- **Las validaciones de la biblioteca** (DOC1, «Valida sin IA: …» bajo «Qué lee») van en su columna, con los nombres de los datos
+  validados; qué se valida va en la (i) del título.
+- **El segmentado en el celular** baja de renglón, en lugar de cortarse.

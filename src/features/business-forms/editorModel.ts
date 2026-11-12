@@ -1,6 +1,7 @@
 import { normalizeCatalogQuestionSource } from "./catalogQuestionSource";
 import { openDraftSession } from "./draftSession";
-import type { DraftCalculation, DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCalculationOperation, FormCulture, FormDefinitionSnapshot, LocalizedText } from "./model";
+import type { DraftCalculation, DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCalculationOperation, FormCulture, FormDefinitionSnapshot, FormDocumentReading,
+  LocalizedText } from "./model";
 
 export const localizedValue = (text: LocalizedText | Readonly<Record<string, string | null>> | null, culture: FormCulture, original: FormCulture) => text?.[culture]?.trim() ? text[culture]! : text?.[original] ?? "";
 type ContentTexts = Readonly<Record<string, string | null | undefined>> | null | undefined;
@@ -79,13 +80,13 @@ const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
-  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections";
+  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections" | "documentReading";
   readonly parentId?: string;
   readonly optionId?: string;
   readonly culture?: FormCulture;
   readonly property?: "label" | "help";
-  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | null;
-  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | null;
+  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | null;
+  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | null;
   readonly canKeep: boolean;
 }
 export interface DraftReview { readonly mine: DraftEditorValue; readonly current: DraftEditorValue; readonly definition: FormDefinitionSnapshot; readonly rows: readonly DraftReviewRow[] }
@@ -130,6 +131,10 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
   // The section titles (CW15-B) have no identity: they are compared, and kept, as a whole.
   const sectionList = (value: DraftEditorValue) => (value.draft.sections ?? []).map(({ start, title }) => ({ start, title }));
   if (!equal(sectionList(mine), sectionList(saved))) rows.push({ id: "sections", kind: "sections", mine: mine.draft.sections ?? [], current: saved.draft.sections ?? [], canKeep: true });
+  // DOC1: the reading of documents is one setting: compared, and kept, as a whole too.
+  const reading = (value: DraftEditorValue) => { const own = value.draft.documentReading; return own ? { enabled: own.enabled, recognition: own.recognition,
+    lookups: own.lookups.map(({ questionId, sourceQuestionId, field }) => ({ questionId, sourceQuestionId, field })) } : null; };
+  if (!equal(reading(mine), reading(saved))) rows.push({ id: "documentReading", kind: "documentReading", mine: mine.draft.documentReading ?? null, current: saved.draft.documentReading ?? null, canKeep: true });
   return { mine, current: saved, definition, rows };
 }
 function withText(map: EditableTexts, culture: FormCulture, value: string | null): Record<string, string> {
@@ -189,5 +194,11 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
   // The chosen titles stay within the questions that remain.
   const titles = (choices.sections === "mine" ? review.mine : review.current).draft.sections ?? [];
   result.draft = { ...result.draft, sections: titles.length ? titles.map(section => ({ ...section, start: Math.min(section.start, result.draft.fields.length) })) : undefined };
+  // DOC1: the reading chosen as a whole; mine without one takes the saved one away. A lookup that names a question no longer kept
+  // goes when the editor takes the result (`withoutDanglingLookups`).
+  if (choices.documentReading === "mine") {
+    const { documentReading: _current, ...draft } = result.draft;
+    result.draft = review.mine.draft.documentReading ? { ...result.draft, documentReading: review.mine.draft.documentReading } : draft;
+  }
   return result;
 }

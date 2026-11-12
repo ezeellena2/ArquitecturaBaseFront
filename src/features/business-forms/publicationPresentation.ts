@@ -64,5 +64,8 @@ export function publicationIssueNames(value: DraftEditorValue, culture: FormCult
   if (!text) return issue.message;
   return t(text.part === "help" ? "publication.helpTooLong" : text.part === "option" ? "publication.optionTooLong" : "publication.textTooLong", { limit: issue.limit, length: text.length, option: choiceName(issue) });
  };
- return { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail };
+ // Where its action takes it: a lookup of the reading (DOC1, it also names the question it fills), a question, a title or a text.
+ const goToLabel = (issue: Issue) => issue.path.startsWith("draft.documentReading") ? "publication.goToLookup" : issue.fieldId ? "publication.goToQuestion"
+  : sectionOf(issue.path) ? "publication.goToTitle" : "publication.goToText";
+ return { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail, goToLabel };
 }

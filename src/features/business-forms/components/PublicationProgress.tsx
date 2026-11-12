@@ -29,10 +29,10 @@ export function PublicationProblems({ progress, value, culture, onGoToIssue, can
 }) {
   const { t } = useTranslation("forms");
   if (!progress.issues.length) return null;
-  const { issueName, issueDetail, sectionOf } = publicationIssueNames(value, culture, t);
+  const { issueName, issueDetail, goToLabel } = publicationIssueNames(value, culture, t);
   return <Surface title={t("publication.problems")} help={t("publication.problemsHelp")}>
     <ul className={findingRows}>{progress.issues.map((issue, index) => <Finding key={issue.path + ":" + index} tone="danger" title={issueName(issue)}
-      action={canLocateIssue(issue) ? <Button type="button" size="sm" variant="outline" onClick={() => onGoToIssue(issue)}>{t(issue.fieldId ? "publication.goToQuestion" : sectionOf(issue.path) ? "publication.goToTitle" : "publication.goToText")}</Button> : null}>
+      action={canLocateIssue(issue) ? <Button type="button" size="sm" variant="outline" onClick={() => onGoToIssue(issue)}>{t(goToLabel(issue))}</Button> : null}>
       <p className="text-[var(--color-content-muted)]">{issueDetail(issue)}</p>
     </Finding>)}</ul>
   </Surface>;

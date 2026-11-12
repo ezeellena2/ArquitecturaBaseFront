@@ -1,5 +1,6 @@
+import { readingQuestionName } from "./documentReading";
 import { localizedValue, questionEditorType, type DraftReview, type DraftReviewRow } from "./editorModel";
-import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCatalogMatch, FormCulture, LocalizedText } from "./model";
+import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCatalogMatch, FormCulture, FormDocumentReading, LocalizedText } from "./model";
 
 // A cell of the draft review (board LR2-A, 2026-11-03): a text as written, a translation, a text in grey when the version
 // lacks it, a numbered list, or a catalog datum that the screen reads when it shows it.
@@ -112,6 +113,21 @@ export function draftReviewLines(review: DraftReview, row: DraftReviewRow, { cul
         moved: other[index]?.start !== section.start || JSON.stringify(other[index]?.title) !== JSON.stringify(section.title) })) } : { kind: "none" };
     };
     return [{ key: "value", before: titles("current"), after: titles("mine") }];
+  }
+  // DOC1: the reading of documents with the names of its zone: whether it is on, «Cómo reconocerlo» and each lookup by the question
+  // it reads and the one it fills, marked when it differs from the other version's. Without a reading, it is off and empty.
+  if (row.kind === "documentReading") {
+    const facts = (side: "current" | "mine"): Fact[] => {
+      const reading = row[side] as FormDocumentReading | null, other = row[side === "mine" ? "current" : "mine"] as FormDocumentReading | null;
+      const { fields, culture: original } = sides[side].draft;
+      const name = (id: string) => readingQuestionName(fields, id, culture, original) ?? "—";
+      return [{ key: "enabled", label: key("documentReading.enabled"), value: key(reading?.enabled ? "yes" : "no") },
+        { key: "recognition", label: key("documentReading.recognition"), value: reading?.recognition.trim() ? text(reading.recognition) : { kind: "none" } },
+        { key: "lookups", label: key("documentReading.lookups"), value: reading?.lookups.length ? { kind: "list", items: reading.lookups.map((lookup, index) => ({
+          value: text(`${name(lookup.sourceQuestionId)} → ${name(lookup.questionId)}`), moved: JSON.stringify(other?.lookups[index]) !== JSON.stringify(lookup) })) } : { kind: "none" } }];
+    };
+    const lines = compared(facts("current"), facts("mine"));
+    return lines.length ? lines : compared(facts("current"), facts("mine"), true);
   }
   if (Array.isArray(current) || Array.isArray(mine)) {
     const list = (side: "current" | "mine"): ReviewValue => {

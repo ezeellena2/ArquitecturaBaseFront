@@ -3,6 +3,7 @@ import { normalizeCatalogQuestionSource } from "@/features/business-forms/catalo
 import { readSuggestionOptions, type FormSuggestionSet } from "@/features/business-forms/api/suggestions";
 import { createRuleVisualFixtures } from "./formRuleFixtures";
 import { createFolderVisualFixtures } from "./folderFixtures";
+import { readingCatalog, readingDefinition, readingStats } from "./documentReadingFixtures";
 import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
 import budgetEnCheck from "../fixtures/forms-http/budget-http/en.json" with { type: "json" };
 import publishedEsList from "../fixtures/forms-http/published/list-es.json" with { type: "json" };
@@ -137,6 +138,8 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   if (scenario === "forms-publication-app-only") { const original = definitions.get(fixtureFormId)!; definitions.set(fixtureFormId, { ...original, draft: { ...original.draft, appOnly: true } }); }
   // CA1-A, CO1-A and BI1-A: an invoice copied from the library, with a condition, the amount of each item and the total.
   if (scenario === "forms-library-engine") definitions.set(fixtureFormId, engineDefinition(culture));
+  // DOC1: «Pagos de clientes», a copy of «Comprobante de transferencia» that reads documents, with a lookup in «Clientes».
+  if (scenario.startsWith("forms-library-reading")) definitions.set(fixtureFormId, readingDefinition(culture));
   // CW15-B: three section titles between the questions of the visit.
   if (scenario === "forms-sections") {
     const original = definitions.get(fixtureFormId)!;
@@ -273,6 +276,12 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if (ruleResponse) return ruleResponse;
     const folderResponse = await folderFixture.handle(request);
     if (folderResponse) return folderResponse;
+    // DOC1: the catalog the lookup fills and «Cómo viene leyendo», with the latest corrections.
+    if (scenario.startsWith("forms-library-reading") && request.method === "GET") {
+      const catalog = path.startsWith("/api/forms/catalogs/") ? readingCatalog(path.split("/").at(-1)) : undefined;
+      if (catalog) return json(catalog);
+      if (path.endsWith("/document-reading")) return json(readingStats(culture));
+    }
     if (scenario === "forms-publication-http-published" || scenario === "forms-publication-http-failed") {
       const failed = scenario.endsWith("failed");
       if (request.method !== "GET") return json({ code: "Forms.Draft.RevisionConflict" }, 409);
@@ -422,6 +431,9 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
     if ([...definitions.values()].some(d => d.id !== previous?.id && d.prefix === body.prefix))
       return json({ code: "Forms.Definition.PrefixTaken", errors: { prefix: [culture === "es" ? "Ya hay un formulario con ese prefijo. Elegí otro." : "A form already uses this prefix. Choose another."] } }, 400);
     if (!/^[A-Z][A-Z0-9]{0,11}$/.test(body.prefix)) return json({ code: "Validation.Failed", errors: { prefix: ["Invalid prefix."] } }, 400);
+    // DOC1, as the server: «Cómo reconocerlo» goes trimmed (the editor does not save it empty while the reading is on).
+    const sentReading = body.draft.documentReading;
+    const recognition = sentReading?.recognition.trim() ?? "";
     const fields: FormDraftSaveResult["identityMap"]["fields"][number][] = []; const choices: FormDraftSaveResult["identityMap"]["choices"][number][] = [];
     const canonical: CanonicalQuestion[] = body.draft.fields.map(q => {
       const fieldId = q.fieldId ?? guid(serial++); const common = { fieldId, key: key(fieldId), label: q.label, help: q.help && Object.values(q.help).some(text => !!text?.trim()) ? Object.fromEntries(Object.entries(q.help).filter((entry): entry is [string, string] => !!entry[1]?.trim())) : null, required: q.required };
@@ -458,8 +470,15 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
       const repeated = "repeated" in q && q.repeated ? { repeated: true as const } : {};
       return q.type === "shortText" || q.type === "longText" ? { ...common, ...repeated, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, ...repeated, type: q.type };
     });
+    // DOC1: off without a text nor lookups there is no reading; a lookup names a new question by its local identity, sealed with its field.
+    const assigned = new Map(fields.map(item => [item.localId, item.fieldId]));
+    const { documentReading: _sentReading, ...sentDraft } = body.draft;
+    const documentReading = sentReading && (sentReading.enabled || recognition || sentReading.lookups.length) ? { ...sentReading, recognition, lookups: sentReading.lookups.map(lookup =>
+      ({ ...lookup, questionId: assigned.get(lookup.questionId) ?? lookup.questionId, sourceQuestionId: assigned.get(lookup.sourceQuestionId) ?? lookup.sourceQuestionId })) } : undefined;
     const definition: FormDefinitionSnapshot = { offerWhen: body.offerWhen?.trim() || null, id: previous?.id ?? guid(serial++), name: Object.fromEntries(Object.entries(body.name).map(([language, text]) => [language, text.trim()])), prefix: body.prefix, prefixLocked: previous?.prefixLocked ?? false,
-      revision: (previous?.revision ?? 0) + 1, draft: { ...body.draft, fields: canonical } };
+      revision: (previous?.revision ?? 0) + 1, draft: { ...sentDraft, fields: canonical, ...documentReading ? { documentReading } : {} },
+      // BI1-A: a copy keeps its standard; saving does not change it.
+      ...previous?.standard ? { standard: previous.standard } : {} };
     definitions.set(definition.id, definition);
     const result: FormDraftSaveResult = { requestId: body.requestId, definition, identityMap: { fields, choices }, recovery: { path: "/api/forms/draft-changes/" + body.requestId, resultExpiresAtUtc: "2026-11-09T12:00:00Z" } };
     receipts.set(body.requestId, { body: JSON.stringify(body), kind: previous ? "Update" : "Create", result });

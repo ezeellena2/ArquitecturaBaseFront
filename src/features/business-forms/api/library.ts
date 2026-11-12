@@ -15,8 +15,10 @@ const standard = z.strictObject({
   source: z.string().min(1).optional(),
   // The prefix «Agregar» offers: the server knows the prefixes in use, deleted forms' too.
   suggestedPrefix: z.string().min(1).max(12),
-  // DOC1: a standard that reads documents names the data it reads and its fixed validations; without them, both are omitted.
-  reads: z.array(z.string().min(1)).min(1).max(40).optional(),
+  // DOC1: a standard that reads documents names the data it reads, in its order, each with the key a copy's `standard.bound` uses
+  // (key → question), and its fixed validations; without them, both are omitted.
+  reads: z.array(z.strictObject({ key: z.string().min(1).max(64), name: z.string().min(1) })).min(1).max(40)
+    .refine(items => new Set(items.map(item => item.key)).size === items.length).optional(),
   validations: z.array(z.strictObject({ name: z.string().min(1), kind: questionValidationSchema })).min(1).max(20).optional(),
 });
 // DOC1: the standards of the next stages, without a draft to add, listed as «Próximamente».

@@ -84,7 +84,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
   // NI2-C (2026-11-03): written in the menu language, with no translation started, the form says nothing about languages,
   // not even while checking.
   const monolingual = value.draft.culture === scope.culture && !hasFormTexts(value, scope.culture === "es" ? "en" : "es");
-  const { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail } = publicationIssueNames(value, scope.culture, t);
+  const { questionOf, questionName, sectionOf, sectionName, choiceName, issueName, issueDetail, goToLabel } = publicationIssueNames(value, scope.culture, t);
   const missingTextName = (issue: PublicationIssue) => {
     const name = questionName(issue.fieldId);
     const section = name ? null : sectionName(issue.path);
@@ -109,7 +109,7 @@ export function PublicationCheckDialog({ scope, id, revision, value, dirty, canS
     return first && culture === scope.culture && scope.permissions.includes("formtemplates.manage") ? <Button type="button" variant="link" size="inline" onClick={() => { locatingIssue.current = true; onCompleteTranslation(first); }}>{t("publication.completeCulture", { language: t("cultureNamesInText." + culture) })}</Button> : null;
   };
   const goTo = (issue: PublicationIssue) => issue.fieldId || issue.path.startsWith("name.") || issue.path.startsWith("draft.submitLabel.") || sectionOf(issue.path)
-    ? <Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(issue.fieldId ? "publication.goToQuestion" : sectionOf(issue.path) ? "publication.goToTitle" : "publication.goToText")}</Button> : null;
+    ? <Button type="button" size="sm" variant="outline" onClick={() => { locatingIssue.current = true; onGoToIssue(issue); }}>{t(goToLabel(issue))}</Button> : null;
   const warningDetails = (warning: PublicationWarning) => {
     switch (warning.code) {
       case "Forms.Publication.OptionsPerRecipientHigh":

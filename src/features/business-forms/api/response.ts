@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { PagedResult } from "@/shared/api/pagedResult";
 import type { DraftQuestion, CanonicalQuestion, FormDefinitionSnapshot, FormDraftSaveResult } from "../model";
 
-const guid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).refine(value => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(value));
+/** An identity of the server: a guid, never the empty one. */
+export const guid = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).refine(value => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(value));
 const revision = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const utc = z.iso.datetime();
 const text = z.record(z.string().refine(value => value === "es" || value === "en"), z.string());

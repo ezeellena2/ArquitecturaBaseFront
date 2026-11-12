@@ -67,6 +67,8 @@ export function draftFieldIssues(body: DraftWriteBody, errors: Record<string, st
     if (!segments) return [];
     if (segments[0] === "name" || segments[0] === "prefix" || segments[0] === "offerWhen" || segments[0] === "draft" && segments.length <= 2) return [{ path, messages: [...messages] }];
     if (segments[0] === "draft" && segments[1] === "submitLabel") return [{ path, messages: [...messages] }];
+    // DOC1: the reading of documents is a setting of the form; its lookups are named by their place in the list sent.
+    if (segments[0] === "draft" && segments[1] === "documentReading") return [{ path, messages: [...messages] }];
     if (segments[0] === "draft" && segments[1] === "sections") return sectionIssue(body.draft.sections, path, segments, messages);
     const index = segments[2];
     const field = segments[0] === "draft" && segments[1] === "fields" && typeof index === "number" ? body.draft.fields[index] : undefined;
@@ -85,6 +87,8 @@ export function publicationFieldIssues(value: DraftEditorValue, issues: readonly
   return issues.flatMap((issue): DraftFieldIssue[] => {
     // A title's problem comes from the check of this same saved draft, so its place still names it.
     if (!issue.fieldId && issue.path.startsWith("draft.sections[")) return sectionIssue(value.draft.sections, issue.path, parseValidationPath(issue.path) ?? [], [issue.message]);
+    // DOC1: a lookup of the reading names the catalog question it fills, but it is fixed in the lookup, under «Lectura de documentos».
+    if (issue.path.startsWith("draft.documentReading")) return [{ path: issue.path, messages: [issue.message] }];
     if (!issue.fieldId) return /^(name|draft\.submitLabel)(\.(es|en))?$/.test(issue.path) ? [{ path: issue.path, messages: [issue.message] }] : [];
     const question = value.draft.fields.find(q => q.fieldId === issue.fieldId);
     if (!question) return [];

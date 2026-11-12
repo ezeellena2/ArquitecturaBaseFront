@@ -1,13 +1,14 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
 import { httpCohort } from "@/test/httpCohort";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { cellUnder } from "@/test/utils/tableCells";
+import { transferReceiptStandard, upcomingStandards } from "@/test/visual/documentReadingFixtures";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
@@ -42,16 +43,26 @@ it("lists each standard with its version, module and copies, and offers «Agrega
   // The first render pays the lazy page: with the machine loaded it takes more than a second.
   expect(await screen.findByText("Factura", {}, { timeout: 10_000 })).toBeInTheDocument();
   expect(screen.getByText("Factura C con sus ítems y el total.")).toBeInTheDocument();
-  // One piece of data per column (UD1): the version, the module that brings it and how many forms came from it.
+  // One piece of data per column (UD1): the version, the module that brings it and how many of your forms came from it. A column
+  // no standard has (what it reads and validates, DOC1) is not shown full of «—», and without upcoming standards there is no state
+  // to say nor anything to filter.
   const table = screen.getByRole("table");
-  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Estándar", "Versión", "Origen", "Formularios"]);
+  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Estándar", "Versión", "Origen", "En tus formularios"]);
   const [first, second] = within(table).getAllByRole("row").slice(1);
   expect(cellUnder(table, first!, "Versión")).toHaveTextContent(/^1$/);
   expect(cellUnder(table, first!, "Origen")).toHaveTextContent(/^ARCA$/);
-  expect(cellUnder(table, first!, "Formularios")).toHaveTextContent(/^1$/);
+  expect(cellUnder(table, first!, "En tus formularios")).toHaveTextContent(/^1$/);
   expect(cellUnder(table, second!, "Origen")).toHaveTextContent(/^—$/);
-  expect(cellUnder(table, second!, "Formularios")).toHaveTextContent(/^0$/);
+  expect(cellUnder(table, second!, "En tus formularios")).toHaveTextContent(/^0$/);
+  expect(screen.queryByRole("group", { name: "Estado" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Agregar/ })).not.toBeInTheDocument();
+});
+
+it("shows every standard for a shared «Próximamente» when none is coming", async () => {
+  setup(["formtemplates.read"]);
+  renderRouteWithProviders("/formularios/biblioteca?availability=Upcoming");
+  expect(await screen.findByText("Factura", {}, { timeout: 10_000 })).toBeInTheDocument();
+  expect(screen.getAllByRole("row")).toHaveLength(3);
 });
 
 it("says there are no standards when no installed module brings one, with the title only", async () => {
@@ -185,4 +196,62 @@ it("adds the copy to the folder chosen, the standard's when none is", async () =
   await waitFor(() => expect(bodies).toHaveLength(1));
   expect(bodies[0]).toMatchObject({ folderId: north });
   await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/${created.definition.id}`), { timeout: 20000 });
+});
+
+// DOC1: a standard that reads documents says what it reads and what it validates without AI; the standards of the next stages are rows
+// without an action. The search and «Todos · Disponibles · Próximamente» go in the address: they are not private.
+describe("the library with the reading of documents (DOC1)", () => {
+  const documents = () => { setup(["formtemplates.read", "formtemplates.manage"]); server.use(http.get("/api/forms/library", () => HttpResponse.json({ standards: [transferReceiptStandard("es"), invoice], upcoming: upcomingStandards("es") }))); };
+
+  it("says what a standard reads and validates and how many of your forms came from it, and lists the upcoming ones without «Agregar»", async () => {
+    documents();
+    renderRouteWithProviders("/formularios/biblioteca");
+    const receipt = (await screen.findByText("Comprobante de transferencia", {}, { timeout: 10_000 })).closest("tr")!;
+    const table = screen.getByRole("table");
+    expect(cellUnder(table, receipt, "Qué lee")).toHaveTextContent(/^Banco o billetera de origen, Cuenta de origen, .*, Número de operación y Concepto$/);
+    expect(cellUnder(table, receipt, "Validaciones fijas")).toHaveTextContent(/^Cuenta de origen, CUIT o CUIL de origen, Cuenta de destino y CUIT o CUIL de destino$/);
+    expect(cellUnder(table, receipt, "En tus formularios")).toHaveTextContent(/^2$/);
+    expect(within(receipt).getByRole("button", { name: "Agregar «Comprobante de transferencia»" })).toBeInTheDocument();
+    const remito = screen.getByText("Remito").closest("tr")!;
+    expect(cellUnder(table, remito, "Estado")).toHaveTextContent(/^Próximamente$/);
+    expect(cellUnder(table, remito, "Versión")).toHaveTextContent(/^—$/);
+    expect(within(remito).queryByRole("button")).not.toBeInTheDocument();
+    // The (i) says that the validations do not depend on the AI.
+    await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Biblioteca" }));
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("cuáles validan sin IA, con sus dígitos verificadores");
+  });
+
+  it("searches by name without accents and filters what is available or coming soon, in the address", async () => {
+    documents();
+    const { router } = renderRouteWithProviders("/formularios/biblioteca");
+    const segments = await screen.findByRole("group", { name: "Estado" }, { timeout: 10_000 });
+    await waitFor(() => expect(within(segments).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (13)", "Disponibles (2)", "Próximamente (11)"]));
+    await userEvent.type(screen.getByRole("searchbox", { name: "Buscar por nombre" }), "credito");
+    await waitFor(() => expect(router.state.location.search).toBe("?search=credito"));
+    // The counts follow the search, before the filter.
+    await waitFor(() => expect(within(segments).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (1)", "Disponibles (0)", "Próximamente (1)"]));
+    expect(screen.getAllByRole("row").slice(1).map(row => (row as HTMLTableRowElement).cells[0]?.textContent?.split("Lee")[0])).toEqual(["Nota de crédito o débito"]);
+
+    await userEvent.click(within(segments).getByRole("button", { name: "Disponibles (0)" }));
+    await waitFor(() => expect(router.state.location.search).toBe("?search=credito&availability=Available"));
+    expect(screen.getByText("No hay estándares que coincidan.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    await waitFor(() => expect(router.state.location.search).toBe(""));
+
+    // Only the upcoming ones: their name and what they are, without columns of «—», without «Estado» and without «Acciones».
+    await userEvent.click(within(segments).getByRole("button", { name: "Próximamente (11)" }));
+    await waitFor(() => expect(router.state.location.search).toBe("?availability=Upcoming"));
+    expect(within(screen.getByRole("table")).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Estándar"]);
+    expect(screen.getAllByRole("row")).toHaveLength(12);
+    expect(screen.queryByRole("button", { name: /^Agregar «/ })).not.toBeInTheDocument();
+  });
+
+  it("opens with the search and the filter of a shared address", async () => {
+    documents();
+    renderRouteWithProviders("/formularios/biblioteca?search=comprobante&availability=Available");
+    expect(await screen.findByText("Comprobante de transferencia", {}, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    expect(screen.getByRole("searchbox", { name: "Buscar por nombre" })).toHaveValue("comprobante");
+    expect(screen.getByRole("button", { name: "Disponibles (1)" })).toHaveAttribute("aria-pressed", "true");
+  });
 });
