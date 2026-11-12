@@ -657,15 +657,18 @@ describe("the panel", () => {
   }, 20_000);
 
   it("shows a rejected file the inbox kept no copy of with its name and its reason, without asking for it", async () => {
-    const { requests } = setup();
+    // Over the limit, WhatsApp never said its size.
+    const rejected = receivedDocumentDetailFixture(receivedDocumentIds.rejected);
+    const { requests } = setup({ details: { [receivedDocumentIds.rejected]: { ...rejected, document: { ...rejected.document, file: { ...rejected.document.file, size: null } } } } });
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.rejected}`);
     const frame = await panel();
     expect(await within(frame).findByRole("heading", { name: "planilla-vieja.doc" })).toBeInTheDocument();
     expect(within(frame).getByText("Es de un formato viejo: no se pudo abrir.")).toBeInTheDocument();
     expect(within(frame).queryByRole("toolbar")).not.toBeInTheDocument();
     expect(within(frame).queryByRole("button", { name: "Descargar" })).not.toBeInTheDocument();
-    // Never read, it is not reopened: nothing would be left to review.
+    // Never read, it is not reopened: nothing would be left to review. Without its size, nothing says one.
     expect(within(frame).queryByRole("button", { name: "Volver a abrir" })).not.toBeInTheDocument();
+    expect(within(frame).queryByText(/\b(?:bytes|KB|MB)\b/)).not.toBeInTheDocument();
     await pause(300);
     expect(requests.files).toBe(0);
   }, 20_000);

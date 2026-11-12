@@ -25,8 +25,9 @@ describe("the guards", () => {
     expect(readReceivedDocument({ ...detail, history: [...detail.history, { atUtc: "2026-10-21T21:20:00Z", kind: "formChosen", actor: null, detail: null }] }).history).toHaveLength(2);
     // The seven fractional digits the backend writes.
     expect(readReceivedDocuments({ ...page, items: [{ ...page.items[0], receivedAtUtc: "2026-10-22T15:04:00.1234567Z" }] }).items[0]!.receivedAtUtc).toBe("2026-10-22T15:04:00.1234567Z");
-    // A rejected file the inbox kept no copy of.
+    // A rejected file the inbox kept no copy of, also without its size when WhatsApp never said it (one over the limit).
     expect(readReceivedDocuments({ ...page, items: [page.items[8]] }).items[0]!.file.stored).toBe(false);
+    expect(readReceivedDocuments({ ...page, items: [{ ...page.items[8], file: { ...page.items[8]!.file, size: null } }] }).items[0]!.file.size).toBeNull();
     // Without «Revisar documentos» there is no form to read it for, and a choice comes without its options.
     const readOnly = readReceivedDocument(receivedDocumentDetailFixture(id, "es", false));
     expect(readOnly.forms).toEqual([]);
@@ -64,6 +65,7 @@ describe("the guards", () => {
     ["a datum that helps find it twice", withItem({ highlights: [item.highlights[0], item.highlights[0]] })],
     ["a date in local time", withItem({ receivedAtUtc: "2026-10-22T12:04:00-03:00" })],
     ["a file that does not say whether its copy was kept", withItem({ file: (({ stored: _stored, ...rest }) => rest)(item.file) })],
+    ["a kept file without its size", withItem({ file: { ...item.file, size: null } })],
     ["a revision zero", withItem({ revision: 0 })],
     ["a document without the deadline of its reply", { ...page, items: [undated] }],
     ["a deadline of a document nobody waits for", withItem({ replyExpiresAtUtc: "2026-10-23T15:04:00Z" })],

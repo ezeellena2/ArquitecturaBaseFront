@@ -26,7 +26,9 @@ export const receivedDocumentEventKinds = ["received", "discarded", "reopened", 
 const person = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const form = z.strictObject({ definitionId: guid, name: z.string() });
 // Its file; `stored` is false for a rejected one the inbox kept no copy of (too big, an old format, macros): nothing to show or download.
-const file = z.strictObject({ name: z.string().min(1), mediaType: z.string().min(1), size: count, pages: z.number().int().min(1).max(10).nullable(), stored: z.boolean() });
+// Only such a one can come without its size, when the channel never said it (one over the limit).
+const file = z.strictObject({ name: z.string().min(1), mediaType: z.string().min(1), size: count.nullable(), pages: z.number().int().min(1).max(10).nullable(), stored: z.boolean() })
+  .refine(entry => entry.size !== null || !entry.stored);
 // Up to three data read that help find it, as the person reads them: the question and its value (an amount, a validated number, an
 // option).
 const highlight = z.strictObject({ fieldId: guid, label: z.string(), value: z.string() });
