@@ -10,6 +10,7 @@ Funciones sin React, red ni caché que deciden cómo se lee el historial, cuánd
 | Envío de una sugerencia | `assistantSendSession` |
 | Respuestas de formularios | `formReplyPresentation`, `formReplyValue` |
 | Retiro de datos privados | `threadPrivacy` |
+| El borrador del agente de «Asistente» | `assistantAgentDraft` |
 
 ## Al modificar
 
@@ -26,6 +27,8 @@ Funciones sin React, red ni caché que deciden cómo se lee el historial, cuánd
 - `freezeAssistantSend` congela sólo `requestId` e IDs incluidos en el orden de la propuesta, filtrados contra lo ofrecido; nunca valores. Destildar todo es válido.
 - **Respuestas históricas.** `toFormReplyPresentation` copia el número como texto literal y las filas autorizadas; los demás estados no tienen valores ni número. `Unavailable` es el respaldo de una proyección inválida, no un estado del servidor. `formatFormReplyValue` muestra decimal, fecha sin hora y sí/no con `shared/lib/typedValue` (el formato de las pantallas de formularios: decimal agrupado con su escala, fecha numérica), distingue cero, `false` y ausencia, usa etiquetas históricas (varias separadas por coma, con catálogo y detalle; sin proyectar el escalar tipado) y devuelve `null` ante un valor inválido para que la tarjeta no muestre contenido crudo.
 - **Retiro privado.** `withoutFormReplyValues` quita valores de respuestas, cuerpo de `FlowReply` y de avisos FormAction (mensajes y salidas) y la explicación del asistente; conserva origen, autor y textos ordinarios. Se aplica a cada página, no sólo a la última.
+
+- **Agente.** `assistantAgentDraft` arma el borrador desde lo leído, lo que manda Guardar (sólo lo que usa la acción elegida, los textos recortados y un idioma vacío como nulo), qué cambió, los problemas en las rutas del servidor con cada caso nombrado por su id (`case:<id>`), la mezcla de un conflicto (lo que cambié queda, lo demás se toma de lo guardado) y cómo se lee una acción en su fila. Los límites son los del servidor (`agentLimits`).
 
 ## Referencias
 

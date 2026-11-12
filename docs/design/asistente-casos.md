@@ -1,6 +1,6 @@
 # Casos del asistente: tableros elegidos
 
-Fecha: **2026-10-21**. **Elegidos AS1-A y AS2–AS6** de la versión 98 del lienzo; por programar.
+Fecha: **2026-10-21**. **Elegidos AS1-A y AS2–AS6** de la versión 98 del lienzo. **La pantalla «Asistente» (AS1-A, AS2, AS3 y AS5) está programada** en `/whatsapp/asistente` desde el 2026-11-11, con [las diferencias de abajo](#diferencias-de-lo-programado--2026-11-11); el chat (AS4) viene después.
 
 Origen: la sección «Casos del asistente» de la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -22,6 +22,30 @@ valen para el concepto elegido.
 | [AS4 · El chat](evidence/asistente-casos/as4-chat.png) | **Elegido el 2026-10-21.** Cada acción sale como «Asistente», con su porqué debajo: «Por qué respondió esto» (el caso, lo que usó y el texto, guardado tal como salió) o «Por qué lo mandó» para un formulario. Derivar manda el mensaje fijo del perfil, pasa la conversación a Atención manual y la marca «Necesita una persona» con el motivo: en la cabecera, en una franja y en la lista de chats, con el filtro «Necesita una persona (N)»; se quita cuando alguien le responde. También el texto exacto, los botones, «Sin respuesta del asistente», el tope del día (deriva) y, en Atención manual, la respuesta redactada como borrador para el operador, con la sugerencia de hoy (H2). Sin avisos fuera del sistema. |
 | [AS5 · Límites y conocimiento](evidence/asistente-casos/as5-limites-y-conocimiento.png) | **Elegido el 2026-10-21.** Límites: las reglas fijas de toda respuesta redactada (solo con lo cargado; corta y en el idioma de la persona; sin enlaces, teléfonos, precios ni compromisos que no estén cargados; si no sabe, deriva), temas que no responde, lo que no puede prometer, el largo máximo (lo que se pasa no sale y deriva), el tope de respuestas por conversación y día (aparte de los 2 ofrecimientos; al llegar, deriva) y las acciones que el agente puede usar. Al derivar, el mensaje es el del perfil. Conocimiento: la Información del negocio, de solo lectura, sección por sección con su estado («Cargado», «Sin cargar», «Texto anterior, sin revisar»); las preguntas sin respuesta y los textos anteriores sin revisar no se usan. Se edita en su pantalla, con «Administrar información del negocio». |
 | [AS6 · El circuito de punta a punta](evidence/asistente-casos/as6-circuito.png) | **Elegido el 2026-10-21.** Los ejemplos en el celular de la persona y en el chat del operador, con lo que hacen la persona, el sistema y la IA, más la ráfaga con tres acciones. La IA elige y redacta; el sistema le pasa esa conversación de las últimas 24 horas con lo que ya hizo, vuelve a validar límites y permisos antes de mandar y guarda el caso, lo que usó y el texto. Como hoy, solo en modo Asistente y dentro de las 24 horas. |
+
+## Diferencias de lo programado — 2026-11-11
+
+La revisión del 11/11 contra la lista de chequeo de [visual-baseline](visual-baseline.md) y las reglas nuevas (sin leyendas, motivo de lo apagado, un dato por columna, fechas sólo con números) cambió dos cosas, aprobadas por el usuario:
+
+- La zona «Cuando deriva» de Límites se fue: repetía el mensaje del Perfil. Los cuatro motivos para derivar (un caso, un tema que no responde, que no encuentre la respuesta en lo cargado y el tope del día) pasaron a la (i) de «Mensaje al derivar a una persona», en Perfil.
+- El recuadro «Siempre, en todas las respuestas redactadas» pasó a la (i) del título «Límites».
+
+Y al programar, con los componentes que ya existen:
+
+1. El encabezado de los paneles (el editor de un caso y Probar) es blanco con una línea, como los diálogos, no la banda verde.
+2. «Qué hacer» va en una sola columna de tarjetas: sin descripciones cada una ocupa un renglón y `RadioGroupField` no tiene grilla.
+3. «Prellenado con lo que diga el mensaje.» y «No se borra ni se mueve» explicaban algo: pasaron a la (i) de su banda.
+4. Un caso propio que manda un formulario dice «Mandar <formulario>», igual que el bloque de los formularios.
+5. «Editar en Información del negocio» y «Editar en el formulario» van sin el ícono de enlace externo: navegan dentro de la app.
+6. Las zonas de Conocimiento usan los títulos reales de Información del negocio («Datos del negocio», «Ubicación y zona de atención», «Horario de atención», «Servicios y condiciones», «Preguntas frecuentes»), en el orden del servidor; «Qué dice» lista los hechos confirmados y debajo, en gris, cuántas preguntas no tienen respuesta. Un texto anterior sin revisar no se muestra.
+7. En Probar cada burbuja lleva su hora (`MessageBubble` la exige), el número de cada acción es el recuadro de `StepList` y no hay una cuenta elegida de entrada: Probar la pide.
+8. «Necesita una persona» y su motivo van sin «Motivo:».
+9. «Cualquier otra cosa» no tiene «Tipo de entrada».
+10. En el celular, Descartar y Guardar quedan abajo con `sticky`, como en la carga web de un formulario.
+11. Límites suma «Agregar» junto al cuadro del tema.
+12. Lo que el tablero no dibuja: la pestaña con un problema lleva un ícono, el 409 se revisa en una zona con `ComparisonTable` y, mientras se guarda o hay un conflicto, la lista queda inerte.
+
+Capturas: `src/test/visual/screenshots/assistant-agent-{cases,case-editor,profile-empty,limits,knowledge,test}-{es,en}-{1440,390,320}.png`.
 
 ## Lo que se fijó al dibujar
 

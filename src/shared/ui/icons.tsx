@@ -370,6 +370,13 @@ export function BellIcon(props: IconProps) { return <Icon {...props}><path d="M1
 /// A link that opens outside the app, in another tab: the WhatsApp chat of the business.
 export function ExternalLinkIcon(props: IconProps) { return <Icon {...props}><path d="M14 4h6v6M10 14 20 4"/><path d="M18 13.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4.5"/></Icon>; }
 
+/// Casos del asistente (AS1-A to AS5): «Asistente» in the WhatsApp panel, «Probar», and two actions of «Qué hacer» (answer with
+/// the business information, ask with buttons).
+export function MonitorIcon(props: IconProps) { return <Icon {...props}><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></Icon>; }
+export function FlaskIcon(props: IconProps) { return <Icon {...props}><path d="M9 3h6M10 3v6L4.7 18.4A1.7 1.7 0 0 0 6.2 21h11.6a1.7 1.7 0 0 0 1.5-2.6L14 9V3"/><path d="M7.2 15h9.6"/></Icon>; }
+export function BookIcon(props: IconProps) { return <Icon {...props}><path d="M5 19V5a2 2 0 0 1 2-2h12v14H7a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12"/></Icon>; }
+export function ListIcon(props: IconProps) { return <Icon {...props}><path d="M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01"/></Icon>; }
+
 export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";
 export { MapPin as MapPinIcon } from "lucide-react";
 

@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { PermissionRequirement } from "@/auth/usePermissions";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon, MonitorIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -85,7 +85,11 @@ export const administration: NavigationPanel = {
 /// no otro árbol: las migas y la ruta activa no tienen por qué saber dónde está dibujado cada uno.
 export const whatsapp: NavigationPanel = {
   labelKey: "navigation.whatsapp", icon: PublicWhatsAppIcon,
-  items: [{ labelKey: "navigation.whatsappChat", to: "/whatsapp/chat", icon: PublicWhatsAppIcon, permission: "whatsapp.read" }],
+  items: [
+    { labelKey: "navigation.whatsappChat", to: "/whatsapp/chat", icon: PublicWhatsAppIcon, permission: "whatsapp.read" },
+    // Casos del asistente (AS1-A): the main agent, with «Configurar el asistente».
+    { labelKey: "navigation.whatsappAssistant", to: "/whatsapp/asistente", icon: MonitorIcon, permission: "whatsapp.configureassistant" },
+  ],
 };
 export function isWhatsAppPath(pathname: string): boolean {
   const path = withoutTrailingSlash(pathname);

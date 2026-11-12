@@ -81,6 +81,10 @@ export const routes: RouteObject[] = [
                 children: [{ path: "/whatsapp/chat", lazy: async () => ({ Component: (await import("@/features/whatsapp/pages/WhatsAppChatPage")).WhatsAppChatPage }) }],
               },
               {
+                element: <ProtectedRoute permission="whatsapp.configureassistant" />,
+                children: [{ path: "/whatsapp/asistente", lazy: async () => ({ Component: (await import("@/features/whatsapp/pages/AssistantAgentPage")).AssistantAgentPage }) }],
+              },
+              {
                 element: <ProtectedRoute permission="users.read" />,
                 children: [
                   {

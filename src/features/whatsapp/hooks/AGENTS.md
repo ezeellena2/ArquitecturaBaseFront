@@ -10,6 +10,8 @@ Coordinan TanStack Query, permisos y estado en memoria del chat. Cada hook tiene
 | Envío de un formulario | `useFormComposer` |
 | Sugerencia del asistente en Atención manual | `useAssistantSuggestion` |
 | Transcripción de audios recibidos | `useChatAudioTranscription` |
+| El agente de «Asistente»: borrador, guardado y conflicto | `useAssistantAgentEditor` |
+| Probar el asistente | `useAssistantAgentTests` |
 
 ## Al modificar
 
@@ -27,6 +29,8 @@ Coordinan TanStack Query, permisos y estado en memoria del chat. Cada hook tiene
 - **Retry-After.** Un 429 fija la espera (1 s a 24 h; 30 s si falta) en listado, preparación, envío, consulta y sugerencias; acciones y avisos leen el plazo vigente y al vencer no se repite nada solo.
 - **Sugerencia.** El dueño (armado por `ChatThread`) combina actor, conversación, cultura, permisos, revisión de modo, fuente y revisión del destinatario. Cambiarlo reinicia sólo el estado privado con un UUID nuevo, sin remontar el editor ordinario; la disponibilidad de IA no forma parte del dueño. Con puntero se consulta por GET; sin puntero y con permiso de análisis se pide una vez (el servidor deduplica). Una operación a la vez con `AbortController` (`busyAction` dice cuál, para que cada control muestre su progreso, y `searching` cuando se pide o consulta sin el diálogo abierto o está Pending); un resultado tardío de otro dueño se descarta. Enviar congela `requestId` e IDs incluidos; incierto o 409 obliga a consultar antes de repetir. Pending se consulta cada 5 s con la pestaña visible y una falla pausa ese sondeo. Un 403 retira propuesta, intento y diálogo sin tocar la lectura del chat. Nada va a QueryCache, MutationCache, URL ni storage.
 - **Transcripción.** En Manual con `whatsapp.read` (sin exigir Send) pide una vez cada audio Pending cargado, sin cuerpo. Pausar la lectura aborta el transporte y conserva las identidades intentadas; sólo un dueño nuevo (actor, conversación, cultura, permisos) las olvida. Un GET del hilo que falla de forma transitoria no cancela un POST en vuelo y un resultado tardío de otro dueño se ignora. Completar no fuerza otro GET: el sondeo del hilo observa todos los audios. Un 403 llama a `denyRead`.
+
+- **Asistente.** `useAssistantAgentEditor` tiene el borrador en memoria (sin MutationCache ni URL), valida al guardar y en vivo después del primer intento, y lleva cada 400 a la clave del caso que estaba en ese lugar al mandarlo, así moverlo conserva el problema. `save()` devuelve las claves con problemas para que la página lleve el foco al primero. Un 409 deja revisar lo guardado (`reviewChanges`) y conservar lo editado sobre lo de la otra persona o usar lo guardado; un resultado incierto avisa y conserva el borrador (sin comprobante, ADR 0018: el siguiente guardado da 409 si el primero entró). Un 429 es el motivo de Guardar. `useAssistantAgentTests` manda cada prueba con su `requestId` y lee su resultado cada 1,5 s mientras está pendiente; un POST incierto pasa a leer (un 404 dice que no corrió) y una lectura que falla deja «Consultar de nuevo». Cerrar el panel corta las lecturas y olvida los resultados.
 
 ## Referencias
 
