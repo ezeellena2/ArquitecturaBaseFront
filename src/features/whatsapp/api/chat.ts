@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { chatAudioSchema, type ChatAudio } from "./audio";
 import { api } from "@/shared/api/httpClient";
-import { readThreadFormReplies, type FormReply } from "./formReplies";
+import { formRecordNumberSchema, readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
 import { assistantExplanationSchema, assistantSuggestionPointerSchema, assistantQuickRepliesSchema, type AssistantExplanation, type AssistantSuggestionPointer } from "./assistant";
 
@@ -38,6 +38,26 @@ const receivedDocumentSchema = z.strictObject({ name: z.string().min(1).optional
   pages: z.number().int().min(1).optional(), reasonCode: z.literal("notLinked").optional() })
   .refine(document => document.name !== undefined || document.kind === "jpeg" || document.kind === "png");
 export type ReceivedDocument = z.infer<typeof receivedDocumentSchema>;
+// VC1-A: «Por qué lo propuso» of a spreadsheet, on the notice of its loads: the rows it recognized of each form (named in the reader's
+// language), the ones it sent (up to three), the ones it passed to the team and the repeated ones, each with the response it is already in
+// or the row of the same spreadsheet it repeats, which is listed too. A row is its sheet (only when the book has more than one, so all of a
+// notice are named or none is) and its number; none is in two places. It names forms, rows and response numbers, never a value of a
+// response: like the reasons of AS4, everyone with whatsapp.read sees it.
+const sheetRowSchema = z.strictObject({ sheet: z.string().min(1).nullable(), number: z.number().int().min(1) });
+const rowKey = (row: z.infer<typeof sheetRowSchema>) => JSON.stringify([row.sheet, row.number]);
+const repeatedRowSchema = z.strictObject({ row: sheetRowSchema, recordNumber: formRecordNumberSchema.nullable(), sameAs: sheetRowSchema.nullable() })
+  .refine(entry => (entry.recordNumber === null) !== (entry.sameAs === null) && (entry.sameAs === null || rowKey(entry.sameAs) !== rowKey(entry.row)));
+const spreadsheetRowsSchema = z.strictObject({
+  recognized: z.array(z.strictObject({ form: z.string().min(1), count: z.number().int().min(1) })).min(1),
+  sent: z.array(sheetRowSchema).max(3), forTeam: z.array(sheetRowSchema), repeated: z.array(repeatedRowSchema),
+}).refine(rows => {
+  const listed = [...rows.sent, ...rows.forTeam, ...rows.repeated.map(entry => entry.row)];
+  const keys = new Set(listed.map(rowKey));
+  const repeats = rows.repeated.flatMap(entry => entry.sameAs === null ? [] : [entry.sameAs]);
+  const named = [...listed, ...repeats].map(row => row.sheet !== null);
+  return keys.size === listed.length && repeats.every(row => keys.has(rowKey(row))) && (named.every(Boolean) || !named.some(Boolean));
+});
+export type SpreadsheetRows = z.infer<typeof spreadsheetRowsSchema>;
 export type MessagePurpose = "Unclassified" | "Business" | "Access";
 export type AccessEventKind = "SignInCode" | "VerifyPhoneCode" | "Invitation" | "AccessRequested" | "AccessInstructions";
 export type OutgoingState = "Pending" | "Sending" | "Accepted" | "Failed" | "Uncertain" | "Reviewed";
@@ -69,6 +89,8 @@ export interface ChatMessage {
   prefill?: PrefilledValue[];
   /** Task 8 of the documents: what a `ReceivedDocument` is; it goes with the body when the history is cleared. */
   document?: ReceivedDocument;
+  /** VC1-A: «Por qué lo propuso» of the notice of the loads of a spreadsheet, seen with whatsapp.read. */
+  spreadsheetRows?: SpreadsheetRows;
 }
 export interface Outgoing {
   assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies" | "LocationRequest"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
@@ -78,6 +100,8 @@ export interface Outgoing {
   assistantReply?: AssistantReply;
   /** W3: «Prellenado con» of a queued resend of the form, only with `formrecords.read`, like «Por qué lo mandó». */
   prefill?: PrefilledValue[];
+  /** VC1-A: «Por qué lo propuso» of the queued notice of the loads of a spreadsheet, seen with whatsapp.read. */
+  spreadsheetRows?: SpreadsheetRows;
 }
 /** `assistantEvents` (AS4): what the assistant decided without a message in the page's span, oldest first. */
 export interface Thread { assistantSuggestion: AssistantSuggestionPointer | null; assistantAvailability: AssistantAvailability; contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean; assistantEvents?: AssistantEvent[] }
@@ -106,6 +130,8 @@ export const getThread = async (id: string, cursor?: { at: string; id: string },
   if (thread.messages.some(row => !sharedContactSchema.optional().safeParse(row.contact).success) || thread.canReadFormRecords === true
     && [...thread.messages, ...thread.outgoing].some(row => !prefillSchema.optional().safeParse(row.prefill).success)) return unsupported();
   if (thread.messages.some(row => !receivedDocumentSchema.optional().safeParse(row.document).success)) return unsupported();
+  // «Por qué lo propuso» is no value of a response: it is checked for every reader, and `withoutFormReplyValues` keeps it.
+  if ([...thread.messages, ...thread.outgoing].some(row => !spreadsheetRowsSchema.optional().safeParse(row.spreadsheetRows).success)) return unsupported();
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });
 };
 export const markRead = (id: string, throughSequence: number) => api.put<void>(`${base}/${id}/read`, { throughSequence });

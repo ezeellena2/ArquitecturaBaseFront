@@ -255,8 +255,11 @@ const origin = z.strictObject({
   sentAtUtc: utc,
   conversationId: guid.nullable(),
   maskedAddress: z.string().nullable(),
-  // DOC5-A: the document of «Documentos recibidos» it came from, when it came from one.
-  document: z.strictObject({ id: guid, name: z.string().min(1) }).optional(),
+  // DOC5-A: the document of «Documentos recibidos» it came from, when it came from one. VC1-A: a row of a spreadsheet says which (its
+  // sheet only when the book has more than one) and when its spreadsheet arrived («Salió de una planilla · {archivo}, fila {n}»). The
+  // shape is the inbox's row, written here so the editor, which reads responses, does not load the inbox's guards.
+  document: z.strictObject({ id: guid, name: z.string().min(1),
+    row: z.strictObject({ sheet: z.string().min(1).nullable(), number: z.number().int().min(1), receivedAtUtc: utc }).optional() }).optional(),
 });
 // An item of a block in the detail: every question of the block in its version, with null where it was left empty.
 const itemValue = z.strictObject({ fieldId: guid, key: z.string(), type: rowType, label: z.string(), value })

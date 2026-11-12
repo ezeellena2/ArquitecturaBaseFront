@@ -10,6 +10,8 @@ const number = z.string().regex(/^[A-Z][A-Z0-9]{0,11}-\d{6,19}$/).refine(value =
   const digits = value.slice(value.lastIndexOf('-') + 1);
   return /^\d{6,19}$/.test(digits) && BigInt(digits) > 0n && BigInt(digits) <= 9223372036854775807n;
 });
+/** The number of a saved response, «PREFIJO-dígitos»; «Por qué lo propuso» of a spreadsheet names it too (VC1-A). */
+export const formRecordNumberSchema = number;
 const field = { fieldId: guid, key: text, label: text };
 const decimal = z.string().regex(/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/);
 const date = z.string().refine(value => formatDateOnly(value, 'en') !== null);

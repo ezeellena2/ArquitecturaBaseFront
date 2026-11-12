@@ -117,6 +117,7 @@
   "reasons": {
     "forReviewExpired": "Venció sin que {{person}} lo confirmara en WhatsApp.",
     "forReviewNotSendable": "No se le pudo mandar el formulario a {{person}}.",
+    "forReviewOverLimit": "Pasó el tope de 3 cargas por mensaje.",
     "waiting": "Le mandamos este documento a {{person}}. Si no lo confirma hasta el {{date}}, lo podés revisar acá.",
     "quota": "Llegó cuando ya no quedaban lecturas del día: no se leyó.",
     "other": "Quien lo mandó eligió «Otro»: no encaja en ningún formulario.",
@@ -194,6 +195,8 @@
     "confirmed": "Se cargó como {{number}}",
     "confirmedOther": "Se cargó en su formulario",
     "choseOther": "Eligió «Otro»",
-    "formChosen": "Eligió el formulario"
+    "formChosen": "Eligió el formulario",
+    "sent": "Se la mandó prellenada a {{person}}, como {{position}} de {{total}}.",
+    "overLimit": "Pasó el tope de 3 cargas por mensaje: quedó para revisar acá."
   }
 }

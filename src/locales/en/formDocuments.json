@@ -117,6 +117,7 @@
   "reasons": {
     "forReviewExpired": "It expired without {{person}} confirming it on WhatsApp.",
     "forReviewNotSendable": "The form could not be sent to {{person}}.",
+    "forReviewOverLimit": "It went over the limit of 3 loads per message.",
     "waiting": "We sent this document to {{person}}. If they do not confirm it by {{date}}, you can review it here.",
     "quota": "It arrived when no readings were left for the day: it was not read.",
     "other": "Whoever sent it chose “Other”: it does not fit any form.",
@@ -194,6 +195,8 @@
     "confirmed": "Loaded as {{number}}",
     "confirmedOther": "Loaded in its form",
     "choseOther": "Chose “Other”",
-    "formChosen": "Chose the form"
+    "formChosen": "Chose the form",
+    "sent": "Sent prefilled to {{person}}, as {{position}} of {{total}}.",
+    "overLimit": "It went over the limit of 3 loads per message: left to review here."
   }
 }

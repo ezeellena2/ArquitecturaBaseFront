@@ -20,8 +20,10 @@ export const receivedDocumentFilterStates = ["proposed", "forReview", "unclassif
 export type ReceivedDocumentFilterState = (typeof receivedDocumentFilterStates)[number];
 export const receivedDocumentQuestionTypes = ["shortText", "longText", "decimal", "date", "boolean", "choice"] as const;
 export const receivedDocumentMarks = ["doubtful", "notRead", "invalid", "completed"] as const;
-// «formChosen» is the person choosing a form of a doubt in the channel; «choseOther», choosing «Otro».
-export const receivedDocumentEventKinds = ["received", "discarded", "reopened", "extractionRequested", "formChanged", "extractionFailed", "confirmed", "choseOther", "formChosen"] as const;
+// «formChosen» is the person choosing a form of a doubt in the channel; «choseOther», choosing «Otro». VC1-A: «sent» is a row sent as one
+// of the loads of its spreadsheet, with «{i}/{k}» in its detail; «overLimit», a row past the three loads of a message.
+export const receivedDocumentEventKinds = ["received", "discarded", "reopened", "extractionRequested", "formChanged", "extractionFailed", "confirmed", "choseOther", "formChosen",
+  "sent", "overLimit"] as const;
 
 const person = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const form = z.strictObject({ definitionId: guid, name: z.string() });
@@ -29,6 +31,8 @@ const form = z.strictObject({ definitionId: guid, name: z.string() });
 // Only such a one can come without its size, when the channel never said it (one over the limit).
 const file = z.strictObject({ name: z.string().min(1), mediaType: z.string().min(1), size: count.nullable(), pages: z.number().int().min(1).max(10).nullable(), stored: z.boolean() })
   .refine(entry => entry.size !== null || !entry.stored);
+// VC1-A: a row of a spreadsheet is an entry of its own: its sheet only when the book has more than one, and its number as Excel numbers it.
+const receivedDocumentRowSchema = z.strictObject({ sheet: z.string().min(1).nullable(), number: z.number().int().min(1) });
 // Up to three data read that help find it, as the person reads them: the question and its value (an amount, a validated number, an
 // option).
 const highlight = z.strictObject({ fieldId: guid, label: z.string(), value: z.string() });
@@ -38,6 +42,8 @@ const item = z.strictObject({
   // A proposed one is for the team when nobody waits for its person (it cannot be sent, or its reply expired).
   forReview: z.boolean(), reasonCode: z.string().min(1).nullable(), documentType: z.string().min(1).nullable(),
   record: z.strictObject({ recordId: guid, number: z.string().min(1) }).nullable(), file,
+  // Only a row of a spreadsheet, whose file is the spreadsheet.
+  row: receivedDocumentRowSchema.optional(),
   highlights: z.array(highlight).max(3).refine(values => unique(values.map(value => value.fieldId))),
   deleteAfterUtc: utc.nullable(),
   // Until when its person is waited for in the channel: only while it waits for them, and then always (null when nobody is).
@@ -85,21 +91,37 @@ const value = z.strictObject({
   .refine(entry => (entry.options !== null) === (entry.type === "choice"))
   .refine(entry => entry.optionsUnavailable === null || entry.type === "choice" && entry.options?.length === 0);
 const candidate = z.strictObject({ definitionId: guid, versionId: guid, name: z.string(), values: z.array(value).max(40).refine(values => unique(values.map(entry => entry.fieldId))) });
-// Where the same document already is: a response of the form (with its number) or another document of the inbox.
-const repetition = z.strictObject({ atUtc: utc, recordId: guid.nullable(), recordNumber: z.string().min(1).nullable(), documentId: guid.nullable() });
+// Where the same document already is: a response of the form (with its number) or another document of the inbox. VC1-A: the data that
+// matched, together and in the reader's language («Repetida: el mismo {dato} que {número}.»), and, for a row that repeats another row of
+// the same spreadsheet, that row with its entry instead of a response.
+const repetition = z.strictObject({ atUtc: utc, recordId: guid.nullable(), recordNumber: z.string().min(1).nullable(), documentId: guid.nullable(),
+  labels: z.array(z.string().min(1)).min(1).refine(values => new Set(values).size === values.length).optional(), row: receivedDocumentRowSchema.optional() })
+  .refine(value => value.row === undefined || value.documentId !== null && value.recordNumber === null);
 const proposal = z.strictObject({
   outcome: z.enum(["sure", "doubt", "unknown"]), documentType: z.string().min(1).nullable(),
   candidates: z.array(candidate).max(3).refine(values => unique(values.map(entry => entry.definitionId))), repetition: repetition.nullable(),
 });
-const historyEvent = z.strictObject({ atUtc: utc, kind: z.enum(receivedDocumentEventKinds), actor: person.nullable(), detail: z.string().nullable() });
+// A load says which of the loads of its message it was, «1/3», up to three; one past them says nothing more.
+const load = /^([1-3])\/([1-3])$/;
+const sentAs = (detail: string | null) => { const match = detail === null ? null : load.exec(detail); return match !== null && Number(match[1]) <= Number(match[2]); };
+const historyEvent = z.strictObject({ atUtc: utc, kind: z.enum(receivedDocumentEventKinds), actor: person.nullable(), detail: z.string().nullable() })
+  .refine(event => event.kind !== "sent" || sentAs(event.detail))
+  .refine(event => event.kind !== "overLimit" || event.detail === null);
 const detail = z.strictObject({
-  document: item, reading: reading.nullable(), proposal: proposal.nullable(),
+  document: item, reading: reading.nullable(),
+  // VC1-A: a row brings its cells with content as they came, each with the header of its column (its letter when that header is empty),
+  // instead of the reading of a document.
+  rowCells: z.array(z.strictObject({ header: z.string().min(1), value: z.string().min(1) })).min(1).optional(),
+  proposal: proposal.nullable(),
   // The change of form that runs, while it runs.
   extraction: z.strictObject({ requestId: guid, definitionId: guid, requestedAtUtc: utc }).nullable(),
   history: z.array(historyEvent), canReview: z.boolean(),
   // The forms it can be read for, only for whoever reviews it.
   forms: z.array(form).refine(values => unique(values.map(entry => entry.definitionId))),
-}).refine(entry => entry.canReview || entry.forms.length === 0);
+}).refine(entry => entry.canReview || entry.forms.length === 0)
+  .refine(entry => (entry.rowCells !== undefined) === (entry.document.row !== undefined) && (entry.rowCells === undefined || entry.reading === null))
+  // Only a row is one of the loads of its spreadsheet, or goes over their limit.
+  .refine(entry => entry.document.row !== undefined || !entry.history.some(event => event.kind === "sent" || event.kind === "overLimit"));
 // A change of form while it runs, after it or when it failed with its code.
 const extraction = z.strictObject({ requestId: guid, state: z.enum(["pending", "completed", "failed"]), failureCode: z.string().min(1).nullable() })
   .refine(entry => (entry.failureCode !== null) === (entry.state === "failed"));

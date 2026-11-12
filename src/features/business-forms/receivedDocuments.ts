@@ -76,7 +76,7 @@ export function receivedDocumentForms(detail: Pick<ReceivedDocumentDetail, "docu
  * the backend answers 409).
  */
 export interface ReceivedDocumentActions { edit: boolean; pass: boolean; changeForm: boolean; discard: boolean; reopen: boolean; waiting: boolean }
-export function receivedDocumentActions(detail: Pick<ReceivedDocumentDetail, "document" | "canReview" | "reading">): ReceivedDocumentActions {
+export function receivedDocumentActions(detail: Pick<ReceivedDocumentDetail, "document" | "canReview" | "reading" | "rowCells">): ReceivedDocumentActions {
   const { state, forReview } = detail.document;
   const review = detail.canReview;
   const waiting = review && state === "proposed" && !forReview;
@@ -86,7 +86,8 @@ export function receivedDocumentActions(detail: Pick<ReceivedDocumentDetail, "do
     changeForm: review && (state === "proposed" || state === "unclassified"),
     discard: review && (state === "proposed" || state === "unclassified"),
     // One that was never read (a rejected file) is not reopened: a change of form needs its reading, so nothing would be left to review.
-    reopen: review && state === "discarded" && detail.reading !== null,
+    // A row's reading is its cells (VC1-A).
+    reopen: review && state === "discarded" && (detail.reading !== null || detail.rowCells !== undefined),
     waiting,
   };
 }
@@ -157,7 +158,7 @@ export function receivedDocumentErrorKey(code: string | null): string {
  */
 export type ReceivedDocumentReason = { key: string; values?: Record<string, string> } | null;
 // The steps that decide who a document waits for; a change of form that failed leaves it as it was.
-const waitingSteps = new Set<ReceivedDocumentEvent["kind"]>(["received", "formChosen", "choseOther", "reopened", "formChanged", "discarded", "confirmed"]);
+const waitingSteps = new Set<ReceivedDocumentEvent["kind"]>(["received", "formChosen", "choseOther", "reopened", "formChanged", "discarded", "confirmed", "overLimit"]);
 export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "document" | "reading" | "proposal" | "history">, unknownPerson: string): ReceivedDocumentReason {
   const { state, reasonCode, forReview, sender } = detail.document;
   const person = sender.displayName ?? unknownPerson;
@@ -166,6 +167,8 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
   if (state === "proposed" && forReview) {
     const last = [...detail.history].reverse().find(event => waitingSteps.has(event.kind));
     if (last?.kind === "received" && last.detail === "notSendable") return { key: "reasons.forReviewNotSendable", values: { person } };
+    // VC1-A: a row past the three loads of its message waits for the team from the start: nothing expired.
+    if (last?.kind === "overLimit") return { key: "reasons.forReviewOverLimit" };
     return last?.kind === "formChosen" || last?.kind === "received" && (last.detail === "sure" || last.detail === "doubt") ? { key: "reasons.forReviewExpired", values: { person } } : null;
   }
   if (state === "unclassified") return { key: reasonCode === "quota" ? "reasons.quota" : reasonCode === "other" ? "reasons.other" : "reasons.unknown" };
@@ -185,9 +188,10 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
 const refusedCode = "Forms.ReceivedDocument.ExtractionRefused";
 /**
  * A step of the history, as the person reads it: what happened (with the form or the response it names) and who did it below. A change
- * of form the engine refused names the form asked for in the step that asked for it (`earlier`, the steps before it).
+ * of form the engine refused names the form asked for in the step that asked for it (`earlier`, the steps before it). A row sent as one of
+ * the loads of its spreadsheet («{i}/{k}», VC1-A) names the person it was sent to: the one who sent it (`sender`).
  */
-export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: readonly ReceivedDocumentEvent[] = []): { key: string; values?: Record<string, string> } {
+export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: readonly ReceivedDocumentEvent[] = [], sender = ""): { key: string; values?: Record<string, string> } {
   switch (event.kind) {
     case "received": return { key: "history.received." + (["sure", "doubt", "unknown", "unreadable", "duplicate", "notSendable", "quota", "rejected"].includes(event.detail ?? "") ? event.detail : "other") };
     case "extractionRequested": return event.detail ? { key: "history.extractionRequested", values: { form: event.detail } } : { key: "history.extractionRequestedOther" };
@@ -198,6 +202,10 @@ export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: 
       return asked ? { key: "history.extractionRefused", values: { form: asked } } : { key: "history.extractionRefusedOther" };
     }
     case "confirmed": return event.detail ? { key: "history.confirmed", values: { number: event.detail } } : { key: "history.confirmedOther" };
+    case "sent": {
+      const [position = "", total = ""] = event.detail?.split("/") ?? [];
+      return { key: "history.sent", values: { person: sender, position, total } };
+    }
     default: return { key: "history." + event.kind };
   }
 }
