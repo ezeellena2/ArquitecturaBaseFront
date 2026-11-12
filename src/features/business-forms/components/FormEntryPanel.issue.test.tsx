@@ -102,7 +102,7 @@ describe("the itemized total while loading (IV1-A)", () => {
     const notice = await within(panel).findByText("No pudimos calcular el total. Al enviar se calcula igual.", undefined, { timeout: 5000 });
     expect(asked).toHaveLength(1);
     await user.click(within(notice.closest("[role=status]")!).getByRole("button", { name: "Volver a probar" }));
-    expect(await within(panel).findByText("$ 1210", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(await within(panel).findByText("$ 1.210", undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(asked).toHaveLength(2);
   }, 30000);
 });
