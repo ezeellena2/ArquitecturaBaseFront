@@ -15,7 +15,7 @@ export interface StatCardProps {
 /**
  * A number with its variation (DOC7-A): the name in grey, the number at the level of a screen title, with the proportional
  * figures of the font, and its detail in grey. It does not format nor compare: its owner says the number, the sign and against
- * which period it compares («+18 % que 01/09/2026 – 30/09/2026»).
+ * which period it compares («+18% que 01/09/2026 – 30/09/2026»).
  */
 export function StatCard({ label, value, detail, loading = false }: StatCardProps): ReactNode {
   return (

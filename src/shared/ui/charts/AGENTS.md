@@ -11,7 +11,7 @@ cada fecha (`shared/lib/dateTime`, `typedValue`) y nombra cada pieza.
   (null), sin barra y «—». La cifra va sobre la barra sólo si entra en su lugar (cada balde es un contenedor) y el eje nombra
   pocas fechas, enteras y con números, más a medida que la tarjeta crece: la primera y la última, debajo de su barra mientras
   entran en su lugar y contra el borde cuando no. Cada balde dice su período y su valor al pasar el mouse y al lector de pantalla.
-- `BarList`: el reparto de una pregunta, un renglón por opción con su nombre, su barra contra la más larga y «38 · 31 %», con una
+- `BarList`: el reparto de una pregunta, un renglón por opción con su nombre, su barra contra la más larga y «38 · 31%», con una
   línea entre renglones; donde no entra, la barra baja debajo del nombre. `tone` es el color de la barra (lo que queda, en gris; un
   estado, el de su rol): el color nunca dice algo solo.
 - Las dos tienen su gemela en tabla (`asTable`, «Ver como tabla»): un dato por columna, los números a la derecha, con `DataTable`.

@@ -14,15 +14,15 @@ const buckets: BarChartBucket[] = [
   { key: "2026-10-04", value: 10, cap: "10", exact: "10", axis: "04/10/2026", period: "04/10/2026" },
 ];
 const items: BarListItem[] = [
-  { key: "galicia", label: "Banco Galicia", value: 38, valueLabel: "38", share: "31 %" },
-  { key: "others", label: "Otras 7 opciones", value: 9, valueLabel: "9", share: "7 %", tone: "muted" },
+  { key: "galicia", label: "Banco Galicia", value: 38, valueLabel: "38", share: "31%" },
+  { key: "others", label: "Otras 7 opciones", value: 9, valueLabel: "9", share: "7%", tone: "muted" },
 ];
 
 describe("StatCard", () => {
   it("says what the number is, the number and its change, in that order", () => {
-    renderWithProviders(<StatCard label="Respuestas" value="123" detail="+18 % que 01/09/2026 – 30/09/2026" />);
+    renderWithProviders(<StatCard label="Respuestas" value="123" detail="+18% que 01/09/2026 – 30/09/2026" />);
     expect(screen.getByText("Respuestas").nextElementSibling).toHaveTextContent("123");
-    expect(screen.getByText("+18 % que 01/09/2026 – 30/09/2026")).toBeVisible();
+    expect(screen.getByText("+18% que 01/09/2026 – 30/09/2026")).toBeVisible();
   });
 
   it("keeps its place without any text while the number arrives", () => {
@@ -83,7 +83,7 @@ describe("BarList", () => {
   it("lists each option with its value and its share, the bar against the longest one", () => {
     renderWithProviders(<BarList label="Por banco" items={items} labelHeader="Opción" valueHeader="Cantidad" shareHeader="%" empty="Sin respuestas" />);
     const rows = within(screen.getByRole("list", { name: "Por banco" })).getAllByRole("listitem");
-    expect(rows.map(row => row.textContent)).toEqual(["Banco Galicia38 · 31 %", "Otras 7 opciones9 · 7 %"]);
+    expect(rows.map(row => row.textContent)).toEqual(["Banco Galicia38 · 31%", "Otras 7 opciones9 · 7%"]);
     expect(rows[1]!.querySelector<HTMLElement>("[style]")?.style.width).toBe(`${9 / 38 * 100}%`);
   });
 

@@ -217,7 +217,7 @@ export const formatDashboardAverage = (value: number, language: string): string 
 /** A short number for the cap of a bar, two significant digits («4,4 M», «820 k»); the table keeps it exact. */
 export const formatDashboardCompact = (value: number, language: string): string => numberFormat(language, { notation: "compact", maximumSignificantDigits: 2 }).format(value);
 
-/** The share of a whole in whole percents, «<1 %» for a sliver; nothing when the whole is nothing. */
+/** The share of a whole in whole percents, «<1%» for a sliver; nothing when the whole is nothing. */
 export function formatDashboardShare(part: number, whole: number, language: string): string | undefined {
   if (!(whole > 0)) return undefined;
   const share = part / whole;
@@ -225,7 +225,7 @@ export function formatDashboardShare(part: number, whole: number, language: stri
   return share > 0 && share < 0.005 ? "<" + percent.format(0.01) : percent.format(share);
 }
 
-/** The change against the previous period, with its sign: «+18 %», «-5 %», «0 %». */
+/** The change against the previous period, with its sign: «+18%», «-5%», «0%». */
 export const formatDashboardChange = (current: number, previous: number, language: string): string =>
   numberFormat(language, { style: "percent", maximumFractionDigits: 0, signDisplay: "exceptZero" }).format((current - previous) / Math.abs(previous));
 

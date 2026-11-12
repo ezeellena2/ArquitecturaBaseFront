@@ -12,7 +12,7 @@ export interface BarListItem {
   value: number | null;
   /** The value, already formatted («38», «4.400.000», «—»). */
   valueLabel: string;
-  /** Its share of the whole, already formatted («31 %»), when there is one. */
+  /** Its share of the whole, already formatted («31%»), when there is one. */
   share?: string;
   tone?: ChartTone;
 }
@@ -37,7 +37,7 @@ const tones: Record<ChartTone, string> = {
 };
 
 /**
- * A distribution in bars (DOC7-A): one row per option, with its name, its bar against the longest and «38 · 31 %», a line
+ * A distribution in bars (DOC7-A): one row per option, with its name, its bar against the longest and «38 · 31%», a line
  * between rows; where the list is narrow, the bar goes under the name. The bars are ranked by their owner, who formats every
  * value; the color of a bar never says something alone: each row says its name and its numbers. `asTable` shows the same
  * numbers as a table, one datum per column.

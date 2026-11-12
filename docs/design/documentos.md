@@ -330,7 +330,7 @@ contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se
 4. **Lo que se lee, en su lugar.** Cada número con su nombre arriba y su variación debajo; un reparto, renglones con el nombre, su
    barra y sus números en columnas fijas; la tabla, un dato por columna.
 5. **Un dato por columna.** Las tablas: «Día», «Semana» o «Mes» y «Cantidad» o el total; «Opción», «Persona» o «Estado», el valor y
-   «%». El reparto no es una tabla (excepción F) y dice «38 · 31 %», como lo pide el plan.
+   «%». El reparto no es una tabla (excepción F) y dice «38 · 31%», como lo pide el plan.
 6. **Sin leyendas.** Sin subtítulos en las tarjetas ni descripción en los vacíos. Las líneas grises son datos: la variación, por
    qué un valor dice «—» y «Se ven los últimos 400 días».
 7. **Textos ciertos, una sola vez.** Los títulos siguen al período de la respuesta a la vista (no al pedido que todavía no llegó) y
@@ -364,7 +364,7 @@ contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se
   acciones del formulario (exportar y agregar una respuesta), iguales en las dos pestañas.
 - **Las pestañas de quien también aprueba** son «Por aprobar (N) · Todas · Tablero» (PL1-A); las demás, «Respuestas (N) ·
   Tablero». «123 respuestas» al lado del período no está: lo dicen la pestaña y el primer número.
-- **El período anterior se nombra con sus fechas** («+18 % que 01/09/2026 – 30/09/2026», fechas sólo con números): no «que
+- **El período anterior se nombra con sus fechas** («+18% que 01/09/2026 – 30/09/2026», fechas sólo con números): no «que
   septiembre». «Mínimo y máximo» no dice «En octubre»: el chip ya dice el rango.
 - **La variación va en gris, con su signo**: el tablero la pinta de verde, pero si subir es bueno depende del formulario.
 - **Los montos van sin símbolo** («14.381.300»), con su moneda en el nombre: «Total de Monto (pesos)» (diferencias del plan).
@@ -384,7 +384,7 @@ contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se
   manda el servidor entran en un teléfono. Un total negativo no tiene barra: su cifra va sobre la línea de base, sin el tono suave.
 - **Una tarjeta cuyo número o moneda no vino con estos filtros** cuenta las respuestas, con su título y «Contar» en «Cantidad», y la
   dirección conserva su total: lo vuelve a sumar cuando los filtros lo dejan entrar.
-- **Un reparto lleva una línea entre renglones** y, donde no entra, la barra debajo del nombre; dice «38 · 31 %» también en el
+- **Un reparto lleva una línea entre renglones** y, donde no entra, la barra debajo del nombre; dice «38 · 31%» también en el
   celular, donde DOC7-A dejaba sólo la cantidad.
 - **Lo que queda va en gris y con un nombre común**: «Otras 7 opciones» (DOC7-A, «Otros 7 clientes» en verde); «Otras N
   personas» en «Quién cargó».

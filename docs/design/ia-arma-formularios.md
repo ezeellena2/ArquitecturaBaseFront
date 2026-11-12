@@ -69,7 +69,7 @@ Los tableros no lo dicen; se resolvió con la opción más simple que cumple el 
   para cambiarlo se quita con la X. El archivo dice en el editor su tipo y su tamaño («Excel · 24 KB») y en el mensaje,
   también sus filas («Excel · 86 filas · 24 KB»). Lo que no se lee, lo vea el navegador o el servidor, queda debajo del
   editor con el archivo, que no se vuelve a mandar hasta quitarlo o cambiarlo; mientras sube, la flecha dice cuánto
-  («Enviando… 40 %»). Quien ya no puede adjuntar recibe el remedio debajo del editor y el clip desaparece, sin cerrar Inicio.
+  («Enviando… 40%»). Quien ya no puede adjuntar recibe el remedio debajo del editor y el clip desaparece, sin cerrar Inicio.
 
 Etapa 2 (2026-11-11), las tarjetas con planilla:
 
@@ -100,7 +100,7 @@ Etapa 3, al programar los documentos en Inicio (2026-11-12), lo que difiere de I
   nombra lo que el clip toma («Sólo se puede adjuntar un PDF, una foto JPEG o PNG, un Word (.docx), un Excel (.xlsx) o un
   CSV.»), y un documento de más de 10 MB, «El archivo pesa 12 MB y el tope es de 10 MB. Achicalo y volvé a adjuntarlo.». El peso
   se redondea hacia arriba: uno apenas pasado dice «10,1 MB», nunca el tope mismo.
-- Una foto o un PDF se lee antes del turno: la flecha dice cuánto subió («Enviando… 40 %») y después «Leyendo el
+- Una foto o un PDF se lee antes del turno: la flecha dice cuánto subió («Enviando… 40%») y después «Leyendo el
   documento…», y el turno sale cuando termina, con lo escrito (el audio, si hay, va antes). Mientras tanto se apagan la X, las
   sugerencias y las conversaciones, porque el turno espera en esta conversación. Un Word va con su turno, como una planilla. La
   espera está en la flecha, como la del audio, sin una línea de estado aparte.

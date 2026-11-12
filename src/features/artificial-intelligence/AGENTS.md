@@ -49,7 +49,7 @@ Planillas de Inicio (Etapa 2): con `bootstrap.attachments` el editor suma el cli
 el elegido se ve con su nombre, su tipo y su tamaño y se quita con la X. Antes de mandar, `attachmentProblem` frena un Excel
 viejo, uno con macros, otro tipo o más de 10 MB, y el motivo queda debajo del editor mientras esté el archivo. Al mandar va
 primero la normalización del audio, si hay, y después `assistantApi.submitFile` (multipart a `file-turns` por `api.upload`,
-con los campos que tiene el turno); la flecha dice cuánto subió («Enviando… 40 %») y repetir el mismo pedido manda el mismo
+con los campos que tiene el turno); la flecha dice cuánto subió («Enviando… 40%») y repetir el mismo pedido manda el mismo
 archivo. Un 400 en `file` deja el texto del servidor debajo del editor con el archivo, que no se vuelve a mandar hasta
 quitarlo o cambiarlo; el 403 `Ai.Assistant.AttachmentForbidden` muestra ahí su remedio y relee el bootstrap, sin cerrar
 Inicio; lo demás sigue el contrato común. El mensaje muestra el archivo con sus filas (`turn.attachment`) junto a lo escrito
@@ -62,7 +62,7 @@ planillas; `documents`, un Word; `documentReading`, además fotos y PDF), y su n
 archivo») y su `accept` lo siguen. `attachmentProblem` frena por la extensión un Word viejo o con macros (que pide guardarlo en
 PDF sólo si el clip lo toma), un tipo que el clip no toma (con la lista de los que sí) o más de 10 MB (con el peso redondeado
 hacia arriba, `roundUpToTenthOfMegabyte`). Una foto o un PDF se lee antes del turno con `useAssistantDocument`, como el audio:
-sube por `api.upload` con su propio `requestId` («Enviando… 40 %»), sigue la lectura con `pollingAfterSeconds` («Leyendo el
+sube por `api.upload` con su propio `requestId` («Enviando… 40%»), sigue la lectura con `pollingAfterSeconds` («Leyendo el
 documento…» en la flecha, con las sugerencias y las conversaciones apagadas) y `actions.submit` manda el turno con
 `documentRequestId`, después del audio si hay. El mismo archivo conserva su pedido: una subida incierta se repite con él, una que
 llegó sólo vuelve a consultar la lectura (sin subirlo; uno que el servidor ya no conoce se sube otra vez con el mismo pedido) y uno
