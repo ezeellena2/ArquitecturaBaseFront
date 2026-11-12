@@ -392,3 +392,9 @@ export function WrenchIcon({ className }: IconProps) { return <Wrench className=
 export function StoreIcon({ className }: IconProps) { return <Store className={className} strokeWidth={1.75} aria-hidden="true" />; }
 export function LeafIcon({ className }: IconProps) { return <Leaf className={className} strokeWidth={1.75} aria-hidden="true" />; }
 export function FileIcon({ className }: IconProps) { return <File className={className} strokeWidth={1.75} aria-hidden="true" />; }
+/// The viewer of a document (DOC5-A, `DocumentViewer`): bring a photo closer, take it away and turn it a quarter clockwise.
+export function ZoomInIcon(props: IconProps) { return <Icon {...props}><circle cx="11" cy="11" r="6.5"/><path d="m16 16 3.5 3.5M8.5 11h5M11 8.5v5"/></Icon>; }
+export function ZoomOutIcon(props: IconProps) { return <Icon {...props}><circle cx="11" cy="11" r="6.5"/><path d="m16 16 3.5 3.5M8.5 11h5"/></Icon>; }
+export function RotateIcon(props: IconProps) { return <Icon {...props}><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 4v4h-4"/></Icon>; }
+/// A photo among the documents of «Documentos recibidos», where a PDF or a Word is `DocumentIcon`.
+export function ImageIcon(props: IconProps) { return <Icon {...props}><rect x="4" y="5" width="16" height="14" rx="1"/><circle cx="9" cy="10" r="1.5"/><path d="m20 16-4.5-4.5L7 19"/></Icon>; }

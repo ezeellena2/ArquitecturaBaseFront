@@ -61,3 +61,16 @@ it("says Reintentando… on its retry while the responses are read again", () =>
   view.rerender(<ResponsePanelFrame title="VIS-000001" navigation={{ ...navigation, error: new Error("network"), onRetry, retrying: true }}><p>Respuesta</p></ResponsePanelFrame>);
   expect(screen.getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
 });
+
+// DOC5-A: a region that scrolls with the keyboard, such as a photo brought closer, keeps ↑ ↓ for itself; Escape still closes.
+it("leaves the arrows to a region that scrolls with the keyboard, and closes with Escape from it", async () => {
+  const onMove = vi.fn(), onClose = vi.fn();
+  renderWithProviders(<ResponsePanelFrame title="comprobante.jpg" navigation={{ ...navigation, onMove, onClose }}>
+    <div role="region" tabIndex={0} aria-label="Foto comprobante.jpg">Foto</div>
+  </ResponsePanelFrame>);
+  screen.getByRole("region", { name: "Foto comprobante.jpg" }).focus();
+  await userEvent.keyboard("{ArrowDown}{ArrowUp}");
+  expect(onMove).not.toHaveBeenCalled();
+  await userEvent.keyboard("{Escape}");
+  expect(onClose).toHaveBeenCalledTimes(1);
+});

@@ -128,7 +128,8 @@
     "catalogs": "Catalogs",
     "responses": "Responses",
     "missingForms": "Missing forms",
-    "formOverview": "Forms"
+    "formOverview": "Forms",
+    "receivedDocuments": "Received documents"
   },
   "layout": {
     "sidebar": {
@@ -171,6 +172,19 @@
     "morePhotos_other": "View {{count}} more photos",
     "photoCount_one": "{{count}} photo",
     "photoCount_other": "{{count}} photos"
+  },
+  "documentViewer": {
+    "toolbar": "View {{name}}",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoom": "{{percent}}",
+    "rotate": "Rotate",
+    "download": "Download",
+    "loading": "Loading the document…",
+    "failed": "We could not load the document.",
+    "photo": "Photo {{name}}",
+    "pdf": "PDF {{name}}",
+    "noPreview": "This file cannot be viewed here."
   },
   "pasteGrid": {
     "row": "Row",

@@ -1,0 +1,199 @@
+{
+  "title": "Documentos recibidos",
+  "help": "Lo que llega por WhatsApp a los formularios con lectura de documentos. Un documento sin clasificar o descartado se borra a los 90 días, con su lectura.",
+  "search": "Monto, CUIT u operación",
+  "searchDigits": "Escribí al menos 3 números: un monto, un CUIT o una operación.",
+  "segments": {
+    "label": "Estado",
+    "all": "Todos",
+    "proposed": "Propuestos",
+    "unclassified": "Sin clasificar",
+    "confirmed": "Confirmados",
+    "discarded": "Descartados"
+  },
+  "filters": "Filtros",
+  "received": "Recibido",
+  "receivedFrom": "Recibido desde",
+  "receivedTo": "Recibido hasta",
+  "invalidRange": "La fecha de hasta es anterior a la de desde.",
+  "chips": {
+    "search": "Búsqueda: {{text}}",
+    "receivedRange": "Recibido: {{from}} – {{to}}",
+    "receivedFrom": "Recibido desde el {{from}}",
+    "receivedTo": "Recibido hasta el {{to}}",
+    "form": "Formulario: {{name}}",
+    "sender": "Mandó: {{name}}"
+  },
+  "remove": "Quitar {{name}}",
+  "clear": "Limpiar todo",
+  "filterAll": "Todos",
+  "noOptions": "No hay opciones que coincidan.",
+  "facetsTruncated": "Se muestran los 100 con más documentos.",
+  "columns": {
+    "document": "Documento",
+    "received": "Recibido",
+    "sender": "Mandó",
+    "form": "Formulario",
+    "state": "Estado",
+    "deletes": "Se borra",
+    "record": "Respuesta"
+  },
+  "states": {
+    "forReview": "Para revisar",
+    "proposed": "Propuesto",
+    "unclassified": "Sin clasificar",
+    "confirmed": "Confirmado",
+    "discarded": "Descartado"
+  },
+  "open": "Abrir {{name}}",
+  "unknownPerson": "Persona sin nombre",
+  "empty": "Todavía no llegaron documentos",
+  "noMatches": "Ningún documento coincide",
+  "loadFailed": "No pudimos cargar los documentos.",
+  "retrying": "Reintentando…",
+  "wait_one": "Esperá {{count}} segundo para volver a intentar.",
+  "wait_other": "Esperá {{count}} segundos para volver a intentar.",
+  "panel": {
+    "label": "Documento",
+    "loadFailed": "No pudimos cargar el documento.",
+    "unavailable": "Este documento ya no está.",
+    "subtitle": "{{person}} · {{date}}"
+  },
+  "tabs": {
+    "label": "Documento",
+    "review": "Revisar",
+    "history": "Historial ({{count}})"
+  },
+  "form": {
+    "label": "Formulario",
+    "help": "Es el formulario que reconoció la IA. Si elegís otro, se vuelven a leer los datos del documento para ese formulario.",
+    "choose": "Elegí un formulario",
+    "none": "Sin formulario",
+    "sure": "Seguro",
+    "doubt": "Con dudas",
+    "versionChanged": "Se publicó otra versión de «{{form}}» después de leerlo: volvé a leer sus datos para pasarlo.",
+    "readAgain": "Volver a leer para «{{form}}»"
+  },
+  "extraction": {
+    "reading": "Leyendo los datos para «{{form}}»…",
+    "readingOther": "Se están leyendo los datos para otro formulario…",
+    "unrecognized": "No se reconocieron los datos para «{{form}}»: el documento queda como estaba.",
+    "failed": "No se pudieron leer los datos para «{{form}}».",
+    "refused": "No se pudo leer para «{{form}}»: el motor no lo permitió.",
+    "unknown": "No pudimos saber si terminó la lectura para «{{form}}».",
+    "unknownOther": "No pudimos saber si terminó la lectura para el otro formulario."
+  },
+  "data": {
+    "more_one": "Ver {{count}} dato más",
+    "more_other": "Ver los {{count}} datos más",
+    "less": "Ver menos datos",
+    "choose": "Elegí una opción",
+    "missingData": "No hay opciones para {{person}}: le falta «{{datum}}». Completalo en Datos de las personas."
+  },
+  "options": {
+    "search": "Buscar en {{label}}",
+    "loading": "Cargando las opciones…",
+    "noMatches": "Ninguna opción coincide con «{{search}}».",
+    "empty": "No hay opciones.",
+    "failed": "No se pudieron traer las opciones.",
+    "truncated": "Se muestran las primeras 50: escribí para buscar otras.",
+    "clear": "Quitar {{label}}"
+  },
+  "marks": {
+    "doubtful": "Revisá",
+    "notRead": "No se leyó",
+    "completed": "Del catálogo",
+    "bankAccount": "Revisá la cuenta: los números no dan. Copiala del comprobante.",
+    "taxId": "Revisá la CUIT o CUIL: los números no dan. Copiala del comprobante.",
+    "invalid": "Revisá este dato: no pasa la validación del formulario."
+  },
+  "problems": {
+    "required": "Completá este dato.",
+    "number": "Escribí un número.",
+    "date": "Escribí una fecha."
+  },
+  "yes": "Sí",
+  "no": "No",
+  "reasons": {
+    "forReviewExpired": "Venció sin que {{person}} lo confirmara en WhatsApp.",
+    "forReviewNotSendable": "No se le pudo mandar el formulario a {{person}}.",
+    "waiting": "Le mandamos este documento a {{person}}. Si no lo confirma hasta el {{date}}, lo podés revisar acá.",
+    "quota": "Llegó cuando ya no quedaban lecturas del día: no se leyó.",
+    "other": "Quien lo mandó eligió «Otro»: no encaja en ningún formulario.",
+    "unknown": "La IA no lo reconoció en ningún formulario con lectura.",
+    "reviewerBy": "Lo descartó {{person}}.",
+    "reviewer": "Lo descartó alguien del equipo.",
+    "duplicateOf": "Ya se había cargado en {{number}}.",
+    "duplicate": "Ya se había recibido el mismo documento.",
+    "unreadable": {
+      "blurry": "No se leía: la foto está movida.",
+      "dark": "No se leía: la foto está oscura.",
+      "cut": "No se leía: la foto está cortada.",
+      "covered": "No se leía: algo tapa el documento.",
+      "other": "No se leía bien."
+    },
+    "protected": "Tiene contraseña: no se pudo abrir.",
+    "legacy": "Es de un formato viejo: no se pudo abrir.",
+    "macroEnabled": "Tiene macros: no se abrió.",
+    "tooLarge": "Pesa más de 10 MB.",
+    "tooManyPages": "Tiene más de 10 páginas.",
+    "empty": "Está vacío.",
+    "notOpened": "No se pudo abrir."
+  },
+  "discard": {
+    "action": "Descartar",
+    "title": "¿Descartar {{name}}?",
+    "description": "Se borra el {{date}}, con su lectura. Hasta entonces lo podés volver a abrir.",
+    "pending": "Descartando…",
+    "done": "Se descartó {{name}}.",
+    "failed": "No se pudo descartar el documento."
+  },
+  "reopen": {
+    "action": "Volver a abrir",
+    "pending": "Abriendo…",
+    "done": "Se volvió a abrir {{name}}.",
+    "failed": "No se pudo volver a abrir el documento."
+  },
+  "pass": {
+    "action": "Pasar al formulario",
+    "pending": "Pasando…",
+    "done": "Se cargó como {{number}}.",
+    "open": "Ver la respuesta",
+    "notSaved": "No se pasó al formulario.",
+    "review": "Revisá {{label}}.",
+    "failed": "No se pudo pasar al formulario.",
+    "noForm": "Elegí un formulario para pasarlo."
+  },
+  "record": {
+    "label": "Respuesta"
+  },
+  "history": {
+    "empty": "Todavía no pasó nada con este documento.",
+    "fromSender": "De {{person}}, por WhatsApp",
+    "bySender": "{{person}}, por WhatsApp",
+    "received": {
+      "sure": "Llegó y la IA lo reconoció",
+      "doubt": "Llegó y la IA dudó entre formularios",
+      "unknown": "Llegó y la IA no lo reconoció",
+      "unreadable": "Llegó y no se leía",
+      "duplicate": "Llegó repetido",
+      "notSendable": "Llegó y no se le pudo mandar el formulario",
+      "quota": "Llegó sin lecturas del día",
+      "rejected": "Llegó y no se pudo abrir",
+      "other": "Llegó"
+    },
+    "discarded": "Se descartó",
+    "reopened": "Se volvió a abrir",
+    "extractionRequested": "Se pidió leerlo para «{{form}}»",
+    "extractionRequestedOther": "Se pidió leerlo para otro formulario",
+    "formChanged": "Pasó a «{{form}}»",
+    "formChangedOther": "Cambió de formulario",
+    "extractionFailed": "No se reconocieron los datos para el formulario elegido",
+    "extractionRefused": "No se pudo leer para «{{form}}»: el motor no lo permitió.",
+    "extractionRefusedOther": "No se pudo leer para otro formulario: el motor no lo permitió.",
+    "confirmed": "Se cargó como {{number}}",
+    "confirmedOther": "Se cargó en su formulario",
+    "choseOther": "Eligió «Otro»",
+    "formChosen": "Eligió el formulario"
+  }
+}

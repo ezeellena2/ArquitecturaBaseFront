@@ -12,8 +12,10 @@ export interface ResponsePanelNavigation {
   onMove: (direction: number) => void; onClose: () => void;
   error?: unknown; onRetry?: () => unknown; retrying?: boolean; kind?: "sheet" | "pending";
 }
-export function ResponsePanelFrame({ title, status, subtitle, navigation, children, actions, loading }: {
+export function ResponsePanelFrame({ title, status, subtitle, navigation, children, actions, loading, label, failedLabel, footer }: {
   title: string; loading?: boolean; status?: ReactNode; subtitle?: ReactNode; navigation: ResponsePanelNavigation; children: ReactNode; actions?: ReactNode;
+  /** A document of «Documentos recibidos» (DOC5-A) is not a response: its name, what failed and its actions, fixed at the foot. */
+  label?: string; failedLabel?: string; footer?: ReactNode;
 }) {
   const { t } = useTranslation("forms");
   const mobile = useMediaQuery("(width < 640px)");
@@ -35,7 +37,7 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
   const interaction = {
     ref: (node: HTMLElement | null) => { panel.current = node; },
     "aria-busy": loading,
-    "aria-label": t("responses.detail"),
+    "aria-label": label ?? t("responses.detail"),
     tabIndex: -1,
     onFocusCapture: (event: FocusEvent<HTMLElement>) => { navigationFocus.current = event.target === previous.current ? "previous" : event.target === next.current ? "next" : null; },
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
@@ -45,7 +47,8 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
       const dialog = target?.closest('[role="dialog"]');
       if (dialog && dialog !== panel.current) return;
       if (event.key === "Escape") { event.preventDefault(); navigation.onClose(); }
-      if ((event.key === "ArrowUp" || event.key === "ArrowDown") && target?.closest('[role="tablist"]')) return;
+      // A region that scrolls with the keyboard (the photo of a document, brought closer) keeps the arrows for itself.
+      if ((event.key === "ArrowUp" || event.key === "ArrowDown") && target?.closest('[role="tablist"],[role="region"][tabindex="0"]')) return;
       if (event.key === "ArrowUp" && navigation.previous && !navigation.busy) { event.preventDefault(); navigation.onMove(-1); }
       if (event.key === "ArrowDown" && navigation.next && !navigation.busy) { event.preventDefault(); navigation.onMove(1); }
     },
@@ -70,8 +73,12 @@ export function ResponsePanelFrame({ title, status, subtitle, navigation, childr
       </div>
       {subtitle ? <p className="mt-1 text-sm text-[var(--color-content-muted)]">{subtitle}</p> : null}
     </header>
-    <div className={cn("min-h-0 flex-1 overflow-y-auto p-4", switching && "opacity-45")} inert={switching || undefined}>{navigation.error && navigation.onRetry ? <div className="mb-3 space-y-2"><p className="text-sm">{t("responses.loadFailed")}</p><Button variant="outline" pending={navigation.retrying} onClick={() => { navigation.onRetry?.(); }}>{t(navigation.retrying ? "responses.retrying" : "common:actions.retry")}</Button></div> : null}{children}</div>
-    {!mobile && navigation.position !== undefined && navigation.count !== undefined ? <p className="shrink-0 border-t border-[var(--color-border)] px-4 py-2 text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</p> : null}
+    <div className={cn("min-h-0 flex-1 overflow-y-auto p-4", switching && "opacity-45")} inert={switching || undefined}>{navigation.error && navigation.onRetry ? <div className="mb-3 space-y-2"><p className="text-sm">{failedLabel ?? t("responses.loadFailed")}</p><Button variant="outline" pending={navigation.retrying} onClick={() => { navigation.onRetry?.(); }}>{t(navigation.retrying ? "responses.retrying" : "common:actions.retry")}</Button></div> : null}{children}</div>
+    {/* The actions of a document stay at the foot, out of the scroll; on a computer the position goes on their left. */}
+    {footer ? <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--color-border)] px-4 py-2">
+      {!mobile && navigation.position !== undefined && navigation.count !== undefined ? <p className="text-xs text-[var(--color-content-muted)]">{t("responses.position", { position: navigation.position, count: navigation.count })}</p> : null}
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full max-sm:*:flex-1">{footer}</div>
+    </div> : !mobile && navigation.position !== undefined && navigation.count !== undefined ? <p className="shrink-0 border-t border-[var(--color-border)] px-4 py-2 text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</p> : null}
   </>;
   return mobile ? <Dialog open onOpenChange={open => { if (!open) navigation.onClose(); }}><DialogContent {...interaction} placement="right" showCloseButton={false} aria-modal="true" aria-labelledby={undefined} aria-describedby={undefined} className="top-12 bottom-0 h-[calc(100svh-3rem)] max-w-none gap-0 overflow-hidden p-0" onOpenAutoFocus={event => { event.preventDefault(); panel.current?.focus(); }} onCloseAutoFocus={event => event.preventDefault()} onEscapeKeyDown={event => { event.preventDefault(); navigation.onClose(); }}>{content}</DialogContent></Dialog> : <section {...interaction} className="absolute top-12 right-0 bottom-0 z-20 flex w-[min(32.5rem,100%)] flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl outline-none">{content}</section>;
 }

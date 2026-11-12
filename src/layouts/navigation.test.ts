@@ -86,3 +86,10 @@ it("exposes missing requests with Manage independently of template Read", () => 
  expect(entry).toMatchObject({permission:"formtemplates.manage",exact:true});
  expect(isFormsPath("/formularios/faltantes")).toBe(true);
 });
+
+// DOC5-A: an open document hangs from «Documentos recibidos» in the breadcrumbs, not from «Diseñar formularios» (`/formularios`).
+it("hangs an open received document from its inbox", () => {
+  expect(forms.items.find(item => "to" in item && item.to === "/formularios/documentos")).toMatchObject({ permission: "formdocuments.read" });
+  expect(parentLinkOf("/formularios/documentos/0199b0c0-0000-7000-8000-000000000005")?.to).toBe("/formularios/documentos");
+  expect(isFormsPath("/formularios/documentos/0199b0c0-0000-7000-8000-000000000005")).toBe(true);
+});

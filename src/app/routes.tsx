@@ -53,6 +53,8 @@ export const routes: RouteObject[] = [
               },
               { element: <ProtectedRoute permission="formpersondata.manage" />, children: [{ path: "/datos-de-personas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/PersonDataPage")).PersonDataPage }) }] },
               { element: <ProtectedRoute permission="formtemplates.manage" />, children: [{ path: "/formularios/faltantes", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/MissingFormsPage")).MissingFormsPage }) }] },
+              // «Documentos recibidos» (DOC5-A): the open document goes in the route, as a response in D2, and the page stays mounted.
+              { element: <ProtectedRoute permission="formdocuments.read" />, children: [{ path: "/formularios/documentos", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ReceivedDocumentsPage")).ReceivedDocumentsPage }), children: [{ path: ":documentId", element: null }] }] },
               { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
               {
                 // «Formularios» and the sheet also open with «Completar formularios», which reads only one's own responses (CW6-C).

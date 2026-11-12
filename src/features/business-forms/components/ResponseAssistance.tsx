@@ -11,9 +11,17 @@ export function ResponseAssistance({ record, actor, busy, onForbidden, onError }
 }) {
  const { t } = useTranslation("forms"); const [expanded, setExpanded] = useState(false); const contentId = useId();
  const assistance = record.assistance;
- if (!assistance && record.chain.length === 0) return null;
+ // DOC5-A: the document of «Documentos recibidos» it came from and who passed it to the form, with the way to it; the server names it only
+ // to whoever sees the inbox.
+ const origin = record.origin; const document = origin?.document;
+ if (!assistance && record.chain.length === 0 && !document) return null;
  return <section className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4" aria-label={t("detail.assistance.origin")}>
   <h3 className="text-sm font-semibold">{t("detail.assistance.origin")}</h3>
+  {document ? <div className="space-y-1 text-sm">
+   <p className="break-words">{t("detail.assistance.document", { name: document.name })}</p>
+   {origin?.channelId === "documents" && origin.senderName ? <p className="text-[var(--color-content-muted)]">{t("detail.assistance.passedBy", { name: origin.senderName })}</p> : null}
+   <Link className="text-[var(--color-brand-700)] underline" to={"/formularios/documentos/" + document.id}>{t("detail.assistance.viewDocument")}</Link>
+  </div> : null}
   {assistance ? <>
    <p className="text-sm">{assistance.senderKind === "Assistant" ? t("detail.assistance.preparedByAssistant") : t("detail.assistance.preparedBy")} {assistance.senderKind === "Manual" ? <strong>{assistance.operator?.displayName ?? t("responses.unknownPerson")}</strong> : null}</p>
    {assistance.suggestion ? <p className="text-sm text-[var(--color-content-muted)]">{assistance.suggestion.mode === "Always" ? t("detail.assistance.always") : t("suggestions.modes.Assistant")}</p> : null}

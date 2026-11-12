@@ -128,7 +128,8 @@
     "catalogs": "Catálogos",
     "responses": "Respuestas",
     "missingForms": "Formularios que faltan",
-    "formOverview": "Formularios"
+    "formOverview": "Formularios",
+    "receivedDocuments": "Documentos recibidos"
   },
   "layout": {
     "sidebar": {
@@ -171,6 +172,19 @@
     "morePhotos_other": "Ver {{count}} fotos más",
     "photoCount_one": "{{count}} foto",
     "photoCount_other": "{{count}} fotos"
+  },
+  "documentViewer": {
+    "toolbar": "Ver {{name}}",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoom": "{{percent}}",
+    "rotate": "Girar",
+    "download": "Descargar",
+    "loading": "Cargando el documento…",
+    "failed": "No pudimos cargar el documento.",
+    "photo": "Foto {{name}}",
+    "pdf": "PDF {{name}}",
+    "noPreview": "Este archivo no se puede ver acá."
   },
   "pasteGrid": {
     "row": "Fila",

@@ -1,0 +1,199 @@
+{
+  "title": "Received documents",
+  "help": "What arrives by WhatsApp for the forms that read documents. An unclassified or discarded document is deleted after 90 days, with its reading.",
+  "search": "Amount, CUIT or operation",
+  "searchDigits": "Type at least 3 digits: an amount, a CUIT or an operation.",
+  "segments": {
+    "label": "State",
+    "all": "All",
+    "proposed": "Proposed",
+    "unclassified": "Unclassified",
+    "confirmed": "Confirmed",
+    "discarded": "Discarded"
+  },
+  "filters": "Filters",
+  "received": "Received",
+  "receivedFrom": "Received from",
+  "receivedTo": "Received until",
+  "invalidRange": "The until date is before the from date.",
+  "chips": {
+    "search": "Search: {{text}}",
+    "receivedRange": "Received: {{from}} – {{to}}",
+    "receivedFrom": "Received from {{from}}",
+    "receivedTo": "Received until {{to}}",
+    "form": "Form: {{name}}",
+    "sender": "Sent by: {{name}}"
+  },
+  "remove": "Remove {{name}}",
+  "clear": "Clear all",
+  "filterAll": "All",
+  "noOptions": "No options match.",
+  "facetsTruncated": "Showing the 100 with the most documents.",
+  "columns": {
+    "document": "Document",
+    "received": "Received",
+    "sender": "Sent by",
+    "form": "Form",
+    "state": "State",
+    "deletes": "Deleted on",
+    "record": "Response"
+  },
+  "states": {
+    "forReview": "To review",
+    "proposed": "Proposed",
+    "unclassified": "Unclassified",
+    "confirmed": "Confirmed",
+    "discarded": "Discarded"
+  },
+  "open": "Open {{name}}",
+  "unknownPerson": "Person without a name",
+  "empty": "No documents have arrived yet",
+  "noMatches": "No document matches",
+  "loadFailed": "We could not load the documents.",
+  "retrying": "Retrying…",
+  "wait_one": "Wait {{count}} second to try again.",
+  "wait_other": "Wait {{count}} seconds to try again.",
+  "panel": {
+    "label": "Document",
+    "loadFailed": "We could not load the document.",
+    "unavailable": "This document is no longer here.",
+    "subtitle": "{{person}} · {{date}}"
+  },
+  "tabs": {
+    "label": "Document",
+    "review": "Review",
+    "history": "History ({{count}})"
+  },
+  "form": {
+    "label": "Form",
+    "help": "It is the form the AI recognized. If you choose another one, the document's data are read again for that form.",
+    "choose": "Choose a form",
+    "none": "No form",
+    "sure": "Sure",
+    "doubt": "With doubts",
+    "versionChanged": "Another version of “{{form}}” was published after it was read: read its data again to pass it.",
+    "readAgain": "Read again for “{{form}}”"
+  },
+  "extraction": {
+    "reading": "Reading the data for “{{form}}”…",
+    "readingOther": "The data are being read for another form…",
+    "unrecognized": "The data were not recognized for “{{form}}”: the document stays as it was.",
+    "failed": "The data could not be read for “{{form}}”.",
+    "refused": "It could not be read for “{{form}}”: the engine did not allow it.",
+    "unknown": "We could not tell whether the reading for “{{form}}” finished.",
+    "unknownOther": "We could not tell whether the reading for the other form finished."
+  },
+  "data": {
+    "more_one": "See {{count}} more datum",
+    "more_other": "See the {{count}} more data",
+    "less": "See fewer data",
+    "choose": "Choose an option",
+    "missingData": "There are no options for {{person}}: “{{datum}}” is missing. Complete it in People data."
+  },
+  "options": {
+    "search": "Search in {{label}}",
+    "loading": "Loading the options…",
+    "noMatches": "No option matches “{{search}}”.",
+    "empty": "There are no options.",
+    "failed": "The options could not be loaded.",
+    "truncated": "Showing the first 50: type to find others.",
+    "clear": "Remove {{label}}"
+  },
+  "marks": {
+    "doubtful": "Check",
+    "notRead": "Not read",
+    "completed": "From the catalog",
+    "bankAccount": "Check the account: the numbers do not add up. Copy it from the receipt.",
+    "taxId": "Check the CUIT or CUIL: the numbers do not add up. Copy it from the receipt.",
+    "invalid": "Check this datum: it does not pass the form's validation."
+  },
+  "problems": {
+    "required": "Fill in this datum.",
+    "number": "Type a number.",
+    "date": "Type a date."
+  },
+  "yes": "Yes",
+  "no": "No",
+  "reasons": {
+    "forReviewExpired": "It expired without {{person}} confirming it on WhatsApp.",
+    "forReviewNotSendable": "The form could not be sent to {{person}}.",
+    "waiting": "We sent this document to {{person}}. If they do not confirm it by {{date}}, you can review it here.",
+    "quota": "It arrived when no readings were left for the day: it was not read.",
+    "other": "Whoever sent it chose “Other”: it does not fit any form.",
+    "unknown": "The AI did not recognize it in any form that reads documents.",
+    "reviewerBy": "{{person}} discarded it.",
+    "reviewer": "Someone of the team discarded it.",
+    "duplicateOf": "It had already been loaded in {{number}}.",
+    "duplicate": "The same document had already been received.",
+    "unreadable": {
+      "blurry": "It could not be read: the photo is blurry.",
+      "dark": "It could not be read: the photo is dark.",
+      "cut": "It could not be read: the photo is cut.",
+      "covered": "It could not be read: something covers the document.",
+      "other": "It could not be read well."
+    },
+    "protected": "It has a password: it could not be opened.",
+    "legacy": "It has an old format: it could not be opened.",
+    "macroEnabled": "It has macros: it was not opened.",
+    "tooLarge": "It is larger than 10 MB.",
+    "tooManyPages": "It has more than 10 pages.",
+    "empty": "It is empty.",
+    "notOpened": "It could not be opened."
+  },
+  "discard": {
+    "action": "Discard",
+    "title": "Discard {{name}}?",
+    "description": "It is deleted on {{date}}, with its reading. Until then you can reopen it.",
+    "pending": "Discarding…",
+    "done": "{{name}} was discarded.",
+    "failed": "The document could not be discarded."
+  },
+  "reopen": {
+    "action": "Reopen",
+    "pending": "Reopening…",
+    "done": "{{name}} was reopened.",
+    "failed": "The document could not be reopened."
+  },
+  "pass": {
+    "action": "Pass to the form",
+    "pending": "Passing…",
+    "done": "Loaded as {{number}}.",
+    "open": "See the response",
+    "notSaved": "It was not passed to the form.",
+    "review": "Check {{label}}.",
+    "failed": "It could not be passed to the form.",
+    "noForm": "Choose a form to pass it."
+  },
+  "record": {
+    "label": "Response"
+  },
+  "history": {
+    "empty": "Nothing has happened with this document yet.",
+    "fromSender": "From {{person}}, by WhatsApp",
+    "bySender": "{{person}}, by WhatsApp",
+    "received": {
+      "sure": "Arrived and the AI recognized it",
+      "doubt": "Arrived and the AI hesitated between forms",
+      "unknown": "Arrived and the AI did not recognize it",
+      "unreadable": "Arrived and could not be read",
+      "duplicate": "Arrived repeated",
+      "notSendable": "Arrived and the form could not be sent",
+      "quota": "Arrived without readings for the day",
+      "rejected": "Arrived and could not be opened",
+      "other": "Arrived"
+    },
+    "discarded": "Discarded",
+    "reopened": "Reopened",
+    "extractionRequested": "Asked to read it for “{{form}}”",
+    "extractionRequestedOther": "Asked to read it for another form",
+    "formChanged": "Moved to “{{form}}”",
+    "formChangedOther": "Changed form",
+    "extractionFailed": "The data were not recognized for the chosen form",
+    "extractionRefused": "It could not be read for “{{form}}”: the engine did not allow it.",
+    "extractionRefusedOther": "It could not be read for another form: the engine did not allow it.",
+    "confirmed": "Loaded as {{number}}",
+    "confirmedOther": "Loaded in its form",
+    "choseOther": "Chose “Other”",
+    "formChosen": "Chose the form"
+  }
+}

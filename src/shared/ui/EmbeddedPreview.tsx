@@ -1,15 +1,32 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/shared/lib/utils";
 
 type Frame = { readonly width: number; readonly height: number };
+const frameClassName = "h-[min(30rem,55svh)] w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]";
 
 // Read-only preview; the owner validates the URL and supplies an accessible title.
 // With `frame`, the page keeps the size its site lays it out for (Meta's interactive official preview: 480 × 840 CSS px) and scales whole to the
 // room its owner gives it: never cut and without scroll bars (VO1-A, 2026-11-06).
-export function EmbeddedPreview({ url, title, kind = "external", className, frame }: { url: string; title: string; kind?: "external" | "pdf"; className?: string; frame?: Frame }) {
+// With `blob` (a PDF's validated bytes, DOC5-A's `DocumentViewer`), the private URL lives only while the frame shows it, as in `PrivateImage`.
+export function EmbeddedPreview({ url, blob, title, kind = "external", className, frame }: ({ url: string; blob?: undefined } | { url?: undefined; blob: Blob }) & {
+  title: string; kind?: "external" | "pdf"; className?: string; frame?: Frame;
+}) {
   const sandbox = kind === "pdf" ? undefined : "allow-scripts allow-same-origin allow-forms";
-  if (frame) return <FittedPreview url={url} title={title} sandbox={sandbox} frame={frame} className={className} />;
-  return <iframe className={cn("h-[min(30rem,55svh)] w-full rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]", className)} src={url} title={title} sandbox={sandbox} referrerPolicy="no-referrer" />;
+  if (blob) return <PrivateFrame blob={blob} title={title} sandbox={sandbox} className={className} />;
+  if (frame) return <FittedPreview url={url!} title={title} sandbox={sandbox} frame={frame} className={className} />;
+  return <iframe className={cn(frameClassName, className)} src={url} title={title} sandbox={sandbox} referrerPolicy="no-referrer" />;
+}
+
+function PrivateFrame({ blob, title, sandbox, className }: { blob: Blob; title: string; sandbox: string | undefined; className?: string }) {
+  const frame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const element = frame.current;
+    if (!element) return;
+    const url = URL.createObjectURL(blob);
+    element.src = url;
+    return () => { element.removeAttribute("src"); URL.revokeObjectURL(url); };
+  }, [blob]);
+  return <iframe ref={frame} className={cn(frameClassName, className)} title={title} sandbox={sandbox} referrerPolicy="no-referrer" />;
 }
 
 // The frame is measured against its room before the browser paints, so it never shows at the wrong size; a room that grows or

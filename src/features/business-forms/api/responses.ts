@@ -255,6 +255,8 @@ const origin = z.strictObject({
   sentAtUtc: utc,
   conversationId: guid.nullable(),
   maskedAddress: z.string().nullable(),
+  // DOC5-A: the document of «Documentos recibidos» it came from, when it came from one.
+  document: z.strictObject({ id: guid, name: z.string().min(1) }).optional(),
 });
 // An item of a block in the detail: every question of the block in its version, with null where it was left empty.
 const itemValue = z.strictObject({ fieldId: guid, key: z.string(), type: rowType, label: z.string(), value })

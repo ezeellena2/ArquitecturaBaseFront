@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { PermissionRequirement } from "@/auth/usePermissions";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon, MonitorIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon, MonitorIcon, FileIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -100,6 +100,9 @@ export const forms: NavigationPanel = {
   labelKey: "navigation.forms", icon: FormIcon,
   items: [
     { labelKey: "navigation.formOverview", to: "/formularios/respuestas", icon: FormIcon, permission: ["formrecords.read", "formapprovals.decide", "formrecords.create"] },
+    // DOC5-A: below «Formularios», with the documents that wait for someone of the team. Before «Diseñar formularios», whose
+    // `/formularios` would otherwise be the parent of an open document in the breadcrumbs.
+    { labelKey: "navigation.receivedDocuments", to: "/formularios/documentos", icon: FileIcon, permission: "formdocuments.read" },
     { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
     { labelKey: "navigation.library", to: "/formularios/biblioteca", icon: DocumentIcon, permission: "formtemplates.read", feature: "form-library" },
     { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },

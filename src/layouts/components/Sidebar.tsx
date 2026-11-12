@@ -24,6 +24,7 @@ import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, RefreshIcon } from "@/shared/ui/icons";
@@ -61,7 +62,7 @@ function NavItem({
 }) {
   const Icon = item.icon;
   const pathname = useLocation().pathname;
-  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|biblioteca|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
+  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|biblioteca|documentos|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
   const responseWorkspace = item.to === "/formularios/respuestas" && /^\/formularios\/(?:respuestas(?:\/|$)|[^/]+\/respuestas(?:\/|$))/.test(pathname);
 
   const match = useMatch({ path: item.to, end: item.exact || item.to === "/" });
@@ -104,6 +105,8 @@ function NavBranch({
   items,
   showIcon = true,
   leading,
+  trailing,
+  after,
   controls,
   translate,
   onNavigate,
@@ -113,6 +116,9 @@ function NavBranch({
   items: NavigationItem[];
   showIcon?: boolean;
   leading?: ReactNode;
+  /** A row after the items, as «Documentos recibidos» after the pages of the forms (DOC5-A), and the items that go below it. */
+  trailing?: ReactNode;
+  after?: NavigationItem[];
   controls: BranchControls;
   translate: (key: string) => string;
   onNavigate?: () => void;
@@ -147,6 +153,8 @@ function NavBranch({
           )}
         >
           <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} />
+          {trailing}
+          {after?.length ? <NavItems items={after} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} /> : null}
         </ul>
       ) : null}
     </>
@@ -433,12 +441,17 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const responses = useContext(FormsOverviewNavigationContext);
   const activateResponses = responses?.setActive;
   useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
-  const formsItems = [...visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview"), canSee, false), ...folderModel.forms];
+  // «Formularios» and «Documentos recibidos» are drawn with their counters (FormsOverviewLink, ReceivedDocumentsLink). The second goes
+  // after the fixed pages and before the folders: its row appearing or leaving when the permissions arrive moves none of the pages, and
+  // the folders, which arrive later, go below it.
+  const formsPages = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview" && item.labelKey !== "navigation.receivedDocuments"), canSee, false);
+  const formsItems = [...formsPages, ...folderModel.forms];
+  const formsCounted = has(["formrecords.read", "formapprovals.decide", "formrecords.create", "formdocuments.read"]);
   const ownPanel = folderModel.own.find(panel => panel.labelKey === openPanel);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : ownPanel ?? administration;
   const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : ownPanel ? ownPanel.items : openPanel === "admin" ? adminItems : [];
   const PanelIcon = selectedPanel.icon;
-  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && has(["formrecords.read", "formapprovals.decide", "formrecords.create"])) && openPanel !== undefined && !isMobile;
+  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && formsCounted) && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -583,10 +596,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             </ul>
           ) : null}
 
-          {formsItems.length > 0 || has(["formrecords.read", "formapprovals.decide", "formrecords.create"]) ? (
+          {formsItems.length > 0 || formsCounted ? (
             <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
               {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsItems} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsPages} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} trailing={<ReceivedDocumentsLink onNavigate={onNavigate}/>} after={folderModel.forms} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -721,7 +734,11 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
             {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/> : null}
             <ul className="flex flex-col gap-1">
-              <NavItems items={selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
+              <NavItems items={openPanel === "forms" ? formsPages : selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
+              {openPanel === "forms" ? <>
+                <ReceivedDocumentsLink onNavigate={onNavigate}/>
+                <NavItems items={folderModel.forms} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
+              </> : null}
             </ul>
           </div>
         </nav>
@@ -739,4 +756,21 @@ function FormsOverviewLink({onNavigate,enteredFromMenu=false}:{onNavigate?:()=>v
  const pending=overview?.pending===true;
  const count=has("formapprovals.decide")&&!pending?overview?.count:undefined;
  return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"],current:enteredFromMenu?false:undefined}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
+}
+
+/// «Documentos recibidos» (DOC5-A), after the pages of the forms and before their folders, with the documents that wait for someone of
+/// the team. It loads like the number of «Formularios»: in the same row, and «Reintentar» below it when the number could not be read.
+function ReceivedDocumentsLink({onNavigate}:{onNavigate?:()=>void}) {
+  const documents = useContext(FormsOverviewNavigationContext)?.documents;
+  const { t, i18n } = useTranslation();
+  const { has, isPending } = usePermissions();
+  if (isPending) return <li><Skeleton aria-hidden="true" className="h-7.5 rounded-[var(--radius-control)]"/></li>;
+  if (!has("formdocuments.read")) return null;
+  const link = forms.items.find(item => item.labelKey === "navigation.receivedDocuments") as NavigationLink;
+  const pending = documents?.pending === true;
+  const count = pending ? undefined : documents?.count;
+  return <li>
+    <NavItem item={link} label={t(link.labelKey) + (count === undefined ? "" : " (" + formatNumber(count, i18n.language) + ")")} trailing={pending ? <Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/> : undefined} collapsed={false} onNavigate={onNavigate}/>
+    {!pending && documents?.failed ? <Button variant="ghost" size="sm" onClick={documents.retry}>{t("actions.retry")}</Button> : null}
+  </li>;
 }

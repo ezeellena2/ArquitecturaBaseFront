@@ -583,14 +583,17 @@ for (const collapsed of [false, true]) {
     }, state);
     await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: "/formularios/respuestas", lang: "es", scenario: "forms-overview" })}`);
     await page.evaluate(() => document.fonts.ready);
+    // The scene installs its fixtures when its script runs, which a busy machine can leave for after the fonts.
+    await page.waitForFunction(() => (window as typeof window & Partial<HeldLoads>).formOverviewFixture !== undefined);
     await page.evaluate(() => (window as typeof window & HeldLoads).formOverviewFixture.holdCount());
     const menu = page.getByRole("navigation", { name: "Navegación principal", exact: true });
     const panel = page.getByRole("navigation", { name: "Gestión de formularios", exact: true });
     const topbar = page.getByRole("banner");
     const marks = (region: Locator) => region.locator('[data-slot="skeleton"]');
-    // Forms, WhatsApp and Administration in the bar; «Formularios» and its three pages in the panel; the avatar above.
+    // Forms, WhatsApp and Administration in the bar; «Formularios», its three pages and, last, «Documentos recibidos» in the panel; the
+    // avatar above.
     await expect(marks(menu)).toHaveCount(3);
-    await expect(marks(panel)).toHaveCount(4);
+    await expect(marks(panel)).toHaveCount(5);
     await expect(marks(topbar)).toHaveCount(1);
     const boxes = (targets: Locator[]) => Promise.all(targets.map(async target => (await target.boundingBox())!));
     const loadingMenu = await boxes(await marks(menu).all());
@@ -611,7 +614,8 @@ for (const collapsed of [false, true]) {
     expect(loadingMenu[0]).toEqual(row);
     // Without their permissions WhatsApp and Administration leave; while loading they measured a row as well.
     expect(loadingMenu.map(box => [box.width, box.height])).toEqual(loadingMenu.map(() => [row.width, row.height]));
-    expect(await boxes(rows)).toEqual(loadingPanel);
+    // Without its permission «Documentos recibidos», the last row (DOC5-A), leaves: the rows above it keep their place.
+    expect(await boxes(rows)).toEqual(loadingPanel.slice(0, rows.length));
     expect(loadedAvatar).toEqual(loadingAvatar);
     await expect(marks(rows[0])).toHaveCount(1);
     expect.soft(await contrastWithSurface(marks(rows[0]))).toBeGreaterThan(1.08);

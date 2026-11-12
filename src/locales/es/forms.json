@@ -1327,6 +1327,9 @@
       "changed": "Corregido al completar",
       "included": "Incluido",
       "chain": "Cadena de respuestas",
+      "document": "Salió de un documento · {{name}}",
+      "passedBy": "La pasó al formulario {{name}}",
+      "viewDocument": "Ver en Documentos recibidos",
       "from": "De {{name}}",
       "mapped": "De la respuesta de origen"
     }

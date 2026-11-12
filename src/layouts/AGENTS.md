@@ -22,6 +22,8 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 
 Gestión de formularios compone la entrada fija «Formularios» de MF1 y las tareas de diseño/catálogos/faltantes. La tabla exige RecordsRead OR ApprovalsDecide OR RecordsCreate; su conteo de menú sólo se muestra con Decide. `formsOverviewNavigation` es neutral: layouts informa si el panel está abierto y app aporta conteo y recuperación. No se dibujan formularios individuales ni una bandeja global.
 
+«Documentos recibidos» (DOC5-A) va después de las páginas fijas del panel de los formularios y del cajón, y antes de sus carpetas (`NavBranch` la recibe en `trailing` y las carpetas en `after`): su renglón no mueve ninguna página al llegar los permisos y las carpetas, que llegan después, se suman debajo; con `formdocuments.read`, y dice cuántos documentos esperan a alguien del equipo (`documents` del contexto neutral), con su bloque de carga en el mismo renglón y «Reintentar» si no se pudo leer, como «Formularios» (`ReceivedDocumentsLink`); sólo ese permiso ya muestra el panel. En `navigation` va antes de «Diseñar formularios», así un documento abierto (`/formularios/documentos/{id}`) cuelga de él en las migas y no de `/formularios`.
+
 Las migas de respuesta leen número y nombre del padre aportados por el detalle mediante el hook neutral; el listado paginado de navegación no es fuente del nombre confirmado.
 
 Las migas del diseño PDF usan el nombre confirmado que aporta su pantalla: Inicio / formulario / Diseño del PDF. El formulario enlaza al editor sólo con formtemplates.read; RulesManage por sí solo conserva el nombre como texto.

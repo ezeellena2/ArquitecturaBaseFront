@@ -566,3 +566,120 @@ capturas es/en a 1440, 390 y 320 en `test-results/visual` (sin golden).
 - **La escena** no tiene «Lectura de documentos» encima: esa zona pide el módulo de IA, que el escenario no instala; el orden de las
   dos zonas lo prueba vitest (`FormEditorLocationContact.test.tsx`). El desplegable abierto es el nativo y no se captura: sus
   opciones, y cuáles están apagadas, las prueba vitest (`FormLocationContactZone.test.tsx`).
+
+### DOC5-A · La planilla con panel (2026-11-12)
+
+Tarea 10 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#parte-b--la-bandeja-documentos-recibidos-doc5-a-y-doc6)
+(decisiones 14 a 16), sólo el front, contra el contrato del backend de la tarea 7 y su corrección «7b» (la búsqueda va en el
+cuerpo de `POST api/forms/documents/search`, con los formularios y las personas de los filtros) y con cuerpos sintéticos hasta que se
+exporte la cohorte `forms-documents-http`: `ReceivedDocumentsPage` en `/formularios/documentos`, su panel (`components/documents`)
+en `/formularios/documentos/{id}`, la pieza nueva `DocumentViewer` de `shared/ui`, la entrada del menú con su número y, en «Cómo
+empezó» del detalle de una respuesta, de qué documento salió, quién la pasó al formulario y «Ver en Documentos recibidos» (con «Ver
+documentos recibidos», que es a quien el servidor se lo nombra). La escena `receivedDocuments.spec.ts` deja las capturas es/en a
+1440, 390 y 320 en `test-results/documents` (sin golden). Quedan para sus tareas el documento en el chat del operador, la línea de
+un número sin cuenta y la marca «Necesita una persona» (tareas 8 y 9) y el aviso de los parecidos con «Armar formulario con la IA»
+(tarea 14).
+
+**La lista de chequeo:**
+
+1. **Entero y armado.** `Page` con su (i), `FilterBar` con `SearchInput`, el segmentado de los estados y «Filtros» (`FilterPanel`:
+   «Formulario» y «Mandó» con `Autocomplete`, y «Recibido»), los chips con «Limpiar todo», `Surface` con `DataTable` y
+   `Pagination`, `Badge`; el panel es el marco de D2 (`ResponsePanelFrame`) con `Tabs`, `DocumentViewer`, `Banner`, `FormField`,
+   `NativeSelect`, `DisabledReason`, los campos comunes, `DataList` y `ConfirmDialog`. Estados: la carga (el aro en la tabla y en la
+   caja del documento), sin documentos, sin coincidencias, el error con «Reintentar» y la espera de un 429 (también al volver a leer
+   el documento o su archivo), sin permiso, sólo lectura, uno que espera a su persona, leyendo para otro formulario, confirmado,
+   descartado, un 409 y un resultado incierto. El único diálogo es la confirmación de «Descartar».
+2. **Una tarea, zonas que se entienden solas.** Revisar lo que llegó: la barra, la planilla y, en el panel, el documento, por qué
+   está donde está, su formulario con sus datos y, al pie, lo que se hace con él.
+3. **El control según el dato.** Los estados, pocos y con su cantidad: segmentado. «Formulario» y «Mandó», en «Filtros»: el combo
+   que se escribe para buscar, como PL2-A; «Recibido»: desde y hasta. El formulario del documento, uno entre pocos: desplegable.
+   Una pregunta de elegir: desplegable con sus opciones; un sí o no: segmentado; un texto, un número o una fecha: su campo.
+4. **Lo que se lee, en su lugar.** Los datos que no se editan van en `DataList`; el historial, un renglón por paso con qué pasó,
+   quién debajo en gris y la fecha a la derecha, como los momentos de una respuesta. Ningún «Rótulo: valor» corrido.
+5. **Un dato por columna.** Documento (su nombre, que lo abre; el ícono del tipo es dibujo y la «Fila 5» de VC1-A irá debajo en
+   gris, excepción A), Recibido, Mandó, Formulario, una columna por dato leído con el nombre de su pregunta, Estado, Se borra (sólo
+   si la página tiene un descartado o un sin clasificar) y Respuesta.
+6. **Sin leyendas.** La bajada del título y la regla de los 90 días van en la (i) de la página; qué pasa al cambiar el formulario,
+   en la (i) de «Formulario». Por qué un documento está donde está es un dato (nombra a la persona, quién lo descartó o dónde se
+   cargó) y va en un `Banner` arriba de sus datos; el motivo de las acciones de uno que espera, sobre ellas. Los vacíos dicen sólo
+   su título.
+7. **Textos ciertos, una sola vez.** «Para revisar» es el propuesto que espera al equipo y «Propuesto», el que espera a su persona;
+   su `Banner` dice «Venció…» sólo si se le mandó y no lo confirmó, «No se le pudo mandar…» si no se pudo, y nada si alguien del
+   equipo lo volvió a abrir o lo leyó para otro formulario (lo decide el último paso del historial que cambia a quién espera).
+   «Todos (N)» suma los cuatro estados, y las cantidades y el número del menú van con los miles de la región; la seguridad aparece
+   sólo con un formulario; el día en que se borraría se cuenta al abrir la confirmación. El estado está en el encabezado del panel y
+   no se repite: el `Banner` dice por qué.
+8. **Botones y lo apagado.** Al pie, «Descartar» (borde rojo, abre la confirmación) y «Pasar al formulario», la principal y
+   última; «Volver a abrir» en un descartado. Los de uno que espera a su persona quedan en su lugar, apagados, con el motivo encima
+   («Le mandamos este documento a {persona}. Si no lo confirma hasta el {fecha y hora}, lo podés revisar acá.», VC1-A), igual que el
+   desplegable del formulario y «Volver a leer para «X»», debajo de él (un desplegable nunca elige la opción que muestra); la espera
+   de un 429 también es su motivo. Sin «Revisar documentos» no están.
+9. **Lo elegido y la espera.** El estado elegido va relleno y la fila abierta lleva su barra; «Pasando…», «Descartando…» y
+   «Abriendo…» con su aro; «Leyendo los datos para «X»…» con el aro y los datos atenuados mientras se lo sigue; si su lectura falla
+   (una red caída, un 5xx, un 429), deja de leerlo y dice «No pudimos saber si terminó la lectura para «X».» con «Reintentar» (con la
+   espera de un 429), sin apagar las acciones; la planilla vuelve a leer con la línea que corre, y la caja del documento conserva su
+   alto mientras llega.
+10. **Estados y mensajes.** El resultado (el número con que se cargó, descartado, reabierto) va en el aviso común, uno por
+    documento, también si llega con el panel cerrado (y la planilla se vuelve a leer); lo que falta (también una pregunta de elegir
+    obligatoria), un número o una fecha que no lo son y los problemas del servidor por pregunta, debajo de su dato, con el foco en el
+    primero; un 409 (también `Forms.ReceivedDocument.AwaitingSender`, y el de las opciones de un documento que ya no se puede
+    cambiar) dice el porqué del servidor y vuelve a leer el documento, y
+    `Forms.Entry.VersionChanged` ofrece en el aviso «Volver a leer para «X»»; un 403 retira la bandeja; un 429 apaga con la espera;
+    una red caída o un 5xx al escribir dicen que no se pudo confirmar el resultado y vuelven a leer el documento, y otro «Pasar al
+    formulario» repite el mismo pedido.
+11. **Lo mismo, igual en toda la app.** El marco de D2 (↑ ↓ ×, Escape y la posición al pie), la barra y los chips de la planilla,
+    las fechas con números, tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px la página no se desplaza de costado: la tabla lo hace dentro de su caja (lo mide la
+    escena). El documento abre en su pantalla con las acciones abajo, a lo ancho. ↑ ↓ y Escape en el panel (dentro de la foto
+    acercada, ↑ ↓ la desplazan); es/en; en la dirección van la página, el tamaño, el orden, el documento abierto y la pestaña
+    (`tab=history`), y los filtros viven en la página.
+
+**Diferencias con el tablero:**
+
+- **Los filtros viven en memoria, no en la dirección** (decisión 16): la búsqueda trae montos, CUIT y operaciones. El estado también
+  es un filtro privado, como en la planilla.
+- **«Formulario» y «Mandó» son combos de «Filtros»**, como los de la planilla (PL2-A): sus opciones son las que trae la página,
+  cada una contada por el servidor bajo los otros filtros, y se muestran sin la cantidad; escribir busca entre ellas. El servidor
+  trae hasta 100, las de más documentos (y siempre la elegida); si cortó la lista, arriba de las opciones dice «Se muestran los 100
+  con más documentos.».
+- **La miniatura es el ícono del tipo** (foto, PDF o Word): no hay una ruta de miniatura, y bajar cada archivo para la tabla pesa.
+- **«Datos leídos» es una columna por dato** (UD), con el nombre de su pregunta y «—» donde un documento no lo trae; un monto va a
+  la izquierda porque el dato no trae su tipo.
+- **«Se borra» es una columna**, con la fecha, en lugar de «Se borra el …» junto al estado (UD); **«Para revisar»** es el estado del
+  propuesto que espera al equipo (VC1-A).
+- **La bajada va en la (i)** del título y no está «27 en los últimos 7 días» del celular: la cantidad está en «Todos (27)» y al pie.
+- **El aviso de los parecidos** (DOC6) no está: el contrato no trae los grupos; lo suma la tarea 14 con su acción.
+- **En el celular el segmentado baja de renglón**, como en el resto de la app, en lugar del desplegable «Estado: todos».
+- **El panel es el marco de D2**: la posición va al pie, a la izquierda de las acciones (en el celular, arriba), no junto a ↑ ↓.
+- **El visor**: una foto se acerca, se aleja, gira y se descarga; un PDF usa el visor del navegador, con sus páginas y su zoom, y
+  «Descargar» (sin «Página 1 de 1» propio). Un archivo rechazado del que la bandeja no guardó copia (`stored: false`: más de 10 MB,
+  un .doc viejo, un .docm) muestra su nombre y su motivo, sin visor ni «Descargar», y nunca se pide; como nunca se leyó, tampoco se
+  vuelve a abrir (no quedaría nada para revisar: cambiar de formulario necesita su lectura).
+- **La seguridad** es la insignia «Seguro» o «Con dudas» junto al desplegable, en lugar de «Reconocido por la IA · seguro».
+- **El formulario se elige entre los que el servidor puede leerlo** (también un sin clasificar sin candidatos), con el suyo
+  primero si ya no está entre ellos.
+- **Una pregunta de elegir** (Cliente, Moneda) es un desplegable con sus opciones (las propias o las del catálogo que ve quien lo
+  mandó), también la que no se leyó; la leída queda aunque su catálogo ya no la ofrezca, y las de una pregunta de catálogo que elige
+  primero por un campo (LD1-A) van bajo su grupo, para distinguir «San Martín» de dos provincias. Sin «Revisar documentos», o en un
+  confirmado o un descartado, el servidor no manda las opciones y el dato se lee. Si el catálogo tiene más de 200 opciones para quien
+  lo mandó, se buscan en el servidor, de a 50, como una pregunta de catálogo en la carga desde la app; si a esa persona le falta el
+  dato por el que filtra el catálogo, el dato dice «No hay opciones para {persona}: le falta «{dato}». Completalo en Datos de las
+  personas.» en lugar del desplegable, y frena «Pasar al formulario» sólo si es obligatorio.
+- **«Del catálogo»** marca un dato que completó el servidor, en lugar de «Por el CUIT de origen, en Clientes.» y «Banco Macro, por
+  los primeros dígitos.»: el contrato no dice desde qué dato ni con qué catálogo.
+- **Sólo lectura** muestra los datos en `DataList`, sin campos apagados ni la línea «Solo lectura: no tenés «Revisar documentos».»
+- **El historial** no trae las correcciones dato por dato ni «sin texto»: el contrato no las tiene. Que la persona eligió un
+  formulario de las dudas en WhatsApp es «Eligió el formulario», con «{persona}, por WhatsApp» debajo, y un cambio de formulario que
+  el motor no permitió, «No se pudo leer para «{formulario}»: el motor no lo permitió.», con quien lo pidió debajo (el aviso dice lo
+  mismo y el documento deja de decir «Leyendo…»).
+- **«Ver los N datos más»** deja a la vista, plegado, el dato que pide una mirada (con dudas, que no pasa, obligatorio sin leer o
+  con un problema); «Ver menos datos» vuelve a plegar los demás.
+- **Los vacíos**: «Todavía no llegaron documentos» y «Ningún documento coincide» con «Limpiar todo», como la planilla, sin las
+  descripciones; el error es el de la tabla con «Reintentar» y el aviso común, no un recuadro rojo.
+- **El menú** dice «Documentos recibidos (7)», como «Formularios (4)», y la entrada va **después de las páginas fijas** del panel
+  de Gestión de formularios (y del cajón del celular) **y antes de las carpetas**, no debajo de «Formularios»: su renglón, que aparece
+  o se va cuando llegan los permisos, no mueve ninguna página, y las carpetas, que llegan después, se suman debajo de él (regla del
+  2026-11-05, visual-baseline). Las migas de un documento abierto siguen colgando de «Documentos recibidos».
+- **«Descartar»** confirma con el día en que se borraría; **«Pasar al formulario»** dice el número en el aviso común.
+- **El PDF** no se ve en las capturas: Chromium sin ventana no dibuja su visor y la caja queda vacía; vitest prueba que el marco
+  recibe la URL privada.

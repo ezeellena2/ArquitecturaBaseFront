@@ -1327,6 +1327,9 @@
       "changed": "Corrected when completing",
       "included": "Included",
       "chain": "Response chain",
+      "document": "Came from a document · {{name}}",
+      "passedBy": "{{name}} passed it to the form",
+      "viewDocument": "View in Received documents",
       "from": "From {{name}}",
       "mapped": "From the source response"
     }

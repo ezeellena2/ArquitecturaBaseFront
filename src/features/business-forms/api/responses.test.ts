@@ -28,6 +28,15 @@ it.each(["Manual", "Assistant"])("requires the explicit %s sender kind without i
   expect(responseDetailSchema.safeParse({ ...body, origin: { ...body.origin, senderKind: undefined } }).success).toBe(false);
   expect(responseDetailSchema.safeParse({ ...body, origin: null }).success).toBe(true);
 });
+// DOC5-A: a response that came from a document of «Documentos recibidos» names it, with its identity and its name, and nothing else.
+it("reads the document a response came from, when it came from one", () => {
+  const record = responseDetailFixture();
+  const document = { id: "0199b0c0-0000-7000-8000-000000000005", name: "comprobante.jpg" };
+  expect(responseDetailSchema.parse({ ...record, origin: { ...record.origin, document } }).origin?.document).toEqual(document);
+  expect(responseDetailSchema.safeParse({ ...record, origin: { ...record.origin, document: { ...document, size: 1 } } }).success).toBe(false);
+  expect(responseDetailSchema.safeParse({ ...record, origin: { ...record.origin, document: { ...document, name: "" } } }).success).toBe(false);
+  expect(responseDetailSchema.safeParse({ ...record, origin: { ...record.origin, document: null } }).success).toBe(false);
+});
 
 
 it.each(["Received", "PendingApproval", "Approved", "Rejected"] as const)("sends the exact %s state in search and facet count filter bodies", async state => {
