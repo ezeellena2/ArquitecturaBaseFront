@@ -56,6 +56,10 @@ export interface FormQuestionToggle {
 // DOC1: the fixed validation of a question bound by a library standard: an account (CBU, CVU or alias) or a CUIT or CUIL. Only a
 // short text has it.
 export type FormQuestionValidation = "bankAccount" | "taxId";
+// W3 (UC1-A): what a text question outside the block receives of what the person shares in the chat while the form is open: the
+// location, the contact's name or its phone. Each datum goes to one question at most, and the location to none while the form has a
+// question «Ubicación» (W1-A takes it there). Like a fixed validation, it travels with the question and goes with it.
+export type FormQuestionReceives = "location" | "contactName" | "contactPhone";
 // DOC1: the reading of documents, a setting of the form like «Dónde se completa»: whether it is on, «Cómo reconocerlo» (up to 1000
 // characters, required while on) and up to five lookups in catalogs. Each fills a catalog question (`questionId`) with what another
 // question read (`sourceQuestionId`), compared with the option's code ("code"), its text ("text") or a catalog field, by its id.
@@ -72,7 +76,8 @@ type QuestionContent<TOption, THelp, TMaxLength = number, TSource = FormQuestion
   readonly showWhen?: TShowWhen | null;
   readonly toggles?: readonly FormQuestionToggle[];
 } & (
-  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true; readonly validation?: FormQuestionValidation }
+  | { readonly type: "shortText" | "longText"; readonly maxLength: TMaxLength; readonly source?: null; readonly repeated?: true; readonly validation?: FormQuestionValidation;
+    readonly receives?: FormQuestionReceives }
   | { readonly type: "photo" | "document"; readonly files: TFiles; readonly source?: null }
   | { readonly type: "decimal" | "date" | "boolean"; readonly source?: null; readonly repeated?: true; readonly calculation?: TCalculation | null }
   | { readonly type: "choice"; readonly options: readonly TOption[]; readonly source?: null; readonly repeated?: true }

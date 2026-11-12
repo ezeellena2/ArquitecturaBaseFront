@@ -20,6 +20,8 @@ export const canonicalCatalogSourceSchema = z.strictObject({ catalog: guid, matc
 const rowQuestionTypes: readonly string[] = ["shortText", "longText", "decimal", "date", "boolean", "choice"];
 // DOC1: the fixed validations of a question bound by a library standard: an account (CBU, CVU or alias) or a CUIT or CUIL.
 export const questionValidationSchema = z.enum(["bankAccount", "taxId"]);
+// W3 (UC1-A): what a text question receives of what the person shares in the chat: the location, the contact's name or its phone.
+export const questionReceivesSchema = z.enum(["location", "contactName", "contactPhone"]);
 export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.string(), type: z.enum(["shortText", "longText", "decimal", "date", "boolean", "choice", "multiChoice", "photo", "document", "group", "location"]),
   label: text, help: helpText.nullable(), required: z.boolean(), maxLength: z.number().int().min(1).max(10000).nullable(), options: z.array(choice).min(1).max(50).nullable(), source: canonicalCatalogSourceSchema.optional(),
   files: z.strictObject({ minFiles: z.number().int().min(0).max(10), maxFiles: z.number().int().min(1).max(10), photoSource: z.enum(["cameraOrGallery", "camera"]).nullable() }).optional(),
@@ -36,10 +38,13 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     .refine(toggles => new Set(toggles.map(toggle => toggle.key)).size === toggles.length).optional(),
   // DOC1: omitted without one; only a short text has it (the account, the alias, the CUIT or the CUIL).
   validation: questionValidationSchema.optional(),
+  // W3 (UC1-A): omitted without one; only a short or a long text outside the block has it.
+  receives: questionReceivesSchema.optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
     context.addIssue({ code: "custom", message: "Invalid rows configuration." });
   if (value.validation && value.type !== "shortText") context.addIssue({ code: "custom", message: "Invalid validation." });
+  if (value.receives && (value.type !== "shortText" && value.type !== "longText" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid receives." });
   // A calculation is an optional decimal with two operands to multiply or take a percentage; neither the block nor its questions show by a condition.
   if (value.calculation && (value.type !== "decimal" || value.required || value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)
     || value.showWhen && (value.type === "group" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid calculation or condition." });
@@ -95,6 +100,10 @@ const definition = z.strictObject({ id: guid, name: nameText, prefix: z.string()
   const question = (id: string) => fields.find(item => item.fieldId.toLowerCase() === id.toLowerCase());
   if (lookups.some(lookup => !question(lookup.questionId)?.source || !question(lookup.sourceQuestionId) || lookup.sourceQuestionId.toLowerCase() === lookup.questionId.toLowerCase())
     || new Set(lookups.map(lookup => lookup.questionId.toLowerCase())).size !== lookups.length) context.addIssue({ code: "custom", message: "Invalid document reading." });
+  // W3: each datum goes to one question, and the location to none while the form asks for it with a question «Ubicación» (W1-A).
+  const receives = fields.flatMap(item => item.receives ? [item.receives] : []);
+  if (new Set(receives).size !== receives.length || receives.includes("location") && fields.some(item => item.type === "location"))
+    context.addIssue({ code: "custom", message: "Invalid receives." });
 });
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const audit = z.strictObject({ createdAtUtc: utc, modifiedAtUtc: utc.nullable(), lastChangedAtUtc: utc, lastChangedBy: author.nullable() });

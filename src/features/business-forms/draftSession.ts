@@ -41,8 +41,10 @@ function editorQuestion(field: CanonicalQuestion, localId: string, optionLocalId
     case "multiChoice": return field.source ? { ...common, type: field.type, selection: { ...field.selection }, source: copyCatalogQuestionSource(field.source) } : { ...common, type: field.type, selection: { ...field.selection }, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
     case "choice": return field.source ? { ...common, ...repeated, type: field.type, source: copyCatalogQuestionSource(field.source) } : { ...common, ...repeated, type: field.type, options: field.options.map(option => ({ ...option, localId: optionLocalId(option.choiceId) })) };
     case "photo": case "document": return { ...common, type: field.type, files: { ...field.files } };
-    // DOC1: like the toggles, the fixed validation of a bound short text goes back as it came, and without one there is no key.
-    case "shortText": case "longText": return { ...common, ...repeated, type: field.type, maxLength: field.maxLength, ...field.validation ? { validation: field.validation } : {} };
+    // DOC1: like the toggles, the fixed validation of a bound short text goes back as it came, and without one there is no key. So does
+    // what a text receives of what is shared in the chat (W3).
+    case "shortText": case "longText": return { ...common, ...repeated, type: field.type, maxLength: field.maxLength, ...field.validation ? { validation: field.validation } : {},
+      ...field.receives ? { receives: field.receives } : {} };
     case "group": return { ...common, type: field.type, rows: { ...field.rows } };
     // CA1-A: only a decimal is calculated.
     default: return { ...common, ...repeated, type: field.type,
