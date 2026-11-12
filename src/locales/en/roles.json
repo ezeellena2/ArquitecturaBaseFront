@@ -23,9 +23,10 @@
   },
   "form": {
     "name": "Name",
+    "systemNameHelp": "It's a system role: its name can't be changed.",
     "nameRequired": "Enter a name.",
     "descriptionLabel": "Description",
-    "descriptionPlaceholder": "Optional. One line explaining what it is for.",
+    "descriptionPlaceholder": "For example: reviews and approves their team's responses.",
     "submit": "Save"
   },
   "editor": {
@@ -36,7 +37,7 @@
     "crumbLoading": "Edit role",
     "crumbUnnamed": "Role",
     "back": "Back to Roles and permissions",
-    "allPermissions": "All permissions",
+    "adminHelp": "It's the system role with every permission: it can't be changed.",
     "saving": "Saving…",
     "details": "Role details",
     "loadError": "We couldn't load the role",
@@ -53,30 +54,15 @@
   },
   "picker": {
     "columns": {
-      "name": "Permission",
-      "description": "Description",
-      "assigned": "Assigned"
+      "wholeArea": "Whole area",
+      "area": "Area",
+      "read": "View",
+      "manage": "Manage",
+      "others": "Other permissions"
     },
     "title": "Permissions",
-    "searchLabel": "Search for a permission",
-    "searchPlaceholder": "Search for a permission or an area",
-    "show": "Show",
-    "all": "All",
-    "picked": "Picked · {{total}}",
-    "expandAll": "Expand all",
-    "collapseAll": "Collapse all",
-    "areaProgress": "{{picked}} of {{total}}",
-    "pickAll": "Pick all",
     "pickAllFor": "Pick all permissions in {{area}}",
-    "clearAll": "Remove all",
-    "clearAllFor": "Remove all permissions in {{area}}",
-    "noMatch": {
-      "title": "No permission matches",
-      "nonePicked": "This role has no permissions picked yet.",
-      "query": "There are no permissions or areas that say “{{query}}”.",
-      "queryPicked": "There are no permissions or areas that say “{{query}}” among the picked ones.",
-      "action": "See all permissions"
-    }
+    "clearAllFor": "Remove all permissions in {{area}}"
   },
   "delete": {
     "title": "Delete the {{name}} role",

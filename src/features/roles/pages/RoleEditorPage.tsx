@@ -58,7 +58,7 @@ function isSameDraft(first: Draft, second: Draft): boolean {
 
 const detailsClassName = "grid w-full max-w-2xl grid-cols-1 gap-3.5";
 
-/// Mantiene el espacio de los datos y las secciones mientras llegan el rol y el catálogo.
+/// Mantiene el espacio de los datos y de la matriz de permisos mientras llegan el rol y el catálogo (ES3).
 function EditorSkeleton(): ReactNode {
   return (
     <div aria-hidden="true" className="flex flex-col gap-6">
@@ -66,19 +66,22 @@ function EditorSkeleton(): ReactNode {
         <div className="space-y-2.5"><Skeleton className="h-3 w-20" /><Skeleton className="h-9" /></div>
         <div className="space-y-2.5"><Skeleton className="h-3 w-24" /><Skeleton className="h-16" /></div>
       </div></Surface>
-      <div className="flex flex-col gap-2 border-t border-[var(--color-border)] pt-4">
-        <Skeleton className="h-9" />
-        <Skeleton className="h-7.5" />
-        <Skeleton className="h-7.5" />
-        <Skeleton className="h-7.5" />
-        <Skeleton className="h-7.5" />
-      </div>
+      <Surface>
+        <div className="flex flex-col gap-2 p-4">
+          <Skeleton className="h-6" />
+          <Skeleton className="h-7.5" />
+          <Skeleton className="h-7.5" />
+          <Skeleton className="h-7.5" />
+          <Skeleton className="h-7.5" />
+        </div>
+      </Surface>
     </div>
   );
 }
 
 /// Nombre y descripción, sin panel lateral. Un rol del sistema no cambia de nombre, y Admin tampoco de
-/// descripción: los campos siguen a la vista, de solo lectura, en vez de desaparecer.
+/// descripción: los campos siguen a la vista, de solo lectura, en vez de desaparecer. Por qué el nombre de User no se
+/// cambia no es obvio y va en la (i) de «Nombre»; el de Admin lo dice la (i) del título, que vale para todo el rol.
 function RoleDetails({
   draft,
   nameError,
@@ -106,6 +109,7 @@ function RoleDetails({
         <FormField
           label={t("form.name")}
           required={!isSystemRole}
+          help={isSystemRole && !readOnly ? t("form.systemNameHelp") : undefined}
           error={nameError}
         >
           <Input
@@ -327,10 +331,9 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     );
   }
 
-  const actions = !isReady ? undefined : isAdmin ? (
-    // Admin no se cambia: en lugar de los botones, lo que tiene.
-    <span className="text-xs text-[var(--color-content-muted)]">{t("editor.allPermissions")}</span>
-  ) : (
+  // Admin no se cambia: sin botones. Que tiene todo lo dicen las tildes de la matriz, y por qué no se cambia, la (i) del
+  // título (RO1-A).
+  const actions = !isReady || isAdmin ? undefined : (
     <>
       <Button asChild variant="outline">
         <Link to="/roles">{t("common:actions.cancel")}</Link>
@@ -344,7 +347,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   );
 
   return (
-    <Page backTo={{ to: "/roles", label: t("editor.back") }} title={title} actions={actions}>
+    <Page backTo={{ to: "/roles", label: t("editor.back") }} title={title} help={isAdmin ? t("editor.adminHelp") : undefined} actions={actions}>
       {loadError ? (
         <EmptyState
           title={t("editor.loadError")}

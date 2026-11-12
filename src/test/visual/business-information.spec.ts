@@ -41,21 +41,23 @@ for (const language of ["es", "en"] as const) {
       }).map(select => select.getAttribute("aria-label")))).toEqual([]);
     });
   }
-  test(`business permissions distinguish area headings from plain permission rows in ${language}`, async ({ page }) => {
+  // RO1-A: the business permissions are IA's second pair, so on a desktop they go in «Otros permisos» of its row, with
+  // their names; on a phone each area is a band in the tone of a section and its permissions are white rows under it.
+  test(`business permissions read in the row of IA and under its band in ${language}`, async ({ page }) => {
+    const es = language === "es";
     await page.goto(`/src/test/visual/index.html?screen=/roles/admin&scenario=business-roles&lang=${language}`);
-    const permission = page.getByRole("checkbox", { name: language === "es" ? "Ver información del negocio" : "View business information", exact: true });
-    await expect(permission).toBeChecked();
-    await expect(permission).toBeDisabled();
     const table = page.getByRole("table");
-    const rows = table.locator('tbody tr:not([data-section])');
-    for (const row of await rows.all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
-    const sections = table.locator('tbody tr[data-section]');
-    await expect(sections).toHaveCount(4);
-    const sectionColor = await sections.first().evaluate(el => getComputedStyle(el).backgroundColor);
-    expect(sectionColor).not.toBe("rgb(255, 255, 255)");
-    expect(sectionColor).not.toBe(await table.locator("thead").evaluate(el => getComputedStyle(el).backgroundColor));
-    for (const row of await sections.all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe(sectionColor);
-    expect(await table.locator("thead").evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe("rgb(255, 255, 255)");
+    const ai = table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: es ? "Inteligencia artificial" : "Artificial intelligence" }) });
+    await expect(ai.getByRole("cell").last()).toContainText(es ? "Ver información del negocio" : "View business information");
+    await expect(ai.getByRole("cell").last()).toContainText(es ? "Administrar información del negocio" : "Manage business information");
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 900 });
+    const bands = table.locator('tbody tr[data-tone="section"]');
+    await expect(bands).toHaveCount(4);
+    const bandColor = await bands.first().evaluate(el => getComputedStyle(el).backgroundColor);
+    expect(bandColor).not.toBe("rgb(255, 255, 255)");
+    for (const row of await bands.all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe(bandColor);
+    for (const row of await table.locator('tbody tr:not([data-tone="section"])').all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
   });
   test(`lost replies recover by receipt in ${language}`, async ({ page }) => {
     await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-uncertain&lang=${language}`);

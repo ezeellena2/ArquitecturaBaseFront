@@ -1,24 +1,21 @@
-import { act, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState, type FormEvent } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PermissionGroup } from "../api/roles";
 import { PermissionPicker } from "./PermissionPicker";
 import i18n from "@/shared/i18n";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
-// Las tres áreas reales, con los textos del backend en español.
-const catalog: PermissionGroup[] = [
+// Las tres áreas del núcleo y la de WhatsApp, con los textos del backend en español: WhatsApp no tiene «Administrar» y
+// sus otros dos permisos van en «Otros permisos».
+const core: PermissionGroup[] = [
   {
     area: "users",
     name: "Usuarios",
     permissions: [
       { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
-      {
-        code: "users.manage",
-        name: "Administrar usuarios",
-        description: "Dar de alta, editar, desactivar y eliminar cuentas.",
-      },
+      { code: "users.manage", name: "Administrar usuarios", description: "Dar de alta, editar, desactivar y eliminar cuentas." },
     ],
   },
   {
@@ -33,471 +30,242 @@ const catalog: PermissionGroup[] = [
     area: "settings",
     name: "Configuración",
     permissions: [
-      {
-        code: "settings.manage",
-        name: "Administrar la configuración",
-        description: "El modo de registro y los ajustes del sistema.",
-      },
+      { code: "settings.manage", name: "Administrar la configuración", description: "El modo de registro y los ajustes del sistema." },
     ],
   },
 ];
 
+const whatsapp: PermissionGroup = {
+  area: "whatsapp",
+  name: "WhatsApp",
+  permissions: [
+    { code: "whatsapp.read", name: "Ver chats", description: "Leer conversaciones y tus mensajes sin leer." },
+    { code: "whatsapp.send", name: "Responder chats", description: "Enviar respuestas manuales en conversaciones autorizadas." },
+    { code: "whatsapp.configureassistant", name: "Configurar el asistente", description: "Pasar una conversación al modo Asistente." },
+  ],
+};
+
+const catalog = [...core, whatsapp];
+
 /// El selector es controlado: la pantalla guarda lo elegido. Esto hace de pantalla, así un clic se ve reflejado.
-function Harness({ initial = [], readOnly }: { initial?: string[]; readOnly?: boolean }) {
+function Harness({ groups = catalog, initial = [], readOnly }: { groups?: PermissionGroup[]; initial?: string[]; readOnly?: boolean }) {
   const [picked, setPicked] = useState<readonly string[]>(initial);
 
-  return <PermissionPicker groups={catalog} picked={picked} onChange={setPicked} readOnly={readOnly} />;
+  return <PermissionPicker groups={groups} picked={picked} onChange={setPicked} readOnly={readOnly} />;
 }
 
-function area(name: string) {
-  return screen.getByRole("rowgroup", { name });
+/// La matriz es la del escritorio (RO1-A): desde 768 px. jsdom no tiene `matchMedia` y el de los tests dice que no.
+function onDesktop() {
+  vi.spyOn(globalThis, "matchMedia").mockImplementation((query) => ({
+    matches: query === "(min-width: 768px)",
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }) as MediaQueryList);
 }
 
-function searchBox() {
-  return screen.getByRole("searchbox", { name: "Buscar un permiso" });
+function areaRow(name: string) {
+  return screen.getByRole("rowheader", { name }).closest("tr")!;
+}
+
+/// Las celdas de una fila de la matriz por su encabezado, para no depender de en qué lugar está cada columna.
+function cellUnder(row: HTMLElement, header: string) {
+  const headers = screen.getAllByRole("columnheader").map((cell) => cell.textContent);
+
+  return row.querySelectorAll("th, td")[headers.indexOf(header)] as HTMLElement;
 }
 
 describe("PermissionPicker", () => {
-  it("renders one table with a common header and collapsible row groups", () => {
-    renderWithProviders(<Harness />);
-
-    const table = screen.getByRole("table", { name: "Permisos" });
-    expect(screen.getAllByRole("table")).toHaveLength(1);
-    expect(within(table).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual([
-      "Permiso", "Descripción", "Asignado",
-    ]);
-    const row = within(table).getByRole("row", { name: /Ver usuarios/ });
-    const cells = within(row).getAllByRole("cell");
-    expect(cells[0]).toHaveTextContent("Ver usuarios");
-    expect(cells[1]).toHaveTextContent("El listado y el detalle de cada cuenta.");
-    expect(within(cells[2]!).getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("shows partial selection and selects the full section even through a search", async () => {
-    renderWithProviders(<Harness initial={["users.read", "roles.read"]} />);
-    const section = within(area("Usuarios"));
-    expect(section.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" })).toBePartiallyChecked();
-    await userEvent.type(searchBox(), "desactivar");
-    await userEvent.click(section.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" }));
-    await userEvent.clear(searchBox());
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
-    expect(section.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" })).toBeChecked();
-  });
+  describe("on a desktop, a matrix", () => {
+    it("draws one row per area with the columns Área, Ver, Administrar and Otros permisos, without search, filters or folding", () => {
+      onDesktop();
+      renderWithProviders(<Harness initial={["users.read"]} />);
 
-  it("selects a collapsed section without opening it", async () => {
-    renderWithProviders(<Harness />);
-    const section = within(area("Roles"));
-    await userEvent.click(section.getByRole("checkbox", { name: "Elegir todos los permisos de Roles" }));
-    expect(section.getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(section.getByRole("checkbox", { name: "Quitar todos los permisos de Roles" })).toBeChecked();
-    await userEvent.click(section.getByRole("button", { expanded: false }));
-    expect(section.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
-    expect(section.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
-  });
+      const table = screen.getByRole("table", { name: "Permisos" });
+      expect(within(table).getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual([
+        "Todo el área", "Área", "Ver", "Administrar", "Otros permisos",
+      ]);
+      // Cada fila la nombra su área; su (i) va en la misma celda sin sumarse al nombre.
+      const areas = within(table).getAllByRole("rowheader");
+      expect(areas).toHaveLength(4);
+      ["Usuarios", "Roles", "Configuración", "WhatsApp"].forEach((name, index) => expect(areas[index]).toHaveAccessibleName(name));
 
-  it("names every area as a group, even while it is closed", () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
+      const users = areaRow("Usuarios");
+      expect(within(cellUnder(users, "Ver")).getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
+      expect(within(cellUnder(users, "Administrar")).getByRole("checkbox", { name: "Administrar usuarios" })).not.toBeChecked();
+      expect(cellUnder(users, "Otros permisos")).toBeEmptyDOMElement();
 
-    // El `legend` en `sr-only` es de donde el `fieldset` saca el nombre: si alguien lo "limpia", las casillas
-    // de un área se quedan sin decir de qué área son.
-    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(area("Usuarios")).toBeInTheDocument();
-    expect(area("Configuración")).toBeInTheDocument();
-  });
+      expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Expandir todo|Contraer todo|Elegidos/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { expanded: false })).not.toBeInTheDocument();
+    });
 
-  it("starts with the areas that have something picked open", () => {
-    renderWithProviders(<Harness initial={["users.read", "settings.manage"]} />);
+    it("puts the permissions that are not to view or to manage in «Otros permisos», with their names", async () => {
+      onDesktop();
+      renderWithProviders(<Harness />);
 
-    expect(within(area("Usuarios")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(within(area("Configuración")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: "Ver roles" })).not.toBeInTheDocument();
-  });
+      const chats = areaRow("WhatsApp");
+      expect(within(cellUnder(chats, "Ver")).getByRole("checkbox", { name: "Ver chats" })).toBeInTheDocument();
+      const others = cellUnder(chats, "Otros permisos");
+      expect(within(others).getAllByRole("checkbox").map((checkbox) => checkbox.closest("label")?.textContent)).toEqual([
+        "Responder chats", "Configurar el asistente",
+      ]);
 
-  it("opens the first area of a role with nothing picked", () => {
-    renderWithProviders(<Harness />);
+      await userEvent.click(within(others).getByText("Responder chats"));
 
-    expect(within(area("Usuarios")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
-  });
+      expect(within(others).getByRole("checkbox", { name: "Responder chats" })).toBeChecked();
+    });
 
-  it("opens and closes an area", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
+    it("leaves out «Otros permisos» when no area has another permission, as in the core without modules", () => {
+      onDesktop();
+      renderWithProviders(<Harness groups={core} />);
 
-    await userEvent.click(within(area("Roles")).getByRole("button", { expanded: false }));
+      expect(screen.getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual([
+        "Todo el área", "Área", "Ver", "Administrar",
+      ]);
+    });
 
-    expect(within(area("Roles")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeInTheDocument();
+    it("draws a dash where the area does not have that permission, with nothing to pick", () => {
+      onDesktop();
+      renderWithProviders(<Harness />);
 
-    await userEvent.click(within(area("Roles")).getByRole("button", { expanded: true }));
+      const settings = cellUnder(areaRow("Configuración"), "Ver");
+      expect(settings).toHaveTextContent("—");
+      expect(within(settings).queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(within(cellUnder(areaRow("WhatsApp"), "Administrar")).queryByRole("checkbox")).not.toBeInTheDocument();
+    });
 
-    expect(screen.queryByRole("checkbox", { name: "Ver roles" })).not.toBeInTheDocument();
-  });
+    it("picks a single permission", async () => {
+      onDesktop();
+      const onChange = vi.fn();
+      renderWithProviders(<PermissionPicker groups={catalog} picked={["users.read"]} onChange={onChange} />);
 
-  it("expands and collapses every area", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
+      await userEvent.click(screen.getByRole("checkbox", { name: "Administrar usuarios" }));
 
-    const toggle = screen.getByRole("button", { name: "Expandir todo" });
-    expect(screen.queryByRole("button", { name: "Contraer todo" })).not.toBeInTheDocument();
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).toBe(screen.getByRole("table"));
-    await userEvent.click(toggle);
+      expect(onChange).toHaveBeenCalledWith(["users.read", "users.manage"]);
+    });
 
-    expect(screen.getAllByRole("checkbox")).toHaveLength(8);
-    expect(toggle).toHaveAccessibleName("Contraer todo");
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    it("describes each checkbox with what its permission allows", () => {
+      onDesktop();
+      renderWithProviders(<Harness />);
 
-    await userEvent.click(toggle);
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAccessibleDescription("El listado y el detalle de cada cuenta.");
+      expect(screen.getByRole("checkbox", { name: "Responder chats" })).toHaveAccessibleDescription(
+        "Enviar respuestas manuales en conversaciones autorizadas.",
+      );
+    });
 
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
-    expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(toggle).toHaveAccessibleName("Expandir todo");
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    it("says what each permission of an area allows in the area's (i)", () => {
+      onDesktop();
+      renderWithProviders(<Harness />);
 
-    await userEvent.click(toggle);
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-  });
+      const info = within(areaRow("Usuarios")).getByRole("button", { name: "Más información sobre Usuarios" });
+      // Un permiso por renglón: el tooltip conserva los saltos.
+      expect(info).toHaveAccessibleDescription(
+        "Ver usuarios — El listado y el detalle de cada cuenta.\nAdministrar usuarios — Dar de alta, editar, desactivar y eliminar cuentas.",
+      );
+    });
 
-  it("collapses search results immediately and keeps them collapsed when the search is cleared", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
+    it("picks and removes a whole area from its checkbox, mixed while only part of it is picked", async () => {
+      onDesktop();
+      renderWithProviders(<Harness initial={["users.read", "roles.read"]} />);
 
-    await userEvent.type(searchBox(), "ver");
-    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
+      const pickAll = within(areaRow("Usuarios")).getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" });
+      expect(pickAll).toBePartiallyChecked();
 
-    expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: "Ver usuarios" })).not.toBeInTheDocument();
+      await userEvent.click(pickAll);
 
-    await userEvent.clear(searchBox());
+      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
+      const clearAll = within(areaRow("Usuarios")).getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" });
+      expect(clearAll).toBeChecked();
 
-    expect(within(area("Usuarios")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(3);
+      await userEvent.click(clearAll);
 
-    await userEvent.type(searchBox(), "ver");
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-  });
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).not.toBeChecked();
+    });
 
-  it("offers expanding all when an individual area is collapsed", async () => {
-    renderWithProviders(<Harness initial={["users.read", "roles.read", "settings.manage"]} />);
-    expect(screen.getByRole("button", { name: "Contraer todo" })).toBeInTheDocument();
+    it("has no area checkbox for an area of a single permission, which would repeat that permission's", () => {
+      onDesktop();
+      renderWithProviders(<Harness />);
 
-    await userEvent.click(within(area("Roles")).getByRole("button", { expanded: true }));
-    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
+      expect(within(areaRow("Configuración")).getAllByRole("checkbox")).toHaveLength(1);
+      expect(screen.queryByRole("checkbox", { name: /todos los permisos de Configuración/ })).not.toBeInTheDocument();
+    });
 
-    expect(within(area("Roles")).getByRole("button", { expanded: true })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Administrar roles" })).not.toBeChecked();
-  });
+    // El check de un área conserva un nombre contextual en ambos idiomas.
+    it.each(["es", "en"])("names each area's checkbox after what it does and the area, in %s", async (language) => {
+      onDesktop();
+      await i18n.changeLanguage(language);
 
-  it.each([false, true])("toggles optional catalog areas without changing permissions, readOnly=%s", async (readOnly) => {
-    const groups = [...catalog,
-      { area: "whatsapp", name: "WhatsApp", permissions: [{ code: "whatsapp.read", name: "Ver chats", description: "Leer chats." }] },
-      { area: "ai", name: "Inteligencia artificial", permissions: [{ code: "ai.read", name: "Ver conexión", description: "Ver la conexión." }] },
-    ];
-    const picked = groups.flatMap((group) => group.permissions.map((permission) => permission.code));
-    const onChange = vi.fn();
-    renderWithProviders(<PermissionPicker groups={groups} picked={picked} onChange={onChange} readOnly={readOnly} />);
+      try {
+        renderWithProviders(<Harness initial={["users.read", "users.manage"]} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
-    for (const group of groups) expect(within(area(group.name)).getByRole("button", { expanded: false })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
-    for (const permission of groups.flatMap((group) => group.permissions)) {
-      const checkbox = screen.getByRole("checkbox", { name: permission.name });
-      expect(checkbox).toBeChecked();
-      if (readOnly) expect(checkbox).toBeDisabled();
-    }
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it("lets picked results collapse and reopens results for a new search", async () => {
-    renderWithProviders(<Harness initial={["users.read", "roles.read"]} />);
-    await userEvent.click(screen.getByRole("button", { name: "Elegidos · 2" }));
-    await userEvent.click(screen.getByRole("button", { name: "Contraer todo" }));
-    expect(screen.queryAllByRole("checkbox")).toHaveLength(2);
-
-    await userEvent.type(searchBox(), "usuarios");
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-    await userEvent.click(within(area("Usuarios")).getByRole("button", { expanded: true }));
-    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Expandir todo" }));
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-  });
-
-  it("disables the global toggle when no areas match", async () => {
-    renderWithProviders(<Harness />);
-    await userEvent.type(searchBox(), "no-match");
-    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeDisabled();
-    await userEvent.clear(searchBox());
-    expect(screen.getByRole("button", { name: "Expandir todo" })).toBeEnabled();
-  });
-
-  it("describes each checkbox with the permission's description", () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
-
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAccessibleDescription(
-      "El listado y el detalle de cada cuenta.",
-    );
-    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).not.toBeChecked();
-  });
-
-  it("picks a single permission", async () => {
-    const onChange = vi.fn();
-    renderWithProviders(<PermissionPicker groups={catalog} picked={["users.read"]} onChange={onChange} />);
-
-    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar usuarios" }));
-
-    expect(onChange).toHaveBeenCalledWith(["users.read", "users.manage"]);
-  });
-
-  it("says how many permissions of an area are picked in its «Asignado» cell, next to its checkbox, not in its name (UD, E)", () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
-
-    // A band names one thing: the area; how many it has picked goes in the column that says what is assigned.
-    const band = within(area("Usuarios")).getAllByRole("row")[0];
-    expect(within(band).getAllByRole("cell").at(-1)).toHaveTextContent("1 de 2");
-    expect(within(band).getByRole("button", { name: "Usuarios" })).not.toHaveTextContent("1 de 2");
-  });
-
-  it("picks and removes a whole area, and counts over all of its permissions", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
-
-    expect(within(area("Usuarios")).getByText("1 de 2")).toBeInTheDocument();
-
-    // El nombre accesible identifica el área; el estado mixto refleja la selección parcial.
-    const pickAll = screen.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" });
-    expect(pickAll).toBePartiallyChecked();
-
-    await userEvent.click(pickAll);
-
-    expect(within(area("Usuarios")).getByText("2 de 2")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
-
-    const clearAll = screen.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" });
-    expect(clearAll).toBeChecked();
-
-    await userEvent.click(clearAll);
-
-    expect(within(area("Usuarios")).getByText("0 de 2")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).not.toBeChecked();
-  });
-
-  // El check de sección conserva un nombre contextual en ambos idiomas.
-  it.each(["es", "en"])("names each area's button starting with the text it shows, in %s", async (language) => {
-    await i18n.changeLanguage(language);
-
-    try {
-      // Usuarios, con todo elegido, muestra "Quitar todos"; Roles, sin nada, "Elegir todos".
-      renderWithProviders(<Harness initial={["users.read", "users.manage"]} />);
-
-      for (const name of ["Usuarios", "Roles"]) {
-        const action = within(await screen.findByRole("rowgroup", { name }))
-          .getByRole("checkbox", { name: new RegExp(name + "$") });
-        expect(action).toHaveAccessibleName(new RegExp(name + "$"));
-        expect(action).toHaveAttribute("aria-checked", name === "Usuarios" ? "true" : "false");
+        expect(within(areaRow("Usuarios")).getByRole("checkbox", { name: /Usuarios$/ })).toHaveAttribute("aria-checked", "true");
+        expect(within(areaRow("Roles")).getByRole("checkbox", { name: /Roles$/ })).toHaveAttribute("aria-checked", "false");
+      } finally {
+        await i18n.changeLanguage("es");
       }
-    } finally {
-      await i18n.changeLanguage("es");
-    }
-  });
-
-  it("picks the whole area even when the search hides part of it", async () => {
-    const onChange = vi.fn();
-    renderWithProviders(<PermissionPicker groups={catalog} picked={[]} onChange={onChange} />);
-
-    await userEvent.type(searchBox(), "ver usuarios");
-
-    expect(screen.queryByRole("checkbox", { name: "Administrar usuarios" })).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("checkbox", { name: "Elegir todos los permisos de Usuarios" }));
-
-    expect(onChange).toHaveBeenCalledWith(["users.read", "users.manage"]);
-  });
-
-  it("filters by search without minding case or accents", async () => {
-    renderWithProviders(<Harness />);
-
-    await userEvent.type(searchBox(), "CONFIGURACION");
-
-    expect(area("Configuración")).toBeInTheDocument();
-    expect(screen.queryByRole("rowgroup", { name: "Usuarios" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
-    // Lo que queda a la vista se muestra abierto: buscar y tener que abrir cada resultado es buscar dos veces.
-    expect(screen.getByRole("checkbox", { name: "Administrar la configuración" })).toBeInTheDocument();
-  });
-
-  it("finds a permission by its description", async () => {
-    renderWithProviders(<Harness />);
-
-    await userEvent.type(searchBox(), "desactivar");
-
-    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: "Ver usuarios" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
-  });
-
-  it("does not filter on a search of only spaces", async () => {
-    renderWithProviders(<Harness />);
-
-    await userEvent.type(searchBox(), "   ");
-
-    expect(area("Usuarios")).toBeInTheDocument();
-    expect(area("Roles")).toBeInTheDocument();
-    expect(area("Configuración")).toBeInTheDocument();
-    // No cuenta como una búsqueda: las áreas siguen como estaban, no se abren todas.
-    expect(within(area("Roles")).getByRole("button", { expanded: false })).toBeInTheDocument();
-    expect(screen.queryByText("Ningún permiso coincide")).not.toBeInTheDocument();
-  });
-
-  it("shows only the picked permissions, with their count", async () => {
-    renderWithProviders(<Harness initial={["users.read", "roles.manage"]} />);
-
-    const show = screen.getByRole("group", { name: "Mostrar" });
-    expect(within(show).getByRole("button", { name: "Todos" })).toHaveAttribute("aria-pressed", "true");
-
-    await userEvent.click(within(show).getByRole("button", { name: "Elegidos · 2" }));
-
-    expect(within(show).getByRole("button", { name: "Elegidos · 2" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByRole("checkbox")).toHaveLength(4);
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeInTheDocument();
-    expect(screen.queryByRole("rowgroup", { name: "Configuración" })).not.toBeInTheDocument();
-  });
-
-  it("explains that nothing is picked yet when only the picked are shown", async () => {
-    renderWithProviders(<Harness />);
-
-    await userEvent.click(screen.getByRole("button", { name: "Elegidos · 0" }));
-
-    expect(screen.getByRole("heading", { name: "Ningún permiso coincide" })).toBeInTheDocument();
-    expect(screen.getByText("Este rol todavía no tiene permisos elegidos.")).toBeInTheDocument();
-  });
-
-  it("repeats the trimmed search when nothing matches it", async () => {
-    renderWithProviders(<Harness />);
-
-    await userEvent.type(searchBox(), "  factura  ");
-
-    expect(screen.getByRole("heading", { name: "Ningún permiso coincide" })).toBeInTheDocument();
-    expect(screen.getByText("No hay permisos ni áreas que digan “factura”.")).toBeInTheDocument();
-  });
-
-  it("says that the search found nothing among the picked ones", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
-
-    await userEvent.click(screen.getByRole("button", { name: "Elegidos · 1" }));
-    await userEvent.type(searchBox(), "roles");
-
-    expect(screen.getByText("No hay permisos ni áreas que digan “roles” entre los elegidos.")).toBeInTheDocument();
-  });
-
-  it("clears the search and the filter from the empty state", async () => {
-    renderWithProviders(<Harness initial={["users.read"]} />);
-
-    await userEvent.click(screen.getByRole("button", { name: "Elegidos · 1" }));
-    await userEvent.type(searchBox(), "roles");
-    await userEvent.click(screen.getByRole("button", { name: "Ver todos los permisos" }));
-
-    expect(searchBox()).toHaveValue("");
-    expect(screen.getByRole("button", { name: "Todos" })).toHaveAttribute("aria-pressed", "true");
-    expect(area("Usuarios")).toBeInTheDocument();
-    expect(area("Roles")).toBeInTheDocument();
-    expect(area("Configuración")).toBeInTheDocument();
-    expect(screen.queryByText("Ningún permiso coincide")).not.toBeInTheDocument();
-  });
-
-  // Los controles que se sacan a sí mismos de la vista no dejan el foco en `<body>`: con el teclado se perdería
-  // el lugar justo mientras se revisa y se limpia lo elegido.
-  describe("keeps the focus when what had it goes away", () => {
-    async function showOnlyPicked(total: number) {
-      await userEvent.click(screen.getByRole("button", { name: `Elegidos · ${total}` }));
-    }
-
-    async function pressOn(element: HTMLElement, key: string) {
-      act(() => element.focus());
-      await userEvent.keyboard(key);
-    }
-
-    it("moves to the next permission after unpicking one with only the picked shown", async () => {
-      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
-      await showOnlyPicked(3);
-
-      await pressOn(screen.getByRole("checkbox", { name: "Administrar usuarios" }), " ");
-
-      expect(screen.queryByRole("checkbox", { name: "Administrar usuarios" })).not.toBeInTheDocument();
-      expect(screen.getByRole("checkbox", { name: "Ver roles" })).toHaveFocus();
     });
 
-    it("moves back to the previous permission after unpicking the last one shown", async () => {
-      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
-      await showOnlyPicked(3);
+    it("reads what the role has with a tick, without checkboxes nor the column of the whole area, when it is read-only", () => {
+      onDesktop();
+      renderWithProviders(<Harness initial={["users.read", "users.manage", "settings.manage", "whatsapp.send"]} readOnly />);
 
-      await pressOn(screen.getByRole("checkbox", { name: "Ver roles" }), " ");
-
-      expect(screen.queryByRole("rowgroup", { name: "Roles" })).not.toBeInTheDocument();
-      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toHaveFocus();
-    });
-
-    it("moves to the next section checkbox after removing a whole area with only the picked shown", async () => {
-      renderWithProviders(<Harness initial={["users.read", "users.manage", "roles.read"]} />);
-      await showOnlyPicked(3);
-
-      await pressOn(screen.getByRole("checkbox", { name: "Quitar todos los permisos de Usuarios" }), " ");
-
-      expect(screen.queryByRole("rowgroup", { name: "Usuarios" })).not.toBeInTheDocument();
-      expect(screen.getByRole("checkbox", { name: "Elegir todos los permisos de Roles" })).toHaveFocus();
-    });
-
-    it("moves to the way out of the empty list after unpicking the only one shown", async () => {
-      renderWithProviders(<Harness initial={["users.read"]} />);
-      await showOnlyPicked(1);
-
-      await pressOn(screen.getByRole("checkbox", { name: "Ver usuarios" }), " ");
-
-      expect(screen.getByRole("button", { name: "Ver todos los permisos" })).toHaveFocus();
-    });
-
-    it("moves to the search after showing every permission from the empty state", async () => {
-      renderWithProviders(<Harness initial={["users.read"]} />);
-      await userEvent.type(searchBox(), "zzz");
-
-      await pressOn(screen.getByRole("button", { name: "Ver todos los permisos" }), "{Enter}");
-
-      expect(screen.queryByRole("button", { name: "Ver todos los permisos" })).not.toBeInTheDocument();
-      expect(searchBox()).toHaveFocus();
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(screen.getAllByRole("columnheader").map((heading) => heading.textContent)).toEqual([
+        "Área", "Ver", "Administrar", "Otros permisos",
+      ]);
+      expect(cellUnder(areaRow("Usuarios"), "Ver")).toHaveTextContent("Ver usuarios");
+      expect(cellUnder(areaRow("Usuarios"), "Administrar")).toHaveTextContent("Administrar usuarios");
+      expect(cellUnder(areaRow("Roles"), "Ver")).toBeEmptyDOMElement();
+      expect(cellUnder(areaRow("Configuración"), "Ver")).toHaveTextContent("—");
+      expect(cellUnder(areaRow("WhatsApp"), "Otros permisos")).toHaveTextContent("Responder chats");
+      expect(cellUnder(areaRow("WhatsApp"), "Otros permisos")).not.toHaveTextContent("Configurar el asistente");
     });
   });
 
-  it("does not submit the form it lives in when Enter is pressed in the search", async () => {
-    const onSubmit = vi.fn((event: FormEvent) => event.preventDefault());
-    renderWithProviders(
-      <form onSubmit={onSubmit}>
-        <PermissionPicker groups={catalog} picked={[]} onChange={vi.fn()} />
-        <button type="submit">Guardar</button>
-      </form>,
-    );
+  describe("on a phone, one band per area", () => {
+    it("lists each area as a group, with its permissions named in full and without the matrix's columns", () => {
+      renderWithProviders(<Harness initial={["whatsapp.send"]} />);
 
-    // Es el campo donde un Enter es natural, y adentro del formulario del rol dispararía el Guardar.
-    await userEvent.type(searchBox(), "roles{Enter}");
+      expect(screen.queryByRole("columnheader")).not.toBeInTheDocument();
+      const chats = screen.getByRole("rowgroup", { name: "WhatsApp" });
+      expect(within(chats).getAllByRole("checkbox").map((checkbox) => checkbox.closest("label")?.textContent || checkbox.getAttribute("aria-label"))).toEqual([
+        "Elegir todos los permisos de WhatsApp", "Ver chats", "Responder chats", "Configurar el asistente",
+      ]);
+      expect(within(chats).getByRole("checkbox", { name: "Responder chats" })).toBeChecked();
+      expect(within(chats).getByRole("button", { name: "Más información sobre WhatsApp" })).toBeInTheDocument();
+    });
 
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(searchBox()).toHaveValue("roles");
-  });
+    it("picks a permission by touching its name and a whole area from its band", async () => {
+      renderWithProviders(<Harness />);
 
-  it("only shows what the role allows when it is read-only", async () => {
-    renderWithProviders(<Harness initial={["users.read", "users.manage"]} readOnly />);
+      await userEvent.click(screen.getByText("Ver usuarios"));
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeChecked();
 
-    expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeDisabled();
-    for (const checkbox of screen.getAllByRole("checkbox", { name: /^(Elegir|Quitar) todos los permisos/ })) {
-      expect(checkbox).toBeDisabled();
-    }
+      await userEvent.click(within(screen.getByRole("rowgroup", { name: "Roles" })).getByRole("checkbox", { name: "Elegir todos los permisos de Roles" }));
+      expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
+      expect(within(screen.getByRole("rowgroup", { name: "Configuración" })).getAllByRole("checkbox")).toHaveLength(1);
+    });
 
-    // Mirar sí se puede: abrir áreas y buscar no cambian el rol.
-    await userEvent.click(within(area("Roles")).getByRole("button", { expanded: false }));
+    it("reads what the role has with a tick when it is read-only", () => {
+      renderWithProviders(<Harness initial={["users.read"]} readOnly />);
 
-    expect(screen.getByRole("checkbox", { name: "Ver roles" })).toBeDisabled();
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      const users = screen.getByRole("rowgroup", { name: "Usuarios" });
+      expect(within(users).getByText("Ver usuarios")).toBeInTheDocument();
+      expect(within(users).queryByText("Administrar usuarios")).not.toBeInTheDocument();
+    });
   });
 });

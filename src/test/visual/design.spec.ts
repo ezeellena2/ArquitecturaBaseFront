@@ -177,14 +177,40 @@ test("listing and editor share actual header typography and row sizes", async ({
 
 test("table scrolling stays inside the table on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
-  await openScreen(page, "/roles/support");
+  await openScreen(page, "/roles");
   const table = page.getByRole("table");
   await expect(table).toBeVisible();
   const scroll = page.locator('[data-slot="table-container"]');
   expect(await scroll.evaluate(element => element.scrollWidth)).toBeGreaterThan(await scroll.evaluate(element => element.clientWidth));
   await scroll.evaluate(element => { element.scrollLeft = element.scrollWidth; });
   expect(await scroll.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
-  await expect(page.getByRole("columnheader", { name: "Asignado" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Acciones" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+// RO1-A: on a phone the permissions of a role are one band per area with its permissions under it, named in full and
+// 44 px tall to touch, so nothing scrolls sideways; from 768 px they are the matrix.
+test("the permissions of a role stack on a phone and are a matrix on a desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await openScreen(page, "/roles/support");
+  const table = page.getByRole("table", { name: "Permisos" });
+  await expect(table.getByRole("rowgroup", { name: "Usuarios" })).toBeVisible();
+  await expect(table.getByRole("columnheader")).toHaveCount(0);
+  const scroll = table.locator("xpath=..");
+  expect(await scroll.evaluate(element => element.scrollWidth)).toBeLessThanOrEqual(await scroll.evaluate(element => element.clientWidth));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  // The name is the label of its checkbox, the whole row to touch.
+  const permission = page.getByText("Administrar usuarios", { exact: true });
+  expect(await permission.evaluate(element => element.tagName)).toBe("LABEL");
+  expect((await permission.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await permission.click();
+  await expect(page.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(table.getByRole("columnheader")).toHaveText(["Todo el área", "Área", "Ver", "Administrar"]);
+  await expect(table.getByRole("rowheader", { name: "Usuarios" })).toBeVisible();
+  // The picked one is still picked: the screen keeps what was chosen, not the layout.
+  await expect(page.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
 });
 
 test("table bodies alternate colors while headers and hover keep their hierarchy", async ({ page }) => {
@@ -225,19 +251,20 @@ test("a table closes with a line under its last row unless it touches the edge o
   expect(await closingLine(page.getByRole("table"))).toBe("0px");
 });
 
-test("role fields, filters and permissions have separate shared containers", async ({ page }) => {
+// RO1-A: the role is two zones, its fields and its permissions; the bar of filters went with the search and the folding.
+test("role fields and permissions have separate shared containers, with no bar of filters between them", async ({ page }) => {
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await openScreen(page, "/roles/support");
     const name = page.getByRole("textbox", { name: /^Nombre/ });
     await expect(name).toBeVisible();
     const fields = page.locator('[data-slot="surface"]').filter({ has: name });
-    const filters = page.locator('[data-slot="filter-bar"]');
     const permissions = page.locator('[data-slot="surface"]').filter({ has: page.getByRole("table") });
     await expect(fields).toHaveCount(1);
+    await expect(permissions).toHaveCount(1);
+    await expect(page.locator('[data-slot="filter-bar"]')).toHaveCount(0);
     expect(await fields.evaluate(element => getComputedStyle(element).borderTopWidth)).toBe("1px");
-    expect((await filters.boundingBox())!.y).toBeGreaterThan((await fields.boundingBox())!.y + (await fields.boundingBox())!.height);
-    expect((await permissions.boundingBox())!.y).toBeGreaterThan((await filters.boundingBox())!.y + (await filters.boundingBox())!.height);
+    expect((await permissions.boundingBox())!.y).toBeGreaterThan((await fields.boundingBox())!.y + (await fields.boundingBox())!.height);
   }
 });
 

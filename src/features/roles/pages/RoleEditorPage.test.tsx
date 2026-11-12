@@ -173,7 +173,7 @@ describe("RoleEditorPage", () => {
     await userEvent.paste("  Mesa de ayuda  ");
     await userEvent.click(screen.getByRole("textbox", { name: "Descripción" }));
     await userEvent.paste(" Atiende a los usuarios. ");
-    // En un rol nuevo arranca abierta la primera área.
+    // Todas las áreas están a la vista: no hay nada que abrir.
     await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
@@ -882,21 +882,23 @@ describe("RoleEditorPage", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Admin" })).toBeInTheDocument();
     expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();
-    expect(screen.getByText("Todos los permisos")).toBeInTheDocument();
+    // Las tildes ya dicen que tiene todo (RO1-A): la banda no lo repite, y por qué no se cambia va en la (i) del título.
+    expect(screen.queryByText("Todos los permisos")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Más información sobre Admin" })).toHaveAccessibleDescription(
+      "Es el rol del sistema con todos los permisos: no se cambia.",
+    );
     expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cancelar" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAttribute("readonly");
+    expect(screen.getByRole("textbox", { name: "Descripción" })).not.toHaveAttribute("placeholder");
 
-    const checkboxes = screen.getAllByRole("checkbox");
-    expect(checkboxes).toHaveLength(8);
-    for (const checkbox of checkboxes) {
-      expect(checkbox).toBeChecked();
-      expect(checkbox).toBeDisabled();
+    // Una lectura: sin casillas que no se pueden tocar, cada permiso que tiene, con su nombre.
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    for (const permission of ["Ver usuarios", "Administrar usuarios", "Ver roles", "Administrar roles", "Administrar la configuración"]) {
+      expect(screen.getByText(permission)).toBeInTheDocument();
     }
-    expect(screen.queryByRole("button", { name: /^Elegir todos|^Quitar todos/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Quitar Ver usuarios" })).not.toBeInTheDocument();
   });
 
   it("shows the name of User read-only, and saves a change of its permissions", async () => {
@@ -915,7 +917,9 @@ describe("RoleEditorPage", () => {
     const name = await screen.findByRole("textbox", { name: "Nombre" });
     expect(name).toHaveValue("User");
     expect(name).toHaveAttribute("readonly");
-    expect(name).not.toHaveAccessibleDescription();
+    // Por qué no se cambia no es obvio: va en la (i) de «Nombre», nunca en un texto debajo del campo.
+    expect(name).toHaveAccessibleDescription("Es un rol del sistema: el nombre no se cambia.");
+    expect(screen.getByRole("button", { name: "Más información sobre Nombre" })).toBeInTheDocument();
     expect(screen.queryByText("Los roles del sistema no cambian de nombre.")).not.toBeInTheDocument();
     expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();

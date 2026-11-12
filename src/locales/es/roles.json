@@ -23,9 +23,10 @@
   },
   "form": {
     "name": "Nombre",
+    "systemNameHelp": "Es un rol del sistema: el nombre no se cambia.",
     "nameRequired": "Poné un nombre.",
     "descriptionLabel": "Descripción",
-    "descriptionPlaceholder": "Opcional. Una línea que explique para qué sirve.",
+    "descriptionPlaceholder": "Por ejemplo: revisa y aprueba las respuestas de su equipo.",
     "submit": "Guardar"
   },
   "editor": {
@@ -36,7 +37,7 @@
     "crumbLoading": "Editar rol",
     "crumbUnnamed": "Rol",
     "back": "Volver a Roles y permisos",
-    "allPermissions": "Todos los permisos",
+    "adminHelp": "Es el rol del sistema con todos los permisos: no se cambia.",
     "saving": "Guardando…",
     "details": "Datos del rol",
     "loadError": "No pudimos cargar el rol",
@@ -53,30 +54,15 @@
   },
   "picker": {
     "columns": {
-      "name": "Permiso",
-      "description": "Descripción",
-      "assigned": "Asignado"
+      "wholeArea": "Todo el área",
+      "area": "Área",
+      "read": "Ver",
+      "manage": "Administrar",
+      "others": "Otros permisos"
     },
     "title": "Permisos",
-    "searchLabel": "Buscar un permiso",
-    "searchPlaceholder": "Buscar un permiso o un área",
-    "show": "Mostrar",
-    "all": "Todos",
-    "picked": "Elegidos · {{total}}",
-    "expandAll": "Expandir todo",
-    "collapseAll": "Contraer todo",
-    "areaProgress": "{{picked}} de {{total}}",
-    "pickAll": "Elegir todos",
     "pickAllFor": "Elegir todos los permisos de {{area}}",
-    "clearAll": "Quitar todos",
-    "clearAllFor": "Quitar todos los permisos de {{area}}",
-    "noMatch": {
-      "title": "Ningún permiso coincide",
-      "nonePicked": "Este rol todavía no tiene permisos elegidos.",
-      "query": "No hay permisos ni áreas que digan “{{query}}”.",
-      "queryPicked": "No hay permisos ni áreas que digan “{{query}}” entre los elegidos.",
-      "action": "Ver todos los permisos"
-    }
+    "clearAllFor": "Quitar todos los permisos de {{area}}"
   },
   "delete": {
     "title": "Eliminar el rol {{name}}",

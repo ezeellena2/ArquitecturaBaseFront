@@ -1,19 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { PermissionGroup } from "../api/roles";
-import {
-  areaProgress,
-  initialOpenAreas,
-  normalizeForSearch,
-  pickedSummary,
-  sameSelection,
-  toggleArea,
-  visibleAreas,
-  type AreaSubset,
-} from "./permissionPicker";
+import { areaColumns, areaHelp, areaProgress, hasOtherPermissions, sameSelection, toggleArea } from "./permissionPicker";
 
-// Las tres áreas reales, con los textos del backend en español, más una de ejemplo del tablero: en el
-// catálogo real cada permiso nombra a su área, así que sin ella no hay forma de ver que coincidir por el
-// área muestra permisos que por su cuenta no coinciden.
+// Las tres áreas del núcleo, con los textos del backend en español, más dos con permisos que no son ver ni
+// administrar: una de ejemplo y la de IA, cuyo segundo par (`ai.business.*`) también termina en `.read` y `.manage`.
 const users: PermissionGroup = {
   area: "users",
   name: "Usuarios",
@@ -58,89 +48,68 @@ const billing: PermissionGroup = {
   ],
 };
 
-const catalog = [users, roles, settings, billing];
+const ai: PermissionGroup = {
+  area: "ai",
+  name: "Inteligencia artificial",
+  permissions: [
+    { code: "ai.read", name: "Ver conexión", description: "Consultar la configuración de IA sin ver su clave." },
+    { code: "ai.manage", name: "Administrar conexión", description: "Configurar la conexión y probar el proveedor de IA." },
+    { code: "ai.business.read", name: "Ver información del negocio", description: "Consultar los datos del negocio sin modificarlos." },
+    { code: "ai.business.manage", name: "Administrar información del negocio", description: "Editar y guardar los datos del negocio." },
+  ],
+};
 
-/// Lo que se ve, reducido a cada área con sus códigos y en su orden, que es lo que importa comparar.
-function codesOf(areas: readonly AreaSubset[]): [string, string[]][] {
-  return areas.map((item) => [item.group.area, item.permissions.map((permission) => permission.code)]);
-}
+const codes = (items: readonly { code: string }[]) => items.map((item) => item.code);
 
-const everything: [string, string[]][] = [
-  ["users", ["users.read", "users.manage"]],
-  ["roles", ["roles.read", "roles.manage"]],
-  ["settings", ["settings.manage"]],
-  ["billing", ["billing.read", "billing.emit", "billing.void"]],
-];
+describe("areaColumns", () => {
+  it("puts the area's read and manage permissions in their columns and nothing else", () => {
+    const columns = areaColumns(users);
 
-describe("normalizeForSearch", () => {
-  it("trims, lowercases and drops the accents", () => {
-    expect(normalizeForSearch("  Configuración ")).toBe("configuracion");
-    expect(normalizeForSearch("ÁÉÍÓÚ Ü Ñ")).toBe("aeiou u n");
+    expect(columns.read?.code).toBe("users.read");
+    expect(columns.manage?.code).toBe("users.manage");
+    expect(columns.others).toEqual([]);
+  });
+
+  it("leaves a column empty when the area does not have that permission", () => {
+    const columns = areaColumns(settings);
+
+    expect(columns.read).toBeUndefined();
+    expect(columns.manage?.code).toBe("settings.manage");
+  });
+
+  it("puts the rest in the other permissions, in the catalog order", () => {
+    const columns = areaColumns(billing);
+
+    expect(columns.read?.code).toBe("billing.read");
+    expect(columns.manage).toBeUndefined();
+    expect(codes(columns.others)).toEqual(["billing.emit", "billing.void"]);
+  });
+
+  it("only reads the area's own code: a second pair that also ends in read and manage goes to the others", () => {
+    const columns = areaColumns(ai);
+
+    expect(columns.read?.code).toBe("ai.read");
+    expect(columns.manage?.code).toBe("ai.manage");
+    expect(codes(columns.others)).toEqual(["ai.business.read", "ai.business.manage"]);
   });
 });
 
-describe("visibleAreas", () => {
-  it("shows every area and permission when nothing filters", () => {
-    expect(codesOf(visibleAreas(catalog, { query: "", onlyPicked: false, picked: [] }))).toEqual(everything);
+describe("hasOtherPermissions", () => {
+  it("is false when every permission is to read or to manage, as in the core without modules", () => {
+    expect(hasOtherPermissions([users, roles, settings])).toBe(false);
   });
 
-  it("does not filter with a query made only of spaces", () => {
-    expect(codesOf(visibleAreas(catalog, { query: "   ", onlyPicked: false, picked: [] }))).toEqual(everything);
+  it("is true when any area has another permission", () => {
+    expect(hasOtherPermissions([users, billing])).toBe(true);
   });
+});
 
-  it("matches permission names regardless of case and surrounding spaces", () => {
-    expect(codesOf(visibleAreas(catalog, { query: "  VER ", onlyPicked: false, picked: [] }))).toEqual([
-      ["users", ["users.read"]],
-      ["roles", ["roles.read"]],
-      ["billing", ["billing.read"]],
-    ]);
-  });
-
-  it("matches descriptions too", () => {
-    expect(codesOf(visibleAreas(catalog, { query: "detalle", onlyPicked: false, picked: [] }))).toEqual([
-      ["users", ["users.read"]],
-    ]);
-  });
-
-  it("shows the whole area when its name matches, without minding the accents", () => {
-    // Ningún permiso de Facturación dice "facturacion": se ven los tres porque coincide el área.
-    expect(codesOf(visibleAreas(catalog, { query: "facturacion", onlyPicked: false, picked: [] }))).toEqual([
-      ["billing", ["billing.read", "billing.emit", "billing.void"]],
-    ]);
-    expect(codesOf(visibleAreas(catalog, { query: "factura", onlyPicked: false, picked: [] }))).toEqual([
-      ["billing", ["billing.read", "billing.emit", "billing.void"]],
-    ]);
-    expect(codesOf(visibleAreas(catalog, { query: "configuracion", onlyPicked: false, picked: [] }))).toEqual([
-      ["settings", ["settings.manage"]],
-    ]);
-  });
-
-  it("shows only the picked permissions and leaves out the areas without any", () => {
-    expect(
-      codesOf(visibleAreas(catalog, { query: "", onlyPicked: true, picked: ["settings.manage", "users.manage"] })),
-    ).toEqual([
-      ["users", ["users.manage"]],
-      ["settings", ["settings.manage"]],
-    ]);
-  });
-
-  it("combines the query with the picked filter", () => {
-    expect(
-      codesOf(visibleAreas(catalog, { query: "ver", onlyPicked: true, picked: ["users.read", "users.manage"] })),
-    ).toEqual([["users", ["users.read"]]]);
-  });
-
-  it("returns no area when nothing matches", () => {
-    expect(visibleAreas(catalog, { query: "auditoría", onlyPicked: false, picked: [] })).toEqual([]);
-    expect(visibleAreas(catalog, { query: "", onlyPicked: true, picked: [] })).toEqual([]);
-  });
-
-  it("keeps the whole area next to the visible permissions", () => {
-    // La píldora "N de M" y "Elegir todos" cuentan sobre el área entera, no sobre lo que se ve.
-    const [area] = visibleAreas(catalog, { query: "detalle", onlyPicked: false, picked: [] });
-
-    expect(area?.group).toBe(users);
-    expect(area?.permissions).toHaveLength(1);
+describe("areaHelp", () => {
+  it("says what each permission of the area allows, one per line, in the catalog order", () => {
+    expect(areaHelp(users)).toBe(
+      "Ver usuarios — El listado y el detalle de cada cuenta.\n" +
+        "Administrar usuarios — Dar de alta, editar, desactivar y eliminar cuentas.",
+    );
   });
 });
 
@@ -178,45 +147,6 @@ describe("toggleArea", () => {
     const repeated: PermissionGroup = { area: "users", name: "Usuarios", permissions: [read, read] };
 
     expect(toggleArea(repeated, [])).toEqual(["users.read"]);
-  });
-});
-
-describe("pickedSummary", () => {
-  it("groups the picked permissions by area in the catalog order and counts them", () => {
-    const summary = pickedSummary(catalog, ["roles.read", "users.manage", "users.read"]);
-
-    expect(codesOf(summary.groups)).toEqual([
-      ["users", ["users.read", "users.manage"]],
-      ["roles", ["roles.read"]],
-    ]);
-    expect(summary.permissions).toBe(3);
-    expect(summary.areas).toBe(2);
-  });
-
-  it("is empty when nothing is picked", () => {
-    expect(pickedSummary(catalog, [])).toEqual({ groups: [], permissions: 0, areas: 0 });
-  });
-
-  it("does not count codes that are not in the catalog", () => {
-    // Un permiso que el backend ya no declara no tiene chip que mostrar, así que tampoco suma al conteo.
-    const summary = pickedSummary(catalog, ["users.read", "reports.read"]);
-
-    expect(summary.permissions).toBe(1);
-    expect(summary.areas).toBe(1);
-  });
-});
-
-describe("initialOpenAreas", () => {
-  it("opens the areas that have something picked", () => {
-    expect(initialOpenAreas(catalog, ["settings.manage", "roles.read"])).toEqual(["roles", "settings"]);
-  });
-
-  it("opens the first area when nothing is picked", () => {
-    expect(initialOpenAreas(catalog, [])).toEqual(["users"]);
-  });
-
-  it("opens nothing when the catalog is empty", () => {
-    expect(initialOpenAreas([], [])).toEqual([]);
   });
 });
 
