@@ -17,6 +17,13 @@ it("recovers the accepted shared receipt without attributing it to the current o
   const sent = { ...ready, state: "Sent", proposal: null, outgoing };
   expect(parseAssistantSuggestion(sent, contact, { requestId, sourceMessageId })).toEqual(sent);
 });
+// W1-A: a sent suggestion of a form with a location opens with its location request, which says how the send stands.
+it("recovers a sent suggestion that opened with the location request", () => {
+  const request = { ...outgoing, kind: "LocationRequest", body: "Para completar «Visita», mandanos tu ubicación.",
+    form: { ...outgoing.form, location: { state: "Requested", expiresAtUtc: "2026-10-18T12:00:00Z" } } };
+  const sent = { ...ready, state: "Sent", proposal: null, outgoing: request };
+  expect(parseAssistantSuggestion(sent, contact, { requestId, sourceMessageId })).toEqual(sent);
+});
 it.each(["Pending", "NoReply", "Blocked", "Discarded"])("reads %s without inventing a form or canonical values", state => {
   const body = { ...ready, state, proposal: null };
   expect(parseAssistantSuggestion(body, contact)).toEqual(body);

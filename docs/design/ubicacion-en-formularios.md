@@ -259,4 +259,5 @@ Decisiones de detalle, con la opción más simple:
    ubicación.
 5. **Lo demás, como W1-A:** opcional, dos veces, vence, dos pedidos e inglés (tableros 2 a 7).
 
-Lista de chequeo de diseño: pasada (2026-11-11), con las diferencias aceptadas de W1-A.
+Lista de chequeo de diseño: pasada (2026-11-11), con las diferencias aceptadas de W1-A. Programado el mismo día; el chat del
+front sólo suma que una sugerencia mandada puede abrir con el pedido.

@@ -37,6 +37,25 @@ describe("a location by WhatsApp in the chat", () => {
     expect(screen.queryByText(/^Mensaje /)).not.toBeInTheDocument();
   });
 
+  // The assistant also sends forms with a location (2026-11-11): its request is the same card, by «Asistente», with «Por qué lo
+  // mandó» once; the Flow that follows the location comes without it.
+  it("shows the assistant's request with its author and why it sent it, and the Flow that follows without repeating it", async () => {
+    const assistant = { reason: "Pidió registrar la visita a Ferretería Sur.", proposedFields: [{ fieldId: "0199b0c0-0000-7000-8000-000000000003",
+      label: "Cliente visitado", displayValue: "Ferretería Sur" }] };
+    await timeline([
+      message({ id: "request", direction: "Outbound", kind: "LocationRequest", origin: "Assistant", occurredAtUtc: "2026-11-11T15:00:00Z", assistant,
+        body: "Para completar «Registro de visita», mandanos tu ubicación.", form: form({ state: "Received", expiresAtUtc: "2026-11-12T15:00:00Z" }) }),
+      message({ id: "point", kind: "Location", occurredAtUtc: "2026-11-11T15:02:00Z", location: { latitude: -34.603722, longitude: -58.381592 } }),
+      message({ id: "flow", direction: "Outbound", kind: "Flow", origin: "Assistant", occurredAtUtc: "2026-11-11T15:02:01Z",
+        body: "Completá el formulario «Registro de visita».", form: form() }),
+    ]);
+
+    expect(within(screen.getByRole("group", { name: "Pedido de ubicación" })).getByText("Ubicación recibida")).toBeInTheDocument();
+    expect(screen.getAllByText("Asistente ·")).toHaveLength(2);
+    expect(screen.getAllByText("Por qué lo mandó")).toHaveLength(1);
+    expect(screen.getByText("Pidió registrar la visita a Ferretería Sur.")).toBeInTheDocument();
+  });
+
   it("says a location whose point was cleared is a location message", async () => {
     await timeline([message({ kind: "Location" })]);
 
