@@ -6,6 +6,8 @@ quedaron en el plan. Por programar, salvo DOC1: la pantalla «Biblioteca», sin 
 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)), y la lectura en el editor y lo que lee cada estándar, al front
 el 2026-11-11 ([cómo quedó](#doc1--la-biblioteca-y-la-lectura-2026-11-11)), mientras se programa su backend. DOC7-A, el
 tablero de cada formulario, quedó programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
+El mismo día se eligieron UC1-A y VC1-A, de un lienzo aparte, para la ubicación y el contacto que se comparten y varias cargas
+desde un Excel ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)), por programar.
 
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
@@ -26,7 +28,7 @@ va arriba de la planilla de DOC5-A.
 | Captura | Qué define |
 | --- | --- |
 | [DOC1 · La biblioteca y la lectura](evidence/documentos/doc1-la-biblioteca-y-la-lectura.png) | **Elegido el 2026-10-22.** «Biblioteca», una pantalla nueva en Gestión de formularios, junto a Diseñar formularios: los formularios estándar del producto, hoy «Comprobante de transferencia», y los de las etapas siguientes como «Próximamente», sin acción. Cada estándar dice qué lee, sus validaciones fijas, su versión y en qué formularios propios está; se filtra por todos, disponibles o próximamente y se busca por nombre, en la dirección. «Agregar» pide el nombre y el prefijo y crea una copia propia en borrador; se puede agregar más de una vez («Pagos a proveedores» es otra copia del mismo estándar). En el editor, la sección **«Lectura de documentos»**: prenderla; de qué estándar y versión viene; «Cómo reconocerlo», la descripción para la IA, donde lo propio (de quién es la cuenta de destino) separa dos copias; los ejemplos, que suman las correcciones de la bandeja sin entrenar ningún modelo; qué pregunta recibe cada dato (cambiarle el nombre a una no corta la lectura; un dato sin pregunta no se lee); las validaciones fijas del estándar, con candado (los dígitos del CBU, el CVU y el CUIT; el banco sale de los primeros dígitos de la cuenta, con la tabla del BCRA como datos); el cruce con catálogos (Cliente por el CUIT de origen, en Clientes); los duplicados y cómo viene leyendo, por formulario y por dato. Un formulario propio sin estándar usa el mismo mecanismo, sin candados. Prender o cambiar la lectura se guarda en el borrador y sale al publicar. Pide «Diseñar formularios». |
-| [DOC2 · Los tres casos y los otros formatos](evidence/documentos/doc2-los-tres-casos-y-los-otros-formatos.png) | **Elegido el 2026-10-22.** Juan manda el comprobante por WhatsApp, con texto o sin él. Se lee solo lo de cuentas vinculadas y activas con permiso de cargar respuestas, y se clasifica entre los formularios con lectura que esa persona puede completar; si el que encaja no se le puede mandar, lo dice y deriva (DOC4). **Seguro:** «Recibí un comprobante de transferencia de $150.000 del Galicia. ¿Lo cargo?» con «Abrir formulario», prellenado y con el comprobante adjunto. **Duda:** «¿Qué es este documento?» con hasta 3 botones; con dos posibles, el tercero es «Otro», y con la elección sigue como el seguro. **No lo reconoce:** «No reconocí este documento. ¿Qué querés cargar con él?» con la lista de lo que esa persona puede completar y «Otro», que lo deja «Sin clasificar» y lo anota en Formularios que faltan. El sistema guarda la foto como copia privada y valida sin IA el CBU, el CUIT y los duplicados; en el chat del operador el documento es un mensaje más, con «Por qué lo propuso» o «Por qué preguntó» debajo, como en AS4. **Los otros formatos:** un PDF (se lee entero, hasta el tope), un Word y un Excel con varias filas, donde cada fila es una carga; la ubicación y el contacto que se comparten no pasan por la IA y completan las preguntas elegidas en el editor del formulario abierto («Dirección de entrega», «Recibió» y «Teléfono de quien recibe» en «Registrar entrega»), que se vuelve a mandar. Los mensajes van en el idioma de la persona. |
+| [DOC2 · Los tres casos y los otros formatos](evidence/documentos/doc2-los-tres-casos-y-los-otros-formatos.png) | **Elegido el 2026-10-22.** Juan manda el comprobante por WhatsApp, con texto o sin él. Se lee solo lo de cuentas vinculadas y activas con permiso de cargar respuestas, y se clasifica entre los formularios con lectura que esa persona puede completar; si el que encaja no se le puede mandar, lo dice y deriva (DOC4). **Seguro:** «Recibí un comprobante de transferencia de $150.000 del Galicia. ¿Lo cargo?» con «Abrir formulario», prellenado y con el comprobante adjunto. **Duda:** «¿Qué es este documento?» con hasta 3 botones; con dos posibles, el tercero es «Otro», y con la elección sigue como el seguro. **No lo reconoce:** «No reconocí este documento. ¿Qué querés cargar con él?» con la lista de lo que esa persona puede completar y «Otro», que lo deja «Sin clasificar» y lo anota en Formularios que faltan. El sistema guarda la foto como copia privada y valida sin IA el CBU, el CUIT y los duplicados; en el chat del operador el documento es un mensaje más, con «Por qué lo propuso» o «Por qué preguntó» debajo, como en AS4. **Los otros formatos:** un PDF (se lee entero, hasta el tope), un Word y un Excel con varias filas, donde cada fila es una carga; la ubicación y el contacto que se comparten no pasan por la IA y completan las preguntas elegidas en el editor del formulario abierto («Dirección de entrega», «Recibió» y «Teléfono de quien recibe» en «Registrar entrega»), que se vuelve a mandar. Los mensajes van en el idioma de la persona. Desde el 2026-11-11, la ubicación, el contacto y las cargas de un Excel los fijan UC0 a UC6 y VC1 a VC5 ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)), y los tres desplegables pasan a la zona de UC1-A. |
 | [DOC3 · El formulario prellenado](evidence/documentos/doc3-el-formulario-prellenado.png) | **Elegido el 2026-10-22.** El Flow de siempre, completo con lo leído y el aviso «Lo completamos con el comprobante que mandaste. Revisá lo marcado antes de confirmar.»: lo dudoso, con «Revisá» y el borde de atención; lo que no se leyó, vacío con «No se leyó» (si la pregunta es obligatoria, no deja confirmar); el comprobante, ya adjunto en su pregunta de documento, con «Cambiar documento». Al confirmar se vuelven a revisar el CBU, el CVU, el CUIT y los duplicados con lo corregido; lo que no pasa no se guarda y dice por qué («Revisá la cuenta: los números no dan. Copiala del comprobante.»). Cada corrección queda registrada: el dato propuesto, el confirmado y quién. En el chat, la tarjeta de siempre, con el comprobante como archivo de la respuesta; en el detalle, la lectura: qué reconoció, qué se corrigió o completó y qué se validó sin IA. |
 | [DOC4 · Los casos difíciles](evidence/documentos/doc4-los-casos-dificiles.png) | **Elegido el 2026-10-22.** Una foto movida, oscura o cortada: no adivina, pide otra diciendo qué dato falta. Un PDF con contraseña: no se abre ni se pide la contraseña; pide uno sin contraseña o una captura. Un repetido (el mismo archivo, o la misma operación, monto y fecha): avisa cuándo y en qué respuesta se cargó, sin IA. Un CBU mal leído: la validación fija lo rechaza y la cuenta llega marcada; no se puede confirmar así. **Un formulario que no se le puede mandar**, como «Pagos a proveedores» a Pablo, que no tiene zona: el documento se lee y se reconoce, pero a la persona le falta el dato con el que se filtra el catálogo (CE4-A) y nunca se manda la lista entera; contesta «Gracias, recibí tu comprobante de $412.000. No lo puedo cargar desde acá: se lo pasé a una persona del equipo para que lo revise.», deriva la conversación como en AS4 y el documento queda propuesto, con lo leído, para alguien del equipo. Un Word o un Excel de formato viejo, un Excel con macros o con contraseña: no se abren ni van a la IA, y se pide un PDF o una versión sin macros ni contraseña. **Un número sin cuenta vinculada**, como Carlos Díaz: no se lee ni se le contesta; queda en el chat para un operador, con la línea «No se leyó: el número no tiene una cuenta vinculada. Lo atiende un operador.», y no entra en la bandeja. |
 | [DOC5-A · La planilla con panel](evidence/documentos/doc5-a-la-planilla-con-panel.png) | **Elegido el 2026-10-22.** «Documentos recibidos», debajo de Formularios en el panel de Gestión de formularios, con cuántos esperan a alguien del equipo. Una planilla como la de respuestas: cada documento es una fila con su miniatura, cuándo llegó, quién lo mandó, el formulario, los datos leídos que sirven para encontrarlo (monto, banco o CUIT), el estado y la respuesta. Se busca por monto (con o sin puntos), CUIT u operación, también en lo que no se cargó; se filtra por formulario, quién lo mandó, cuándo llegó y estado (propuesto, sin clasificar, confirmado o descartado, con cuántos hay), y todo vive en la dirección, con la página y el documento abierto. Un sin clasificar o un descartado se borra a los 90 días, con su lectura, y su fila dice cuándo. El documento se abre en un panel al costado, como la vista rápida D2: arriba el documento (acercar, girar, páginas y descargar); abajo el formulario que reconoció la IA, con su seguridad (cambiarlo vuelve a leer los datos para ese formulario), los datos, el historial, «Descartar», con confirmación y que se puede volver a abrir, y «Pasar al formulario», que guarda la respuesta con lo revisado, deja registradas las correcciones y pasa el documento a «Confirmado», con su número. ↑ ↓ recorren la planilla. **Para revisar acá** queda un propuesto que venció sin que la persona lo confirmara en WhatsApp, como el comprobante del Macro que mandó Pablo. En el celular, la tabla se desplaza de costado y el documento abre en su pantalla, con las acciones abajo. Dos permisos nuevos: «Ver documentos recibidos» y «Revisar documentos» (corregir, pasar al formulario y descartar); con solo ver, el documento y sus datos se ven sin poder cambiarlos. La respuesta dice en su origen de qué documento salió y quién la revisó. |
@@ -62,6 +64,243 @@ lienzo) y la maqueta ya lo muestran, y las capturas de arriba son las corregidas
 - **Para revisar acá (DOC5-A).** Junta los propuestos que vencieron sin que la persona los confirmara en WhatsApp, como el
   comprobante del Macro de Pablo, y las filas de una planilla que pasaron el tope. Los pasa al formulario alguien con
   «Revisar documentos».
+
+## Ubicación y contacto por WhatsApp (W3) y varias cargas desde un Excel
+
+Fecha: **2026-11-11**. **Elegidos UC1-A y VC1-A**, los recomendados, por programar: son las tareas 19 a 30 del
+[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel),
+después de las tareas 1 a 16 y antes del cierre. Es lo que la implementación de DOC1 a DOC7 dejaba afuera, aunque DOC2 lo había
+dibujado: la ubicación y el contacto que la persona comparte por su cuenta mientras tiene un formulario abierto (W3 de la
+[pregunta «Ubicación»](ubicacion-en-formularios.md#etapa-2-por-whatsapp-w1-a)) y varias cargas desde un Excel. Las reglas, el
+modelo de datos y las tareas están en el plan; las pantallas, los textos y los estados salen de acá.
+
+Lienzo: [Ubicación, contacto y varias cargas por WhatsApp](https://claude.ai/artifact/Sv9qPDk5H6xbRabJqUT77w), de tipo Design.
+Se armó aparte porque el [Sistema visual](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) es de otra cuenta y no se abre desde
+Claude Code, y se dibujó sobre DOC2, DOC4 y DOC5-A, W1-A y el tope de tres acciones de
+[casos del asistente](../../../ArquitecturaBase/docs/plans/2026-10-21-casos-del-asistente.md), sin reabrirlos: cómo llegan las
+cargas al teléfono (un aviso y una carga por fila, cada una con «Abrir formulario») y el primer teléfono de un contacto ya los
+había fijado DOC2. Como el lienzo es privado y puede cambiar fuera de Git, esta sección congela lo elegido. Los tableros pasan al
+Sistema visual cuando se pueda abrir, y ahí se suman sus capturas, como las de DOC1 a DOC7.
+
+### Los tableros
+
+UC1 y VC1 tenían varios conceptos. **Se eligieron UC1-A**, una zona propia en el editor, **y VC1-A**, una entrada por fila en
+«Documentos recibidos»; UC1-B, UC1-C y VC1-B son las alternativas que no se eligieron. Los demás tableros tenían un solo concepto
+y valen para los elegidos.
+
+| Tablero | Qué define |
+| --- | --- |
+| UC0 · Qué hace una ubicación o un contacto que llega | La regla y su orden, sin IA. Una ubicación completa primero un pedido de W1-A que la espera, del operador o del asistente, sin cambios; si no hay, va al envío abierto más viejo que eligió una pregunta para la ubicación, y le vuelve el formulario completado; si no, queda en el chat, como hoy. Un contacto va al envío abierto más viejo que eligió preguntas para el contacto; si no, queda en el chat, ahora legible, con el nombre y los teléfonos. En todos los caminos, el más viejo primero y lo primero vale; un número sin cuenta vinculada no tiene envíos abiertos. |
+| UC1-A · Una zona propia en el editor | **Elegido el 2026-11-11.** «Ubicación y contacto», debajo de «Preguntas» y de «Lectura de documentos», con la (i) en el título y tres renglones con la etiqueta arriba (IA1-A): «Ubicación», «Nombre del contacto» y «Teléfono del contacto», cada uno con un desplegable de las preguntas de texto. Aparece sólo con «En la app y por WhatsApp». La ubicación y el contacto no pasan por la IA ni dependen de leer documentos: «Registrar entrega» los usa sin prender la lectura, que pide «Cómo reconocerlo». Una cosa, una zona: los tres se ven juntos, y una pregunta «Ubicación» cambia un solo renglón. En contra: una zona más en un editor largo. |
+| UC1-B · Dentro de «Lectura de documentos», como DOC2 | No se eligió. Los mismos desplegables, como un grupo dentro de la zona de la lectura y con la etiqueta al costado: lo que dibujó DOC2 el 2026-10-22, antes de que existiera la pregunta «Ubicación». Junta lo que lee la IA con lo compartido sin IA, la zona se llama «Lectura de documentos» aunque esté apagada y, si el grupo sólo se ve con la lectura prendida, obliga a escribir «Cómo reconocerlo». |
+| UC1-C · En cada pregunta | No se eligió. «Se completa con lo que se comparte» en el editor de cada pregunta de texto, con la línea de la pregunta que lo dice y las opciones tomadas apagadas. Va con la pregunta, sin zona nueva, pero lo del formulario queda repartido (hay que abrir cada pregunta para saber quién recibe qué), suma un dato a cada línea y apaga opciones lejos de la pregunta que las tiene. |
+| UC1-A · El editor entero: estados | El editor con la zona y el desplegable abierto: «Ninguna», las preguntas de texto y, apagadas, las que tomó otro renglón, con «· Recibe …». Un formulario con una pregunta «Ubicación», con el renglón de la ubicación apagado y su motivo encima; «Sólo en la app», sin la zona; sólo lectura, y el celular. |
+| UC2 · La ubicación completa el formulario abierto (W3) | «Registrar entrega», mandado por Ana Pérez; Juan comparte un lugar con el clip. El mensaje que vuelve dice qué pregunta completó y de qué formulario, y el formulario trae la dirección o, si mandó su ubicación actual, el punto. En el chat de la app, la ubicación como en W1-A, el reenvío con «Prellenado con» y la respuesta; en la actividad del detalle, «Llegó la ubicación · Completó «Dirección de entrega»» y «Se volvió a mandar el formulario». |
+| UC3 · El contacto completa el formulario abierto | El asistente había mandado «Registrar entrega» prellenado con la dirección; Juan comparte un contacto con dos teléfonos. El formulario vuelve con lo que ya tenía más el nombre y el primer teléfono. La burbuja nueva del contacto en el chat de la app, y la actividad: «Llegó el contacto · Completó «Recibió» y «Teléfono de quien recibe»». |
+| UC4 · Sin formulario que completar, con un pedido W1-A y sin cuenta | Sin un envío abierto que lo reciba, o sin preguntas elegidas, no se contesta nada y los mensajes quedan en el chat, con «Contacto» en la lista de chats. El pedido de W1-A aparece como contexto, sin redibujarse. Lo de un número sin cuenta vinculada queda para un operador, sin la línea de DOC4. |
+| UC5 · Dos formularios abiertos y la ubicación que llega dos veces | «Registrar entrega» y «Retiro de envases» abiertos: la primera ubicación va al más viejo, la segunda al otro y la tercera queda en el chat. Una sola respuesta por envío: Juan responde el formulario anterior y se guarda; si después responde el nuevo, no se guarda y el chat lo dice. |
+| UC6 · En inglés | El teléfono, el chat de la app, la zona del editor con su (i) y la actividad, con el menú en inglés y las fechas en `MM/dd/yyyy`. |
+| VC1-A · Una entrada por fila | **Elegido el 2026-11-11.** En «Documentos recibidos», cada fila que se vuelve una carga es una entrada: la planilla como su archivo, con «Fila 5» en gris debajo (la excepción A de un dato por columna), y su formulario, su monto, su estado y su respuesta. El panel cambia el visor por «La fila», con los encabezados y los valores como llegaron (`DataList`), y «Descargar la planilla»; lo demás es el panel de DOC5-A. Cada fila tiene su estado, su respuesta, su historial y su búsqueda por monto, la bandeja sigue con un dato por columna y ↑ ↓ recorren las filas, sin un panel nuevo. En contra: una planilla grande llena la bandeja de renglones del mismo archivo; el plan la acota a 50 filas. |
+| VC1-B · Una entrada por planilla | No se eligió. La planilla es un documento, como «pagos-semana.xlsx» en DOC5-A, y sus filas viven en una tabla del panel, con «Revisar» por fila y «Pasar las 4 al formulario». La planilla aparece una vez y se pueden pasar varias juntas, pero rompe un dato por columna (el monto, el estado y la respuesta de siete filas en una celda), la búsqueda encuentra la planilla y no la fila, y suma un panel con su propia revisión adentro. |
+| VC2 · Siete filas: tres cargas y el resto para el equipo | Marta manda «cobranzas-semana.xlsx». El aviso; las tres cargas («1 de 3 · $95.000 · Ferretería Norte», con «Cobranzas · prellenado» en el pie); la carga 2 abierta, con su marca de duda (DOC3); el chat de la app con «Por qué lo propuso» y el enlace a la bandeja, y la actividad de una respuesta que salió de una fila, mandada a la persona o pasada por el equipo. |
+| VC3 · La bandeja con las filas | La bandeja entera, con el panel de una fila «Para revisar» y el aro de «Pasando…», el contador del menú, una fila que espera a la persona («Descartar» y «Pasar al formulario» apagados, con su motivo encima), el historial de una confirmada y el celular. |
+| VC4 · Casos difíciles de una planilla | Filas de dos formularios, una repetida, una que no encaja, la misma planilla otra vez (descartada con su motivo, como un documento repetido), ninguna fila que encaja («No lo reconoce» de DOC2) y un número sin cuenta vinculada (la línea de DOC4). |
+| VC5 · En inglés | El teléfono, el chat con «Why it proposed this» y la bandeja con «Row 5», «To review», «The row» y el motivo de una fila que espera a la persona. |
+
+### Los textos
+
+**A · La ubicación y el contacto**
+
+| Dónde | Español | Inglés |
+| --- | --- | --- |
+| WhatsApp, la ubicación completó (el texto de DOC2, con el formulario) | Puse tu ubicación en «{pregunta}». Revisá el formulario «{formulario}» y confirmalo. | I put your location in “{question}”. Check the form “{form}” and confirm it. |
+| WhatsApp, el contacto completó | Puse el contacto en «{pregunta}» y «{pregunta}». Revisá el formulario «{formulario}» y confirmalo. | I put the contact in “{question}” and “{question}”. Check the form “{form}” and confirm it. |
+| El botón (ya existe) | Abrir formulario | Open form |
+| Chat, el reenvío (ya existe; el autor es el remitente del envío, el operador o «Asistente») | Prellenado con | Prefilled with |
+| Chat, nombre accesible de la burbuja del contacto | Contacto: {nombre} | Contact: {name} |
+| Lista de chats, vista previa | Contacto | Contact |
+| Chat, un contacto que ya no se conserva (como «Mensaje de ubicación») | Mensaje de contacto | contact message |
+| Chat, la segunda respuesta del mismo envío | No se guardó: el envío ya tiene su respuesta, {número}. | Not saved: the send already has its response, {number}. |
+| Actividad, la ubicación de W3 (el renglón de W1-A con su detalle) | Llegó la ubicación · Completó «{pregunta}» | Location received · Filled in “{question}” |
+| Actividad, el contacto | Llegó el contacto · Completó «{pregunta}» y «{pregunta}» | Contact received · Filled in “{question}” and “{question}” |
+| Actividad, el reenvío | Se volvió a mandar el formulario | Form sent again |
+| Editor, título de la zona | Ubicación y contacto | Location and contact |
+| Editor, la (i) del título | La ubicación o el contacto que la persona comparte en el chat completan estas preguntas del formulario que tiene abierto, y el formulario le vuelve a llegar completado. Sin una pregunta elegida, quedan en el chat. | The location or contact the person shares in the chat fills in these questions of the form they have open, and the form comes back to them filled in. With no question chosen, they stay in the chat. |
+| Editor, renglones | Ubicación · Nombre del contacto · Teléfono del contacto | Location · Contact name · Contact phone |
+| Editor, opción vacía | Ninguna | None |
+| Editor, opción tomada por otro renglón | {pregunta} · Recibe la ubicación / · Recibe el nombre del contacto / · Recibe el teléfono del contacto | {question} · Gets the location / · Gets the contact name / · Gets the contact phone |
+| Editor, motivo del renglón apagado con una pregunta «Ubicación» | La ubicación va a la pregunta «{pregunta}», que se pide antes de mandar el formulario. | The location goes to the “{question}” question, which is asked for before the form is sent. |
+
+Las preguntas se juntan como en el resto de los textos: «A», «A» y «B», «A», «B» y «C» (en inglés, “A” and “B”).
+
+**B · Varias cargas desde un Excel**
+
+| Dónde | Español | Inglés |
+| --- | --- | --- |
+| WhatsApp, el aviso, primera frase | Recibí una planilla con {n} filas de «{formulario}». | I got a spreadsheet with {n} rows of “{form}”. |
+| El aviso, primera frase con filas de varios formularios | Recibí una planilla con {n} filas. | I got a spreadsheet with {n} rows. |
+| El aviso, van todas | Te preparé un formulario por cada una: revisalos y confirmalos. | I prepared a form for each one: check them and confirm them. |
+| El aviso, pasan el tope | Te preparé un formulario para cada una de las 3 primeras: revisalos y confirmalos. | I prepared a form for each of the first 3: check them and confirm them. |
+| El aviso, una sola carga | Te preparé el formulario: revisalo y confirmalo. | I prepared the form: check it and confirm it. |
+| El aviso, una repetida | La fila {n} ya se cargó el {fecha} en {número}: no la cargo de nuevo. | Row {n} was already loaded on {date} in {number}: I won't load it again. |
+| El aviso, varias repetidas | Las filas {n} y {m} ya se cargaron: no las cargo de nuevo. | Rows {n} and {m} were already loaded: I won't load them again. |
+| El aviso, para el equipo | Las otras {m} se las pasé a una persona del equipo. | I passed the other {m} to a person on the team. |
+| El aviso, para el equipo, una sola | La otra se la pasé a una persona del equipo. | I passed the other one to a person on the team. |
+| WhatsApp, una planilla de más de 50 filas (lo sumó el plan) | Por acá cargo planillas de hasta 50 filas. Dividila y mandámela de nuevo. | I load spreadsheets of up to 50 rows here. Split it and send it to me again. |
+| La carga, cuerpo | {i} de {k} · {resumen de la fila} | {i} of {k} · {row summary} |
+| La carga, pie (hasta 60 caracteres, el tope de Meta) | {formulario} · prellenado | {form} · prefilled |
+| Ninguna fila encaja (DOC2, adaptado) | No reconocí las filas de esta planilla. ¿Qué querés cargar con ella? | I didn't recognize the rows of this spreadsheet. What do you want to load with it? |
+| El botón de la lista (DOC2) | Elegir formulario | Choose form |
+| El aviso del formulario prellenado (DOC3, adaptado) | Lo completamos con la planilla que mandaste. Revisá lo marcado antes de confirmar. | We filled it in with the spreadsheet you sent. Check what is marked before confirming. |
+| Chat, «Por qué lo propuso» (DOC2) | Reconoció · {n} filas de {formulario}, seguro / Mandó · Filas 2, 3 y 4 / Para el equipo · Filas 5 a 8 / Repetidas · Fila {n}, ya en {número} | Recognized · {n} rows of {form}, sure / Sent · Rows 2, 3 and 4 / For the team · Rows 5 to 8 / Repeated · Row {n}, already in {number} |
+| Chat, el enlace | Ver en Documentos recibidos | View in Received documents |
+| Bandeja, detalle del archivo | Fila {n} | Row {n} |
+| Bandeja, detalle del archivo con varias hojas | {hoja} · fila {n} | {sheet} · row {n} |
+| Bandeja, estado del propuesto que espera al equipo | Para revisar | To review |
+| Panel, por qué espera al equipo | Pasó el tope de 3 cargas por mensaje. | It went over the limit of 3 loads per message. |
+| Panel, una fila que no encaja | No encaja en ningún formulario. | It does not fit any form. |
+| Panel, una repetida | Repetida: el mismo {dato} que {número}. | Repeated: the same {field} as {number}. |
+| Panel, la zona y su botón | La fila · Descargar la planilla | The row · Download the spreadsheet |
+| Panel, motivo de «Descartar» y «Pasar al formulario» apagados | Le mandamos esta fila a {persona}. Si no la confirma hasta el {fecha y hora}, la podés revisar acá. | We sent this row to {person}. If they do not confirm it by {date and time}, you can review it here. |
+| Historial de la fila | Llegó en {archivo}, fila {n}, por WhatsApp de {persona}. · La IA la reconoció: {formulario}, seguro. Leyó {a} de {b} datos. · Se la mandó prellenada a {persona}, como {i} de {k}. · Pasó el tope de 3 cargas por mensaje: quedó para revisar acá. · {persona} la confirmó: {número}, sin correcciones. | Arrived in {file}, row {n}, via WhatsApp from {person}. · The AI recognized it: {form}, sure. It read {a} of {b} data. · Sent prefilled to {person}, as {i} of {k}. · It went over the limit of 3 loads per message: left to review here. · {person} confirmed it: {number}, without corrections. |
+| Actividad de la respuesta | Salió de una planilla · {archivo}, fila {n} | Came from a spreadsheet · {file}, row {n} |
+| Actividad, si la pasó el equipo | La pasó al formulario {persona} · Desde «Documentos recibidos» | {person} passed it to the form · From “Received documents” |
+
+Fechas sólo con números: `dd/MM/yyyy` en español y `MM/dd/yyyy` en inglés, con la hora como en el resto de la app. En inglés la
+planilla es «spreadsheet», como en el resto de la app, donde «sheet» es la planilla de respuestas o una hoja: el lienzo decía
+«sheet» y se corrigió al registrarlo. El lienzo no dibuja el aviso ni el motivo de una fila igual a otra de la misma planilla (B5):
+nombran esa otra fila en lugar de la respuesta, y su texto lo fijan las tareas 29 y 30 por lo más simple.
+
+### Decisiones de detalle
+
+Lo que las dos elecciones no fijaban se resolvió por lo más simple y quedó dibujado. El tope, el aviso, los ofrecimientos y el
+orden de la ubicación se confirmaron con las otras sesiones de la tanda; donde el plan las precisó contra el código va lo del plan
+(abajo, las correcciones). No se vuelven a preguntar.
+
+**A · La ubicación y el contacto**
+
+1. **El orden vive con W1-A.** Una ubicación que la persona manda por su cuenta completa primero un pedido de W1-A que la espera,
+   del operador o del asistente; si no hay, va al envío abierto más viejo que eligió una pregunta para la ubicación; si no, queda
+   en el chat. Un contacto va al envío abierto más viejo que eligió preguntas para el contacto.
+2. **Un envío abierto** salió por WhatsApp, no tiene respuesta, no venció y ya existía cuando llegó lo compartido. Uno que espera
+   la ubicación de W1-A todavía no salió: no toma un contacto. Un número sin cuenta vinculada no tiene envíos: lo que manda queda
+   en el chat, sin la línea de DOC4.
+3. **Lo primero vale.** Un envío toma una sola ubicación y un solo contacto; lo que llega después va al siguiente que lo pueda
+   usar o queda en el chat. No pasa por la IA ni gasta cupos.
+4. **Qué se escribe:** la dirección del lugar si vino o, si no, el punto («-32.947102, -60.638955», como la pregunta
+   «Ubicación»); del contacto, el nombre y el primer teléfono de la primera tarjeta, tal como vienen (si es otro, la persona lo
+   cambia en el formulario). Un contacto sin nombre o sin teléfono completa lo que trae, y el mensaje nombra sólo esa pregunta. Se
+   corta en el largo de la pregunta y reemplaza lo prellenado.
+5. **El formulario vuelve en el mismo envío:** otro Flow del envío, con lo que ya tenía más lo compartido, del mismo remitente y
+   con su sello, como el Flow que sigue a la ubicación en W1-A. El mensaje de DOC2 suma el nombre del formulario, como todo
+   mensaje que lo abre desde el 2026-11-07. «Por qué lo mandó» va sólo en el primero; en el chat, el reenvío lleva «Prellenado
+   con» (la etiqueta y el valor), que se ve como «Por qué lo mandó»: con `formrecords.read` y mientras se conserva el contenido.
+   No es otra oferta, no entra a «Documentos recibidos» y no cambia el perfil del Flow.
+6. **Si cambió el modo.** El reenvío sale como cualquier mensaje de su remitente: el del operador, mientras la conversación siga
+   en Atención manual; el del asistente, mientras siga en Asistente con la revisión que selló, así que no vuelve si una persona
+   tomó la conversación. Si ya no puede salir, lo compartido no va a ese envío: va al siguiente o queda en el chat. Si el modo
+   cambia después, la reserva frena el reenvío, como en W1-A, y se ve como cualquier mensaje que no salió.
+7. **Una sola respuesta por envío:** la primera que llega, del Flow anterior o del nuevo. La otra no se guarda y el chat dice
+   cuál quedó; a la persona no se le avisa, como hoy un rechazo.
+8. **El contacto se ve:** deja de ser «Mensaje de otro tipo». El chat muestra el nombre y los teléfonos, uno por renglón, y la
+   lista de chats dice «Contacto».
+9. **El editor.** Cada renglón ofrece las preguntas de texto, corto o largo, fuera del bloque; la elegida en otro renglón aparece
+   apagada, con «· Recibe …». Quitar la pregunta o cambiarle el tipo vuelve el renglón a «Ninguna»; cambiarle el nombre no
+   cambia nada. Se guarda con el borrador y sale al publicar. Con «Sólo en la app» la zona no aparece y lo elegido queda guardado.
+10. **Con una pregunta «Ubicación»** la ubicación va ahí, por W1-A: el renglón de la ubicación queda apagado, con su motivo
+    encima (MA1-A).
+11. **Lo demás no cambia:** lo que se escribe es una respuesta de texto, así que la planilla, el Excel, el PDF y el detalle no
+    suman insignias; la actividad del detalle dice qué se completó.
+
+**B · Varias cargas desde un Excel**
+
+1. **Un aviso y una carga por fila,** hasta tres por planilla, en el orden de la planilla. El tope cuenta las cargas propuestas,
+   no los mensajes: el aviso es un texto fijo que suma el canal al aplicar las propuestas, no lo escribe el modelo y no cuenta.
+   Cada planilla es un mensaje: dos seguidas tienen tres cargas cada una.
+2. **El aviso dice las filas y el formulario** («7 filas de «Cobranzas»») en lugar del tipo de documento, porque un formulario
+   propio no trae el nombre de su documento; con filas de varios formularios, sólo cuántas, y cada carga dice el suyo en el pie.
+3. **Lo que va al equipo, en una frase:** junta las que pasan el tope, las que no encajan y las que no se le pueden mandar
+   (CE4-A).
+4. **Cada fila se clasifica sola:** la que encaja seguro es una carga; con duda o sin formulario, «Sin clasificar» (una fila no
+   pregunta con botones). Si ninguna encaja, la planilla sigue «No lo reconoce» de DOC2: la lista y «Otro».
+5. **Repetida** es la que coincide con una respuesta en lo que el formulario marca como repetido, o la igual a otra fila de la
+   misma planilla: no se carga, el aviso dice dónde está y queda descartada, con su fecha de borrado. La misma planilla otra vez
+   (el mismo archivo) entra descartada, como un documento repetido.
+6. **No son cargas ni entradas** los encabezados, los totales ni las filas vacías.
+7. **Una fila no trae archivo:** la pregunta de foto o documento queda vacía y, si es obligatoria, la completa la persona en el
+   Flow. Por eso el ejemplo es «Cobranzas» y no el comprobante de transferencia, que pide el comprobante.
+8. **En la bandeja,** «Para revisar» es cómo se ve un propuesto que espera al equipo (el «para revisar acá» de DOC5-A), y
+   «Propuesto», el que espera a la persona, con «Descartar» y «Pasar al formulario» apagados y su motivo encima. El filtro
+   «Propuestos» incluye los dos. De lo leído se muestra «Monto», un dato por columna.
+9. **«Fila 5»** es la fila como la numera Excel; si el libro tiene varias hojas, «Ventas · fila 5».
+10. **Las cargas contestan un archivo que mandó la persona:** no son ofertas y no gastan los dos ofrecimientos del día. Las
+    acotan los cupos de lectura y de interpretación: la planilla se lee en el servidor, sin `ReadDocument`, y su interpretación
+    cuenta en el cupo global, como hoy.
+11. **Como DOC4:** una cuenta sin vincular o sin permiso de cargar, y una planilla que no se abre (con macros, con contraseña o
+    de formato viejo).
+
+### La lista de chequeo de diseño
+
+Pasada antes de mostrar los tableros para elegir (2026-11-11). Diferencia aceptada en todos: se dibujaron a mano con las medidas
+y los tokens de los lienzos anteriores (W1-A y DOC5-A), porque la biblioteca de piezas está en otra cuenta. Lo que corrigió el
+plan (abajo) no está en el lienzo: la lista se vuelve a pasar al programar.
+
+| Tablero | Respuestas |
+| --- | --- |
+| UC0 | Tablero de reglas, no una pantalla. 1 sí (los caminos, con W1-A como contexto); 2 sí; 7 sí («Ya programado» y «Como hoy» marcan lo que no cambia); 10 sí (el «si no» de cada camino es el vacío); 11 sí. Lo demás no aplica. |
+| UC1-A | 1 sí; 2 sí; 3 sí (un desplegable por dato); 6 sí (la leyenda de DOC2 pasa a la (i)); 7 sí; 8 sí; 11 sí (`Surface`, `FormField` y `NativeSelect`); 10 y 12, en el editor entero. |
+| UC1-B, no elegido | No pasan 2 (dos cosas en una zona) y 7 (la zona se llama como la lectura, aunque esté apagada); 6 se corrigió con la (i). |
+| UC1-C, no elegido | No pasan 4 (hay que abrir cada pregunta), 7 (un dato más en cada línea) y 8 (opciones apagadas lejos de la pregunta que las tiene). |
+| UC1-A, el editor entero | 1 a 12 sí: el desplegable abierto, la pregunta «Ubicación», «Sólo en la app», sólo lectura y el celular; lo apagado, con su motivo encima; sin carga, error, 429 ni conflicto propios (son los del borrador); 44 px a 390; es/en; sin URL. |
+| UC2 | 1 a 12 sí: el teléfono, el formulario abierto con y sin dirección, el chat de la app y la actividad (TL3-A); el mensaje dice qué completó y de qué formulario; un reenvío que no sale se ve como cualquier mensaje; fechas sólo con números. |
+| UC3 | 1 a 12 sí: dos teléfonos (el primero, visible en «Prellenado con»), vuelve con lo que ya tenía, la burbuja nueva del contacto con el número sin partir. |
+| UC4 | 1, 7, 10 y 11 sí: no se contesta ni se suma una línea; el pedido de W1-A no se redibuja. |
+| UC5 | 1, 7 y 10 sí: cada mensaje nombra su formulario; la segunda respuesta del mismo envío se ve con su motivo en el chat. |
+| UC6 | 7 y 12 sí: el idioma del formulario para la persona y el del menú para la app, sin nombrar el idioma; `MM/dd/yyyy`. |
+| VC1-A | 1 a 5, 7, 8 y 11 sí: «Fila 5» como detalle gris (excepción A); la fila en `DataList`; el panel de DOC5-A. |
+| VC1-B, no elegido | No pasan 5 (celdas con varios estados y respuestas), 9 (la fila abierta no es la carga) y 2 (un panel con otra tabla y sus acciones). |
+| VC2 | 1 a 12 sí: el aviso, las cargas, el formulario prellenado con su marca, «Por qué lo propuso» en `DataList`, el enlace a la bandeja y la actividad. |
+| VC3 | 1 a 12 sí: los estados de las filas, el panel para revisar con «Pasando…», la fila que espera a la persona (el motivo en las acciones, EP1-A), el historial, el contador y el celular; un 409 si otra persona ya la pasó; la carga, los vacíos, el error y los permisos de DOC5-A. |
+| VC4 | 1, 7 y 10 sí: dos formularios, la repetida, sin clasificar, ninguna que encaja y sin cuenta, cada caso por su canal. |
+| VC5 | 7 y 12 sí: los idiomas, `MM/dd/yyyy` y los montos con coma de miles. |
+
+### Correcciones del plan
+
+El plan se escribió contra el código el mismo día y corrigió lo que el lienzo resolvía de otra forma o no tenía. La elección no
+cambia y el lienzo todavía no lo muestra; las decisiones de arriba ya lo siguen:
+
+- **El reenvío del operador, sólo en Atención manual.** El lienzo lo hacía volver en cualquier modo, pero hoy un mensaje del
+  operador sale sólo en Atención manual (`WhatsAppOutgoingSendGuard`): el reenvío sale como cualquier mensaje de su remitente y,
+  si ya no puede salir, lo compartido va al siguiente envío o queda en el chat (A6).
+- **Lo elegido en el editor se guarda en cada pregunta** (`receives`: `location`, `contactName` o `contactPhone`, como
+  `validation`), no como tres referencias del formulario al lado de «Dónde se completa». Sale al publicar con el esquema, se va
+  con la pregunta y no lo hereda la pregunta nueva de un cambio de tipo, así que no quedan referencias sueltas; con «Sólo en la
+  app» queda guardado en sus preguntas. El servidor lo acepta sólo en una pregunta de texto fuera del bloque, cada valor una vez,
+  y la ubicación sólo sin una pregunta «Ubicación».
+- **Las filas se proponen con un mapeo por formulario,** no fila por fila. Se leen las filas de todas las hojas, con los
+  encabezados de cada hoja (su primera fila con contenido). La IA dice, por cada formulario que reconoce, sus filas, qué columna
+  va a cada pregunta y qué columnas leyó con dudas, y aparte las filas de datos que no encajan; las que no nombra (totales,
+  notas) no son filas. Formularios arma cada fila desde la copia, sin IA: convierte cada celda al tipo de su pregunta, corre las
+  validaciones fijas, busca las repetidas y aplica el tope en el orden de la planilla. Una fila que el modelo no llegó a ver
+  queda «Sin clasificar», el resumen de una carga son sus dos primeros datos, en el orden del formulario, y cambiar de
+  formulario en el panel vuelve a proponer el mapeo de esa fila, sin leer de nuevo.
+- **Hasta 50 filas por planilla,** sin contar los encabezados; el lienzo no tenía tope. Una más grande no se carga: contesta,
+  como una planilla que no se abre, «Por acá cargo planillas de hasta 50 filas. Dividila y mandámela de nuevo.» y entra
+  descartada, sin gastar una interpretación. Vale para cargar (armar o importar siguen con sus topes): así una planilla no llena
+  la bandeja ni deja filas que el modelo no ve. Lo calibra el piloto.
+- **Cuándo se carga una planilla.** Hoy se baja, en el Asistente automático, sólo la de quien administra catálogos; con algún
+  formulario publicado con lectura, también la de quien puede cargar respuestas. Una planilla sola va a la carga; con un pedido,
+  también a armar, como hoy. Sin formularios con lectura, todo sigue como hoy.
+- **La segunda respuesta** no suma un motivo propio: ya la rechaza la captura (`Forms.Record.ReplayConflict`), y el hilo suma a
+  ese rechazo el número de la que se guardó (`savedNumber`), que el chat muestra con el texto de UC5.
+- **DOC2 pasa sus tres desplegables a la zona de UC1-A.** DOC2 los dibujó dentro de «Lectura de documentos» («Registrar entrega ·
+  Lectura de documentos · Ubicación y contacto»), con la etiqueta al costado («Ubicación», «Contacto: nombre» y «Contacto:
+  teléfono») y la leyenda debajo. Ahora van en «Ubicación y contacto», con la etiqueta arriba, los nombres de UC1-A y la leyenda
+  en la (i); la captura de DOC2 conserva el dibujo anterior.
+
+Lo que falta confirmar, con Meta en la prueba real: que el reenvío salga con el `flow_token` del envío (si no, pasa a ser otro
+envío que cierra el primero) y el pie de una carga (si no, el formulario va en el cuerpo). Con el usuario, nada: el tope de 50
+filas y el reenvío del operador en Atención manual se resolvieron por lo más simple.
 
 ## Cómo quedó
 
