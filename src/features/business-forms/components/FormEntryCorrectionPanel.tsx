@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatPercent } from "@/shared/lib/numberFormat";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -20,7 +21,7 @@ import { EntryCorrectionFields } from "./EntryCorrectionFields";
 export function FormEntryCorrectionPanel({ formId, recordId, number, onClose, onSaved }: {
   formId: string; recordId: string; number: string; onClose: () => void; onSaved: (recordId: string) => void;
 }) {
-  const { t } = useTranslation(["formEntries", "forms"]);
+  const { t, i18n } = useTranslation(["formEntries", "forms"]);
   const correction = useEntryCorrectionEditor(formId, recordId);
   const { editor, query, scope } = correction;
   const entry = correction.correction?.entry;
@@ -66,7 +67,7 @@ export function FormEntryCorrectionPanel({ formId, recordId, number, onClose, on
     <footer className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[var(--color-border)] px-4 py-3">
       <Button type="button" variant="outline" disabled={editor.sending} onClick={close}>{t("common:actions.cancel")}</Button>
       <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending} onClick={() => void submit()}>
-        {editor.sending ? t("correction.saving", { percent: Math.round((editor.progress ?? 0) * 100) }) : t("correction.save")}</Button></DisabledReason>
+        {editor.sending ? t("correction.saving", { percent: formatPercent(editor.progress ?? 0, i18n.language) }) : t("correction.save")}</Button></DisabledReason>
     </footer>
     <ConfirmDialog open={closing || guard.isBlocked} onOpenChange={open => { if (!open) { setClosing(false); guard.stay(); } }}
       title={t("correction.closeTitle")} description={t("correction.closeDescription")} cancelLabel={t("correction.stay")} confirmLabel={t("correction.closeConfirm")} destructive

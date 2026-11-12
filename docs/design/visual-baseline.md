@@ -1293,6 +1293,10 @@ formateador de i18next escribe solo cada número con esa pieza, así que un text
 del Excel siguen siendo números y Excel las muestra con la región de quien abre el archivo. Leer un número que escribe
 una persona no cambia: el español de la Argentina usa la misma coma decimal y el mismo punto de miles.
 
+Un porcentaje sigue la misma regla: el signo va donde lo pone la región, pegado al número en es-AR y en en-US («21%»,
+«10,5%», «10.5%»). Un texto nunca lo pega a mano, porque ponía un espacio en un idioma y no en el otro: en el front lo
+escribe `formatPercent` y en el servidor `DisplayNumbers.Percent`. Una alícuota que llega como dato de ARCA va como viene.
+
 La regla no estaba escrita. El 2026-11-12 el usuario pidió que los números tuvieran un estándar, como las fechas, y que
 cada idioma los trabajara a su manera. Un test de arquitectura en cada repo impide un formateador suelto.
 

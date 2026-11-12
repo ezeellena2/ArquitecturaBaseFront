@@ -117,7 +117,7 @@
     "unsupported": "This browser does not provide the location. Open the form in another browser or on a phone."
   },
   "send": {
-    "sending": "Sending… {{percent}}%",
+    "sending": "Sending… {{percent}}",
     "notSaved": "It was not saved",
     "review": "Check «{{label}}».",
     "failed": "It could not be sent",
@@ -172,7 +172,7 @@
     "reasonRequired": "Write the reason.",
     "reasonTooLong": "The reason can have up to 500 characters.",
     "save": "Save correction",
-    "saving": "Saving… {{percent}} %",
+    "saving": "Saving… {{percent}}",
     "saved": "{{number}} was corrected",
     "closeTitle": "Discard the correction?",
     "closeDescription": "What you changed is not saved.",

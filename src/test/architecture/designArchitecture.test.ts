@@ -60,6 +60,18 @@ describe("the application uses the shared design system", () => {
     expect(formatted).toEqual([]);
   });
 
+  // A percentage goes through the shared number format too (2026-11-12): a sign glued by hand in a text put a space in one
+  // language and not in the other («45 %», «45%»). The text takes the percentage already written (formatPercent).
+  it("glues no percent sign to a number in a text or in the code", () => {
+    const locales = path.join(root, "locales");
+    const texts = readdirSync(locales, { withFileTypes: true }).filter(entry => entry.isDirectory()).flatMap(language =>
+      readdirSync(path.join(locales, language.name)).filter(name => name.endsWith(".json"))
+        .filter(name => /\}\}\s?%/.test(readFileSync(path.join(locales, language.name, name), "utf8"))).map(name => `${language.name}/${name}`));
+    const code = sourceFiles(root).filter(file => /\+\s*["'`]\s?%["'`]/.test(readFileSync(file, "utf8")))
+      .map(file => path.relative(root, file).replaceAll("\\", "/"));
+    expect([...texts, ...code]).toEqual([]);
+  });
+
   it("mounts notifications once in application providers", () => {
     const mounts = sourceFiles(root).filter(file => !file.includes(`${path.sep}test${path.sep}`))
       .filter(file => /<Toaster\b/.test(readFileSync(file, "utf8")));

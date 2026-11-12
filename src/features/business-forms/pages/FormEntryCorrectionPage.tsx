@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatPercent } from "@/shared/lib/numberFormat";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -22,7 +23,7 @@ import { responseFullPath } from "../responseNavigationPaths";
  */
 export function FormEntryCorrectionPage() {
   const { formId = "", recordId = "" } = useParams();
-  const { t } = useTranslation(["formEntries", "forms"]);
+  const { t, i18n } = useTranslation(["formEntries", "forms"]);
   const navigate = useNavigate();
   const mobile = useMediaQuery("(width < 640px)");
   const correction = useEntryCorrectionEditor(formId, recordId);
@@ -44,7 +45,7 @@ export function FormEntryCorrectionPage() {
   const saveButton = (touch = false) => <DisabledReason reason={submitReason}>
     <Button type="button" size={touch ? "touch" : "default"} className={touch ? "w-full" : undefined} disabled={!entry || editor.blocked}
       pending={editor.sending} onClick={() => void submit()}>
-      {editor.sending ? t("correction.saving", { percent: Math.round((editor.progress ?? 0) * 100) }) : t("correction.save")}</Button>
+      {editor.sending ? t("correction.saving", { percent: formatPercent(editor.progress ?? 0, i18n.language) }) : t("correction.save")}</Button>
   </DisabledReason>;
   const actions = mobile || !entry ? undefined : <>
     <Button type="button" variant="outline" disabled={editor.sending} onClick={() => navigate(back)}>{t("common:actions.cancel")}</Button>

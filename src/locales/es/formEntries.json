@@ -117,7 +117,7 @@
     "unsupported": "Este navegador no da la ubicación. Abrí el formulario en otro navegador o en el celular."
   },
   "send": {
-    "sending": "Enviando… {{percent}} %",
+    "sending": "Enviando… {{percent}}",
     "notSaved": "No se guardó",
     "review": "Revisá «{{label}}».",
     "failed": "No se pudo enviar",
@@ -172,7 +172,7 @@
     "reasonRequired": "Escribí el motivo.",
     "reasonTooLong": "El motivo puede tener hasta 500 caracteres.",
     "save": "Guardar corrección",
-    "saving": "Guardando… {{percent}} %",
+    "saving": "Guardando… {{percent}}",
     "saved": "Se corrigió {{number}}",
     "closeTitle": "¿Descartar la corrección?",
     "closeDescription": "Lo que cambiaste no se guarda.",

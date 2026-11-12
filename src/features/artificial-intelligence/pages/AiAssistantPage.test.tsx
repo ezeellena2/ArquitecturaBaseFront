@@ -1065,7 +1065,7 @@ describe("spreadsheets in Home (Stage 2)", () => {
     expect(field).toHaveAttribute("placeholder", "Agregá un texto, si querés…");
     await pasteText(field, "Armame un catálogo");
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    expect(await screen.findByRole("button", { name: "Enviando… 40 %" })).toHaveAttribute("aria-busy", "true");
+    expect(await screen.findByRole("button", { name: "Enviando… 40%" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("button", { name: "Quitar clientes.xlsx" })).toBeDisabled();
     expect(uploads[0].url).toBe("/api/ai/assistant/file-turns");
     const requestId = String(uploads[0].body.get("requestId"));
@@ -1238,7 +1238,7 @@ describe("documents in Home (Stage 3)", () => {
     expect(field).toHaveAttribute("placeholder", "Agregá un texto, si querés…");
     await pasteText(field, "Armame un formulario con este comprobante");
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    expect(await screen.findByRole("button", { name: "Enviando… 40 %" })).toHaveAttribute("aria-busy", "true");
+    expect(await screen.findByRole("button", { name: "Enviando… 40%" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByRole("button", { name: "Quitar comprobante.pdf" })).toBeDisabled();
     expect(uploads[0].url).toBe("/api/ai/assistant/documents");
     expect([...uploads[0].body.keys()].sort()).toEqual(["file", "requestId"]);

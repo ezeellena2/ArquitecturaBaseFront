@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
+import { formatPercent } from "@/shared/lib/numberFormat";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
@@ -34,7 +35,7 @@ import { useFormEntry } from "../hooks/useFormEntry";
  */
 export function FormEntryPage() {
   const { formId = "" } = useParams();
-  const { t } = useTranslation(["formEntries", "forms"]);
+  const { t, i18n } = useTranslation(["formEntries", "forms"]);
   const location = useLocation();
   const navigate = useNavigate();
   const mobile = useMediaQuery("(width < 640px)");
@@ -72,7 +73,7 @@ export function FormEntryPage() {
   const missingForm = editor.conflict === "missing" || query.error instanceof ApiError && query.error.status === 404;
   const submitReason = editor.missing ? t("catalog.missingDataReason", { datum: editor.missing.catalog?.missingData ?? "" }) : null;
   // While it asks «¿Emitimos la factura?», «Enviar» says what it does (5.6).
-  const sendLabel = editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) })
+  const sendLabel = editor.sending ? t("send.sending", { percent: formatPercent(editor.progress ?? 0, i18n.language) })
     : editor.previewing && !editor.issue ? t("issue.preparing") : entry?.submitLabel ?? "…";
   // Kept, the form stays for the next one as in the panel (AR2-A): the notice says the number, the files start empty and
   // the focus goes back to the first question. Otherwise, «Enviada».

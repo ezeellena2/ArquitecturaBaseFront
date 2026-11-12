@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatNumber, numberFormat, numberLocale } from "./numberFormat";
+import { formatNumber, formatPercent, numberFormat, numberLocale } from "./numberFormat";
 
 // The one number format (2026-11-12): the CLDR standard of the region of each language of the app, es-AR and en-US.
 describe("numberFormat", () => {
@@ -32,6 +32,16 @@ describe("numberFormat", () => {
     expect(formatNumber(1.25, "es", { maximumFractionDigits: 1 })).toBe("1,3");
     expect(formatNumber(0.18, "en", { style: "percent", maximumFractionDigits: 0 })).toBe("18%");
     expect(formatNumber(4400000, "en", { notation: "compact", maximumSignificantDigits: 2 })).toBe("4.4M");
+  });
+
+  // A percentage goes with its sign as the region writes it (2026-11-12), never glued by hand in a text: «45%» in both
+  // languages, «10,5%» in Spanish.
+  it("writes a share as a percentage with the region of its language", () => {
+    expect(formatPercent(0.45, "es")).toBe("45%");
+    expect(formatPercent(0.45, "en")).toBe("45%");
+    expect(formatPercent(0.105, "es", { maximumFractionDigits: 1 })).toBe("10,5%");
+    expect(formatPercent(0.105, "en", { maximumFractionDigits: 1 })).toBe("10.5%");
+    expect(formatPercent(12.5, "es")).toBe("1.250%");
   });
 
   // A table formats every numeric cell on every render, and building a formatter costs about a hundred times more than using one.

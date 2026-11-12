@@ -22,6 +22,7 @@ import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { formatTimeInZone } from "@/shared/lib/dateTime";
 import { formatFileSize } from "@/shared/lib/fileSize";
+import { formatPercent } from "@/shared/lib/numberFormat";
 import { Page } from "@/shared/ui/Page";
 import { Button } from "@/shared/ui/button";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -397,9 +398,9 @@ export function AiAssistantPage() {
   const composerDisabled = disabled || dictation.normalizing || !!reading.phase || recorder.state === "starting" || recorder.state === "recording";
   const goesWithTurn = !!attachment && !readsFirst(attachment.file.name);
   const sendLabel = dictation.normalizing ? t("sending")
-    : reading.phase === "uploading" ? t("sendingFile", { percent: Math.round((reading.progress ?? 0) * 100) })
+    : reading.phase === "uploading" ? t("sendingFile", { percent: formatPercent(reading.progress ?? 0, i18n.language) })
     : reading.phase === "reading" ? t("attachment.reading")
-    : working === "submit" && goesWithTurn ? t("sendingFile", { percent: Math.round((actions.progress ?? 0) * 100) })
+    : working === "submit" && goesWithTurn ? t("sendingFile", { percent: formatPercent(actions.progress ?? 0, i18n.language) })
     : t(working === "submit" ? "sending" : "send");
   // What this person may attach, as the bootstrap says it (Stage 2 and 3).
   const kinds = attachmentKinds(bootstrap.data ?? {});

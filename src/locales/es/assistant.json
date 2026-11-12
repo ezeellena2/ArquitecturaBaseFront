@@ -8,7 +8,7 @@
   "keyboardHelp": "Enter agrega una línea. Ctrl+Enter o ⌘+Enter envían.",
   "send": "Enviar",
   "sending": "Enviando…",
-  "sendingFile": "Enviando… {{percent}} %",
+  "sendingFile": "Enviando… {{percent}}",
   "history": "Historial",
   "newConversation": "Nueva conversación",
   "thread": "Conversación con el asistente",

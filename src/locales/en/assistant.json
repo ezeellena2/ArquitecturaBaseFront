@@ -8,7 +8,7 @@
   "keyboardHelp": "Enter adds a line. Ctrl+Enter or ⌘+Enter send.",
   "send": "Send",
   "sending": "Sending…",
-  "sendingFile": "Sending… {{percent}}%",
+  "sendingFile": "Sending… {{percent}}",
   "history": "History",
   "newConversation": "New conversation",
   "thread": "Assistant conversation",

@@ -27,3 +27,9 @@ export function numberFormat(language: string, options?: Intl.NumberFormatOption
 export function formatNumber(value: number | bigint, language: string, options?: Intl.NumberFormatOptions): string {
   return numberFormat(language, options).format(value);
 }
+
+/// Una parte como porcentaje (0,45 es «45%»), con el signo donde lo pone la región: pegado en es-AR y en en-US. Un texto
+/// recibe el porcentaje ya escrito y nunca pega el signo a mano, que ponía un espacio en un idioma y no en el otro.
+export function formatPercent(share: number, language: string, options?: Intl.NumberFormatOptions): string {
+  return formatNumber(share, language, { style: "percent", maximumFractionDigits: 0, ...options });
+}

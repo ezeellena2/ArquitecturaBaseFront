@@ -109,7 +109,7 @@ describe("loading a response from the app", () => {
     expect(await screen.findByRole("img", { name: "pluviometro.jpg" })).toBeVisible();
     expect(screen.getByText("1 de 3")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Enviar" }));
-    expect(await screen.findByRole("button", { name: "Enviando… 50 %" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Enviando… 50%" })).toBeDisabled();
 
     expect(await screen.findByRole("heading", { name: "LLU-000322", level: 1 })).toBeVisible();
     expect(screen.getByText("Enviada")).toBeVisible();

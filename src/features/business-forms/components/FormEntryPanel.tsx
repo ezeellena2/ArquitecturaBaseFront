@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatPercent } from "@/shared/lib/numberFormat";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
@@ -25,7 +26,7 @@ import { IssueTotals } from "./IssueTotals";
  * marked, and the notice says its number. «Pantalla completa» takes what was loaded to the page.
  */
 export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId: string; formName?: string; onClose: () => void; onSaved: (recordId: string) => void }) {
-  const { t } = useTranslation(["formEntries", "forms"]);
+  const { t, i18n } = useTranslation(["formEntries", "forms"]);
   const navigate = useNavigate();
   const { scope, query } = useFormEntry(formId);
   const entry = query.data;
@@ -82,7 +83,7 @@ export function FormEntryPanel({ formId, formName, onClose, onSaved }: { formId:
       <div className="min-w-0 flex-1"><CheckboxField label={t("panel.keep")} checked={keep} onCheckedChange={setKeep}/></div>
       <Button type="button" variant="outline" disabled={editor.sending} onClick={close}>{t("common:actions.cancel")}</Button>
       <DisabledReason reason={submitReason}><Button type="button" disabled={!entry || editor.blocked} pending={editor.sending || editor.previewing} onClick={() => void submit()}>
-        {editor.sending ? t("send.sending", { percent: Math.round((editor.progress ?? 0) * 100) }) : editor.previewing && !editor.issue ? t("issue.preparing") : entry?.submitLabel ?? "…"}</Button></DisabledReason>
+        {editor.sending ? t("send.sending", { percent: formatPercent(editor.progress ?? 0, i18n.language) }) : editor.previewing && !editor.issue ? t("issue.preparing") : entry?.submitLabel ?? "…"}</Button></DisabledReason>
     </footer>
     <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} retryWait={editor.retryWait} onConfirm={() => void submit(true)}
       onRetry={() => void editor.retryIssue()} onClose={editor.closeIssue}/>
