@@ -42,7 +42,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
     await screenshot(page,`reference-${lang}-${width}`,width);
     await page.reload();await page.getByRole("button",{name:"Juan Gómez",exact:true}).click();await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toBeVisible();
     await openChat(page,lang,"no-values",width);await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toHaveCount(0);
-    await expect(page.getByText(text.forms.reply.saved.replace("{{number}}","VIS-000031"),{exact:true})).toBeVisible();
+    await expect(page.getByText(text.forms.reply.saved.replace("{{number}}","VIS-000031").replace(/<\/?number>/g,""),{exact:true})).toBeVisible();
     await screenshot(page,`no-values-${lang}-${width}`,width);
   });
   test(`K7 rejection and explicit resend ${lang} ${width}px`,async({page})=>{

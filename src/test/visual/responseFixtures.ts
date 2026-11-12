@@ -412,6 +412,20 @@ export function createResponseVisualFixtures(
               submittedAtUtc: detail.submittedAtUtc, originRecordId: id(150) },
           ];
         }
+        // W3 (UC2, UC3 and UC6), synthetic until the backend writes it (task 24): by WhatsApp, the place and the contact the person
+        // shared completed their questions and each one brought the form back, before the response.
+        if (scenario === "responses-shared-content") {
+          const at = (time: string) => "2026-10-16T" + time + ":00Z";
+          detail.history = [
+            { kind: "Sent", atUtc: at("11:50"), actor: detail.actor },
+            { kind: "LocationReceived", atUtc: at("11:53"), actor: null, questions: [en ? "Delivery address" : "Dirección de entrega"] },
+            { kind: "SentAgain", atUtc: at("11:53"), actor: detail.actor },
+            { kind: "ContactReceived", atUtc: at("11:55"), actor: null, questions: en ? ["Received by", "Recipient's phone"] : ["Recibió", "Teléfono de quien recibe"] },
+            { kind: "SentAgain", atUtc: at("11:55"), actor: detail.actor },
+            { kind: "Submitted", atUtc: detail.submittedAtUtc, actor: detail.actor },
+            { kind: "Saved", atUtc: detail.submittedAtUtc, actor: null },
+          ];
+        }
         return json(detail);
       }
       return json({ code: "NotFound" }, 404);

@@ -131,7 +131,7 @@ const receivedReply: NonNullable<ChatMessage['formReply']> = { state: 'Completed
   ] };
 it('presents an authorized received form inside the common bubble without exposing or reusing its raw body', async () => {
   await setup([{ ...message(null), direction: 'Inbound', kind: 'FlowReply', body: 'private raw reply', formReply: receivedReply }], []);
-  expect(screen.getByText('Guardada como VIS-000001')).toBeInTheDocument();
+  expect(screen.getByText('VIS-000001').parentElement).toHaveTextContent('Guardada como VIS-000001');
   expect(screen.getByText('Historical English form')).toBeInTheDocument();
   expect(screen.getByText('No')).toBeInTheDocument();
   expect(screen.getByText('0')).toBeInTheDocument();
@@ -140,7 +140,7 @@ it('presents an authorized received form inside the common bubble without exposi
 });
 it('keeps the received receipt readable without answer permission', async () => {
   await setup([{ ...message(null), direction: 'Inbound', kind: 'FlowReply', formReply: { ...receivedReply, values: null } }], [], false);
-  expect(screen.getByText('Guardada como VIS-000001')).toBeInTheDocument();
+  expect(screen.getByText('VIS-000001').parentElement).toHaveTextContent('Guardada como VIS-000001');
   expect(screen.getByText('No tenés permiso para ver las respuestas de este formulario.')).toBeInTheDocument();
   expect(screen.queryByText('Historical question')).not.toBeInTheDocument();
 });

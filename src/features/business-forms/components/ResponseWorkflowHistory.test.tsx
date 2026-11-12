@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useQueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
 import { it, expect, vi } from "vitest";
+import i18n from "@/shared/i18n";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -426,5 +427,47 @@ it("shows two forms sent again at the same instant as two rows without repeating
     expect(errors.mock.calls.some(call => call.some(part => /same key/i.test(String(part))))).toBe(false);
   } finally {
     errors.mockRestore();
+  }
+});
+
+// W3 (UC2, UC3 and UC6): what the person shared says under it, in grey, which questions it completed (the labels of the version,
+// joined like the rest of the texts), and the form that came back is a row of its own, without repeating who sent it.
+const ana = { userId: id(30), displayName: "Ana Pérez" };
+const sharedHistory = (questions: { location: string; name: string; phone: string }): ResponseDetail["history"] => [
+  { kind: "Sent", atUtc: instant("00"), actor: ana },
+  { kind: "LocationReceived", atUtc: instant("05"), actor: null, questions: [questions.location] }, { kind: "SentAgain", atUtc: instant("05"), actor: ana },
+  { kind: "ContactReceived", atUtc: instant("07"), actor: null, questions: [questions.name, questions.phone] }, { kind: "SentAgain", atUtc: instant("07"), actor: ana },
+  { kind: "Submitted", atUtc: instant("09"), actor: ana }, { kind: "Saved", atUtc: instant("09"), actor: null }];
+async function receivedRows(record: ResponseDetail) {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
+  renderWithProviders(<RecordActivity record={record} />);
+  const band = await screen.findByRole("listitem", { name: /^(Al recibirla|On receipt)$/ });
+  return within(band).getAllByRole("listitem").map(row => [...row.querySelectorAll("p")].map(line => line.textContent));
+}
+it("says under the shared location and contact the questions they completed, and the form sent again without its sender", async () => {
+  const rows = await receivedRows({ ...responseDetailFixture(), history: sharedHistory({ location: "Dirección de entrega", name: "Recibió", phone: "Teléfono de quien recibe" }) });
+
+  expect(rows).toEqual([["Se mandó el formulario", "Ana Pérez"], ["Llegó la ubicación", "Completó «Dirección de entrega»"], ["Se volvió a mandar el formulario"],
+    ["Llegó el contacto", "Completó «Recibió» y «Teléfono de quien recibe»"], ["Se volvió a mandar el formulario"],
+    ["Se respondió el formulario", "Por WhatsApp · Ana Pérez"], ["Se guardó la respuesta"]]);
+});
+it("names the only question a contact completed, and keeps the location of W1-A without questions", async () => {
+  const rows = await receivedRows({ ...responseDetailFixture(), history: [{ kind: "LocationRequested", atUtc: instant("00"), actor: null },
+    { kind: "LocationReceived", atUtc: instant("01"), actor: null }, { kind: "Sent", atUtc: instant("01"), actor: ana },
+    { kind: "ContactReceived", atUtc: instant("03"), actor: null, questions: ["Teléfono de quien recibe"] }, { kind: "SentAgain", atUtc: instant("03"), actor: null }] });
+
+  expect(rows).toEqual([["Se pidió la ubicación"], ["Llegó la ubicación"], ["Se mandó el formulario", "Ana Pérez"],
+    ["Llegó el contacto", "Completó «Teléfono de quien recibe»"], ["Se volvió a mandar el formulario"]]);
+});
+it("says what the shared location and contact completed in English", async () => {
+  await act(async () => { await i18n.changeLanguage("en"); });
+  try {
+    const rows = await receivedRows({ ...responseDetailFixture(), history: sharedHistory({ location: "Delivery address", name: "Received by", phone: "Recipient's phone" }) });
+
+    expect(rows.slice(1, 5)).toEqual([["Location received", "Filled in “Delivery address”"], ["Form sent again"],
+      ["Contact received", "Filled in “Received by” and “Recipient's phone”"], ["Form sent again"]]);
+  } finally {
+    await act(async () => { await i18n.changeLanguage("es"); });
   }
 });

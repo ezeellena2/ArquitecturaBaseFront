@@ -106,3 +106,21 @@ it("draws the line of DOC4 only under the last of consecutive documents that wer
   expect(items.map(item => [item.key, item.notReadLine])).toEqual([["message:first", false], ["message:second", true], ["message:text", false],
     ["message:third", true], ["message:read", false], ["message:fourth", true], ["outgoing:reply", false]]);
 });
+
+// W3: only a received contact carries its card into the history, and only a form carries «Prellenado con» of a resend, as a message
+// and as an outgoing; a contact whose content expired comes without its card.
+it("carries a shared contact only on a contact and «Prellenado con» only on a form", () => {
+  const card = { name: "Raúl Medina", phones: ["+54 9 341 555-0199", "+54 9 341 555-0142"] };
+  const prefill = [{ label: "Recibió", value: "Raúl Medina" }];
+  const [contact, expired, text, resent, pending] = buildTimeline([
+    { ...message("contact", "2026-11-12T12:00:00Z"), direction: "Inbound", kind: "Contact", body: null, contact: card },
+    { ...message("expired", "2026-11-12T12:01:00Z"), direction: "Inbound", kind: "Contact", body: null },
+    { ...message("text", "2026-11-12T12:02:00Z"), contact: card, prefill },
+    { ...message("resent", "2026-11-12T12:03:00Z"), kind: "Flow", form, prefill },
+  ], [{ ...outgoing("pending", "2026-11-12T12:04:00Z"), kind: "Flow", form, prefill }]);
+  expect(contact).toMatchObject({ kind: "Contact", contact: card, prefill: null });
+  expect(expired).toMatchObject({ kind: "Contact", contact: null });
+  expect(text).toMatchObject({ contact: null, prefill: null });
+  expect(resent).toMatchObject({ kind: "Flow", contact: null, prefill });
+  expect(pending).toMatchObject({ source: "outgoing", contact: null, prefill });
+});

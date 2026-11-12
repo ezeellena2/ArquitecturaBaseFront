@@ -90,7 +90,7 @@ for (const culture of ['es', 'en'] as const) describe('received forms in real pa
     expect(screen.getByText('Llegó una respuesta de formulario. La estamos guardando…')).toBeInTheDocument();
     expect(screen.getByText('No pudimos guardar la respuesta del formulario.')).toBeInTheDocument();
     expect(screen.getByText('Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.')).toBeInTheDocument();
-    expect(screen.getAllByText('Guardada como VIS-000024')).toHaveLength(1);
+    expect(screen.getAllByText('VIS-000024').map(number => number.parentElement?.textContent)).toEqual(['Guardada como VIS-000024']);
   });
   it.each(['reply-inbox-read', 'reply-inbox-without-read'])('uses the fixed server preview from actual inbox %s', async inboxName => {
     const allowed = inboxName === 'reply-inbox-read';

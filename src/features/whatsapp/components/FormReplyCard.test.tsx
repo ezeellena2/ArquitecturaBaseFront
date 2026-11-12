@@ -20,13 +20,15 @@ describe("form reply capture presentation", () => {
   it("shows a confirmed receipt with values and retains it when the channel message was removed", () => {
     renderWithProviders(<FormReplyCard reply={{ ...completed, messageRemoved: true }} />);
     expect(screen.getByText("Private answer marker")).toBeInTheDocument();
-    expect(screen.getByText("Guardada como VIS-000001")).toBeInTheDocument();
+    expect(screen.getByText("VIS-000001").parentElement).toHaveTextContent("Guardada como VIS-000001");
+    // The number moves whole to the next line: it never breaks at its hyphen («VIS-» / «000001»).
+    expect(screen.getByText("VIS-000001")).toHaveClass("inline-block");
     expect(screen.getByText("El mensaje de WhatsApp ya no está disponible. La respuesta sigue guardada.")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Respuesta del formulario Registrar visita, guardada como VIS-000001" })).toBeInTheDocument();
   });
   it("retains only the authorized receipt metadata for read-only and revoked values", () => {
     const view = renderWithProviders(<FormReplyCard reply={{ ...completed, values: null }} />);
-    expect(screen.getByText("Guardada como VIS-000001")).toBeInTheDocument();
+    expect(screen.getByText("VIS-000001").parentElement).toHaveTextContent("Guardada como VIS-000001");
     expect(screen.getByText("No tenés permiso para ver las respuestas de este formulario.")).toBeInTheDocument();
     expect(screen.queryByText("Private answer marker")).not.toBeInTheDocument();
     view.rerender(<FormReplyCard reply={{ ...completed, values: null, valuesRevoked: true }} />);
@@ -43,7 +45,7 @@ describe("form reply capture presentation", () => {
   it("localizes platform copy for English without changing entered text", async () => {
     await i18n.changeLanguage("en");
     renderWithProviders(<FormReplyCard reply={{ ...completed, name: "Register visit" }} />);
-    expect(screen.getByText("Saved as VIS-000001")).toBeInTheDocument();
+    expect(screen.getByText("VIS-000001").parentElement).toHaveTextContent("Saved as VIS-000001");
     expect(screen.getByText("Private answer marker")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Form reply Register visit, saved as VIS-000001" })).toBeInTheDocument();
   });
@@ -86,4 +88,21 @@ it("says only that it is downloading the files again", () => {
   renderWithProviders(<FormReplyCard reply={{state:"RetryingFiles",name:"Visita"}} />);
   expect(screen.getByText("Estamos intentando bajar los archivos de nuevo.")).toBeInTheDocument();
   expect(screen.queryByText(/No hace falta hacer nada/)).not.toBeInTheDocument();
+});
+
+// W3 (UC5): a send keeps one response, the first that arrives. The second is not saved and the card says which one was kept,
+// without offering to send it again: the send already has its response.
+it("says the second response of a send was not saved and names the one that was kept", async () => {
+  const second: FormReplyPresentation = { state: "Rejected", name: "Registrar entrega", rejectionCode: "Forms.Record.ReplayConflict", savedNumber: "ENT-000031" };
+  const view = renderWithProviders(<FormReplyCard reply={second} onResend={() => {}} />);
+  expect(screen.getByRole("group", { name: "Respuesta del formulario Registrar entrega" })).toHaveTextContent("No se guardó: el envío ya tiene su respuesta, ENT-000031.");
+  // The number, with its period, moves whole to the next line: never «ENT-» / «000031.».
+  expect(screen.getByText("ENT-000031.")).toHaveClass("inline-block");
+  expect(screen.queryByText("No pudimos guardar la respuesta del formulario.")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Mandar de nuevo" })).not.toBeInTheDocument();
+  view.unmount();
+  await i18n.changeLanguage("en");
+  renderWithProviders(<FormReplyCard reply={{ ...second, name: "Record delivery" }} onResend={() => {}} />);
+  expect(screen.getByRole("group", { name: "Form reply Record delivery" })).toHaveTextContent("Not saved: the send already has its response, ENT-000031.");
 });

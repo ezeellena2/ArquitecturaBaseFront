@@ -2,6 +2,7 @@ import { Fragment, memo, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDateInZone, formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
 import { Button } from "@/shared/ui/button";
+import { CellText } from "@/shared/ui/CellText";
 import { DataList } from "@/shared/ui/DataList";
 import { MessageBubble, MessageDateDivider } from "@/shared/ui/MessageBubble";
 import { MessageCard } from "@/shared/ui/MessageCard";
@@ -11,10 +12,11 @@ import { ChatAudio } from "./ChatAudio";
 import { ChatSpreadsheet } from "./ChatSpreadsheet";
 import { ChatReceivedDocument, ChatReceivedDocumentNotRead } from "./ChatReceivedDocument";
 import { ChatLocation } from "./ChatLocation";
+import { ChatContact } from "./ChatContact";
 import { FormReplyCard } from "./FormReplyCard";
 import { LocationRequestCard } from "./LocationRequestCard";
 import { AssistantEventLine, AssistantReplyWhy } from "./ChatAssistantReply";
-import type { Outgoing } from "../api/chat";
+import type { Outgoing, PrefilledValue } from "../api/chat";
 import { groupTimelineByDay, type TimelineEntry } from "../lib/timeline";
 import { accessSummary } from "../lib/messagePresentation";
 import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
@@ -45,8 +47,8 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
       {group.items.map(item => item.source === "event" ? <AssistantEventLine key={item.key} reply={item.reply} /> : <Fragment key={item.key}><MessageBubble direction={item.direction}
-        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" || item.kind === "Spreadsheet" || item.kind === "ReceivedDocument" || item.kind === "Location" && item.location ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
-        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.source === "message" && item.kind === "Spreadsheet" && item.purpose !== "Access" ? <ChatSpreadsheet name={item.spreadsheetName} caption={item.body} /> : item.source === "message" && item.kind === "ReceivedDocument" && item.purpose !== "Access" ? <ChatReceivedDocument document={item.document} caption={item.body} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.kind === "Location" && item.location && item.purpose !== "Access" ? <ChatLocation point={item.location} /> : item.kind === "LocationRequest" && item.form ? <LocationRequestCard form={item.form} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
+        text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" || item.kind === "Spreadsheet" || item.kind === "ReceivedDocument" || item.kind === "Location" && item.location || item.kind === "Contact" && item.contact ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
+        attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.source === "message" && item.kind === "Spreadsheet" && item.purpose !== "Access" ? <ChatSpreadsheet name={item.spreadsheetName} caption={item.body} /> : item.source === "message" && item.kind === "ReceivedDocument" && item.purpose !== "Access" ? <ChatReceivedDocument document={item.document} caption={item.body} /> : item.source === "message" && item.kind === "Contact" && item.contact && item.purpose !== "Access" ? <ChatContact contact={item.contact} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.kind === "Location" && item.location && item.purpose !== "Access" ? <ChatLocation point={item.location} /> : item.kind === "LocationRequest" && item.form ? <LocationRequestCard form={item.form} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})}>{item.prefill && !formValuesRevoked ? <PrefilledWith values={item.prefill} /> : null}</MessageCard> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "assistant" ? "author.assistant" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
@@ -74,3 +76,18 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
     </div>)}
   </MessageHistory>;
 });
+
+/** W3 (UC2, UC3): «Prellenado con» of a resend of the form, in its card: each question with what went into it, read like the values
+ *  of a response (`FormReplyValues`, LR1): two columns from 640 px and, in the celular, each value under its question; a value keeps its
+ *  groups whole (a phone breaks only at its spaces). It goes like «Por qué lo mandó»: only while the values of the responses can be read. */
+function PrefilledWith({ values }: { values: readonly PrefilledValue[] }) {
+  const { t } = useTranslation("whatsapp");
+  const title = useId();
+  return <div role="group" aria-labelledby={title} className="border-t border-[var(--color-border)] px-3 pt-2">
+    <p id={title} className="text-xs font-semibold text-[var(--color-content-muted)]">{t("assistant.prefilled")}</p>
+    <dl className="divide-y divide-[var(--color-border)] text-sm">{values.map((value, index) => <div key={index} className="grid min-w-0 grid-cols-1 gap-1 py-2 sm:grid-cols-2 sm:gap-3">
+      <dt className="min-w-0 break-words text-[var(--color-content-muted)]">{value.label}</dt>
+      <dd className="min-w-0 break-words"><CellText text={value.value} /></dd>
+    </div>)}</dl>
+  </div>;
+}

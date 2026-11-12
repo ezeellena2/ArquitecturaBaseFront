@@ -604,6 +604,67 @@ capturas es/en a 1440, 390 y 320 en `test-results/visual` (sin golden).
   dos zonas lo prueba vitest (`FormEditorLocationContact.test.tsx`). El desplegable abierto es el nativo y no se captura: sus
   opciones, y cuáles están apagadas, las prueba vitest (`FormLocationContactZone.test.tsx`).
 
+### UC2 a UC6 · El chat y la actividad (2026-11-12)
+
+Tarea 25 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+(decisiones técnicas 3, 6, 7 y 8), sobre los guards de la tarea 19b y con cuerpos sintéticos de esas formas hasta que las tareas 22
+a 24 escriban los del backend y se exporten (`whatsapp-audio-http`, `whatsapp-forms-http` y `forms-responses-http`): `ChatContact`
+en el chat del operador, «Prellenado con» en la tarjeta del reenvío, el motivo de la segunda respuesta en `FormReplyCard` y los
+renglones nuevos de la actividad en `ResponseWorkflowHistory`. La vista previa «Contacto» de la lista es un texto del servidor: no
+dibuja nada. La escena `whatsapp-shared-content.spec.ts` deja el chat con golden es/en a 1440, 390 y 320
+(`whatsapp-shared-content{,-contact,-prefilled}` y `whatsapp-shared-contacts`), y `responsesSharedContent.spec.ts`, la actividad en
+`test-results/shared-content`, sin golden como las demás escenas de la actividad.
+
+**La lista de chequeo**, para la burbuja del contacto, el reenvío, la segunda respuesta y la actividad:
+
+1. **Entero y armado.** Piezas de la biblioteca: `MessageBubble`, `MessageCard` (la del formulario, con «Prellenado con» adentro
+   como el renglón de estado de `LocationRequestCard`), los renglones de los valores de una respuesta (`FormReplyValues`), `CellText`
+   y `UserIcon`; la actividad es la de TL3-A. Estados: un contacto con nombre y dos teléfonos, con un teléfono largo, sin nombre, sin
+   teléfono, sin los dos y vencido; el reenvío del operador y el del asistente, con uno y con tres datos, sin «Prellenado con» sin
+   permiso o al revocarlo y sin tarjeta si su metadata no vale; la segunda respuesta; en la actividad, la ubicación de W3, el
+   contacto con una y con dos preguntas, los reenvíos y la ubicación de W1-A, sin preguntas. No hay diálogos.
+2. **Una tarea, zonas que se entienden solas.** Son mensajes del historial y renglones de la actividad: el contacto dice quién es y
+   sus teléfonos; el reenvío, qué se prellenó, dentro de su tarjeta; la segunda respuesta, por qué no se guardó.
+3. **El control según el dato.** No tienen controles: el chat no abre ni agenda el contacto.
+4. **Lo que se lee, en su lugar.** «Prellenado con» se lee como los valores de la respuesta que llega después (LR1): cada pregunta
+   con su valor en dos columnas desde 640 px y, en el celular, el valor debajo de su pregunta; el contacto, el nombre arriba y un
+   teléfono por renglón, sin «Teléfono:»; en la actividad, lo que se completó va en gris debajo de lo que pasó, donde los demás
+   renglones dicen quién.
+5. **Un dato por columna.** No hay tablas nuevas; la actividad conserva sus cuatro columnas.
+6. **Sin leyendas.** Nada explica: el motivo de la segunda respuesta es su estado y «Completó …» es un dato de su renglón.
+7. **Textos ciertos, una sola vez.** «Se volvió a mandar el formulario» no repite quién lo mandó, aunque el servidor lo diga: es el
+   mismo envío y su remitente está en «Se mandó el formulario», como lo dibujan UC2 y UC3. La ubicación de W1-A no dice «Completó»
+   (no trae preguntas), un contacto sin teléfono no inventa uno y «Por qué lo mandó» va sólo en el primer envío (el servidor no lo
+   manda en el reenvío). La segunda respuesta nombra la que quedó y no ofrece «Mandar de nuevo».
+8. **Botones y lo apagado.** No hay botones nuevos.
+9. **Lo elegido y la espera.** Sin selección ni esperas propias: llegan con el hilo y con el detalle.
+10. **Estados y mensajes.** La carga, el error y los permisos son los del chat y del detalle. «Prellenado con» tiene la privacidad
+    de «Por qué lo mandó»: sin «Ver respuestas» el servidor no lo manda y el guard lo descarta, y al revocar el permiso se va; el
+    contacto lo ve quien lee el chat. Vencido es un estado del mensaje: «Mensaje de contacto».
+11. **Lo mismo, igual en toda la app.** La burbuja del contacto sigue a la ubicación de W1-A (el ícono, el dato en negrita, lo
+    demás debajo y los números con ancho fijo, como el punto); «Prellenado con», los renglones de los valores de la respuesta; la
+    segunda respuesta, el renglón de un rechazo; un teléfono, como un código con guiones, se parte sólo en sus espacios (`CellText`),
+    y el número de una respuesta no se parte en su guion, también en «Guardada como …»; las preguntas se juntan como en el resto de
+    los textos («A» y «B», “A” and “B”); tokens y `rem`; fechas con números.
+12. **Celular, teclado e idiomas.** Desde 320 px nada se desplaza de costado: la escena mide cada caja que desplaza o corta
+    alrededor de los contactos, del último «Prellenado con», de la segunda respuesta y de los renglones de la actividad, hasta el
+    documento (`expectNoSideScroll`). Un teléfono que entra ocupa un renglón; uno largo («+54 9 (0341) 15-555-0177») se parte sólo
+    en sus espacios y nunca dentro de un grupo, como el número de una respuesta, y la escena revisa cada grupo. La región del
+    contacto se llama «Contacto: {nombre}» («Contacto» sin nombre) y «Prellenado con» es un grupo con ese nombre; es/en; nada en la
+    dirección.
+
+**Diferencias con los tableros:**
+
+- **La segunda respuesta va como cualquier rechazo** de la tarjeta, con el triángulo y sin tinte: UC5 la pinta en rojo con el
+  círculo, que ningún otro rechazo de la tarjeta usa.
+- **Un contacto sin nombre o sin teléfono** no está dibujado: sin nombre se titula «Contacto», como una foto sin nombre de archivo es
+  «Foto» (DOC2), y su región se llama «Contacto»; sin teléfono es el nombre solo. Uno sin los dos, que el contrato admite, es
+  «Contacto» solo.
+- **«Prellenado con» va en los renglones de los valores de la respuesta**: dos columnas iguales desde 640 px y, en el celular, cada
+  valor debajo de su pregunta, así un teléfono entra entero; UC2 y UC3 lo dibujan con las columnas de `DataList`.
+- **El primer envío del asistente no lleva «Prellenado con» en su tarjeta**, que UC3 sí le dibuja: esos datos van sólo en «Por qué
+  lo mandó», porque `prefill` existe sólo en el reenvío (decisión técnica 6 del plan).
+
 ### DOC5-A · La planilla con panel (2026-11-12)
 
 Tarea 10 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#parte-b--la-bandeja-documentos-recibidos-doc5-a-y-doc6)

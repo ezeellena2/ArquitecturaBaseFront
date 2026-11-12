@@ -1,9 +1,10 @@
 import type { FormReply, FormReplyValue } from '../api/formReplies';
 import type { FormReplyDisplayRow, FormReplyDisplayValue } from './formReplyValue';
 
-// Unavailable is a presentation fallback for an invalid projection, never a server processing state.
+// Unavailable is a presentation fallback for an invalid projection, never a server processing state. W3: the second response of a send
+// (`Rejected`) brings the number of the one that was kept (`savedNumber`).
 export type FormReplyPresentation = { readonly fileCount?:number; readonly receivedAtUtc?:string } & (
-  | { readonly state: 'Pending' | 'Downloading' | 'RetryingFiles' | 'Rejected' | 'Unrecognized' | 'Unavailable'; readonly name: string | null; readonly rejectionCode?: string | null; readonly rejectedQuestion?: string | null }
+  | { readonly state: 'Pending' | 'Downloading' | 'RetryingFiles' | 'Rejected' | 'Unrecognized' | 'Unavailable'; readonly name: string | null; readonly rejectionCode?: string | null; readonly rejectedQuestion?: string | null; readonly savedNumber?: string }
   | { readonly state: 'Completed'; readonly name: string; readonly recordNumber: string; readonly recordId?:string; readonly amendment?: 'Replaced' | 'Voided';
       readonly values: readonly FormReplyDisplayRow[] | null; readonly valuesRevoked?: boolean; readonly messageRemoved?: boolean });
 
@@ -19,7 +20,7 @@ function answer(row: FormReplyValue): FormReplyDisplayValue {
 export function toFormReplyPresentation(reply: FormReply | null): FormReplyPresentation | null {
   if (reply === null) return null;
   const metadata={...(reply.fileCount===undefined?{}:{fileCount:reply.fileCount}),...(reply.receivedAtUtc===undefined?{}:{receivedAtUtc:reply.receivedAtUtc})};
-  if (reply.state !== 'Completed') return reply.state==='Rejected' ? { ...metadata,state:reply.state,name:reply.name,rejectionCode:reply.rejectionCode,rejectedQuestion:reply.rejectedQuestion } : {...metadata,state:reply.state,name:reply.name};
+  if (reply.state !== 'Completed') return reply.state==='Rejected' ? { ...metadata,state:reply.state,name:reply.name,rejectionCode:reply.rejectionCode,rejectedQuestion:reply.rejectedQuestion,...(reply.savedNumber===undefined?{}:{savedNumber:reply.savedNumber}) } : {...metadata,state:reply.state,name:reply.name};
   return { ...metadata,state: 'Completed', name: reply.name, recordNumber: reply.number, recordId:reply.recordId, ...(reply.amendment ? { amendment: reply.amendment } : {}),
     values: reply.values?.map(row => ({ id: row.fieldId, label: row.label, answer: answer(row) })) ?? null };
 }

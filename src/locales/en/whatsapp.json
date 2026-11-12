@@ -116,7 +116,8 @@
     "Spreadsheet": "spreadsheet",
     "Location": "location",
     "LocationRequest": "location request",
-    "ReceivedDocument": "document"
+    "ReceivedDocument": "document",
+    "Contact": "contact"
   },
   "spreadsheet": {
     "label": "Spreadsheet",
@@ -194,7 +195,7 @@
       "pending": "A form reply arrived. We are saving it…",
       "rejected": "We could not save the form reply.",
       "unrecognized": "A form reply arrived that could not be matched to a send. It was not saved.",
-      "saved": "Saved as {{number}}",
+      "saved": "Saved as <number>{{number}}</number>",
       "corrected": "{{number}} was corrected later: its correction replaced it.",
       "voided": "{{number}} was voided later.",
       "savedName": "Form reply {{name}}, saved as {{number}}",
@@ -211,7 +212,8 @@
       "receiving": "Receiving form",
       "downloadingCount_one": "Received {{count}} file. Downloading it from WhatsApp and saving the response.",
       "downloadingCount_other": "Received {{count}} files. Downloading them from WhatsApp and saving the response.",
-      "filesRejectedQuestion": "Could not save the file for “{{label}}”. The response was not saved."
+      "filesRejectedQuestion": "Could not save the file for “{{label}}”. The response was not saved.",
+      "alreadySaved": "Not saved: the send already has its response, <number>{{number}}.</number>"
     },
     "catalogs": {
       "loading": "Preparing options for this person…",
@@ -291,6 +293,10 @@
   },
   "location": {
     "viewOnMap": "View on the map"
+  },
+  "contact": {
+    "label": "Contact",
+    "name": "Contact: {{name}}"
   },
   "locationRequest": {
     "title": "Location request",

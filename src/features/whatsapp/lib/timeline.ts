@@ -5,7 +5,7 @@ import { toFormReplyPresentation, type FormReplyPresentation } from "./formReply
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import type { MapPoint } from "@/shared/lib/mapPoint";
-import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing, ReceivedDocument } from "../api/chat";
+import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing, PrefilledValue, ReceivedDocument, SharedContact } from "../api/chat";
 
 const deliveryStates = {
   Pending: "pending", Sending: "pending", Accepted: "sent", Sent: "sent", Delivered: "delivered",
@@ -26,6 +26,10 @@ interface TimelineContent {
   document: ReceivedDocument | null;
   /** DOC4: whether «No se leyó…» goes under it: the last of the documents a number without a linked account sent in a row. */
   notReadLine: boolean;
+  /** W3: the first card of a received contact, or null once its content expired and in every other message. */
+  contact: SharedContact | null;
+  /** W3: «Prellenado con» of a resend of the form (only with `formrecords.read`), or null in every other message. */
+  prefill: PrefilledValue[] | null;
   assistant: AssistantExplanation | null;
   /** AS4: «Por qué respondió esto» of a reply of the agent, as the server keeps it. */
   assistantReply: AssistantReply | null;
@@ -60,6 +64,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     spreadsheetName: message.kind === "Spreadsheet" ? message.spreadsheetName ?? null : null,
     document: message.kind === "ReceivedDocument" ? message.document ?? null : null,
     notReadLine: false,
+    contact: message.kind === "Contact" ? message.contact ?? null : null,
+    prefill: message.kind === "Flow" && message.purpose !== "Access" ? message.prefill ?? null : null,
     messageId: message.id,
     quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
     assistant: message.purpose === "Access" ? null : message.assistant,
@@ -80,6 +86,8 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     spreadsheetName: null,
     document: null,
     notReadLine: false,
+    contact: null,
+    prefill: operation.kind === "Flow" ? operation.prefill ?? null : null,
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     assistantReply: operation.assistantReply ?? null,

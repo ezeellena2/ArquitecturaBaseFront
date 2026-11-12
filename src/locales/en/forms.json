@@ -984,6 +984,8 @@
     "historyLocationSkipped": "Continued without the location",
     "historyContactReceived": "Contact received",
     "historySentAgain": "Form sent again",
+    "historyFilled": "Filled in {{questions}}",
+    "historyQuestion": "“{{question}}”",
     "export": "Export to Excel",
     "exportTitle": "Export responses to Excel",
     "exportColumns": "Columns",

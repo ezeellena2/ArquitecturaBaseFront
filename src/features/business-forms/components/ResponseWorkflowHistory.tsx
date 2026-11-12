@@ -54,10 +54,15 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
   const acting = workflow.working?.kind === "act" ? workflow.working.runId : null;
   const reviewing = workflow.working?.kind === "check" ? "workflow.working" : workflow.working?.kind === "review" ? "workflow.confirming" : null;
   const unknown = t("responses.unknownPerson");
-  // Whoever loaded it goes once, under «Se respondió el formulario», with its channel; the assistant has no person.
+  // Whoever loaded it goes once, under «Se respondió el formulario», with its channel; the assistant has no person. W3 (UC2, UC3): what
+  // the person shared says under it which questions it completed, «A» y «B» like the rest of the texts, and the form that came back is
+  // the same send, so it does not repeat who sent it.
+  const filled = (questions: readonly string[]) => t("responses.historyFilled", {
+    questions: new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(questions.map(question => t("responses.historyQuestion", { question }))) });
   const recordRow = (event: ResponseDetail["history"][number]): ActivityRow => {
     const name = event.actor?.displayName ?? undefined;
-    const who = event.kind === "Submitted" && record.channel === "app" ? t("detail.inApp", { name: name ?? unknown })
+    const who = "questions" in event && event.questions ? filled(event.questions) : event.kind === "SentAgain" ? undefined
+      : event.kind === "Submitted" && record.channel === "app" ? t("detail.inApp", { name: name ?? unknown })
       : event.kind === "Submitted" && record.channel === "phone" ? t("detail.byWhatsApp", { name: name ?? unknown })
       : event.kind === "Sent" && !event.actor && record.origin?.senderKind === "Assistant" ? t("detail.assistant") : name;
     return { key: recordEventKey(record.history, event), atUtc: event.atUtc, text: t("responses.history" + event.kind), detail: who ? <Detail>{who}</Detail> : null };

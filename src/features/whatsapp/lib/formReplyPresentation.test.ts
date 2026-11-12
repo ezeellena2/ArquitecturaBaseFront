@@ -61,3 +61,10 @@ it("keeps multi-choice labels and metadata in received order without copying cat
   expect(presentation(message({ ...completed, values: [{ fieldId: "multi", key: "faults", type: "multiChoice", label: "Fallas", value: [] }] })))
     .toMatchObject({ values: [{ answer: { type: "multiChoice", value: [] } }] });
 });
+
+// W3 (UC5): a send keeps one response; the second one is not saved and brings the number of the one that was kept.
+it("keeps the number of the response that was kept in the second response of a send", () => {
+  const second: FormReply = { state: "Rejected", definitionId: "historical-definition", versionId: "historical-version", versionNumber: 1, name: "Registrar entrega",
+    recordId: null, number: null, values: null, rejectionCode: "Forms.Record.ReplayConflict", savedNumber: "ENT-000031" };
+  expect(presentation(message(second))).toEqual({ state: "Rejected", name: "Registrar entrega", rejectionCode: "Forms.Record.ReplayConflict", savedNumber: "ENT-000031" });
+});

@@ -18,6 +18,7 @@ import { createArcaVisualFixtures } from "./arcaFixtures";
 import { createAssistantAgentVisualFixtures } from "./assistantAgentFixtures";
 import { createChatAssistantVisualFixtures } from "./chatAssistantFixtures";
 import { createChatDocumentVisualFixtures } from "./chatDocumentFixtures";
+import { createChatSharedContentVisualFixtures } from "./chatSharedContentFixtures";
 import { createFormFixtureStore } from "./formFixtures";
 import { createMissingRequestVisualFixtures } from "./missingRequestFixtures";
 import { createLibraryVisualFixtures } from "./libraryFixtures";
@@ -90,6 +91,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   if (chatAssistantFixture) Object.assign(globalThis, { chatAssistantFixture });
   // Task 8 of the documents in the chat (DOC2 and DOC4): a linked conversation with its documents and one without a linked account.
   const chatDocumentFixture = scenario === "chat-document" ? createChatDocumentVisualFixtures(language) : undefined;
+  // W3 in the chat (UC2 to UC6): the location and the contact that bring the form back, the second response, and contacts without a form.
+  const chatSharedContentFixture = scenario === "chat-shared-content" ? createChatSharedContentVisualFixtures(language) : undefined;
   const businessScenario = (scenario?.startsWith("business-") ?? false) || roleGroupsScenario;
   // Mi perfil con el número verificado y Google (tablero PF1-A): el chat del número, sin vincular o vinculado. El
   // teléfono es inventado.
@@ -105,6 +108,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
       ...(assistantAgentFixture?.permissions ?? []),
       ...(chatAssistantFixture?.permissions ?? []),
       ...(chatDocumentFixture?.permissions ?? []),
+      ...(chatSharedContentFixture?.permissions ?? []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(scenario === "business-roles" || roleGroupsScenario ? ["ai.read", "ai.manage"] : [])],
   };
@@ -236,6 +240,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (receivedDocumentFixture) { const result = await receivedDocumentFixture.handle(request); if (result) return result; }
     if (chatAssistantFixture) { const result = await chatAssistantFixture.handle(request); if (result) return result; }
     if (chatDocumentFixture) { const result = await chatDocumentFixture.handle(request); if (result) return result; }
+    if (chatSharedContentFixture) { const result = await chatSharedContentFixture.handle(request); if (result) return result; }
     if (catalogExtraFieldsFixture) { const result = await catalogExtraFieldsFixture.handle(request); if (result) return result; }
     if (personDataFixture) { const result = await personDataFixture.handle(request); if (result) return result; }
     if (catalogQuestionFixture) { const result = await catalogQuestionFixture.handle(request); if (result) return result; }

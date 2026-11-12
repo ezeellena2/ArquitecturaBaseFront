@@ -116,7 +116,8 @@
     "Spreadsheet": "planilla",
     "Location": "de ubicación",
     "LocationRequest": "de pedido de ubicación",
-    "ReceivedDocument": "documento"
+    "ReceivedDocument": "documento",
+    "Contact": "de contacto"
   },
   "spreadsheet": {
     "label": "Planilla",
@@ -194,7 +195,7 @@
       "pending": "Llegó una respuesta de formulario. La estamos guardando…",
       "rejected": "No pudimos guardar la respuesta del formulario.",
       "unrecognized": "Llegó una respuesta de formulario que no pudimos relacionar con un envío. No se guardó.",
-      "saved": "Guardada como {{number}}",
+      "saved": "Guardada como <number>{{number}}</number>",
       "corrected": "Después se corrigió: {{number}} quedó reemplazada por su corrección.",
       "voided": "Después se anuló {{number}}.",
       "savedName": "Respuesta del formulario {{name}}, guardada como {{number}}",
@@ -211,7 +212,8 @@
       "receiving": "Recibiendo formulario",
       "downloadingCount_one": "Recibimos {{count}} archivo. Lo estamos bajando de WhatsApp y guardando la respuesta.",
       "downloadingCount_other": "Recibimos {{count}} archivos. Los estamos bajando de WhatsApp y guardando la respuesta.",
-      "filesRejectedQuestion": "No pudimos guardar el archivo de «{{label}}». No se guardó la respuesta."
+      "filesRejectedQuestion": "No pudimos guardar el archivo de «{{label}}». No se guardó la respuesta.",
+      "alreadySaved": "No se guardó: el envío ya tiene su respuesta, <number>{{number}}.</number>"
     },
     "catalogs": {
       "loading": "Preparando las opciones para esta persona…",
@@ -291,6 +293,10 @@
   },
   "location": {
     "viewOnMap": "Ver en el mapa"
+  },
+  "contact": {
+    "label": "Contacto",
+    "name": "Contacto: {{name}}"
   },
   "locationRequest": {
     "title": "Pedido de ubicación",

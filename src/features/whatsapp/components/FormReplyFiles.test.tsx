@@ -43,7 +43,7 @@ it("removes names and closes the viewer when a content request loses permission"
  await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  expect(screen.queryByRole("button",{name:/private.png/})).not.toBeInTheDocument();
  expect(screen.queryByText("private.png")).not.toBeInTheDocument();
- expect(screen.getByText("Guardada como VIS-000001")).toBeInTheDocument();
+ expect(screen.getByText("VIS-000001").parentElement).toHaveTextContent("Guardada como VIS-000001");
  await waitFor(()=>expect(screen.getByRole("group",{name:"Respuesta del formulario Visita, guardada como VIS-000001"})).toHaveFocus());
 });
 it.each(["Downloading","RetryingFiles"] as const)("shows %s without file values or number",state=>{
