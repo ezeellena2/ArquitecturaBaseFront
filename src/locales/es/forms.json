@@ -1756,6 +1756,25 @@
     "exampleRead": "Leído",
     "exampleConfirmed": "Confirmado"
   },
+  "locationContact": {
+    "title": "Ubicación y contacto",
+    "help": "La ubicación o el contacto que la persona comparte en el chat completan estas preguntas del formulario que tiene abierto, y el formulario le vuelve a llegar completado. Sin una pregunta elegida, quedan en el chat.",
+    "rows": {
+      "location": "Ubicación",
+      "contactName": "Nombre del contacto",
+      "contactPhone": "Teléfono del contacto"
+    },
+    "none": "Ninguna",
+    "option": "{{label}} (pregunta {{number}})",
+    "unnamed": "Pregunta {{number}}",
+    "taken": {
+      "location": "{{option}} · Recibe la ubicación",
+      "contactName": "{{option}} · Recibe el nombre del contacto",
+      "contactPhone": "{{option}} · Recibe el teléfono del contacto"
+    },
+    "locationQuestion": "La ubicación va a la pregunta «{{question}}», que se pide antes de mandar el formulario.",
+    "locationQuestionNumber": "La ubicación va a la pregunta {{number}}, que se pide antes de mandar el formulario."
+  },
   "issuance": {
     "title": "Comprobante",
     "issuing": "Se está emitiendo el comprobante. La página se actualiza sola.",

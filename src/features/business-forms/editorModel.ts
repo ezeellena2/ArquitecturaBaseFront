@@ -1,5 +1,6 @@
 import { normalizeCatalogQuestionSource } from "./catalogQuestionSource";
 import { openDraftSession } from "./draftSession";
+import { locationContactAssignment, withLocationContactAssignment, type LocationContactAssignment } from "./locationContact";
 import type { DraftCalculation, DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCalculationOperation, FormCulture, FormDefinitionSnapshot, FormDocumentReading,
   LocalizedText } from "./model";
 
@@ -80,13 +81,13 @@ const metadata = (q: DraftQuestion) => ({ fieldId: q.fieldId, replacesFieldId: q
 type EditableTexts = Readonly<Record<string, string | null>> | null;
 export interface DraftReviewRow {
   readonly id: string;
-  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections" | "documentReading" | "appOnly";
+  readonly kind: "name" | "prefix" | "offerWhen" | "submit" | "field" | "fieldText" | "order" | "option" | "optionOrder" | "sections" | "documentReading" | "appOnly" | "locationContact";
   readonly parentId?: string;
   readonly optionId?: string;
   readonly culture?: FormCulture;
   readonly property?: "label" | "help";
-  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | null;
-  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | null;
+  readonly mine: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | LocationContactAssignment | null;
+  readonly current: string | LocalizedText | DraftQuestion | DraftChoice | readonly string[] | readonly DraftSection[] | FormDocumentReading | LocationContactAssignment | null;
   readonly canKeep: boolean;
 }
 export interface DraftReview { readonly mine: DraftEditorValue; readonly current: DraftEditorValue; readonly definition: FormDefinitionSnapshot; readonly rows: readonly DraftReviewRow[] }
@@ -138,6 +139,9 @@ export function createDraftReview(mine: DraftEditorValue, definition: FormDefini
   const reading = (value: DraftEditorValue) => { const own = value.draft.documentReading; return own ? { enabled: own.enabled, recognition: own.recognition,
     lookups: own.lookups.map(({ questionId, sourceQuestionId, field }) => ({ questionId, sourceQuestionId, field })) } : null; };
   if (!equal(reading(mine), reading(saved))) rows.push({ id: "documentReading", kind: "documentReading", mine: mine.draft.documentReading ?? null, current: saved.draft.documentReading ?? null, canKeep: true });
+  // W3 (UC1-A): «Ubicación y contacto» too: which question receives each shared datum, compared and kept as a whole.
+  const receivers = { mine: locationContactAssignment(mine.draft.fields), current: locationContactAssignment(saved.draft.fields) };
+  if (!equal(receivers.mine, receivers.current)) rows.push({ id: "locationContact", kind: "locationContact", ...receivers, canKeep: true });
   return { mine, current: saved, definition, rows };
 }
 function withText(map: EditableTexts, culture: FormCulture, value: string | null): Record<string, string> {
@@ -208,5 +212,8 @@ export function resolveDraftReview(review: DraftReview, choices: Readonly<Record
     const { appOnly: _current, ...draft } = result.draft;
     result.draft = review.mine.draft.appOnly ? { ...draft, appOnly: true } : draft;
   }
+  // W3: each question kept receives what it received in the version chosen for the zone, whichever was chosen for the question; one
+  // that no longer fits (gone into the block, or the location beside a question «Ubicación») goes when the editor takes the result.
+  if (choices.locationContact) result.draft = { ...result.draft, fields: withLocationContactAssignment(result.draft.fields, (choices.locationContact === "mine" ? review.mine : review.current).draft.fields) };
   return result;
 }

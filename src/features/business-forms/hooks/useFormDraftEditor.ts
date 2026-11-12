@@ -9,6 +9,7 @@ import { draftFieldIssues, type DraftFieldIssue } from "../validationPaths";
 import { canReadForms, formActorKey, formDetailKey, type FormReadScope } from "./useFormQueries";
 import { createDraftReview, resolveDraftReview } from "../editorModel";
 import { withoutDanglingLookups } from "../documentReading";
+import { withoutDanglingReceives } from "../locationContact";
 
 export interface FormEditorIssue {
   readonly kind: "validation" | "conflict" | "uncertain" | "missing" | "expired" | "forbidden" | "read";
@@ -162,10 +163,14 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       setIssue({ kind: "read", code: error instanceof ApiError ? error.code : undefined, traceId: error instanceof ApiError ? error.traceId : undefined, error });
     } finally { finish(controller); }
   }
-  return { session: owns ? session : null, issue: owns ? issue : null, review: owns ? review : null, busy: owns && busy,
-    canSave: owns && !knownDeleted && capability && deniedPermissions !== permissionsStamp && scope.permissions.includes("formtemplates.manage") && session?.phase === "Editing" && !busy,
-    // DOC1: a lookup of the reading never names a question no longer there, whether the reading is on, off or hidden.
-    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, withoutDanglingLookups(value))); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
+  // Whether this actor may edit this form at all: the permission, the server's capability (a deactivated form), a 403 or a deleted form.
+  // Saving, an unconfirmed save or a pending review only stop it for a while (`canSave`).
+  const canEdit = owns && !knownDeleted && capability && deniedPermissions !== permissionsStamp && scope.permissions.includes("formtemplates.manage");
+  return { session: owns ? session : null, issue: owns ? issue : null, review: owns ? review : null, busy: owns && busy, canEdit,
+    canSave: canEdit && session?.phase === "Editing" && !busy,
+    // DOC1: a lookup of the reading never names a question no longer there, whether the reading is on, off or hidden. W3: nor does a
+    // question keep what it receives of the chat once it no longer fits, shown or hidden.
+    change: (value: DraftEditorValue) => { if (alive()) { publish(changeDraft(current.current!, withoutDanglingReceives(withoutDanglingLookups(value)))); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
     discard: () => { if (alive()) { publish(discardDraft(current.current!)); if (current.current?.phase === "Editing" && !knownDeleted) setIssue(null); } },
     useCurrent: () => {
       if (!alive() || !review || current.current?.phase !== "ReviewRequired" || busy) return;
@@ -178,7 +183,7 @@ export function useFormDraftEditor(scope: FormReadScope, initial: DraftEditorVal
       if (!alive() || !review || current.current?.phase !== "ReviewRequired" || busy) return;
       const resolved = resolveDraftReview(createDraftReview(current.current.value, review.definition), choices);
       if (!resolved) return;
-      publish(changeDraft(openDraftSession(current.current.scope, review.definition), withoutDanglingLookups(resolved)));
+      publish(changeDraft(openDraftSession(current.current.scope, review.definition), withoutDanglingReceives(withoutDanglingLookups(resolved))));
       manageDenied.current = !review.capabilities.canSave;
       if (!review.capabilities.canSave) setDeniedPermissions(permissionsStamp);
       setIssue(null); setReview(null);

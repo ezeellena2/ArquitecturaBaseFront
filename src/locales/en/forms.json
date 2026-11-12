@@ -1756,6 +1756,25 @@
     "exampleRead": "Read",
     "exampleConfirmed": "Confirmed"
   },
+  "locationContact": {
+    "title": "Location and contact",
+    "help": "The location or contact the person shares in the chat fills in these questions of the form they have open, and the form comes back to them filled in. With no question chosen, they stay in the chat.",
+    "rows": {
+      "location": "Location",
+      "contactName": "Contact name",
+      "contactPhone": "Contact phone"
+    },
+    "none": "None",
+    "option": "{{label}} (question {{number}})",
+    "unnamed": "Question {{number}}",
+    "taken": {
+      "location": "{{option}} · Gets the location",
+      "contactName": "{{option}} · Gets the contact name",
+      "contactPhone": "{{option}} · Gets the contact phone"
+    },
+    "locationQuestion": "The location goes to the “{{question}}” question, which is asked for before the form is sent.",
+    "locationQuestionNumber": "The location goes to question {{number}}, which is asked for before the form is sent."
+  },
   "issuance": {
     "title": "Voucher",
     "issuing": "The voucher is being issued. The page updates on its own.",

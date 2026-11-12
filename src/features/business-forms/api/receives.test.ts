@@ -73,6 +73,20 @@ describe("the question that receives what is shared in the chat (W3)", () => {
     expect(received(saved.definition.draft.fields)).toHaveLength(3);
   });
 
+  // WhatsApp does not prefill a question that shows by a condition (CO1-A), so the server refuses it: Forms.Draft.ReceivesQuestionInvalid.
+  it("rejects it on a text that shows by a condition, which reads well without it", () => {
+    const delivered = question(19, { type: "boolean", required: true });
+    const conditioned = (rest: object = {}) => text(11, { showWhen: { questionId: delivered.fieldId, values: ["false"] }, ...rest });
+    expect(readFormDetail(detail({ fields: [delivered, conditioned(), notes] })).definition.draft.fields[1]).toMatchObject({ showWhen: { values: ["false"] } });
+    expect(() => readFormDetail(detail({ fields: [delivered, conditioned({ receives: "contactName" }), notes] }))).toThrow("Unsupported form response.");
+  });
+
+  // Nor a question with the fixed validation of a library standard (the account or the CUIT): what is shared would not pass it.
+  it.each(["bankAccount", "taxId"])("rejects it on a short text with the fixed validation %s, which reads well without it", validation => {
+    expect(readFormDetail(detail({ fields: [text(11, { validation }), notes] })).definition.draft.fields[0]).toMatchObject({ validation });
+    expect(() => readFormDetail(detail({ fields: [text(11, { validation, receives: "contactPhone" }), notes] }))).toThrow("Unsupported form response.");
+  });
+
   const block = question(20, { type: "group", required: true, rows: { minRows: 1, maxRows: 5 } });
   it.each([
     ["a datum it does not know", { fields: [text(10, { receives: "address" }), notes] }],

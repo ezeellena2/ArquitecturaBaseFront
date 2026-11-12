@@ -504,3 +504,65 @@ programa a la vez: `FormDocumentReadingZone` después de «Preguntas» en el edi
 - **Las validaciones de la biblioteca** (DOC1, «Valida sin IA: …» bajo «Qué lee») van en su columna, con los nombres de los datos
   validados; qué se valida va en la (i) del título.
 - **El segmentado en el celular** baja de renglón, en lugar de cortarse.
+
+### UC1-A · Ubicación y contacto en el editor (2026-11-12)
+
+Tarea 19 en su primera parte (el guard de `receives`; los del hilo y de la actividad quedan para la segunda) y tarea 21 del
+[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+(decisión técnica 1), contra el contrato fijo de la tarea 20 y con dobles sintéticos, porque el backend se programa después:
+`receives` en cada pregunta de texto del borrador y del detalle, que el editor devuelve como llegó al guardar, chequear y
+publicar, y `FormLocationContactZone` después de «Lectura de documentos». La escena `formLocationContact.spec.ts` deja las
+capturas es/en a 1440, 390 y 320 en `test-results/visual` (sin golden).
+
+**La lista de chequeo**, para la zona:
+
+1. **Entero y armado.** Piezas de la biblioteca: `Surface` con su (i), `FormField`, `NativeSelect`, `DisabledReason` y, en sólo
+   lectura, `Label` sobre cada valor. Estados: las tres preguntas elegidas, «Ninguna», una tomada por otro renglón, una pregunta
+   «Ubicación», «Sólo en la app» y sin canal (sin la zona), sólo lectura y el celular. No es un diálogo.
+2. **Una tarea, zonas que se entienden solas.** Una zona para lo que completa lo compartido, aparte de la lectura (que pide la IA
+   y «Cómo reconocerlo»), en renglones con una línea entre ellos y en el orden en que llegan los datos.
+3. **El control según el dato.** Una pregunta de una lista: un desplegable por dato.
+4. **Lo que se lee, en su lugar.** En sólo lectura, cada renglón con su etiqueta arriba y la pregunta debajo, como en el tablero
+   (una `dl`), sin «Rótulo: valor» corrido; en la revisión de un 409 la zona es un cambio de `ComparisonTable`, un dato por renglón,
+   con cada pregunta nombrada como en la zona y los números de su versión.
+5. **Un dato por columna.** No hay tablas.
+6. **Sin leyendas.** La explicación (la leyenda de DOC2) va en la (i) del título, y el motivo del renglón apagado, encima de él.
+7. **Textos ciertos, una sola vez.** «Ninguna» dice que nada lo recibe, «· Recibe …» nombra qué recibe la tomada y el motivo nombra
+   la pregunta «Ubicación» del formulario; con «Sólo en la app» o sin canal la zona no está, así que no promete lo que no pasa. El
+   idioma no se nombra.
+8. **Botones y lo apagado.** No tiene botones. Con una pregunta «Ubicación», el renglón de la ubicación queda en su lugar y con su
+   forma, muestra esa pregunta y da el motivo encima, con el puntero, un toque o el foco en su envoltorio (MA1-A); una opción
+   tomada lleva «· Recibe …», la forma de lo apagado en un desplegable.
+9. **Lo elegido y la espera.** Lo elegido es el valor del desplegable. No tiene esperas propias: se guarda con «Guardar borrador», y
+   mientras guarda, queda sin confirmar o espera una revisión, los desplegables siguen en su lugar, apagados, como los controles de
+   «Lectura de documentos»: nada salta.
+10. **Estados y mensajes.** Sin carga, error, 429 ni conflicto propios: son los del borrador. Un 409 la lista como un cambio y
+    «Conservar mis cambios» la conserva. Lo que el servidor rechazaría no sale del editor: quitar la pregunta, cambiarle el tipo,
+    meterla en el bloque o ponerle una condición le saca lo elegido (sacarle la condición no se lo devuelve), y sumar una pregunta
+    «Ubicación» le saca la ubicación a la de texto, con la zona a la vista u oculta. Sin «Administrar formularios» o dado de baja
+    se lee sin cambiar; guardar o esperar una revisión no la vuelve de sólo lectura.
+11. **Lo mismo, igual en toda la app.** Los renglones son los de IA1-A y las preguntas se nombran como en las demás listas del
+    editor; tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px sin desplazar la página; en el celular los desplegables van a lo ancho y miden
+    44 px (`size="touch"`), y la escena lo mide; cada control se llama como su renglón, y el envoltorio del renglón apagado se
+    alcanza con Tab, con el motivo como descripción del control; es/en; nada en la dirección.
+
+**Diferencias con el tablero:**
+
+- **Una pregunta con condición o con validación fija no recibe nada** (decidido al programar, el 2026-11-12): la zona ofrece las
+  preguntas de texto fuera del bloque, sin «Se muestra: Según otra respuesta» (CO1-A), porque WhatsApp no prellena una pregunta
+  condicional y el formulario que vuelve fallaría, y sin la validación fija de un estándar de la biblioteca (la cuenta o el CUIT),
+  que lo compartido no pasaría. El servidor rechaza las dos (`Forms.Draft.ReceivesQuestionInvalid`). Ponerle una condición a la que
+  recibe algo la deja en «Ninguna», como meterla en el bloque. El tablero ofrece todas las de texto fuera del bloque.
+- **Las preguntas llevan su número** («Dirección de entrega (pregunta 1)», «Recibió (pregunta 2) · Recibe el nombre del
+  contacto»), como en las demás listas de preguntas del editor (los cruces de la lectura, las condiciones y los cálculos): así se
+  distinguen dos con el mismo texto, y una que todavía no tiene texto se llama «Pregunta 6». La revisión de un 409 las nombra igual.
+  El tablero las dibuja sólo con su texto. A 320 px el valor elegido se corta dentro del desplegable, como en esas listas; las
+  opciones se leen enteras en la lista del teléfono.
+- **El renglón apagado** muestra la pregunta «Ubicación» con su número, como valor del desplegable; el motivo la nombra por su
+  texto, como en el tablero, o por su número mientras no tiene texto («La ubicación va a la pregunta 6, …»).
+- **Sólo lectura** también dice «Ninguna», en gris, y con una pregunta «Ubicación», esa pregunta en el renglón de la ubicación.
+- **La (i) del título** está en todos los estados; el tablero la omite en los recuadros chicos.
+- **La escena** no tiene «Lectura de documentos» encima: esa zona pide el módulo de IA, que el escenario no instala; el orden de las
+  dos zonas lo prueba vitest (`FormEditorLocationContact.test.tsx`). El desplegable abierto es el nativo y no se captura: sus
+  opciones, y cuáles están apagadas, las prueba vitest (`FormLocationContactZone.test.tsx`).

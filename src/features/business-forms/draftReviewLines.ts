@@ -1,12 +1,14 @@
 import { readingQuestionName } from "./documentReading";
 import { localizedValue, questionEditorType, type DraftReview, type DraftReviewRow } from "./editorModel";
+import { locationContactKinds, questionName, type LocationContactAssignment } from "./locationContact";
 import type { DraftChoice, DraftEditorValue, DraftQuestion, DraftSection, FormCatalogMatch, FormCulture, FormDocumentReading, LocalizedText } from "./model";
+import { questionNumbers } from "./rowsQuestions";
 
-// A cell of the draft review (board LR2-A, 2026-11-03): a text as written, a translation, a text in grey when the version
-// lacks it, a numbered list, or a catalog datum that the screen reads when it shows it.
+// A cell of the draft review (board LR2-A, 2026-11-03): a text as written, a translation (with its values, when it has them), a
+// text in grey when the version lacks it, a numbered list, or a catalog datum that the screen reads when it shows it.
 export type ReviewValue =
   | { readonly kind: "text"; readonly text: string }
-  | { readonly kind: "key"; readonly key: string }
+  | { readonly kind: "key"; readonly key: string; readonly values?: Readonly<Record<string, string>> }
   | { readonly kind: "missing"; readonly key: string }
   | { readonly kind: "none" }
   | { readonly kind: "list"; readonly items: readonly { readonly value: ReviewValue; readonly moved: boolean }[] }
@@ -128,6 +130,22 @@ export function draftReviewLines(review: DraftReview, row: DraftReviewRow, { cul
         { key: "recognition", label: key("documentReading.recognition"), value: reading?.recognition.trim() ? text(reading.recognition) : { kind: "none" } },
         { key: "lookups", label: key("documentReading.lookups"), value: reading?.lookups.length ? { kind: "list", items: reading.lookups.map((lookup, index) => ({
           value: text(`${name(lookup.sourceQuestionId)} → ${name(lookup.questionId)}`), moved: JSON.stringify(other?.lookups[index]) !== JSON.stringify(lookup) })) } : { kind: "none" } }];
+    };
+    const lines = compared(facts("current"), facts("mine"));
+    return lines.length ? lines : compared(facts("current"), facts("mine"), true);
+  }
+  // W3 (UC1-A): «Ubicación y contacto» with the names of its rows: the question that receives each datum, or «Ninguna», named as in
+  // the zone with the numbers of its version; with a question «Ubicación», the location line is that question, as the zone shows it.
+  if (row.kind === "locationContact") {
+    const facts = (side: "current" | "mine"): Fact[] => {
+      const { fields, culture: original } = sides[side].draft;
+      const numbers = questionNumbers(fields);
+      const located = fields.find(item => item.type === "location");
+      return locationContactKinds.map(kind => {
+        const question = kind === "location" && located ? located : fields.find(item => identity(item) === (row[side] as LocationContactAssignment)[kind]);
+        return { key: kind, label: key("locationContact.rows." + kind), value: question
+          ? { kind: "key", ...questionName(localizedValue(question.label, culture, original), numbers[fields.indexOf(question)]!) } : key("locationContact.none") };
+      });
     };
     const lines = compared(facts("current"), facts("mine"));
     return lines.length ? lines : compared(facts("current"), facts("mine"), true);

@@ -4,6 +4,7 @@ import { readSuggestionOptions, type FormSuggestionSet } from "@/features/busine
 import { createRuleVisualFixtures } from "./formRuleFixtures";
 import { createFolderVisualFixtures } from "./folderFixtures";
 import { readingCatalog, readingDefinition, readingStats } from "./documentReadingFixtures";
+import { deliveryDefinition } from "./locationContactFixtures";
 import budgetEsCheck from "../fixtures/forms-http/budget-http/es.json" with { type: "json" };
 import budgetEnCheck from "../fixtures/forms-http/budget-http/en.json" with { type: "json" };
 import publishedEsList from "../fixtures/forms-http/published/list-es.json" with { type: "json" };
@@ -140,6 +141,9 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   if (scenario === "forms-library-engine") definitions.set(fixtureFormId, engineDefinition(culture));
   // DOC1: «Pagos de clientes», a copy of «Comprobante de transferencia» that reads documents, with a lookup in «Clientes».
   if (scenario.startsWith("forms-library-reading")) definitions.set(fixtureFormId, readingDefinition(culture));
+  // W3 (UC1-A): «Registrar entrega», whose questions receive what is shared in the chat; `-location` adds a question «Ubicación» and
+  // `-read` is the editor read only.
+  if (scenario.startsWith("forms-location-contact")) definitions.set(fixtureFormId, deliveryDefinition(culture, { location: scenario === "forms-location-contact-location" }));
   // CW15-B: three section titles between the questions of the visit.
   if (scenario === "forms-sections") {
     const original = definitions.get(fixtureFormId)!;
@@ -257,7 +261,7 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
   let conflict = false; let missing = false; let serial = 100;
   const writes: DraftWriteBody[] = [];
   const calls: { method: string; path: string }[] = [];
-  const canSave = scenario !== "forms-read" && scenario !== "forms-catalog-read";
+  const canSave = scenario !== "forms-read" && scenario !== "forms-catalog-read" && scenario !== "forms-location-contact-read";
   function wireCommit(result: FormDraftSaveResult) { return { ...result, definition: wireDefinition(result.definition) }; }
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url); const path = url.pathname;
@@ -468,7 +472,9 @@ export function createFormFixtureStore(culture: FormCulture = "es", scenario = "
         return { ...common, type: q.type, rows: { minRows, maxRows } };
       }
       const repeated = "repeated" in q && q.repeated ? { repeated: true as const } : {};
-      return q.type === "shortText" || q.type === "longText" ? { ...common, ...repeated, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600) } : { ...common, ...repeated, type: q.type };
+      // W3, as the server: what a text receives of the chat is kept as it was sent.
+      return q.type === "shortText" || q.type === "longText" ? { ...common, ...repeated, type: q.type, maxLength: q.maxLength ?? (q.type === "shortText" ? 80 : 600), ...q.receives ? { receives: q.receives } : {} }
+        : { ...common, ...repeated, type: q.type };
     });
     // DOC1: off without a text nor lookups there is no reading; a lookup names a new question by its local identity, sealed with its field.
     const assigned = new Map(fields.map(item => [item.localId, item.fieldId]));

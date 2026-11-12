@@ -38,13 +38,15 @@ export const canonicalFormFieldSchema = z.strictObject({ fieldId: guid, key: z.s
     .refine(toggles => new Set(toggles.map(toggle => toggle.key)).size === toggles.length).optional(),
   // DOC1: omitted without one; only a short text has it (the account, the alias, the CUIT or the CUIL).
   validation: questionValidationSchema.optional(),
-  // W3 (UC1-A): omitted without one; only a short or a long text outside the block has it.
+  // W3 (UC1-A): omitted without one; only a short or a long text outside the block, without a condition (WhatsApp does not prefill a
+  // question that shows by a condition) and without a fixed validation (an account or a CUIT of a library standard) has it.
   receives: questionReceivesSchema.optional(),
 }).superRefine((value, context) => {
   if (value.type === "group" ? !value.rows || value.rows.minRows > value.rows.maxRows || value.required !== (value.rows.minRows > 0) : value.rows !== undefined)
     context.addIssue({ code: "custom", message: "Invalid rows configuration." });
   if (value.validation && value.type !== "shortText") context.addIssue({ code: "custom", message: "Invalid validation." });
-  if (value.receives && (value.type !== "shortText" && value.type !== "longText" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid receives." });
+  if (value.receives && (value.type !== "shortText" && value.type !== "longText" || value.repeated || value.showWhen || value.validation))
+    context.addIssue({ code: "custom", message: "Invalid receives." });
   // A calculation is an optional decimal with two operands to multiply or take a percentage; neither the block nor its questions show by a condition.
   if (value.calculation && (value.type !== "decimal" || value.required || value.calculation.operation !== "sum" && value.calculation.operands.length !== 2)
     || value.showWhen && (value.type === "group" || value.repeated)) context.addIssue({ code: "custom", message: "Invalid calculation or condition." });

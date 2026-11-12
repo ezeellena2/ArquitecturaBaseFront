@@ -54,6 +54,7 @@ import { calculationIncomplete } from "../calculations";
 import { conditionIncomplete } from "../conditions";
 import { documentReadingIncomplete, withoutIncompleteLookups } from "../documentReading";
 import { FormDocumentReadingZone } from "../components/FormDocumentReadingZone";
+import { FormLocationContactZone } from "../components/FormLocationContactZone";
 import { useFormStandardName } from "../hooks/useFormStandardName";
 import { folderActorKey } from "../hooks/useFormFolders";
 import { localizedValue, missingFormTexts, newQuestion, suggestedPrefix } from "../editorModel";
@@ -251,6 +252,8 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
   const guard = useUnsavedChangesGuard(dirty || rulesDirty || suggestionsDirty || frozen || publicationPending);
   const reviewRequired = session?.phase === "ReviewRequired";
   const readOnly = !editor.canSave;
+  // The zones read only when the form cannot be edited at all; while it saves or waits for a review their controls stay, off.
+  const viewOnly = !editor.canEdit;
   // An enabled Save says there are changes. A new form has nothing saved yet, so it can be saved as it is (validated on the attempt).
   const saveEnabled = editor.canSave && (dirty || !session?.confirmed);
   const knownDeleted = editor.issue?.kind === "read" && editor.issue.code === "Forms.Definition.NotFound";
@@ -516,8 +519,11 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
 
         </Surface>
         {/* DOC1: after «Preguntas», saved with the draft; only where WhatsApp completes the form. */}
-        {readingShown ? <FormDocumentReadingZone value={value} onChange={change} readOnly={readOnly} scope={scope} standard={standard} definitionId={session.confirmed?.id ?? null}
+        {readingShown ? <FormDocumentReadingZone value={value} onChange={change} readOnly={viewOnly} disabled={readOnly} scope={scope} standard={standard} definitionId={session.confirmed?.id ?? null}
           culture={contentCulture} timeZoneId={timeZoneId} issues={visibleIssues} showIncomplete={incompleteShown} /> : null}
+        {/* W3 (UC1-A): after «Lectura de documentos», saved with the draft on each question; only where WhatsApp completes the form, and
+            hidden it keeps what was saved. */}
+        {!appOnly ? <FormLocationContactZone value={value} onChange={change} readOnly={viewOnly} disabled={readOnly} culture={contentCulture} /> : null}
       </div>
       {/* SA2-A: the preview of where it is completed: the app's «Nueva respuesta», or the WhatsApp phone. */}
       {appOnly ? <FormAppPreview key={session.scope.editorId} value={value} culture={contentCulture} />

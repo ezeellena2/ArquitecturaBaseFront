@@ -48,7 +48,7 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
     if (item === null) return null;
     switch (item.kind) {
       case "text": return item.text;
-      case "key": return t(item.key);
+      case "key": return t(item.key, item.values ?? {});
       case "missing": return muted(t(item.key));
       case "none": return muted("—");
       case "list": return <ol className="flex flex-col gap-0.5">{item.items.map((entry, index) => <li key={index} className="flex gap-1.5">
@@ -71,7 +71,8 @@ export function DraftReviewChanges({ value, definition, culture, catalogScope }:
       return t("reviewOption", { question: questionLabel, option: optionLabel || t("translationPending") });
     }
     if (row.kind === "fieldText") { const question = parent(row); return t("reviewFieldText", { question: question ? localizedValue(question.label, culture, value.draft.culture) : t("question"), field: t(row.property === "help" ? "help" : "question") }); }
-    return t(row.kind === "submit" ? "submitLabel" : row.kind === "order" ? "order" : row.kind === "sections" ? "sections.all" : row.kind === "documentReading" ? "documentReading.title" : row.kind === "appOnly" ? "completedIn.label" : row.kind);
+    return t(row.kind === "submit" ? "submitLabel" : row.kind === "order" ? "order" : row.kind === "sections" ? "sections.all" : row.kind === "documentReading" ? "documentReading.title" : row.kind === "appOnly" ? "completedIn.label"
+      : row.kind === "locationContact" ? "locationContact.title" : row.kind);
   }
   // NI1-A (2026-11-03): a change names its language only when it is not the menu's.
   const rowTitle = (row: DraftReviewRow) => row.culture && row.culture !== culture ? t("localizedChange", { name: title(row), language: t(`cultures.${row.culture}`) }) : title(row);

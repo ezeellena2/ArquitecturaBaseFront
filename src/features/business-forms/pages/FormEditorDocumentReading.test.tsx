@@ -52,6 +52,25 @@ it("goes after «Preguntas» and is saved with the draft: turned off, it keeps w
   expect(store.writes.at(-1)?.draft.fields.find(question => question.fieldId === readingIds.sourceAccount)).toMatchObject({ validation: "bankAccount" });
 });
 
+it("keeps its controls while a save is in flight, off until it answers: it is not read only", { timeout: 20_000 }, async () => {
+  let release: () => void = () => {};
+  server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { await new Promise<void>(resolve => { release = resolve; }); return store.handle(request); }));
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await zone();
+  await userEvent.type(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ }), " Banco Sur.");
+  await save();
+  // Nothing goes away nor changes place: «Agregar cruce», the lookup with its trash and the switch stay, off.
+  expect(screen.getByRole("button", { name: "Agregar cruce" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Quitar el cruce 1" })).toBeDisabled();
+  expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "Leer los documentos que lleguen por WhatsApp" })).toBeDisabled();
+  expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).toHaveAttribute("readonly");
+  await act(async () => { release(); });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Agregar cruce" })).toBeEnabled());
+  expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toBeEnabled();
+  expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).not.toHaveAttribute("readonly");
+});
+
 it("turned off, a lookup left half chosen goes: saving does not stop on what it no longer shows", { timeout: 20_000 }, async () => {
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   await zone();
