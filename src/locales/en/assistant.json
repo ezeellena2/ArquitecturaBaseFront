@@ -110,16 +110,38 @@
   },
   "attachment": {
     "attach": "Attach a spreadsheet",
+    "attachFile": "Attach a file",
     "remove": "Remove {{name}}",
     "kind": {
       "xlsx": "Excel",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF",
+      "photo": "Photo",
+      "docx": "Word"
     },
     "rows_one": "{{rows}} row",
     "rows_other": "{{rows}} rows",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
     "legacy": "An old Excel file (.xls) cannot be read. Save it as .xlsx or .csv.",
     "macros": "An Excel file with macros or in binary format (.xlsm or .xlsb) cannot be read. Save it as .xlsx or .csv.",
-    "type": "Only an Excel workbook (.xlsx) or a CSV file can be attached.",
-    "tooLarge": "The spreadsheet is {{size}} and the limit is 10 MB. Make it smaller or split it and attach it again."
+    "legacyWord": "An old Word document (.doc) cannot be read. Save it as .docx.",
+    "legacyWordPdf": "An old Word document (.doc) cannot be read. Save it as .docx or as a PDF.",
+    "macrosWord": "A Word document with macros (.docm) cannot be read. Save it as .docx.",
+    "macrosWordPdf": "A Word document with macros (.docm) cannot be read. Save it as .docx or as a PDF.",
+    "type": "Only {{types}} can be attached.",
+    "types": {
+      "pdf": "a PDF",
+      "photo": "a JPEG or PNG photo",
+      "docx": "a Word document (.docx)",
+      "xlsx": "an Excel workbook (.xlsx)",
+      "csv": "a CSV file"
+    },
+    "tooLarge": "The spreadsheet is {{size}} and the limit is 10 MB. Make it smaller or split it and attach it again.",
+    "tooLargeDocument": "The file is {{size}} and the limit is 10 MB. Make it smaller and attach it again.",
+    "reading": "Reading the document…",
+    "readingFailed": "The document could not be read. Try sending it again.",
+    "uploadUnknown": "We do not know whether the document arrived. Press Send again: if it did, it is not read twice.",
+    "readingUnknown": "We could not check the document's reading. Press Send to check it again."
   }
 }

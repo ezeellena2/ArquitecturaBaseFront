@@ -1,7 +1,8 @@
 # La IA arma formularios y catálogos: tableros elegidos
 
 Fecha: **2026-11-04**, con los tableros dibujados el 2026-11-03. Estado: **Etapas 1 y 2 programadas** (texto y audio el
-2026-11-05, planillas el 2026-11-11); la 3 (documentos) se planifica con la lectura de documentos. El alcance y las decisiones
+2026-11-05, planillas el 2026-11-11) y **la 3 en Inicio** (el clip con documentos y la tarjeta que lee documentos, 2026-11-12);
+DOC6 y WhatsApp siguen en el [plan de documentos](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#implementación-lectura-carga-bandeja-etapa-3-de-la-ia-y-tableros). El alcance y las decisiones
 están en el [plan](../../../ArquitecturaBase/docs/plans/2026-11-04-ia-arma-formularios-y-catalogos.md) y las reglas, en el
 [ADR 0024](../../../ArquitecturaBase/docs/decisions/0024-ia-arma-formularios-y-catalogos.md). Las pantallas, los textos y los
 estados salen de acá.
@@ -88,6 +89,35 @@ Etapa 2 (2026-11-11), las tarjetas con planilla:
   siempre.
 - Si la planilla ya no está o la propuesta cambió, el diálogo lo dice arriba del origen y queda en «Subir un archivo», sin la
   opción del chat.
+
+Etapa 3, al programar los documentos en Inicio (2026-11-12), lo que difiere de IA4 o los tableros no dicen:
+
+- El clip ofrece lo que el servidor deja adjuntar a esa persona, no siempre los cinco tipos de IA4: una planilla, a quien
+  administra catálogos; un Word, a quien diseña formularios, y además una foto o un PDF sólo si la instalación lee documentos.
+  Su nombre lo sigue: «Adjuntar una planilla» con sólo planillas y «Adjuntar un archivo» con algún documento.
+- Lo que el navegador ve que no sirve queda debajo del editor con el archivo, como en la Etapa 2. Un Word viejo (.doc) o con
+  macros (.docm) dice «Guardalo como .docx o en PDF.» sólo si el clip toma un PDF, y si no, «Guardalo como .docx.»; otro tipo
+  nombra lo que el clip toma («Sólo se puede adjuntar un PDF, una foto JPEG o PNG, un Word (.docx), un Excel (.xlsx) o un
+  CSV.»), y un documento de más de 10 MB, «El archivo pesa 12 MB y el tope es de 10 MB. Achicalo y volvé a adjuntarlo.». El peso
+  se redondea hacia arriba: uno apenas pasado dice «10,1 MB», nunca el tope mismo.
+- Una foto o un PDF se lee antes del turno: la flecha dice cuánto subió («Enviando… 40 %») y después «Leyendo el
+  documento…», y el turno sale cuando termina, con lo escrito (el audio, si hay, va antes). Mientras tanto se apagan la X, las
+  sugerencias y las conversaciones, porque el turno espera en esta conversación. Un Word va con su turno, como una planilla. La
+  espera está en la flecha, como la del audio, sin una línea de estado aparte.
+- Si la lectura falla, su motivo queda debajo del editor con el archivo y mandarlo otra vez lo vuelve a leer; si el servidor
+  no lo toma (con contraseña, de más de 10 páginas o ilegible), su texto queda igual y el archivo no se vuelve a mandar hasta
+  quitarlo o cambiarlo. Uno ya leído no se vuelve a subir si el turno no salió, y uno que ya llegó sólo vuelve a consultar su
+  lectura. Si no se sabe si llegó o no se pudo consultar la lectura, el aviso de abajo dice qué hacer («Tocá Enviar…»), y un
+  429 apaga la flecha con la espera común («Esperá 40 s para enviar otra consulta.»), como el de un turno.
+- Cuando «Consultar estado» o «Repetir el mismo pedido» confirman el turno, el archivo y el audio salen del editor, como al
+  mandarlo. Salir de la conversación durante la lectura, confirmando que se descarta el borrador, saca el archivo y el audio y
+  corta la lectura: nada llega a la conversación que se dejó.
+- Un documento leído a medias o que no se pudo leer igual va con su turno: lo dice la respuesta, no el editor.
+- El archivo dice en el editor su tipo y su tamaño («PDF · 412 KB») y en el mensaje, también las páginas de un PDF: «PDF ·
+  2 páginas · 412 KB», «Foto · 1,2 MB» (una foto es una página y no se cuenta), «Word · 24 KB».
+- La tarjeta de un formulario que prende la lectura suma «Lee documentos» al resumen («PAG · 6 preguntas · Lee
+  documentos»). Lo leído en cada pregunta y el estándar parecido no se muestran en Inicio: son de DOC6. «Ver cómo queda» no
+  cambia, porque la lectura no cambia la pantalla de WhatsApp.
 
 ## Lo que cambia de lo que hay
 

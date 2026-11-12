@@ -560,7 +560,10 @@ Capturas, decisiones, alcance, piezas y estado: [formularios-whatsapp.md](formul
   transcripción en gris debajo (escena `assistant-audio`). Desde el 2026-11-11 (Etapa 2 de [la IA arma
   formularios](ia-arma-formularios.md)) el clip va junto al micrófono, para quien puede adjuntar: un Excel o un CSV por
   mensaje, que se ve en el editor con su nombre, su tipo y su tamaño y se quita con la X; lo que no sirve lo dice debajo del
-  editor, y en el hilo el mensaje muestra el archivo con sus filas (escenas `assistant-attachment`).
+  editor, y en el hilo el mensaje muestra el archivo con sus filas (escenas `assistant-attachment`). Desde el 2026-11-12 (Etapa
+  3) el clip toma también lo que la persona puede adjuntar de documentos: un Word y, si la instalación los lee, una foto o un
+  PDF, que se lee antes del turno con «Leyendo el documento…» en la flecha; el mensaje dice «PDF · 2 páginas · 412 KB» y la
+  tarjeta de un formulario que prende la lectura, «Lee documentos» (escenas `assistant-document`).
 - Vive en `shared/ui/assistant` e `index.css`. Capturas `assistant-*.png`; verificación en el
   [registro de corrección](../verification/inicio-asistente-correccion-2026-10-04.md).
 

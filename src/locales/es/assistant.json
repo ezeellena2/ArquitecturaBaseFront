@@ -110,16 +110,38 @@
   },
   "attachment": {
     "attach": "Adjuntar una planilla",
+    "attachFile": "Adjuntar un archivo",
     "remove": "Quitar {{name}}",
     "kind": {
       "xlsx": "Excel",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF",
+      "photo": "Foto",
+      "docx": "Word"
     },
     "rows_one": "{{rows}} fila",
     "rows_other": "{{rows}} filas",
+    "pages_one": "{{count}} página",
+    "pages_other": "{{count}} páginas",
     "legacy": "No se puede leer un Excel viejo (.xls). Guardalo como .xlsx o .csv.",
     "macros": "No se puede leer un Excel con macros o binario (.xlsm o .xlsb). Guardalo como .xlsx o .csv.",
-    "type": "Sólo se puede adjuntar un Excel (.xlsx) o un CSV.",
-    "tooLarge": "La planilla pesa {{size}} y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla."
+    "legacyWord": "No se puede leer un Word viejo (.doc). Guardalo como .docx.",
+    "legacyWordPdf": "No se puede leer un Word viejo (.doc). Guardalo como .docx o en PDF.",
+    "macrosWord": "No se puede leer un Word con macros (.docm). Guardalo como .docx.",
+    "macrosWordPdf": "No se puede leer un Word con macros (.docm). Guardalo como .docx o en PDF.",
+    "type": "Sólo se puede adjuntar {{types}}.",
+    "types": {
+      "pdf": "un PDF",
+      "photo": "una foto JPEG o PNG",
+      "docx": "un Word (.docx)",
+      "xlsx": "un Excel (.xlsx)",
+      "csv": "un CSV"
+    },
+    "tooLarge": "La planilla pesa {{size}} y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla.",
+    "tooLargeDocument": "El archivo pesa {{size}} y el tope es de 10 MB. Achicalo y volvé a adjuntarlo.",
+    "reading": "Leyendo el documento…",
+    "readingFailed": "No se pudo leer el documento. Probá mandarlo de nuevo.",
+    "uploadUnknown": "No sabemos si el documento llegó. Tocá Enviar de nuevo: si ya llegó, no se vuelve a leer.",
+    "readingUnknown": "No pudimos consultar la lectura del documento. Tocá Enviar para volver a consultarla."
   }
 }

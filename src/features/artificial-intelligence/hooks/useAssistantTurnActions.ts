@@ -20,15 +20,18 @@ import { assistantKey, createSubmission } from "../assistant/model";
 /// The request on its way and what it acts on (the turn it cancels, the conversation it deletes): only the control that
 /// sent it shows the spinner and its gerund.
 export type AssistantAction = "submit" | "retry" | "recover" | "cancel" | "remove";
-/// The frozen request: its body and, in a turn with a spreadsheet, the same file, so repeating it recovers the same turn.
-interface Submission { readonly body: AssistantSubmit; readonly file?: File }
+/// The frozen request: its body and, in a turn with a spreadsheet or a Word, the same file, so repeating it recovers the same turn.
+/// The turn of a photo or a PDF names its reading in the body, and a dictated one its recording.
+export interface AssistantSubmission { readonly body: AssistantSubmit; readonly file?: File }
 export function useAssistantTurnActions({
   userId,
   onAccepted,
   onForbidden,
 }: {
   userId: string;
-  onAccepted: (value: AssistantAccepted) => void;
+  /// The accepted turn and the submission it was, also when «Consultar estado» or «Repetir el mismo pedido» confirmed it: the owner
+  /// clears what that turn took.
+  onAccepted: (value: AssistantAccepted, submission: AssistantSubmission) => void;
   onForbidden: () => void;
 }) {
   const { t } = useTranslation(["assistant", "common"]);
@@ -41,7 +44,7 @@ export function useAssistantTurnActions({
   const [fileError, setFileError] = useState<string>();
   // How much of a file went up, from 0 to 1, while it travels.
   const [progress, setProgress] = useState<number>();
-  const frozen = useRef<Submission | null>(null);
+  const frozen = useRef<AssistantSubmission | null>(null);
   const inFlight = useRef(false);
   const mounted = useRef(true);
   const generation = useRef(0);
@@ -60,11 +63,11 @@ export function useAssistantTurnActions({
   function isCurrent(version: number) {
     return mounted.current && generation.current === version;
   }
-  function accept(value: AssistantAccepted, version: number) {
+  function accept(value: AssistantAccepted, version: number, submission: AssistantSubmission) {
     if (!isCurrent(version)) return;
     frozen.current = null;
     setUncertain(false);
-    onAccepted(value);
+    onAccepted(value, submission);
     void client.invalidateQueries({
       queryKey: [...assistantKey(userId), "conversations"],
     });
@@ -144,7 +147,7 @@ export function useAssistantTurnActions({
       message: operationalErrorMessage(error, t),
     });
   }
-  async function send(submission: Submission, action: "submit" | "retry") {
+  async function send(submission: AssistantSubmission, action: "submit" | "retry") {
     if (inFlight.current) return false;
     inFlight.current = true;
     setWorking({ action });
@@ -157,7 +160,7 @@ export function useAssistantTurnActions({
         ? await assistantApi.submitFile(body, file, (fraction) => { if (isCurrent(version)) setProgress(fraction); })
         : await assistantApi.submit(body);
       if (!isCurrent(version)) return false;
-      accept(response, version);
+      accept(response, version, submission);
       return true;
     } catch (error) {
       handle(error, version);
@@ -179,10 +182,11 @@ export function useAssistantTurnActions({
     },
     audioRequestId?: string,
     file?: File,
+    documentRequestId?: string,
   ) {
     if (inFlight.current || frozen.current || cooldown.isRunning) return false;
     frozen.current = {
-      body: createSubmission(crypto.randomUUID(), question, connectionRevision, conversation, audioRequestId),
+      body: createSubmission(crypto.randomUUID(), question, connectionRevision, conversation, audioRequestId, documentRequestId),
       ...(file ? { file } : {}),
     };
     return send(frozen.current, "submit");
@@ -192,8 +196,9 @@ export function useAssistantTurnActions({
     inFlight.current = true;
     setWorking({ action: "recover" });
     const version = generation.current;
+    const submission = frozen.current;
     try {
-      accept(await assistantApi.turn(frozen.current.body.requestId), version);
+      accept(await assistantApi.turn(submission.body.requestId), version, submission);
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         if (isCurrent(version))
@@ -284,6 +289,9 @@ export function useAssistantTurnActions({
     clearFileError: () => setFileError(undefined),
     progress,
     cooldownSeconds: cooldown.seconds,
+    /// The common wait of Home, for a 429 on a request another hook made (the upload of a recording or of a document): the arrow is
+    /// off and says how long, as after a turn's own 429.
+    startCooldown: (seconds: number) => cooldown.restart(seconds),
     submit,
     recover,
     retryIdentical,

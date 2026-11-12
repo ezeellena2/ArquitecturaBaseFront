@@ -113,6 +113,24 @@ const audioStatus = z.strictObject({
   failure: failure.nullable(),
   pollingAfterSeconds: z.number().int().positive(),
 });
+// Where the reading of a photo or a PDF is (Stage 3); once completed, the document it read (a photo is one page) and how readable it
+// was, with the cause when it was not whole; a failure says why.
+const documentStatus = z.strictObject({
+  requestId: id,
+  state: assistantStateSchema,
+  document: z
+    .strictObject({
+      name: z.string(),
+      kind: z.enum(["pdf", "jpeg", "png"]),
+      pages: z.number().int().min(1).max(10),
+      size: count,
+      readability: z.enum(["readable", "partial", "unreadable"]),
+      problem: z.enum(["blurry", "dark", "cut", "covered", "other"]).nullable(),
+    })
+    .nullable(),
+  failure: failure.nullable(),
+  pollingAfterSeconds: z.number().int().positive(),
+});
 const bootstrap = z.strictObject({
   availability: z.enum([
     "available",
@@ -130,8 +148,8 @@ const bootstrap = z.strictObject({
   // Whether this person may attach a spreadsheet (Stage 2): the server says it, the front never repeats the permissions.
   // Optional until the joint export brings it to the captured bootstrap; without it, Home offers no clip.
   attachments: z.boolean().optional(),
-  // Whether this person may attach a Word, and also a photo or a PDF (Stage 3). The server computes them and publishes them with the
-  // documents' screen: optional, and Home does not read them yet.
+  // Whether this person may attach a Word, and also a photo or a PDF that the installation reads (Stage 3). Optional until the joint
+  // export brings them to the captured bootstrap; without them, the clip takes no document.
   documents: z.boolean().optional(),
   documentReading: z.boolean().optional(),
 });
@@ -171,6 +189,7 @@ export type AssistantConversation = z.infer<typeof conversation>;
 export type AssistantConversationSummary = z.infer<typeof conversationSummary>;
 export type AssistantBootstrap = z.infer<typeof bootstrap>;
 export type AssistantAudioStatus = z.infer<typeof audioStatus>;
+export type AssistantDocumentStatus = z.infer<typeof documentStatus>;
 export type AssistantTurnAttachment = NonNullable<AssistantTurn["attachment"]>;
 export interface AssistantSubmit {
   readonly requestId: string;
@@ -180,6 +199,8 @@ export interface AssistantSubmit {
   readonly question: string;
   /// The normalization of a recording: the server takes its transcript, never the browser (IA4).
   readonly audioRequestId?: string;
+  /// The completed reading of a photo or a PDF: the server takes the document and its reading, never the browser (Stage 3).
+  readonly documentRequestId?: string;
 }
 function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
@@ -222,8 +243,8 @@ export const assistantApi = {
     ),
   submit: async (body: AssistantSubmit, signal?: AbortSignal) =>
     read(accepted, await api.post<unknown>(`${base}/turns`, body, { signal })),
-  // A turn with a spreadsheet goes in one multipart request: the fields it has and the file, whose kind the server reads from
-  // its bytes. The same body and file again recover the same turn.
+  // A turn with a spreadsheet or a Word goes in one multipart request: the fields it has and the file, whose kind the server reads
+  // from its bytes. The same body and file again recover the same turn.
   submitFile: async (body: AssistantSubmit, file: File, onProgress: (fraction: number) => void, signal?: AbortSignal) => {
     const form = new FormData();
     form.append("requestId", body.requestId);
@@ -262,6 +283,16 @@ export const assistantApi = {
     read(audioStatus, await api.get<unknown>(`${base}/audio/${encodeURIComponent(requestId)}`, { signal })),
   audioFile: (requestId: string, signal?: AbortSignal) =>
     api.blob(`${base}/audio/${encodeURIComponent(requestId)}/file`, { signal }),
+  // A photo or a PDF goes up in multipart under its own request, with how much went up; the same request and file again recover its
+  // reading (Stage 3).
+  uploadDocument: async (requestId: string, file: File, onProgress: (fraction: number) => void, signal?: AbortSignal) => {
+    const body = new FormData();
+    body.append("requestId", requestId);
+    body.append("file", file, file.name);
+    return read(documentStatus, await api.upload<unknown>(`${base}/documents`, body, onProgress, { signal }));
+  },
+  document: async (requestId: string, signal?: AbortSignal) =>
+    read(documentStatus, await api.get<unknown>(`${base}/documents/${encodeURIComponent(requestId)}`, { signal })),
   remove: (id: string, signal?: AbortSignal) =>
     api.delete<void>(`${base}/conversations/${encodeURIComponent(id)}`, {
       signal,

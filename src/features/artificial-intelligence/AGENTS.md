@@ -57,6 +57,25 @@ y lo dicho, y un archivo elegido cuenta como borrador para la guarda de salida. 
 ofrece sólo con `attachments`, escribe su pedido y abre el selector; `proposalNeighbors` agrupa por `replacementGroup` o, sin
 él, por capacidad.
 
+Documentos de Inicio (Etapa 3): el clip toma lo que el bootstrap dice de esa persona (`attachmentKinds`: `attachments`,
+planillas; `documents`, un Word; `documentReading`, además fotos y PDF), y su nombre («Adjuntar una planilla» o «Adjuntar un
+archivo») y su `accept` lo siguen. `attachmentProblem` frena por la extensión un Word viejo o con macros (que pide guardarlo en
+PDF sólo si el clip lo toma), un tipo que el clip no toma (con la lista de los que sí) o más de 10 MB (con el peso redondeado
+hacia arriba, `roundUpToTenthOfMegabyte`). Una foto o un PDF se lee antes del turno con `useAssistantDocument`, como el audio:
+sube por `api.upload` con su propio `requestId` («Enviando… 40 %»), sigue la lectura con `pollingAfterSeconds` («Leyendo el
+documento…» en la flecha, con las sugerencias y las conversaciones apagadas) y `actions.submit` manda el turno con
+`documentRequestId`, después del audio si hay. El mismo archivo conserva su pedido: una subida incierta se repite con él, una que
+llegó sólo vuelve a consultar la lectura (sin subirlo; uno que el servidor ya no conoce se sube otra vez con el mismo pedido) y uno
+ya leído no se vuelve a pedir; un audio ya oído tampoco se vuelve a subir. Los avisos de una subida incierta o de una consulta que
+falló dicen qué hacer («Tocá Enviar…»). Una lectura fallida deja su motivo debajo del editor y el próximo intento usa otro pedido.
+Un 400 en `file` o el 403 `AttachmentDocumentForbidden` quedan con el archivo, como en la Etapa 2, y
+`AttachmentDocumentUnavailable` relee el bootstrap. Un 429 al subir un audio o un documento arranca la espera común
+(`actions.startCooldown`). La aceptación del turno, también la que confirman «Consultar estado» o «Repetir el mismo pedido», saca
+del editor el archivo y el audio que llevó (`onAccepted` recibe el envío). Salir confirmando que se descarta el borrador saca el
+archivo y el audio y corta la normalización y la lectura (`cancel`); `sendMedia` vuelve a mirar después de cada espera que el
+envío no se haya retirado, así nada llega a la conversación que se dejó. Un Word va por `submitFile`. El mensaje dice «PDF ·
+2 páginas · 412 KB», «Foto · 1,2 MB» o «Word · 24 KB».
+
 El panel interno usa useAssistantConversationList con usePagination/QueryCache privado (cuenta, idioma y revisión de permisos), 20 filas por defecto y GET acotados. conversationGroups recibe ahora UTC y zona del perfil; se recalcula al abrir/reanudar, sin timer paralelo. RuntimeProvider aísla la API experimental de threadList fijada en 0.15.23; callbacks sólo piden la navegación autorizada de AiAssistantPage. Nueva conversación no escribe hasta la aceptación; list/detail son autoridad de títulos. El borrado confirmado retira título y turnos del caché y luego invalida la página.
 
 Propuestas (IA1-A): el turno trae `proposal` sólo si cerró con una (Id, capacidad, versión y el contenido del dueño, que esta feature no lee). ConfirmedMessage muestra, debajo del texto, la tarjeta del módulo que la acepta por `AssistantProposalContext`, con la anterior de la misma capacidad y si una posterior la reemplazó (`proposalNeighbors`: por ordinal y sólo turnos completos; un catálogo pedido después de un formulario no lo reemplaza). Con una propuesta en el hilo, el editor dice «Pedí un cambio o hacé otra consulta…». Sin el módulo instalado, la respuesta se lee sola.

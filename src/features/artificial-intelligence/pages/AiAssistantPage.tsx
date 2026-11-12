@@ -52,17 +52,25 @@ import {
   type AssistantTurnAttachment,
 } from "../api/assistant";
 import {
+  acceptedFileKinds,
   assistantKey,
   attachmentAccept,
+  attachmentKinds,
   attachmentProblem,
+  canAttach,
   fileExtension,
+  fileKind,
   isActiveTurn,
   proposalNeighbors,
+  readsFirst,
+  roundUpToTenthOfMegabyte,
+  type AttachmentKinds,
   type AttachmentProblem,
 } from "../assistant/model";
 import { useAssistantConversation } from "../hooks/useAssistantConversation";
 import { useAssistantTurnActions } from "../hooks/useAssistantTurnActions";
 import { useAssistantDictation } from "../hooks/useAssistantDictation";
+import { useAssistantDocument } from "../hooks/useAssistantDocument";
 import { AssistantTurnAudio } from "../components/assistant/AssistantTurnAudio";
 import { AssistantRuntimeProvider } from "../components/assistant/AssistantRuntimeProvider";
 import { AssistantWelcome } from "../components/assistant/AssistantWelcome";
@@ -79,12 +87,25 @@ const announcedStates: readonly AssistantState[] = [
   "expired",
 ];
 type Translate = (key: string, options?: Record<string, unknown>) => string;
-/// What describes a file in the composer (its type and size) or in a message (also its rows), in the menu language.
-function describeFile(t: Translate, language: string, file: { kind: string; size: number; rows?: number }) {
-  const kind = file.kind === "xlsx" || file.kind === "csv" ? t(`attachment.kind.${file.kind}`) : file.kind.toUpperCase();
-  const rows = file.rows === undefined ? null
-    : t("attachment.rows", { count: file.rows, rows: file.rows });
-  return [kind, rows, formatFileSize(file.size, language)].filter(Boolean).join(" · ");
+/// What describes a file in the composer (its kind and size) or in a message (also the rows of a spreadsheet or the pages of a PDF;
+/// a photo is one page, not counted), in the menu language: «Excel · 86 filas · 24 KB», «PDF · 2 páginas · 412 KB», «Foto · 1,2 MB»,
+/// «Word · 24 KB». A kind Home does not take says its extension.
+function describeFile(t: Translate, language: string, file: { kind: string; size: number; rows?: number; pages?: number }) {
+  const kind = fileKind(file.kind);
+  const count = file.rows !== undefined ? t("attachment.rows", { count: file.rows, rows: file.rows })
+    : kind === "pdf" && file.pages !== undefined ? t("attachment.pages", { count: file.pages }) : null;
+  return [kind ? t(`attachment.kind.${kind}`) : file.kind.toUpperCase(), count, formatFileSize(file.size, language)].filter(Boolean).join(" · ");
+}
+/// Why a file the browser can see does not serve: an old Word or one with macros says to save it as a PDF only when the clip takes
+/// one, another type names what the clip takes for this person, and one over the limit says its weight rounded up.
+function problemText(t: Translate, language: string, problem: AttachmentProblem, kinds: AttachmentKinds, size: number) {
+  if (problem === "type") {
+    const types = acceptedFileKinds(kinds).map((kind) => t(`attachment.types.${kind}`));
+    return t("attachment.type", { types: new Intl.ListFormat(language, { type: "disjunction" }).format(types) });
+  }
+  if (problem === "legacyWord") return t(kinds.reading ? "attachment.legacyWordPdf" : "attachment.legacyWord");
+  if (problem === "macrosWord") return t(kinds.reading ? "attachment.macrosWordPdf" : "attachment.macrosWord");
+  return t(`attachment.${problem}`, { size: formatFileSize(roundUpToTenthOfMegabyte(size), language) });
 }
 function TurnFile({ attachment }: { attachment: AssistantTurnAttachment }) {
   const { t, i18n } = useTranslation("assistant");
@@ -156,7 +177,7 @@ export function AiAssistantPage() {
   const location = useLocation();
   const [draft, setDraft] = useState(() => (conversationId ? "" : readAssistantDraft(location.state) ?? ""));
   const [localError, setLocalError] = useState<string>();
-  // Stage 2: one file per message, with what the browser saw that does not serve; the clip and a suggestion open the picker.
+  // Stage 2 and 3: one file per message, with what the browser saw that does not serve; the clip and a suggestion open the picker.
   const [attachment, setAttachment] = useState<{ file: File; problem?: AttachmentProblem }>();
   const fileInput = useRef<HTMLInputElement>(null);
   const clip = useRef<HTMLButtonElement>(null);
@@ -211,9 +232,13 @@ export function AiAssistantPage() {
   );
   const actions = useAssistantTurnActions({
     userId,
-    onAccepted: (value) => {
+    onAccepted: (value, submission) => {
       setAccepted(value);
       setDraft("");
+      // The turn took the composer's file and recording, also when «Consultar estado» or «Repetir el mismo pedido» confirmed it: they
+      // leave the composer, so the next send does not repeat them and the leave guard lets go.
+      if (submission.file || submission.body.documentRequestId) setAttachment(undefined);
+      if (submission.body.audioRequestId) recorder.discard();
       navigation.allowNextNavigation();
       setDrawerOpen(false);
       update({ conversacion: value.conversationId, page: undefined });
@@ -226,7 +251,14 @@ export function AiAssistantPage() {
   });
   // IA4: one recording per message, up to the bound of a WhatsApp audio; leaving the page loses it like a draft.
   const recorder = useAudioRecorder(audioMaximumBytes);
-  const dictation = useAssistantDictation({ userId, onForbidden: () => setForbidden(true) });
+  // A 429 on the upload of a recording or of a document starts the same wait as one on the turn.
+  const dictation = useAssistantDictation({ userId, onForbidden: () => setForbidden(true), onWait: actions.startCooldown });
+  // Stage 3: a photo or a PDF is read before its turn, under its own request.
+  const reading = useAssistantDocument({ userId, onForbidden: () => setForbidden(true), onWait: actions.startCooldown });
+  // A send that prepares a recording or a document belongs to the conversation it started in: leaving it retires that send, so its
+  // turn never reaches the conversation that was left.
+  const sendGeneration = useRef(0);
+  const retireSend = () => { sendGeneration.current += 1; };
   const navigation = useUnsavedChangesGuard(
     !!draft.trim() || actions.uncertain || recorder.state !== "idle" || !!attachment,
     { queryKeys: ["conversacion"] },
@@ -308,6 +340,7 @@ export function AiAssistantPage() {
     }
   }, [data, userId, t, accepted, reread]);
   function go(id: string | null) {
+    retireSend();
     navigation.allowNextNavigation();
     setAccepted(undefined);
     setDraft("");
@@ -358,23 +391,33 @@ export function AiAssistantPage() {
   // Each request on its way shows it on the control that sent it; the cancellation, on the turn it cancels.
   const working = actions.working?.action;
   const cancelling = working === "cancel" ? actions.working?.target : undefined;
-  // IA4: a recording travels first and its turn after it, with the file if there is one; the arrow shows the spinner for both,
-  // and how much of the file went up.
-  const sendingMedia = dictation.normalizing || (working === "submit" && (recorder.state === "ready" || !!attachment));
-  const composerDisabled = disabled || dictation.normalizing || recorder.state === "starting" || recorder.state === "recording";
+  // IA4: a recording travels first, then a photo or a PDF goes up and is read (Stage 3), and the turn travels last, with a spreadsheet
+  // or a Word if there is one; the arrow shows the spinner for every step, how much of a file went up and the reading.
+  const sendingMedia = dictation.normalizing || !!reading.phase || (working === "submit" && (recorder.state === "ready" || !!attachment));
+  const composerDisabled = disabled || dictation.normalizing || !!reading.phase || recorder.state === "starting" || recorder.state === "recording";
+  const goesWithTurn = !!attachment && !readsFirst(attachment.file.name);
+  const sendLabel = dictation.normalizing ? t("sending")
+    : reading.phase === "uploading" ? t("sendingFile", { percent: Math.round((reading.progress ?? 0) * 100) })
+    : reading.phase === "reading" ? t("attachment.reading")
+    : working === "submit" && goesWithTurn ? t("sendingFile", { percent: Math.round((actions.progress ?? 0) * 100) })
+    : t(working === "submit" ? "sending" : "send");
+  // What this person may attach, as the bootstrap says it (Stage 2 and 3).
+  const kinds = attachmentKinds(bootstrap.data ?? {});
   // What the browser saw that does not serve, or why the server did not take the file: it stays under the composer with the file.
   const attachmentReason = attachment?.problem
-    ? t(`attachment.${attachment.problem}`, { size: formatFileSize(attachment.file.size, i18n.language) })
-    : attachment ? actions.fileError : undefined;
+    ? problemText(t, i18n.language, attachment.problem, kinds, attachment.file.size)
+    : attachment ? actions.fileError ?? reading.fileError : undefined;
   // The clip hides when the file is chosen and the X goes with the file: the focus passes from one to the other, not to <body>.
   function chooseFile(file: File) {
     actions.clearFileError();
+    reading.clear();
     setLocalError(undefined);
-    flushSync(() => setAttachment({ file, problem: attachmentProblem(file) }));
+    flushSync(() => setAttachment({ file, problem: attachmentProblem(file, kinds) }));
     removeButton.current?.focus();
   }
   function removeFile() {
     actions.clearFileError();
+    reading.clear();
     flushSync(() => setAttachment(undefined));
     clip.current?.focus();
   }
@@ -386,16 +429,20 @@ export function AiAssistantPage() {
       return;
     }
     setLocalError(undefined);
+    // After each wait the send checks it was not retired: leaving the conversation discards it, and its turn would reach the old one.
+    const generation = sendGeneration.current;
     const recording = recorder.state === "ready" ? recorder.recording : undefined;
     const audioRequestId = recording ? await dictation.normalize(recording) : undefined;
-    if (recording && !audioRequestId) return;
-    const sent = await actions.submit(draft, bootstrap.data.connectionRevision,
+    if (generation !== sendGeneration.current || (recording && !audioRequestId)) return;
+    // A photo or a PDF is read first and the turn names its reading; a spreadsheet or a Word goes with the turn.
+    const file = attachment?.file;
+    const toRead = file && readsFirst(file.name) ? file : undefined;
+    const documentRequestId = toRead ? await reading.read(toRead) : undefined;
+    if (generation !== sendGeneration.current || (toRead && !documentRequestId)) return;
+    // Its acceptance clears the composer (`onAccepted`), also when it is confirmed later.
+    await actions.submit(draft, bootstrap.data.connectionRevision,
       conversationId && data.conversation.data ? { id: conversationId, revision: data.conversation.data.revision } : undefined,
-      audioRequestId, attachment?.file);
-    if (!sent) return;
-    if (recording) recorder.discard();
-    setAttachment(undefined);
-    setDraft("");
+      audioRequestId, toRead ? undefined : file, documentRequestId);
   }
   async function submit(question: string) {
     const max = bootstrap.data?.limits.questionMaxLength ?? 4000;
@@ -440,7 +487,8 @@ export function AiAssistantPage() {
                 <AssistantConversationPanel
                   list={list}
                   timeZone={user?.timeZoneId ?? "UTC"}
-                  disabled={actions.busy || actions.uncertain}
+                  // While a recording or a document is prepared, its turn still waits for this conversation.
+                  disabled={actions.busy || actions.uncertain || dictation.normalizing || !!reading.phase}
                   onCollapse={() => {
                     setPanelExpanded(false);
                     setDrawerOpen(false);
@@ -522,7 +570,8 @@ export function AiAssistantPage() {
                         <Spinner />
                       ) : null
                     }
-                    suggestions={<AssistantSuggestions items={[...moduleSuggestions, ...bootstrap.data.suggestions.slice(0, 3)]} disabled={disabled}
+                    suggestions={<AssistantSuggestions items={[...moduleSuggestions, ...bootstrap.data.suggestions.slice(0, 3)]}
+                      disabled={disabled || dictation.normalizing || !!reading.phase}
                       onChoose={question => {
                         const suggestion = moduleSuggestions.find(item => item.question === question);
                         setDraft(suggestion?.draft ?? question);
@@ -636,19 +685,19 @@ export function AiAssistantPage() {
                         hint={t("keyboardHelp")}
                         placeholder={recorder.state === "ready" || attachment ? t("placeholderOptional")
                           : hasProposal ? t("placeholderProposal") : (emptyPlaceholder ?? t("placeholder"))}
-                        sendLabel={t(working === "submit" && attachment && !dictation.normalizing ? "sendingFile"
-                          : working === "submit" || dictation.normalizing ? "sending" : "send",
-                          { percent: Math.round((actions.progress ?? 0) * 100) })}
-                        sending={working === "submit" || dictation.normalizing}
+                        sendLabel={sendLabel}
+                        sending={working === "submit" || dictation.normalizing || !!reading.phase}
                         value={draft}
                         onValueChange={(value) => {
                           setDraft(value);
                           setLocalError(undefined);
                         }}
                         disabled={composerDisabled}
-                        error={localError ?? attachmentReason ?? dictation.error ?? (recorder.denied ? t("audio.denied") : undefined) ?? actions.fieldError}
-                        attach={bootstrap.data.attachments ? (
-                          <AssistantAttach label={t("attachment.attach")} accept={attachmentAccept} inputRef={fileInput} buttonRef={clip}
+                        error={localError ?? attachmentReason ?? dictation.error ?? reading.error ?? (recorder.denied ? t("audio.denied") : undefined)
+                          ?? actions.fieldError}
+                        attach={canAttach(kinds) ? (
+                          <AssistantAttach label={t(kinds.word || kinds.reading ? "attachment.attachFile" : "attachment.attach")}
+                            accept={attachmentAccept(kinds)} inputRef={fileInput} buttonRef={clip}
                             disabled={composerDisabled} showButton={!attachment} onChoose={chooseFile} />
                         ) : undefined}
                         record={bootstrap.data.audio && recorder.supported && recorder.state === "idle"
@@ -759,7 +808,13 @@ export function AiAssistantPage() {
                 navigation.stay();
                 void actions.recover();
               } else {
+                // Leaving discards the draft whole: the text, the file and the recording, and what was being prepared to send them.
+                retireSend();
+                dictation.cancel();
+                reading.cancel();
                 setDraft("");
+                setAttachment(undefined);
+                recorder.discard();
                 setAccepted(undefined);
                 navigation.leave();
               }

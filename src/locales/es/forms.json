@@ -1607,7 +1607,8 @@
       "open": "Abrir el borrador",
       "catalogExists": "{{name}}, ya existe",
       "required": "Obligatoria",
-      "new": "Nueva"
+      "new": "Nueva",
+      "readsDocuments": "Lee documentos"
     },
     "catalog": {
       "kind": "Catálogo",

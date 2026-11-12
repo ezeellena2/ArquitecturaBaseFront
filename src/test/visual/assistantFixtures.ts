@@ -7,6 +7,7 @@ import type {
   AssistantTurn,
 } from "@/features/artificial-intelligence/api/assistant";
 import { spreadsheetProposalScene } from "./assistantSpreadsheetFixtures";
+import { documentProposalScene } from "./assistantDocumentFixtures";
 declare global {
   interface Window { assistantHistoryTestState: { reads: string[]; writes: number } }
 }
@@ -47,6 +48,8 @@ export function createAssistantVisualFixtures(
     configurationDestination: "aiConfiguration",
     audio: scenario.startsWith("assistant-audio"),
     attachments: scenario.startsWith("assistant-attachment"),
+    // Etapa 3 de la IA: whoever designs forms and manages catalogs, in an installation that reads documents, attaches every kind.
+    ...(scenario === "assistant-proposal-document" ? { attachments: true, documents: true, documentReading: true } : {}),
     limits: { questionMaxLength: 4000 },
     suggestions: [
       {
@@ -218,8 +221,10 @@ export function createAssistantVisualFixtures(
       : [];
   if (previousTurns.length) turn = { ...turn, ordinal: 11 };
   // IA1-A (2026-11-04): a form proposal replaced by its adjustment, and a catalog proposal that already created its catalog.
-  // Stage 2: `assistant-proposal-sheet` and `assistant-proposal-import`, the spreadsheet proposals.
+  // Stage 2: `assistant-proposal-sheet` and `assistant-proposal-import`, the spreadsheet proposals; Stage 3,
+  // `assistant-proposal-document`, the form proposed from a PDF.
   const scene = scenario === "assistant-proposal" ? proposalScene(turn, en)
+    : scenario === "assistant-proposal-document" ? documentProposalScene(turn, en)
     : scenario.startsWith("assistant-proposal-") ? spreadsheetProposalScene(turn, en, scenario) : null;
   if (scene) { previousTurns.push(...scene.previous); turn = scene.current; }
   let turnReads = 0;
@@ -236,6 +241,9 @@ export function createAssistantVisualFixtures(
       return scenario === "assistant-load-error"
         ? json({ code: "Unexpected", traceId: "assistant-visual" }, 500)
         : json(bootstrap);
+    // A photo or a PDF goes up by XMLHttpRequest (the scene answers it with a route); its reading stays running here.
+    if (path.startsWith("/api/ai/assistant/documents/"))
+      return json({ requestId: path.split("/").at(-1), state: "running", document: null, failure: null, pollingAfterSeconds: 2 });
     if (path.endsWith("/conversations") && scenario === "assistant-history") {
       const all = Array.from({ length: 24 }, (_, index) => ({ ...summary(), conversationId: index === 0 ? assistantFixtureConversationId : fixtureId(3, index),
         title: index === 0 ? bootstrap.suggestions[0].question : `${index + 1}. ${bootstrap.suggestions[index % 5].question}`,

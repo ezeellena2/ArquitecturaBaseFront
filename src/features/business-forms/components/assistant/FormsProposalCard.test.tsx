@@ -197,3 +197,38 @@ it("folds a replaced import, and marks nothing new against a previous proposal o
   await mount(props(proposalCapabilities.catalogImport, importing, { previous: { ...previous, capability: proposalCapabilities.catalog, version: 2, content: mapped } }));
   expect(within(await screen.findByRole("region", { name: "Importación: Contratistas" })).queryByText("Nueva")).not.toBeInTheDocument();
 });
+
+// Etapa 3 de la IA: propose-form@2, the form of version 1 with the turn's document. Its summary says it reads documents when the
+// proposal turns the reading on; what each question read and a similar standard are for DOC6, not for this card.
+const reading = { recognition: "Comprobantes de transferencia: muestran el monto, la fecha y las cuentas de origen y de destino." };
+const documentForm = { ...form, questions: form.questions.map((question, index) => ({ ...question, sample: index === 0 ? "AB 123 CD" : null })),
+  documentReading: reading, standard: null };
+
+it("says that a form proposed with a document reads documents, and creates its draft like version 1", async () => {
+  const router = await mount(props(proposalCapabilities.form, documentForm, {}, 2));
+  const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
+  expect(within(card).getByText("CCC · 2 preguntas · Lee documentos")).toBeInTheDocument();
+  expect(within(card).getByText("Texto corto · Obligatoria")).toBeInTheDocument();
+  expect(within(card).queryByText("AB 123 CD")).not.toBeInTheDocument();
+  expect(within(card).queryByText(reading.recognition)).not.toBeInTheDocument();
+  await userEvent.click(within(card).getByRole("button", { name: "Crear borrador" }));
+  expect(await screen.findByText("Editor")).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe("/formularios/" + createdId);
+  expect(posted).toEqual([{ requestId, proposalId }]);
+});
+
+it("does not say it reads documents when version 2 leaves the reading off, and marks nothing new against version 1 for the samples", async () => {
+  const previous = { id: "01990000-0000-7000-8000-000000000054", capability: proposalCapabilities.form, version: 1, content: form };
+  await mount(props(proposalCapabilities.form, { ...documentForm, documentReading: null }, { previous }, 2));
+  const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
+  expect(within(card).getByText("CCC · 2 preguntas")).toBeInTheDocument();
+  expect(within(card).queryByText(/Lee documentos/)).not.toBeInTheDocument();
+  expect(within(card).queryByText("Nueva")).not.toBeInTheDocument();
+});
+
+it("says it in English too", async () => {
+  await i18n.changeLanguage("en");
+  await mount(props(proposalCapabilities.form, { ...documentForm, culture: "en", name: "Load control" }, {}, 2));
+  const card = await screen.findByRole("region", { name: "Form: Load control" });
+  expect(within(card).getByText("CCC · 2 questions · Reads documents")).toBeInTheDocument();
+});

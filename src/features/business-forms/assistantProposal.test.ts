@@ -60,9 +60,38 @@ describe("assistant proposals of the forms module", () => {
     expect(readProposal(proposal(proposalCapabilities.catalogImport, { ...importContent, catalog: { ...importContent.catalog, kind: "manual" } }))).toBeNull();
   });
 
+  // Etapa 3 de la IA: version 2 adds the reading the proposal turns on, what each question read in the document and a similar library
+  // standard, each one null or exactly its object; version 1 reads as a form without them.
+  const recognition = "Comprobantes de transferencia: muestran el monto, la fecha y las cuentas de origen y de destino.";
+  const documentContent = { ...formContent, questions: formContent.questions.map((question, index) => ({ ...question, sample: index === 0 ? "AB 123 CD" : null })),
+    documentReading: { recognition }, standard: { key: "transfer-receipt", name: "Comprobante de transferencia" } };
+  it("reads the form with a document (version 2), with its reading, samples and standard, and version 1 as a form without them", () => {
+    expect(readProposal(proposal(proposalCapabilities.form, documentContent, 2))).toEqual({ kind: "form", content: documentContent });
+    const off = { ...documentContent, documentReading: null, standard: null };
+    expect(readProposal(proposal(proposalCapabilities.form, off, 2))).toEqual({ kind: "form", content: off });
+    expect(readForm(formContent)).toEqual({ ...formContent, questions: formContent.questions.map(question => ({ ...question, sample: null })),
+      documentReading: null, standard: null });
+  });
+
+  const { documentReading: _reading, ...withoutReading } = documentContent;
+  const { standard: _standard, ...withoutStandard } = documentContent;
+  it.each([
+    ["version 1's shape", formContent],
+    ["no reading", withoutReading],
+    ["no standard", withoutStandard],
+    ["a question without its sample", { ...documentContent, questions: formContent.questions }],
+    ["a reading without its text", { ...documentContent, documentReading: {} }],
+    ["a reading with more than its text", { ...documentContent, documentReading: { recognition, crossings: [] } }],
+    ["a standard without its name", { ...documentContent, standard: { key: "transfer-receipt" } }],
+    ["a field outside the contract", { ...documentContent, extra: true }],
+  ])("reads no form with a document whose content has %s", (_, content) => {
+    expect(readProposal(proposal(proposalCapabilities.form, content, 2))).toBeNull();
+  });
+
   it("accepts its capabilities before loading the card, by name and version only", () => {
     expect(acceptsProposal(proposal(proposalCapabilities.people, {}))).toBe(true);
-    expect(acceptsProposal(proposal(proposalCapabilities.form, formContent, 2))).toBe(false);
+    expect(acceptsProposal(proposal(proposalCapabilities.form, formContent, 2))).toBe(true);
+    expect(acceptsProposal(proposal(proposalCapabilities.form, formContent, 3))).toBe(false);
     expect(acceptsProposal(proposal("fixture.propose", formContent))).toBe(false);
   });
 
@@ -85,5 +114,15 @@ describe("assistant proposals of the forms module", () => {
     expect([...newQuestions(content, null)]).toEqual([]);
     expect([...newQuestions(content, proposal(proposalCapabilities.catalog, catalogContent))]).toEqual([]);
     expect([...newQuestions(content, proposal(proposalCapabilities.catalogImport, importContent))]).toEqual([]);
+  });
+
+  it("compares the questions of the two versions without what they read: a sample is not a new question", () => {
+    const read = readProposal(proposal(proposalCapabilities.form, documentContent, 2));
+    if (read?.kind !== "form") throw new Error("The fixture is not a form proposal.");
+    expect([...newQuestions(read.content, proposal(proposalCapabilities.form, formContent))]).toEqual([]);
+    const resampled = { ...documentContent, questions: documentContent.questions.map(question => ({ ...question, sample: "Otro" })) };
+    expect([...newQuestions(readForm(formContent), proposal(proposalCapabilities.form, resampled, 2))]).toEqual([]);
+    const changed = { ...documentContent, questions: [{ ...documentContent.questions[0], label: "Dominio" }, ...documentContent.questions.slice(1)] };
+    expect([...newQuestions(read.content, proposal(proposalCapabilities.form, changed, 2))]).toEqual([0]);
   });
 });

@@ -1607,7 +1607,8 @@
       "open": "Open the draft",
       "catalogExists": "{{name}}, already exists",
       "required": "Required",
-      "new": "New"
+      "new": "New",
+      "readsDocuments": "Reads documents"
     },
     "catalog": {
       "kind": "Catalog",

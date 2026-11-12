@@ -7,9 +7,10 @@ export const proposalCapabilities = {
   catalogImport: "forms.authoring.propose-import",
   people: "forms.catalog-filters.propose",
 } as const;
-// The versions the card draws: version 2 of the catalog maps the turn's spreadsheet; version 1 still reads in older turns.
+// The versions the card draws: version 2 of the catalog maps the turn's spreadsheet and version 2 of the form may turn on the
+// reading of the turn's document (Etapa 3 de la IA); version 1 still reads in older turns.
 const versions = new Map<string, readonly number[]>([
-  [proposalCapabilities.form, [1]],
+  [proposalCapabilities.form, [1, 2]],
   [proposalCapabilities.catalog, [1, 2]],
   [proposalCapabilities.catalogImport, [1]],
   [proposalCapabilities.people, [1]],

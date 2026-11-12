@@ -6,16 +6,22 @@ import type { DraftChoice, DraftEditorValue, DraftQuestion, FormCulture } from "
 
 // The proposals the Home assistant can close on for this module, as the server normalized them: one strict shape per version.
 const culture = z.enum(["es", "en"]);
-const proposedQuestion = z.strictObject({
+const questionShape = {
   label: z.string().min(1),
   type: z.enum(["shortText", "longText", "number", "date", "yesNo", "choice", "multiChoice", "catalog", "photo", "document"]),
   required: z.boolean(),
   options: z.array(z.string().min(1)),
   catalog: z.strictObject({ id: z.string().uuid(), name: z.string() }).nullable(),
-});
-const formProposal = z.strictObject({
-  culture, name: z.string().min(1), prefix: z.string().min(1), submitLabel: z.string().min(1),
-  questions: z.array(proposedQuestion).min(1).max(40),
+};
+const formShape = { culture, name: z.string().min(1), prefix: z.string().min(1), submitLabel: z.string().min(1) };
+const formProposal = z.strictObject({ ...formShape, questions: z.array(z.strictObject(questionShape)).min(1).max(40) });
+// Etapa 3 de la IA (propose-form@2): version 1's form and, with the turn's document, the reading it turns on with «Cómo reconocerlo»,
+// what each question read in the document (for DOC6 to compare) and a similar library standard, each one null or exactly its object.
+const documentFormProposal = z.strictObject({
+  ...formShape,
+  questions: z.array(z.strictObject({ ...questionShape, sample: z.string().nullable() })).min(1).max(40),
+  documentReading: z.strictObject({ recognition: z.string().min(1) }).nullable(),
+  standard: z.strictObject({ key: z.string().min(1), name: z.string().min(1) }).nullable(),
 });
 const valueType = z.enum(["text", "integer", "decimal", "date"]);
 const catalogShape = {
@@ -44,7 +50,8 @@ const peopleProposal = z.strictObject({
   }),
   limitations: z.array(z.strictObject({ code: z.string(), criterion: z.string() })),
 });
-export type FormProposal = z.infer<typeof formProposal>;
+/** A form proposal: version 1 reads as one without a document (no reading, samples or standard). */
+export type FormProposal = z.infer<typeof documentFormProposal>;
 export type ProposedQuestion = FormProposal["questions"][number];
 /** A catalog proposal: version 1 reads as one without a spreadsheet. */
 export type CatalogProposal = z.infer<typeof mappedCatalogProposal>;
@@ -60,8 +67,13 @@ export type ReadProposal =
 /** The proposal as this module reads it, or null when it is another capability, version or shape: then no card shows. */
 export function readProposal(proposal: AssistantProposal): ReadProposal | null {
   if (!acceptsProposal(proposal)) return null;
-  if (proposal.capability === proposalCapabilities.form) {
+  if (proposal.capability === proposalCapabilities.form && proposal.version === 1) {
     const parsed = formProposal.safeParse(proposal.content);
+    return parsed.success ? { kind: "form", content: { ...parsed.data, questions: parsed.data.questions.map(question => ({ ...question, sample: null })),
+      documentReading: null, standard: null } } : null;
+  }
+  if (proposal.capability === proposalCapabilities.form) {
+    const parsed = documentFormProposal.safeParse(proposal.content);
     return parsed.success ? { kind: "form", content: parsed.data } : null;
   }
   if (proposal.capability === proposalCapabilities.catalog && proposal.version === 1) {
@@ -80,12 +92,17 @@ export function readProposal(proposal: AssistantProposal): ReadProposal | null {
   return parsed.success ? { kind: "people", content: parsed.data } : null;
 }
 
-/** The questions that did not exist, the same, in the proposal this one replaced: the card marks them «Nueva». */
+/** The questions that did not exist, the same, in the proposal this one replaced: the card marks them «Nueva». What a question read
+ *  in the document is not the question, so the two versions compare without it. */
 export function newQuestions(content: FormProposal, previous: AssistantProposal | null): ReadonlySet<number> {
   const before = previous ? readProposal(previous) : null;
   if (before?.kind !== "form") return new Set();
-  const known = new Set(before.content.questions.map(question => JSON.stringify(question)));
-  return new Set(content.questions.flatMap((question, index) => known.has(JSON.stringify(question)) ? [] : [index]));
+  const asked = (question: ProposedQuestion) => {
+    const { sample: _, ...asked } = question;
+    return JSON.stringify(asked);
+  };
+  const known = new Set(before.content.questions.map(asked));
+  return new Set(content.questions.flatMap((question, index) => known.has(asked(question)) ? [] : [index]));
 }
 
 /** The editor value the proposal becomes, for «Ver cómo queda»: the same mapping the server applies when it creates the draft. */

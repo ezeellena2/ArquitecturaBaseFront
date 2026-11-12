@@ -213,6 +213,28 @@ describe("durable assistant acceptance", () => {
     expect(sent[1]).toEqual(sent[0]);
     expect(test.client.getMutationCache().getAll()).toHaveLength(0);
   });
+  // Stage 3: the owner clears what the accepted turn took (the file, the recording, the reading it names), also when the status check
+  // confirms a turn whose acceptance was uncertain.
+  it("tells the owner which submission it accepted, also when the status check recovers it", async () => {
+    vi.spyOn(assistantApi, "submit").mockRejectedValue(ApiError.network());
+    const recovered = vi.spyOn(assistantApi, "turn").mockImplementation(async (requestId) => ({ ...accepted, requestId }) as never);
+    const test = setup();
+    await act(() => test.result.current.submit("", 7, undefined, "a1", undefined, "d1"));
+    expect(test.result.current.uncertain).toBe(true);
+    expect(test.onAccepted).not.toHaveBeenCalled();
+    await act(() => test.result.current.recover());
+    expect(recovered).toHaveBeenCalledOnce();
+    expect(test.onAccepted).toHaveBeenCalledOnce();
+    const [value, submission] = test.onAccepted.mock.calls[0]!;
+    expect(submission.body).toMatchObject({ requestId: value.requestId, audioRequestId: "a1", documentRequestId: "d1" });
+    expect(submission.file).toBeUndefined();
+  });
+  it("starts the common wait for a request another hook made, like the one of its own 429", async () => {
+    const test = setup();
+    act(() => test.result.current.startCooldown(40));
+    expect(test.result.current.cooldownSeconds).toBe(40);
+    expect(await act(() => test.result.current.submit("pregunta", 7))).toBe(false);
+  });
   it("sends a turn with a spreadsheet, says how much went up and repeats the same body and file only when asked", async () => {
     const file = new File(["Código,Cliente"], "clientes.csv", { type: "text/csv" });
     const sent: { body: AssistantSubmit; file: File }[] = [];

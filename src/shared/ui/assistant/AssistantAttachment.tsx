@@ -6,7 +6,8 @@ import { CloseIcon, FileIcon, PaperclipIcon } from "../icons";
 /// input to open the picker from elsewhere too (a Home suggestion that attaches), checks the chosen file and says what failed.
 export function AssistantAttach({ label, accept, inputRef, buttonRef, onChoose, disabled = false, showButton = true }: {
   label: string;
-  /// The types the picker offers (`.xlsx,.csv`): the server reads the kind from the bytes, never from this.
+  /// The types the picker offers (`.xlsx,.csv`, and `.pdf,.jpg,.jpeg,.png,.docx` when the owner takes documents): the server reads
+  /// the kind from the bytes, never from this.
   accept: string;
   inputRef: RefObject<HTMLInputElement | null>;
   /// The clip, for the owner to give it back the focus when the X goes with the file.

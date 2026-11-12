@@ -1,5 +1,6 @@
 import type { ThreadMessageLike } from "@assistant-ui/react";
 import type {
+  AssistantBootstrap,
   AssistantState,
   AssistantSubmit,
   AssistantTurn,
@@ -46,6 +47,7 @@ export function createSubmission(
     revision: number;
   },
   audioRequestId?: string,
+  documentRequestId?: string,
 ): AssistantSubmit {
   return Object.freeze({
     requestId,
@@ -53,8 +55,9 @@ export function createSubmission(
     expectedConnectionRevision: connectionRevision,
     conversationId: conversation?.id ?? null,
     expectedRevision: conversation?.revision ?? null,
-    // Only a dictated turn names its recording: a typed one keeps the body it always had.
+    // Only a dictated turn names its recording, and only the turn of a photo or a PDF its reading: the others keep their body.
     ...(audioRequestId ? { audioRequestId } : {}),
+    ...(documentRequestId ? { documentRequestId } : {}),
   });
 }
 export function projectMessages(
@@ -114,20 +117,52 @@ export function sourceDestination(
   return item && permissions.includes(item.permission) ? item.path : undefined;
 }
 export const assistantKey = (userId: string) => ["assistant", userId] as const;
-/** The most a spreadsheet may weigh, as the server reads it (Stage 2). */
+/** The most a file may weigh, as the server reads it: a spreadsheet (Stage 2) or a document (Stage 3). */
 export const attachmentMaximumBytes = 10 * 1024 * 1024;
-/** What the clip offers: one Excel workbook or one CSV per message. */
-export const attachmentAccept = ".xlsx,.csv";
-export type AttachmentProblem = "legacy" | "macros" | "type" | "tooLarge";
-/** What the browser can see does not serve before sending a file: an old Excel, one with macros, another type or more than the
- *  limit. The server reads the kind from the bytes and says the rest (with a password, unreadable, empty). */
-export function attachmentProblem(file: { readonly name: string; readonly size: number }): AttachmentProblem | undefined {
-  const extension = fileExtension(file.name);
-  if (extension === "xls") return "legacy";
-  if (extension === "xlsm" || extension === "xlsb") return "macros";
-  if (extension !== "xlsx" && extension !== "csv") return "type";
-  return file.size > attachmentMaximumBytes ? "tooLarge" : undefined;
+/** What this person may attach in Home, as the bootstrap says it: a spreadsheet (Stage 2), a Word, and also a photo or a PDF that
+ *  the server reads before the turn (Stage 3). The front never repeats the permissions or what the installation reads. */
+export interface AttachmentKinds {
+  readonly spreadsheets: boolean;
+  readonly word: boolean;
+  readonly reading: boolean;
 }
+export const attachmentKinds = (bootstrap: Pick<AssistantBootstrap, "attachments" | "documents" | "documentReading">): AttachmentKinds => ({
+  spreadsheets: bootstrap.attachments ?? false,
+  word: bootstrap.documents ?? false,
+  reading: bootstrap.documentReading ?? false,
+});
+export const canAttach = (kinds: AttachmentKinds) => kinds.spreadsheets || kinds.word || kinds.reading;
+/** A file as Home names it: from its extension in the composer, or from the kind the server read in a message. */
+export type AttachmentFileKind = "pdf" | "photo" | "docx" | "xlsx" | "csv";
+const fileKinds: Readonly<Record<string, AttachmentFileKind>> = { pdf: "pdf", jpg: "photo", jpeg: "photo", png: "photo", docx: "docx", xlsx: "xlsx", csv: "csv" };
+export const fileKind = (kindOrExtension: string): AttachmentFileKind | undefined => Object.hasOwn(fileKinds, kindOrExtension) ? fileKinds[kindOrExtension] : undefined;
+/** The kinds the clip takes, in the order the picker and the reason of another type name them. */
+export function acceptedFileKinds(kinds: AttachmentKinds): readonly AttachmentFileKind[] {
+  return [...(kinds.reading ? ["pdf", "photo"] as const : []), ...(kinds.word ? ["docx"] as const : []), ...(kinds.spreadsheets ? ["xlsx", "csv"] as const : [])];
+}
+const extensions: Readonly<Record<AttachmentFileKind, string>> = { pdf: ".pdf", photo: ".jpg,.jpeg,.png", docx: ".docx", xlsx: ".xlsx", csv: ".csv" };
+/** What the picker offers: the server reads the kind from the bytes, never from this. */
+export const attachmentAccept = (kinds: AttachmentKinds) => acceptedFileKinds(kinds).map(kind => extensions[kind]).join(",");
+/** A photo or a PDF is read before its turn, under its own request; a spreadsheet or a Word goes with the turn. */
+export const readsFirst = (name: string) => ["pdf", "photo"].includes(fileKind(fileExtension(name)) ?? "");
+export type AttachmentProblem = "legacy" | "macros" | "legacyWord" | "macrosWord" | "type" | "tooLarge" | "tooLargeDocument";
+/** What the browser can see does not serve before sending a file: an old Excel or Word, one with macros, a type the clip does not
+ *  take or more than the limit. The server reads the kind from the bytes and says the rest (with a password, unreadable, empty, more
+ *  than ten pages). An old or macro-enabled file of a kind this person cannot attach is just another type. */
+export function attachmentProblem(file: { readonly name: string; readonly size: number }, kinds: AttachmentKinds): AttachmentProblem | undefined {
+  const extension = fileExtension(file.name);
+  if (kinds.spreadsheets && extension === "xls") return "legacy";
+  if (kinds.spreadsheets && (extension === "xlsm" || extension === "xlsb")) return "macros";
+  if (kinds.word && extension === "doc") return "legacyWord";
+  if (kinds.word && extension === "docm") return "macrosWord";
+  const kind = fileKind(extension);
+  if (!kind || !acceptedFileKinds(kinds).includes(kind)) return "type";
+  if (file.size <= attachmentMaximumBytes) return undefined;
+  return kind === "xlsx" || kind === "csv" ? "tooLarge" : "tooLargeDocument";
+}
+/** The weight a file over the limit says it has: rounded up to the next tenth of a megabyte, so a byte over 10 MB never reads as
+ *  «10 MB», the limit itself. Dividing by the megabyte, a power of two, keeps a whole number of tenths exact. */
+export const roundUpToTenthOfMegabyte = (bytes: number) => Math.ceil(bytes * 10 / (1024 * 1024)) * (1024 * 1024) / 10;
 export function fileExtension(name: string) {
   const dot = name.lastIndexOf(".");
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : "";

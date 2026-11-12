@@ -972,6 +972,52 @@ describe("dictated turns (IA4)", () => {
     await screen.findByRole("textbox", { name: "Tu pregunta" });
     expect(screen.queryByRole("button", { name: "Grabar un audio" })).not.toBeInTheDocument();
   });
+
+  it("starts the common wait after a 429 on the recording's upload: Enviar off with «Esperá N s» and nothing goes up again", async () => {
+    installMicrophone();
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.QuotaExceeded",
+      detail: "Esperá para continuar.", retryAfter: 40 } }]);
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("Esperá 40 s para enviar otra consulta.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Tu audio")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+    expect(writes).toHaveLength(0);
+    // The person can still discard it while waiting.
+    await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
+    expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument();
+  });
+
+  it("does not upload again a recording the server already heard when its turn did not go", async () => {
+    installMicrophone();
+    const uploads = captureUploads([{ status: 202, body: status("completed", "Armame un formulario de visitas") }]);
+    let rejected = false;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      if (!rejected) {
+        rejected = true;
+        return HttpResponse.json({ title: "Conflicto", status: 409, code: "Ai.Assistant.ActiveTurn", detail: "Hay otra consulta en curso." }, { status: 409 });
+      }
+      turn = { ...turn, requestId: body.requestId, question: body.question, audio: { requestId: audioRequestId, transcript: "Armame un formulario de visitas" } };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(uploads).toHaveLength(1);
+    expect(writes[1].audioRequestId).toBe(writes[0].audioRequestId);
+    expect(writes[1].requestId).not.toBe(writes[0].requestId);
+  });
 });
 
 // Stage 2: one spreadsheet per message, from the clip or from a suggestion that attaches; the browser stops what it sees does
@@ -1051,7 +1097,8 @@ describe("spreadsheets in Home (Stage 2)", () => {
     expect(screen.queryByText(/Excel viejo/)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Adjuntar una planilla" }));
     choose("clientes.xlsx", 10 * 1024 * 1024 + 1);
-    expect(screen.getByText("La planilla pesa 10 MB y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla.")).toBeInTheDocument();
+    // Its weight rounds up: a byte over the limit never reads as the limit itself.
+    expect(screen.getByText("La planilla pesa 10,1 MB y el tope es de 10 MB. Achicala o dividila y volvé a adjuntarla.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Quitar clientes.xlsx" }));
     choose("clientes.pdf");
     expect(screen.getByText("Sólo se puede adjuntar un Excel (.xlsx) o un CSV.")).toBeInTheDocument();
@@ -1109,19 +1156,564 @@ describe("spreadsheets in Home (Stage 2)", () => {
   });
 });
 
-// Stage 3, before the documents' screen: a turn that brought a document (a Word renamed .xlsx passes the clip's filter) keeps its
-// conversation readable, and its message names the document like a spreadsheet, without rows or pages.
+// Stage 3: the message names the document a turn brought by its kind, the pages of a PDF (a photo is one, not counted) and its size;
+// a Word renamed .xlsx passes the clip's filter and comes back as what it is.
 describe("a document a turn brought (Stage 3)", () => {
   it.each([
-    ["a Word renamed .xlsx", { name: "acta.xlsx", kind: "docx" as const, size: 12 * 1024 }, "DOCX · 12 KB"],
-    ["a PDF with its pages", { name: "acta.pdf", kind: "pdf" as const, size: 96 * 1024, pages: 3 }, "PDF · 96 KB"],
-  ])("opens the conversation and shows %s by its name, like a spreadsheet without rows", async (_, attachment, description) => {
+    ["a Word renamed .xlsx", { name: "acta.xlsx", kind: "docx" as const, size: 12 * 1024 }, "Word · 12 KB"],
+    ["a PDF with its pages", { name: "acta.pdf", kind: "pdf" as const, size: 96 * 1024, pages: 3 }, "PDF · 3 páginas · 96 KB"],
+    ["a PDF of one page", { name: "acta.pdf", kind: "pdf" as const, size: 412 * 1024, pages: 1 }, "PDF · 1 página · 412 KB"],
+    ["a photo, without its page", { name: "remito.jpeg", kind: "jpeg" as const, size: 1258291, pages: 1 }, "Foto · 1,2 MB"],
+  ])("opens the conversation and shows %s by its name", async (_, attachment, description) => {
     turn = { ...turn, question: "", attachment };
     renderRouteWithProviders(`/?conversacion=${conversationId}`);
     expect(await screen.findByText(attachment.name)).toBeInTheDocument();
-    // The whole description: its kind and size, with no count of rows or pages.
     expect(screen.getByText(description)).toBeInTheDocument();
     expect(screen.getByText("Hay tres usuarios activos.")).toBeInTheDocument();
+  });
+});
+
+// Stage 3: the clip takes what the bootstrap says this person may attach. A photo or a PDF goes up under its own request and is read
+// before its turn, which names the reading; a Word goes with its turn, like a spreadsheet.
+describe("documents in Home (Stage 3)", () => {
+  const documentRequestId = "0199a0c0-0000-7000-8000-000000000666";
+  const read = { name: "comprobante.pdf", kind: "pdf", pages: 2, size: 412 * 1024, readability: "readable", problem: null };
+  const status = (state: string, document: unknown = null, failure: unknown = null) =>
+    ({ requestId: documentRequestId, state, document, failure, pollingAfterSeconds: 1 });
+  let bootstrapReads: number;
+  const withKinds = (kinds: { attachments?: boolean; documents?: boolean; documentReading?: boolean; audio?: boolean;
+    suggestions?: { id: string; question: string }[] }) =>
+    http.get("/api/ai/assistant/bootstrap", () => {
+      bootstrapReads++;
+      return HttpResponse.json({ availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
+        configurationDestination: null, audio: false, ...kinds });
+    });
+  const all = { attachments: true, documents: true, documentReading: true };
+  const fileInput = () => document.querySelector<HTMLInputElement>("input[type=file]")!;
+  const choose = (name: string, size = 1024) => {
+    const file = new File([new Uint8Array(size)], name);
+    fireEvent.change(fileInput(), { target: { files: [file] } });
+    return file;
+  };
+  // The turn that names a reading shows its document, as the server would.
+  const turnsWithDocument = () => http.post("/api/ai/assistant/turns", async ({ request }) => {
+    const body = (await request.json()) as AssistantSubmit;
+    writes.push(body);
+    turn = { ...turn, requestId: body.requestId, question: body.question,
+      attachment: body.documentRequestId ? { name: read.name, kind: "pdf", pages: 2, size: read.size } : undefined };
+    return HttpResponse.json(acceptedOf(turn), { status: 202 });
+  });
+  beforeEach(() => { bootstrapReads = 0; });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    ["a Word, to whoever designs forms", { documents: true }, ".docx"],
+    ["also a photo or a PDF, when the installation reads them", { documents: true, documentReading: true }, ".pdf,.jpg,.jpeg,.png,.docx"],
+    ["every kind, also to whoever manages catalogs", all, ".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv"],
+  ])("offers the clip to attach a file: %s", async (_, kinds, accept) => {
+    server.use(withKinds(kinds));
+    renderRouteWithProviders("/");
+    expect(await screen.findByRole("button", { name: "Adjuntar un archivo" })).toBeInTheDocument();
+    expect(fileInput()).toHaveAttribute("accept", accept);
+  });
+
+  it("reads a PDF before its turn: how much went up, «Leyendo el documento…» while it is read, and the turn names its reading", async () => {
+    server.use(withKinds({ ...all, suggestions: [{ id: "users", question: "¿Cuántos usuarios activos hay?" }] }), turnsWithDocument());
+    let releaseUpload!: () => void;
+    const uploads = captureUploads([{ status: 202, body: status("pending"), progress: [0.4],
+      release: new Promise<void>((resolve) => { releaseUpload = resolve; }) }]);
+    let releaseRead!: () => void;
+    const reading = new Promise<void>((resolve) => { releaseRead = resolve; });
+    const polled: string[] = [];
+    server.use(http.get("/api/ai/assistant/documents/:id", async ({ params }) => {
+      polled.push(String(params.id));
+      await reading;
+      return HttpResponse.json(status("completed", read));
+    }));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    expect(screen.getByText("PDF · 412 KB")).toBeInTheDocument();
+    const field = screen.getByRole("textbox", { name: "Tu pregunta" });
+    expect(field).toHaveAttribute("placeholder", "Agregá un texto, si querés…");
+    await pasteText(field, "Armame un formulario con este comprobante");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByRole("button", { name: "Enviando… 40 %" })).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "Quitar comprobante.pdf" })).toBeDisabled();
+    expect(uploads[0].url).toBe("/api/ai/assistant/documents");
+    expect([...uploads[0].body.keys()].sort()).toEqual(["file", "requestId"]);
+    const requestId = String(uploads[0].body.get("requestId"));
+    releaseUpload();
+    expect(await screen.findByRole("button", { name: "Leyendo el documento…" })).toHaveAttribute("aria-busy", "true");
+    // Its turn waits for this conversation: another one cannot be opened, nor a suggestion chosen, meanwhile.
+    expect(within(screen.getByRole("complementary", { name: "Conversaciones" })).getByRole("button", { name: "Nueva conversación" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "¿Cuántos usuarios activos hay?" })).toBeDisabled();
+    expect(writes).toHaveLength(0);
+    await waitFor(() => expect(polled).toEqual([requestId]), { timeout: 3000 });
+    releaseRead();
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toEqual({ requestId: writes[0].requestId, conversationId: null, expectedRevision: null, expectedConnectionRevision: 7,
+      question: "Armame un formulario con este comprobante", documentRequestId: requestId });
+    expect(await screen.findByText("PDF · 2 páginas · 412 KB")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Quitar comprobante.pdf" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Adjuntar un archivo" })).toBeInTheDocument();
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("sends a Word with its turn, like a spreadsheet, and its message says «Word · 24 KB»", async () => {
+    server.use(withKinds({ documents: true }));
+    let release!: () => void;
+    const answer = { status: 202, body: {} as unknown, release: new Promise<void>((resolve) => { release = resolve; }) };
+    const uploads = captureUploads([answer]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("acta.docx", 24 * 1024);
+    expect(screen.getByText("Word · 24 KB")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(uploads).toHaveLength(1));
+    expect(uploads[0].url).toBe("/api/ai/assistant/file-turns");
+    const requestId = String(uploads[0].body.get("requestId"));
+    expect(uploads[0].body.has("documentRequestId")).toBe(false);
+    turn = { ...turn, requestId, question: "", attachment: { name: "acta.docx", kind: "docx", size: 24 * 1024 } };
+    answer.body = acceptedOf(turn);
+    release();
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Quitar acta.docx" })).not.toBeInTheDocument());
+    expect(await screen.findByText("Word · 24 KB")).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("normalizes the recording first, then reads the document, and the turn names both", async () => {
+    installMicrophone();
+    URL.createObjectURL = vi.fn(() => "blob:recording");
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    const audioRequestId = "0199a0c0-0000-7000-8000-000000000555";
+    server.use(withKinds({ ...all, audio: true }), turnsWithDocument());
+    const uploads = captureUploads([
+      { status: 202, body: { requestId: audioRequestId, state: "completed", transcript: "Con este comprobante", failure: null, pollingAfterSeconds: 1 } },
+      { status: 202, body: status("completed", read) },
+    ]);
+    try {
+      renderRouteWithProviders("/");
+      await userEvent.click(await screen.findByRole("button", { name: "Grabar un audio" }));
+      await screen.findByText(/^Grabando · 0:0\d$/);
+      await userEvent.click(screen.getByRole("button", { name: "Detener" }));
+      await screen.findByLabelText("Tu audio");
+      choose("comprobante.pdf", 412 * 1024);
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      await waitFor(() => expect(writes).toHaveLength(1));
+      expect(uploads.map(upload => upload.url)).toEqual(["/api/ai/assistant/audio", "/api/ai/assistant/documents"]);
+      expect(writes[0]).toMatchObject({ question: "", audioRequestId: String(uploads[0].body.get("requestId")),
+        documentRequestId: String(uploads[1].body.get("requestId")) });
+    } finally { removeMicrophone(); }
+  });
+
+  it("keeps the file with the server's reason when the reading fails, and the next attempt reads it under another request", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const reason = "No se pudo leer el documento: el proveedor lo rechazó.";
+    const uploads = captureUploads([{ status: 202, body: status("pending") }, { status: 202, body: status("completed", read) }]);
+    server.use(http.get("/api/ai/assistant/documents/:id", () =>
+      HttpResponse.json(status("failed", null, { code: "Ai.Assistant.ProviderRejected", detail: reason, recovery: "newAttempt" }))));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText(reason, undefined, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect(writes[0].documentRequestId).toBe(uploads[1].body.get("requestId"));
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
+  });
+
+  it("keeps the file with the server's reason for a document it does not read, and sends it again only once it is changed", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const reason = "Este PDF tiene contraseña. Mandá uno sin contraseña.";
+    const uploads = captureUploads([{ status: 400, body: { code: "Ai.Assistant.AttachmentProtectedPdf", detail: reason, errors: { file: [reason] } } },
+      { status: 202, body: status("completed", read) }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText(reason)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("aria-invalid", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+    await userEvent.click(screen.getByRole("button", { name: "Quitar comprobante.pdf" }));
+    expect(screen.queryByText(reason)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adjuntar un archivo" })).toHaveFocus();
+    // Another file goes up under another request and its turn names that reading.
+    choose("comprobante-sin-clave.pdf", 412 * 1024);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads).toHaveLength(2);
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect((uploads[1].body.get("file") as File).name).toBe("comprobante-sin-clave.pdf");
+    expect(writes[0].documentRequestId).toBe(uploads[1].body.get("requestId"));
+  });
+
+  it("re-reads the bootstrap when the installation no longer reads photos or PDF files, with the server's reason under the composer", async () => {
+    server.use(withKinds(all));
+    const reason = "No se pueden leer fotos ni PDF en esta instalación.";
+    const uploads = captureUploads([{ status: 400, body: { code: "Ai.Assistant.AttachmentDocumentUnavailable", detail: reason, errors: { file: [reason] } } }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    const before = bootstrapReads;
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText(reason)).toBeInTheDocument();
+    await waitFor(() => expect(bootstrapReads).toBeGreaterThan(before));
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+  });
+
+  // The acceptance of a document's turn could not be confirmed: when «Consultar estado» or «Repetir el mismo pedido» confirms it, the
+  // turn took the file and the recording, so they leave the composer, the next send does not repeat them and the guard lets go.
+  it("clears the composer when «Consultar estado» confirms the turn of a document, and the leave guard lets go", async () => {
+    server.use(withKinds(all));
+    const uploads = captureUploads([{ status: 202, body: status("completed", read) }]);
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      turn = { ...turn, requestId: body.requestId, question: body.question, attachment: { name: read.name, kind: "pdf", pages: 2, size: read.size } };
+      return HttpResponse.error();
+    }));
+    const { router } = renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const operation = await screen.findByText("Aceptación por confirmar");
+    await userEvent.click(within(operation.parentElement!).getByRole("button", { name: "Consultar estado" }));
+    await waitFor(() => expect(router.state.location.search).toContain(conversationId));
+    expect(await screen.findByText("PDF · 2 páginas · 412 KB")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Quitar comprobante.pdf" })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveAttribute("placeholder", "Preguntale al sistema…");
+    await act(async () => {
+      await router.navigate("/");
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(router.state.location.search).not.toContain("conversacion=");
+    expect(writes).toHaveLength(1);
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("clears the recording and the file when «Repetir el mismo pedido» confirms a dictated turn with a document", async () => {
+    installMicrophone();
+    URL.createObjectURL = vi.fn(() => "blob:recording");
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    server.use(withKinds({ ...all, audio: true }));
+    captureUploads([
+      { status: 202, body: { requestId: "0199a0c0-0000-7000-8000-000000000555", state: "completed", transcript: "Con este comprobante",
+        failure: null, pollingAfterSeconds: 1 } },
+      { status: 202, body: status("completed", read) },
+    ]);
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      turn = { ...turn, requestId: body.requestId, question: body.question, attachment: { name: read.name, kind: "pdf", pages: 2, size: read.size } };
+      return writes.length === 1 ? HttpResponse.error() : HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    try {
+      renderRouteWithProviders("/");
+      await userEvent.click(await screen.findByRole("button", { name: "Grabar un audio" }));
+      await screen.findByText(/^Grabando · 0:0\d$/);
+      await userEvent.click(screen.getByRole("button", { name: "Detener" }));
+      await screen.findByLabelText("Tu audio");
+      choose("comprobante.pdf", 412 * 1024);
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      const operation = await screen.findByText("Aceptación por confirmar");
+      await userEvent.click(within(operation.parentElement!).getByRole("button", { name: "Repetir el mismo pedido" }));
+      await waitFor(() => expect(writes).toHaveLength(2));
+      expect(writes[1]).toEqual(writes[0]);
+      await waitFor(() => expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument());
+      expect(screen.queryByRole("button", { name: "Quitar comprobante.pdf" })).not.toBeInTheDocument();
+    } finally { removeMicrophone(); }
+  });
+
+  it("starts the common wait after a 429 on the upload: Enviar off with «Esperá N s» and nothing goes up again", async () => {
+    server.use(withKinds(all));
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.QuotaExceeded",
+      detail: "Esperá para continuar.", retryAfter: 40 } }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("Esperá 40 s para enviar otra consulta.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("says the server's reason for a conflict on the upload, and the next attempt goes up under another request", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.RequestReused",
+      detail: "Ese pedido ya se usó con otro archivo." } }, { status: 202, body: status("completed", read) }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese pedido ya se usó con otro archivo.", expect.anything()));
+    expect(writes).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+  });
+
+  it("closes Home when the upload says this person can no longer use the assistant", async () => {
+    server.use(withKinds(all));
+    captureUploads([{ status: 403, body: { title: "Prohibido", status: 403, code: "Ai.Assistant.Forbidden", detail: "Sin acceso." } }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByRole("heading", { name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Tu pregunta" })).not.toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("keeps the request when the reading cannot be asked for: the next send asks again without uploading the file", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const warning = vi.spyOn(toast, "warning");
+    const uploads = captureUploads([{ status: 202, body: status("pending") }]);
+    const polled: string[] = [];
+    server.use(http.get("/api/ai/assistant/documents/:id", ({ params }) => {
+      polled.push(String(params.id));
+      return polled.length === 1 ? HttpResponse.error() : HttpResponse.json(status("completed", read));
+    }));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(warning).toHaveBeenCalledWith("No pudimos consultar la lectura del documento. Tocá Enviar para volver a consultarla.",
+      expect.anything()), { timeout: 3000 });
+    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const requestId = String(uploads[0].body.get("requestId"));
+    expect(uploads).toHaveLength(1);
+    expect(polled).toEqual([requestId, requestId]);
+    expect(writes[0].documentRequestId).toBe(requestId);
+  });
+
+  it("uploads the file again under the same request when the server no longer knows its reading", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const uploads = captureUploads([{ status: 202, body: status("pending") }, { status: 202, body: status("completed", read) }]);
+    server.use(http.get("/api/ai/assistant/documents/:id", () =>
+      HttpResponse.json({ title: "No encontrado", status: 404, code: "Ai.Assistant.NotFound", detail: "No se encontró." }, { status: 404 })));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("comprobante.pdf")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled(), { timeout: 3000 });
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads).toHaveLength(2);
+    expect(uploads[1].body.get("requestId")).toBe(uploads[0].body.get("requestId"));
+  });
+
+  it("starts the common wait after a 429 while the reading is asked for, and keeps the request for later", async () => {
+    server.use(withKinds(all));
+    const uploads = captureUploads([{ status: 202, body: status("pending") }]);
+    server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json({ title: "Demasiados pedidos", status: 429,
+      code: "Ai.Assistant.QuotaExceeded", detail: "Esperá para continuar.", retryAfter: 30 }, { status: 429 })));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("Esperá 30 s para enviar otra consulta.", undefined, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("says a completed reading without its document could not be read, and the next attempt goes up under another request", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const uploads = captureUploads([{ status: 202, body: status("completed") }, { status: 202, body: status("completed", read) }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("No se pudo leer el documento. Probá mandarlo de nuevo.")).toBeInTheDocument();
+    expect(writes).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+  });
+
+  it("sends nothing and says nothing when the page closes during the reading", async () => {
+    server.use(withKinds(all));
+    const error = vi.spyOn(toast, "error");
+    const warning = vi.spyOn(toast, "warning");
+    captureUploads([{ status: 202, body: status("pending") }]);
+    let polls = 0;
+    server.use(http.get("/api/ai/assistant/documents/:id", () => { polls++; return HttpResponse.json(status("running")); }));
+    const { unmount } = renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await screen.findByRole("button", { name: "Leyendo el documento…" });
+    unmount();
+    const before = polls;
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(polls).toBe(before);
+    expect(writes).toHaveLength(0);
+    expect(error).not.toHaveBeenCalled();
+    expect(warning).not.toHaveBeenCalled();
+  });
+
+  // Leaving the conversation confirms discarding the draft: its file and its recording go, the reading stops and nothing reaches the
+  // conversation that was left.
+  it("discards the file and the recording and stops the reading when the person leaves during it", async () => {
+    installMicrophone();
+    URL.createObjectURL = vi.fn(() => "blob:recording");
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    server.use(withKinds({ ...all, audio: true }), turnsWithDocument());
+    captureUploads([
+      { status: 202, body: { requestId: "0199a0c0-0000-7000-8000-000000000555", state: "completed", transcript: "Con este comprobante",
+        failure: null, pollingAfterSeconds: 1 } },
+      { status: 202, body: status("pending") },
+    ]);
+    let releaseRead!: () => void;
+    const reading = new Promise<void>((resolve) => { releaseRead = resolve; });
+    server.use(http.get("/api/ai/assistant/documents/:id", async () => { await reading; return HttpResponse.json(status("completed", read)); }));
+    try {
+      const { router } = renderRouteWithProviders("/");
+      await screen.findByRole("button", { name: "Adjuntar un archivo" });
+      await act(async () => {
+        await router.navigate(`/?conversacion=${conversationId}`);
+      });
+      await screen.findByText("Hay tres usuarios activos.");
+      await userEvent.click(screen.getByRole("button", { name: "Grabar un audio" }));
+      await screen.findByText(/^Grabando · 0:0\d$/);
+      await userEvent.click(screen.getByRole("button", { name: "Detener" }));
+      await screen.findByLabelText("Tu audio");
+      choose("comprobante.pdf", 412 * 1024);
+      await pasteText(screen.getByRole("textbox", { name: "Tu pregunta" }), "Armame un formulario");
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      await screen.findByRole("button", { name: "Leyendo el documento…" }, { timeout: 3000 });
+      await act(async () => {
+        await router.navigate(-1);
+      });
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Nueva conversación" }));
+      await waitFor(() => expect(router.state.location.search).not.toContain("conversacion="));
+      expect(screen.queryByRole("button", { name: "Quitar comprobante.pdf" })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveValue("");
+      releaseRead();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(writes).toHaveLength(0);
+      expect(screen.getByRole("button", { name: "Adjuntar un archivo" })).toBeEnabled();
+    } finally { removeMicrophone(); }
+  });
+
+  it("repeats an upload whose outcome is unknown under the same request, and does not upload again a document already read", async () => {
+    server.use(withKinds(all));
+    const uploads = captureUploads([{ status: 503, body: { title: "Error", status: 503, detail: "No disponible." } },
+      { status: 202, body: status("completed", read) }]);
+    let rejected = false;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      if (!rejected) {
+        rejected = true;
+        return HttpResponse.json({ title: "Conflicto", status: 409, code: "Ai.Assistant.ActiveTurn", detail: "Hay otra consulta en curso." }, { status: 409 });
+      }
+      turn = { ...turn, requestId: body.requestId, question: body.question, attachment: { name: read.name, kind: "pdf", pages: 2, size: read.size } };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    const send = async () => {
+      await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    };
+    await send();
+    await waitFor(() => expect(uploads).toHaveLength(1));
+    await send();
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).toBe(uploads[0].body.get("requestId"));
+    await send();
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(uploads).toHaveLength(2);
+    expect(writes[1].documentRequestId).toBe(uploads[0].body.get("requestId"));
+    expect(writes[1].requestId).not.toBe(writes[0].requestId);
+    expect(await screen.findByText("PDF · 2 páginas · 412 KB")).toBeInTheDocument();
+  });
+
+  it("says under the composer that this person can no longer attach documents, keeps Home and reads the bootstrap again", async () => {
+    server.use(withKinds(all));
+    const remedy = "Para adjuntar fotos, PDF o Word, pedile a quien administra la instalación el permiso de diseñar formularios.";
+    const uploads = captureUploads([{ status: 403, body: { title: "Prohibido", status: 403, code: "Ai.Assistant.AttachmentDocumentForbidden", detail: remedy } }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    const before = bootstrapReads;
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText(remedy)).toBeInTheDocument();
+    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+    await waitFor(() => expect(bootstrapReads).toBeGreaterThan(before));
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toBeInTheDocument();
+    // The same file is not sent again: it is removed or changed.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(1);
+    expect(screen.getByText(remedy)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["an old Word, when PDF files are not read", { documents: true }, "acta.doc", 1024, "No se puede leer un Word viejo (.doc). Guardalo como .docx."],
+    ["an old Word", all, "acta.doc", 1024, "No se puede leer un Word viejo (.doc). Guardalo como .docx o en PDF."],
+    ["a Word with macros, when PDF files are not read", { documents: true }, "acta.docm", 1024, "No se puede leer un Word con macros (.docm). Guardalo como .docx."],
+    ["a Word with macros", all, "acta.docm", 1024, "No se puede leer un Word con macros (.docm). Guardalo como .docx o en PDF."],
+    ["a Word with macros, to whoever may attach only spreadsheets", { attachments: true }, "acta.docm", 1024,
+      "Sólo se puede adjuntar un Excel (.xlsx) o un CSV."],
+    ["another type", all, "notas.txt", 1024, "Sólo se puede adjuntar un PDF, una foto JPEG o PNG, un Word (.docx), un Excel (.xlsx) o un CSV."],
+    ["a PDF, when PDF files are not read", { documents: true }, "comprobante.pdf", 1024, "Sólo se puede adjuntar un Word (.docx)."],
+    ["a document of more than 10 MB", all, "comprobante.pdf", 11 * 1024 * 1024, "El archivo pesa 11 MB y el tope es de 10 MB. Achicalo y volvé a adjuntarlo."],
+    ["a document a byte over 10 MB, rounding its weight up", all, "comprobante.pdf", 10 * 1024 * 1024 + 1,
+      "El archivo pesa 10,1 MB y el tope es de 10 MB. Achicalo y volvé a adjuntarlo."],
+  ])("stops %s in the browser, says why under the composer and sends nothing", async (_, kinds, name, size, reason) => {
+    server.use(withKinds(kinds));
+    const uploads = captureUploads([{ status: 202, body: {} }]);
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: /^Adjuntar un/ });
+    choose(name, size);
+    expect(screen.getByText(reason)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(uploads).toHaveLength(0);
+    expect(writes).toHaveLength(0);
+  });
+
+  it("asks before browser Back leaves a chosen document unsent, like a draft", async () => {
+    server.use(withKinds(all));
+    const { router } = renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    await act(async () => {
+      await router.navigate(`/?conversacion=${conversationId}`);
+    });
+    await screen.findByText("Hay tres usuarios activos.");
+    choose("foto.jpg", 1258291);
+    expect(screen.getByText("Foto · 1,2 MB")).toBeInTheDocument();
+    await act(async () => {
+      await router.navigate(-1);
+    });
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Seguir editando" }));
+    expect(screen.getByText("foto.jpg")).toBeInTheDocument();
+    expect(router.state.location.search).toContain(conversationId);
   });
 });
 

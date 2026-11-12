@@ -43,9 +43,12 @@ function FormCard({ requestId, proposal, previous, replaced, content }: Assistan
     ? <Button size="sm" pending={creation.creating} onClick={() => void creation.create()}>{t(creation.creating ? "assistantProposals.form.creating" : "assistantProposals.form.create")}</Button>
     : null;
   const fresh = newQuestions(content, previous);
+  // A form proposed with a document says it reads them when the proposal turns the reading on (Etapa 3 de la IA).
+  const summary = [t("assistantProposals.form.summary", { prefix: content.prefix, count: content.questions.length }),
+    ...(content.documentReading ? [t("assistantProposals.form.readsDocuments")] : [])].join(" · ");
   return (
     <>
-      <AssistantProposalCard kind={kind} title={content.name} summary={t("assistantProposals.form.summary", { prefix: content.prefix, count: content.questions.length })}
+      <AssistantProposalCard kind={kind} title={content.name} summary={summary}
         actions={<><Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>{t("assistantProposals.form.preview")}</Button>{create}</>}>
         {creation.problem ? <p role="alert" className="text-sm text-[var(--color-danger-700)]">{creation.problem}</p> : null}
         <ol className="flex flex-col gap-2">

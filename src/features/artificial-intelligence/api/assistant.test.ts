@@ -113,7 +113,7 @@ describe("assistant contract", () => {
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ ...bootstrap, attachments: "yes" })));
     await expect(assistantApi.bootstrap()).rejects.toThrow("Invalid assistant contract.");
   });
-  // Stage 3: the server computes them and does not publish them yet; Home does not read them until the documents' screen.
+  // Stage 3: optional until the joint export brings them to the captured bootstrap, like `attachments`.
   it("reads whether this person may attach a Word and also a photo or a PDF in the bootstrap, as optional booleans", async () => {
     const bootstrap = { availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
       configurationDestination: null, audio: false, attachments: true, documents: true, documentReading: false };
@@ -179,6 +179,53 @@ describe("assistant contract", () => {
       expect(Object.fromEntries([...sends[1].body.entries()].filter(([key]) => key !== "file"))).toEqual({ requestId,
         conversationId: turn.conversationId, expectedRevision: "2", expectedConnectionRevision: "7", question: "Armame un catálogo", audioRequestId });
     } finally { vi.unstubAllGlobals(); }
+  });
+  // Stage 3: a photo or a PDF goes up under its own request, saying how much went up, and its reading is followed by its status.
+  const documentRequestId = "0199a0c0-0000-7000-8000-000000000666";
+  const read = { name: "comprobante.pdf", kind: "pdf", pages: 2, size: 421888, readability: "partial", problem: "cut" };
+  const documentStatus = (state: string, document: unknown = null, failure: unknown = null) =>
+    ({ requestId: documentRequestId, state, document, failure, pollingAfterSeconds: 1 });
+  it("uploads a photo or a PDF in multipart under its own request, says how much went up and follows its reading", async () => {
+    const sends = captureUploads([{ status: 202, body: documentStatus("pending"), progress: [0.4, 1] }]);
+    const file = new File(["%PDF"], "comprobante.pdf", { type: "application/pdf" });
+    const progress: number[] = [];
+    try {
+      await expect(assistantApi.uploadDocument(documentRequestId, file, fraction => progress.push(fraction)))
+        .resolves.toStrictEqual(documentStatus("pending"));
+      expect(sends[0].url).toBe("/api/ai/assistant/documents");
+      expect([...sends[0].body.keys()].sort()).toEqual(["file", "requestId"]);
+      expect(sends[0].body.get("requestId")).toBe(documentRequestId);
+      expect((sends[0].body.get("file") as File).name).toBe("comprobante.pdf");
+      expect(progress).toEqual([0.4, 1]);
+    } finally { vi.unstubAllGlobals(); }
+    for (const body of [documentStatus("completed", read), documentStatus("completed", { ...read, kind: "jpeg", pages: 1, readability: "readable", problem: null }),
+      documentStatus("failed", null, { code: "Ai.Assistant.ProviderRejected", detail: "No se pudo leer el documento.", recovery: "newAttempt" })]) {
+      server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json(body)));
+      await expect(assistantApi.document(documentRequestId)).resolves.toStrictEqual(body);
+    }
+  });
+  it.each([
+    ["a Word, which goes with its turn", { ...read, kind: "docx" }],
+    ["no page", { ...read, pages: 0 }],
+    ["more than ten pages", { ...read, pages: 11 }],
+    ["a readability outside the contract", { ...read, readability: "blurry" }],
+    ["a cause outside the contract", { ...read, problem: "torn" }],
+    ["a field outside the contract", { ...read, text: "Monto $ 1.000" }],
+    ["no cause at all", { name: read.name, kind: read.kind, pages: read.pages, size: read.size, readability: read.readability }],
+  ])("rejects the status of a reading whose document has %s", async (_, document) => {
+    server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json(documentStatus("completed", document))));
+    await expect(assistantApi.document(documentRequestId)).rejects.toThrow("Invalid assistant contract.");
+  });
+  it("names the reading in the turn's body, and only there", async () => {
+    let sent: unknown;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      sent = await request.json();
+      return HttpResponse.json({ conversationId: turn.conversationId, requestId, conversationRevision: 1, turnRevision: 1, state: "pending",
+        stage: "pending", submittedAtUtc: turn.submittedAtUtc, serverNowUtc: turn.serverNowUtc, pollingAfterSeconds: 1 }, { status: 202 });
+    }));
+    await assistantApi.submit({ requestId, conversationId: null, expectedRevision: null, expectedConnectionRevision: 7, question: "",
+      documentRequestId });
+    expect(sent).toEqual({ requestId, conversationId: null, expectedRevision: null, expectedConnectionRevision: 7, question: "", documentRequestId });
   });
   it("rejects a normalization status outside the contract", async () => {
     server.use(http.get("/api/ai/assistant/audio/:id", () => HttpResponse.json(
