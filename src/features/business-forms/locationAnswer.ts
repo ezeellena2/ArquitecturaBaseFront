@@ -1,3 +1,5 @@
+import { formatNumber } from "@/shared/lib/numberFormat";
+
 // The point and its map link are shared with the chat, where a location also arrives by WhatsApp (W1-A).
 export { formatCoordinates, mapUrl } from "@/shared/lib/mapPoint";
 
@@ -62,7 +64,7 @@ export function locationFromPosition(coords: Pick<GeolocationCoordinates, "latit
 
 /** «± 15 m», «± 2.400 m» in Spanish and «± 2,400 m» in English. */
 export function formatAccuracy(meters: number, language: string): string {
-  return "± " + meters.toLocaleString(language === "en" ? "en-US" : "es-AR", { maximumFractionDigits: 0 }) + " m";
+  return "± " + formatNumber(meters, language, { maximumFractionDigits: 0 }) + " m";
 }
 
 export function isLowAccuracy(point: LocationPoint): boolean {

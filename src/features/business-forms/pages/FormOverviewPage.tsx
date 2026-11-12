@@ -5,6 +5,7 @@ import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { Banner } from "@/shared/ui/Banner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -66,7 +67,7 @@ export function FormOverviewPage() {
   const columns: Column<FormOverviewRow>[] = [
     { id: "name", header: t("formColumn"), cell: row => canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span> },
     ...(mixed ? [{ id: "formState", header: t("overview.formState"), cell: (row: FormOverviewRow) => t(row.deactivatedAtUtc ? "overview.formStates.Deactivated" : "overview.formStates.Active") }] : []),
-    ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), numeric: true, cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{row.pendingApprovalCount}</Badge></Link> : "—" }] : []),
+    ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), numeric: true, cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{formatNumber(row.pendingApprovalCount, i18n.language)}</Badge></Link> : "—" }] : []),
     ...(scope.canRead ? [
       { id: "responses", header: t("overview.responses"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
       { id: "lastResponse", header: t("overview.lastResponse"), cell: lastNumber },

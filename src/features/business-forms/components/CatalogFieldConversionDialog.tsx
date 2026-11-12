@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { Button } from "@/shared/ui/button";
 import { DataList } from "@/shared/ui/DataList";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -24,7 +25,7 @@ export function CatalogFieldConversionDialog({ name, from, field, culture, conve
 }) {
   const { t, i18n } = useTranslation("forms");
   const restoreFocus = useRestoreFocusOnClose();
-  const count = (value: number) => new Intl.NumberFormat(i18n.language, { useGrouping: "always" }).format(value);
+  const count = (value: number) => formatNumber(value, i18n.language);
   const shown = rows.slice(0, shownRows);
   const more = invalidCount - shown.length;
   // A row quotes the value saved in the previous type as its cell showed it; a saved option comes as its text.

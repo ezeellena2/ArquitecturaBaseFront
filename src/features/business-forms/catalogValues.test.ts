@@ -27,6 +27,16 @@ describe("catalog value presentation and exact canonical input", () => {
     expect(formatCatalogValue("Date", "2026-10-22", "es")).toBe("22/10/2026");
     expect(formatCatalogValue("Text", null, "es")).toBe("");
   });
+  // Reading what a person types does not change with the number format (2026-11-12): es and es-AR share the decimal comma
+  // and the thousands dot, so what the app writes reads back as the same value.
+  it.each([["1210", "1.210", "1,210"], ["1234.5", "1.234,5", "1,234.5"], ["-750280.25", "-750.280,25", "-750,280.25"]])(
+    "reads back the number the app writes in each language: %s", (canonical, spanish, english) => {
+      expect(formatCatalogValue("Decimal", canonical, "es")).toBe(spanish);
+      expect(formatCatalogValue("Decimal", canonical, "en")).toBe(english);
+      expect(parseCatalogValue("Decimal", spanish, "es")).toEqual({ valid: true, value: canonical });
+      expect(parseCatalogValue("Decimal", english, "en")).toEqual({ valid: true, value: canonical });
+      expect(parseCatalogValue("Decimal", canonical.replace(".", ","), "es")).toEqual({ valid: true, value: canonical });
+    });
   it("shows editor text and canonical values with the shared format", () => {
     const labels = { yes: "Sí", no: "No" };
     expect(catalogScalarText("decimal", "1500,5", "es", labels, "es")).toBe("1.500,5");

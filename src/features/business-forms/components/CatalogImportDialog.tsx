@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { cn } from "@/shared/lib/utils";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Banner } from "@/shared/ui/Banner";
@@ -172,7 +173,7 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   // What was read, in two columns (lista de chequeo, 2026-11-11): the file it reviews (the pasted rows go as one too), its sheet
   // and the rows read; the counts of the tabs are in the tabs, and what stays the same and what is reactivated, which have no
   // tab, go in their rows when there is any. While it reads, the sheet and the rows wait in their place.
-  const count = (value: number) => new Intl.NumberFormat(i18n.language, { useGrouping: "always" }).format(value);
+  const count = (value: number) => formatNumber(value, i18n.language);
   const fileName = state.file?.name ?? (state.source === "chat" ? assistant?.fileName : undefined);
   const readItems = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) => [
     ...(fileName ? [{ key: "file", label: t("catalogs.import.file"), value: fileName }] : []),

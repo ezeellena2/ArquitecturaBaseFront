@@ -372,7 +372,7 @@
       "optionalFirst": "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.",
       "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores", "saveToEnterValues": "Guardá el catálogo para cargar los valores de los campos nuevos.", "limit_one": "Un catálogo admite hasta {{count}} campo.", "limit_other": "Un catálogo admite hasta {{count}} campos.",
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
-      "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count, number(useGrouping: always)}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count, number(useGrouping: always)}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
+      "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
       "usage": {
         "hiddenForm": "Un formulario",
         "stage": { "Draft": "En el borrador", "Active": "En la versión activa", "both": "En la versión activa y en el borrador" },
@@ -382,10 +382,10 @@
       "columns": "Columnas", "valueLabel": "Fila {{row}} · {{field}}", "readOnlyEmpty": "—", "clear": "Limpiar", "viewNamed": "Ver {{name}}", "clearValue": "Limpiar {{name}}",
       "rowProblem": "Fila {{row}} · {{field}}: {{message}}", "optionValueLabel": "{{option}} · {{field}}", "optionProblem": "{{option}} · {{field}}: {{message}}",
       "inputHint": { "integer": "Entero", "decimal": "Número decimal", "date": "Fecha", "plain": "{{type}}.", "range": "{{type}}, {{rule}}." },
-      "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count, number(useGrouping: always)}} opciones activas.",
-      "invalidValues_one": "1 opción tiene un valor que no convierte.", "invalidValues_other": "{{count, number(useGrouping: always)}} opciones tienen valores que no convierten.",
-      "incompatibleValues_one": "1 opción tiene un valor que no cumple las reglas del campo.", "incompatibleValues_other": "{{count, number(useGrouping: always)}} opciones tienen valores que no cumplen las reglas del campo.",
-      "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count, number(useGrouping: always)}} valores pueden convertirse.",
+      "missingValues_one": "Faltan valores en 1 opción activa.", "missingValues_other": "Faltan valores en {{count}} opciones activas.",
+      "invalidValues_one": "1 opción tiene un valor que no convierte.", "invalidValues_other": "{{count}} opciones tienen valores que no convierten.",
+      "incompatibleValues_one": "1 opción tiene un valor que no cumple las reglas del campo.", "incompatibleValues_other": "{{count}} opciones tienen valores que no cumplen las reglas del campo.",
+      "convertedValues_one": "1 valor puede convertirse.", "convertedValues_other": "{{count}} valores pueden convertirse.",
       "roles": { "filter": "Filtro", "data": "Dato" },
       "keyHelp": "Qué es la clave", "roleHelp": "Qué es el papel",
       "roleHelpText": "Filtro: para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta. Dato: se guarda con la opción y viaja con la respuesta.",
@@ -406,7 +406,7 @@
       "conversion": {
         "title": "Cambiar el tipo de «{{name}}»", "savedType": "Tipo guardado", "newType": "Tipo nuevo",
         "loaded": "Valores cargados", "converted": "Se convierten", "invalid": "No se convierten",
-        "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count, number(useGrouping: always)}} más.",
+        "row": "Fila", "what": "Qué pasa", "more_one": "Y {{count}} más.", "more_other": "Y {{count}} más.",
         "show_one": "Ver la fila en la tabla", "show_other": "Ver los {{count}} en la tabla"
       }
     },

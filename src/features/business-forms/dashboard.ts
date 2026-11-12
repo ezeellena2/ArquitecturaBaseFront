@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { calendarDateInZone, formatDateOnly } from "@/shared/lib/dateTime";
+import { numberFormat } from "@/shared/lib/numberFormat";
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import type { BarChartBucket } from "@/shared/ui/charts/BarChart";
 import type { BarListItem, ChartTone } from "@/shared/ui/charts/BarList";
@@ -204,15 +205,7 @@ export function dashboardMeasureOptions(dashboard: FormDashboard, card: Dashboar
 
 // ── Numbers in the language of the menu ─────────────────────────────────────────────────────────────────────────────────────
 
-const locale = (language: string) => language.startsWith("es") ? "es-AR" : "en-US";
-// Building an Intl formatter costs much more than using one (shared/lib/AGENTS.md): each locale and set of options keeps one.
-const formats = new Map<string, Intl.NumberFormat>();
-function numberFormat(language: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
-  const key = locale(language) + JSON.stringify(options);
-  let format = formats.get(key);
-  if (!format) formats.set(key, format = new Intl.NumberFormat(locale(language), options));
-  return format;
-}
+// The one number format of the app (shared/lib/numberFormat): es-AR and en-US, each region and set of options with its formatter.
 // The decimal text of a number as JSON brought it, without an exponent, for the one format of typed values.
 const decimalText = (value: number) => numberFormat("en", { useGrouping: false, maximumFractionDigits: 20 }).format(value);
 

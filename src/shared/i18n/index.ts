@@ -1,6 +1,7 @@
-import i18n from "i18next";
+import i18n, { type FormatterModule } from "i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
 import { initReactI18next } from "react-i18next";
+import { formatNumber } from "@/shared/lib/numberFormat";
 
 export const supportedLanguages = ["es", "en"] as const;
 
@@ -29,17 +30,30 @@ i18n.on("languageChanged", (language) => {
   document.documentElement.lang = language;
 });
 
+// FORMATO ÚNICO DE NÚMEROS (2026-11-12): todo número que entra en un texto, también el de un plural, pasa por el formateador
+// de shared/lib con la región de su idioma: «1.210 respuestas», «1,210 responses». Por eso los textos no llevan formatos
+// (un `number` entre las llaves) y un identificador se pasa como texto, que queda como está. Reemplaza al formateador de
+// i18next, que escribe con el idioma pelado y en español no agrupa los números de cuatro cifras.
+const numbers: FormatterModule = {
+  type: "formatter",
+  init: () => {},
+  add: () => {},
+  addCached: () => {},
+  format: (value, _format, language) => typeof value === "number" || typeof value === "bigint" ? formatNumber(value, language ?? i18n.language) : value,
+};
+
 // Cada módulo tiene su archivo por idioma y se carga cuando alguien lo pide con useTranslation("modulo").
 await i18n
   .use(resourcesToBackend((language: string, namespace: string) => import(`../../locales/${language}/${namespace}.json`)))
   .use(initReactI18next)
+  .use(numbers)
   .init({
     lng: initialLanguage(),
     fallbackLng: "es",
     supportedLngs: [...supportedLanguages],
     ns: ["common", "auth", "profile", "users", "roles", "settings"],
     defaultNS: "common",
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: false, alwaysFormat: true },
     react: { useSuspense: true },
   });
 

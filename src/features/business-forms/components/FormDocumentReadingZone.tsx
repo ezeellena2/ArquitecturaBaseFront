@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { formatDateInZone } from "@/shared/lib/dateTime";
+import { numberFormat } from "@/shared/lib/numberFormat";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
@@ -51,7 +52,10 @@ function useZoneOpen(problem: string) {
 interface ZoneProps {
   value: DraftEditorValue;
   onChange: (value: DraftEditorValue) => void;
+  /** The form cannot be edited (permission, a deactivated form): without the controls that change it. */
   readOnly: boolean;
+  /** While the draft saves or waits for a review: the same controls, off, so nothing changes place. */
+  disabled?: boolean;
   scope: FormReadScope;
   /** BI1-A: the library standard the form was copied from; an own form has none. */
   standard: FormDefinitionStandard | undefined;
@@ -70,7 +74,7 @@ interface ZoneProps {
  * the lookups in catalogs, saved with the draft. A copy of a library standard also says which questions receive its data, sealed
  * by «Agregar» with their fixed validations (BI1-A), what marks a repeated document and «Cómo viene leyendo».
  */
-export function FormDocumentReadingZone({ value, onChange, readOnly, scope, standard, definitionId, culture, timeZoneId, issues, showIncomplete }: ZoneProps) {
+export function FormDocumentReadingZone({ value, onChange, readOnly, disabled = false, scope, standard, definitionId, culture, timeZoneId, issues, showIncomplete }: ZoneProps) {
   const { t } = useTranslation("forms");
   const reading = value.draft.documentReading;
   // Off, only the switch shows: the editor takes another problem of the reading to the common notice.
@@ -88,16 +92,16 @@ export function FormDocumentReadingZone({ value, onChange, readOnly, scope, stan
   return <CollapsibleSection title={title} help={t("documentReading.help")} open={open} onOpenChange={setOpen} summary={summary}
     expandLabel={t("catalogQuestion.zones.expand", { name: title })} collapseLabel={t("catalogQuestion.zones.collapse", { name: title })}>
     <div className="flex flex-col divide-y divide-[var(--color-border)]">
-      <div className="p-4"><CheckboxField label={t("documentReading.enabled")} checked={!!reading?.enabled} disabled={readOnly} error={errorFor("")}
+      <div className="p-4"><CheckboxField label={t("documentReading.enabled")} checked={!!reading?.enabled} disabled={readOnly || disabled} error={errorFor("")}
         onCheckedChange={checked => change({ ...reading ?? emptyReading, enabled: checked })} /></div>
-      {reading?.enabled ? <ReadingDetails reading={reading} value={value} change={change} readOnly={readOnly} scope={scope} standard={standard} definitionId={definitionId}
+      {reading?.enabled ? <ReadingDetails reading={reading} value={value} change={change} readOnly={readOnly} disabled={disabled} scope={scope} standard={standard} definitionId={definitionId}
         culture={culture} timeZoneId={timeZoneId} errorFor={errorFor} incomplete={incomplete} unrecognized={unrecognized} open={open} /> : null}
     </div>
   </CollapsibleSection>;
 }
 
-function ReadingDetails({ reading, value, change, readOnly, scope, standard, definitionId, culture, timeZoneId, errorFor, incomplete, unrecognized, open }: {
-  reading: FormDocumentReading; value: DraftEditorValue; change: (next: FormDocumentReading) => void; readOnly: boolean; scope: FormReadScope;
+function ReadingDetails({ reading, value, change, readOnly, disabled, scope, standard, definitionId, culture, timeZoneId, errorFor, incomplete, unrecognized, open }: {
+  reading: FormDocumentReading; value: DraftEditorValue; change: (next: FormDocumentReading) => void; readOnly: boolean; disabled: boolean; scope: FormReadScope;
   standard: FormDefinitionStandard | undefined; definitionId: string | null; culture: FormCulture; timeZoneId?: string; errorFor: (path: string) => string | undefined;
   incomplete: boolean; unrecognized: boolean; open: boolean;
 }) {
@@ -109,10 +113,10 @@ function ReadingDetails({ reading, value, change, readOnly, scope, standard, def
   return <>
     <div className="p-4"><FormField label={t("documentReading.recognition")} help={t("documentReading.recognitionHelp")}
       error={errorFor(".recognition") ?? (unrecognized ? t("documentReading.recognitionRequired") : undefined)}>
-      <Textarea readOnly={readOnly} maxLength={1000} data-reading-control="recognition" value={reading.recognition} onChange={event => change({ ...reading, recognition: event.target.value })} />
+      <Textarea readOnly={readOnly || disabled} maxLength={1000} data-reading-control="recognition" value={reading.recognition} onChange={event => change({ ...reading, recognition: event.target.value })} />
     </FormField></div>
     {standard && fromLibrary?.reads ? <StandardData value={value} standard={standard} fromLibrary={fromLibrary} reads={fromLibrary.reads} culture={culture} /> : null}
-    <Lookups reading={reading} value={value} change={change} readOnly={readOnly} scope={scope} culture={culture} errorFor={errorFor} incomplete={incomplete} />
+    <Lookups reading={reading} value={value} change={change} readOnly={readOnly} disabled={disabled} scope={scope} culture={culture} errorFor={errorFor} incomplete={incomplete} />
     {standard ? <ReadingStats value={value} scope={scope} definitionId={definitionId} culture={culture} timeZoneId={timeZoneId} open={open} /> : null}
   </>;
 }
@@ -151,9 +155,9 @@ function StandardData({ value, standard, fromLibrary, reads, culture }: { value:
 
 // «Cruce con catálogos»: up to five, each the question read, the catalog question it fills and what of the catalog is compared. In
 // a table from 640 px and, on the phone, one box per lookup with its buttons and lists of 44 px. Quitar goes without asking, like an
-// item: Guardar keeps the draft. Read only and without lookups, there is nothing to show.
-function Lookups({ reading, value, change, readOnly, scope, culture, errorFor, incomplete }: {
-  reading: FormDocumentReading; value: DraftEditorValue; change: (next: FormDocumentReading) => void; readOnly: boolean; scope: FormReadScope; culture: FormCulture;
+// item: Guardar keeps the draft. Read only and without lookups, there is nothing to show; while the draft saves, everything stays, off.
+function Lookups({ reading, value, change, readOnly, disabled, scope, culture, errorFor, incomplete }: {
+  reading: FormDocumentReading; value: DraftEditorValue; change: (next: FormDocumentReading) => void; readOnly: boolean; disabled: boolean; scope: FormReadScope; culture: FormCulture;
   errorFor: (path: string) => string | undefined; incomplete: boolean;
 }) {
   const { t } = useTranslation("forms");
@@ -173,8 +177,8 @@ function Lookups({ reading, value, change, readOnly, scope, culture, errorFor, i
   const free = questions.targets.filter(target => !lookups.some(lookup => lookup.questionId.toLowerCase() === target.id.toLowerCase()));
   const addReason = lookups.length >= maxDocumentLookups ? t("documentReading.limit", { count: maxDocumentLookups })
     : questions.targets.length === 0 ? t("documentReading.noCatalogQuestions") : free.length === 0 ? t("documentReading.allFilled") : null;
-  const rows = lookups.map((lookup, index) => <LookupRow key={index} index={index} lookup={lookup} lookups={lookups} questions={questions} scope={scope} readOnly={readOnly} phone={phone}
-    errorFor={errorFor} incomplete={incomplete} onChange={next => update(index, next)} onRemove={() => remove(index)} />);
+  const rows = lookups.map((lookup, index) => <LookupRow key={index} index={index} lookup={lookup} lookups={lookups} questions={questions} scope={scope} readOnly={readOnly} disabled={disabled}
+    phone={phone} errorFor={errorFor} incomplete={incomplete} onChange={next => update(index, next)} onRemove={() => remove(index)} />);
   if (readOnly && !lookups.length) return null;
   return <div ref={root} className="flex flex-col gap-2 p-4">
     <GroupLabel id={id} help={t("documentReading.lookupsHelp")}>{t("documentReading.lookups")}</GroupLabel>
@@ -186,16 +190,16 @@ function Lookups({ reading, value, change, readOnly, scope, culture, errorFor, i
       <TableBody striped={false}>{rows}</TableBody>
     </Table></Surface> : null}
     {errorFor(".lookups") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{errorFor(".lookups")}</p> : null}
-    {readOnly ? null : <div className="flex"><DisabledReason reason={addReason}>
-      <Button ref={add} type="button" variant="outline" size={phone ? "touch" : "sm"} disabled={addReason !== null} onClick={addLookup}><PlusIcon className="size-4" />{t("documentReading.add")}</Button>
+    {readOnly ? null : <div className="flex"><DisabledReason reason={disabled ? null : addReason}>
+      <Button ref={add} type="button" variant="outline" size={phone ? "touch" : "sm"} disabled={disabled || addReason !== null} onClick={addLookup}><PlusIcon className="size-4" />{t("documentReading.add")}</Button>
     </DisabledReason></div>}
   </div>;
 }
 
 type LookupPart = "sourceQuestionId" | "questionId" | "field";
-function LookupRow({ index, lookup, lookups, questions, scope, readOnly, phone, errorFor, incomplete, onChange, onRemove }: {
+function LookupRow({ index, lookup, lookups, questions, scope, readOnly, disabled, phone, errorFor, incomplete, onChange, onRemove }: {
   index: number; lookup: FormDocumentLookup; lookups: readonly FormDocumentLookup[]; questions: ReturnType<typeof lookupQuestions>; scope: FormReadScope; readOnly: boolean;
-  phone: boolean; errorFor: (path: string) => string | undefined; incomplete: boolean; onChange: (lookup: FormDocumentLookup) => void; onRemove: () => void;
+  disabled: boolean; phone: boolean; errorFor: (path: string) => string | undefined; incomplete: boolean; onChange: (lookup: FormDocumentLookup) => void; onRemove: () => void;
 }) {
   const { t } = useTranslation("forms");
   const ids = useId();
@@ -234,7 +238,7 @@ function LookupRow({ index, lookup, lookups, questions, scope, readOnly, phone, 
     const control = <NativeSelect data-reading-control={`lookups[${index}].${part}`} id={`${ids}-${part}`} size={phone ? "touch" : "default"}
       aria-label={phone ? undefined : t("documentReading.cell", { number, label })} aria-labelledby={phone ? `${ids}-${part}-label` : undefined}
       aria-invalid={problems.some(problem => problem.part === part) || missing(part) || undefined} aria-describedby={messages.length ? messageId : undefined}
-      aria-busy={loading || undefined} disabled={readOnly || loading || reason !== null} value={loading ? "" : lookup[part]} onChange={event => {
+      aria-busy={loading || undefined} disabled={readOnly || disabled || loading || reason !== null} value={loading ? "" : lookup[part]} onChange={event => {
         const chosen = event.target.value;
         if (part === "field") { onChange({ ...lookup, field: chosen }); return; }
         if (part === "sourceQuestionId") {
@@ -264,7 +268,7 @@ function LookupRow({ index, lookup, lookups, questions, scope, readOnly, phone, 
   const list = messages.length ? <div id={messageId} className="flex flex-col gap-0.5">{messages.map(message => <p key={message} role="alert"
     className="flex items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon aria-hidden="true" className="mt-px size-3.5 shrink-0" />{message}</p>)}</div> : null;
   if (phone) return <div data-reading-lookup={index}><Surface headingLevel={3} title={t("documentReading.lookup", { number })} actions={readOnly ? undefined
-    : <Button type="button" size="touch" variant="destructive-outline" aria-label={t("documentReading.remove", { number })} onClick={onRemove}>{t("documentReading.removeShort")}</Button>}>
+    : <Button type="button" size="touch" variant="destructive-outline" aria-label={t("documentReading.remove", { number })} disabled={disabled} onClick={onRemove}>{t("documentReading.removeShort")}</Button>}>
     <div className="flex flex-col gap-4 p-4">
       {parts.map(({ part, label }) => <div key={part} className="flex flex-col gap-1.5"><Label id={`${ids}-${part}-label`} htmlFor={`${ids}-${part}`}>{label}</Label>{controls[part]}</div>)}
       {list}
@@ -273,7 +277,7 @@ function LookupRow({ index, lookup, lookups, questions, scope, readOnly, phone, 
   return <Fragment>
     <TableRow data-reading-lookup={index}>
       {parts.map(({ part }) => <TableCell key={part} className="py-1.5 align-top whitespace-normal">{controls[part]}</TableCell>)}
-      {readOnly ? null : <TableCell className="w-px py-1.5 align-top"><IconButton size="icon-sm" variant="destructive-outline" label={t("documentReading.remove", { number })} onClick={onRemove}>
+      {readOnly ? null : <TableCell className="w-px py-1.5 align-top"><IconButton size="icon-sm" variant="destructive-outline" label={t("documentReading.remove", { number })} disabled={disabled} onClick={onRemove}>
         <TrashIcon className="size-4" /></IconButton></TableCell>}
     </TableRow>
     {list ? <TableRow className="hover:bg-transparent"><TableCell colSpan={readOnly ? 3 : 4} className="pb-2 whitespace-normal">{list}</TableCell></TableRow> : null}
@@ -326,7 +330,7 @@ function ReadingStats({ value, scope, definitionId, culture, timeZoneId, open }:
 function StatsTables({ data, name, culture, timeZoneId, labelledBy }: { data: FormDocumentReadingStats; name: (id: string) => string | null; culture: FormCulture; timeZoneId?: string;
   labelledBy: string }) {
   const { t } = useTranslation("forms");
-  const share = new Intl.NumberFormat(culture, { style: "percent", maximumFractionDigits: 0 });
+  const share = numberFormat(culture, { style: "percent", maximumFractionDigits: 0 });
   const mostCorrected = data.mostCorrected;
   return <>
     <DataList items={[

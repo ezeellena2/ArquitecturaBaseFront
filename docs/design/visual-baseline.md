@@ -100,8 +100,10 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
     [mensajes](../guides/mensajes-y-estados.md))
 11. **Lo mismo, igual en toda la app:** ¿lo que ya tiene forma en otra pantalla se ve con la misma pieza (los filtros
     aplicados, como chips; los datos de una cuenta, en `AccountRows`)? ¿Usa sólo tokens, los cinco niveles de letra y
-    los seis pasos de espacio, en `rem`? ¿Toda fecha, sólo con números (`03/11/2026`)?
-    ([principios](#principios-del-sistema), [escala y forma](#escala-y-forma), [fechas](#fechas-sólo-con-números--2026-11-10))
+    los seis pasos de espacio, en `rem`? ¿Toda fecha, sólo con números (`03/11/2026`)? ¿Todo número, con los miles y
+    los decimales de su idioma (`1.210`, `1,210`)?
+    ([principios](#principios-del-sistema), [escala y forma](#escala-y-forma), [fechas](#fechas-sólo-con-números--2026-11-10),
+    [números](#números-con-la-región-de-cada-idioma--2026-11-12))
 12. **Celular, teclado e idiomas:** ¿funciona desde 320 px sin desplazar la página de costado, con 44 px para tocar, con
     teclado y lector de pantalla, en español y en inglés, y una colección guarda su estado en la URL?
     ([responsive y accesibilidad](#responsive-y-accesibilidad-mínimos), [criterio de finalización](#criterio-de-finalización-de-una-pantalla))
@@ -1271,6 +1273,25 @@ segmentado, y el tipo de un dato de las personas conserva su texto de la app, «
 cada celda por su encabezado (`cellUnder`). No se sumó un control automático: los casos encontrados eran composiciones
 (una etiqueta junto al dato, un renglón gris con un estado) que una regla de sintaxis no distingue de la excepción A, y
 quedan a cargo de la revisión de cada cambio. Faltan la prueba manual y pasar los tableros al lienzo del sistema visual.
+
+## Números con la región de cada idioma — 2026-11-12
+
+Todo número que ve una persona se escribe con el estándar CLDR de la región de su idioma, el mismo de Intl en el front y
+de `CultureInfo` en el servidor: español de Argentina (es-AR, por el voseo) e inglés de Estados Unidos (en-US, como las
+fechas `MM/dd/yyyy`). En español va `1.210`, `750.280` y `1.234,5`; en inglés, `1,210`, `750,280` y `1,234.5`. El
+español pelado (`es`) sigue la norma de España, que no agrupa los números de cuatro cifras: salía «$ 1210» al lado de
+«$ 750.280». Los identificadores (códigos, CUIT, número de comprobante o de documento, teléfonos) no son números: van
+como se escriben. La moneda no cambia (`common:money`): sólo cambia cómo se escribe el número.
+
+Se cumple con una sola pieza de cada lado. En el front, `numberFormat` y `formatNumber` de `shared/lib/numberFormat`, por
+donde pasan los decimales, los tamaños, los valores tipados y los tableros, y también los números de un texto: el
+formateador de i18next escribe solo cada número con esa pieza, así que un texto no lleva formatos. En el servidor,
+`DisplayNumbers`, por donde pasan el PDF, los avisos, WhatsApp, los correos y los textos del Excel; las celdas numéricas
+del Excel siguen siendo números y Excel las muestra con la región de quien abre el archivo. Leer un número que escribe
+una persona no cambia: el español de la Argentina usa la misma coma decimal y el mismo punto de miles.
+
+La regla no estaba escrita. El 2026-11-12 el usuario pidió que los números tuvieran un estándar, como las fechas, y que
+cada idioma los trabajara a su manera. Un test de arquitectura en cada repo impide un formateador suelto.
 
 ## Fechas, sólo con números — 2026-11-10
 

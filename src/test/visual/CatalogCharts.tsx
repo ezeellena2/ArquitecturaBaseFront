@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { BarChart, type BarChartBucket } from "@/shared/ui/charts/BarChart";
 import { BarList, type BarListItem } from "@/shared/ui/charts/BarList";
 import { ChartRefreshing } from "@/shared/ui/charts/ChartRefreshing";
@@ -28,7 +29,7 @@ export function CatalogCharts() {
   const longDays: BarChartBucket[] = longCounts.map((count, index) => ({ key: "l" + index, value: count, cap: String(count), exact: String(count), axis: longDay(index), period: longDay(index) }));
   const weeks: BarChartBucket[] = [[0, 2000000, "2 M"], [4, 4400000, "4,4 M"], [11, 4200000, "4,2 M"], [18, 3800000, "3,8 M"]].map(([start, value, cap], index) => ({
     key: "w" + index, value: value as number, cap: es ? cap as string : (cap as string).replace(",", "."),
-    exact: new Intl.NumberFormat(es ? "es-AR" : "en-US").format(value as number), axis: day(start as number), period: `${day(start as number)} – ${day(Math.min(30, (start as number) + 6))}`,
+    exact: formatNumber(value as number, es ? "es" : "en"), axis: day(start as number), period: `${day(start as number)} – ${day(Math.min(30, (start as number) + 6))}`,
   }));
   const text = es
     ? { stats: "Números · StatCard", count: "Respuestas", total: "Total de Monto (pesos)", average: "Promedio de Monto (pesos)", range: "Mínimo y máximo de Monto (pesos)",
@@ -43,7 +44,7 @@ export function CatalogCharts() {
       banksTable: "By bank or wallet of origin · as a table", empty: "By day of Payment date · no responses", refreshing: "While it reads again",
       day: "Day", week: "Week", quantity: "Count", totalHeader: "Total of Amount (pesos)", option: "Option", noAnswers: "No responses",
       others: "7 other options", approved: "Approved", pending: "To approve", rejected: "Rejected", note: "Showing the last 400 days." };
-  const percent = (value: number) => new Intl.NumberFormat(es ? "es-AR" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format(value);
+  const percent = (value: number) => formatNumber(value, es ? "es" : "en", { style: "percent", maximumFractionDigits: 0 });
   const banks: BarListItem[] = [["Banco Galicia", 38], ["Banco Santander", 27], ["Banco Nación", 21], ["Mercado Pago", 17], ["Brubank", 11], ["Banco Macro", 9]]
     .map(([label, count]) => ({ key: label as string, label: label as string, value: count as number, valueLabel: String(count), share: percent(count as number / 123) }));
   const states: BarListItem[] = [{ key: "a", label: text.approved, value: 101, valueLabel: "101", share: percent(101 / 123), tone: "success" },

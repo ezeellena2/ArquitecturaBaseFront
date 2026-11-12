@@ -43,6 +43,23 @@ describe("the application uses the shared design system", () => {
     expect(styles(path.join(root, "features"))).toEqual([]);
   });
 
+  // FORMATO ÚNICO DE NÚMEROS (2026-11-12): un número se escribe con la región de su idioma (es-AR, en-US) sólo desde
+  // shared/lib/numberFormat; un Intl suelto con el idioma de la interfaz sigue la norma de España y no agrupa «1210».
+  it("formats numbers only through the shared number format", () => {
+    const loose = sourceFiles(root).filter(file => !file.endsWith(`shared${path.sep}lib${path.sep}numberFormat.ts`))
+      .filter(file => /new Intl\.NumberFormat\(|\.toLocaleString\(/.test(readFileSync(file, "utf8")))
+      .map(file => path.relative(root, file).replaceAll("\\", "/"));
+    expect(loose).toEqual([]);
+  });
+  // The numbers of a text go through the same formatter on their own (shared/i18n): a format in a text would bypass it.
+  it("leaves the numbers of the texts to the shared formatter", () => {
+    const locales = path.join(root, "locales");
+    const formatted = readdirSync(locales, { withFileTypes: true }).filter(entry => entry.isDirectory()).flatMap(language =>
+      readdirSync(path.join(locales, language.name)).filter(name => name.endsWith(".json"))
+        .filter(name => /\{\{[^}]*,[^}]*\}\}/.test(readFileSync(path.join(locales, language.name, name), "utf8"))).map(name => `${language.name}/${name}`));
+    expect(formatted).toEqual([]);
+  });
+
   it("mounts notifications once in application providers", () => {
     const mounts = sourceFiles(root).filter(file => !file.includes(`${path.sep}test${path.sep}`))
       .filter(file => /<Toaster\b/.test(readFileSync(file, "utf8")));

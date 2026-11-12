@@ -14,6 +14,7 @@ import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Spinner } from "@/shared/ui/Spinner";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { cn } from "@/shared/lib/utils";
 import { ApiError } from "@/shared/api/ApiError";
 import { listChats, type Chat, type ChatFilter } from "../api/chat";
@@ -112,11 +113,11 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
 // Memoized: typing a reply changes the drafts of the page, and only the row whose preview turns into «Borrador sin enviar»
 // redraws (performance review 26, 2026-11-07).
 const ChatRow = memo(function ChatRow({ chat, selected, hasDraft, onSelect }: { chat: Chat; selected: boolean; hasDraft: boolean; onSelect: (id: string) => void }) {
-  const { t } = useTranslation("whatsapp");
+  const { t, i18n } = useTranslation("whatsapp");
   // The open one, as in a list with a detail: the brand tint and a 3 px bar at its start (OE1-A, 2026-11-03).
   return <div className={cn("border-b border-[var(--color-border)] p-2", selected ? "bg-[var(--color-brand-50)] shadow-[inset_3px_0_0_var(--color-brand-600)]" : "")}>
     <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected} onClick={() => onSelect(chat.id)}>
-      <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
+      <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{formatNumber(chat.unreadCount, i18n.language)}</span> : null}</span>
     </Button>
     {/* AS4: the same mark as in the header of the conversation; why, inside it. */}
     {chat.needsPerson ? <div className="px-2 pb-1"><NeedsPersonBadge /></div> : null}

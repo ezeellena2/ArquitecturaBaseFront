@@ -8,7 +8,7 @@ export type YesNoLabels = { readonly yes: string; readonly no: string };
 export function formatTypedValue(type: TypedValueType, value: string, language: string): string | null {
   if (type === "date") return formatDateOnly(value, language);
   if (type === "integer" && value.includes(".")) return null;
-  return formatExactDecimal(value, language.startsWith("es") ? "es-AR" : "en-US");
+  return formatExactDecimal(value, language);
 }
 
 export function formatYesNo(value: string | boolean, labels: YesNoLabels): string | null {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -42,7 +43,7 @@ export function EntryFilesField({ question, files, onChange, maxFileSizeMiB, id,
   const previews = useMemo(() => photo ? files.map(file => URL.createObjectURL(file)) : [], [files, photo]);
   useEffect(() => () => previews.forEach(url => URL.revokeObjectURL(url)), [previews]);
   const full = files.length + kept.length >= max;
-  const megabytes = (size: number) => (size / 1024 / 1024).toLocaleString(i18n.language, { maximumFractionDigits: 1 });
+  const megabytes = (size: number) => formatNumber(size / 1024 / 1024, i18n.language, { maximumFractionDigits: 1 });
   const describe = (file: File) => {
     const kind = file.type === "application/pdf" ? "PDF" : file.type.startsWith("image/") ? file.type.slice(6).toUpperCase().replace("JPEG", "JPG")
       : file.type.includes("sheet") || file.type.includes("excel") ? "Excel" : "Word";

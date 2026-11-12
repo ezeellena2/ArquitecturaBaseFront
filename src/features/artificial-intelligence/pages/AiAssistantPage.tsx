@@ -83,7 +83,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 function describeFile(t: Translate, language: string, file: { kind: string; size: number; rows?: number }) {
   const kind = file.kind === "xlsx" || file.kind === "csv" ? t(`attachment.kind.${file.kind}`) : file.kind.toUpperCase();
   const rows = file.rows === undefined ? null
-    : t("attachment.rows", { count: file.rows, rows: new Intl.NumberFormat(language).format(file.rows) });
+    : t("attachment.rows", { count: file.rows, rows: file.rows });
   return [kind, rows, formatFileSize(file.size, language)].filter(Boolean).join(" · ");
 }
 function TurnFile({ attachment }: { attachment: AssistantTurnAttachment }) {
