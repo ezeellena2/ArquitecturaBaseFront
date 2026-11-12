@@ -208,7 +208,7 @@ describe("«Esperando que lo confirmes» (EM2-A)", () => {
   const waiting = action({ state: "Uncertain", reasonCode: "Forms.Action.AwaitingConfirmation", reason: "La emisión espera que la confirme quien cargó la respuesta.", completedAtUtc: null });
   const confirmation = { runId: issueRun, document: { es: "Factura A", en: "Invoice A" }, receiver: "Agro del Sur S.A.", total: "605000",
     info: { es: "Lo decide el sistema: sos responsable inscripto y tu cliente también.", en: "The system decides it." }, date: "2026-11-09",
-    amounts: [{ label: { es: "Importe neto gravado", en: "Net taxed amount" }, value: "500000" }, { label: { es: "IVA 21 %", en: "VAT 21 %" }, value: "105000" }] };
+    amounts: [{ label: { es: "Importe neto gravado", en: "Net taxed amount" }, value: "500000" }, { label: { es: "IVA 21%", en: "VAT 21%" }, value: "105000" }] };
 
   it("shows what «¿La emito?» said to whoever loaded it and issues it with «Emitir»", { timeout: 20_000 }, async () => {
     const { posts } = setup({}, { actions: [waiting], confirmation });
@@ -216,7 +216,7 @@ describe("«Esperando que lo confirmes» (EM2-A)", () => {
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     const section = await zone();
     const summary = within(section).getByRole("group", { name: "Esperando que lo confirmes" });
-    for (const text of ["Factura A", "Agro del Sur S.A.", "09/11/2026", "Importe neto gravado", "$ 500.000", "IVA 21 %", "$ 105.000", "$ 605.000"]) expect(within(summary).getByText(text)).toBeInTheDocument();
+    for (const text of ["Factura A", "Agro del Sur S.A.", "09/11/2026", "Importe neto gravado", "$ 500.000", "IVA 21%", "$ 105.000", "$ 605.000"]) expect(within(summary).getByText(text)).toBeInTheDocument();
     expect(within(summary).getByRole("button", { name: "Por qué este comprobante" })).toBeInTheDocument();
     await user.click(within(section).getByRole("button", { name: "Emitir" }));
     await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: true } }]));
