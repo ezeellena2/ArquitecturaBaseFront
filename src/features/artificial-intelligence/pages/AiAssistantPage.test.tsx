@@ -1109,6 +1109,22 @@ describe("spreadsheets in Home (Stage 2)", () => {
   });
 });
 
+// Stage 3, before the documents' screen: a turn that brought a document (a Word renamed .xlsx passes the clip's filter) keeps its
+// conversation readable, and its message names the document like a spreadsheet, without rows or pages.
+describe("a document a turn brought (Stage 3)", () => {
+  it.each([
+    ["a Word renamed .xlsx", { name: "acta.xlsx", kind: "docx" as const, size: 12 * 1024 }, "DOCX · 12 KB"],
+    ["a PDF with its pages", { name: "acta.pdf", kind: "pdf" as const, size: 96 * 1024, pages: 3 }, "PDF · 96 KB"],
+  ])("opens the conversation and shows %s by its name, like a spreadsheet without rows", async (_, attachment, description) => {
+    turn = { ...turn, question: "", attachment };
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    expect(await screen.findByText(attachment.name)).toBeInTheDocument();
+    // The whole description: its kind and size, with no count of rows or pages.
+    expect(screen.getByText(description)).toBeInTheDocument();
+    expect(screen.getByText("Hay tres usuarios activos.")).toBeInTheDocument();
+  });
+});
+
 // A module's extension, without importing it: a suggestion that attaches and a card that says whether it was replaced.
 describe("what a module adds to Home (Stage 2)", () => {
   function Card({ proposal, replaced }: AssistantProposalCardProps) {

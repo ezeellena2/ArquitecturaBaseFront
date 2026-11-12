@@ -103,21 +103,58 @@ describe("assistant contract", () => {
     const bootstrap = { availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
       configurationDestination: null, audio: false, attachments: true };
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(bootstrap)));
-    await expect(assistantApi.bootstrap()).resolves.toEqual(bootstrap);
+    await expect(assistantApi.bootstrap()).resolves.toStrictEqual(bootstrap);
     // Until the joint export brings the field to the captured bootstrap, it may be missing: no clip then.
     const { attachments: _, ...withoutAttachments } = bootstrap;
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(withoutAttachments)));
     const read = await assistantApi.bootstrap();
-    expect(read).toEqual(withoutAttachments);
+    expect(read).toStrictEqual(withoutAttachments);
     expect(read.attachments ?? false).toBe(false);
     server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ ...bootstrap, attachments: "yes" })));
     await expect(assistantApi.bootstrap()).rejects.toThrow("Invalid assistant contract.");
   });
+  // Stage 3: the server computes them and does not publish them yet; Home does not read them until the documents' screen.
+  it("reads whether this person may attach a Word and also a photo or a PDF in the bootstrap, as optional booleans", async () => {
+    const bootstrap = { availability: "available", connectionRevision: 7, suggestions: [], limits: { questionMaxLength: 4000 },
+      configurationDestination: null, audio: false, attachments: true, documents: true, documentReading: false };
+    server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json(bootstrap)));
+    await expect(assistantApi.bootstrap()).resolves.toStrictEqual(bootstrap);
+    for (const field of ["documents", "documentReading"]) {
+      server.use(http.get("/api/ai/assistant/bootstrap", () => HttpResponse.json({ ...bootstrap, [field]: "yes" })));
+      await expect(assistantApi.bootstrap()).rejects.toThrow("Invalid assistant contract.");
+    }
+  });
   it("reads the spreadsheet of the turn that brought it, with its name, kind, rows and size", async () => {
     const withFile = { ...turn, question: "", attachment: { name: "clientes.xlsx", kind: "xlsx", rows: 86, size: 24576 } };
     server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json(withFile)));
-    await expect(assistantApi.turn(requestId)).resolves.toEqual(withFile);
+    await expect(assistantApi.turn(requestId)).resolves.toStrictEqual(withFile);
     server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json({ ...withFile, attachment: { ...withFile.attachment, kind: "xls" } })));
+    await expect(assistantApi.turn(requestId)).rejects.toThrow("Invalid assistant contract.");
+  });
+  // Stage 3: a photo or a PDF counts its pages (a photo is one) and a Word has none; no document counts rows. A Word renamed .xlsx
+  // passes the clip's filter and comes back as what it is.
+  it("reads the document of the turn that brought it: a photo or a PDF with its pages, a Word without them", async () => {
+    for (const attachment of [
+      { name: "acta.pdf", kind: "pdf", size: 98304, pages: 3 },
+      { name: "remito.jpeg", kind: "jpeg", size: 40960, pages: 1 },
+      { name: "remito.png", kind: "png", size: 40960 },
+      { name: "acta.xlsx", kind: "docx", size: 12288 },
+    ]) {
+      const withDocument = { ...turn, question: "", attachment };
+      server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json(withDocument)));
+      await expect(assistantApi.turn(requestId)).resolves.toStrictEqual(withDocument);
+    }
+  });
+  it.each([
+    ["a spreadsheet without rows", { name: "clientes.xlsx", kind: "xlsx", size: 24576 }],
+    ["a spreadsheet with pages", { name: "clientes.csv", kind: "csv", rows: 86, size: 24576, pages: 1 }],
+    ["a document with rows", { name: "acta.pdf", kind: "pdf", rows: 3, size: 98304, pages: 3 }],
+    ["a Word with pages", { name: "acta.docx", kind: "docx", size: 12288, pages: 1 }],
+    ["a PDF without a page", { name: "acta.pdf", kind: "pdf", size: 98304, pages: 0 }],
+    ["a PDF with more than ten pages", { name: "acta.pdf", kind: "pdf", size: 98304, pages: 11 }],
+    ["a kind outside the contract", { name: "acta.doc", kind: "doc", size: 12288 }],
+  ])("rejects a turn whose file is %s", async (_, attachment) => {
+    server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json({ ...turn, question: "", attachment })));
     await expect(assistantApi.turn(requestId)).rejects.toThrow("Invalid assistant contract.");
   });
   it("sends a turn with a spreadsheet in multipart, with only the fields it has, and says how much went up", async () => {

@@ -6,6 +6,7 @@ import { createQueryClient } from "@/shared/api/queryClient";
 import { ApiError } from "@/shared/api/ApiError";
 import { configureHttpClient, resetHttpClient } from "@/shared/api/httpClient";
 import { server } from "@/test/mocks/server";
+import { notify } from "@/shared/ui/notifications";
 import { http, HttpResponse } from "msw";
 import { assistantApi } from "../api/assistant";
 import type { AssistantSubmit } from "../api/assistant";
@@ -266,6 +267,46 @@ describe("durable assistant acceptance", () => {
     expect(test.result.current.fileError).toBe(remedy);
     expect(onForbidden).not.toHaveBeenCalled();
     expect(refresh).toHaveBeenCalledWith({ queryKey: ["assistant", "u1"] });
+  });
+  // Stage 3: a document has its own 403, with the same remedy under the composer.
+  it("says under the composer that this person can no longer attach a document, like a spreadsheet, without closing Home", async () => {
+    const remedy = "Para adjuntar fotos, PDF o Word, pedile a quien administra la instalación el permiso de diseñar formularios.";
+    vi.spyOn(assistantApi, "submitFile").mockRejectedValue(new ApiError(403, { code: "Ai.Assistant.AttachmentDocumentForbidden", detail: remedy }));
+    vi.mocked(notify).mockClear();
+    const onForbidden = vi.fn();
+    const client = createQueryClient();
+    const refresh = vi.spyOn(client, "invalidateQueries");
+    const remove = vi.spyOn(client, "removeQueries");
+    const test = renderHook(() => useAssistantTurnActions({ userId: "u1", onAccepted: vi.fn(), onForbidden }),
+      { wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider> });
+    await act(() => test.result.current.submit("", 7, undefined, undefined, new File(["x"], "acta.docx")));
+    expect(test.result.current.fileError).toBe(remedy);
+    expect(onForbidden).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledWith({ queryKey: ["assistant", "u1"] });
+  });
+  // Stage 3: every reason a document was not read has its own code under the file; the hook does not read the code, only the field.
+  it.each([
+    "Ai.Assistant.AttachmentDocumentUnavailable", "Ai.Assistant.AttachmentDocumentNotStored", "Ai.Assistant.AttachmentTooManyPages",
+    "Ai.Assistant.AttachmentTooLargeImage", "Ai.Assistant.AttachmentProtectedPdf", "Ai.Assistant.AttachmentProtectedWord",
+    "Ai.Assistant.AttachmentLegacyWord", "Ai.Assistant.AttachmentMacroEnabledWord", "Ai.Assistant.AttachmentEmptyWord",
+    "Ai.Assistant.AttachmentUnreadablePdf", "Ai.Assistant.AttachmentUnreadableImage", "Ai.Assistant.AttachmentUnreadableWord",
+  ])("keeps the server's reason for %s under the composer, without a notice, and the next attempt is another request", async (code) => {
+    const file = new File(["docx"], "acta.docx");
+    const reason = "No se pudo leer el documento.";
+    const submitFile = vi.spyOn(assistantApi, "submitFile")
+      .mockRejectedValueOnce(new ApiError(400, { code, detail: reason, errors: { file: [reason] } }))
+      .mockResolvedValue(accepted);
+    vi.mocked(notify).mockClear();
+    const test = setup();
+    expect(await act(() => test.result.current.submit("", 7, undefined, undefined, file))).toBe(false);
+    expect(test.result.current.fileError).toBe(reason);
+    expect(test.result.current.fieldError).toBeUndefined();
+    expect(test.result.current.uncertain).toBe(false);
+    expect(notify).not.toHaveBeenCalled();
+    await act(() => test.result.current.submit("", 7, undefined, undefined, file));
+    expect(submitFile.mock.calls[1]![0].requestId).not.toEqual(submitFile.mock.calls[0]![0].requestId);
   });
   it("blocks concurrent submit callbacks before React can render busy", async () => {
     let release!: () => void;

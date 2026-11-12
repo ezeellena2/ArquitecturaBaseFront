@@ -81,8 +81,10 @@ export function useAssistantTurnActions({
       frozen.current = null;
       return;
     }
-    // Whoever lost the right to attach keeps Home: the remedy goes under the composer and the bootstrap hides the clip.
-    if (error instanceof ApiError && error.status === 403 && error.code === "Ai.Assistant.AttachmentForbidden") {
+    // Whoever lost the right to attach keeps Home: the remedy goes under the composer and the bootstrap hides the clip. A spreadsheet
+    // (Stage 2) and a document (Stage 3) each have their code.
+    if (error instanceof ApiError && error.status === 403
+      && ["Ai.Assistant.AttachmentForbidden", "Ai.Assistant.AttachmentDocumentForbidden"].includes(error.code ?? "")) {
       setFileError(error.detail);
       frozen.current = null;
       void client.invalidateQueries({ queryKey: assistantKey(userId) });

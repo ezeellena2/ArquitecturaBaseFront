@@ -91,8 +91,19 @@ const turn = z.strictObject({
     .optional(),
   // A dictated turn names its recording and carries what the server heard in it (IA4).
   audio: z.strictObject({ requestId: id, transcript: z.string() }).optional(),
-  // Only the turn that brought a spreadsheet shows it (Stage 2): the turns that inherit it keep their shape.
-  attachment: z.strictObject({ name: z.string(), kind: z.enum(["xlsx", "csv"]), rows: count, size: count }).optional(),
+  // Only the turn that brought a file shows it: the turns that inherit it keep their shape. A spreadsheet (Stage 2) counts its rows
+  // and a document (Stage 3) never does: a photo or a PDF may count its pages (a photo is one, a PDF up to ten), and a Word has none.
+  attachment: z
+    .strictObject({
+      name: z.string(),
+      kind: z.enum(["xlsx", "csv", "pdf", "jpeg", "png", "docx"]),
+      rows: count.optional(),
+      size: count,
+      pages: z.number().int().min(1).max(10).optional(),
+    })
+    .refine((file) => (file.kind === "xlsx" || file.kind === "csv") === (file.rows !== undefined))
+    .refine((file) => file.pages === undefined || file.kind === "pdf" || file.kind === "jpeg" || file.kind === "png")
+    .optional(),
 });
 // Where the normalization of a recording is; the transcript once it completed (IA4).
 const audioStatus = z.strictObject({
@@ -119,6 +130,10 @@ const bootstrap = z.strictObject({
   // Whether this person may attach a spreadsheet (Stage 2): the server says it, the front never repeats the permissions.
   // Optional until the joint export brings it to the captured bootstrap; without it, Home offers no clip.
   attachments: z.boolean().optional(),
+  // Whether this person may attach a Word, and also a photo or a PDF (Stage 3). The server computes them and publishes them with the
+  // documents' screen: optional, and Home does not read them yet.
+  documents: z.boolean().optional(),
+  documentReading: z.boolean().optional(),
 });
 const summaryFields = {
   conversationId: id,
