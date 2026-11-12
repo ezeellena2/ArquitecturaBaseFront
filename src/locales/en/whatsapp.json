@@ -239,7 +239,29 @@
     "whySuggested": "Why it suggested this",
     "quickRepliesLabel": "Reply options",
     "configuredSuggestionLabel": "Form suggestion",
-    "configuredSuggestion": "You can send {{name}}"
+    "configuredSuggestion": "You can send {{name}}",
+    "textSuggestionLabel": "Reply suggestion",
+    "textSuggestion": "The assistant suggests replying",
+    "useAsDraft": "Use as draft",
+    "usingAsDraft": "Using as draft…",
+    "draftInUse": "There's already a reply written."
+  },
+  "needsPerson": {
+    "label": "Needs a person",
+    "filter": "Needs a person ({{count}})",
+    "help": "It goes away when someone replies."
+  },
+  "assistantReply": {
+    "title": "Why it replied this",
+    "case": "Case",
+    "why": "Why",
+    "used": "Used",
+    "place": "In the reply",
+    "placeValue": "{{ordinal}} of {{count}}",
+    "tapped": "Tapped",
+    "tappedValue": "«{{title}}»",
+    "noReply": "No reply from the assistant",
+    "handoff": "The assistant handed off the conversation"
   },
   "readForbidden": "You no longer have permission to view this conversation.",
   "audio": {

@@ -16,9 +16,10 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { cn } from "@/shared/lib/utils";
 import { ApiError } from "@/shared/api/ApiError";
-import { listChats, type Chat } from "../api/chat";
+import { listChats, type Chat, type ChatFilter } from "../api/chat";
 import { ChatThread } from "../components/ChatThread";
 import type { ChatDraft } from "../components/ChatComposer";
+import { NeedsPersonBadge } from "../components/ChatNeedsPerson";
 import { useVisibleChat } from "../hooks/useChatThread";
 import { chatReadScopeKey, useChatReadCleanup } from "../hooks/useChatReadScope";
 import { previewText } from "../lib/messagePresentation";
@@ -30,6 +31,8 @@ export function WhatsAppChatPage() {
 
 function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const { t, i18n } = useTranslation("whatsapp");
+  // The why of each answer of the agent (AS4) names its actions, its cases and its reasons with the words of «Asistente».
+  useTranslation("whatsappAssistant");
   const { has, permissions } = usePermissions();
   const readScope = { actor, culture: i18n.resolvedLanguage ?? "es", permissions };
   const listRoot = [...chatReadScopeKey(readScope), "list"] as const;
@@ -40,7 +43,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const setSelected = useCallback((id: string | undefined) => updateQuery({ conversacion: id }, { replace: false }), [updateQuery]);
   const back = useCallback(() => setSelected(undefined), [setSelected]);
   const [search, setSearch] = useState("");
-  const [unread, setUnread] = useState(false);
+  const [filter, setFilter] = useState<ChatFilter>("all");
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, ChatDraft>>({});
@@ -51,8 +54,8 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.touched) || Boolean(draft.form?.attempt)));
   const visible = useVisibleChat();
   const listStamp = JSON.stringify(listRoot);
-  const list = useQuery({ queryKey: [...listRoot, page, search, unread], enabled: has("whatsapp.read"), queryFn: async ({ signal }) => {
-      const result = await listChats(page, search, unread, signal);
+  const list = useQuery({ queryKey: [...listRoot, page, search, filter], enabled: has("whatsapp.read"), queryFn: async ({ signal }) => {
+      const result = await listChats(page, search, filter, signal);
       signal.throwIfAborted();
       return result;
     },
@@ -76,9 +79,11 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
           <div className={cn("flex min-h-0 flex-col border-r border-[var(--color-border)]", selected ? "max-xl:hidden" : "")}>
             <div className="flex flex-col gap-3 border-b border-[var(--color-border)] p-3">
               <SearchInput value={search} onChange={changeSearch} label={t("search")} />
-              <div className="flex items-center gap-2"><SegmentedControl aria-label={t("show")} options={[
-                { key: "all", label: t("all", { count: list.data?.allCount ?? 0 }), pressed: !unread, onSelect: () => { setUnread(false); setPage(1); } },
-                { key: "unread", label: t("unread", { count: list.data?.unreadCount ?? 0 }), pressed: unread, onSelect: () => { setUnread(true); setPage(1); } },
+              {/* Three sets with their counts (AS4 adds «Necesita una persona»): in the narrow column they go on to the next line. */}
+              <div className="flex items-center gap-2"><SegmentedControl wrap="always" aria-label={t("show")} options={[
+                { key: "all", label: t("all", { count: list.data?.allCount ?? 0 }), pressed: filter === "all", onSelect: () => { setFilter("all"); setPage(1); } },
+                { key: "unread", label: t("unread", { count: list.data?.unreadCount ?? 0 }), pressed: filter === "unread", onSelect: () => { setFilter("unread"); setPage(1); } },
+                { key: "needsPerson", label: t("needsPerson.filter", { count: list.data?.needsPersonCount ?? 0 }), pressed: filter === "needsPerson", onSelect: () => { setFilter("needsPerson"); setPage(1); } },
               ]}/>
                 {list.isPlaceholderData ? <span role="status" className="ml-auto inline-flex"><Spinner decorative /><span className="sr-only">{t("loading")}</span></span> : null}</div>
             </div>
@@ -86,7 +91,7 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
               {list.isPending ? <div role="status" className="flex items-center gap-2 p-4 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("loading")}</div> : null}
               {list.isError && !list.data ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
               {list.data?.page.items.map(chat => <ChatRow key={chat.id} chat={chat} selected={selected === chat.id} hasDraft={Boolean(drafts[chat.id]?.body)} onSelect={setSelected} />)}
-              {list.data?.page.items.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t(search || unread ? "noResults" : "empty")}</p> : null}
+              {list.data?.page.items.length === 0 ? <p className="p-4 text-sm text-[var(--color-content-muted)]">{t(search || filter !== "all" ? "noResults" : "empty")}</p> : null}
             </div>
             {list.data && list.data.page.totalPages > 1 ? <div className="flex items-center justify-between gap-2 border-t border-[var(--color-border)] p-2">
               <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(value => value - 1)}>{t("previous")}</Button><span className="text-xs">{page} / {list.data.page.totalPages}</span><Button variant="outline" size="sm" disabled={page >= list.data.page.totalPages} onClick={() => setPage(value => value + 1)}>{t("next")}</Button>
@@ -113,6 +118,8 @@ const ChatRow = memo(function ChatRow({ chat, selected, hasDraft, onSelect }: { 
     <Button variant="ghost" className="w-full justify-start text-left" aria-label={chat.profileName ?? chat.phoneNumber ?? t("unnamed")} aria-pressed={selected} onClick={() => onSelect(chat.id)}>
       <span className="flex w-full min-w-0 items-center justify-between gap-2"><span className="min-w-0 flex-1 truncate">{chat.profileName ?? chat.phoneNumber ?? t("unnamed")}</span>{chat.mode === "Assistant" ? <Badge variant="outline">{t("mode.Assistant")}</Badge> : null}{chat.unreadCount ? <span className="text-xs">{chat.unreadCount}</span> : null}</span>
     </Button>
+    {/* AS4: the same mark as in the header of the conversation; why, inside it. */}
+    {chat.needsPerson ? <div className="px-2 pb-1"><NeedsPersonBadge /></div> : null}
     <p className="truncate px-2 text-xs text-[var(--color-content-muted)]">{hasDraft ? t("draft") : previewText(t, chat.previewPurpose, chat.previewAccessEventKind, chat.preview)}</p>
   </div>;
 });

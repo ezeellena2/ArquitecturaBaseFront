@@ -503,7 +503,7 @@ it("removes inbox and thread payloads on permission changes without discarding t
 it("cancels an in-flight inbox query and refuses its old result after form record permission is revoked", async () => {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["whatsapp.read", "formrecords.read"] })));
   let resolve!: (value: Awaited<ReturnType<typeof chatApi.listChats>>) => void;
-  const safe = { page: { items: [{ ...contact, preview: "Authorized inbox" }], totalCount: 1, page: 1, pageSize: 20, totalPages: 1 }, allCount: 1, unreadCount: 0 };
+  const safe = { page: { items: [{ ...contact, preview: "Authorized inbox" }], totalCount: 1, page: 1, pageSize: 20, totalPages: 1 }, allCount: 1, unreadCount: 0, needsPersonCount: 0 };
   const reads = vi.spyOn(chatApi, "listChats").mockImplementationOnce(() => new Promise(done => { resolve = done; })).mockResolvedValue(safe);
   renderRouteWithProviders("/whatsapp/chat");
   await waitFor(() => expect(reads).toHaveBeenCalledOnce());

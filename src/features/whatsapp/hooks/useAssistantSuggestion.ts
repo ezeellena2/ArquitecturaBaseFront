@@ -34,8 +34,9 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
   const suggestionRef = useRef(suggestion);
   const [recovery, setRecovery] = useState<"none" | "consult" | "repeat">("none");
   const recoveryRef = useRef(recovery);
-  // The operation in flight, so each control shows its own progress: one operation at a time.
-  const [busyAction, setBusyAction] = useState<"request" | "consult" | "discard" | "send">();
+  // The operation in flight, so each control shows its own progress: one operation at a time. «draft» discards a text after
+  // putting it in the composer (AS4).
+  const [busyAction, setBusyAction] = useState<"request" | "consult" | "discard" | "draft" | "send">();
   const busy = busyAction !== undefined;
   const [denied, setDenied] = useState(false);
   const deniedRef = useRef(false);
@@ -86,7 +87,7 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
       if (result.state === "Sent") void client.invalidateQueries({ queryKey: chatKey });
     }
   }
-  function fail(error: unknown, action: "request" | "consult" | "discard" | "send") {
+  function fail(error: unknown, action: "request" | "consult" | "discard" | "draft" | "send") {
     const feedback = errorFeedback(error, { writing: action !== "consult" });
     if (action === "consult") pollPaused.current = true;
     if (feedback.kind === "cancelled" || feedback.kind === "session") return;
@@ -109,10 +110,10 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
       }
       setAttemptState(undefined);
     }
-    if (action === "request" || action === "discard") setRecoveryState("consult");
+    if (action === "request" || action === "discard" || action === "draft") setRecoveryState("consult");
     notify({ id: noticeId, kind: "error", message: feedback.kind === "wait" ? t("forms.waitingHint", { count: feedback.retryAfterSeconds ?? 30 }) : readErrorMessage(error, t), action: { label: t("send.check"), onClick: () => void consult() } });
   }
-  async function run(action: "request" | "consult" | "discard" | "send", work: (signal: AbortSignal) => Promise<void>) {
+  async function run(action: "request" | "consult" | "discard" | "draft" | "send", work: (signal: AbortSignal) => Promise<void>) {
     if (!enabledRef.current || !active.current || currentOwner.current !== owner || deniedRef.current || operation.current || Date.now() < deadline.current) return;
     const controller = new AbortController();
     operation.current = controller; setBusyAction(action);
@@ -153,6 +154,18 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
       if (owns(signal)) accept(result);
     });
   }
+  // «Usar como borrador» (AS4): the text goes to the composer, where the operator reviews it and sends it, and the suggestion is
+  // discarded by its route, like «No, gracias». Nothing goes out on its own; if the discard fails, the text stays in the composer.
+  async function toDraft(put: (text: string) => void) {
+    const value = suggestionRef.current;
+    if (value?.state !== "Ready" || !value.textProposal) return;
+    const { text } = value.textProposal;
+    await run("draft", async signal => {
+      put(text);
+      const result = await discardAssistantSuggestion(contactId, value.requestId, signal);
+      if (owns(signal)) accept(result);
+    });
+  }
   async function send() {
     const value = suggestionRef.current;
     if (!writeAllowed.current || value?.state !== "Ready" || !value.proposal || attemptRef.current && recoveryRef.current !== "repeat") return;
@@ -181,10 +194,10 @@ export function useAssistantSuggestion(contactId: string, modeRevision: number, 
     return () => window.clearInterval(timer);
   }, [waitUntil]);
   const shown = stateOwner === owner && !denied && enabled;
-  return { proposal: shown ? suggestion?.proposal ?? null : null, open: shown && open, setOpen, selected, setSelected, attempt, recovery, busy, busyAction: shown ? busyAction : undefined, denied,
+  return { proposal: shown ? suggestion?.proposal ?? null : null, textProposal: shown ? suggestion?.textProposal ?? null : null, open: shown && open, setOpen, selected, setSelected, attempt, recovery, busy, busyAction: shown ? busyAction : undefined, denied,
     // Asking for a suggestion, or reading it while the assistant has it pending or after a notice: the composer says it is
     // working, in the place of the card. The dialog shows its own progress in its footer.
     searching: shown && !open && (busyAction === "request" || busyAction === "consult" || suggestion?.state === "Pending"),
-    waiting: now < waitUntil, waitSeconds: Math.max(0, Math.ceil((waitUntil - now) / 1000)), discard, send, consult };
+    waiting: now < waitUntil, waitSeconds: Math.max(0, Math.ceil((waitUntil - now) / 1000)), discard, toDraft, send, consult };
 }
 export type AssistantComposerState = ReturnType<typeof useAssistantSuggestion>;

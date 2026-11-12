@@ -135,6 +135,28 @@ describe("SegmentedControl", () => {
     expect(screen.getByRole("button", { name: "Sólo en la app" })).toHaveClass("bg-[var(--color-brand-600)]", "max-sm:border-[var(--color-brand-600)]");
   });
 
+  it("keeps the options apart at every width when they always wrap, as in a narrow column", () => {
+    render(
+      <SegmentedControl
+        wrap="always"
+        aria-label="Mostrar"
+        options={[
+          { key: "all", label: "Todos (4)", pressed: true, onSelect: vi.fn() },
+          { key: "unread", label: "Sin leer (1)", pressed: false, onSelect: vi.fn() },
+          { key: "needsPerson", label: "Necesita una persona (1)", pressed: false, onSelect: vi.fn() },
+        ]}
+      />,
+    );
+
+    // AS4 (2026-11-12): the filters of the chat inbox, where «Necesita una persona» goes on to the next line also on the desktop.
+    const group = screen.getByRole("group", { name: "Mostrar" });
+    expect(group).toHaveClass("flex", "flex-wrap", "gap-1.5");
+    expect(group).not.toHaveClass("sm:inline-flex", "sm:divide-x", "divide-x", "h-[var(--height-control)]");
+    const other = screen.getByRole("button", { name: "Necesita una persona (1)" });
+    expect(other).toHaveClass("min-h-[var(--height-control)]", "max-w-full", "rounded-[var(--radius-control)]", "border", "border-[var(--color-border)]", "bg-[var(--color-surface)]", "max-sm:min-h-11");
+    expect(screen.getByRole("button", { name: "Todos (4)" })).toHaveClass("bg-[var(--color-brand-600)]", "border-[var(--color-brand-600)]");
+  });
+
   it("turns every option off while its owner works", async () => {
     const onFile = vi.fn();
     render(

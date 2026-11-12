@@ -10,8 +10,9 @@ import { ApiError } from "@/shared/api/ApiError";
 import { useChatAudioTranscription } from "../hooks/useChatAudioTranscription";
 import { useChatThread } from "../hooks/useChatThread";
 import { useChatThreadActions } from "../hooks/useChatThreadActions";
-import { buildTimeline } from "../lib/timeline";
+import { buildTimeline, withAssistantEvents } from "../lib/timeline";
 import { ChatComposer, type ChatDraft } from "./ChatComposer";
+import { NeedsPersonBadge, NeedsPersonBanner } from "./ChatNeedsPerson";
 import { ChatTimeline } from "./ChatTimeline";
 
 export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canConfigureAssistant, draft, updateDraft, onBack }: {
@@ -25,11 +26,11 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
   const [formOpenRequest, setFormOpenRequest] = useState(0);
   const [atBottom, setAtBottom] = useState(true);
   const [retrying, setRetrying] = useState(false);
-  const { latest, history, messages, read, formValuesRevoked, denyRead } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
+  const { latest, history, messages, assistantEvents, read, formValuesRevoked, denyRead } = useChatThread(id, { actor, culture: i18n.resolvedLanguage ?? "es", permissions: readPermissions }, atBottom);
   const readOwner = JSON.stringify([actor, id, i18n.resolvedLanguage, [...new Set(readPermissions)].sort()]);
   useChatAudioTranscription({ owner: readOwner, contactId: id, enabled: readPermissions.includes("whatsapp.read") && latest.data?.contact.mode === "Manual", messages, onForbidden: denyRead });
   const { mode, setMode, review, setReview, changing, reviewing } = useChatThreadActions(id, latest.refetch);
-  const items = useMemo(() => buildTimeline(messages, latest.data?.outgoing ?? []), [messages, latest.data?.outgoing]);
+  const items = useMemo(() => withAssistantEvents(buildTimeline(messages, latest.data?.outgoing ?? []), assistantEvents), [messages, latest.data?.outgoing, assistantEvents]);
   // The history is memoized: its callbacks keep their identity while the reply is typed.
   const resendForm = useCallback(() => setFormOpenRequest(value => value + 1), []);
   const reuse = useCallback((body: string) => updateDraft(value => ({ ...value, body, attempt: undefined })), [updateDraft]);
@@ -78,11 +79,14 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
             {linkedAccount === null ? <p className="text-xs text-[var(--color-content-muted)]">{t("forms.unlinkedHeader")}</p> : linkedAccount ? <p className="break-words text-xs text-[var(--color-content-muted)]">{t("forms.linkedHeader",{account:visibleEmail??linkedAccount.displayName})}{mayReadEmail&&!linkedAccount.email ? " · "+t("forms.noEmail") : ""}{!linkedAccount.isActive ? " · "+t("forms.inactive") : ""}</p> : null}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* AS4: the conversation that the assistant handed off, until a person answers it; why, in the strip below. */}
+          {contact.needsPerson ? <NeedsPersonBadge /> : null}
           <Badge variant="outline">{t(`mode.${contact.mode}`)}</Badge>
           {contact.mode === "Manual" && canConfigureAssistant && availability !== "notInstalled" && !latest.isError ? <DisabledReason reason={availabilityReason}><Button variant="outline" size="sm" disabled={!canEnableAssistant || changing.isPending || forbidden} onClick={event => { modeTrigger.current = event.currentTarget; setMode({ mode: "Assistant", revision: contact.modeRevision }); }}>{t("mode.enable")}</Button></DisabledReason> : null}
         </div>
       </header>
+      {contact.needsPerson ? <div className="p-3"><NeedsPersonBanner needsPerson={contact.needsPerson} /></div> : null}
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span>{retryAction}</div> : null}
       <ChatTimeline contactId={id} readOwner={readOwner} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? resendForm : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending ? reviewing.variables?.requestId : undefined} onReview={setReview}

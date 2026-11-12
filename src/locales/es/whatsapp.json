@@ -239,7 +239,29 @@
     "whySuggested": "Por qué lo sugirió",
     "quickRepliesLabel": "Opciones de respuesta",
     "configuredSuggestionLabel": "Sugerencia de formulario",
-    "configuredSuggestion": "Podés mandarle {{name}}"
+    "configuredSuggestion": "Podés mandarle {{name}}",
+    "textSuggestionLabel": "Sugerencia de respuesta",
+    "textSuggestion": "El asistente sugiere responder",
+    "useAsDraft": "Usar como borrador",
+    "usingAsDraft": "Pasando al borrador…",
+    "draftInUse": "Ya hay una respuesta escrita."
+  },
+  "needsPerson": {
+    "label": "Necesita una persona",
+    "filter": "Necesita una persona ({{count}})",
+    "help": "Se quita cuando alguien le responde."
+  },
+  "assistantReply": {
+    "title": "Por qué respondió esto",
+    "case": "Caso",
+    "why": "Por qué",
+    "used": "Usó",
+    "place": "En la respuesta",
+    "placeValue": "{{ordinal}} de {{count}}",
+    "tapped": "Tocó",
+    "tappedValue": "«{{title}}»",
+    "noReply": "Sin respuesta del asistente",
+    "handoff": "El asistente derivó la conversación"
   },
   "readForbidden": "Ya no tenés permiso para ver esta conversación.",
   "audio": {

@@ -1,6 +1,6 @@
 # Casos del asistente: tableros elegidos
 
-Fecha: **2026-10-21**. **Elegidos AS1-A y AS2–AS6** de la versión 98 del lienzo. **La pantalla «Asistente» (AS1-A, AS2, AS3 y AS5) está programada** en `/whatsapp/asistente` desde el 2026-11-11, con [las diferencias de abajo](#diferencias-de-lo-programado--2026-11-11); el chat (AS4) viene después.
+Fecha: **2026-10-21**. **Elegidos AS1-A y AS2–AS6** de la versión 98 del lienzo. **La pantalla «Asistente» (AS1-A, AS2, AS3 y AS5) está programada** en `/whatsapp/asistente` desde el 2026-11-11, con [las diferencias de abajo](#diferencias-de-lo-programado--2026-11-11); **el chat (AS4)**, en `/whatsapp/chat` desde el 2026-11-12, con [las suyas](#el-chat-as4--2026-11-12).
 
 Origen: la sección «Casos del asistente» de la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -46,6 +46,22 @@ Y al programar, con los componentes que ya existen:
 12. Lo que el tablero no dibuja: la pestaña con un problema lleva un ícono, el 409 se revisa en una zona con `ComparisonTable` y, mientras se guarda o hay un conflicto, la lista queda inerte.
 
 Capturas: `src/test/visual/screenshots/assistant-agent-{cases,case-editor,profile-empty,limits,knowledge,test}-{es,en}-{1440,390,320}.png`.
+
+### El chat (AS4) — 2026-11-12
+
+Programado contra el contrato del backend (`needsPerson`, `assistantReply`, `assistantEvents` y `textProposal`), con las reglas de [visual-baseline](visual-baseline.md) que el tablero no tenía. Difiere en:
+
+1. **«Por qué respondió esto» en dos columnas** ([lecturas](visual-baseline.md#lecturas)): la acción va como etiqueta con su ícono (la de «Asistente») y, en `DataList`, «En la respuesta» («1 de 2», sólo con varias acciones), «Caso» («Cualquier otra cosa» para el último), «Tocó» («Visita»), «Por qué» y «Usó»; lo vacío no aparece. No van «Caso 2:» ni «Texto: el de arriba…»: el servidor manda el «cuándo» del caso, no su número, y el texto es el del mensaje.
+2. **La franja** no repite «Necesita una persona», que ya está en la cabecera ([el estado, una vez](visual-baseline.md#el-estado-una-vez--2026-11-06)): dice sólo el motivo, sin «Motivo:» y sin comillas (el de un caso, tal cual), en el `Banner` de atención, con su triángulo en lugar de la persona; la marca queda para el lector de pantalla y «Se quita cuando alguien le responde.» pasó a la (i).
+3. **La marca de la fila** es la etiqueta común, del ancho de su texto, entre el nombre y el resumen. El resumen es el del servidor («Mensaje del asistente»), no «Asistente: Te paso…».
+4. **Los filtros** son un segmentado de tres, siempre separados (`wrap="always"`): en la columna angosta «Necesita una persona (N)» baja de renglón, también a 390 px en español, porque cada opción mide 44 px en el celular. La cantidad se ve aunque sea 0.
+5. **Las líneas** («Sin respuesta del asistente», «El asistente derivó la conversación») llevan debajo los mismos datos de un porqué (caso, por qué y, al derivar, la marca con su motivo), en lugar de una oración con «caso 4: «…»»; «Pasó a Atención manual» no se repite: lo dice el modo de la cabecera.
+6. **El mensaje al derivar** lleva su porqué («Derivar a una persona», el caso y la marca con su motivo), sin «mensaje al derivar» en la hora; la línea del derivar aparece sólo cuando ese mensaje no pudo salir.
+7. **El botón tocado** es «Tocó «Visita»» sólo cuando el servidor lo guarda (un texto o un derivar); un botón que manda un formulario lo interpreta el asistente como un mensaje, así que «eligió «Visita» → mandó Registrar visita» no existe. Un formulario de una ráfaga sigue con «Por qué lo mandó»: hoy el servidor no le suma lugar ni caso.
+8. **El borrador del operador** muestra el texto entero en su recuadro, más «Caso» y «Usó» en dos columnas; los botones van a la derecha del título en la compu y abajo en el celular. «Usar como borrador» sólo escribe en un compositor vacío y habilitado: si no, queda apagado con su motivo («Ya hay una respuesta escrita.», el del compositor o la espera de un 429), y si el descarte falla el texto queda en el compositor y la tarjeta sigue.
+9. **Al programar**: el cuerpo de «Por qué lo mandó» de un formulario también se lee desde la izquierda, como el nuevo; las dos tarjetas de sugerencia dejan a su contenido un ancho propio, así en el celular los botones bajan en lugar de aplastar el texto.
+
+Capturas: `src/test/visual/screenshots/whatsapp-assistant-{handoff,replies,draft}-{es,en}-{1440,390,320}.png` y `whatsapp-assistant-list-{es,en}-{390,320}.png`; las `whatsapp-*-1440` (chat, accesos y planillas) muestran el filtro nuevo.
 
 ## Lo que se fijó al dibujar
 

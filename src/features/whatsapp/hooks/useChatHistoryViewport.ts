@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type UIEvent } from "react";
-import type { TimelineItem } from "../lib/timeline";
+import type { TimelineEntry } from "../lib/timeline";
 
-export function useChatHistoryViewport(items: readonly TimelineItem[], atBottom: boolean, onAtBottomChange: (recent: boolean) => void) {
+export function useChatHistoryViewport(items: readonly TimelineEntry[], atBottom: boolean, onAtBottomChange: (recent: boolean) => void) {
   const viewport = useRef<HTMLDivElement>(null);
   const frame = useRef<number | undefined>(undefined);
   useLayoutEffect(() => {

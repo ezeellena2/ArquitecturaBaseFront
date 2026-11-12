@@ -286,10 +286,11 @@ export function describeAction(t: TFunction<"whatsappAssistant">, action: DraftA
   }
 }
 
-/** Why a test hands off, from the code of the server: a case says its own reason as it is. */
+/** Why a test or the chat hands off, from the code of the server: a case says its own reason as it is; a button, what was tapped (AS4). */
 export function handoffReasonText(t: TFunction<"whatsappAssistant">, code: string | null, reason: string | null): string {
   switch (code) {
     case "case": return reason?.trim() || t("test.handoff.other");
+    case "button": return reason?.trim() ? t("test.handoff.button", { title: reason.trim() }) : t("test.handoff.other");
     case "dailyReplyLimit": return t("test.handoff.dailyReplyLimit");
     case "replyTooLong": case "replyNotAllowed": return t("test.handoff.limits");
     case "blockedTopic": return t("test.handoff.blockedTopic");

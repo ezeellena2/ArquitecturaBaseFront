@@ -1,8 +1,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { ApiError } from "@/shared/api/ApiError";
-import { getThread, markRead, type ChatMessage, type Thread } from "../api/chat";
-import { mergeMessages } from "../lib/history";
+import { getThread, markRead, type AssistantEvent, type ChatMessage, type Thread } from "../api/chat";
+import { mergeAssistantEvents, mergeMessages } from "../lib/history";
 import { withoutFormReplyValues } from "../lib/threadPrivacy";
 import { createFormReplyReadGate } from "./formReplyReadGate";
 import { chatReadScopeKey, useChatReadCleanup, type ChatReadScope } from "./useChatReadScope";
@@ -21,6 +21,7 @@ export function useVisibleChat() {
 }
 
 const noMessages: ChatMessage[] = [];
+const noEvents: AssistantEvent[] = [];
 
 export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolean) {
   const client = useQueryClient();
@@ -80,6 +81,10 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
   const messages = useMemo(() => mergeMessages([...(history.data?.pages.map(page => allowed ? page.messages : withoutFormReplyValues(page).messages) ?? []),
     latest.data ? allowed ? latest.data.messages : withoutFormReplyValues(latest.data).messages : []]),
     [history.data?.pages, latest.data, allowed]);
+  // AS4: what the assistant decided without a message comes with each page, read with `whatsapp.read` like the messages: it
+  // carries no form values, so the gate of values does not touch it.
+  const assistantEvents = useMemo(() => mergeAssistantEvents([...(history.data?.pages.map(page => page.assistantEvents) ?? []), latest.data?.assistantEvents]),
+    [history.data?.pages, latest.data]);
   const read = useMutation({ mutationFn: (sequence: number) => markRead(id, sequence), retry: false,
     onSuccess: () => { void client.invalidateQueries({ queryKey: [...chatReadScopeKey(scope), "list"] }); } });
   const sequence = latest.data?.messages.reduce((max, message) => Math.max(max, message.inboundSequence), 0) ?? 0;
@@ -97,5 +102,5 @@ export function useChatThread(id: string, scope: ChatReadScope, atBottom: boolea
   const fetchNextPage = useCallback(() => enabled && !readDenied ? fetchOlder() : Promise.resolve(undefined), [enabled, readDenied, fetchOlder]);
   return { denyRead, latest: { ...latest, error: readDenied ? forbiddenRead : latest.error, isError: readDenied || latest.isError, data, refetch: () => enabled && !readDenied ? latest.refetch() : Promise.resolve(undefined) },
     history: { ...history, data: enabled && !readDenied && history.data ? allowed ? history.data : { ...history.data, pages: history.data.pages.map(withoutFormReplyValues) } : undefined, fetchNextPage },
-    messages: enabled && !readDenied ? messages : noMessages, read, visible, formValuesRevoked: gate.wasGranted && !allowed };
+    messages: enabled && !readDenied ? messages : noMessages, assistantEvents: enabled && !readDenied ? assistantEvents : noEvents, read, visible, formValuesRevoked: gate.wasGranted && !allowed };
 }

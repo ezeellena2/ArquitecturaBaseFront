@@ -22,6 +22,6 @@ it("keeps restricted action captions out of threads and private text out of chat
   expect(thread.canReadFormRecords).toBe(false); expect(actions.length).toBeGreaterThan(0); for (const action of actions) expect(action.body).toBeNull();
   const privateBodies = [...original.messages, ...original.outgoing].filter(item => item.origin === "FormAction" && item.body !== null).map(item => item.body!);
   expect(privateBodies.length).toBeGreaterThan(0);
-  const chats = await listChats(1, "", false); const contact = chats.page.items.find(item => item.id === original.contact.id); expect(contact).toBeDefined();
+  const chats = await listChats(1, "", "all"); const contact = chats.page.items.find(item => item.id === original.contact.id); expect(contact).toBeDefined();
   for (const body of privateBodies) expect(contact!.preview).not.toContain(body);
 });

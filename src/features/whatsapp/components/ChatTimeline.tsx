@@ -12,8 +12,9 @@ import { ChatSpreadsheet } from "./ChatSpreadsheet";
 import { ChatLocation } from "./ChatLocation";
 import { FormReplyCard } from "./FormReplyCard";
 import { LocationRequestCard } from "./LocationRequestCard";
+import { AssistantEventLine, AssistantReplyWhy } from "./ChatAssistantReply";
 import type { Outgoing } from "../api/chat";
-import { groupTimelineByDay, type TimelineItem } from "../lib/timeline";
+import { groupTimelineByDay, type TimelineEntry } from "../lib/timeline";
 import { accessSummary } from "../lib/messagePresentation";
 import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 
@@ -22,7 +23,8 @@ import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
   atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
   contactId: string; readOwner: string; onAudioForbidden: () => void;
-  items: readonly TimelineItem[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
+  /** The messages and outgoing, with the lines of what the assistant decided without a message (AS4). */
+  items: readonly TimelineEntry[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
   /** The `requestId` whose review is being confirmed: that bubble shows the progress, and no other review starts meanwhile. */
   reviewing?: string; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
@@ -39,7 +41,7 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
     {historyError ? <p className="mb-3 text-sm text-[var(--color-content-muted)]">{t("loadFailed")}</p> : null}
     {groups.map(group => <div key={group.date}>
       <MessageDateDivider date={group.date} label={formatDateInZone(group.items[0].occurredAtUtc, language, timeZone)} />
-      {group.items.map(item => <MessageBubble key={item.key} direction={item.direction}
+      {group.items.map(item => item.source === "event" ? <AssistantEventLine key={item.key} reply={item.reply} /> : <MessageBubble key={item.key} direction={item.direction}
         text={item.purpose === "Access" ? accessSummary(t, item.accessEventKind) : item.origin === "FormAction" ? formValuesRevoked ? "" : item.body ?? "" : item.kind === "FlowReply" || item.kind === "Audio" || item.kind === "Spreadsheet" || item.kind === "Location" && item.location ? "" : item.body ?? t(item.kind === "Text" || item.kind === "Flow" && item.form ? "textRemoved" : "unsupported", { kind: t(`kind.${item.kind}`, { defaultValue: t("kind.Other") }) })}
         attachment={item.origin === "FormAction" ? <MessageCard icon={<FormIcon className="size-4" />} title={t("formActions.title")} description={t(item.kind === "Document" ? "formActions.document" : "formActions.notice")} /> : item.source === "message" && item.kind === "Audio" && item.audio && item.purpose !== "Access" ? <ChatAudio key={readOwner + ":" + item.messageId} owner={readOwner} contactId={contactId} messageId={item.messageId} audio={item.audio} body={item.body} onForbidden={onAudioForbidden} preserveViewport={preserveViewport}/> : item.source === "message" && item.kind === "Spreadsheet" && item.purpose !== "Access" ? <ChatSpreadsheet name={item.spreadsheetName} caption={item.body} /> : item.kind === "FlowReply" && item.purpose !== "Access" ? <FormReplyCard actor={actor} timeZone={timeZone} onResend={onResendForm} reply={item.formReply?.state === "Completed" ? { ...item.formReply, valuesRevoked: formValuesRevoked } : item.formReply ?? { state: "Unavailable", name: null }} preserveViewport={preserveViewport} /> : item.kind === "Location" && item.location && item.purpose !== "Access" ? <ChatLocation point={item.location} /> : item.kind === "LocationRequest" && item.form ? <LocationRequestCard form={item.form} /> : item.form ? <MessageCard icon={<FormIcon className="size-4" />} title={item.form.name[item.form.culture]} description={t("forms.cardDescription",{version:item.form.versionNumber,cta:t("forms.openForm",{lng:item.form.culture})})} /> : item.quickReplies ? <ul aria-label={t("assistant.quickRepliesLabel")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">{item.quickReplies.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}</ul> : undefined}
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
@@ -48,10 +50,14 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
         delivery={item.delivery ? { state: item.delivery.state, label: t(`status.${item.delivery.code}`) } : undefined}>
         {item.assistant && !formValuesRevoked && item.purpose !== "Access" ? <section className="rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] p-3 text-sm">
           <p className="font-medium">{t(item.origin === "Assistant" ? "assistant.whySent" : "assistant.whySuggested")}</p>
-          <p className="mt-1 break-words">{item.assistant.reason}</p>
-          {/* The proposed data in two columns (rule LR1), not «Cliente: Pérez Hnos.» glued in a line. */}
-          {item.assistant.proposedFields.length ? <div className="mt-2"><DataList items={item.assistant.proposedFields.map(field => ({ key: field.fieldId, label: field.label, value: field.displayValue }))}/></div> : null}
+          {/* The body reads from the left, as «Por qué respondió esto» (AS4): the title follows the side of the message. */}
+          <div className="text-left">
+            <p className="mt-1 break-words">{item.assistant.reason}</p>
+            {/* The proposed data in two columns (rule LR1), not «Cliente: Pérez Hnos.» glued in a line. */}
+            {item.assistant.proposedFields.length ? <div className="mt-2"><DataList items={item.assistant.proposedFields.map(field => ({ key: field.fieldId, label: field.label, value: field.displayValue }))}/></div> : null}
+          </div>
         </section> : null}
+        {item.assistantReply && item.purpose !== "Access" ? <AssistantReplyWhy reply={item.assistantReply} /> : null}
         {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>
           {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.requestId} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.requestId ? "review.confirming" : "review.action")}</Button> : null}

@@ -43,7 +43,9 @@ export function SegmentedControl({
   /// En el celular, las opciones van separadas y la que no entra baja de renglón; desde 640 px, unidas como siempre. Es para
   /// opciones de textos largos que no entran juntas en un teléfono, como «Dónde se completa» (SA1-A, 2026-11-09). Una opción
   /// más larga que el renglón ocupa todo el ancho y corta su texto en renglones, sin pasarse de su caja (2026-11-11).
-  wrap?: boolean;
+  /// `"always"` las separa en todos los anchos, para una columna angosta también en la compu: los filtros de la bandeja del
+  /// chat, donde «Necesita una persona» baja de renglón (AS4, 2026-11-12).
+  wrap?: boolean | "always";
   "aria-label": string;
 }): ReactNode {
   return (
@@ -52,7 +54,7 @@ export function SegmentedControl({
       aria-label={label}
       className={cn(
         // Sin `overflow-hidden`: el contorno de foco va por fuera de la opción y el grupo no tiene que recortarlo.
-        appearance === "public" ? "access-channel" : wrap
+        appearance === "public" ? "access-channel" : wrap === "always" ? "flex flex-wrap gap-1.5" : wrap
           ? "flex flex-wrap gap-1.5 sm:inline-flex sm:flex-nowrap sm:gap-0 sm:divide-x sm:divide-[var(--color-border)] sm:rounded-[var(--radius-control)] sm:border sm:border-[var(--color-border)] sm:bg-[var(--color-surface)] sm:h-[var(--height-control)]"
           : cn("shrink-0 divide-x divide-[var(--color-border)] rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] h-[var(--height-control)] max-sm:h-11"),
         appearance === "public" || wrap ? undefined : fullWidth ? "flex w-full" : "inline-flex",
@@ -75,7 +77,8 @@ export function SegmentedControl({
             // Separada en el celular, cada opción lleva su borde; la elegida, el de su relleno. Mide al menos 44 px de alto y, si su
             // texto no entra en el renglón, toma todo el ancho y lo corta en renglones parejos: crece hacia abajo, nunca hacia el
             // costado.
-            wrap && appearance !== "public" ? cn("max-sm:min-h-11 max-sm:max-w-full max-sm:py-2 max-sm:whitespace-normal max-sm:text-balance max-sm:rounded-[var(--radius-control)] max-sm:border", option.pressed ? "max-sm:border-[var(--color-brand-600)]" : "max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)]") : "",
+            wrap === "always" && appearance !== "public" ? cn("min-h-[var(--height-control)] max-w-full rounded-[var(--radius-control)] border max-sm:min-h-11 max-sm:py-2 max-sm:whitespace-normal max-sm:text-balance", option.pressed ? "border-[var(--color-brand-600)]" : "border-[var(--color-border)] bg-[var(--color-surface)]")
+              : wrap && appearance !== "public" ? cn("max-sm:min-h-11 max-sm:max-w-full max-sm:py-2 max-sm:whitespace-normal max-sm:text-balance max-sm:rounded-[var(--radius-control)] max-sm:border", option.pressed ? "max-sm:border-[var(--color-brand-600)]" : "max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)]") : "",
             appearance === "public" ? undefined : option.pressed
               ? "bg-[var(--color-brand-600)] font-semibold text-[var(--color-brand-ink)]"
               : "font-medium text-[var(--color-content)] enabled:hover:bg-[var(--color-surface-muted)] aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-transparent",

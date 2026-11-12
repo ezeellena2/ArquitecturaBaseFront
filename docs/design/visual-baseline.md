@@ -128,7 +128,7 @@ de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.t
 **Deuda de sincronización** (está en `shared/ui` y no en la biblioteca; abrir el Artifact requiere autorización
 explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `Surface`, `FilterChip`, `FilterMenuTrigger`,
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
-`appearance="public"`), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
+`appearance="public"`, `wrap="always"` de AS4), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
 (OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `FormField beside` y `FormSkeleton stacked` (IA1-A), el tooltip que conserva sus renglones (RO1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
@@ -597,7 +597,7 @@ Sin elección; no se implementan sin ella.
 | WhatsApp · Orientación y mensajes del sistema | backend | Panel 2 desactualizado: Meta aprobó la invitación como Marketing, con otro texto |
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |
-| Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Pantalla programada el 2026-11-11](asistente-casos.md#diferencias-de-lo-programado--2026-11-11); el chat (AS4), por programar |
+| Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Pantalla programada el 2026-11-11](asistente-casos.md#diferencias-de-lo-programado--2026-11-11); [el chat (AS4), el 2026-11-12](asistente-casos.md#el-chat-as4--2026-11-12): «Necesita una persona» con su filtro, el porqué de cada respuesta, sus líneas y el texto para el compositor; falta la prueba manual |
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
 | Documentos por WhatsApp | «Biblioteca», «Lectura de documentos» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md) |

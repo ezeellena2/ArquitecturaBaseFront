@@ -17,7 +17,11 @@ const proposal = z.strictObject({ proposalId: guid.nullable(), definitionId: gui
 export type AssistantProposal = z.infer<typeof proposal>;
 // W1-A: a sent suggestion of a form with a location opens with its location request, and its Flow goes out with the location.
 const outgoing = z.strictObject({ id: guid, requestId: guid, operatorUserId: guid, body: z.string().nullable(), requestedAtUtc: z.string().datetime({ offset: true }), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.enum(["Flow", "LocationRequest"]), quickReplies: z.null(), origin: z.literal("Conversation"), form: formMetadataSchema, recoveryPath: z.string().nullable(), assistant: assistantExplanationSchema.nullable() });
-const suggestion = assistantSuggestionPointerSchema.extend({ proposal: proposal.nullable(), outgoing: outgoing.nullable() }).refine(value => value.state === "Ready" ? value.proposal !== null && value.outgoing === null : value.state === "Sent" ? value.proposal === null && value.outgoing !== null : value.proposal === null && value.outgoing === null);
+// Casos del asistente (AS4): in Atención manual a Ready suggestion can be a text for the composer instead of a form, with the case it
+// followed and what it used. It fits in the composer and is absent in every other suggestion.
+const textProposal = z.strictObject({ text: z.string().max(4096).refine(text => text.trim() !== ""), caseSource: z.enum(["Own", "Form", "Fallback"]), caseTitle: z.string().nullable(), used: z.array(z.string()) });
+export type AssistantTextProposal = z.infer<typeof textProposal>;
+const suggestion = assistantSuggestionPointerSchema.extend({ proposal: proposal.nullable(), outgoing: outgoing.nullable(), textProposal: textProposal.optional() }).refine(value => value.state === "Ready" ? (value.proposal !== null) !== (value.textProposal !== undefined) && value.outgoing === null : value.textProposal === undefined && (value.state === "Sent" ? value.proposal === null && value.outgoing !== null : value.proposal === null && value.outgoing === null));
 export type AssistantSuggestion = z.infer<typeof suggestion>;
 export interface AssistantSuggestionRequest { requestId: string; sourceMessageId: string; expectedModeRevision: number }
 export interface AssistantSendRequest { requestId: string; includedFieldIds: readonly string[] }

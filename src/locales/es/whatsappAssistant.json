@@ -247,6 +247,7 @@
       "limits": "La respuesta no pasó los límites",
       "blockedTopic": "Le preguntaron por un tema que no responde",
       "unknown": "No encontró la respuesta en lo cargado",
+      "button": "Tocó «{{title}}»",
       "other": "Lo derivó el asistente"
     }
   },
