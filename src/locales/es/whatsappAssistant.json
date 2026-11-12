@@ -261,6 +261,7 @@
     "formRequired": "Elegí un formulario.",
     "buttonsRequired": "Agregá al menos un botón.",
     "repeatedButton": "Ya hay un botón con este texto.",
+    "repeatedUntranslated": "Sin traducir sale como «{{text}}», igual que otro botón.",
     "destinationRequired": "Elegí a dónde lleva.",
     "repeatedTopic": "Este tema ya está en la lista.",
     "tooManyTopics": "Podés agregar hasta {{count}} temas.",

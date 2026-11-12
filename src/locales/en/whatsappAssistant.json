@@ -261,6 +261,7 @@
     "formRequired": "Choose a form.",
     "buttonsRequired": "Add at least one button.",
     "repeatedButton": "There's already a button with this text.",
+    "repeatedUntranslated": "Untranslated, it goes out as “{{text}}”, like another button.",
     "destinationRequired": "Choose where it leads.",
     "repeatedTopic": "This topic is already on the list.",
     "tooManyTopics": "You can add up to {{count}} topics.",

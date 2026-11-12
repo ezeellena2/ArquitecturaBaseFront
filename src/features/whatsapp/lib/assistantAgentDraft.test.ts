@@ -87,6 +87,25 @@ describe("what Guardar checks", () => {
     expect(issuesUnder(validateDraft(draft, "es"), caseKey(draft.cases[0]!.id))["action.kind"]).toEqual({ key: "validation.actionNotAllowed" });
   });
 
+  it("compares the buttons' titles as the person sees them: one without its translation goes out with its original", () => {
+    const draft = draftFromAgent(configOf(agent));
+    const item = draft.cases[1]!;
+    const button = (id: string, es: string, en: string): ReturnType<typeof newButton> => ({ ...newButton(id), title: { es, en }, destination: "Handoff" });
+    const titleIssue = (original: "es" | "en") => issuesUnder(validateDraft(draft, original), caseKey(item.id))["action.buttons[1].title"];
+    item.action = { ...emptyAction("AskButtons"), question: { es: "¿Ya terminaste?", en: "Are you done?" }, buttons: [button("1", "OK", ""), button("2", "Listo", "OK")] };
+    expect(titleIssue("es")).toEqual({ key: "validation.repeatedButton", culture: "en" });
+    // Its English field is empty, so the message says the title it goes out with.
+    item.action.buttons = [button("1", "Listo", "OK"), button("2", "OK", "")];
+    expect(titleIssue("es")).toEqual({ key: "validation.repeatedUntranslated", values: { text: "OK" }, culture: "en" });
+    item.action.buttons = [button("1", "OK", "  "), button("2", "Listo", "ok")];
+    expect(titleIssue("es")).toEqual({ key: "validation.repeatedButton", culture: "en" });
+    item.action.buttons = [button("1", "OK", "Fine"), button("2", "Listo", "OK")];
+    expect(titleIssue("es")).toBeUndefined();
+    // A repeated original is named in its own language, where it was written, although the other language repeats it too.
+    item.action.buttons = [button("1", "", "Done"), button("2", "", "done")];
+    expect(titleIssue("en")).toEqual({ key: "validation.repeatedButton", culture: "en" });
+  });
+
   it("puts the server's problems on the case that was sent at that place, even after moving it", () => {
     const ids = ["0199a0c0-0000-7000-8000-000000000001", "0199a0c0-0000-7000-8000-000000000002"];
     const mapped = serverIssueKeys({ "cases[1].action.buttons[1].title": ["Repetido."], "profile.name": ["Requerido."], "fallback.kind": ["Apagada."], "limits.blockedTopics[3]": ["Largo."], cases: ["Demasiados."], "cases[7].when": ["Otro."], expectedRevision: ["Mal."] }, ids);

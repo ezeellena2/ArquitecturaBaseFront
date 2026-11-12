@@ -178,9 +178,14 @@ export function validateAction(action: DraftAction, allowed: readonly AgentActio
       action.buttons.forEach((button, index) => {
         const path = (name: string) => at(`buttons[${index}].${name}`);
         fixed(issues, path("title"), button.title, agentLimits.buttonTitle, original);
-        for (const culture of ["es", "en"] as const) {
-          const title = button.title[culture].trim().toLocaleLowerCase(culture);
-          if (title && seen[culture].has(title) && !issues[path("title")]) issues[path("title")] = { key: "validation.repeatedButton", culture };
+        // As the person sees it: a title without its translation goes out with its original. A repeat is named first in the
+        // original, where it was written; one that repeats only through the original names that title, since its field is empty.
+        for (const culture of [original, other(original)]) {
+          const own = button.title[culture].trim();
+          const shown = own || button.title[original].trim();
+          const title = shown.toLocaleLowerCase(culture);
+          if (title && seen[culture].has(title) && !issues[path("title")])
+            issues[path("title")] = own ? { key: "validation.repeatedButton", culture } : { key: "validation.repeatedUntranslated", values: { text: shown }, culture };
           if (title) seen[culture].add(title);
         }
         if (!button.destination) issues[path("destination")] = { key: "validation.destinationRequired" };
