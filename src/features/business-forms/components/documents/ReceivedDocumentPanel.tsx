@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
@@ -18,6 +18,7 @@ import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { receivedDocumentForbidden, useReceivedDocumentDetail, useReceivedDocumentFile, useReceivedDocumentReadWait, useReceivedDocumentReview,
   useReceivedDocumentScope } from "../../hooks/useReceivedDocuments";
+import { documentFormProposalPath } from "../../documentFormProposal";
 import { receivedDocumentActions, receivedDocumentFieldId, receivedDocumentForms, receivedDocumentReason, receivedDocumentStateLabel, receivedDocumentStateVariant } from "../../receivedDocuments";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../ResponsePanelFrame";
 import { ReceivedDocumentData } from "./ReceivedDocumentData";
@@ -38,6 +39,7 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
   const scope = useReceivedDocumentScope();
   const zone = scope.user?.timeZoneId;
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = params.get("tab") === "history" ? "history" : "review";
   const detail = useReceivedDocumentDetail(documentId);
   const shown = detail.data;
@@ -158,6 +160,15 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
             ? <Link to={`/formularios/${document.form.definitionId}/respuestas/${document.record.recordId}`} className="font-medium text-[var(--color-brand-700)] underline">{document.record.number}</Link>
             : document.record.number }] : [],
         ]} />}
+        {/* DOC6: an unclassified document with its reading and its copy can become a form of its own, for whoever reviews documents and
+            designs forms: its page asks for the proposal under a new request. */}
+        {scope.buildsForms && document.state === "unclassified" && shown.reading && document.file.stored ? <div>
+          <DisabledReason reason={busy ? t("formProposal.busy") : null}>
+            <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void navigate(documentFormProposalPath(crypto.randomUUID(), { documentId: document.id }))}>
+              {t("formProposal.build")}
+            </Button>
+          </DisabledReason>
+        </div> : null}
         {reading ? <p role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{reading}</p> : null}
         {stalled ? <Banner tone="warning" action={<DisabledReason reason={wait}>
           <Button type="button" variant="outline" size="sm" disabled={!!wait} onClick={review.retry}>{t("common:actions.retry")}</Button>

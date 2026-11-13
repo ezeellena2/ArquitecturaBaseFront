@@ -213,3 +213,11 @@ export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: 
 /** Why a change of form ended without one: the form was not recognized, the engine refused it, or something else the server named. */
 export const receivedDocumentExtractionFailureKey = (code: string | null) =>
   code === "Forms.ReceivedDocument.Unrecognized" ? "extraction.unrecognized" : code === refusedCode ? "extraction.refused" : "extraction.failed";
+
+/**
+ * Why «Armar formulario con la IA» (DOC6) ended without a proposal: the assistant proposed no form, the engine no longer knows the request,
+ * or the engine could not (its own codes come as they are and read the same, like a change of form that failed).
+ */
+export const documentFormProposalFailureKey = (code: string) =>
+  code === "Forms.ReceivedDocument.NoFormProposal" ? "formProposal.failure.noProposal"
+    : code === "Forms.ReceivedDocument.ProposalNotFound" ? "formProposal.failure.notFound" : "formProposal.failure.failed";

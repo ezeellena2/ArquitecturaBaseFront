@@ -45,6 +45,22 @@ describe("the guards", () => {
     expect(readReceivedDocument(unlisted({ reason: "missingData", datum: "Provincia" })).proposal!.candidates[0]!.values[0]!.optionsUnavailable).toEqual({ reason: "missingData", datum: "Provincia" });
   });
 
+  // DOC6 (task 14): the notice of similar documents, up to five topics of «Formularios que faltan» that three or more unclassified
+  // documents share under the page's other filters, the largest first, each with how many and the newest of them, up to a request's 20.
+  const topicId = (n: number) => `0199b0c0-0000-7000-8000-${String(950 + n).padStart(12, "0")}`;
+  const documentIds = (count: number) => Array.from({ length: count }, (_, n) => `0199b0c0-0000-7000-8000-${String(1000 + n).padStart(12, "0")}`);
+  const group = { topic: { id: topicId(1), name: "tickets de combustible" }, count: 3, documentIds: [receivedDocumentIds.unclassified, receivedDocumentIds.other, documentIds(1)[0]] };
+  it("read the notice of similar documents, also with none", () => {
+    const groups = [{ topic: { id: topicId(2), name: "remitos de entrega" }, count: 25, documentIds: documentIds(20) }, group];
+    expect(readReceivedDocuments({ ...page, groups }).groups).toEqual(groups);
+    expect(readReceivedDocuments(page).groups).toEqual([]);
+  });
+  // The database counts a topic's name by its characters, not by JavaScript's UTF-16 units: a long one with emoji is read.
+  it("read a long topic with emoji", () => {
+    const groups = [{ ...group, topic: { ...group.topic, name: "🚚".repeat(120) } }];
+    expect(readReceivedDocuments({ ...page, groups }).groups).toEqual(groups);
+  });
+
   const item = page.items[0]!;
   const waiting = page.items[5]!;
   const value = detail.proposal!.candidates[0]!.values[1]!;
@@ -54,6 +70,7 @@ describe("the guards", () => {
     ({ ...detail, proposal: { ...detail.proposal, candidates: [{ ...detail.proposal!.candidates[0], values: [{ ...base, ...changes }] }] } });
   const { replyExpiresAtUtc: _deadline, ...undated } = item;
   const { facets: _facets, ...withoutFacets } = page;
+  const { groups: _groups, ...withoutGroups } = page;
   const { forms: _forms, ...withoutForms } = detail;
   it.each<[string, unknown]>([
     ["an unknown member", { ...page, private: true }],
@@ -76,6 +93,19 @@ describe("the guards", () => {
     ["a form twice in the filter", { ...page, facets: { ...page.facets, forms: [page.facets.forms[0], page.facets.forms[0]] } }],
     ["a person twice in the filter", { ...page, facets: { ...page.facets, senders: [page.facets.senders[0], page.facets.senders[0]] } }],
     ["filters that do not say whether their lists were cut", { ...page, facets: { forms: page.facets.forms, senders: page.facets.senders } }],
+    ["no notice of similar documents", withoutGroups],
+    ["a null notice of similar documents", { ...page, groups: null }],
+    ["a group of two documents", { ...page, groups: [{ ...group, count: 2 }] }],
+    ["a group of a count that is not whole", { ...page, groups: [{ ...group, count: 3.5 }] }],
+    ["a group without its newest documents", { ...page, groups: [{ ...group, documentIds: [] }] }],
+    ["a group with more documents than a request takes", { ...page, groups: [{ ...group, count: 21, documentIds: documentIds(21) }] }],
+    ["a document twice in a group", { ...page, groups: [{ ...group, documentIds: [group.documentIds[0], group.documentIds[0], group.documentIds[1]] }] }],
+    ["a document of a group that is not an identity", { ...page, groups: [{ ...group, documentIds: ["ticket-1", ...group.documentIds] }] }],
+    ["a topic in two groups", { ...page, groups: [group, { ...group, count: 4 }] }],
+    ["six groups", { ...page, groups: [1, 2, 3, 4, 5, 6].map(n => ({ ...group, topic: { ...group.topic, id: topicId(n) } })) }],
+    ["a topic without its name", { ...page, groups: [{ ...group, topic: { ...group.topic, name: "" } }] }],
+    ["a topic with an unknown member", { ...page, groups: [{ ...group, topic: { ...group.topic, state: "Pending" } }] }],
+    ["a group with an unknown member", { ...page, groups: [{ ...group, documents: [] }] }],
   ])("rejects a page with %s", (_case, body) => {
     expect(() => readReceivedDocuments(body)).toThrow("Unsupported form response.");
   });

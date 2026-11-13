@@ -54,7 +54,12 @@ export const routes: RouteObject[] = [
               { element: <ProtectedRoute permission="formpersondata.manage" />, children: [{ path: "/datos-de-personas", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/PersonDataPage")).PersonDataPage }) }] },
               { element: <ProtectedRoute permission="formtemplates.manage" />, children: [{ path: "/formularios/faltantes", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/MissingFormsPage")).MissingFormsPage }) }] },
               // «Documentos recibidos» (DOC5-A): the open document goes in the route, as a response in D2, and the page stays mounted.
-              { element: <ProtectedRoute permission="formdocuments.read" />, children: [{ path: "/formularios/documentos", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ReceivedDocumentsPage")).ReceivedDocumentsPage }), children: [{ path: ":documentId", element: null }] }] },
+              { element: <ProtectedRoute permission="formdocuments.read" />, children: [{ path: "/formularios/documentos", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/ReceivedDocumentsPage")).ReceivedDocumentsPage }), children: [{ path: ":documentId", element: null }] },
+                // «Armar formulario con la IA» (DOC6): its request goes in the route, so leaving and coming back reads it. It also asks for
+                // «Revisar documentos» and «Diseñar formularios».
+                { element: <ProtectedRoute permission="formdocuments.review" />, children: [{ element: <ProtectedRoute permission="formtemplates.read" />, children: [{ element: <ProtectedRoute permission="formtemplates.manage" />, children: [
+                  { path: "/formularios/documentos/armar/:requestId", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/DocumentFormProposalPage")).DocumentFormProposalPage }) },
+                ] }] }] }] },
               { element: <ProtectedRoute permission="formrules.manage" />, children: [{ path: "/formularios/:formId/pdf", lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormPdfDesignPage")).FormPdfDesignPage }) }] },
               {
                 // «Formularios» and the sheet also open with «Completar formularios», which reads only one's own responses (CW6-C).

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import en from "@/locales/en/formDocuments.json";
+import es from "@/locales/es/formDocuments.json";
 import { receivedDocumentDetailFixture, receivedDocumentFields, receivedDocumentForms, receivedDocumentIds, receivedDocumentOptions, receivedDocumentsPageFixture } from "@/test/visual/receivedDocumentFixtures";
 import type { ReceivedDocumentEvent } from "./api/receivedDocuments";
-import { hasReceivedDocumentFilters, receivedDocumentActions, receivedDocumentAnswers, receivedDocumentAnswersKey, receivedDocumentCandidate, receivedDocumentDataColumns,
+import { documentFormProposalFailureKey, hasReceivedDocumentFilters, receivedDocumentActions, receivedDocumentAnswers, receivedDocumentAnswersKey, receivedDocumentCandidate, receivedDocumentDataColumns,
   receivedDocumentDatum, receivedDocumentDraft, receivedDocumentEventKey, receivedDocumentExtractionFailureKey, receivedDocumentForms as formsOf, receivedDocumentKind,
   receivedDocumentProblems, receivedDocumentReason, receivedDocumentShownData, receivedDocumentStateLabel, receivedDocumentValueNeedsLook, searchDigitsMissing } from "./receivedDocuments";
 
@@ -167,5 +169,19 @@ describe("why and what happened", () => {
     expect(receivedDocumentExtractionFailureKey("Forms.ReceivedDocument.ExtractionRefused")).toBe("extraction.refused");
     expect(receivedDocumentExtractionFailureKey("Forms.ReceivedDocument.Unrecognized")).toBe("extraction.unrecognized");
     expect(receivedDocumentExtractionFailureKey("Forms.ReceivedDocument.FormChanged")).toBe("extraction.failed");
+  });
+});
+
+// DOC6 (task 14): why «Armar formulario con la IA» ended without a proposal, by its code: the assistant proposed none, the request is no
+// longer there, or the engine could not (its codes come as they are, and all of them read the same).
+describe("a form proposal", () => {
+  it("says why it failed, in both languages", () => {
+    expect(documentFormProposalFailureKey("Forms.ReceivedDocument.NoFormProposal")).toBe("formProposal.failure.noProposal");
+    expect(documentFormProposalFailureKey("Forms.ReceivedDocument.ProposalNotFound")).toBe("formProposal.failure.notFound");
+    for (const code of ["Ai.Assistant.ProviderUnavailable", "Ai.Assistant.Expired", "Ai.Assistant.InvalidOutput", "Ai.Assistant.LimitExceeded", "Ai.Assistant.ContentBlocked"])
+      expect(documentFormProposalFailureKey(code)).toBe("formProposal.failure.failed");
+    const texts = (locale: typeof es) => Object.values(locale.formProposal.failure);
+    expect(texts(es)).toHaveLength(3);
+    expect([...texts(es), ...texts(en)].every(text => text.trim() !== "")).toBe(true);
   });
 });

@@ -746,7 +746,8 @@ un número sin cuenta y la marca «Necesita una persona» (tareas 8 y 9) y el av
 - **«Se borra» es una columna**, con la fecha, en lugar de «Se borra el …» junto al estado (UD); **«Para revisar»** es el estado del
   propuesto que espera al equipo (VC1-A).
 - **La bajada va en la (i)** del título y no está «27 en los últimos 7 días» del celular: la cantidad está en «Todos (27)» y al pie.
-- **El aviso de los parecidos** (DOC6) no está: el contrato no trae los grupos; lo suma la tarea 14 con su acción.
+- **El aviso de los parecidos** (DOC6) llegó con la tarea 14, arriba de la planilla y con su acción
+  ([cómo quedó](#doc6--armar-formulario-con-la-ia-2026-11-12)).
 - **En el celular el segmentado baja de renglón**, como en el resto de la app, en lugar del desplegable «Estado: todos».
 - **El panel es el marco de D2**: la posición va al pie, a la izquierda de las acciones (en el celular, arriba), no junto a ↑ ↓.
 - **El visor**: una foto se acerca, se aleja, gira y se descarga; un PDF usa el visor del navegador, con sus páginas y su zoom, y
@@ -781,3 +782,89 @@ un número sin cuenta y la marca «Necesita una persona» (tareas 8 y 9) y el av
 - **«Descartar»** confirma con el día en que se borraría; **«Pasar al formulario»** dice el número en el aviso común.
 - **El PDF** no se ve en las capturas: Chromium sin ventana no dibuja su visor y la caja queda vacía; vitest prueba que el marco
   recibe la URL privada.
+
+### DOC6 · Armar formulario con la IA (2026-11-12)
+
+Tarea 14 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#parte-b--la-bandeja-documentos-recibidos-doc5-a-y-doc6)
+(decisión 17), sólo el front, contra el contrato del backend de la misma tarea (`FormDocumentProposalsController`) y con cuerpos
+sintéticos hasta que se exporte la cohorte `forms-documents-http`: el aviso de los parecidos arriba de la planilla (los `groups` de
+la página), «Armar formulario con la IA» en el panel de un sin clasificar y la página `/formularios/documentos/armar/{pedido}`
+(`DocumentFormProposalPage`). La escena `documentFormProposal.spec.ts` guarda las referencias
+`document-form-{notice,pending,proposal,failed}-{es,en}-{1440,390,320}`.
+
+**La lista de chequeo:**
+
+1. **Entero y armado.** `Page` con su (i) y «Cancelar» y «Crear borrador» en la banda; `Banner` para el aviso de la bandeja, el
+   estándar parecido, el borrador ya creado, el pedido que falló y el que no se pudo seguir; «El formulario» (`Surface` con
+   `FormField`, `Input` y `Textarea`), «Preguntas (N)» y «Documentos (N)» (`Surface` con `DataTable`, y el `DocumentViewer` de la
+   bandeja); el diálogo de una pregunta (`Dialog` con `NativeSelect`, `CheckboxField` y `CatalogQuestionSelector`), el «Agregar» de
+   la biblioteca (`FormStandardAddDialog`) y `ConfirmDialog` al salir con cambios. Estados: pidiendo, armando (se puede salir y
+   volver), la propuesta, el borrador ya creado, el que falló, el que no se pudo seguir, el pedido que ya no está (`EmptyState` con
+   «Volver a Documentos recibidos»), el error al pedirlo o al leerlo con «Reintentar», la espera de un 429 y sin permiso. El
+   diálogo es breve y de una pregunta.
+2. **Una tarea, zonas que se entienden solas.** Armar el formulario: a un lado la propuesta (sus avisos, «El formulario» y
+   «Preguntas»), al otro los documentos de los que salió; en el celular, uno debajo del otro.
+3. **El control según el dato.** Las preguntas y los documentos son colecciones: tablas. El tipo de una pregunta, uno entre diez:
+   desplegable; si es obligatoria: casilla; su catálogo: el combo de catálogos de siempre; sus opciones: un campo por opción con
+   «Agregar opción».
+4. **Lo que se lee, en su lugar.** Lo leído para una pregunta va, en su diálogo, en `DataList`; ningún «Rótulo: valor» corrido.
+5. **Un dato por columna.** Preguntas: Pregunta, Tipo (las opciones o el catálogo debajo, en gris: excepción A), Leído en el primero
+   (sólo si alguna lo trae), Obligatoria y Acciones. Documentos: Documento (su nombre elige cuál se ve; el ícono del tipo es dibujo),
+   Mandó y Recibido.
+6. **Sin leyendas.** Qué hace la IA y qué pasa al publicar van en la (i) del título; qué es «Cómo reconocerlo», en la suya; el
+   prefijo y el botón final, en las del editor; de dónde salen los documentos, en la (i) de «Documentos».
+7. **Textos ciertos, una sola vez.** «La IA está leyendo el documento…» o «…los N documentos…», con la cantidad del pedido;
+   «Crear borrador» está apagado sólo mientras llega la propuesta («Esperá a que la IA arme la propuesta.»); un pedido que falló o
+   que no se pudo leer no ofrece crear, así no se dice dos veces que no hay propuesta; el borrador ya creado se dice una vez, en su
+   `Banner`, con «Abrir el borrador» en la banda.
+8. **Botones y lo apagado.** «Cancelar» junto a «Crear borrador», la principal y última; «Volver a pedir» en el aviso del que
+   falló; «Agregar el estándar» (la principal del aviso) y «Armar igual con la IA». El lápiz y el tacho de cada fila editan y
+   quitan (quitar no confirma: nada se guarda hasta «Crear borrador»). Lo apagado da su motivo encima: la espera de un 429, la
+   biblioteca que se está leyendo o que ya no tiene el estándar.
+9. **Lo elegido y la espera.** El documento que se ve lleva la barra de la fila elegida; «Pidiendo la propuesta…», «La IA está
+   leyendo…» y «Creando…» llevan su aro; lo que viene ocupa su lugar con las zonas de `FormSkeleton`, y los documentos no se mueven
+   cuando llega la propuesta ni cuando falla.
+10. **Estados y mensajes.** El borrador creado va en el aviso común y abre su editor. Lo que falta y los problemas del servidor van
+    debajo de su campo o de su pregunta, por la ruta del cuerpo (`name`, `prefix`, `recognition`, `questions[2].options`…), con el
+    foco en el primero; lo que no es de un campo, en el aviso. Un 404 o un 409 al crear (también una propuesta vieja,
+    `Forms.ReceivedDocument.ProposalNotFound`) dice el texto del servidor y vuelve a leer el pedido; un 400, 404 o 409 al pedir
+    dice el texto del servidor con la vuelta a la bandeja; un 429 (también el cupo o la capacidad de la IA,
+    `Ai.Assistant.QuotaExceeded` y `Ai.Assistant.CapacityLimited`) dice el texto del servidor y espera lo que pidió, con el motivo
+    en «Reintentar» o en «Crear borrador» (en el aviso, cuándo se puede volver a intentar); un 403 retira la página; salir con
+    cambios pide confirmación.
+11. **Lo mismo, igual en toda la app.** El aviso es el `Banner` de siempre; las fechas van con números y la zona del perfil, las
+    cantidades de los textos con los miles de la región, tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px la página no se desplaza de costado (lo mide la escena): las tablas lo hacen dentro
+    de su caja. El diálogo de una pregunta ocupa la pantalla del celular. es/en. En la dirección va el pedido y, sólo hasta que el
+    servidor lo guarda, qué se pidió (`?documento=` o `?tema=`): volver a la dirección lee el mismo pedido.
+
+**Diferencias con el tablero:**
+
+- **«Cancelar» en lugar de «Descartar la propuesta»**: la propuesta no se borra en el servidor, y cancelar vuelve a la bandeja
+  (con cambios, confirma).
+- **Sin la línea «La IA propone; vos revisás y publicás…» ni la insignia «Propuesta de la IA»**: lo primero va en la (i) del
+  título (sin leyendas) y lo segundo ya lo dice el título.
+- **El estándar parecido es un aviso arriba de la propuesta**, como en el detalle del tablero («Agregar el estándar» y «Armar igual
+  con la IA»), no una zona fija al pie: sin estándar no hay zona, porque «Ninguno de la biblioteca, todavía…» no ayuda a decidir.
+  «Agregar el estándar» abre el «Agregar» de la biblioteca, con las carpetas de Diseñar formularios.
+- **Las preguntas son una tabla con un dato por columna** (UD): «Leído en el primero» es una columna, en lugar de «Leído en el
+  primero: …» en el renglón, y no hay columna de número. En el celular es la misma tabla, que se desplaza de costado dentro de su
+  caja como las demás de la app, en lugar de una tarjeta por pregunta.
+- **Una pregunta se edita en un diálogo** (el lápiz de su fila) con su texto, su tipo, si es obligatoria y sus opciones o su
+  catálogo, y lo leído arriba para comparar; «Agregar pregunta» abre el mismo diálogo.
+- **Los documentos son una tabla** (Documento, Mandó, Recibido) con el elegido en el visor de la bandeja, en lugar de las
+  miniaturas y del resumen «Los sin clasificar que se parecen: de … del 17 al 22 de octubre.»; lo que pasa al publicar va en la (i)
+  de «Documentos».
+- **El aviso de la bandeja dice la cantidad y el tema, con «Armar formulario con la IA»**, sin «¿Armamos un formulario?» (lo dice
+  el botón) ni «Ver los 5», porque la bandeja no filtra por tema. Con varios temas, un aviso por tema (hasta cinco), el más grande
+  primero.
+- **La entrada desde el panel** es «Armar formulario con la IA» debajo del formulario de un sin clasificar que tiene su lectura y su
+  copia, no la tarjeta «Sin clasificar · 5» del concepto B.
+- **Si falla**, el aviso rojo dice por qué (la IA no propuso ninguno, el pedido ya no está o no se pudo armar) con «Volver a pedir»,
+  que pide otra vez, con un pedido nuevo, para el mismo tema o documento; no hay «Crear borrador» ni la segunda frase del tablero:
+  los documentos siguen a la vista al costado.
+- **Mientras arma**, el aro y «La IA está leyendo los N documentos y armando la propuesta…» van arriba de las zonas que vienen; si
+  no se puede saber cómo sigue, un aviso amarillo con «Reintentar».
+- **Ya creado el borrador**, la propuesta queda de sólo lectura, con «Ya se creó el borrador con esta propuesta.» y «Abrir el
+  borrador» en la banda.
+- **En el celular las acciones quedan en la banda**, como en las demás páginas, y no al pie.

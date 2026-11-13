@@ -27,6 +27,8 @@ export function useReceivedDocumentScope() {
     owner: [user?.id ?? "", i18n.language, permissions.join(",")].join(":"),
     allowed: permissions.includes("formdocuments.read"),
     readsResponses: permissions.includes("formrecords.read"),
+    // «Armar formulario con la IA» (DOC6): seeing the inbox, reviewing documents and designing forms, the four its routes ask for.
+    buildsForms: ["formdocuments.read", "formdocuments.review", "formtemplates.read", "formtemplates.manage"].every(permission => permissions.includes(permission)),
   };
 }
 export const receivedDocumentsKey = (owner: string) => ["form-received-documents", owner] as const;
@@ -185,10 +187,11 @@ export function useReceivedDocumentReview(detail: ReceivedDocumentDetail | undef
     if (feedback.kind === "cancelled" || feedback.kind === "session") return;
     if (feedback.kind === "forbidden" && engine) { say(id, { kind: "error", message: failed, description: feedback.detail ?? undefined }); await readAgain(id); return; }
     if (feedback.kind === "forbidden") { onDenied(); return; }
+    // A 429 (also the AI's quota or capacity when the form changes) says the server's text, when it has one, and when to try again.
     if (feedback.kind === "wait") {
       const seconds = Math.min(86400, Math.max(1, feedback.retryAfterSeconds ?? 60));
       restart(seconds);
-      say(id, { kind: "error", message: t("wait", { count: seconds }) });
+      say(id, { kind: "error", message: feedback.detail ?? t("wait", { count: seconds }), description: feedback.detail ? t("wait", { count: seconds }) : undefined });
       return;
     }
     if (feedback.kind === "uncertain") { say(id, { kind: "warning", message: operationalErrorMessage(error, t) }); await readAgain(id); return; }

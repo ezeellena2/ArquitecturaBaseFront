@@ -61,7 +61,13 @@ const facets = z.strictObject({
   senders: z.array(z.strictObject({ userId: guid, displayName: z.string().nullable(), count })).refine(values => unique(values.map(value => value.userId))),
   formsTruncated: z.boolean(), sendersTruncated: z.boolean(),
 });
-const page = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, counts, facets })
+// DOC6 (task 14): a topic of «Formularios que faltan», by the name it was noted with, and the notice of similar documents: up to five
+// topics that three or more unclassified documents share under the page's other filters (never its state's), the largest first, each
+// with how many they are and the newest of them, up to the 20 a request takes. Always present, possibly empty.
+const topic = z.strictObject({ id: guid, name: z.string().min(1).max(120) });
+const group = z.strictObject({ topic, count: z.number().int().min(3), documentIds: z.array(guid).min(1).max(20).refine(unique) });
+const groups = z.array(group).max(5).refine(values => unique(values.map(value => value.topic.id)));
+const page = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, counts, facets, groups })
   .refine(value => value.items.length <= value.pageSize && unique(value.items.map(row => row.id)));
 const menuCounts = z.strictObject({ forReview: count, unclassified: count, total: count }).refine(value => value.total === value.forReview + value.unclassified);
 
@@ -142,6 +148,11 @@ export type ReceivedDocumentExtraction = z.infer<typeof extraction>;
 export type ReceivedDocumentRecord = z.infer<typeof recordResponse>;
 export type ReceivedDocumentOption = z.infer<typeof option>;
 export type ReceivedDocumentOptionPage = z.infer<typeof optionPage>;
+export type ReceivedDocumentTopic = z.infer<typeof topic>;
+export type ReceivedDocumentGroup = z.infer<typeof group>;
+/** A document as the list shows it, and a topic of «Formularios que faltan»: «Armar formulario con la IA» (DOC6) reads them too. */
+export const receivedDocumentItemSchema = item;
+export const receivedDocumentTopicSchema = topic;
 
 /** The private filters and the paging and order of the list: they travel in a body, never in a URL. */
 export interface ReceivedDocumentsQuery {

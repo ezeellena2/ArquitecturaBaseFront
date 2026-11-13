@@ -51,6 +51,22 @@ beforeEach(() => {
 });
 
 const lastList = (requests: { list: Body[] }) => requests.list.at(-1)!;
+// «Armar formulario con la IA» (DOC6): whoever also designs forms, and the request its page asks for (it waits, empty).
+const builder = [...reviewer, "formtemplates.read", "formtemplates.manage"];
+const topicId = "0199b0c0-0000-7000-8000-000000000951";
+function proposalHandlers(topic: { id: string; name: string } | null) {
+  const asks: unknown[] = [];
+  const pending = (requestId: unknown) => ({ requestId, state: "pending", failureCode: null, topic, documents: [], proposal: null, definitionId: null });
+  server.use(
+    http.post("/api/forms/documents/form-proposals", async ({ request }) => {
+      const body = await request.json() as { requestId: string };
+      asks.push(body);
+      return HttpResponse.json(pending(body.requestId), { status: 202 });
+    }),
+    http.get("/api/forms/documents/form-proposals/:requestId", ({ params }) => HttpResponse.json(pending(params.requestId))),
+  );
+  return asks;
+}
 const panel = () => screen.findByRole("region", { name: "Documento" }, { timeout: 10_000 });
 const pause = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 const notices = (kind: string) => vi.mocked(notify).mock.calls.filter(([options]) => options.kind === kind).map(([options]) => options.message);
@@ -164,7 +180,7 @@ describe("the list", () => {
 
   it("says when nothing arrived yet, when nothing matches and when the list could not be read", async () => {
     const empty: Omit<ReceivedDocumentsPage, "pageSize"> = { items: [], page: 1, totalCount: 0, counts: { proposed: 0, forReview: 0, unclassified: 0, confirmed: 0, discarded: 0 },
-      facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false } };
+      facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false }, groups: [] };
     let failing = true;
     setup({ list: body => body.state ? HttpResponse.json({ ...empty, pageSize: body.pageSize })
       : failing ? HttpResponse.json({ status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ ...empty, pageSize: body.pageSize }) });
@@ -178,6 +194,29 @@ describe("the list", () => {
     expect(await screen.findByText("Ningún documento coincide")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Limpiar todo" }));
     expect(await screen.findByText("Todavía no llegaron documentos")).toBeInTheDocument();
+  }, 20_000);
+
+  // DOC6: the notice of similar documents, above the sheet, for whoever reviews documents and designs forms.
+  it("shows the similar documents no form takes above the sheet and asks for a form from their topic under a new request", async () => {
+    const groups = [{ topic: { id: topicId, name: "tickets de combustible" }, count: 5, documentIds: [receivedDocumentIds.unclassified, receivedDocumentIds.other] }];
+    setup({ permissions: builder, list: body => HttpResponse.json({ ...receivedDocumentsPageFixture(), page: body.page, pageSize: body.pageSize, groups }) });
+    const asks = proposalHandlers(groups[0]!.topic);
+    const user = userEvent.setup();
+    const { router } = renderRouteWithProviders("/formularios/documentos");
+    const notice = await screen.findByText("Llegaron 5 documentos parecidos que no encajan en ningún formulario: tickets de combustible.", {}, { timeout: 10_000 });
+    expect(notice.compareDocumentPosition(screen.getByRole("table")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Armar formulario con la IA: tickets de combustible" }));
+    await waitFor(() => expect(asks).toHaveLength(1));
+    expect(asks[0]).toEqual({ requestId: expect.stringMatching(/^[0-9a-f-]{36}$/), topicId });
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/documentos/armar/${(asks[0] as { requestId: string }).requestId}`));
+  }, 20_000);
+
+  it("does not show the notice of similar documents without «Diseñar formularios»", async () => {
+    const groups = [{ topic: { id: topicId, name: "tickets de combustible" }, count: 5, documentIds: [receivedDocumentIds.unclassified] }];
+    setup({ permissions: [...reviewer, "formtemplates.read"], list: body => HttpResponse.json({ ...receivedDocumentsPageFixture(), page: body.page, pageSize: body.pageSize, groups }) });
+    renderRouteWithProviders("/formularios/documentos");
+    expect(await screen.findByRole("button", { name: "Todos (27)" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.queryByText(/documentos parecidos/)).not.toBeInTheDocument();
   }, 20_000);
 
   it("takes the inbox away on a 403", async () => {
@@ -556,6 +595,21 @@ describe("the panel", () => {
     expect(within(frame).getByText("No se pudo leer para «Gastos»: el motor no lo permitió.")).toBeInTheDocument();
   }, 20_000);
 
+  it("says the server's text and when to try again when the AI's quota stops a change of form", async () => {
+    const base = receivedDocumentDetailFixture(receivedDocumentIds.forReview);
+    const expenses = { ...base.proposal!.candidates[0]!, definitionId: receivedDocumentForms.expenses, versionId: "0199b0c0-0000-7000-8000-000000000412", name: "Gastos" };
+    const doubt: ReceivedDocumentDetail = { ...base, proposal: { ...base.proposal!, outcome: "doubt", candidates: [base.proposal!.candidates[0]!, expenses] } };
+    const { write } = setup({ details: { [receivedDocumentIds.forReview]: doubt } });
+    server.use(http.put("/api/forms/documents/:id/form", write(() => HttpResponse.json({ status: 429, title: "Too many requests", code: "Ai.Assistant.QuotaExceeded",
+      detail: "Se terminó el cupo de la IA por hoy.", retryAfter: 120 }, { status: 429 }))));
+    const user = userEvent.setup();
+    renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
+    const frame = await panel();
+    await user.selectOptions(await within(frame).findByRole("combobox", { name: "Formulario" }), "Gastos");
+    await waitFor(() => expect(vi.mocked(notify)).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: "Se terminó el cupo de la IA por hoy.",
+      description: "Esperá 120 segundos para volver a intentar." })));
+  }, 20_000);
+
   it("waits the time a 429 asked before reading a change of form again", async () => {
     setup({ details: { [receivedDocumentIds.forReview]: running(receivedDocumentDetailFixture(receivedDocumentIds.forReview)) } });
     server.use(http.get("/api/forms/documents/:id/extraction", () => HttpResponse.json({ status: 429, retryAfter: 30 }, { status: 429 })));
@@ -654,6 +708,41 @@ describe("the panel", () => {
     expect(within(frame).getByText("Llegó y la IA lo reconoció")).toBeInTheDocument();
     expect(within(frame).getByText("De Juan Gómez, por WhatsApp")).toBeInTheDocument();
     expect(within(frame).getByText("Se cargó como REC-000124")).toBeInTheDocument();
+  }, 20_000);
+
+  // DOC6: an unclassified document with its reading and its copy, for whoever reviews documents and designs forms.
+  it("asks for a form from an unclassified document under a new request, only to whoever also designs forms", async () => {
+    setup({ permissions: builder });
+    const asks = proposalHandlers(null);
+    const user = userEvent.setup();
+    const { router } = renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.unclassified}`);
+    const frame = await panel();
+    await user.click(await within(frame).findByRole("button", { name: "Armar formulario con la IA" }, { timeout: 10_000 }));
+    await waitFor(() => expect(asks).toHaveLength(1));
+    expect(asks[0]).toEqual({ requestId: expect.stringMatching(/^[0-9a-f-]{36}$/), documentId: receivedDocumentIds.unclassified });
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/formularios/documentos/armar/${(asks[0] as { requestId: string }).requestId}`));
+  }, 20_000);
+
+  it("leaves «Armar formulario con la IA» off, with its reason, while the document's data are read for a form", async () => {
+    setup({ permissions: builder, details: { [receivedDocumentIds.unclassified]: running(receivedDocumentDetailFixture(receivedDocumentIds.unclassified)) } });
+    renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.unclassified}`);
+    const build = await within(await panel()).findByRole("button", { name: "Armar formulario con la IA" }, { timeout: 10_000 });
+    expect(build).toHaveAttribute("aria-disabled", "true");
+    expect(build).toHaveAccessibleDescription("Esperá a que termine lo que se está haciendo con este documento.");
+  }, 20_000);
+
+  it("does not offer a form from a document that is not unclassified", async () => {
+    setup({ permissions: builder });
+    renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
+    expect(await within(await panel()).findByRole("button", { name: "Pasar al formulario" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Armar formulario con la IA" })).not.toBeInTheDocument();
+  }, 20_000);
+
+  it("does not offer a form from an unclassified document to whoever only reviews documents", async () => {
+    setup();
+    renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.unclassified}`);
+    expect(await within(await panel()).findByRole("button", { name: "Descartar" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Armar formulario con la IA" })).not.toBeInTheDocument();
   }, 20_000);
 
   it("shows a rejected file the inbox kept no copy of with its name and its reason, without asking for it", async () => {

@@ -23,6 +23,8 @@ const documentFormProposal = z.strictObject({
   documentReading: z.strictObject({ recognition: z.string().min(1) }).nullable(),
   standard: z.strictObject({ key: z.string().min(1), name: z.string().min(1) }).nullable(),
 });
+/** The content of propose-form@2; «Armar formulario con la IA» (DOC6) reads the same proposal from its HTTP route. */
+export const documentFormProposalSchema = documentFormProposal;
 const valueType = z.enum(["text", "integer", "decimal", "date"]);
 const catalogShape = {
   culture, name: z.string().min(1), description: z.string(), valueType, code: z.string().min(1), option: z.string().min(1),

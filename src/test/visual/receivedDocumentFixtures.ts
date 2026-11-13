@@ -71,7 +71,7 @@ export function receivedDocumentsPageFixture(language: "es" | "en" = "es"): Rece
   return { items, page: 1, pageSize: 10, totalCount: 27, counts: { proposed: 3, forReview: 2, unclassified: 5, confirmed: 15, discarded: 4 }, facets: {
     forms: [{ ...payments, count: 19 }, { definitionId: receivedDocumentForms.expenses, name: text.expenses, count: 3 }],
     senders: [{ ...people.juan, count: 14 }, { ...people.pablo, count: 7 }, { ...people.marta, count: 6 }], formsTruncated: false, sendersTruncated: false,
-  } };
+  }, groups: [] };
 }
 
 function value(fieldId: string, label: string, type: ReceivedDocumentValue["type"], read: string | null, shown: string | null, extra: Partial<ReceivedDocumentValue> = {}): ReceivedDocumentValue {
@@ -181,7 +181,7 @@ export function createReceivedDocumentVisualFixtures(language: "es" | "en", scen
         const body = await request.clone().json() as { page?: number; pageSize?: number; state?: string; search?: string; definitionId?: string; senderUserId?: string };
         const pageSize = body.pageSize ?? 10, number = body.page ?? 1;
         if (scenario === "documents-empty") return json({ items: [], page: number, pageSize, totalCount: 0, counts: { proposed: 0, forReview: 0, unclassified: 0, confirmed: 0, discarded: 0 },
-          facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false } });
+          facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false }, groups: [] });
         const search = body.search?.replace(/\D/g, "");
         const items = page.items.filter(entry => (!body.state || (body.state === "forReview" ? entry.forReview : entry.state === body.state))
           && (!body.definitionId || entry.form?.definitionId === body.definitionId) && (!body.senderUserId || entry.sender.userId === body.senderUserId)

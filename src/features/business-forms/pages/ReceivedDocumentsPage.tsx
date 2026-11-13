@@ -27,6 +27,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchReceivedDocuments, type ReceivedDocument, type ReceivedDocumentsQuery } from "../api/receivedDocuments";
 import { ReceivedDocumentFacetControl } from "../components/documents/ReceivedDocumentFacetControl";
+import { ReceivedDocumentGroups } from "../components/documents/ReceivedDocumentGroups";
 import { ReceivedDocumentPanel } from "../components/documents/ReceivedDocumentPanel";
 import { receivedDocumentsKey, receivedDocumentForbidden, useReceivedDocumentList, useReceivedDocumentScope } from "../hooks/useReceivedDocuments";
 import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
@@ -206,6 +207,8 @@ function ReceivedDocuments() {
           <Button type="button" variant="muted-link" size="inline" onClick={() => apply({})}>{t("clear")}</Button>
         </div> : null}
       </FilterBar>
+      {/* DOC6: the similar documents no form takes, above the sheet, for whoever can build a form from them. */}
+      {scope.buildsForms && data ? <ReceivedDocumentGroups groups={data.groups} /> : null}
       <Surface>
         <DataTable columns={columns} rows={items} rowKey={item => item.id} selectedRowKey={documentId} onRowClick={item => navigate(documentPath(item.id))}
           isLoading={list.isPending && !data} refreshing={refreshing} hasData={!!data} error={list.error ? t("loadFailed") : undefined}
