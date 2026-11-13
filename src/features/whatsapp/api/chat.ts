@@ -3,7 +3,8 @@ import { chatAudioSchema, type ChatAudio } from "./audio";
 import { api } from "@/shared/api/httpClient";
 import { formRecordNumberSchema, readThreadFormReplies, type FormReply } from "./formReplies";
 import type { ChatFormMetadata, FormEligibility, LinkedAccount } from "./forms";
-import { assistantExplanationSchema, assistantSuggestionPointerSchema, assistantQuickRepliesSchema, type AssistantExplanation, type AssistantSuggestionPointer } from "./assistant";
+import { assistantExplanationSchema, assistantFieldsSchema, assistantListButtonSchema, assistantListRowsSchema, assistantSuggestionPointerSchema, assistantQuickRepliesSchema,
+  type AssistantExplanation, type AssistantSuggestionPointer } from "./assistant";
 
 const assistantAvailabilitySchema = z.strictObject({ state: z.enum(["available", "notInstalled", "notConfigured", "paused", "modelNotQualified"]) });
 export type AssistantAvailability = z.infer<typeof assistantAvailabilitySchema>;
@@ -34,10 +35,29 @@ export type PrefilledValue = z.infer<typeof prefillSchema>[number];
 // Task 8 of the documents: a photo, a PDF or a Word the person sends is a `ReceivedDocument` with its normalized name (absent only in a
 // photo WhatsApp sent without a file name), its kind (absent when it is none of them), its pages (a PDF's once counted; a photo is
 // one) and `notLinked` when the number has no linked account (DOC4). Absent once its content was cleared; its caption is the body.
+// Task 9: `why` is «Por qué lo propuso» (`proposed`: the form it sent prefilled, how many data it read with doubts and what it read, the
+// two while the sealed content lives and what it read only with formrecords.read) or «Por qué preguntó» (`asked`: the one to nine forms
+// it offered, without «Otro», and the option the person tapped, «Otro» too); absent when the assistant did nothing with the document. A
+// form goes by its name in the reader's language as the chat names it now (else as it was sent or offered), never cut to a button's length.
+const documentWhySchema = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("proposed"), forms: z.tuple([z.string().min(1)]), doubtful: z.number().int().min(0).optional(), fields: assistantFieldsSchema.optional() })
+    .refine(why => why.fields === undefined || why.doubtful !== undefined),
+  z.strictObject({ kind: z.literal("asked"), forms: z.array(z.string().min(1)).min(1).max(9), chosen: z.string().min(1).optional() }),
+]);
+export type ReceivedDocumentWhy = z.infer<typeof documentWhySchema>;
 const receivedDocumentSchema = z.strictObject({ name: z.string().min(1).optional(), kind: z.enum(["pdf", "jpeg", "png", "docx"]).optional(),
-  pages: z.number().int().min(1).optional(), reasonCode: z.literal("notLinked").optional() })
+  pages: z.number().int().min(1).optional(), reasonCode: z.literal("notLinked").optional(), why: documentWhySchema.optional() })
   .refine(document => document.name !== undefined || document.kind === "jpeg" || document.kind === "png");
 export type ReceivedDocument = z.infer<typeof receivedDocumentSchema>;
+// What the assistant read of a document is a value of a response, like «Prellenado con»: it is validated only for whoever may see it, and
+// for the others it is dropped unread (`withoutFormReplyValues` drops it from what is kept).
+function withoutReadFields(document: unknown): unknown {
+  if (typeof document !== "object" || document === null || !("why" in document)) return document;
+  const why: unknown = document.why;
+  if (typeof why !== "object" || why === null || !("fields" in why)) return document;
+  const { fields: _fields, ...rest } = why;
+  return { ...document, why: rest };
+}
 // VC1-A: «Por qué lo propuso» of a spreadsheet, on the notice of its loads: the rows it recognized of each form (named in the reader's
 // language), the ones it sent (up to three), the ones it passed to the team and the repeated ones, each with the response it is already in
 // or the row of the same spreadsheet it repeats, which is listed too. A row is its sheet (only when the book has more than one, so all of a
@@ -91,6 +111,10 @@ export interface ChatMessage {
   document?: ReceivedDocument;
   /** VC1-A: «Por qué lo propuso» of the notice of the loads of a spreadsheet, seen with whatsapp.read. */
   spreadsheetRows?: SpreadsheetRows;
+  /** Task 9 of the documents: the label of the button of a question of the assistant that went as a WhatsApp list; its options are the rows. */
+  listButton?: string;
+  /** Task 9: the Flow the assistant sent for a file the person sent; its body, which may say what it read, needs formrecords.read. */
+  loadsFile?: true;
 }
 export interface Outgoing {
   assistant: AssistantExplanation | null; quickReplies: string[] | null; origin: MessageOrigin; kind?: "Text" | "Flow" | "Document" | "QuickReplies" | "LocationRequest"; form?: ChatFormMetadata | null; recoveryPath?: string | null;
@@ -102,6 +126,9 @@ export interface Outgoing {
   prefill?: PrefilledValue[];
   /** VC1-A: «Por qué lo propuso» of the queued notice of the loads of a spreadsheet, seen with whatsapp.read. */
   spreadsheetRows?: SpreadsheetRows;
+  /** Task 9 of the documents: as in the messages, the label of the button of a list and the mark of a Flow sent for a file. */
+  listButton?: string;
+  loadsFile?: true;
 }
 /** `assistantEvents` (AS4): what the assistant decided without a message in the page's span, oldest first. */
 export interface Thread { assistantSuggestion: AssistantSuggestionPointer | null; assistantAvailability: AssistantAvailability; contact: Chat; messages: ChatMessage[]; outgoing: Outgoing[]; beforeAtUtc: string | null; beforeId: string | null; canReadFormRecords?: boolean; assistantEvents?: AssistantEvent[] }
@@ -120,16 +147,22 @@ export async function listChats(page: number, search: string, filter: ChatFilter
   if (!count.success || chats.page?.items?.some(chat => !needsPersonSchema.optional().safeParse(chat.needsPerson).success)) return unsupported();
   return { ...chats, needsPersonCount: count.data ?? 0 };
 }
+// Task 9 of the documents: with the label of the button of a WhatsApp list, which only the assistant sends, the options are the rows of the
+// list; without it, buttons. `loadsFile` only marks a Flow, and only as `true`.
+const optionsAccepted = (row: { origin: unknown; quickReplies: unknown; listButton?: unknown }) => row.listButton === undefined
+  ? assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success
+  : row.origin === "Assistant" && assistantListButtonSchema.safeParse(row.listButton).success && assistantListRowsSchema.safeParse(row.quickReplies).success;
+const loadsFileAccepted = (row: { kind?: unknown; loadsFile?: unknown }) => row.loadsFile === undefined || row.loadsFile === true && row.kind === "Flow";
 export const getThread = async (id: string, cursor?: { at: string; id: string }, signal?: AbortSignal) => {
   const thread = await api.get<Thread>(`${base}/${id}/messages${cursor ? `?${new URLSearchParams({ beforeAtUtc: cursor.at, beforeId: cursor.id })}` : ""}`, { signal });
   const availability = assistantAvailabilitySchema.safeParse(thread?.assistantAvailability);
-  if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success || row.location !== undefined && !locationPointSchema.safeParse(row.location).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !assistantQuickRepliesSchema.nullable().safeParse(row.quickReplies).success)) throw new Error("Unsupported chat response.");
+  if (thread?.messages?.some(row => !chatAudioSchema.nullable().safeParse(row.audio).success || row.location !== undefined && !locationPointSchema.safeParse(row.location).success) || !availability.success || !assistantSuggestionPointerSchema.nullable().safeParse(thread.assistantSuggestion).success || [...thread.messages, ...thread.outgoing].some(row => !messageOriginSchema.safeParse(row.origin).success || !assistantExplanationSchema.nullable().safeParse(row.assistant).success || !optionsAccepted(row) || !loadsFileAccepted(row))) throw new Error("Unsupported chat response.");
   if (!needsPersonSchema.optional().safeParse(thread.contact?.needsPerson).success || !assistantEventsSchema.optional().safeParse(thread.assistantEvents).success
     || [...thread.messages, ...thread.outgoing].some(row => !assistantReplySchema.optional().safeParse(row.assistantReply).success)) return unsupported();
   // «Prellenado con» is validated only for whoever may see it; for the others it is dropped unread (`withoutFormReplyValues`).
   if (thread.messages.some(row => !sharedContactSchema.optional().safeParse(row.contact).success) || thread.canReadFormRecords === true
     && [...thread.messages, ...thread.outgoing].some(row => !prefillSchema.optional().safeParse(row.prefill).success)) return unsupported();
-  if (thread.messages.some(row => !receivedDocumentSchema.optional().safeParse(row.document).success)) return unsupported();
+  if (thread.messages.some(row => !receivedDocumentSchema.optional().safeParse(thread.canReadFormRecords === true ? row.document : withoutReadFields(row.document)).success)) return unsupported();
   // «Por qué lo propuso» is no value of a response: it is checked for every reader, and `withoutFormReplyValues` keeps it.
   if ([...thread.messages, ...thread.outgoing].some(row => !spreadsheetRowsSchema.optional().safeParse(row.spreadsheetRows).success)) return unsupported();
   return readThreadFormReplies({ ...thread, assistantAvailability: availability.data });

@@ -5,7 +5,13 @@ import type { Outgoing } from "./chat";
 const guid = z.string().uuid();
 const field = z.strictObject({ fieldId: guid, label: z.string(), displayValue: z.string() });
 const fields = z.array(field).max(40).refine(items => new Set(items.map(item => item.fieldId)).size === items.length);
+/** What a proposal read, field by field; «Por qué lo propuso» of a received document says it too (task 9 of the documents). */
+export const assistantFieldsSchema = fields;
 export const assistantQuickRepliesSchema = z.array(z.string().min(1).max(20)).min(1).max(3);
+// Task 9 of the documents: a question that went as a WhatsApp list (only the assistant sends one) carries the label of the button that
+// opens it, up to 20 characters, and its options are the rows of the list: 1 to 10 titles of up to 24, repeated ones numbered « (n)».
+export const assistantListButtonSchema = z.string().min(1).max(20);
+export const assistantListRowsSchema = z.array(z.string().min(1).max(24)).min(1).max(10);
 export const assistantExplanationSchema = z.strictObject({ reason: z.string(), proposedFields: fields });
 export type AssistantField = z.infer<typeof field>;
 export type AssistantExplanation = z.infer<typeof assistantExplanationSchema>;
