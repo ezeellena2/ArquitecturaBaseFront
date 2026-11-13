@@ -140,6 +140,7 @@
     "macroEnabled": "Tiene macros: no se abrió.",
     "tooLarge": "Pesa más de 10 MB.",
     "tooManyPages": "Tiene más de 10 páginas.",
+    "tooManyRows": "Tiene más de 50 filas con datos.",
     "empty": "Está vacío.",
     "notOpened": "No se pudo abrir.",
     "row": {

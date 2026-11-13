@@ -132,6 +132,8 @@ describe("why and what happened", () => {
     const step = (kind: ReceivedDocumentEvent["kind"], detail: string | null = null): ReceivedDocumentEvent => ({ atUtc: forReview.document.receivedAtUtc, kind, actor: null, detail });
     const after = (...history: ReceivedDocumentEvent[]) => receivedDocumentReason({ ...forReview, history }, "?")?.key ?? null;
     expect(after(step("received", "notSendable"))).toBe("reasons.forReviewNotSendable");
+    // VC1-A: the first row of a spreadsheet nobody recognized, whose form its person chose from the list and could not be sent.
+    expect(after(step("received", "unknown"), step("formChosen", "notSendable"))).toBe("reasons.forReviewNotSendable");
     // The person chose a form of a doubt and did not confirm it; a change of form that failed leaves it as it was.
     expect(after(step("received", "doubt"), step("formChosen"))).toBe("reasons.forReviewExpired");
     expect(after(step("received", "sure"), step("extractionRequested", "Gastos"), step("extractionFailed"))).toBe("reasons.forReviewExpired");
@@ -149,6 +151,7 @@ describe("why and what happened", () => {
       proposal: { outcome: "sure" as const, documentType: null, candidates: [], repetition: { atUtc: "2026-10-20T13:39:00Z", recordId: receivedDocumentIds.confirmed, recordNumber: "REC-000123", documentId: null } } };
     expect(receivedDocumentReason(repeated, "?")).toEqual({ key: "reasons.duplicateOf", values: { number: "REC-000123" } });
     expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "protected" } }, "?")?.key).toBe("reasons.protected");
+    expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "tooManyRows" } }, "?")?.key).toBe("reasons.tooManyRows");
     expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "somethingNew" } }, "?")?.key).toBe("reasons.notOpened");
     expect(receivedDocumentReason(receivedDocumentDetailFixture(receivedDocumentIds.pdf), "?")).toBeNull();
   });

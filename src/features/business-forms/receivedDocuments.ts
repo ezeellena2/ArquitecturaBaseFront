@@ -179,11 +179,12 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
   const { state, reasonCode, forReview, sender, row } = detail.document;
   const person = sender.displayName ?? unknownPerson;
   const of = (key: string) => row ? key.replace("reasons.", "reasons.row.") : key;
-  // For the team because its form could not be sent to its person, or because what they were sent (the form, or the forms of a doubt)
+  // For the team because its form could not be sent to its person (also the first row of a spreadsheet whose form its person chose
+  // from the list, VC1-A: `formChosen` with that detail), or because what they were sent (the form, or the forms of a doubt)
   // expired; brought back or read for another form by someone of the team, its state says it all.
   if (state === "proposed" && forReview) {
     const last = [...detail.history].reverse().find(event => waitingSteps.has(event.kind));
-    if (last?.kind === "received" && last.detail === "notSendable") return { key: "reasons.forReviewNotSendable", values: { person } };
+    if ((last?.kind === "received" || last?.kind === "formChosen") && last.detail === "notSendable") return { key: "reasons.forReviewNotSendable", values: { person } };
     // VC1-A: a row past the three loads of its message waits for the team from the start: nothing expired.
     if (last?.kind === "overLimit") return { key: "reasons.forReviewOverLimit" };
     return last?.kind === "formChosen" || last?.kind === "received" && (last.detail === "sure" || last.detail === "doubt") ? { key: of("reasons.forReviewExpired"), values: { person } } : null;
@@ -205,7 +206,7 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
     return repetition?.recordNumber ? { key: "reasons.duplicateOf", values: { number: repetition.recordNumber } } : { key: "reasons.duplicate" };
   }
   if (reasonCode === "unreadable") return { key: "reasons.unreadable." + (detail.reading?.problem ?? "other") };
-  return { key: ["protected", "legacy", "macroEnabled", "tooLarge", "tooManyPages", "empty"].includes(reasonCode ?? "") ? "reasons." + reasonCode : "reasons.notOpened" };
+  return { key: ["protected", "legacy", "macroEnabled", "tooLarge", "tooManyPages", "tooManyRows", "empty"].includes(reasonCode ?? "") ? "reasons." + reasonCode : "reasons.notOpened" };
 }
 
 const refusedCode = "Forms.ReceivedDocument.ExtractionRefused";
