@@ -18,7 +18,9 @@ export function ResponseAssistance({ record, actor, busy, onForbidden, onError }
  return <section className="mt-4 space-y-3 border-t border-[var(--color-border)] pt-4" aria-label={t("detail.assistance.origin")}>
   <h3 className="text-sm font-semibold">{t("detail.assistance.origin")}</h3>
   {document ? <div className="space-y-1 text-sm">
-   <p className="break-words">{t("detail.assistance.document", { name: document.name })}</p>
+   {/* VC1-A: a row of a spreadsheet names its spreadsheet and its row. */}
+   <p className="break-words">{document.row ? t(document.row.sheet === null ? "detail.assistance.spreadsheet" : "detail.assistance.spreadsheetSheet",
+    { name: document.name, number: String(document.row.number), sheet: document.row.sheet ?? "" }) : t("detail.assistance.document", { name: document.name })}</p>
    {origin?.channelId === "documents" && origin.senderName ? <p className="text-[var(--color-content-muted)]">{t("detail.assistance.passedBy", { name: origin.senderName })}</p> : null}
    <Link className="text-[var(--color-brand-700)] underline" to={"/formularios/documentos/" + document.id}>{t("detail.assistance.viewDocument")}</Link>
   </div> : null}

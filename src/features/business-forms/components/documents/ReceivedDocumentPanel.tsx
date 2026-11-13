@@ -19,10 +19,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { receivedDocumentForbidden, useReceivedDocumentDetail, useReceivedDocumentFile, useReceivedDocumentReadWait, useReceivedDocumentReview,
   useReceivedDocumentScope } from "../../hooks/useReceivedDocuments";
 import { documentFormProposalPath } from "../../documentFormProposal";
-import { receivedDocumentActions, receivedDocumentFieldId, receivedDocumentForms, receivedDocumentReason, receivedDocumentStateLabel, receivedDocumentStateVariant } from "../../receivedDocuments";
+import { receivedDocumentActions, receivedDocumentFieldId, receivedDocumentForms, receivedDocumentName, receivedDocumentReason, receivedDocumentRowLabel, receivedDocumentStateLabel,
+  receivedDocumentStateVariant } from "../../receivedDocuments";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../ResponsePanelFrame";
 import { ReceivedDocumentData } from "./ReceivedDocumentData";
 import { ReceivedDocumentHistory } from "./ReceivedDocumentHistory";
+import { ReceivedDocumentRow } from "./ReceivedDocumentRow";
 
 const retentionDays = 90;
 
@@ -44,14 +46,15 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
   const detail = useReceivedDocumentDetail(documentId);
   const shown = detail.data;
   const current = shown?.document.id.toLowerCase() === documentId.toLowerCase() && !detail.isPlaceholderData ? shown : undefined;
-  // A rejected file the inbox kept no copy of is never asked for.
-  const file = useReceivedDocumentFile(current?.document.file.stored ? current.document.id : undefined);
+  // A rejected file the inbox kept no copy of is never asked for, and a row's spreadsheet only when it is downloaded (VC1-A).
+  const file = useReceivedDocumentFile(current?.document.file.stored && !current.document.row ? current.document.id : undefined);
   // The confirmation of «Descartar», with the day it would be deleted, counted when it opens.
   const [discarding, setDiscarding] = useState<string | null>(null);
   const review = useReceivedDocumentReview(current, { onDenied });
   const detailWait = useReceivedDocumentReadWait(detail.error);
   const fileWait = useReceivedDocumentReadWait(file.error);
-  useBreadcrumbLeaf(current?.document.file.name);
+  const named = (key: string, values?: Record<string, string>) => t(key, values);
+  useBreadcrumbLeaf(current ? receivedDocumentName(current.document, named) : undefined);
   const denied = receivedDocumentForbidden(detail.error) || receivedDocumentForbidden(file.error);
   useEffect(() => { if (denied) onDenied(); }, [denied, onDenied]);
   // A change of form that runs keeps being read where it was left, whoever asked for it (the server reads it with the asker's
@@ -74,7 +77,10 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
   const actions = receivedDocumentActions(shown);
   const label = receivedDocumentStateLabel(document);
   const person = document.sender.displayName ?? t("unknownPerson");
-  const reason = receivedDocumentReason(shown, t("unknownPerson"));
+  // A repeated row names the data that matched, «A», «A» y «B», as the menu's language joins them.
+  const reason = receivedDocumentReason(shown, t("unknownPerson"),
+    labels => new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(labels.map(label => t("reasons.row.datum", { label }))));
+  const row = document.row ? receivedDocumentRowLabel(document.row) : null;
   const forms = receivedDocumentForms(shown);
   const candidate = review.candidate;
   const working = review.working;
@@ -89,7 +95,7 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
   // VC1-A: a proposed document its person was sent waits for them until its deadline; its actions stay in place, off, with the reason
   // over them.
   const waiting = actions.waiting && document.replyExpiresAtUtc
-    ? t("reasons.waiting", { person, date: formatDateTimeInZone(document.replyExpiresAtUtc, i18n.language, zone) }) : null;
+    ? t(row ? "reasons.row.waiting" : "reasons.waiting", { person, date: formatDateTimeInZone(document.replyExpiresAtUtc, i18n.language, zone) }) : null;
   const reasonOf = (blocked: string | null) => waiting ?? wait ?? blocked;
   const selectedForm = document.form?.definitionId ?? "";
   const outcome = shown.proposal?.outcome;
@@ -124,7 +130,8 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
   return <ResponsePanelFrame {...frame} title={document.file.name} loading={!current}
     navigation={{ ...navigation, busy: navigation.busy || !current }}
     status={<Badge variant={receivedDocumentStateVariant(label)}>{t("states." + label)}</Badge>}
-    subtitle={t("panel.subtitle", { person, date: formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone) })}
+    subtitle={row ? t("panel.rowSubtitle", { row: t(row.key, row.values), person, date: formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone) })
+      : t("panel.subtitle", { person, date: formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone) })}
     footer={footerActions}>
     <Tabs value={tab} onValueChange={changeTab}>
       <TabsList aria-label={t("tabs.label")}>
@@ -132,13 +139,15 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
         <TabsTrigger value="history">{t("tabs.history", { count: shown.history.length })}</TabsTrigger>
       </TabsList>
       <TabsContent value="review" className="flex flex-col gap-4 pt-3">
-        {/* A rejected file without a copy shows its name (the title) and its reason (the banner), with nothing to see or download. */}
-        {document.file.stored ? <DocumentViewer key={document.id} name={document.file.name} mediaType={document.file.mediaType} blob={file.data} loading={!current || file.isPending}
+        {/* A rejected file without a copy shows its name (the title) and its reason (the banner), with nothing to see or download. A row
+            shows its cells as they came, with its spreadsheet to download (VC1-A). */}
+        {document.row && shown.rowCells ? <ReceivedDocumentRow key={document.id} documentId={document.id} name={document.file.name} cells={shown.rowCells} loading={!current} onDenied={onDenied} />
+          : document.file.stored ? <DocumentViewer key={document.id} name={document.file.name} mediaType={document.file.mediaType} blob={file.data} loading={!current || file.isPending}
           failed={file.isError} onRetry={() => void file.refetch()} retryReason={fileWait} /> : null}
         {reason ? <Banner>{t(reason.key, reason.values)}</Banner> : null}
         {/* The forms it can change to are the ones the server can read it for: without any, the form is read as it is. */}
         {actions.changeForm && forms.length > 0 ? <div className="flex flex-col gap-1.5">
-          <FormField label={t("form.label")} help={t("form.help")} beside={certainty}>
+          <FormField label={t("form.label")} help={t(row ? "form.rowHelp" : "form.help")} beside={certainty}>
             <DisabledReason reason={busy ? null : waiting ?? wait}>
               <NativeSelect value={selectedForm} disabled={busy || !!waiting || !!wait} className="sm:w-72"
                 onChange={event => { const form = forms.find(item => item.definitionId === event.target.value); if (form) void review.changeForm(form.definitionId, form.name); }}>
@@ -181,7 +190,7 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
       <TabsContent value="history" className="pt-3"><ReceivedDocumentHistory detail={shown} zone={zone} /></TabsContent>
     </Tabs>
     <ConfirmDialog open={discarding !== null} onOpenChange={open => { if (!open) setDiscarding(null); }}
-      title={t("discard.title", { name: document.file.name })} description={t("discard.description", { date: discarding ?? "" })}
+      title={t("discard.title", { name: receivedDocumentName(document, named) })} description={t(row ? "discard.rowDescription" : "discard.description", { date: discarding ?? "" })}
       confirmLabel={t("discard.action")} destructive pending={working?.work === "discard"} pendingLabel={t("discard.pending")}
       onConfirm={() => { void review.discard().finally(() => setDiscarding(null)); }} />
   </ResponsePanelFrame>;

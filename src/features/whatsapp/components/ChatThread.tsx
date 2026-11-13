@@ -88,7 +88,7 @@ export function ChatThread({ id, actor, readPermissions, timeZone, canSend, canC
       </header>
       {contact.needsPerson ? <div className="p-3"><NeedsPersonBanner needsPerson={contact.needsPerson} /></div> : null}
       {latest.isError ? <div className="flex items-center justify-between gap-2 p-3 text-sm text-[var(--color-content-muted)]"><span>{t(forbidden ? "send.forbidden" : "stale")}</span>{retryAction}</div> : null}
-      <ChatTimeline contactId={id} readOwner={readOwner} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? resendForm : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
+      <ChatTimeline contactId={id} readOwner={readOwner} opensReceivedDocuments={readPermissions.includes("formdocuments.read")} onAudioForbidden={denyRead} onResendForm={canOpenForm&&canSend&&!latest.isError ? resendForm : undefined} items={items} formValuesRevoked={formValuesRevoked} actor={actor} timeZone={timeZone} canSend={canSend && !latest.isError}
         canReuse={!draft.attempt && !draft.form?.attempt && !draft.body} reviewing={reviewing.isPending ? reviewing.variables?.requestId : undefined} onReview={setReview}
         onReuse={reuse} atBottom={atBottom} onAtBottomChange={setAtBottom}
         hasOlder={Boolean(history.data ? history.hasNextPage : latest.data?.beforeId)} loadingOlder={history.isFetchingNextPage}

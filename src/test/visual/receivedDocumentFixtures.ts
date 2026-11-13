@@ -144,6 +144,99 @@ export function receivedDocumentDetailFixture(documentId: string, language: "es"
   }
 }
 
+// VC1-A: the rows of the spreadsheets Marta Ruiz sent, as the boards VC1-A and VC3 draw them: «cobranzas-semana.xlsx» with seven rows of
+// «Cobranzas» (rows 2 to 4 sent to her as the three loads of the message and waiting for her, 5 to 7 past the limit and for review here, and
+// 8, which fits no form), and «cobranzas-octubre.xlsx», a book with two sheets, with a confirmed row and one equal to it, among a comprobante
+// of today's inbox. Synthetic bodies on the guards of task 26 (front 9f2d7c5d) and the backend of task 28, for the page's tests and the
+// scenes («documents-rows»). Every amount, invoice and customer is invented.
+export const receivedDocumentRowIds = { load: id(21), load2: id(22), load3: id(23), overLimit: id(24), overLimit2: id(25), overLimit3: id(26), unmatched: id(27),
+  confirmed: id(28), repeated: id(29), receipt: id(30) } as const;
+export const receivedDocumentRowForm = { definitionId: id(421), versionId: id(431) } as const;
+const rowFields = { client: id(521), amount: id(522), date: id(523), invoice: id(524) } as const;
+const xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+function rowTexts(language: "es" | "en") {
+  const en = language === "en";
+  return {
+    form: en ? "Collections" : "Cobranzas", payments: en ? "Customer payments" : "Pagos de clientes", amount: en ? "Amount" : "Monto",
+    client: en ? "Customer" : "Cliente", date: en ? "Date" : "Fecha", invoice: en ? "Invoice" : "Factura", sheet: en ? "Sales" : "Ventas",
+    week: en ? "weekly-collections.xlsx" : "cobranzas-semana.xlsx", october: en ? "october-collections.xlsx" : "cobranzas-octubre.xlsx",
+    number: (value: number) => String(Math.trunc(value)).replace(/\B(?=(\d{3})+(?!\d))/g, en ? "," : "."),
+    // A date as the spreadsheet typed it, and as the server writes it for whoever reads.
+    day: (iso: string) => { const [year, month, day] = iso.split("-"); return en ? `${month}/${day}/${year}` : `${day}/${month}/${year}`; },
+  };
+}
+// The rows of the spreadsheets: the customer, the amount, the date and the invoice, as they came in each one.
+const sheetRows = [
+  { n: 21, row: 2, client: ["Ferretería Norte", "North hardware store"], amount: 95000, date: "2026-11-10", invoice: "0003-00001851" },
+  { n: 22, row: 3, client: ["Almacén Las Rosas", "Las Rosas grocery"], amount: 61250, date: "2026-11-10", invoice: "0003-00001852" },
+  { n: 23, row: 4, client: ["Panadería Don Ángel", "Don Ángel bakery"], amount: 128400, date: "2026-11-11", invoice: "0003-00001853" },
+  { n: 24, row: 5, client: ["Kiosco El Sol", "El Sol kiosk"], amount: 47800, date: "2026-11-11", invoice: "0003-00001854" },
+  { n: 25, row: 6, client: ["Distribuidora Sur", "South distributor"], amount: 233000, date: "2026-11-12", invoice: "0003-00001855" },
+  { n: 26, row: 7, client: ["Librería Central", "Central bookstore"], amount: 18900, date: "2026-11-12", invoice: "0003-00001856" },
+  { n: 27, row: 8, client: ["Ajuste de caja", "Cash adjustment"], amount: 1500, date: "2026-11-12", invoice: "—" },
+  { n: 28, row: 3, client: ["Ferretería Norte", "North hardware store"], amount: 87300, date: "2026-10-28", invoice: "0003-00001790" },
+  { n: 29, row: 4, client: ["Ferretería Norte", "North hardware store"], amount: 87300, date: "2026-10-28", invoice: "0003-00001790" },
+] as const;
+const weekAt = "2026-11-12T13:40:00Z";
+const octoberAt = "2026-11-03T15:10:00Z";
+
+/** The page of the inbox with the rows (one page of ten) and its counts, forms and people. */
+export function receivedDocumentRowsPageFixture(language: "es" | "en" = "es"): ReceivedDocumentsPage {
+  const text = rowTexts(language);
+  const form = { definitionId: receivedDocumentRowForm.definitionId, name: text.form };
+  const amount = (value: number) => ({ fieldId: rowFields.amount, label: text.amount, value: text.number(value) });
+  const week = file(text.week, xlsx, 18_400), october = file(text.october, xlsx, 22_100);
+  const rowOf = (n: number) => sheetRows.find(entry => entry.n === n) ?? sheetRows[0];
+  const items: ReceivedDocument[] = [
+    ...[21, 22, 23].map(n => item(n, { receivedAtUtc: weekAt, sender: people.marta, state: "proposed", form, file: week, row: { sheet: null, number: rowOf(n).row },
+      highlights: [amount(rowOf(n).amount)], replyExpiresAtUtc: "2026-11-13T13:40:00Z" })),
+    ...[24, 25, 26].map(n => item(n, { receivedAtUtc: weekAt, sender: people.marta, state: "proposed", forReview: true, form, file: week, row: { sheet: null, number: rowOf(n).row },
+      highlights: [amount(rowOf(n).amount)] })),
+    item(27, { receivedAtUtc: weekAt, sender: people.marta, state: "unclassified", reasonCode: "unknown", file: week, row: { sheet: null, number: 8 }, deleteAfterUtc: "2027-02-10T13:40:00Z" }),
+    item(28, { receivedAtUtc: octoberAt, sender: people.marta, state: "confirmed", form, file: october, row: { sheet: text.sheet, number: 3 }, highlights: [amount(87300)],
+      record: { recordId: id(611), number: "COB-000118" }, revision: 2 }),
+    item(29, { receivedAtUtc: octoberAt, sender: people.marta, state: "discarded", reasonCode: "duplicate", form, file: october, row: { sheet: text.sheet, number: 4 },
+      highlights: [amount(87300)], deleteAfterUtc: "2027-02-01T15:10:00Z" }),
+    item(30, { receivedAtUtc: "2026-11-03T12:20:00Z", sender: people.juan, state: "proposed", forReview: true, form: { definitionId: receivedDocumentForms.payments, name: text.payments },
+      file: file("comprobante.jpg", "image/jpeg", 186_000), highlights: [amount(150000)], documentType: "comprobante de transferencia" }),
+  ];
+  return { items, page: 1, pageSize: 10, totalCount: 10, counts: { proposed: 7, forReview: 4, unclassified: 1, confirmed: 1, discarded: 1 }, facets: {
+    forms: [{ ...form, count: 8 }, { definitionId: receivedDocumentForms.payments, name: text.payments, count: 1 }],
+    senders: [{ ...people.marta, count: 9 }, { ...people.juan, count: 1 }], formsTruncated: false, sendersTruncated: false,
+  }, groups: [] };
+}
+
+/** A row with its cells as they came, its proposal for «Cobranzas» (none when it fits no form) and its history. */
+export function receivedDocumentRowDetailFixture(documentId: string, language: "es" | "en" = "es", canReview = true): ReceivedDocumentDetail {
+  const text = rowTexts(language);
+  const document = receivedDocumentRowsPageFixture(language).items.find(entry => entry.id === documentId);
+  if (!document) throw new Error("No such received row fixture.");
+  const source = sheetRows.find(entry => id(entry.n) === documentId);
+  const forms = canReview ? [{ definitionId: receivedDocumentRowForm.definitionId, name: text.form }, { definitionId: receivedDocumentForms.payments, name: text.payments }] : [];
+  // The comprobante among the rows reads like today's one for review.
+  if (!source) return { ...receivedDocumentDetailFixture(receivedDocumentIds.forReview, language, canReview), document };
+  const client = source.client[language === "en" ? 1 : 0];
+  const rowCells = [{ header: text.client, value: client }, { header: text.date, value: text.day(source.date) }, { header: text.amount, value: String(source.amount) },
+    { header: text.invoice, value: source.invoice }];
+  const values: ReceivedDocumentValue[] = [
+    value(rowFields.client, text.client, "shortText", client, client, { required: true }),
+    value(rowFields.amount, text.amount, "decimal", source.amount.toFixed(2), text.number(source.amount), { required: true }),
+    value(rowFields.date, text.date, "date", source.date, text.day(source.date), { required: true }),
+    value(rowFields.invoice, text.invoice, "shortText", source.invoice, source.invoice),
+  ];
+  const candidate = { definitionId: receivedDocumentRowForm.definitionId, versionId: receivedDocumentRowForm.versionId, name: text.form, values };
+  const base: ReceivedDocumentDetail = { document, reading: null, rowCells, proposal: { outcome: "sure", documentType: null, candidates: [candidate], repetition: null },
+    extraction: null, history: [event(document.receivedAtUtc, "received", null, "sure")], canReview, forms };
+  const position = [21, 22, 23].indexOf(source.n);
+  if (position >= 0) return { ...base, history: [...base.history, event(document.receivedAtUtc, "sent", null, `${position + 1}/3`)] };
+  if ([24, 25, 26].includes(source.n)) return { ...base, history: [...base.history, event(document.receivedAtUtc, "overLimit")] };
+  if (source.n === 27) return { ...base, proposal: null, history: [event(document.receivedAtUtc, "received", null, "unknown")] };
+  if (source.n === 28) return { ...base, history: [...base.history, event(document.receivedAtUtc, "sent", null, "1/1"), event("2026-11-03T15:32:00Z", "confirmed", null, "COB-000118")] };
+  return { ...base, proposal: { outcome: "sure", documentType: null, candidates: [candidate], repetition: { atUtc: document.receivedAtUtc, recordId: null, recordNumber: null,
+    documentId: receivedDocumentRowIds.confirmed, row: { sheet: text.sheet, number: 3 } } }, history: [event(document.receivedAtUtc, "received", null, "duplicate")] };
+}
+
 /** A comprobante drawn as a photo (portrait, so turning it shows), with the stamp «EJEMPLO · FICTICIO». */
 async function receiptPhoto(language: "es" | "en"): Promise<Blob> {
   const canvas = new OffscreenCanvas(600, 860);
@@ -162,8 +255,8 @@ async function receiptPhoto(language: "es" | "en"): Promise<Blob> {
 const receiptPdf = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 420]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n4 0 obj<</Length 79>>stream\nBT /F1 16 Tf 30 370 Td (Banco Nacion - EJEMPLO) Tj 0 -30 Td ($ 98.500,00) Tj ET\nendstream endobj\n5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n";
 
 /**
- * The scenes of the inbox: «documents» (who reviews), «documents-read» (only «Ver documentos recibidos»), «documents-empty» and
- * «documents-error». The search (with its body, as the server) and the filters of the state, the form and the person answer as the
+ * The scenes of the inbox: «documents» (who reviews), «documents-read» (only «Ver documentos recibidos»), «documents-empty»,
+ * «documents-error» and «documents-rows» (the rows of two spreadsheets, VC1-A). The search (with its body, as the server) and the filters of the state, the form and the person answer as the
  * server would for these documents; the rest of the pages repeat the first.
  */
 export function createReceivedDocumentVisualFixtures(language: "es" | "en", scenario: string) {
@@ -174,10 +267,12 @@ export function createReceivedDocumentVisualFixtures(language: "es" | "en", scen
     async handle(request: Request): Promise<Response | undefined> {
       const url = new URL(request.url);
       if (!url.pathname.startsWith("/api/forms/documents")) return undefined;
-      if (url.pathname === "/api/forms/documents/counts") return json(scenario === "documents-empty" ? { forReview: 0, unclassified: 0, total: 0 } : { forReview: 2, unclassified: 5, total: 7 });
+      if (url.pathname === "/api/forms/documents/counts") return json(scenario === "documents-empty" ? { forReview: 0, unclassified: 0, total: 0 }
+        : scenario === "documents-rows" ? { forReview: 4, unclassified: 1, total: 5 } : { forReview: 2, unclassified: 5, total: 7 });
       if (url.pathname === "/api/forms/documents/search" && request.method === "POST") {
         if (scenario === "documents-error") return json({ status: 500, title: "Error", traceId: "visual-trace" }, 500);
-        const page = receivedDocumentsPageFixture(language);
+        const rows = scenario === "documents-rows";
+        const page = rows ? receivedDocumentRowsPageFixture(language) : receivedDocumentsPageFixture(language);
         const body = await request.clone().json() as { page?: number; pageSize?: number; state?: string; search?: string; definitionId?: string; senderUserId?: string };
         const pageSize = body.pageSize ?? 10, number = body.page ?? 1;
         if (scenario === "documents-empty") return json({ items: [], page: number, pageSize, totalCount: 0, counts: { proposed: 0, forReview: 0, unclassified: 0, confirmed: 0, discarded: 0 },
@@ -192,6 +287,10 @@ export function createReceivedDocumentVisualFixtures(language: "es" | "en", scen
       const match = /^\/api\/forms\/documents\/([^/]+)(\/file)?$/.exec(url.pathname);
       if (!match) return undefined;
       const documentId = match[1]!;
+      const row = scenario === "documents-rows";
+      // A row's file is its spreadsheet (a few bytes stand for it).
+      if (match[2] && row) return new Response("PK", { headers: { "content-type": xlsx } });
+      if (row) return json(receivedDocumentRowDetailFixture(documentId, language, review));
       if (match[2]) return documentId === receivedDocumentIds.pdf ? new Response(receiptPdf, { headers: { "content-type": "application/pdf" } })
         : new Response(await receiptPhoto(language), { headers: { "content-type": "image/jpeg" } });
       return json(receivedDocumentDetailFixture(documentId, language, review));

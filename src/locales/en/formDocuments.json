@@ -57,7 +57,8 @@
     "label": "Document",
     "loadFailed": "We could not load the document.",
     "unavailable": "This document is no longer here.",
-    "subtitle": "{{person}} · {{date}}"
+    "subtitle": "{{person}} · {{date}}",
+    "rowSubtitle": "{{row}} · {{person}} · {{date}}"
   },
   "tabs": {
     "label": "Document",
@@ -67,6 +68,7 @@
   "form": {
     "label": "Form",
     "help": "It is the form the AI recognized. If you choose another one, the document's data are read again for that form.",
+    "rowHelp": "It is the form the AI recognized. If you choose another, the row's data are read again for that form.",
     "choose": "Choose a form",
     "none": "No form",
     "sure": "Sure",
@@ -139,12 +141,26 @@
     "tooLarge": "It is larger than 10 MB.",
     "tooManyPages": "It has more than 10 pages.",
     "empty": "It is empty.",
-    "notOpened": "It could not be opened."
+    "notOpened": "It could not be opened.",
+    "row": {
+      "waiting": "We sent this row to {{person}}. If they do not confirm it by {{date}}, you can review it here.",
+      "forReviewExpired": "It expired without {{person}} confirming it on WhatsApp.",
+      "unknown": "It does not fit any form.",
+      "unseen": "The AI did not get to read it.",
+      "reviewerBy": "{{person}} discarded it.",
+      "reviewer": "Someone of the team discarded it.",
+      "duplicateOf_one": "Repeated: the same {{data}} as {{number}}.",
+      "duplicateOf_other": "Repeated: the same {{data}} as {{number}}.",
+      "duplicateRow": "Repeated: the same as row {{number}}.",
+      "duplicateRowSheet": "Repeated: the same as row {{number}} of “{{sheet}}”.",
+      "datum": "“{{label}}”"
+    }
   },
   "discard": {
     "action": "Discard",
     "title": "Discard {{name}}?",
     "description": "It is deleted on {{date}}, with its reading. Until then you can reopen it.",
+    "rowDescription": "It is deleted on {{date}}, with its cells. Until then you can reopen it.",
     "pending": "Discarding…",
     "done": "{{name}} was discarded.",
     "failed": "The document could not be discarded."
@@ -197,7 +213,17 @@
     "choseOther": "Chose “Other”",
     "formChosen": "Chose the form",
     "sent": "Sent prefilled to {{person}}, as {{position}} of {{total}}.",
-    "overLimit": "It went over the limit of 3 loads per message: left to review here."
+    "overLimit": "It went over the limit of 3 loads per message: left to review here.",
+    "row": {
+      "received": {
+        "sure": "Arrived and the AI recognized it",
+        "unknown": "Arrived and the AI did not recognize it",
+        "unseen": "Arrived and the AI did not get to read it",
+        "duplicate": "Arrived repeated"
+      },
+      "extractionRequested": "Asked to read it for “{{form}}”",
+      "extractionRequestedOther": "Asked to read it for another form"
+    }
   },
   "formProposal": {
     "title": "Build a form with AI",
@@ -258,5 +284,13 @@
     "notice_one": "{{count}} similar document arrived that fits no form: {{topic}}.",
     "notice_other": "{{count}} similar documents arrived that fit no form: {{topic}}.",
     "buildFor": "Build a form with AI: {{topic}}"
+  },
+  "row": {
+    "label": "Row {{number}}",
+    "labelSheet": "{{sheet}} · row {{number}}",
+    "title": "The row",
+    "download": "Download the spreadsheet",
+    "downloading": "Downloading…",
+    "downloadFailed": "We could not download the spreadsheet."
   }
 }

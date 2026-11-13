@@ -4,7 +4,7 @@ Funciones sin React, red ni caché que deciden cómo se lee el historial, cuánd
 
 | Responsabilidad | Archivos |
 |---|---|
-| Línea de tiempo e historial | `timeline`, `history`, `messagePresentation` |
+| Línea de tiempo e historial | `timeline`, `history`, `messagePresentation`, `spreadsheetRows` (las filas de «Por qué lo propuso», VC1-A) |
 | Cuándo se puede responder | `replyAvailability` |
 | Envío de formularios | `formSendSession`, `formMessage` |
 | Envío de una sugerencia | `assistantSendSession` |

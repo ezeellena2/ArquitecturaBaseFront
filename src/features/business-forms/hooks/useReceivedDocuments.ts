@@ -5,12 +5,13 @@ import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
+import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { changeReceivedDocumentForm, discardReceivedDocument, fetchReceivedDocument, fetchReceivedDocumentExtraction, fetchReceivedDocumentFile,
   fetchReceivedDocumentMenuCounts, fetchReceivedDocuments, passReceivedDocument, reopenReceivedDocument, searchReceivedDocumentOptions, type ReceivedDocument,
   type ReceivedDocumentDetail, type ReceivedDocumentsPage, type ReceivedDocumentsQuery } from "../api/receivedDocuments";
 import { receivedDocumentAnswers, receivedDocumentAnswersKey, receivedDocumentCandidate, receivedDocumentDraft, receivedDocumentExtractionFailureKey,
-  receivedDocumentProblems, type ReceivedDocumentDraft, type ReceivedDocumentProblem } from "../receivedDocuments";
+  receivedDocumentName, receivedDocumentProblems, type ReceivedDocumentDraft, type ReceivedDocumentProblem } from "../receivedDocuments";
 import { useUnobservedQueryCleanup } from "./useUnobservedQueryCleanup";
 
 /**
@@ -83,6 +84,38 @@ export function useReceivedDocumentFile(id: string | undefined) {
     queryKey: [...receivedDocumentsKey(scope.owner), "file", id], queryFn: ({ signal }) => fetchReceivedDocumentFile(id!, signal), enabled: !!id && scope.allowed,
     gcTime: 0, staleTime: Infinity, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: { errorOwner: "local" },
   });
+}
+
+/**
+ * «Descargar la planilla» of a row (VC1-A): the spreadsheet is asked for only when the person asks, never to show the row, and saved with
+ * its name. A 429 waits its time as the reason of the button and a 403 takes the inbox away; any failure says so in the notice. Leaving
+ * the row abandons it: its owner mounts once per row.
+ */
+export function useReceivedDocumentDownload(documentId: string, name: string, onDenied: () => void) {
+  const { t } = useTranslation("formDocuments");
+  const [pending, setPending] = useState(false);
+  const cooldown = useCountdown(0);
+  const { restart } = cooldown;
+  const running = useRef<AbortController | null>(null);
+  useEffect(() => () => running.current?.abort(), []);
+  const start = useCallback(async () => {
+    if (running.current) return;
+    const controller = new AbortController();
+    running.current = controller;
+    setPending(true);
+    try {
+      savePrivateBlob(await fetchReceivedDocumentFile(documentId, controller.signal), name);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (receivedDocumentForbidden(error)) { onDenied(); return; }
+      if (error instanceof ApiError && error.status === 429) restart(Math.min(86400, Math.max(1, error.retryAfterSeconds ?? 60)));
+      notify({ id: "form-documents:download:" + documentId, kind: "error", message: t("row.downloadFailed"), description: readErrorMessage(error, t) });
+    } finally {
+      running.current = null;
+      if (!controller.signal.aborted) setPending(false);
+    }
+  }, [documentId, name, onDenied, restart, t]);
+  return { start, pending, wait: cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : null };
 }
 
 /**
@@ -211,7 +244,7 @@ export function useReceivedDocumentReview(detail: ReceivedDocumentDetail | undef
     try {
       const changed = await (work === "discard" ? discardReceivedDocument : reopenReceivedDocument)(document.id, document.revision);
       if (live.current) client.setQueryData([...root, "detail", document.id], changed);
-      say(document.id, { kind: "success", message: t(work === "discard" ? "discard.done" : "reopen.done", { name: document.file.name }) });
+      say(document.id, { kind: "success", message: t(work === "discard" ? "discard.done" : "reopen.done", { name: receivedDocumentName(document, (key, values) => t(key, values)) }) });
       await Promise.all([client.invalidateQueries({ queryKey: [...root, "list"] }), client.invalidateQueries({ queryKey: receivedDocumentMenuCountsKey(scope.owner) })]);
     } catch (error) {
       await fail(document.id, error, t(work === "discard" ? "discard.failed" : "reopen.failed"), { writing: true });

@@ -16,6 +16,7 @@ import { ChatContact } from "./ChatContact";
 import { FormReplyCard } from "./FormReplyCard";
 import { LocationRequestCard } from "./LocationRequestCard";
 import { AssistantEventLine, AssistantReplyWhy } from "./ChatAssistantReply";
+import { SpreadsheetRowsWhy } from "./ChatSpreadsheetRows";
 import type { Outgoing, PrefilledValue } from "../api/chat";
 import { groupTimelineByDay, type TimelineEntry } from "../lib/timeline";
 import { accessSummary } from "../lib/messagePresentation";
@@ -24,7 +25,7 @@ import { useChatHistoryViewport } from "../hooks/useChatHistoryViewport";
 // Memoized: typing a reply redraws the composer, while the history formats a date and a time per message and stays as it
 // was (performance review 26, 2026-11-07). Its owner keeps the items and callbacks with the same identity.
 export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readOwner, onAudioForbidden, actor, timeZone, canSend, canReuse, reviewing, onReview, onReuse,
-  atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm }: {
+  atBottom, onAtBottomChange, hasOlder, loadingOlder, historyError, loadOlder, formValuesRevoked = false, onResendForm, opensReceivedDocuments = false }: {
   contactId: string; readOwner: string; onAudioForbidden: () => void;
   /** The messages and outgoing, with the lines of what the assistant decided without a message (AS4). */
   items: readonly TimelineEntry[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
@@ -32,6 +33,8 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
   reviewing?: string; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
   hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>; formValuesRevoked?: boolean; onResendForm?: () => void;
+  /** VC1-A: whether «Por qué lo propuso» of a spreadsheet links to «Documentos recibidos» (only for whoever can open it). */
+  opensReceivedDocuments?: boolean;
 }) {
   const { t, i18n } = useTranslation("whatsapp");
   useTranslation("whatsapp", { lng: "en", useSuspense: false });
@@ -64,6 +67,7 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
           </div>
         </section> : null}
         {item.assistantReply && item.purpose !== "Access" ? <AssistantReplyWhy reply={item.assistantReply} /> : null}
+        {item.spreadsheetRows && item.purpose !== "Access" ? <SpreadsheetRowsWhy rows={item.spreadsheetRows} linksInbox={opensReceivedDocuments} /> : null}
         {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>
           {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.requestId} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.requestId ? "review.confirming" : "review.action")}</Button> : null}

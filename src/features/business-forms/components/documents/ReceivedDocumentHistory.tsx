@@ -14,7 +14,7 @@ export function ReceivedDocumentHistory({ detail, zone }: { detail: ReceivedDocu
   if (detail.history.length === 0) return <p className="text-sm text-[var(--color-content-muted)]">{t("history.empty")}</p>;
   return <ol className="divide-y divide-[var(--color-border)] text-sm">
     {detail.history.map((event, index) => {
-      const text = receivedDocumentEventKey(event, detail.history.slice(0, index), sender);
+      const text = receivedDocumentEventKey(event, detail.history.slice(0, index), sender, !!detail.document.row);
       const who = event.actor ? event.actor.displayName ?? t("unknownPerson")
         : event.kind === "received" ? t("history.fromSender", { person: sender })
         : event.kind === "confirmed" || event.kind === "choseOther" || event.kind === "formChosen" ? t("history.bySender", { person: sender }) : null;

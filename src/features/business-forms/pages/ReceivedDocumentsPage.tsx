@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Link, useMatch, useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ import { ReceivedDocumentPanel } from "../components/documents/ReceivedDocumentP
 import { receivedDocumentsKey, receivedDocumentForbidden, useReceivedDocumentList, useReceivedDocumentScope } from "../hooks/useReceivedDocuments";
 import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
 import { hasReceivedDocumentFilters, isReceivedDocumentId, receivedDocumentDataColumns, receivedDocumentDatum, receivedDocumentKind, receivedDocumentSegments,
-  receivedDocumentsPath, receivedDocumentStateLabel, receivedDocumentStateVariant, searchDigitsMissing, type ReceivedDocumentsFilter } from "../receivedDocuments";
+  receivedDocumentRowLabel, receivedDocumentsPath, receivedDocumentStateLabel, receivedDocumentStateVariant, searchDigitsMissing, type ReceivedDocumentsFilter } from "../receivedDocuments";
 import { receivedDateBoundary } from "../responses";
 
 /**
@@ -79,6 +79,8 @@ function ReceivedDocuments() {
   // The private filters live here, never in the address: the page, its size, the order and the open document do.
   const [filter, setFilter] = useState<ReceivedDocumentsFilter>({});
   const [denied, setDenied] = useState(false);
+  // The rows of one spreadsheet share the name of their link: each link is described by its «Fila 5».
+  const rowLabels = useId();
   const searchValid = !filter.search || !searchDigitsMissing(filter.search);
   const query: ReceivedDocumentsQuery = {
     page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
@@ -137,13 +139,17 @@ function ReceivedDocuments() {
   const date = (value: string) => formatDateTimeInZone(value, i18n.language, zone);
   const dataColumns = receivedDocumentDataColumns(items);
   const columns: Column<ReceivedDocument>[] = [
-    // The document: its kind and its name, which opens it. A row of a spreadsheet (VC1-A) will add its «Fila 5» in grey below it.
+    // The document: its kind and its name, which opens it. A row of a spreadsheet (VC1-A) is its spreadsheet with its «Fila 5» in grey
+    // below it, the exception A of one datum per column.
     { id: "document", header: t("columns.document"), cell: item => {
       const kind = receivedDocumentKind(item.file.mediaType);
       const Icon = kind === "photo" ? ImageIcon : kind === "file" ? FileIcon : DocumentIcon;
+      const row = item.row ? receivedDocumentRowLabel(item.row) : null;
+      const label = row ? `${rowLabels}-${item.id}` : undefined;
       return <div className="flex min-w-40 max-w-64 items-start gap-2">
         <Icon className="mt-0.5 size-4 shrink-0 text-[var(--color-content-muted)]" />
-        <div className="min-w-0"><Link data-document-id={item.id} to={documentPath(item.id)} className="break-words font-medium text-[var(--color-brand-700)] underline">{item.file.name}</Link></div>
+        <div className="min-w-0"><Link data-document-id={item.id} to={documentPath(item.id)} aria-describedby={label} className="break-words font-medium text-[var(--color-brand-700)] underline">{item.file.name}</Link>
+          {row ? <p id={label} className="break-words text-[var(--color-content-muted)]">{t(row.key, row.values)}</p> : null}</div>
       </div>;
     } },
     { id: "receivedAtUtc", header: t("columns.received"), sortable: true, cell: item => <time dateTime={item.receivedAtUtc}>{date(item.receivedAtUtc)}</time> },

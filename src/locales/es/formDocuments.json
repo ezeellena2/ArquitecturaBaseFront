@@ -57,7 +57,8 @@
     "label": "Documento",
     "loadFailed": "No pudimos cargar el documento.",
     "unavailable": "Este documento ya no está.",
-    "subtitle": "{{person}} · {{date}}"
+    "subtitle": "{{person}} · {{date}}",
+    "rowSubtitle": "{{row}} · {{person}} · {{date}}"
   },
   "tabs": {
     "label": "Documento",
@@ -67,6 +68,7 @@
   "form": {
     "label": "Formulario",
     "help": "Es el formulario que reconoció la IA. Si elegís otro, se vuelven a leer los datos del documento para ese formulario.",
+    "rowHelp": "Es el formulario que reconoció la IA. Si elegís otro, se vuelven a leer los datos de la fila para ese formulario.",
     "choose": "Elegí un formulario",
     "none": "Sin formulario",
     "sure": "Seguro",
@@ -139,12 +141,26 @@
     "tooLarge": "Pesa más de 10 MB.",
     "tooManyPages": "Tiene más de 10 páginas.",
     "empty": "Está vacío.",
-    "notOpened": "No se pudo abrir."
+    "notOpened": "No se pudo abrir.",
+    "row": {
+      "waiting": "Le mandamos esta fila a {{person}}. Si no la confirma hasta el {{date}}, la podés revisar acá.",
+      "forReviewExpired": "Venció sin que {{person}} la confirmara en WhatsApp.",
+      "unknown": "No encaja en ningún formulario.",
+      "unseen": "La IA no llegó a leerla.",
+      "reviewerBy": "La descartó {{person}}.",
+      "reviewer": "La descartó alguien del equipo.",
+      "duplicateOf_one": "Repetida: el mismo dato {{data}} que {{number}}.",
+      "duplicateOf_other": "Repetida: los mismos datos {{data}} que {{number}}.",
+      "duplicateRow": "Repetida: igual a la fila {{number}}.",
+      "duplicateRowSheet": "Repetida: igual a la fila {{number}} de «{{sheet}}».",
+      "datum": "«{{label}}»"
+    }
   },
   "discard": {
     "action": "Descartar",
     "title": "¿Descartar {{name}}?",
     "description": "Se borra el {{date}}, con su lectura. Hasta entonces lo podés volver a abrir.",
+    "rowDescription": "Se borra el {{date}}, con sus celdas. Hasta entonces la podés volver a abrir.",
     "pending": "Descartando…",
     "done": "Se descartó {{name}}.",
     "failed": "No se pudo descartar el documento."
@@ -197,7 +213,17 @@
     "choseOther": "Eligió «Otro»",
     "formChosen": "Eligió el formulario",
     "sent": "Se la mandó prellenada a {{person}}, como {{position}} de {{total}}.",
-    "overLimit": "Pasó el tope de 3 cargas por mensaje: quedó para revisar acá."
+    "overLimit": "Pasó el tope de 3 cargas por mensaje: quedó para revisar acá.",
+    "row": {
+      "received": {
+        "sure": "Llegó y la IA la reconoció",
+        "unknown": "Llegó y la IA no la reconoció",
+        "unseen": "Llegó y la IA no llegó a leerla",
+        "duplicate": "Llegó repetida"
+      },
+      "extractionRequested": "Se pidió leerla para «{{form}}»",
+      "extractionRequestedOther": "Se pidió leerla para otro formulario"
+    }
   },
   "formProposal": {
     "title": "Armar formulario con la IA",
@@ -258,5 +284,13 @@
     "notice_one": "Llegó {{count}} documento parecido que no encaja en ningún formulario: {{topic}}.",
     "notice_other": "Llegaron {{count}} documentos parecidos que no encajan en ningún formulario: {{topic}}.",
     "buildFor": "Armar formulario con la IA: {{topic}}"
+  },
+  "row": {
+    "label": "Fila {{number}}",
+    "labelSheet": "{{sheet}} · fila {{number}}",
+    "title": "La fila",
+    "download": "Descargar la planilla",
+    "downloading": "Descargando…",
+    "downloadFailed": "No pudimos bajar la planilla."
   }
 }

@@ -264,6 +264,26 @@
     "filter": "Necesita una persona ({{count}})",
     "help": "Se quita cuando alguien le responde."
   },
+  "spreadsheetRows": {
+    "title": "Por qué lo propuso",
+    "recognized": "Reconoció",
+    "sent": "Mandó",
+    "forTeam": "Para el equipo",
+    "repeated": "Repetidas",
+    "recognizedValue_one": "1 fila de «{{form}}», seguro",
+    "recognizedValue_other": "{{count}} filas de «{{form}}», seguro",
+    "rows_one": "Fila {{rows}}",
+    "rows_other": "Filas {{rows}}",
+    "sheetRows_one": "{{sheet}} · fila {{rows}}",
+    "sheetRows_other": "{{sheet}} · filas {{rows}}",
+    "range": "{{from}} a {{to}}",
+    "repeatedIn": "{{row}}, ya en {{number}}",
+    "repeatedSame": "{{row}}, igual que {{other}}",
+    "row": "Fila {{number}}",
+    "rowInline": "fila {{number}}",
+    "sheetRow": "{{sheet}} · fila {{number}}",
+    "link": "Ver en Documentos recibidos"
+  },
   "assistantReply": {
     "title": "Por qué respondió esto",
     "case": "Caso",

@@ -131,8 +131,15 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
   // response itself, under «Al recibirla», and inside each band the rows go in the order they happened. An action keeps
   // the people of its notice under it.
   const bands: { key: string; title: string; groups: ActivityRow[][] }[] = [];
+  // VC1-A: a response that came from a row of a spreadsheet starts when its spreadsheet arrived, with the file and the row under it; the
+  // server names it only to whoever sees «Documentos recibidos».
+  const source = record.origin?.document;
+  const spreadsheet: ActivityRow[] = source?.row ? [{ key: "origin:spreadsheet", atUtc: source.row.receivedAtUtc, text: t("responses.historySpreadsheet"),
+    detail: <Detail>{t(source.row.sheet === null ? "responses.historySpreadsheetRow" : "responses.historySpreadsheetSheetRow",
+      { name: source.name, number: String(source.row.number), sheet: source.row.sheet ?? "" })}</Detail> }] : [];
   for (const moment of composeWorkflowMoments(record, data)) {
-    if (moment.kind === "received") bands.push({ key: "Received", title: t("detail.events.Received"), groups: moment.history.map(event => [recordRow(event)]) });
+    if (moment.kind === "received") bands.push({ key: "Received", title: t("detail.events.Received"),
+      groups: [...spreadsheet.length ? [spreadsheet] : [], ...moment.history.map(event => [recordRow(event)])] });
     else if (moment.kind === "approval") bands.push({ key: "approval", title: t("detail.approvalBand"), groups: approvalRows(moment.task).map(row => [row]) });
     // The correction and the void are told in the moments above the tabs (CW10-A, CW11-A); the activity keeps the actions.
     else if (moment.kind === "effects") {

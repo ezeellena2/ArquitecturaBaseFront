@@ -5,7 +5,8 @@ import { toFormReplyPresentation, type FormReplyPresentation } from "./formReply
 import { calendarDateInZone } from "@/shared/lib/dateTime";
 import type { MessageDeliveryState } from "@/shared/ui/MessageBubble";
 import type { MapPoint } from "@/shared/lib/mapPoint";
-import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing, PrefilledValue, ReceivedDocument, SharedContact } from "../api/chat";
+import type { AccessEventKind, AssistantEvent, AssistantReply, ChatMessage, MessageOrigin, MessagePurpose, Outgoing, PrefilledValue, ReceivedDocument, SharedContact,
+  SpreadsheetRows } from "../api/chat";
 
 const deliveryStates = {
   Pending: "pending", Sending: "pending", Accepted: "sent", Sent: "sent", Delivered: "delivered",
@@ -33,6 +34,8 @@ interface TimelineContent {
   assistant: AssistantExplanation | null;
   /** AS4: «Por qué respondió esto» of a reply of the agent, as the server keeps it. */
   assistantReply: AssistantReply | null;
+  /** VC1-A: «Por qué lo propuso» of the notice of the loads of a spreadsheet, or null in every other message. */
+  spreadsheetRows: SpreadsheetRows | null;
   quickReplies: string[] | null;
   key: string;
   occurredAtUtc: string;
@@ -70,6 +73,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     quickReplies: message.kind === "Interactive" && message.purpose !== "Access" ? message.quickReplies : null,
     assistant: message.purpose === "Access" ? null : message.assistant,
     assistantReply: message.purpose === "Access" ? null : message.assistantReply ?? null,
+    spreadsheetRows: message.purpose === "Access" ? null : message.spreadsheetRows ?? null,
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
     direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
     form: (message.kind === "Flow" || message.kind === "LocationRequest") && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
@@ -91,6 +95,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     quickReplies: operation.kind === "QuickReplies" ? operation.quickReplies : null,
     assistant: operation.assistant,
     assistantReply: operation.assistantReply ?? null,
+    spreadsheetRows: operation.spreadsheetRows ?? null,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
     direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" || operation.kind === "LocationRequest" ? readFormMetadata(operation.form) : null, location: null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
     origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,

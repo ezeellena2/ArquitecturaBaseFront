@@ -264,6 +264,26 @@
     "filter": "Needs a person ({{count}})",
     "help": "It goes away when someone replies."
   },
+  "spreadsheetRows": {
+    "title": "Why it proposed this",
+    "recognized": "Recognized",
+    "sent": "Sent",
+    "forTeam": "For the team",
+    "repeated": "Repeated",
+    "recognizedValue_one": "1 row of “{{form}}”, sure",
+    "recognizedValue_other": "{{count}} rows of “{{form}}”, sure",
+    "rows_one": "Row {{rows}}",
+    "rows_other": "Rows {{rows}}",
+    "sheetRows_one": "{{sheet}} · row {{rows}}",
+    "sheetRows_other": "{{sheet}} · rows {{rows}}",
+    "range": "{{from}} to {{to}}",
+    "repeatedIn": "{{row}}, already in {{number}}",
+    "repeatedSame": "{{row}}, the same as {{other}}",
+    "row": "Row {{number}}",
+    "rowInline": "row {{number}}",
+    "sheetRow": "{{sheet}} · row {{number}}",
+    "link": "View in Received documents"
+  },
   "assistantReply": {
     "title": "Why it replied this",
     "case": "Case",

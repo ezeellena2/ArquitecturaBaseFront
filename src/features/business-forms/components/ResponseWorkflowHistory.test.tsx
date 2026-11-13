@@ -1,6 +1,7 @@
 import { act, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useQueryClient } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
 import { http, HttpResponse } from "msw";
 import { it, expect, vi } from "vitest";
 import i18n from "@/shared/i18n";
@@ -12,6 +13,7 @@ import type { ReactNode } from "react";
 import type { ResponseAction, ResponseWorkflow } from "../api/workflow";
 import type { ResponseDetail } from "../api/responses";
 import { useResponseWorkflow } from "../hooks/useResponseWorkflow";
+import { ResponseAssistance } from "./ResponseAssistance";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")),
@@ -470,4 +472,22 @@ it("says what the shared location and contact completed in English", async () =>
   } finally {
     await act(async () => { await i18n.changeLanguage("es"); });
   }
+});
+
+// VC1-A: a response that came from a row of a spreadsheet starts, in the activity, when its spreadsheet arrived, with the file and the row
+// under it; «Cómo empezó» names the spreadsheet and the row instead of «Salió de un documento».
+const fromRow = (sheet: string | null): ResponseDetail => {
+  const record = responseDetailFixture();
+  return { ...record, origin: { ...record.origin!, document: { id: id(40), name: "cobranzas-semana.xlsx", row: { sheet, number: 5, receivedAtUtc: "2026-10-17T11:59:00Z" } } },
+    history: [{ kind: "Sent", atUtc: instant("00"), actor: ana }, { kind: "Submitted", atUtc: instant("09"), actor: ana }] };
+};
+it("starts a response that came from a row of a spreadsheet when its spreadsheet arrived, with the file and the row", async () => {
+  const rows = await receivedRows(fromRow(null));
+  expect(rows[0]).toEqual(["Salió de una planilla", "cobranzas-semana.xlsx, fila 5"]);
+  expect(rows[1]).toEqual(["Se mandó el formulario", "Ana Pérez"]);
+});
+it("names the spreadsheet, its sheet and its row in «Cómo empezó»", async () => {
+  renderWithProviders(<MemoryRouter><ResponseAssistance record={fromRow("Ventas")} actor="me" busy={false} onForbidden={vi.fn()} onError={vi.fn()} /></MemoryRouter>);
+  expect(await screen.findByText("Salió de una planilla · cobranzas-semana.xlsx, fila 5 de «Ventas»")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Ver en Documentos recibidos" })).toHaveAttribute("href", "/formularios/documentos/" + id(40));
 });

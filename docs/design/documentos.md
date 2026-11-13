@@ -159,7 +159,8 @@ Las preguntas se juntan como en el resto de los textos: «A», «A» y «B», «
 | Bandeja, estado del propuesto que espera al equipo | Para revisar | To review |
 | Panel, por qué espera al equipo | Pasó el tope de 3 cargas por mensaje. | It went over the limit of 3 loads per message. |
 | Panel, una fila que no encaja | No encaja en ningún formulario. | It does not fit any form. |
-| Panel, una repetida | Repetida: el mismo {dato} que {número}. | Repeated: the same {field} as {number}. |
+| Panel, una fila que la IA no llegó a leer (`unseen`) · su paso del historial | La IA no llegó a leerla. · Llegó y la IA no llegó a leerla | The AI did not get to read it. · Arrived and the AI did not get to read it |
+| Panel, una repetida | Repetida: el mismo dato {dato} que {número}. · Repetida: los mismos datos {datos} que {número}. | Repeated: the same {field} as {number}. |
 | Panel, la zona y su botón | La fila · Descargar la planilla | The row · Download the spreadsheet |
 | Panel, motivo de «Descartar» y «Pasar al formulario» apagados | Le mandamos esta fila a {persona}. Si no la confirma hasta el {fecha y hora}, la podés revisar acá. | We sent this row to {person}. If they do not confirm it by {date and time}, you can review it here. |
 | Historial de la fila | Llegó en {archivo}, fila {n}, por WhatsApp de {persona}. · La IA la reconoció: {formulario}, seguro. Leyó {a} de {b} datos. · Se la mandó prellenada a {persona}, como {i} de {k}. · Pasó el tope de 3 cargas por mensaje: quedó para revisar acá. · {persona} la confirmó: {número}, sin correcciones. | Arrived in {file}, row {n}, via WhatsApp from {person}. · The AI recognized it: {form}, sure. It read {a} of {b} data. · Sent prefilled to {person}, as {i} of {k}. · It went over the limit of 3 loads per message: left to review here. · {person} confirmed it: {number}, without corrections. |
@@ -868,3 +869,70 @@ la página), «Armar formulario con la IA» en el panel de un sin clasificar y l
 - **Ya creado el borrador**, la propuesta queda de sólo lectura, con «Ya se creó el borrador con esta propuesta.» y «Abrir el
   borrador» en la banda.
 - **En el celular las acciones quedan en la banda**, como en las demás páginas, y no al pie.
+
+### VC1-A · Una entrada por fila (2026-11-13)
+
+Tarea 30 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+(reglas B6 y B9 y decisiones técnicas 12 y 13), sólo el front, sobre los guards de la tarea 26 (front 9f2d7c5d) y el backend de la
+bandeja con filas (tarea 28), con cuerpos sintéticos hasta que se exporten `forms-documents-http`, `whatsapp-audio-http` y
+`forms-responses-http`: en la bandeja, «Fila 5» debajo de la planilla, «La fila» con «Descargar la planilla» en el panel, los motivos
+y el historial de una fila; en el chat del operador, «Por qué lo propuso» del aviso de las cargas con su enlace; y en la respuesta,
+«Salió de una planilla». Las escenas `receivedDocumentRows.spec.ts` y `whatsapp-spreadsheet-rows.spec.ts` guardan las referencias
+`document-rows`, `document-row`, `document-row-waiting` y `whatsapp-spreadsheet-rows`, es/en a 1440, 390 y 320. El aviso con sus
+textos y las cargas los escribe el backend (tarea 29); el chat dibuja cada carga como la tarjeta de su formulario, sin el pie, que va
+sólo a WhatsApp.
+
+**La lista de chequeo:**
+
+1. **Entero y armado.** Las piezas de DOC5-A: la planilla con `DataTable`, el marco de D2 con `Tabs`, `Banner`, `DisabledReason`,
+   `DataList` y `ConfirmDialog`; «La fila» es una caja con el marco del visor (el título y «Descargar la planilla» arriba, `DataList`
+   debajo). En el chat, `DataList` dentro de la caja de «Por qué lo mandó» y el enlace común. Estados: una fila que espera a su
+   persona, para revisar por el tope o porque no se le pudo mandar, sin clasificar (no encaja), confirmada, descartada y repetida (de
+   una respuesta o de otra fila de la misma planilla), «Descargando…», la bajada que falla y la espera de un 429; la carga, los
+   vacíos, el error y los permisos son los de DOC5-A.
+2. **Una tarea, zonas que se entienden solas.** Una fila se revisa como un documento: la fila como llegó en el lugar del documento,
+   por qué está donde está, su formulario con sus datos y, al pie, las acciones.
+3. **El control según el dato.** No hay controles nuevos: bajar la planilla es un botón; el filtro es el segmentado de siempre.
+4. **Lo que se lee, en su lugar.** Las celdas de la fila, el encabezado a la izquierda y el valor a la derecha (`DataList`), tal como
+   llegaron; «Por qué lo propuso», en dos columnas desde 640 px y, en el celular, cada valor debajo de su dato, como «Prellenado
+   con», con un renglón por formulario o por hoja cuando hay varios.
+5. **Un dato por columna.** La fila va debajo del nombre de la planilla en gris (la excepción A), «Ventas · fila 3» si el libro tiene
+   varias hojas; «Monto» sigue en su columna.
+6. **Sin leyendas.** Qué pasa al cambiar el formulario de una fila va en la (i) de «Formulario»; el porqué de una fila es un dato y va
+   en el `Banner`.
+7. **Textos ciertos, una sola vez.** Una fila es «la fila»: «Le mandamos esta fila…», «Venció sin que {persona} la confirmara…», «La
+   descartó…», «Llegó y la IA la reconoció»; una que no es carga dice «No encaja en ningún formulario.», una que la IA no llegó a leer
+   (`unseen`, fuera de la muestra), «La IA no llegó a leerla.», y una repetida, «Repetida: el mismo dato «Fecha» que COB-000118.»
+   («dato» concuerda con cualquier pregunta; varios, «los mismos datos …») o «Repetida: igual a la fila 3 de «Ventas».». El número de
+   una fila es un identificador: va sin separador de miles, como en Excel. En la bandeja, el enlace de cada fila se describe con su
+   «Fila 5»: las filas de una planilla comparten el nombre del enlace.
+8. **Botones y lo apagado.** Los de una fila que espera a su persona quedan en su lugar, apagados, con el motivo encima, como en
+   DOC5-A; «Descargar la planilla» espera un 429 con su motivo.
+9. **Lo elegido y la espera.** La fila abierta lleva su barra; «Descargando…» con su aro.
+10. **Estados y mensajes.** Una bajada que falla lo dice en el aviso común; un 403 retira la bandeja; los demás son los de DOC5-A.
+11. **Lo mismo, igual en toda la app.** El panel, la planilla y el chat de siempre; tokens y `rem`.
+12. **Celular, teclado e idiomas.** Desde 320 px la página no se desplaza de costado; es/en con las fechas con números; el chat junta
+    las filas con la conjunción de cada idioma («Filas 2, 3 y 4», «Rows 2, 3, and 4»).
+
+**Diferencias con el tablero:**
+
+- **El historial de una fila conserva la simplificación de DOC5-A:** «Llegó y la IA la reconoció», con «De {persona}, por WhatsApp»
+  debajo, en lugar de «Llegó en {archivo}, fila {n}, por WhatsApp de {persona}.» y «La IA la reconoció: {formulario}, seguro.»: la
+  planilla y la fila ya están en el título y debajo de él, y el formulario y la seguridad, en «Revisar». No está «Leyó {a} de {b}
+  datos»: el contrato no lo trae. La confirmación es «Se cargó como {número}», como la de un documento, sin «sin correcciones».
+- **El panel dice la fila debajo del título** («Fila 5 · Marta Ruiz · 12/11/2026, 10:40»), y las migas, el aviso de descartar o volver
+  a abrir y la confirmación nombran «cobranzas-semana.xlsx · Fila 5»: el título sigue siendo la planilla, como en la bandeja.
+- **«Descargar la planilla» la pide al tocarlo**, no al abrir la fila: recorrer las filas con ↑ ↓ no baja la planilla cada vez.
+- **El filtro es «Propuestos»**, que trae los que esperan al equipo («Para revisar») y los que esperan a su persona («Propuesto»),
+  sin un segmento propio para «Para revisar».
+- **El enlace de «Por qué lo propuso» abre la bandeja**, no las filas de esa planilla: `spreadsheetRows` no trae las entradas y los
+  filtros de la bandeja viven en memoria. Sólo lo ve quien puede abrir «Documentos recibidos».
+- **«Para el equipo» junta en un rango más de tres filas seguidas** («Filas 5 a 8») y nombra hasta tres («Filas 2, 3 y 4»), como
+  escribe el tablero los dos casos; con varias hojas, un renglón por hoja («Ventas · filas 2 y 3»). Una repetida de otra fila dice
+  «Fila 9, igual que fila 4»: el tablero no la dibuja.
+- **«Salió de una planilla»** va en la actividad, a la hora en que llegó la planilla, con «{archivo}, fila {n}» debajo, y en «Cómo
+  empezó» reemplaza a «Salió de un documento»; «La pasó al formulario {persona}» sigue en «Cómo empezó», como en DOC5-A, sin «Desde
+  «Documentos recibidos»», que ya dice el enlace.
+- **«Por qué lo propuso» no usa `DataList` en el celular:** como «Prellenado con», sus dos columnas van desde 640 px y debajo cada
+  valor va bajo su dato, porque en la caja angosta de un mensaje a 320 px «Recognized» se partía adentro de la palabra.
+- **Una repetida de otra fila** dice «Repetida: igual a la fila {n}.» (o «… de «Ventas».»), el texto que el tablero dejaba a la tarea 30.

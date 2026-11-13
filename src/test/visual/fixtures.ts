@@ -93,7 +93,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const chatAssistantFixture = scenario === "chat-assistant-cases" ? createChatAssistantVisualFixtures(language) : undefined;
   if (chatAssistantFixture) Object.assign(globalThis, { chatAssistantFixture });
   // Task 8 of the documents in the chat (DOC2 and DOC4): a linked conversation with its documents and one without a linked account.
-  const chatDocumentFixture = scenario === "chat-document" ? createChatDocumentVisualFixtures(language) : undefined;
+  const chatDocumentFixture = scenario === "chat-document" || scenario === "chat-document-rows" ? createChatDocumentVisualFixtures(language, scenario) : undefined;
   // W3 in the chat (UC2 to UC6): the location and the contact that bring the form back, the second response, and contacts without a form.
   const chatSharedContentFixture = scenario === "chat-shared-content" ? createChatSharedContentVisualFixtures(language) : undefined;
   const businessScenario = (scenario?.startsWith("business-") ?? false) || roleGroupsScenario;

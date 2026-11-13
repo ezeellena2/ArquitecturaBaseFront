@@ -34,6 +34,18 @@ export const receivedDocumentStateLabel = (document: Pick<ReceivedDocument, "sta
 export const receivedDocumentStateVariant = (label: ReceivedDocumentStateLabel) =>
   label === "confirmed" ? "success" as const : label === "discarded" ? "danger" as const : label === "proposed" ? "outline" as const : "warning" as const;
 
+/** A row of a spreadsheet (VC1-A) as the inbox names it: «Fila 5», or «Ventas · fila 5» when the book has several sheets. Its number is
+ * the row as Excel numbers it, an identifier: it goes as text, without grouping. */
+export function receivedDocumentRowLabel(row: NonNullable<ReceivedDocument["row"]>): { key: string; values: Record<string, string> } {
+  return row.sheet === null ? { key: "row.label", values: { number: String(row.number) } } : { key: "row.labelSheet", values: { sheet: row.sheet, number: String(row.number) } };
+}
+/** How a notice, a confirmation or the crumbs name a document: a row adds its row to its spreadsheet («cobranzas.xlsx · Fila 5»). */
+export function receivedDocumentName(document: Pick<ReceivedDocument, "file" | "row">, t: (key: string, values?: Record<string, string>) => string): string {
+  if (!document.row) return document.file.name;
+  const label = receivedDocumentRowLabel(document.row);
+  return document.file.name + " · " + t(label.key, label.values);
+}
+
 /** What a file is, by its media type: the viewer zooms and turns a photo and shows a PDF with the browser's viewer. */
 export type ReceivedDocumentKind = "photo" | "pdf" | "word" | "file";
 export function receivedDocumentKind(mediaType: string): ReceivedDocumentKind {
@@ -156,12 +168,17 @@ export function receivedDocumentErrorKey(code: string | null): string {
  * Why a document is where it is, when that is not obvious from its state: what the reading or the person decided, who discarded it,
  * where the same document already is. Null when its state says it all.
  */
-export type ReceivedDocumentReason = { key: string; values?: Record<string, string> } | null;
+export type ReceivedDocumentReason = { key: string; values?: Record<string, string | number> } | null;
 // The steps that decide who a document waits for; a change of form that failed leaves it as it was.
 const waitingSteps = new Set<ReceivedDocumentEvent["kind"]>(["received", "formChosen", "choseOther", "reopened", "formChanged", "discarded", "confirmed", "overLimit"]);
-export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "document" | "reading" | "proposal" | "history">, unknownPerson: string): ReceivedDocumentReason {
-  const { state, reasonCode, forReview, sender } = detail.document;
+// A row of a spreadsheet (VC1-A) is «la fila»: its texts say «la» where a document's say «lo», it fits no form instead of not being
+// recognized, and a repeated one says which data matched which response (`joinLabels` joins them as the menu's language does), or which
+// row of the same spreadsheet it is equal to.
+export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "document" | "reading" | "proposal" | "history">, unknownPerson: string,
+  joinLabels: (labels: readonly string[]) => string = labels => labels.join(", ")): ReceivedDocumentReason {
+  const { state, reasonCode, forReview, sender, row } = detail.document;
   const person = sender.displayName ?? unknownPerson;
+  const of = (key: string) => row ? key.replace("reasons.", "reasons.row.") : key;
   // For the team because its form could not be sent to its person, or because what they were sent (the form, or the forms of a doubt)
   // expired; brought back or read for another form by someone of the team, its state says it all.
   if (state === "proposed" && forReview) {
@@ -169,16 +186,22 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
     if (last?.kind === "received" && last.detail === "notSendable") return { key: "reasons.forReviewNotSendable", values: { person } };
     // VC1-A: a row past the three loads of its message waits for the team from the start: nothing expired.
     if (last?.kind === "overLimit") return { key: "reasons.forReviewOverLimit" };
-    return last?.kind === "formChosen" || last?.kind === "received" && (last.detail === "sure" || last.detail === "doubt") ? { key: "reasons.forReviewExpired", values: { person } } : null;
+    return last?.kind === "formChosen" || last?.kind === "received" && (last.detail === "sure" || last.detail === "doubt") ? { key: of("reasons.forReviewExpired"), values: { person } } : null;
   }
-  if (state === "unclassified") return { key: reasonCode === "quota" ? "reasons.quota" : reasonCode === "other" ? "reasons.other" : "reasons.unknown" };
+  // A row that is not a load fits no form, or the AI never read it (`unseen`, past the sample it saw): a row never asks with buttons.
+  if (state === "unclassified") return row ? { key: reasonCode === "unseen" ? "reasons.row.unseen" : "reasons.row.unknown" }
+    : { key: reasonCode === "quota" ? "reasons.quota" : reasonCode === "other" ? "reasons.other" : "reasons.unknown" };
   if (state !== "discarded") return null;
   if (reasonCode === "reviewer") {
     const discarded = [...detail.history].reverse().find(event => event.kind === "discarded");
-    return discarded?.actor?.displayName ? { key: "reasons.reviewerBy", values: { person: discarded.actor.displayName } } : { key: "reasons.reviewer" };
+    return discarded?.actor?.displayName ? { key: of("reasons.reviewerBy"), values: { person: discarded.actor.displayName } } : { key: of("reasons.reviewer") };
   }
   if (reasonCode === "duplicate") {
     const repetition = detail.proposal?.repetition;
+    if (row && repetition?.row) return repetition.row.sheet === null ? { key: "reasons.row.duplicateRow", values: { number: String(repetition.row.number) } }
+      : { key: "reasons.row.duplicateRowSheet", values: { number: String(repetition.row.number), sheet: repetition.row.sheet } };
+    if (row && repetition?.recordNumber && repetition.labels) return { key: "reasons.row.duplicateOf",
+      values: { data: joinLabels(repetition.labels), number: repetition.recordNumber, count: repetition.labels.length } };
     return repetition?.recordNumber ? { key: "reasons.duplicateOf", values: { number: repetition.recordNumber } } : { key: "reasons.duplicate" };
   }
   if (reasonCode === "unreadable") return { key: "reasons.unreadable." + (detail.reading?.problem ?? "other") };
@@ -191,10 +214,17 @@ const refusedCode = "Forms.ReceivedDocument.ExtractionRefused";
  * of form the engine refused names the form asked for in the step that asked for it (`earlier`, the steps before it). A row sent as one of
  * the loads of its spreadsheet («{i}/{k}», VC1-A) names the person it was sent to: the one who sent it (`sender`).
  */
-export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: readonly ReceivedDocumentEvent[] = [], sender = ""): { key: string; values?: Record<string, string> } {
+// A row (`row`) is «la fila» where a document is «lo»: «Llegó y la IA la reconoció», DOC5-A's step, without «Leyó {a} de {b}». Only a
+// row arrives without the AI reading it (`unseen`, past the sample it saw).
+const rowSteps = new Set(["sure", "unknown", "unseen", "duplicate"]);
+export function receivedDocumentEventKey(event: ReceivedDocumentEvent, earlier: readonly ReceivedDocumentEvent[] = [], sender = "", row = false): { key: string; values?: Record<string, string> } {
+  const history = row ? "history.row." : "history.";
   switch (event.kind) {
-    case "received": return { key: "history.received." + (["sure", "doubt", "unknown", "unreadable", "duplicate", "notSendable", "quota", "rejected"].includes(event.detail ?? "") ? event.detail : "other") };
-    case "extractionRequested": return event.detail ? { key: "history.extractionRequested", values: { form: event.detail } } : { key: "history.extractionRequestedOther" };
+    case "received": {
+      const detail = ["sure", "doubt", "unknown", "unseen", "unreadable", "duplicate", "notSendable", "quota", "rejected"].find(known => known === event.detail) ?? "other";
+      return { key: (row && rowSteps.has(detail) ? history : "history.") + "received." + detail };
+    }
+    case "extractionRequested": return event.detail ? { key: history + "extractionRequested", values: { form: event.detail } } : { key: history + "extractionRequestedOther" };
     case "formChanged": return event.detail ? { key: "history.formChanged", values: { form: event.detail } } : { key: "history.formChangedOther" };
     case "extractionFailed": {
       if (event.detail !== refusedCode) return { key: "history.extractionFailed" };
