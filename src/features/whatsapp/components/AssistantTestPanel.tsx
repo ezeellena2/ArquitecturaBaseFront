@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePermissions } from "@/auth/usePermissions";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { useSettledValue } from "@/shared/hooks/useSettledValue";
 import { formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
@@ -116,18 +117,21 @@ function TestResult({ run, timeZone, onCheck }: { run: AgentTestRun; timeZone: s
 
 function TestAction({ action, time }: { action: AgentTestAction; time: { timestamp: string; timeLabel: string; dateLabel: string } }) {
   const { t } = useTranslation("whatsappAssistant");
+  // Without reading responses the server leaves out what the model wrote and what a form would fill (H4): it says why there.
+  const hidden = !usePermissions().has("formrecords.read");
   const label = action.kind === "SendForm" && action.form ? t("cases.sendNamed", { form: action.form.name }) : t("actions." + action.kind);
   const attachment = action.form ? <MessageCard icon={<FormIcon className="size-4" />} title={action.form.name} description={t("test.openForm")}>
-    {action.form.fields.length ? <div className="border-t border-[var(--color-border)] px-3"><DataList items={action.form.fields.map((field, index) => ({ key: String(index), label: field.label, value: field.value ?? "—" }))} /></div> : null}
+    {action.form.fields.length ? <div className="border-t border-[var(--color-border)] px-3"><DataList items={action.form.fields.map((field, index) => ({ key: String(index), label: field.label, value: field.value ?? "—" }))} /></div>
+      : hidden ? <p className="border-t border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-content-muted)]">{t("test.recordsHidden")}</p> : null}
   </MessageCard> : action.buttons?.length ? <ul aria-label={t("test.quickReplies")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">
     {action.buttons.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}
   </ul> : undefined;
-  const preview = action.kind !== "NoReply" && (action.text || attachment || action.kind === "Handoff");
+  const preview = action.kind !== "NoReply" && (action.text || attachment || action.kind === "Handoff" || (hidden && action.kind === "DraftedReply"));
   return <div className="flex min-w-0 flex-col gap-2">
     <div><AssistantActionTag kind={action.kind} label={label} /></div>
     <DataList items={[
       { key: "case", label: t("test.case"), value: action.caseSource === "Fallback" ? t("cases.fallback") : action.caseTitle || "—" },
-      { key: "why", label: t("test.why"), value: action.reason || "—" },
+      { key: "why", label: t("test.why"), value: action.reason || (hidden ? t("test.recordsHidden") : "—") },
       { key: "used", label: t("test.used"), value: action.used.length ? <ul className="flex flex-col gap-1">{action.used.map((item, index) => <li key={index}>{item}</li>)}</ul> : "—" },
     ]} />
     {preview ? <MessageHistory label={t("test.preview")}>
@@ -136,6 +140,7 @@ function TestAction({ action, time }: { action: AgentTestAction; time: { timesta
         <span>{handoffReasonText(t, action.handoffReasonCode, action.handoffReason)}</span>
       </p> : null}
       {action.text || attachment ? <MessageBubble direction="incoming" text={action.text ?? ""} attachment={attachment} {...time} /> : null}
+      {hidden && action.kind === "DraftedReply" && !action.text ? <p className="text-sm text-[var(--color-content-muted)]">{t("test.recordsHidden")}</p> : null}
     </MessageHistory> : null}
   </div>;
 }

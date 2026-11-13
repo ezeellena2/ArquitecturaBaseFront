@@ -9,6 +9,7 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
+import { notify } from "@/shared/ui/notifications";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -68,7 +69,7 @@ function AssistantAgentScreen({ actor, timeZone }: { actor: string; timeZone: st
 function AgentEditorScreen({ initial, live, queryKey, actor, timeZone }: { initial: AssistantAgent; live: AssistantAgent; queryKey: readonly unknown[]; actor: string; timeZone: string }) {
   const { t, i18n } = useTranslation("whatsappAssistant");
   const culture: AgentCulture = i18n.resolvedLanguage === "en" ? "en" : "es";
-  const { has } = usePermissions();
+  const { has, refetch } = usePermissions();
   const navigate = useNavigate();
   const editor = useAssistantAgentEditor(initial, queryKey);
   const phone = useMediaQuery("(width < 640px)");
@@ -126,8 +127,19 @@ function AgentEditorScreen({ initial, live, queryKey, actor, timeZone }: { initi
   const discardButton = (touch: boolean) => <DisabledReason reason={editor.changed ? blockedReason : null} className={touch ? "grid w-full" : undefined}>
     <Button type="button" variant="outline" size={touch ? "touch" : "default"} disabled={!editor.changed || editor.busy || !!blockedReason} onClick={() => setDiscarding(true)}>{t("discard")}</Button>
   </DisabledReason>;
-  const testButton = <DisabledReason reason={unavailable}>
-    <Button type="button" variant="outline" disabled={!!unavailable} onClick={() => setTesting(true)}><FlaskIcon className="size-4" />{t("testAction")}</Button>
+  // A 403 of Probar may only mean that reading WhatsApp chats went away (H4): with the permissions read again, the page stays, with
+  // the panel closed and Probar off with its reason, as long as it can still configure the assistant.
+  const leaveTest = async () => {
+    const permissions = (await refetch()).data?.permissions ?? [];
+    if (!permissions.includes("whatsapp.configureassistant")) { editor.guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+    // With both permissions the 403 was about the test (the account stopped being active): the panel stays and says so.
+    if (permissions.includes("whatsapp.read")) { notify({ id: "whatsapp:assistant-test", kind: "error", message: t("test.failed") }); return; }
+    setTesting(false);
+  };
+  // The assistant reads the real chat of the account it tests as: Probar is for someone who reads WhatsApp chats (H4).
+  const testReason = unavailable ?? (has("whatsapp.read") ? null : t("test.needsChats"));
+  const testButton = <DisabledReason reason={testReason}>
+    <Button type="button" variant="outline" disabled={!!testReason} onClick={() => setTesting(true)}><FlaskIcon className="size-4" />{t("testAction")}</Button>
   </DisabledReason>;
   const problems = (shown: boolean): ReactNode => shown ? <><AlertTriangleIcon className="size-3.5 text-[var(--color-danger)]" /><span className="sr-only">{" · " + t("tabs.problems")}</span></> : null;
   const keys = Object.keys(errors);
@@ -176,7 +188,7 @@ function AgentEditorScreen({ initial, live, queryKey, actor, timeZone }: { initi
       onDone={value => { if (editing.kind === "case") editor.putCase(value); else editor.setFallback(value.action); }} onClose={() => setEditing(null)}
       onRemove={id => { editor.removeCase(id); setEditing(null); }} /> : null}
     {testing ? <AssistantTestPanel actor={actor} timeZone={timeZone} unsaved={editor.changed} unavailable={unavailable} draft={testDraft} onDraftChange={setTestDraft}
-      onClose={() => setTesting(false)} onForbidden={() => { editor.guard.allowNextNavigation(); void navigate("/sin-permiso"); }} /> : null}
+      onClose={() => setTesting(false)} onForbidden={() => void leaveTest()} /> : null}
     <ConfirmDialog open={discarding} onOpenChange={setDiscarding} title={t("discardTitle")} description={t("discardHint")} confirmLabel={t("discard")} cancelLabel={t("stay")} onConfirm={editor.discard} />
     <ConfirmDialog open={editor.guard.isBlocked} onOpenChange={open => { if (!open) editor.guard.stay(); }} title={t("discardTitle")} description={t("discardHint")}
       confirmLabel={t("discard")} cancelLabel={t("stay")} onConfirm={editor.guard.leave} />

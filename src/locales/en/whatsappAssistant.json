@@ -207,6 +207,8 @@
   },
   "test": {
     "title": "Test the assistant",
+    "needsChats": "Testing the assistant requires permission to read WhatsApp chats.",
+    "recordsHidden": "You do not have permission to see form responses.",
     "help": "Write what someone would send on WhatsApp: you see what the assistant would do, in order, and why. It uses what is saved and nothing is sent.",
     "unsaved": "You have unsaved changes: the test uses what is saved.",
     "recipient": "As if written by",

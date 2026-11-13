@@ -207,6 +207,8 @@
   },
   "test": {
     "title": "Probar el asistente",
+    "needsChats": "Para probar el asistente hace falta poder ver los chats de WhatsApp.",
+    "recordsHidden": "No tenés permiso para ver las respuestas de los formularios.",
     "help": "Escribí lo que mandaría alguien por WhatsApp: ves qué haría el asistente, en orden, y por qué. Usa lo guardado y no se manda nada.",
     "unsaved": "Tenés cambios sin guardar: la prueba usa lo guardado.",
     "recipient": "Como si escribiera",

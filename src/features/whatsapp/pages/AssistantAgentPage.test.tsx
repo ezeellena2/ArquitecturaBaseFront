@@ -436,4 +436,51 @@ describe("Probar", () => {
     await userEvent.click(button);
     expect(screen.queryByRole("dialog", { name: "Probar el asistente" })).not.toBeInTheDocument();
   });
+
+  // H4: without reading responses, the server leaves out why and what a form would fill, and the test says so in their place.
+  it("says where it leaves out why and what a form would fill for someone who does not read responses", async () => {
+    server.use(http.get("/api/whatsapp/assistant-agent/test-recipients", () => HttpResponse.json({ items: [{ contactId: juan, name: "Juan Gómez", email: null }] })),
+      http.post("/api/whatsapp/assistant-agent/tests", () => new HttpResponse(null, { status: 202 })),
+      http.get("/api/whatsapp/assistant-agent/tests/:id", ({ params }) => HttpResponse.json({ requestId: params.id, state: "completed", failureCode: null, actions: [
+        { kind: "SendForm", caseSource: "Form", caseTitle: "Registrar visita", reason: "", used: [], text: null, buttons: null,
+          form: { name: "Registrar visita", fields: [] }, handoffReasonCode: null, handoffReason: null }] })));
+    await open();
+    await userEvent.click(within(header()).getByRole("button", { name: "Probar" }));
+    const panel = await screen.findByRole("dialog", { name: "Probar el asistente" });
+    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
+    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
+    await userEvent.paste("Pasé por Juan");
+    await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
+    const test = await within(panel).findByRole("article", { name: "Prueba como Juan Gómez" });
+    expect(await within(test).findAllByText("No tenés permiso para ver las respuestas de los formularios.")).toHaveLength(2);
+  });
+
+  // H4: a 403 of Probar after reading chats went away closes the panel and keeps the page, with Probar off and its reason.
+  it("keeps the page and turns Probar off when a test answers 403 and the assistant can still be configured", async () => {
+    server.use(http.get("/api/whatsapp/assistant-agent/test-recipients", () => HttpResponse.json({ items: [{ contactId: juan, name: "Juan Gómez", email: null }] })),
+      http.post("/api/whatsapp/assistant-agent/tests", () => new HttpResponse(null, { status: 403 })));
+    await open();
+    await userEvent.click(within(header()).getByRole("button", { name: "Probar" }));
+    const panel = await screen.findByRole("dialog", { name: "Probar el asistente" });
+    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
+    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
+    await userEvent.paste("Hola");
+    permissions = ["whatsapp.configureassistant", "ai.business.manage", "formtemplates.manage"];
+    await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Probar el asistente" })).not.toBeInTheDocument());
+    expect(within(header()).getByRole("button", { name: "Probar" })).toHaveAccessibleDescription("Para probar el asistente hace falta poder ver los chats de WhatsApp.");
+  });
+
+  // H4: the assistant reads the real chat of the account, so Probar is for someone who reads WhatsApp chats.
+  it("turns Probar off with its reason for someone who does not read WhatsApp chats", async () => {
+    permissions = ["whatsapp.configureassistant", "ai.business.manage", "formtemplates.manage"];
+    await open();
+    const button = within(header()).getByRole("button", { name: "Probar" });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("Para probar el asistente hace falta poder ver los chats de WhatsApp.");
+    await userEvent.click(button);
+    expect(screen.queryByRole("dialog", { name: "Probar el asistente" })).not.toBeInTheDocument();
+  });
 });
