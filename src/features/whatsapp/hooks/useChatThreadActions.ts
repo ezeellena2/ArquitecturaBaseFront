@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { changeMode, chatKey, reviewOutgoing, type ChatMode, type Outgoing } from "../api/chat";
+import { changeMode, chatKey, reviewOutgoingById, type ChatMode, type Outgoing } from "../api/chat";
 
 // Thread writes and their confirmations stay separate from message presentation and the read queries.
 export function useChatThreadActions(id: string, refresh: () => Promise<unknown>) {
@@ -13,8 +13,9 @@ export function useChatThreadActions(id: string, refresh: () => Promise<unknown>
   const feedbackId = `whatsapp:action:${id}`;
   useEffect(() => { active.current = true; return () => { active.current = false; dismissNotification(feedbackId); }; }, [feedbackId]);
   const [mode, setMode] = useState<{ mode: ChatMode; revision: number }>();
-  const [review, setReviewReference] = useState<Pick<Outgoing, "requestId">>();
-  const setReview = useCallback((operation: Pick<Outgoing, "requestId"> | undefined) => setReviewReference(operation ? { requestId: operation.requestId } : undefined), []);
+  // H2: the review goes by the id of the send, so another operator who can send reviews it too.
+  const [review, setReviewReference] = useState<Pick<Outgoing, "id">>();
+  const setReview = useCallback((operation: Pick<Outgoing, "id"> | undefined) => setReviewReference(operation ? { id: operation.id } : undefined), []);
   function feedback(error: unknown, uncertain: "mode.uncertain" | "review.uncertain") {
     const result = errorFeedback(error, { writing: true });
     if (active.current && !["session", "cancelled"].includes(result.kind)) notify({ id: feedbackId, kind: "error", message: result.kind === "uncertain" ? t(uncertain) : result.detail ?? t("actionFailed") });
@@ -28,7 +29,7 @@ export function useChatThreadActions(id: string, refresh: () => Promise<unknown>
       if (active.current && result.mode === "Manual" && result.assistantSendInProgress) notify({ id: feedbackId, kind: "info", message: t("mode.manualSendInProgress") });
       return client.invalidateQueries({ queryKey: chatKey });
     }, onError: error => feedback(error, "mode.uncertain"), onSettled: () => setMode(undefined) });
-  const reviewing = useMutation({ retry: false, mutationFn: (operation: Pick<Outgoing, "requestId">) => reviewOutgoing(id, operation.requestId),
+  const reviewing = useMutation({ retry: false, mutationFn: (operation: Pick<Outgoing, "id">) => reviewOutgoingById(id, operation.id),
     onSuccess: () => client.invalidateQueries({ queryKey: chatKey }), onError: error => feedback(error, "review.uncertain"), onSettled: () => setReviewReference(undefined) });
   return { mode, setMode, review, setReview, changing, reviewing };
 }

@@ -43,7 +43,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
         return response("send-pending",202);
       }),
       http.post("/api/whatsapp/chats/:id/messages", () => { textPosts++; return HttpResponse.error(); }),
-      http.post("/api/whatsapp/chats/:id/outgoing/:requestId/review", () => { reviews++; return HttpResponse.error(); }),
+      http.post("/api/whatsapp/chats/:id/outgoing-messages/:outgoingId/review", () => { reviews++; return HttpResponse.error(); }),
     );
     return thread;
   }
@@ -110,9 +110,10 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     expect(screen.queryByText("Entregado",{exact:true})).not.toBeInTheDocument();
     expect(screen.getByText(selected.name[culture])).toBeInTheDocument();
   });
-  it("hides review from another operator while reading the same actual Uncertain thread", async () => {
+  // H2: another operator who can send also reviews an uncertain send; offering it reviews nothing by itself.
+  it("offers the review to another operator while reading the same actual Uncertain thread", async () => {
     await open("thread-uncertain","019abcde-1000-7000-8000-000000000099");
-    expect(screen.queryByRole("button",{name:"Ya revisé el WhatsApp"})).not.toBeInTheDocument();
+    expect(await screen.findByRole("button",{name:/Ya revisé el WhatsApp|I checked WhatsApp/})).toBeInTheDocument();
     expect(screen.queryByText("Entregado",{exact:true})).not.toBeInTheDocument();
     expect(reviews).toBe(0);
   });

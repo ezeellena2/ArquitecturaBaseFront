@@ -29,7 +29,7 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
   contactId: string; readOwner: string; onAudioForbidden: () => void;
   /** The messages and outgoing, with the lines of what the assistant decided without a message (AS4). */
   items: readonly TimelineEntry[]; actor: string; timeZone?: string; canSend: boolean; canReuse: boolean;
-  /** The `requestId` whose review is being confirmed: that bubble shows the progress, and no other review starts meanwhile. */
+  /** The id of the send whose review is being confirmed: that bubble shows the progress, and no other review starts meanwhile. */
   reviewing?: string; onReview: (operation: Outgoing) => void; onReuse: (body: string) => void;
   atBottom: boolean; onAtBottomChange: (recent: boolean) => void;
   hasOlder: boolean; loadingOlder: boolean; historyError: boolean; loadOlder: () => Promise<unknown>; formValuesRevoked?: boolean; onResendForm?: () => void;
@@ -55,7 +55,9 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
         timestamp={item.occurredAtUtc} timeLabel={formatTimeInZone(item.occurredAtUtc, language, timeZone)}
         dateLabel={formatDateTimeInZone(item.occurredAtUtc, language, timeZone)}
         author={item.purpose === "Access" ? t("access.label") : item.author ? t(item.author === "automatic" ? "author.automatic" : item.author === "assistant" ? "author.assistant" : item.operatorUserId === actor ? "author.you" : "author.operator") : undefined}
-        delivery={item.delivery ? { state: item.delivery.state, label: t(`status.${item.delivery.code}`) } : undefined}
+        delivery={item.delivery ? { state: item.delivery.state, label: /* H2: a reviewed send of the chat says who reviewed it; an older one keeps the general label. */
+          item.source === "outgoing" && item.origin === "Conversation" && item.operation.state === "Reviewed" && item.operation.reviewedByUserId
+            ? t(item.operation.reviewedByUserId === actor ? "review.byYou" : "review.byOther") : t(`status.${item.delivery.code}`) } : undefined}
         describedBy={item.notReadLine ? notReadId + item.key : undefined}>
         {item.assistant && !formValuesRevoked && item.purpose !== "Access" ? <section className="rounded-[var(--radius-control)] bg-[var(--color-surface-muted)] p-3 text-sm">
           <p className="font-medium">{t(item.origin === "Assistant" ? "assistant.whySent" : "assistant.whySuggested")}</p>
@@ -70,7 +72,8 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
         {item.spreadsheetRows && item.purpose !== "Access" ? <SpreadsheetRowsWhy rows={item.spreadsheetRows} linksInbox={opensReceivedDocuments} /> : null}
         {item.origin === "Conversation" && item.source === "outgoing" && item.operation.state === "Uncertain" ? <>
           <p>{t("review.description")}</p>
-          {canSend && item.operation.operatorUserId === actor ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.requestId} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.requestId ? "review.confirming" : "review.action")}</Button> : null}
+          {/* H2: any operator who can send reviews it, also another operator's: the chat does not wait for whoever sent it. */}
+          {canSend ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.id} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.id ? "review.confirming" : "review.action")}</Button> : null}
         </> : null}
         {item.origin === "Conversation" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.kind !== "LocationRequest" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}

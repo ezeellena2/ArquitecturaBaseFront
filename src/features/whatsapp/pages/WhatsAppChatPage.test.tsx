@@ -301,7 +301,7 @@ it("keeps the Assistant confirmation open with its progress until the change ans
 it("keeps the review confirmation open with its progress until the review answers", async () => {
   thread.outgoing = [{ ...pending("request-review", "Resultado externo incierto"), state: "Uncertain" }];
   const wait = held();
-  server.use(http.post("/api/whatsapp/chats/:id/outgoing/:requestId/review", async () => {
+  server.use(http.post("/api/whatsapp/chats/:id/outgoing-messages/:outgoingId/review", async () => {
     await wait.answer; thread.outgoing[0].state = "Reviewed";
     return new HttpResponse(null, { status: 204 });
   }));
@@ -440,8 +440,8 @@ describe("WhatsAppChatPage", () => {
   it("requires confirmation to review its own uncertainty without repeating or marking it delivered", async () => {
     thread.outgoing = [{ ...pending("request-review", "Resultado externo incierto"), state: "Uncertain" }];
     const reviews: string[] = [];
-    server.use(http.post("/api/whatsapp/chats/:id/outgoing/:requestId/review", ({ params }) => {
-      reviews.push(params.requestId as string);
+    server.use(http.post("/api/whatsapp/chats/:id/outgoing-messages/:outgoingId/review", ({ params }) => {
+      reviews.push(params.outgoingId as string);
       thread.outgoing[0].state = "Reviewed";
       return new HttpResponse(null, { status: 204 });
     }));
@@ -450,7 +450,7 @@ describe("WhatsAppChatPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
     expect(reviews).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: "Confirmar que revisé" }));
-    await waitFor(() => expect(reviews).toEqual(["request-review"]));
+    await waitFor(() => expect(reviews).toEqual(["pending-1"]));
     expect(await screen.findByText("Revisado por el operador")).toBeInTheDocument();
     await waitFor(() => expect(input).toBeEnabled());
     expect(requests).toEqual([]);
@@ -471,7 +471,7 @@ describe("WhatsAppChatPage", () => {
   it("reports a lost review response once and keeps the uncertain send blocked", async () => {
     const errors = vi.spyOn(toast, "error");
     thread.outgoing = [{ ...pending("request-review", "Resultado externo incierto"), state: "Uncertain" }];
-    server.use(http.post("/api/whatsapp/chats/:id/outgoing/:requestId/review", () => HttpResponse.error()));
+    server.use(http.post("/api/whatsapp/chats/:id/outgoing-messages/:outgoingId/review", () => HttpResponse.error()));
     const input = await open();
     await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
     await userEvent.click(screen.getByRole("button", { name: "Confirmar que revisé" }));

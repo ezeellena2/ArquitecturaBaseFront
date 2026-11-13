@@ -126,6 +126,8 @@ export interface Outgoing {
   prefill?: PrefilledValue[];
   /** VC1-A: «Por qué lo propuso» of the queued notice of the loads of a spreadsheet, seen with whatsapp.read. */
   spreadsheetRows?: SpreadsheetRows;
+  /** H2: who marked an uncertain send as reviewed, and when; only a reviewed one has it. */
+  reviewedByUserId?: string; reviewedAtUtc?: string;
   /** Task 9 of the documents: as in the messages, the label of the button of a list and the mark of a Flow sent for a file. */
   listButton?: string;
   loadsFile?: true;
@@ -176,4 +178,5 @@ export async function changeMode(id: string, mode: ChatMode, expectedRevision: n
 }
 export const sendText = (id: string, requestId: string, body: string) => api.post<Outgoing>(`${base}/${id}/messages`, { requestId, body });
 export const findOutgoing = (id: string, requestId: string) => api.get<Outgoing>(`${base}/${id}/outgoing/${requestId}`);
-export const reviewOutgoing = (id: string, requestId: string) => api.post<void>(`${base}/${id}/outgoing/${requestId}/review`);
+/** H2: the review of an uncertain send by its id, for any operator who can send. */
+export const reviewOutgoingById = (id: string, outgoingId: string) => api.post<void>(`${base}/${id}/outgoing-messages/${outgoingId}/review`);

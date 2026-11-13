@@ -87,10 +87,19 @@ describe("ChatTimeline", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
     expect(onReview).toHaveBeenCalledExactlyOnceWith(pending);
   });
-  it("keeps another operator's uncertainty visible without offering its review", async () => {
-    await setup([], [operation("Uncertain", "other")]);
+  // H2: any operator who can send reviews another operator's uncertain send, so the chat is not stuck when that operator is away.
+  it("offers the review of another operator's uncertain send and says who reviewed one", async () => {
+    const pending = operation("Uncertain", "other");
+    const { onReview } = await setup([], [pending, { ...operation("Reviewed", "other"), id: "reviewed", requestId: "request-r", reviewedByUserId: "me", reviewedAtUtc: "2026-10-02T12:05:00Z" },
+      { ...operation("Reviewed"), id: "theirs", requestId: "request-t", requestedAtUtc: "2026-10-02T12:02:00Z", reviewedByUserId: "other", reviewedAtUtc: "2026-10-02T12:06:00Z" },
+      { ...operation("Reviewed", "other"), id: "older", requestId: "request-o", requestedAtUtc: "2026-10-02T12:03:00Z" }]);
     expect(screen.getByText("Envío sin confirmar")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Ya revisé el WhatsApp" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ya revisé el WhatsApp" }));
+    expect(onReview).toHaveBeenCalledExactlyOnceWith(pending);
+    expect(screen.getByText("Lo revisaste vos")).toBeInTheDocument();
+    expect(screen.getByText("Lo revisó otro operador")).toBeInTheDocument();
+    // One reviewed before anyone kept who did it says what it said.
+    expect(screen.getByText("Revisado por el operador")).toBeInTheDocument();
   });
   it("keeps recovery and review unavailable in read-only mode", async () => {
     await setup([message("Failed")], [operation("Uncertain")], false);
@@ -115,7 +124,7 @@ describe("ChatTimeline", () => {
     expect(screen.queryByRole("button", { name: "Cargar mensajes anteriores" })).not.toBeInTheDocument();
   });
   it("shows the review in progress only on the bubble being reviewed", async () => {
-    await setup([], [{ ...operation("Uncertain"), id: "first", requestId: "request-a" }, { ...operation("Uncertain"), id: "second", requestId: "request-b", requestedAtUtc: "2026-10-02T12:01:00Z" }], true, true, { reviewing: "request-a" });
+    await setup([], [{ ...operation("Uncertain"), id: "first", requestId: "request-a" }, { ...operation("Uncertain"), id: "second", requestId: "request-b", requestedAtUtc: "2026-10-02T12:01:00Z" }], true, true, { reviewing: "first" });
     const working = screen.getByRole("button", { name: "Confirmando…" });
     expect(working).toHaveAttribute("aria-busy", "true");
     const other = screen.getByRole("button", { name: "Ya revisé el WhatsApp" });

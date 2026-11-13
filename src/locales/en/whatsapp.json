@@ -96,7 +96,9 @@
     "confirmDescription": "It enables new replies without sending this message again or marking it delivered.",
     "confirm": "Confirm I checked",
     "confirming": "Confirming…",
-    "uncertain": "Could not confirm the review. Refresh the chat and check the delivery state before trying again."
+    "uncertain": "Could not confirm the review. Refresh the chat and check the delivery state before trying again.",
+    "byYou": "You reviewed it",
+    "byOther": "Another operator reviewed it"
   },
   "leave": {
     "title": "Leave with unsent replies?",

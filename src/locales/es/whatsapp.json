@@ -96,7 +96,9 @@
     "confirmDescription": "Habilita nuevas respuestas, sin volver a enviar este mensaje ni marcarlo como entregado.",
     "confirm": "Confirmar que revisé",
     "confirming": "Confirmando…",
-    "uncertain": "No se pudo confirmar la revisión. Actualizá el chat y revisá el estado del envío antes de volver a intentarlo."
+    "uncertain": "No se pudo confirmar la revisión. Actualizá el chat y revisá el estado del envío antes de volver a intentarlo.",
+    "byYou": "Lo revisaste vos",
+    "byOther": "Lo revisó otro operador"
   },
   "leave": {
     "title": "¿Salir con respuestas sin enviar?",

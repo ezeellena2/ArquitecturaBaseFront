@@ -84,6 +84,13 @@ describe("Chat forms DTO contract", () => {
     expect(calls).toEqual(["POST", "GET"]);
     expect(frozen.message).toBe("  Complete this form  ");
   });
+  // H2: another operator may have reviewed the frozen attempt's send: its query still reads, with who and when.
+  it("recovers a reviewed receipt with who reviewed it and rejects a null reviewer", async () => {
+    const reviewed = { ...receipt, recoveryPath: null, state: "Reviewed", reviewedByUserId: "019abcde-1000-7000-8000-000000000009", reviewedAtUtc: "2026-11-13T12:00:00Z" };
+    server.use(http.get("/api/whatsapp/chats/" + contactId + "/outgoing/" + request.requestId, () => HttpResponse.json(reviewed)));
+    expect(await recoverFormMessage(contactId, request, "actor")).toMatchObject({ state: "Reviewed", reviewedByUserId: reviewed.reviewedByUserId });
+    expect(() => parseFormOutgoing({ ...reviewed, reviewedByUserId: null }, request, "actor", contactId)).toThrow("Unsupported chat form response.");
+  });
   it("requires the Api-generated owned recovery path on acceptance", async () => {
     server.use(http.post("/api/whatsapp/chats/" + contactId + "/form-messages", () => HttpResponse.json({...receipt,recoveryPath:null}, {status:202})));
     await expect(sendFormMessage(contactId, request, "actor")).rejects.toThrow("Unsupported chat form response.");
