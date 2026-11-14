@@ -89,6 +89,16 @@
     "Reviewed": "Revisado por el operador",
     "Unknown": "Estado no informado"
   },
+  "failure": {
+    "notAllowed": "Este número no está habilitado para recibir mensajes de la cuenta de WhatsApp.",
+    "windowClosed": "La ventana para responder terminó antes de que saliera. Esperá un mensaje nuevo del contacto.",
+    "undeliverable": "Meta no pudo entregarlo: puede que el número no tenga WhatsApp.",
+    "rateLimited": "Meta lo frenó por su límite de mensajes. Probá de nuevo en un rato.",
+    "tokenInvalid": "La conexión con WhatsApp venció o la revocaron. Hay que renovarla.",
+    "permissionMissing": "A la conexión con WhatsApp le falta un permiso para enviar.",
+    "unavailable": "No se pudo llegar a WhatsApp, ni con los reintentos. Probá de nuevo en un rato.",
+    "rejected": "WhatsApp rechazó el mensaje."
+  },
   "review": {
     "description": "Revisá el WhatsApp del teléfono: el mensaje pudo haberse enviado. No se repetirá automáticamente.",
     "action": "Ya revisé el WhatsApp",

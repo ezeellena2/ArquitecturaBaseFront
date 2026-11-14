@@ -75,6 +75,7 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
           {/* H2: any operator who can send reviews it, also another operator's: the chat does not wait for whoever sent it. */}
           {canSend ? <Button variant="outline" size="sm" disabled={Boolean(reviewing)} pending={reviewing === item.operation.id} onClick={() => onReview(item.operation)}>{t(reviewing === item.operation.id ? "review.confirming" : "review.action")}</Button> : null}
         </> : null}
+        {item.delivery?.code === "Failed" && item.failureCode ? <FailureReason code={item.failureCode} /> : null}
         {item.origin === "Conversation" && item.delivery?.code === "Failed" && item.kind !== "Flow" && item.kind !== "LocationRequest" && item.body && canSend ?
           <Button variant="muted-link" size="inline" disabled={!canReuse} onClick={() => onReuse(item.body!)}>{t("reuse")}</Button> : null}
       </MessageBubble>
@@ -83,6 +84,20 @@ export const ChatTimeline = memo(function ChatTimeline({ items, contactId, readO
     </div>)}
   </MessageHistory>;
 });
+
+/** H9: the reason of a failed send by its stable code (`WhatsApp.Send.*`). */
+const failureReasons: Readonly<Record<string, string>> = {
+  "WhatsApp.Send.NotAllowed": "notAllowed", "WhatsApp.Send.WindowClosed": "windowClosed", "WhatsApp.Send.Undeliverable": "undeliverable",
+  "WhatsApp.Send.RateLimited": "rateLimited", "WhatsApp.Send.TokenInvalid": "tokenInvalid", "WhatsApp.Send.PermissionMissing": "permissionMissing",
+  "WhatsApp.Send.Unavailable": "unavailable", "WhatsApp.Send.Rejected": "rejected",
+};
+
+/** H9: why a send did not go out, so the operator knows which to repeat; another code keeps only «No se pudo enviar». Secondary, in gray. */
+function FailureReason({ code }: { code: string }) {
+  const { t } = useTranslation("whatsapp");
+  const reason = failureReasons[code];
+  return reason ? <p className="text-sm text-[var(--color-content-muted)]">{t(`failure.${reason}`)}</p> : null;
+}
 
 /** W3 (UC2, UC3): «Prellenado con» of a resend of the form, in its card: each question with what went into it, read like the values
  *  of a response (`FormReplyValues`, LR1): two columns from 640 px and, in the celular, each value under its question; a value keeps its

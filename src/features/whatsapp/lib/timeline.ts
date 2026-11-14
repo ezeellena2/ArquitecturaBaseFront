@@ -36,6 +36,8 @@ interface TimelineContent {
   assistantReply: AssistantReply | null;
   /** VC1-A: «Por qué lo propuso» of the notice of the loads of a spreadsheet, or null in every other message. */
   spreadsheetRows: SpreadsheetRows | null;
+  /** H9: why a send failed, by its stable code, or null when it did not fail or does not say. */
+  failureCode: string | null;
   quickReplies: string[] | null;
   key: string;
   occurredAtUtc: string;
@@ -74,6 +76,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     assistant: message.purpose === "Access" ? null : message.assistant,
     assistantReply: message.purpose === "Access" ? null : message.assistantReply ?? null,
     spreadsheetRows: message.purpose === "Access" ? null : message.spreadsheetRows ?? null,
+    failureCode: message.purpose === "Access" ? null : message.failureCode ?? null,
     source: "message", key: `message:${message.id}`, occurredAtUtc: message.occurredAtUtc,
     direction: message.direction === "Outbound" ? "outgoing" : "incoming", body: message.purpose === "Access" || message.kind === "FlowReply" ? null : message.body, kind: message.kind,
     form: (message.kind === "Flow" || message.kind === "LocationRequest") && message.purpose !== "Access" ? readFormMetadata(message.form) : null,
@@ -96,6 +99,7 @@ export function buildTimeline(messages: readonly ChatMessage[], outgoing: readon
     assistant: operation.assistant,
     assistantReply: operation.assistantReply ?? null,
     spreadsheetRows: operation.spreadsheetRows ?? null,
+    failureCode: operation.failureCode ?? null,
     source: "outgoing", operation, key: `outgoing:${operation.id}`, occurredAtUtc: operation.requestedAtUtc,
     direction: "outgoing", body: operation.body, kind: operation.kind ?? "Text", form: operation.kind === "Flow" || operation.kind === "LocationRequest" ? readFormMetadata(operation.form) : null, location: null, author: operation.origin === "Assistant" ? "assistant" : operation.origin === "FormAction" || !operation.operatorUserId ? "automatic" : "operator", operatorUserId: operation.operatorUserId,
     origin: operation.origin, purpose: "Business", accessEventKind: null, formReply: null,

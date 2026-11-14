@@ -93,6 +93,8 @@ export interface ChatMessage {
   audio: ChatAudio | null;
   id: string; direction: "Inbound" | "Outbound"; kind: string; body: string | null; occurredAtUtc: string;
   inboundSequence: number; operatorUserId: string | null; status: string | null; errorCode: number | null;
+  /** H9: why a message Meta accepted and later reported as failed did not arrive, by the stable code of its error code. */
+  failureCode?: string;
   origin: MessageOrigin; quickReplies: string[] | null; assistant: AssistantExplanation | null;
   purpose?: MessagePurpose; accessEventKind?: AccessEventKind | null;
   form?: ChatFormMetadata | null;
@@ -128,6 +130,8 @@ export interface Outgoing {
   spreadsheetRows?: SpreadsheetRows;
   /** H2: who marked an uncertain send as reviewed, and when; only a reviewed one has it. */
   reviewedByUserId?: string; reviewedAtUtc?: string;
+  /** H9: why a failed send did not go out, one stable code per kind of refusal; only a failed one that says has it. */
+  failureCode?: string;
   /** Task 9 of the documents: as in the messages, the label of the button of a list and the mark of a Flow sent for a file. */
   listButton?: string;
   loadsFile?: true;

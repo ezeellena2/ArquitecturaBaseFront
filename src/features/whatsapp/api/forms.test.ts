@@ -90,6 +90,9 @@ describe("Chat forms DTO contract", () => {
     server.use(http.get("/api/whatsapp/chats/" + contactId + "/outgoing/" + request.requestId, () => HttpResponse.json(reviewed)));
     expect(await recoverFormMessage(contactId, request, "actor")).toMatchObject({ state: "Reviewed", reviewedByUserId: reviewed.reviewedByUserId });
     expect(() => parseFormOutgoing({ ...reviewed, reviewedByUserId: null }, request, "actor", contactId)).toThrow("Unsupported chat form response.");
+    // H9: a send that failed may say why.
+    expect(parseFormOutgoing({ ...receipt, state: "Failed", failureCode: "WhatsApp.Flow.AccountUnavailable" }, request, "actor", contactId))
+      .toMatchObject({ state: "Failed", failureCode: "WhatsApp.Flow.AccountUnavailable" });
   });
   it("requires the Api-generated owned recovery path on acceptance", async () => {
     server.use(http.post("/api/whatsapp/chats/" + contactId + "/form-messages", () => HttpResponse.json({...receipt,recoveryPath:null}, {status:202})));

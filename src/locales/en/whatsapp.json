@@ -89,6 +89,16 @@
     "Reviewed": "Reviewed by operator",
     "Unknown": "Status unavailable"
   },
+  "failure": {
+    "notAllowed": "This number is not allowed to receive messages from the WhatsApp account.",
+    "windowClosed": "The reply window ended before it went out. Wait for a new message from the contact.",
+    "undeliverable": "Meta could not deliver it: the number may not have WhatsApp.",
+    "rateLimited": "Meta held it back by its message limit. Try again in a while.",
+    "tokenInvalid": "The WhatsApp connection expired or was revoked. It needs to be renewed.",
+    "permissionMissing": "The WhatsApp connection lacks a permission to send.",
+    "unavailable": "WhatsApp could not be reached, not even with the retries. Try again in a while.",
+    "rejected": "WhatsApp refused the message."
+  },
   "review": {
     "description": "Check WhatsApp on the phone: this message may have been sent. It will not be automatically repeated.",
     "action": "I checked WhatsApp",

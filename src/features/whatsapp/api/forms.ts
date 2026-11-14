@@ -20,7 +20,9 @@ const formsSchema = z.object({ page: z.object({ items: z.array(optionSchema), pa
 export type ChatForms = z.infer<typeof formsSchema>;
 const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.string().min(1), body: z.string().nullable(), requestedAtUtc: z.string().datetime({offset:true}), state: z.enum(["Pending", "Sending", "Accepted", "Failed", "Uncertain", "Reviewed"]), waMessageId: z.string().nullable(), kind: z.enum(["Flow", "LocationRequest"]), quickReplies: z.null(), form: formMetadataSchema, recoveryPath: z.string().nullable(), origin: z.literal("Conversation"), assistant: z.null(),
   // H2: a send that someone reviewed says who and when; absent otherwise, never null.
-  reviewedByUserId: guid.optional(), reviewedAtUtc: z.string().datetime({offset:true}).optional() }).strict();
+  reviewedByUserId: guid.optional(), reviewedAtUtc: z.string().datetime({offset:true}).optional(),
+  // H9: a send that failed may say why, by its stable code.
+  failureCode: z.string().min(1).optional() }).strict();
 
 const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
 // missingData names the person's datum that is missing, and only for that block.

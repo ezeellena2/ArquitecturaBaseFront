@@ -76,6 +76,17 @@ describe("ChatTimeline", () => {
     expect(onReuse).toHaveBeenCalledExactlyOnceWith("Mensaje del historial");
     expect(onReview).not.toHaveBeenCalled();
   });
+  // H9: a send that failed says why, by its stable code, so the operator knows which to repeat; another code keeps only the status.
+  it("says why a failed send did not go out, and only for a code it knows", async () => {
+    await setup([], [{ ...operation("Failed"), failureCode: "WhatsApp.Send.Undeliverable" }, { ...operation("Failed"), id: "other", failureCode: "WhatsApp.Flow.AccountUnavailable" }]);
+    expect(screen.getByText("Meta no pudo entregarlo: puede que el número no tenga WhatsApp.")).toBeInTheDocument();
+    expect(screen.getAllByText("No se pudo enviar")).toHaveLength(2);
+  });
+  // H9: a message Meta accepted and later reported as failed in its status says why too.
+  it("says why a message failed in its status after Meta accepted it", async () => {
+    await setup([{ ...message("Failed"), errorCode: 131026, failureCode: "WhatsApp.Send.Undeliverable" }], []);
+    expect(screen.getByText("Meta no pudo entregarlo: puede que el número no tenga WhatsApp.")).toBeInTheDocument();
+  });
   it("preserves an existing draft by disabling recovery", async () => {
     const { onReuse } = await setup([], [operation("Failed")], true, false);
     expect(screen.getByRole("button", { name: "Usar este texto en el borrador" })).toBeDisabled();
