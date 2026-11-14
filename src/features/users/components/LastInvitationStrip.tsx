@@ -20,14 +20,15 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { AlertCircleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
+import { AlertCircleIcon, AlertTriangleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
 
 type IconComponent = ComponentType<{ className?: string }>;
 
 /// Cada estado con su ícono y su texto: el color solo no dice nada a quien no lo distingue. "Entregada" y "Leída" son
-/// los dos tildes de WhatsApp, y "Leída" los pinta, como en el chat. "No llegó" es el único que alarma.
+/// los dos tildes de WhatsApp, y "Leída" los pinta, como en el chat. "No llegó" es el único que alarma; "Sin confirmar"
+/// (H7: no se sabe si salió) advierte, porque puede haber llegado.
 const statuses: Readonly<
   Record<InvitationDeliveryStatus, { readonly key: string; readonly icon: IconComponent; readonly tone?: string }>
 > = {
@@ -36,6 +37,7 @@ const statuses: Readonly<
   Delivered: { key: "delivered", icon: CheckCheckIcon },
   Read: { key: "read", icon: CheckCheckIcon, tone: "[&>svg]:text-[var(--color-brand-600)]" },
   Failed: { key: "failed", icon: AlertCircleIcon, tone: "text-[var(--color-danger-700)]" },
+  Uncertain: { key: "uncertain", icon: AlertTriangleIcon, tone: "text-[var(--color-message-uncertain)]" },
 };
 
 /// Only editable consent/channel errors remain in the resend panel.
@@ -328,13 +330,16 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     : t("invitation.consentWithoutName", { app });
 
   const failed = invitation.deliveryStatus === "Failed";
+  const uncertain = invitation.deliveryStatus === "Uncertain";
   // "No llegó" se ve igual por los dos canales; lo que cambia es el porqué, que va en la (i) junto al estado. Por
-  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó.
-  const failureHint = !failed
-    ? undefined
-    : invitation.channel === "Email"
-      ? t("lastInvitation.failedHintByEmail")
-      : t("lastInvitation.failedHint");
+  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó. "Sin confirmar" pide revisar antes.
+  const failureHint = uncertain
+    ? t("lastInvitation.uncertainHint")
+    : !failed
+      ? undefined
+      : invitation.channel === "Email"
+        ? t("lastInvitation.failedHintByEmail")
+        : t("lastInvitation.failedHint");
   const waiting = seconds > 0;
   const status = invitation.deliveryStatus === null ? undefined : statuses[invitation.deliveryStatus];
   const StatusIcon = status?.icon;
@@ -424,8 +429,8 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
                 ref={resendRef}
                 type="button"
                 size="sm"
-                // Discreto mientras todo anda; con contorno cuando pide atención (no llegó).
-                variant={failed ? "outline" : "ghost"}
+                // Discreto mientras todo anda; con contorno cuando pide atención (no llegó o sin confirmar).
+                variant={failed || uncertain ? "outline" : "ghost"}
                 disabled={waiting}
                 onClick={open}
               >

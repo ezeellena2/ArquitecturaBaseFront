@@ -23,7 +23,8 @@ export interface UserListItem {
 export type InvitationChannel = "Email" | "WhatsApp";
 
 /// Cómo va una invitación. Por WhatsApp, cualquiera de estos; por correo, solo `Failed`, si la cola no la tomó.
-export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed";
+/// `Uncertain` (H7): no se sabe si salió (Meta pudo haberla recibido); se revisa el WhatsApp de la persona antes de reenviarla.
+export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed" | "Uncertain";
 
 /// La última invitación que se le mandó a la cuenta: la franja de abajo de los medios de ingreso en la edición (tablero
 /// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null por un correo que salió, que no tiene estado que

@@ -718,6 +718,24 @@ describe("UserEditDialog", () => {
       expect(resend).toHaveAccessibleDescription("Podés reenviar en 45 s");
     });
 
+    // H7: Meta may have the invitation (a timeout, a cut answer): it is unconfirmed, not failed, and asks to check first.
+    it("says an invitation whose send is uncertain is unconfirmed and asks to check before resending it", async () => {
+      withUser(
+        invitedLaura,
+        detailOf(invitedLaura, {
+          lastInvitation: invitation({ sentAtUtc: "2026-09-24T14:05:00Z", deliveryStatus: "Uncertain" }),
+        }),
+      );
+
+      const strip = stripOf(await openEdit("laura.rios@gmail.com"));
+
+      expect(strip.getByText("Sin confirmar")).toBeInTheDocument();
+      expect(strip.queryByText("No llegó")).not.toBeInTheDocument();
+      expect(strip.getByRole("button", { name: "Más información sobre Sin confirmar" })).toHaveAccessibleDescription(
+        "No sabemos si llegó: Meta no confirmó el envío. Revisá con la persona antes de reenviarla.",
+      );
+    });
+
     it("shows only the date of an invitation by email, which has no delivery status", async () => {
       withUser(
         invitedLaura,
