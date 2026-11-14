@@ -250,6 +250,7 @@
       "blockedTopic": "It was asked about a topic it doesn't answer",
       "unknown": "It didn't find the answer in what is loaded",
       "documentNotAllowed": "The account can't load documents",
+      "assistantFailed": "The assistant couldn't reply",
       "button": "They tapped «{{title}}»",
       "other": "The assistant handed it off"
     }

@@ -7,8 +7,9 @@ import { NeedsPersonBadge } from "./ChatNeedsPerson";
 
 /**
  * What the assistant did and why, as the server kept it (AS4): the action with the tag of «Asistente», then in two columns its
- * place in a reply of several actions, the case («Cualquier otra cosa» for the last one), the button the person tapped, why and
- * what it used; a handoff ends with the mark and its reason, as in Probar. Empty data do not show.
+ * place in a reply of several actions, the case («Cualquier otra cosa» for the last one; none when the assistant could not reply,
+ * H5), the button the person tapped, why and what it used; a handoff ends with the mark and its reason, as in Probar. Empty data
+ * do not show.
  */
 function ReplyDetails({ reply, withAction }: { reply: AssistantReply; withAction: boolean }) {
   const { t } = useTranslation("whatsapp");
@@ -16,16 +17,18 @@ function ReplyDetails({ reply, withAction }: { reply: AssistantReply; withAction
   // A handoff because of a button already says what was tapped in its reason: it is not said twice.
   const tappedInReason = reply.kind === "Handoff" && reply.handoffReasonCode === "button";
   const button = reply.button?.trim();
+  // H5: a handoff because the assistant could not reply followed no case.
+  const withoutCase = reply.kind === "Handoff" && reply.handoffReasonCode === "assistantFailed";
   const rows: DataListItem[] = [
     ...(reply.count > 1 ? [{ key: "place", label: t("assistantReply.place"), value: t("assistantReply.placeValue", { ordinal: reply.ordinal, count: reply.count }) }] : []),
-    { key: "case", label: t("assistantReply.case"), value: reply.caseSource === "Fallback" ? agent("cases.fallback") : reply.caseTitle?.trim() || "—" },
+    ...(withoutCase ? [] : [{ key: "case", label: t("assistantReply.case"), value: reply.caseSource === "Fallback" ? agent("cases.fallback") : reply.caseTitle?.trim() || "—" }]),
     ...(button && !tappedInReason ? [{ key: "tapped", label: t("assistantReply.tapped"), value: t("assistantReply.tappedValue", { title: button }) }] : []),
     ...(reply.reason.trim() ? [{ key: "why", label: t("assistantReply.why"), value: reply.reason }] : []),
     ...(reply.used.length ? [{ key: "used", label: t("assistantReply.used"), value: <ul className="flex flex-col gap-1">{reply.used.map((item, index) => <li key={index}>{item}</li>)}</ul> }] : []),
   ];
   return <div className="flex min-w-0 flex-col gap-2 text-left">
     {withAction ? <div><AssistantActionTag kind={reply.kind} label={agent("actions." + reply.kind)} /></div> : null}
-    <DataList items={rows} />
+    {rows.length ? <DataList items={rows} /> : null}
     {reply.kind === "Handoff" ? <p className="flex flex-wrap items-center gap-2"><NeedsPersonBadge /><span className="min-w-0 break-words">{handoffReasonText(agent, reply.handoffReasonCode, reply.handoffReason)}</span></p> : null}
   </div>;
 }

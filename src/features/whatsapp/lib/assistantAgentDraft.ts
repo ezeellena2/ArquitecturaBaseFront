@@ -302,6 +302,8 @@ export function handoffReasonText(t: TFunction<"whatsappAssistant">, code: strin
     case "unknown": return t("test.handoff.unknown");
     // Task 8 of the documents: a linked account that can neither load nor build forms sent a document.
     case "documentNotAllowed": return t("test.handoff.documentNotAllowed");
+    // H5: the engine failed, or the request expired without its answer.
+    case "assistantFailed": return t("test.handoff.assistantFailed");
     default: return t("test.handoff.other");
   }
 }

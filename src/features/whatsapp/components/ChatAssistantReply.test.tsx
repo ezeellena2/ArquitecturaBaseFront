@@ -83,6 +83,15 @@ it("draws what the assistant decided without a message as lines of the history, 
   const order = [screen.getByText("Reenviá esta cadena a 10 contactos."), screen.getByText("Sin respuesta del asistente"), screen.getByText("¿Y los sábados?"), screen.getByText("El asistente derivó la conversación")];
   for (let index = 1; index < order.length; index++) expect(order[index - 1].compareDocumentPosition(order[index])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 });
+// H5: a handoff because the assistant could not reply followed no case: the line says only the mark and why.
+it("draws a handoff because the assistant could not reply without a case", async () => {
+  await show([], [], [{ id: "019abcde-1000-7000-8000-000000000003", atUtc: "2026-11-11T13:30:00Z",
+    reply: { ...reply, kind: "Handoff", reason: "", used: [], handoffReasonCode: "assistantFailed" } }]);
+  const handoff = within(screen.getByLabelText("Historial de mensajes")).getByText("El asistente derivó la conversación").parentElement!;
+  expect(valueOf(handoff, "Caso")).toBeNull();
+  expect(within(handoff).getByText("El asistente no pudo responder")).toBeInTheDocument();
+  expect(within(handoff).getByText("Necesita una persona")).toBeInTheDocument();
+});
 it("shows no why under a message the agent did not answer", async () => {
   await show([{ ...sent("plain", "Hola, ¿cómo va?", reply), assistantReply: undefined, origin: "Conversation", operatorUserId: "me" }]);
   expect(screen.queryByText("Por qué respondió esto")).not.toBeInTheDocument();

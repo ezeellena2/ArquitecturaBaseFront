@@ -250,6 +250,7 @@
       "blockedTopic": "Le preguntaron por un tema que no responde",
       "unknown": "No encontró la respuesta en lo cargado",
       "documentNotAllowed": "La cuenta no puede cargar documentos",
+      "assistantFailed": "El asistente no pudo responder",
       "button": "Tocó «{{title}}»",
       "other": "Lo derivó el asistente"
     }
