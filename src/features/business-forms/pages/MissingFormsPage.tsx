@@ -11,6 +11,7 @@ import {useCountdown} from "@/shared/hooks/useCountdown";
 import {usePagination} from "@/shared/hooks/usePagination";
 import {useQueryUpdate} from "@/shared/hooks/useQueryUpdate";
 import {formatDateTimeInZone} from "@/shared/lib/dateTime";
+import {Badge} from "@/shared/ui/badge";
 import {Button} from "@/shared/ui/button";
 import {ConfirmDialog} from "@/shared/ui/ConfirmDialog";
 import {DataTable,type Column} from "@/shared/ui/DataTable";
@@ -24,7 +25,7 @@ import {SearchInput} from "@/shared/ui/SearchInput";
 import {SegmentedControl} from "@/shared/ui/SegmentedControl";
 import {Surface} from "@/shared/ui/Surface";
 import {dismissNotification,notify} from "@/shared/ui/notifications";
-import {fetchMissingRequests,discardMissingTopic,type MissingRequestQuery,type MissingRequestsPage,type MissingTopic} from "../api/missingRequests";
+import {fetchMissingRequests,discardMissingTopic,reviewMissingTopic,type MissingRequestQuery,type MissingRequestsPage,type MissingTopic} from "../api/missingRequests";
 import {useUnobservedQueryCleanup} from "../hooks/useUnobservedQueryCleanup";
 
 export function MissingFormsPage(){
@@ -50,8 +51,8 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  const cooldown=useCountdown(0);const {setSearch:updateSearch}=pagination;
  const setSearch=useCallback((value:string)=>{if(!cooldown.isRunning)updateSearch(value);},[cooldown.isRunning,updateSearch]);
  const active=useRef(false);const controller=useRef<AbortController|null>(null);const search=useRef<HTMLInputElement>(null);
- const feedbackId="forms:missing:"+actorId+":"+culture;const writeId=feedbackId+":discard";
- useLayoutEffect(()=>{active.current=true;return()=>{active.current=false;controller.current?.abort();controller.current=null;dismissNotification(writeId);dismissNotification(feedbackId);};},[feedbackId,writeId]);
+ const feedbackId="forms:missing:"+actorId+":"+culture;const writeId=feedbackId+":discard";const reviewId=feedbackId+":review";
+ useLayoutEffect(()=>{active.current=true;return()=>{active.current=false;controller.current?.abort();controller.current=null;dismissNotification(writeId);dismissNotification(reviewId);dismissNotification(feedbackId);};},[feedbackId,writeId,reviewId]);
  const forbidden=denied||list.error instanceof ApiError&&(list.error.status===403||list.error.status===401);
  if(forbidden&&!denied){setDenied(true);setLastLoaded(undefined);setSelected(null);}
  useEffect(()=>{if(forbidden){controller.current?.abort();dismissNotification(writeId);dismissNotification(feedbackId);void client.cancelQueries({queryKey:root});client.removeQueries({queryKey:root});}},[forbidden,client,root,writeId,feedbackId]);
@@ -77,17 +78,31 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
    else{if(failure.kind==="wait")cooldown.restart(failure.retryAfterSeconds??30);notify({id:writeId,kind:"error",message:readErrorMessage(error,t)});}
   }finally{if(active.current&&!pending.signal.aborted){setBusy(false);setSelected(null);}}
  }
+ // Marking a topic as reviewed is not destructive: it needs no confirmation, and it answers a conflict like discarding does.
+ async function review(row:MissingTopic){
+  if(busy||cooldown.isRunning||needsRefresh||forbidden)return;
+  const pending=new AbortController();controller.current=pending;setBusy(true);dismissNotification(reviewId);
+  try{await reviewMissingTopic(row.id,row.revision,pending.signal);if(!active.current||pending.signal.aborted)return;
+   notify({id:reviewId+":success",kind:"success",message:t("missing.reviewedNotice")});await client.invalidateQueries({queryKey:root});
+  }catch(error:unknown){
+   if(!active.current||pending.signal.aborted)return;const failure=errorFeedback(error);
+   if(failure.kind==="forbidden"||failure.kind==="session"){setDenied(true);return;}
+   if(failure.kind==="cancelled")return;
+   if(error instanceof ApiError&&error.status===409){setNeedsRefresh(true);notify({id:reviewId,kind:"warning",message:t("missing.reviewConflict"),action:{label:t("common:actions.retry"),onClick:()=>{if(active.current)void refresh();}}});await refresh();}
+   else{if(failure.kind==="wait")cooldown.restart(failure.retryAfterSeconds??30);notify({id:reviewId,kind:"error",message:readErrorMessage(error,t)});}
+  }finally{if(active.current&&!pending.signal.aborted)setBusy(false);}
+ }
  if(forbidden)return <ForbiddenPage/>;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
  const columns:Column<MissingTopic>[]=[
   // The description stays in grey under the topic (exception A); who discarded it and when go in their columns (UD5).
-  {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
+  {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}{row.state==="Pending"&&row.reviewedAtUtc===null?<Badge variant="warning" className="ml-2 align-middle">{t("missing.unreviewed")}</Badge>:null}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
   ...(state==="Discarded"?[{id:"discardedBy",header:t("missing.discardedByColumn"),cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
    {id:"discardedAtUtc",header:t("missing.discardedAtColumn"),cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
   {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
   {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
-  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate&&askAssistant?<Button asChild size="sm" variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))} aria-label={t("assistantProposals.entries.labelFor",{name:row.name})}>{t("assistantProposals.entries.label")}</Link></Button>:null}{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
+  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate&&askAssistant?<Button asChild size="sm" variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))} aria-label={t("assistantProposals.entries.labelFor",{name:row.name})}>{t("assistantProposals.entries.label")}</Link></Button>:null}{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"&&row.reviewedAtUtc===null?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.reviewFor",{name:row.name})} onClick={()=>void review(row)}>{t("missing.review")}</Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
  ];
  const filtered=!!query.search;const globallyEmpty=data?.stateCounts.pending===0&&data.stateCounts.discarded===0;
  // The wait of a 429 is the reason of every control it turns off: the filters and the table give it as their tooltip and

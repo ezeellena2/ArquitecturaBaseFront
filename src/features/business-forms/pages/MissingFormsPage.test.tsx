@@ -13,7 +13,7 @@ import {notify} from "@/shared/ui/notifications";
 vi.mock("react-oidc-context",async()=>({...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),useAuth:()=>({isAuthenticated:true,isLoading:false,user:{access_token:"test"}})}));
 vi.mock("@/shared/ui/notifications",async()=>({...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"),notify:vi.fn()}));
 const id="11111111-1111-4111-8111-111111111111";
-const topic={id,revision:2,name:"Reclamos de clientes",description:"Dejar asentado qué pasó y qué pide.",originalCulture:"es",requestCount:5,personCount:3,lastRequestedAtUtc:"2026-10-17T12:00:00Z",state:"Pending",discardedBy:null,discardedAtUtc:null};
+const topic={id,revision:2,name:"Reclamos de clientes",description:"Dejar asentado qué pasó y qué pide.",originalCulture:"es",requestCount:5,personCount:3,lastRequestedAtUtc:"2026-10-17T12:00:00Z",state:"Pending",discardedBy:null,discardedAtUtc:null,reviewedBy:null,reviewedAtUtc:null};
 const page=(items:unknown[]=[topic],extra:Record<string,unknown>={})=>({items,page:1,pageSize:20,totalCount:items.length,totalRequests:5,stateCounts:{pending:1,discarded:0},totalPages:items.length?1:0,hasPrevious:false,hasNext:false,...extra});
 function setup(permissions=["formtemplates.manage"],culture: "es"|"en" = "es"){
  const store=createFormFixtureStore(culture,"");
@@ -29,6 +29,20 @@ it("reads and discards aggregate requests with Manage only, while Create still r
  await userEvent.click(screen.getByRole("button",{name:"Descartar Reclamos de clientes"}));
  const dialog=await screen.findByRole("dialog",{name:"Descartar pedido"});await userEvent.click(within(dialog).getByRole("button",{name:"Descartar"}));
  await waitFor(()=>expect(body).toEqual({expectedRevision:2}));expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="success")).toHaveLength(1);
+});
+it("marks an unreviewed topic as reviewed with the expected revision, and a reviewed one has neither the badge nor the action",async()=>{
+ setup();let body:unknown;const reviewed={...topic,id:"22222222-2222-4222-8222-222222222222",name:"Pedidos de compra",reviewedBy:{userId:id,displayName:"Ana"},reviewedAtUtc:"2026-10-17T13:00:00Z"};
+ server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(page([topic,reviewed]))),http.post("/api/forms/missing-requests/:id/review",async({request})=>{body=await request.json();return HttpResponse.json({...topic,revision:3,reviewedBy:{userId:id,displayName:"Ana"},reviewedAtUtc:"2026-10-17T13:00:00Z"});}));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ expect(screen.getAllByText("Sin revisar")).toHaveLength(1);expect(screen.getAllByRole("button",{name:/^Marcar como revisado /})).toHaveLength(1);expect(screen.getByRole("button",{name:"Descartar Pedidos de compra"})).toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Marcar como revisado Reclamos de clientes"}));
+ await waitFor(()=>expect(body).toEqual({expectedRevision:2}));expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="success")).toHaveLength(1);
+});
+it("rereads the list on a review conflict and never repeats the POST automatically",async()=>{
+ setup();let reads=0;let posts=0;
+ server.use(http.get("/api/forms/missing-requests",()=>{reads++;return HttpResponse.json(page([{...topic,revision:reads+1}]));}),http.post("/api/forms/missing-requests/:id/review",()=>{posts++;return HttpResponse.json({code:"Forms.MissingRequest.RevisionConflict",detail:"El pedido cambió."},{status:409});}));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);await userEvent.click(screen.getByRole("button",{name:"Marcar como revisado Reclamos de clientes"}));
+ await waitFor(()=>expect(reads).toBe(2));expect(posts).toBe(1);expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="warning")).toHaveLength(1);
 });
 it("keeps search/state on discard conflict, refreshes the server revision and never repeats POST automatically",async()=>{
  setup();let reads=0;let posts=0;const params:URLSearchParams[]=[];

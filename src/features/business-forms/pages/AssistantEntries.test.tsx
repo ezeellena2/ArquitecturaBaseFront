@@ -11,7 +11,7 @@ import { createFormFixtureStore } from "@/test/visual/formFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 // «Armar con la IA» (IA4): the request begun travels in the navigation state to a new Home conversation, never in the URL.
 const topic = { id: "11111111-1111-4111-8111-111111111111", revision: 2, name: "Reclamos de clientes", description: "Dejar asentado qué pasó y qué pide.", originalCulture: "es",
-  requestCount: 5, personCount: 3, lastRequestedAtUtc: "2026-10-17T12:00:00Z", state: "Pending", discardedBy: null, discardedAtUtc: null };
+  requestCount: 5, personCount: 3, lastRequestedAtUtc: "2026-10-17T12:00:00Z", state: "Pending", discardedBy: null, discardedAtUtc: null, reviewedBy: null, reviewedAtUtc: null };
 const empty = { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false };
 function setup(permissions: string[], features = ["forms", "assistant"]) {
   const store = createFormFixtureStore("es", "");
