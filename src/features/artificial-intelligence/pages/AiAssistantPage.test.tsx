@@ -1072,6 +1072,23 @@ describe("dictated turns (IA4)", () => {
     expect(screen.queryByLabelText("Tu audio")).not.toBeInTheDocument();
   });
 
+  it("says the server's reason for a conflict on the recording's upload, and the next attempt goes up under another request", async () => {
+    installMicrophone();
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.RequestReused",
+      detail: "Ese pedido ya se usó con otra grabación." } }, { status: 202, body: status("completed", "Armame un formulario de visitas") }]);
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese pedido ya se usó con otra grabación.", expect.anything()));
+    expect(writes).toHaveLength(0);
+    expect(screen.getByLabelText("Tu audio")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect(writes[0]).toMatchObject({ audioRequestId: uploads[1].body.get("requestId") });
+  });
+
   it("does not upload again a recording the server already heard when its turn did not go", async () => {
     installMicrophone();
     const uploads = captureUploads([{ status: 202, body: status("completed", "Armame un formulario de visitas") }]);

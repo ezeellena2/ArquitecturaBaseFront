@@ -44,7 +44,7 @@ Audio de Inicio (IA4): con `bootstrap.audio` y un navegador que graba, el micró
 `useAudioRecorder` (tope de 1.000.000 bytes). Al mandar, `useAssistantDictation` sube el audio por `api.upload` con su
 propio `requestId`, sigue la normalización con `pollingAfterSeconds` y recién entonces `actions.submit` manda el turno con
 `audioRequestId` y el texto opcional; el mismo audio conserva su pedido en un reintento y, si el servidor no lo entendió,
-dice el motivo debajo del editor y el próximo intento usa otro. El hilo muestra el audio del turno (`AssistantTurnAudio`:
+dice el motivo debajo del editor y el próximo intento usa otro; un 409 al subirlo (el servidor tiene otra grabación con ese pedido) también, como un documento (B2). El hilo muestra el audio del turno (`AssistantTurnAudio`:
 «Escuchar» baja la grabación por `audio/{id}/file`) y la transcripción en gris; un turno dictado sin texto también es un
 mensaje de la persona. Una grabación sin mandar cuenta como borrador para la guarda de salida.
 
