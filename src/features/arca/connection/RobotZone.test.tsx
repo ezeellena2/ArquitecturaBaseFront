@@ -21,7 +21,7 @@ const connection = {
 } as ArcaConnection;
 const side = (overrides: Partial<ArcaRobotSide>): ArcaRobotSide => ({
   state: "Running", currentStep: null, completedSteps: [], outputs: {}, failure: null, failedStep: null, nextAttemptAtUtc: null,
-  startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null, ...overrides,
+  startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null, alerted: false, ...overrides,
 });
 
 let run: ArcaRobotRun;
@@ -167,12 +167,25 @@ describe("the robot zone", () => {
     run = {
       enabled: true,
       company: side({ state: "Succeeded", completedSteps: ["company.login", "company.delegate.wsfe"] }),
-      platform: side({ state: "Failed", failure: "ScreenChanged", failedStep: "platform.accept", completedSteps: ["platform.login", "platform.certificate"] }),
+      platform: side({ state: "Failed", failure: "ScreenChanged", failedStep: "platform.accept", completedSteps: ["platform.login", "platform.certificate"],
+        alerted: true }),
     };
     renderZone();
 
     expect(await screen.findByText("La plataforma tiene que terminar este paso a mano; ya le avisamos.")).toBeInTheDocument();
     expect(guides).toHaveLength(0);
+  });
+
+  it("promises the alert only when it went out (H19)", async () => {
+    run = {
+      enabled: true,
+      company: side({ state: "Succeeded", completedSteps: ["company.login", "company.delegate.wsfe"] }),
+      platform: side({ state: "Failed", failure: "Unavailable", failedStep: "platform.accept", completedSteps: ["platform.login", "platform.certificate"] }),
+    };
+    renderZone();
+
+    expect(await screen.findByText("La plataforma tiene que terminar este paso a mano.")).toBeInTheDocument();
+    expect(screen.queryByText(/ya le avisamos/)).not.toBeInTheDocument();
   });
 
   it("folds with the point of sale when both sides finished", async () => {

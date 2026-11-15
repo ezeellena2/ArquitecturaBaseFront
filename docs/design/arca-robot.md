@@ -50,7 +50,8 @@ Los tableros no lo dicen, o el contrato no lo permite; se resolvió con la opci�
   (`POST …/robot-runs/current/manual-completion`) y la zona vuelve al avance, con lo del cliente hecho y la plataforma
   aceptando, asignando y confirmando.
 - **Si se frena la plataforma:** el cliente no vuelve a su guía, porque ese paso no lo puede hacer él. La zona dice «La
-  plataforma tiene que terminar este paso a mano; ya le avisamos.» con «Comprobar», y el dueño recibe el correo (RB4-A).
+  plataforma tiene que terminar este paso a mano.» con «Comprobar», y el dueño recibe el correo (RB4-A); «ya le avisamos» se
+  suma sólo cuando el correo salió (H19).
 - **La clave de la plataforma rechazada (H5):** el robot no la vuelve a probar solo, para que ARCA no la bloquee. La zona dice
   «ARCA no aceptó la clave de {plataforma}. El robot no la vuelve a probar solo, para que no la bloqueen: cuando la
   actualicen, tocá «Volver a probar la clave de la plataforma».» y quien administra ARCA tiene ese botón en la banda

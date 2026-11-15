@@ -11,6 +11,8 @@ export type ArcaRobotFailure = "LoginRejected" | "Captcha" | "ExtraValidation" |
 export interface ArcaRobotSide {
   state: ArcaRobotState; currentStep: string | null; completedSteps: string[]; outputs: Record<string, string>;
   failure: ArcaRobotFailure | null; failedStep: string | null; nextAttemptAtUtc: string | null; startedAtUtc: string; finishedAtUtc: string | null;
+  /// H19: si el aviso de su falla salió; la pantalla lo promete sólo entonces.
+  alerted: boolean;
 }
 
 /// Si el robot está prendido en la instalación y cómo va cada lado; sin corrida, los dos son null.

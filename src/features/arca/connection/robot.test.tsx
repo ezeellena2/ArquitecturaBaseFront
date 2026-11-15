@@ -11,7 +11,7 @@ vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof im
 
 const side = (overrides: Partial<ArcaRobotSide>): ArcaRobotSide => ({
   state: "Running", currentStep: null, completedSteps: [], outputs: {}, failure: null, failedStep: null, nextAttemptAtUtc: null,
-  startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null, ...overrides,
+  startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null, alerted: false, ...overrides,
 });
 
 let run: ArcaRobotRun;

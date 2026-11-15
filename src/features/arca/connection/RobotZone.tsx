@@ -115,7 +115,7 @@ export function RobotZone({ step, available = true, connection, canManage, platf
       {platformRejected && canManage ? <Button variant="outline" pending={action.pending === "rearm"} disabled={action.pending !== null}
         onClick={() => void rearmPlatform()}>{t("rearmPlatform")}</Button> : null}</>}>
     {platformRejected ? <Banner tone="warning">{t("platformRejected", { platform: platform.name })}</Banner>
-      : platformStopped ? <Banner tone="warning">{t("platformStopped")}</Banner> : null}
+      : platformStopped ? <Banner tone="warning">{t(platformSide?.alerted ? "platformStoppedAlerted" : "platformStopped")}</Banner> : null}
     <div className="grid gap-5 sm:grid-cols-2">
       <RobotSteps title={t("columns.company")} steps={companySteps} side={company} label={stepLabel} retryAt={format.time} />
       <RobotSteps title={t("columns.platform", { platform: platform.name })} steps={platformSteps} side={platformSide} label={stepLabel}

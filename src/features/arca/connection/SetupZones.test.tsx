@@ -23,7 +23,7 @@ const automated: ArcaConnection = {
   certificates: [{ role: "Pending", alias: "plataforma-demo", isLoaded: false, notBeforeUtc: null, notAfterUtc: null, thumbprint: null }],
 };
 const side = (state: ArcaRobotSide["state"], completedSteps: string[] = []): ArcaRobotSide => ({
-  state, currentStep: null, completedSteps, outputs: {}, failure: null, failedStep: null, nextAttemptAtUtc: null, startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null,
+  state, currentStep: null, completedSteps, outputs: {}, failure: null, failedStep: null, nextAttemptAtUtc: null, startedAtUtc: "2026-11-11T12:00:00Z", finishedAtUtc: null, alerted: false,
 });
 
 let robot: ArcaRobotRun;
