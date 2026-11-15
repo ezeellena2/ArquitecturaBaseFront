@@ -61,6 +61,18 @@ describe("the point of sale zone with the robot", () => {
   });
 });
 
+// H30: when ARCA does not give the points of sale, the zone says why (the detail of an «Arca.*» code), not only that it failed.
+describe("the points of sale ARCA did not give", () => {
+  it("say why ARCA did not give them", async () => {
+    server.use(http.get("/api/arca/invoicing/points-of-sale", () => HttpResponse.json(
+      { code: "Arca.Connection.ServiceNotAuthorized", detail: "ARCA no autorizó el servicio para el alias «plataforma»." }, { status: 400 })));
+    renderWithProviders(<MemoryRouter><PointOfSaleZone step={4} connection={automated} canManage open onReady={() => {}} /></MemoryRouter>);
+
+    expect(await screen.findByText("ARCA no autorizó el servicio para el alias «plataforma».")).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos traer los puntos de venta.")).not.toBeInTheDocument();
+  });
+});
+
 describe("the point of sale with the connection active", () => {
   const active = { ...automated, status: "Active" } as ArcaConnection;
   const zone = () => screen.getByRole("region", { name: "Facturación · Punto de venta" });

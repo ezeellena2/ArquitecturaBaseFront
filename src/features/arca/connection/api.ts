@@ -34,6 +34,8 @@ export const startArcaCertificateRequest = (request: StartArcaRequest) => api.po
 export const downloadArcaRequest = () => api.file("/api/arca/connection/certificate-requests/current");
 export const cancelArcaRenewal = (expectedRevision: number) =>
   api.delete<ArcaConnection>(`/api/arca/connection/certificate-requests/current?expectedRevision=${expectedRevision}`);
+/// H30: cambiar CUIT, ambiente o modo en el alta reemplaza la conexión leída por una nueva, con su pedido, en un solo pedido.
+export const replaceArcaConnection = (request: StartArcaRequest) => api.put<ArcaConnection>("/api/arca/connection", request);
 export const chooseArcaServices = (services: string[], expectedRevision: number) =>
   api.put<ArcaConnection>("/api/arca/connection/services", { services, expectedRevision });
 export const uploadArcaCertificate = (certificate: string, expectedRevision: number) =>

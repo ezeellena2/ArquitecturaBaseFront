@@ -5,7 +5,8 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
 
-/// Una acción de la pantalla con su espera en el botón que la disparó. Un 409 de revisión abre «Revisar»; un error de
+/// Una acción de la pantalla con su espera en el botón que la disparó. Un 409 de revisión, o una conexión que ya no está
+/// (otra persona desconectó: H30), abre «Revisar», que vuelve a leerla; un error de
 /// ARCA dice el texto del servidor, y lo demás sigue el contrato de mensajes. `handle` atiende antes lo que va junto a un
 /// control, como un certificado que no corresponde.
 export function useArcaAction(onConflict: () => void) {
@@ -19,7 +20,7 @@ export function useArcaAction(onConflict: () => void) {
       return await action();
     } catch (error) {
       if (handle?.(error)) return undefined;
-      const feedback = errorFeedback(error, { writing: true, conflictCodes: ["Arca.Connection.RevisionConflict", "Arca.Invoicing.SettingsRevisionConflict"] });
+      const feedback = errorFeedback(error, { writing: true, conflictCodes: ["Arca.Connection.RevisionConflict", "Arca.Invoicing.SettingsRevisionConflict", "Arca.Connection.NotConnected"] });
       if (feedback.kind === "forbidden") void navigate("/sin-permiso");
       else if (feedback.kind === "conflict") onConflict();
       else if (feedback.kind !== "session" && feedback.kind !== "cancelled") {

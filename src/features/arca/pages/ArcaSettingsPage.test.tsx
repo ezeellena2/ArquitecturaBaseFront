@@ -272,6 +272,47 @@ describe("ARCA settings", () => {
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Revisar" })).not.toBeInTheDocument());
   });
 
+  // H30: changing CUIT, environment or mode in the alta is one request that replaces the connection on the server.
+  it("replaces the connection in one request when the environment changes in the alta", async () => {
+    current = awaiting;
+    const replaced: StartArcaRequest[] = [];
+    let deleted = 0;
+    server.use(
+      http.put("/api/arca/connection", async ({ request }) => {
+        const body = await request.json() as StartArcaRequest;
+        replaced.push(body);
+        current = { ...awaiting, environment: body.environment, certificates: [pendingRequest(body.alias)], revision: 1_763_200_000_000 };
+        return HttpResponse.json(current);
+      }),
+      http.delete("/api/arca/connection", () => { deleted++; return new HttpResponse(null, { status: 204 }); }),
+    );
+    renderRouteWithProviders("/configuracion/arca");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cambiar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Homologación" }));
+    await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
+
+    await waitFor(() => expect(replaced).toHaveLength(1));
+    expect(replaced[0]).toMatchObject({ cuit: "20000000060", environment: "Testing", alias: "plataforma", expectedRevision: 1 });
+    expect([deleted, starts.length]).toEqual([0, 0]);
+  });
+
+  // H30: when someone else disconnected meanwhile, the screen reads the connection again instead of repeating «no connection».
+  it("reads the connection again when it is gone", async () => {
+    current = awaiting;
+    server.use(http.put("/api/arca/connection", () => {
+      current = none;
+      return HttpResponse.json({ code: "Arca.Connection.NotConnected", detail: "Todavía no hay una conexión con ARCA." }, { status: 404 });
+    }));
+    renderRouteWithProviders("/configuracion/arca");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cambiar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Homologación" }));
+    await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
+
+    expect(await screen.findByRole("button", { name: "Leer lo actual" })).toBeInTheDocument();
+  });
+
   it("asks before disconnecting and goes back to no connection", async () => {
     current = active;
     const deleted: string[] = [];

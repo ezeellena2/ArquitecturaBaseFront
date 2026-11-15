@@ -11,7 +11,7 @@ import { Input } from "@/shared/ui/input";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { StepList } from "@/shared/ui/StepList";
 import {
-  chooseArcaServices, disconnectArca, downloadArcaRequest, startArcaCertificateRequest, testArcaConnection, uploadArcaCertificate,
+  chooseArcaServices, downloadArcaRequest, replaceArcaConnection, startArcaCertificateRequest, testArcaConnection, uploadArcaCertificate,
   type ArcaAccessMode, type ArcaConnection, type ArcaEnvironment, type ArcaTest,
 } from "./api";
 import { ArcaZone } from "./ArcaZone";
@@ -192,10 +192,11 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
     setErrors(next);
     if (!normalized || next.alias) return;
     const result = await action.run("generate", async () => {
-      let revision = connection.revision;
+      const request = { cuit: normalized, environment, alias, services, expectedRevision: connection.revision, mode };
       const replacing = connection.status !== null && (normalized !== connection.cuit || environment !== connection.environment || mode !== connection.mode);
-      if (replacing) { await disconnectArca(revision); revision = 0; }
-      let started = await startArcaCertificateRequest({ cuit: normalized, environment, alias, services, expectedRevision: revision, mode });
+      // H30: otra CUIT, otro ambiente u otro modo reemplazan la conexión en el servidor, en un solo pedido y con los servicios elegidos.
+      if (replacing) return await replaceArcaConnection(request);
+      let started = await startArcaCertificateRequest(request);
       // Con la misma conexión, el servidor conserva sus servicios: los elegidos de nuevo se guardan aparte.
       const sameServices = started.enabledServices.length === services.length && services.every(code => started.enabledServices.includes(code));
       if (!sameServices) started = await chooseArcaServices(services, started.revision);

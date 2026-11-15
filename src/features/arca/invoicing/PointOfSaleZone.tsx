@@ -1,3 +1,4 @@
+import { ApiError } from "@/shared/api/ApiError";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,7 +23,9 @@ function PointOfSaleChoice({ enabled, canManage, value, onChange }: { enabled: b
   const search = <Button variant="outline" pending={query.isFetching} disabled={query.isFetching} onClick={() => void query.refetch()}>
     {t(query.isFetching ? "invoicing.searching" : "invoicing.search")}</Button>;
   if (query.isPending) return <Skeleton className="h-16" />;
-  if (query.isError) return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{t("invoicing.loadError")}</p>{search}</div>;
+  // H30: why ARCA did not give them (the detail of an «Arca.*» code); anything else, the general text.
+  if (query.isError) return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{query.error instanceof ApiError
+    && query.error.code?.startsWith("Arca.") && query.error.detail ? query.error.detail : t("invoicing.loadError")}</p>{search}</div>;
   if (query.data.length === 0) return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{t("invoicing.none")}</p>{search}</div>;
   return <RadioGroupField label={t("invoicing.pointOfSale")} value={value === null ? undefined : String(value)} onValueChange={next => onChange(Number(next))}
     options={query.data.map(point => ({
