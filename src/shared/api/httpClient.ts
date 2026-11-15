@@ -37,6 +37,12 @@ function renewOnce(): Promise<string | undefined> {
   return renewal;
 }
 
+/// Espera la renovación en vuelo, si hay una; nunca falla. El cierre de sesión la espera antes de dejar los tokens:
+/// oidc-client-ts guarda el usuario renovado sin mirar si mientras tanto se borró.
+export async function waitForSessionRenewal(): Promise<void> {
+  await renewal;
+}
+
 async function readProblem(response: Response): Promise<ProblemDetails> {
   try {
     const body: unknown = await response.json();

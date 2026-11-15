@@ -76,7 +76,7 @@ export function AppLayout() {
     setMobileOpen((previous) => !previous);
   }
 
-  // Keep the transition while UserMenu revokes the server session, clears local data and commits /login.
+  // Keep the transition while `useSignOut` revokes the server session, clears local data and commits /login.
   if (isSigningOut) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3">

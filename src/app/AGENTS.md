@@ -12,7 +12,9 @@ Monta providers, router y árbol de rutas. `routes.tsx` declara rutas y guards; 
   del emisor y las pruebas de arquitectura sigue el plan transversal de mensajes.
 - Las rutas tienen un ErrorBoundary estático y traducido para fallos de render/importación.
   RouteErrorPage ofrece recarga explícita, sin reintentos ni descarte automático de borradores.
-  El límite privado de ProtectedRoute conserva AppLayout; el raíz cubre la carga inicial.
+  El límite privado de ProtectedRoute conserva AppLayout; el de la rama de la sesión cubre la carga inicial.
+- Todas las ramas cuelgan de una raíz sin path (`SignOutFromOtherTabs`, de `auth`) que escucha el cierre de sesión de
+  otra pestaña en cualquier pantalla. No lleva límite de error: el de cada rama se dibuja adentro sin cerrar el canal.
 - `HomeLayout` mantiene `AppLayout` entre rutas privadas; no forzar un remount del caparazón al navegar.
 - El RouterProvider productivo viene de `react-router/dom`, para confirmar `/login` con `flushSync` antes de liberar la transición del cierre de sesión.
 

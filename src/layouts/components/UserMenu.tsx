@@ -1,14 +1,11 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "react-oidc-context";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import { notify } from "@/shared/ui/notifications";
-import { endServerSession } from "@/auth/accessRequests";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
-import { beginSignOut, cancelSignOut } from "@/auth/signOutStatus";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useLanguagePreference } from "@/auth/useLanguagePreference";
+import { useSignOut } from "@/auth/useSignOut";
 import { hasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import { isSupportedLanguage, supportedLanguages, type SupportedLanguage } from "@/shared/i18n";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
@@ -37,9 +34,7 @@ import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 /// tiene cambios sin guardar, antes de cambiarlo pregunta con el mismo «¿Descartar los cambios?» de la salida.
 export function UserMenu() {
   const { t, i18n } = useTranslation();
-  const auth = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const signOut = useSignOut();
   const { data: user, isPending } = useCurrentUser();
   const { change: changeLanguage } = useLanguagePreference();
   const [pendingLanguage, setPendingLanguage] = useState<SupportedLanguage | null>(null);
@@ -62,21 +57,11 @@ export function UserMenu() {
   const detail = accountDetailOf(user);
 
   async function handleSignOut() {
-    // Conserva una transición mientras el servidor cierra la sesión; después limpia el estado y navega en el SPA.
-    beginSignOut();
-
+    // `useSignOut` conserva la transición mientras el servidor cierra la sesión, avisa a las demás pestañas y
+    // navega en el SPA. Si no se pudo cerrar, seguimos en esta pantalla, sin la transición.
     try {
-      await endServerSession(auth.user?.id_token);
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      await auth.removeUser();
-      // Commit /login before releasing the transition: private guards must not carry the old account's URL.
-      await navigate("/login", { replace: true, flushSync: true });
-      cancelSignOut();
+      await signOut();
     } catch {
-      // Si no se pudo ni empezar el cierre de sesión, seguimos en esta pantalla: no puede quedar trabada
-      // mostrando la transición.
-      cancelSignOut();
       notify({ id: "layouts/components/UserMenu:1", kind: "error", message: t("layout.signOutError") });
     }
   }

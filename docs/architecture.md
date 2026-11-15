@@ -64,12 +64,16 @@ y [auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md).
 - `HomeLayout` conserva `AppLayout` entre rutas privadas. Recuperación silenciosa: una vez por montaje del proveedor; la
   renovación conserva la pantalla; los namespaces se precargan.
 - **Cierre de sesión:** POST de formulario a `/connect/logout`, espera la revocación, cancela consultas, limpia la sesión
-  y navega a `/login`. `UserMenu` confirma `/login` con `flushSync` antes de liberar la transición (`RouterProvider` de
+  y navega a `/login`. `useSignOut` confirma `/login` con `flushSync` antes de liberar la transición (`RouterProvider` de
   `react-router/dom`): no queda guardada la ruta de la cuenta anterior y el ingreso siguiente empieza en Inicio. Una
-  visita anónima conserva su `returnTo`. Regresión: `session.spec.ts`.
+  visita anónima conserva su `returnTo`. Regresión: `session.spec.ts`. Con el cierre confirmado, las demás pestañas del
+  mismo navegador reciben un aviso por `BroadcastChannel`, revocan su propia autorización y vuelven a `/login` de la misma
+  forma, sin volver a avisar. Escucha la raíz sin path de todas las rutas (`SignOutFromOtherTabs`), así que alcanza a
+  cualquier pantalla, también `/sin-permiso`, la 404 y el error de una rama, y a la sesión que trae una recuperación en
+  curso ([detalle](../src/auth/AGENTS.md)).
 - `RouteErrorPage` es el límite estático traducido de import/render; Recargar abre un documento nuevo sin repetir
-  escrituras. `ProtectedRoute` conserva el caparazón si falla una hoja; el límite raíz cubre la carga inicial. Un error de
-  carga no es falta de permiso ni vacío.
+  escrituras. `ProtectedRoute` conserva el caparazón si falla una hoja; el de la rama de la sesión cubre la carga
+  inicial. La raíz sin path no tiene límite propio. Un error de carga no es falta de permiso ni vacío.
 - `/perfil` (desde «Mi perfil») no pide permiso. `PUT /api/me` reemplaza nombre, idioma y zona: van siempre los tres.
 - **Inicio:** `src/app/AuthenticatedHome.tsx` carga `AiAssistantPage` solo si `installedFeatures` contiene `assistant` y
   hay `ai.assistant.use`; si no, `DashboardPage`; un fallo de lectura ofrece Reintentar. `home` no importa IA. La URL

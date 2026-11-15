@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from "react-router";
 import { ProtectedRoute } from "@/auth/ProtectedRoute";
 import { SessionRecovery } from "@/auth/SessionRecovery";
+import { SignOutFromOtherTabs } from "@/auth/SignOutFromOtherTabs";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
 import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
@@ -24,7 +25,7 @@ import { RouteErrorPage } from "./RouteErrorPage";
 // visita sin sesión (sección 5.2), así que separarlas en su propio chunk solo suma una ida y vuelta antes de
 // poder mostrar el formulario. Un router de datos como este, además, no pinta nada de toda la rama que
 // matchea (acá, tampoco el `AuthLayout` de afuera) hasta que se resuelve el `lazy` de la hoja.
-export const routes: RouteObject[] = [
+const branches: RouteObject[] = [
   {
     // `SessionRecovery` envuelve a `ProtectedRoute`, y solo esta rama: son las pantallas que necesitan sesión.
     // Al recargar cualquiera de ellas hay que intentar recuperarla antes de que `ProtectedRoute` concluya que
@@ -190,3 +191,7 @@ export const routes: RouteObject[] = [
     lazy: async () => ({ Component: (await import("@/features/errors/pages/NotFoundPage")).NotFoundPage }),
   },
 ];
+
+// Una raíz sin path envuelve todas las ramas para escuchar en cualquier pantalla el cierre de sesión de otra pestaña,
+// también en `/sin-permiso` y en la 404. No lleva límite de error: el de cada rama se dibuja adentro, sin cerrar el canal.
+export const routes: RouteObject[] = [{ Component: SignOutFromOtherTabs, children: branches }];

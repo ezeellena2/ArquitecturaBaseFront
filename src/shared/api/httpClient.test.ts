@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "./ApiError";
-import { api, configureHttpClient, resetHttpClient } from "./httpClient";
+import { api, configureHttpClient, resetHttpClient, waitForSessionRenewal } from "./httpClient";
 import { server } from "@/test/mocks/server";
 
 describe("httpClient", () => {
@@ -129,6 +129,32 @@ describe("httpClient", () => {
     await Promise.all([api.get("/api/users"), api.get("/api/users"), api.get("/api/users")]);
 
     expect(renewSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets the sign-out wait for a renewal in flight, which would store the user again", async () => {
+    let finishRenewal: () => void = () => undefined;
+    const renewSession = vi.fn(() => new Promise<string | undefined>((resolve) => {
+      finishRenewal = () => resolve(undefined);
+    }));
+    configureHttpClient({ getAccessToken: () => "expired", renewSession });
+    server.use(http.get("/api/users", () => new HttpResponse(null, { status: 401 })));
+    const failedRequest = api.get("/api/users").catch(() => undefined);
+    await vi.waitFor(() => expect(renewSession).toHaveBeenCalledOnce());
+    let settled = false;
+
+    const waiting = waitForSessionRenewal().then(() => {
+      settled = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(settled).toBe(false);
+    finishRenewal();
+    await waiting;
+    await failedRequest;
+  });
+
+  it("does not wait when no renewal is in flight", async () => {
+    await expect(waitForSessionRenewal()).resolves.toBeUndefined();
   });
 
   it("gives up with a 401 error when the session cannot be renewed", async () => {
