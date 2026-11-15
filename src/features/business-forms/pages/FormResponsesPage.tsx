@@ -211,7 +211,7 @@ export function FormResponsesPage() {
     ...resultColumns.map(column => ({
       id: responseResultColumnId(column.id),
       header: responseResultColumnLabel(column, data?.resultColumns ?? []),
-      numeric: column.kind === "number",
+      numeric: column.kind === "number" || column.kind === "amount",
       cell: (row: ResponseRow) => responseResultText(column.kind, row.results?.[column.id], i18n.language) ?? t("responses.resultEmpty"),
     })),
   ];

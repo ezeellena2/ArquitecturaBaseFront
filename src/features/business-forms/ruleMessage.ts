@@ -130,6 +130,7 @@ function blockQuestions(block: RuleMessageQuestion, questions: readonly RuleMess
 }
 function resultExample(kind: string, culture: FormCulture, t: Translate) {
   if (kind === "number") return formatExactDecimal("12500.5", culture) ?? "12500.5";
+  if (kind === "amount") return formatExactDecimal("12500.50", culture) ?? "12500.50";
   if (kind === "date") return formatDateOnly("2026-10-16", culture) ?? "2026-10-16";
   return t("rules.samples.result");
 }

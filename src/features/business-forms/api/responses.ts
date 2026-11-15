@@ -146,7 +146,7 @@ const column = z.strictObject({ ...columnShape, type, questions: z.array(questio
     && (column.type !== "group" || column.options.length === 0)
     && new Set(column.questions?.map(question => question.fieldId)).size === (column.questions?.length ?? 0));
 // RE1-A: what external actions left in the responses, a column per datum after the questions; each row has the value of its own.
-const resultKind = z.enum(["text", "date", "number"]);
+const resultKind = z.enum(["text", "date", "number", "amount"]);
 const resultColumn = z.strictObject({ id: z.string().min(1), source: z.string().min(1), sourceName: z.string(), key: z.string().min(1), label: z.string(), kind: resultKind });
 const result = z.strictObject({
   source: z.string().min(1), name: z.string(), recordedAtUtc: utc,

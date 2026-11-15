@@ -8,6 +8,8 @@ describe("typed value screen format", () => {
     ["decimal", "1500.5", "es", "1.500,5"],
     ["decimal", "1500.5", "en", "1,500.5"],
     ["decimal", "9007199254740993.0123", "es", "9.007.199.254.740.993,0123"],
+    ["amount", "1500.5", "es", "1.500,50"],
+    ["amount", "1500", "en", "1,500.00"],
     ["date", "2027-03-15", "es", "15/03/2027"],
     ["date", "2027-03-15", "en", "03/15/2027"],
   ] as const)("formats integers, decimals and dates with one screen format per language (%s %s in %s)", (type, value, language, expected) => {
