@@ -25,7 +25,7 @@ export interface ManualCatalogBody {
   readonly fields?: readonly CatalogFieldBody[];
   readonly presentation?: CatalogPresentation | null;
 }
-export interface CreateManualCatalogBody extends ManualCatalogBody { readonly valueType?: CatalogValueType }
+export interface CreateManualCatalogBody extends ManualCatalogBody { readonly valueType?: CatalogValueType; readonly requestId?: string }
 export interface CatalogItemMove { readonly itemId: string; readonly direction: "up" | "down" }
 /** «Ordenar por…»: `column` is "text", "code" or the id of an active saved field. Ties keep their order and empty values go last. */
 export interface CatalogItemSort { readonly column: string; readonly descending: boolean }
@@ -79,7 +79,7 @@ export const lookupCatalogParty = async (id: string, taxId: string, signal?: Abo
   readCatalogLookupResult(await api.post<unknown>(`/api/forms/catalogs/${catalogId(id)}/lookup`, { taxId }, { signal, cache: "no-store" }));
 
 export interface CatalogFilterOptionsQuery { readonly page: number; readonly pageSize: number; readonly search?: string; readonly sort?: "name" | "-name" }
-export interface FiltersCatalogBody { readonly name: Readonly<Partial<Record<FormCulture, string>>>; readonly description: Readonly<Partial<Record<FormCulture, string>>>; readonly filters: CatalogFiltersBody }
+export interface FiltersCatalogBody { readonly name: Readonly<Partial<Record<FormCulture, string>>>; readonly description: Readonly<Partial<Record<FormCulture, string>>>; readonly filters: CatalogFiltersBody; readonly requestId?: string }
 export interface CatalogFilterPreviewBody { readonly sampleUserId: string; readonly filters: CatalogFiltersBody }
 export async function fetchCatalogFilterOptions(query: CatalogFilterOptionsQuery, signal?: AbortSignal) {
   const params = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)]));

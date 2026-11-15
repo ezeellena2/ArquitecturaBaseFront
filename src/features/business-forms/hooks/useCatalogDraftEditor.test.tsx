@@ -168,6 +168,24 @@ describe("Manual catalog editor ownership", () => {
     expect(bodies[0]).toMatchObject({ expectedRevision: 1 });
     expect(result.current.saved!.catalog.revision).toBe(2);
   });
+  it("sends the same request id when a creation is retried unchanged and a new one when its body changes", async () => {
+    const ids: unknown[] = [];
+    server.use(http.post("/api/forms/catalogs", async ({ request }) => {
+      ids.push(((await request.json()) as { requestId?: string }).requestId);
+      return ids.length < 3 ? HttpResponse.error() : HttpResponse.json({ catalog: { ...initial, revision: 1 }, itemIdentityMap: {}, fieldIdentityMap: {} });
+    }));
+    const { result } = renderHook(() => useCatalogDraftEditor(scope), harness());
+    act(() => result.current.changeMetadata({ name: { es: "Sucursales", en: "Branches" } }));
+    await act(() => result.current.save());
+    await act(() => result.current.save());
+    expect(ids).toHaveLength(2);
+    expect(typeof ids[0]).toBe("string");
+    expect(ids[1]).toBe(ids[0]);
+    act(() => result.current.changeMetadata({ name: { es: "Otras sucursales", en: "Other branches" } }));
+    await act(() => result.current.save());
+    expect(ids).toHaveLength(3);
+    expect(ids[2]).not.toBe(ids[0]);
+  });
   it("requires review only when an explicit retry returns 409 after a lost save response", async () => {
     let calls = 0;
     server.use(http.put("/api/forms/catalogs/" + id, () => ++calls === 1 ? HttpResponse.error()

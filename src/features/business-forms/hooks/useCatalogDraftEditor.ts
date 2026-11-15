@@ -126,6 +126,7 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     if (!owned || !isCurrentOwner() || operation.current || stateRef.current.busy || stateRef.current.requiresReview || revision !== stateRef.current.draft.revision) return;
     setState(value => ({ ...value, draft: loadCatalogDraftItems(value.draft, items) }));
   }, [owned, state.draft.revision, isCurrentOwner]);
+  const creationRequest = useRef<{ readonly key: string; readonly id: string } | null>(null);
   const save = useCallback(async (sampleUserId?: string) => {
     if (!owned || !isCurrentOwner() || !permissionsRef.current.canManage || operation.current || stateRef.current.requiresReview) return;
     const captured = stateRef.current.draft;
@@ -134,6 +135,12 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
     const pendingProposal = captured.proposal?.state === "Pending";
     if (captured.filters && (captured.isActive || pendingProposal) && !sampleUserId) return;
     let writing = false;
+    // The same creation sent again (a lost answer, a second tap) carries the same request id, so the server answers with the catalog it made; a changed body is another request.
+    const withRequestId = <T extends object>(body: T): T & { readonly requestId: string } => {
+      const key = JSON.stringify(body);
+      if (creationRequest.current?.key !== key) creationRequest.current = { key, id: crypto.randomUUID() };
+      return { ...body, requestId: creationRequest.current.id };
+    };
     const controller = new AbortController(); operation.current = controller;
     setState(value => ({ ...value, busy: true, working: "save", error: null, saved: null }));
     try {
@@ -149,11 +156,12 @@ export function useCatalogDraftEditor(scope: CatalogReadScope, initial?: Catalog
         : captured.filters
         ? captured.id && captured.revision !== null
           ? await updateFiltersCatalog(captured.id, { name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters), expectedRevision: captured.revision, isActive: captured.isActive }, controller.signal)
-          : await createFiltersCatalog({ name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters) }, controller.signal)
+          : await createFiltersCatalog(withRequestId({ name: ownTexts(captured.name), description: ownTexts(captured.description), filters: catalogFiltersBody(captured.filters) }), controller.signal)
         : captured.id && captured.revision !== null
           ? await updateManualCatalog(captured.id, catalogDraftUpdateBody(captured), controller.signal)
-          : await createManualCatalog(catalogDraftBody(captured), controller.signal);
+          : await createManualCatalog(withRequestId(catalogDraftBody(captured)), controller.signal);
       if (!accepts(owner, controller) || !permissionsRef.current.canManage) return;
+      creationRequest.current = null;
       const next = fresh(owner, saved.catalog, kind, valueType, scope.culture);
       setState({ ...next, saved });
       // The next revision loads canonical item pages afresh. No collection is reconstructed from a partial page.
