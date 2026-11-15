@@ -32,18 +32,18 @@ const services = (values: Record<string, string> = {}): EntryDraft => ({ ...good
 
 describe("loading a form with calculations and conditions (CA1-A, CO1-A)", () => {
   it("does not ask for a hidden question, and asks again when it shows", () => {
-    expect(validateEntry(entry, goods())).toEqual({});
-    expect(validateEntry(entry, services())).toEqual({ [ids.period]: "required", [ids.from]: "required" });
+    expect(validateEntry(entry, goods(), "es")).toEqual({});
+    expect(validateEntry(entry, services(), "es")).toEqual({ [ids.period]: "required", [ids.from]: "required" });
     expect(entryProblemKeys(entry, goods())).not.toContain(ids.from);
   });
 
   it("never sends a calculation nor what was typed in a hidden question", () => {
-    const send = toEntrySend(entry, goods({ [ids.period]: "Noviembre", [ids.from]: "2026-11-01", [ids.total]: "99" }), "00000000-0000-4000-8000-0000000000e1");
+    const send = toEntrySend(entry, goods({ [ids.period]: "Noviembre", [ids.from]: "2026-11-01", [ids.total]: "99" }), "00000000-0000-4000-8000-0000000000e1", "es");
     expect(send.answers).toEqual([
       { fieldId: ids.concept, value: ids.goods },
       { fieldId: ids.block, rows: [[{ fieldId: ids.quantity, value: "2" }, { fieldId: ids.price, value: "10" }]] },
     ]);
-    const shown = toEntrySend(entry, services({ [ids.period]: "Noviembre", [ids.from]: "2026-11-01" }), "00000000-0000-4000-8000-0000000000e1");
+    const shown = toEntrySend(entry, services({ [ids.period]: "Noviembre", [ids.from]: "2026-11-01" }), "00000000-0000-4000-8000-0000000000e1", "es");
     expect(shown.answers.map(answer => answer.fieldId)).toEqual([ids.concept, ids.period, ids.from, ids.block]);
   });
 

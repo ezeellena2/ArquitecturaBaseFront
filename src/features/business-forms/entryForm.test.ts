@@ -32,8 +32,32 @@ describe("entry form", () => {
 
   it("marks what is missing or does not fit on its own question", () => {
     const draft = { ...initialEntryDraft(entry), values: { [ids.density]: "72,5x", [ids.notes]: "demasiado largo" } };
-    expect(validateEntry(entry, draft)).toEqual({ [ids.crop]: "choose", [ids.density]: "number", [ids.date]: "required", [ids.notes]: "maxLength" });
-    expect(validateEntry(entry, { ...draft, values: { [ids.density]: "72,5", [ids.date]: "2026-10-28" }, choices: { ...draft.choices, [ids.crop]: [{ id: ids.soy, title: "Soja 1ª", description: null }] } })).toEqual({});
+    expect(validateEntry(entry, draft, "es")).toEqual({ [ids.crop]: "choose", [ids.density]: "number", [ids.date]: "required", [ids.notes]: "maxLength" });
+    expect(validateEntry(entry, { ...draft, values: { [ids.density]: "72,5", [ids.date]: "2026-10-28" }, choices: { ...draft.choices, [ids.crop]: [{ id: ids.soy, title: "Soja 1ª", description: null }] } }, "es")).toEqual({});
+  });
+
+  it.each([
+    ["es", "1500", "1500"], ["es", "72,5", "72.5"], ["es", "1.500,5", "1500.5"], ["es", "1.234.567", "1234567"], ["es", "1.5", "1.5"], ["es", "1,500", "1.5"],
+    ["en", "1500", "1500"], ["en", "72.5", "72.5"], ["en", "1,500.5", "1500.5"], ["en", "1,500", "1500"], ["en", "1.500", "1.5"],
+  ])("reads the decimal %s «%s» with the region of the language and sends %s", (culture, typed, sent) => {
+    const draft = { ...initialEntryDraft(entry), values: { [ids.density]: typed } };
+    expect(validateEntry(entry, draft, culture)[ids.density]).toBeUndefined();
+    expect(toEntrySend(entry, draft, "00000000-0000-4000-8000-0000000000c1", culture).answers).toContainEqual({ fieldId: ids.density, value: sent });
+  });
+
+  it.each(["1.500", "1.234", "-2.000"])("marks the decimal «%s» as ambiguous in Spanish on its question", typed => {
+    const draft = { ...initialEntryDraft(entry), values: { [ids.density]: typed } };
+    expect(validateEntry(entry, draft, "es")[ids.density]).toBe("numberAmbiguous");
+  });
+
+  it("has no ambiguous decimal in English and rejects what is not a number", () => {
+    // «1,500» is 1500 and «1.500» is 1.5 there: only a text that reads one way as is and another with the grouping is ambiguous.
+    const draft = (typed: string) => ({ ...initialEntryDraft(entry), values: { [ids.density]: typed } });
+    expect(validateEntry(entry, draft("1,500"), "en")[ids.density]).toBeUndefined();
+    expect(validateEntry(entry, draft("1.500"), "en")[ids.density]).toBeUndefined();
+    expect(validateEntry(entry, draft("1,500"), "es")[ids.density]).toBeUndefined();
+    expect(validateEntry(entry, draft("1,5,0"), "es")[ids.density]).toBe("number");
+    expect(validateEntry(entry, draft("72,5"), "en")[ids.density]).toBe("number");
   });
 
   it("sends canonical values, the chosen ids and each file with its question", () => {
@@ -42,7 +66,7 @@ describe("entry form", () => {
       choices: { [ids.lot]: [{ id: ids.only, title: "Lote 7", description: null }], [ids.crop]: [{ id: ids.soy, title: "Soja 1ª", description: null }] },
       files: { [ids.photos]: [photo("a.jpg"), photo("b.jpg")] },
     };
-    const send = toEntrySend(entry, draft, "00000000-0000-4000-8000-0000000000c1");
+    const send = toEntrySend(entry, draft, "00000000-0000-4000-8000-0000000000c1", "es");
     expect(send.versionId).toBe(entry.versionId);
     expect(send.answers).toEqual([
       { fieldId: ids.lot, value: ids.only }, { fieldId: ids.crop, value: ids.soy },
@@ -53,9 +77,9 @@ describe("entry form", () => {
 
   it("sends a multiple choice as its chosen ids, an empty list when none was chosen", () => {
     const multiple: FormEntry = { ...entry, questions: [question(ids.extra, "multiChoice", { required: false, selection: { minSelected: 0, maxSelected: 3 }, options: [{ id: ids.soy, label: "Soja" }] })] };
-    expect(toEntrySend(multiple, { values: {}, choices: {}, files: {} }, "00000000-0000-4000-8000-0000000000c1").answers).toEqual([{ fieldId: ids.extra, choiceIds: [] }]);
+    expect(toEntrySend(multiple, { values: {}, choices: {}, files: {} }, "00000000-0000-4000-8000-0000000000c1", "es").answers).toEqual([{ fieldId: ids.extra, choiceIds: [] }]);
     expect(validateEntry({ ...multiple, questions: [{ ...multiple.questions[0], required: true, selection: { minSelected: 2, maxSelected: 3 } }] },
-      { values: {}, choices: { [ids.extra]: [{ id: ids.soy, title: "Soja", description: null }] }, files: {} })).toEqual({ [ids.extra]: "chooseAtLeast" });
+      { values: {}, choices: { [ids.extra]: [{ id: ids.soy, title: "Soja", description: null }] }, files: {} }, "es")).toEqual({ [ids.extra]: "chooseAtLeast" });
   });
 
   it("keeps the answers of the questions that stay in a new version and drops the rest", () => {
@@ -84,12 +108,12 @@ describe("entry form", () => {
 
   it("identifies a send by what it carries, so repeating it after a failure keeps its request", () => {
     const draft = { values: { [ids.density]: "9" }, choices: {}, files: { [ids.photos]: [photo()] } };
-    expect(entrySignature(entry, draft)).toBe(entrySignature(entry, { ...draft, values: { ...draft.values } }));
-    expect(entrySignature(entry, draft)).not.toBe(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } }));
+    expect(entrySignature(entry, draft, "es")).toBe(entrySignature(entry, { ...draft, values: { ...draft.values } }, "es"));
+    expect(entrySignature(entry, draft, "es")).not.toBe(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } }, "es"));
     // The query keys on a short key of the signature, never on the answers (4.6).
-    const key = entrySignatureKey(entrySignature(entry, draft));
-    expect(key).toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { ...draft.values } })));
-    expect(key).not.toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } })));
+    const key = entrySignatureKey(entrySignature(entry, draft, "es"));
+    expect(key).toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { ...draft.values } }, "es")));
+    expect(key).not.toBe(entrySignatureKey(entrySignature(entry, { ...draft, values: { [ids.density]: "10" } }, "es")));
     expect(key).toMatch(/^[0-9a-f]{1,14}$/);
   });
 
@@ -193,7 +217,7 @@ describe("choosing first by a field (LD1-A)", () => {
 
   it("is not sent, stays for the next response and does not carry to a question that chooses first by another field", () => {
     const draft = { values: {}, files: {}, groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")] } };
-    expect(toEntrySend(grouped, draft, "00000000-0000-4000-8000-0000000000c1").answers).toEqual([{ fieldId: ids.lot, value: ids.only }]);
+    expect(toEntrySend(grouped, draft, "00000000-0000-4000-8000-0000000000c1", "es").answers).toEqual([{ fieldId: ids.lot, value: ids.only }]);
     expect(keepForNextEntry(draft).groups).toEqual({ [ids.lot]: herbicides });
     expect(carryEntryDraft(grouped, draft, grouped)).toMatchObject({ groups: { [ids.lot]: herbicides }, choices: { [ids.lot]: [option(ids.only, "2,4-D")] } });
     const other: FormEntry = { ...grouped, questions: [{ ...article, catalog: { ...article.catalog!, groupBy: { fieldId: ids.notes, name: "Tipo" } } }, dose] };

@@ -16,7 +16,7 @@ import { useFormEntrySubmit } from "./useFormEntry";
 export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
 
 /** The answers of a preview are those of the send, without files and without a request of their own. */
-const previewSend = (entry: FormEntry, draft: EntryDraft) => toEntrySend(entry, draft, crypto.randomUUID());
+const previewSend = (entry: FormEntry, draft: EntryDraft, culture: string) => toEntrySend(entry, draft, crypto.randomUUID(), culture);
 /** IV1-A: the totals are asked again a moment after the loaded answers stop changing, never on each keystroke. */
 const totalsDelay = 1200;
 
@@ -30,7 +30,9 @@ export interface EntrySubmission { submit: (entry: FormEntry, draft: EntryDraft)
  */
 export function useEntryEditor(formId: string, entry: FormEntry | undefined, owner: string, initial?: EntryDraft,
   options?: { submission?: EntrySubmission; correcting?: boolean }) {
-  const { t } = useTranslation(["formEntries", "common"]);
+  const { t, i18n } = useTranslation(["formEntries", "common"]);
+  // The decimals are read with the region of the language of the person who loads.
+  const culture = i18n.language;
   const [state, setState] = useState<{ entry: FormEntry; draft: EntryDraft } | null>(null);
   const [attempted, setAttempted] = useState(false);
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -49,7 +51,7 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     if (state) { setConflict(null); setServerErrors({}); }
   }
   const draft = state && state.entry === entry ? state.draft : null;
-  const problems = entry && draft ? validateEntry(entry, draft) : {};
+  const problems = entry && draft ? validateEntry(entry, draft, culture) : {};
   // A problem of an item names the question of the block; one of the block, how many items it takes.
   const problemMessage = useCallback((problem: EntryProblem, key: string): string => {
     const question = entry ? entryProblemQuestion(entry, key)?.question : undefined;
@@ -63,12 +65,12 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   Object.assign(errors, serverErrors);
   const missing = entry?.questions.find(question => question.catalog?.issue === "Forms.Record.RecipientDataMissing");
   // IV1-A: with a form that issues and nothing missing, the «Total» itemized by the issuer; the server recalculates on sending.
-  const signature = entry?.issuePreview && draft && Object.keys(problems).length === 0 ? entrySignature(entry, draft) : null;
+  const signature = entry?.issuePreview && draft && Object.keys(problems).length === 0 ? entrySignature(entry, draft, culture) : null;
   const settled = useSettledValue(signature, totalsDelay);
   // The key is a short key of what is loaded, never the answers, and nothing stays cached once it is not shown (4.6).
   const totals = useQuery({
     queryKey: ["form-issue-preview", owner, formId, settled ? entrySignatureKey(settled) : null],
-    queryFn: ({ signal }) => fetchFormIssuePreview(formId, previewSend(entry!, draft!), signal),
+    queryFn: ({ signal }) => fetchFormIssuePreview(formId, previewSend(entry!, draft!, culture), signal),
     enabled: !!settled && settled === signature && !!entry && !!draft, staleTime: Infinity, gcTime: 0, retry: false, meta: { errorOwner: "local" },
   });
   const dirty = !!draft && (options?.correcting ? !!initial && entryDraftKey(draft) !== entryDraftKey(initial)
@@ -152,11 +154,11 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     if (first) { setReveal(value => value + 1); focus(first); return null; }
     try {
       if (entry.issuePreview && !confirmed) {
-        const current = entrySignature(entry, draft);
+        const current = entrySignature(entry, draft, culture);
         if (totals.data && settled === current) { setIssue({ preview: totals.data, signature: current }); return null; }
         setPreviewing(true);
         try {
-          setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft)), signature: current });
+          setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft, culture)), signature: current });
           return null;
         } catch (error) {
           // A form that stopped issuing sends as any other.
@@ -185,7 +187,7 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
   const retryIssue = async () => {
     if (!entry || !draft || previewing || cooldown.isRunning) return;
     setPreviewing(true);
-    try { setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft)), signature: entrySignature(entry, draft) }); }
+    try { setIssue({ preview: await fetchFormIssuePreview(formId, previewSend(entry, draft, culture)), signature: entrySignature(entry, draft, culture) }); }
     catch (error) {
       // A conflict or the problems of the answers close «¿La emito?»; any other failure leaves it open to try again.
       if (error instanceof ApiError && (error.status === 400 || error.status === 403 || error.status === 404

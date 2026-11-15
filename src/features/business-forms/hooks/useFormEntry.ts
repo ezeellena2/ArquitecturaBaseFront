@@ -71,20 +71,21 @@ export function useEntryGroupChoice(entry: FormEntry, question: FormEntryQuestio
  * once one arrived, even with the same kept answers (AR2-A). Nothing goes to MutationCache.
  */
 export function useFormEntrySubmit(formId: string) {
+  const { i18n } = useTranslation();
   const last = useRef<{ signature: string; requestId: string } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const submit = useCallback(async (entry: FormEntry, draft: EntryDraft): Promise<FormEntrySubmitted> => {
-    const signature = entrySignature(entry, draft);
+    const signature = entrySignature(entry, draft, i18n.language);
     if (last.current?.signature !== signature) last.current = { signature, requestId: crypto.randomUUID() };
     setProgress(0);
     try {
-      const result = await submitFormEntry(formId, toEntrySend(entry, draft, last.current.requestId), fraction => setProgress(fraction));
+      const result = await submitFormEntry(formId, toEntrySend(entry, draft, last.current.requestId, i18n.language), fraction => setProgress(fraction));
       last.current = null;
       return result;
     } finally {
       setProgress(null);
     }
-  }, [formId]);
+  }, [formId, i18n.language]);
   return { submit, progress, sending: progress !== null };
 }
 
@@ -104,20 +105,21 @@ export function useEntryCorrection(formId: string, recordId: string) {
 
 /** Sends a correction with its reason and the files that stay; the request keeps its id while it carries the same content. */
 export function useFormEntryCorrectionSubmit(formId: string, recordId: string) {
+  const { i18n } = useTranslation();
   const last = useRef<{ signature: string; requestId: string } | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const submit = useCallback(async (entry: FormEntry, draft: EntryDraft, reason: string): Promise<FormEntrySubmitted> => {
-    const signature = correctionSignature(entry, draft, reason);
+    const signature = correctionSignature(entry, draft, reason, i18n.language);
     if (last.current?.signature !== signature) last.current = { signature, requestId: crypto.randomUUID() };
     setProgress(0);
     try {
-      const result = await submitFormEntryCorrection(formId, recordId, toEntrySend(entry, draft, last.current.requestId), reason.trim(),
+      const result = await submitFormEntryCorrection(formId, recordId, toEntrySend(entry, draft, last.current.requestId, i18n.language), reason.trim(),
         keptFileIds(draft), fraction => setProgress(fraction));
       last.current = null;
       return result;
     } finally {
       setProgress(null);
     }
-  }, [formId, recordId]);
+  }, [formId, recordId, i18n.language]);
   return { submit, progress, sending: progress !== null };
 }

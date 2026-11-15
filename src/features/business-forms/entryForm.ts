@@ -1,5 +1,6 @@
 import type { FormEntry, FormEntryAnswer, FormEntryCorrection, FormEntryGroup, FormEntryItemAnswer, FormEntryKeptFile, FormEntryOption, FormEntryQuestion, FormEntrySend } from "./api/entries";
 import { entryHiddenQuestions } from "./conditions";
+import { parseCatalogValue } from "./catalogValues";
 import { formatCoordinates, parseLocationAnswer } from "./locationAnswer";
 
 /**
@@ -20,13 +21,26 @@ export interface EntryDraft {
 /** An item of the block: a stable key, for the table and the focus, and the values and options of the block's questions. */
 export interface EntryItem { key: string; values: Record<string, string>; choices: Record<string, FormEntryOption[]>; groups?: Record<string, FormEntryGroup> }
 export type EntryProblem = "required" | "choose" | "chooseAtLeast" | "chooseAtMost" | "number" | "date" | "maxLength" | "filesAtLeast" | "filesAtMost"
-  | "rowsAtLeast" | "rowsAtMost";
+  | "rowsAtLeast" | "rowsAtMost" | "numberAmbiguous";
 export type EntryFileProblem = "photoType" | "documentType" | "size" | "count";
 
 const photoTypes = ["image/jpeg", "image/png"];
 const documentTypes = [...photoTypes, "application/pdf", "application/msword", "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
-const decimal = /^[-+]?\d+([.,]\d+)?$/;
+/**
+ * A decimal written in the culture of the person who loads (the app language), as the canonical text with a dot, or why not.
+ * Same rule as the catalogs (`FormCatalogValuePolicy.ValueAmbiguous`): a text that reads one way as is and another with the
+ * grouping of the language («1.500» in es, «1,500» in en) is ambiguous, and the person writes it without thousands separator.
+ */
+function entryDecimal(text: string, culture: string): { value: string } | { problem: "number" | "numberAmbiguous" } {
+  const value = text.trim();
+  if (!/^-?\d+(?:[.,]\d+)?$|^-?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?$/.test(value)) return { problem: "number" };
+  const local = parseCatalogValue("Decimal", value, culture);
+  if (!local.valid || local.value === null) return { problem: "number" };
+  // As is, without the grouping of any language: the way the server reads the canonical text.
+  const asIs = /^-?\d+(?:\.\d+)?$/.test(value) ? parseCatalogValue("Decimal", value, "") : null;
+  return asIs?.valid && asIs.value !== local.value ? { problem: "numberAmbiguous" } : { value: local.value };
+}
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
 const isList = (question: FormEntryQuestion) => question.type === "choice" || question.type === "multiChoice";
@@ -250,7 +264,7 @@ export function chooseEntryGroup(entry: FormEntry, draft: EntryDraft, fieldId: s
  * more items than it takes, and each question of an item goes under its path (`entryItemPath`). A calculation is not loaded
  * (CA1-A) and a hidden question is not required (CO1-A).
  */
-export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<string, EntryProblem> {
+export function validateEntry(entry: FormEntry, draft: EntryDraft, culture: string): Record<string, EntryProblem> {
   const problems: Record<string, EntryProblem> = {};
   const block = entryBlock(entry);
   const hidden = entryHiddenQuestions(entry, draft);
@@ -262,13 +276,13 @@ export function validateEntry(entry: FormEntry, draft: EntryDraft): Record<strin
       else if (items.length > (question.rows?.maxRows ?? 0)) problems[question.fieldId] = "rowsAtMost";
       items.forEach((item, row) => {
         for (const inner of block.questions.filter(inner => !inner.calculation)) {
-          const problem = questionProblem(inner, { values: item.values, choices: item.choices, files: {} });
+          const problem = questionProblem(inner, { values: item.values, choices: item.choices, files: {} }, culture);
           if (problem) problems[entryItemPath(question.fieldId, row, inner.fieldId)] = problem;
         }
       });
       continue;
     }
-    const problem = questionProblem(question, draft);
+    const problem = questionProblem(question, draft, culture);
     if (problem) problems[question.fieldId] = problem;
   }
   return problems;
@@ -311,7 +325,7 @@ export function entryFileCount(question: FormEntryQuestion, draft: EntryDraft): 
   return (draft.files[question.fieldId]?.length ?? 0) + (draft.kept?.[question.fieldId]?.length ?? 0);
 }
 
-function questionProblem(question: FormEntryQuestion, draft: EntryDraft): EntryProblem | null {
+function questionProblem(question: FormEntryQuestion, draft: EntryDraft, culture: string): EntryProblem | null {
   if (isFile(question)) {
     const count = entryFileCount(question, draft);
     if (count < (question.files?.minFiles ?? 0)) return "filesAtLeast";
@@ -325,20 +339,23 @@ function questionProblem(question: FormEntryQuestion, draft: EntryDraft): EntryP
   if (question.type === "choice") return question.required && !draft.choices[question.fieldId]?.length ? "choose" : null;
   const value = draft.values[question.fieldId] ?? "";
   if (value === "") return question.required ? "required" : null;
-  if (question.type === "decimal" && !decimal.test(value.trim())) return "number";
+  if (question.type === "decimal") { const read = entryDecimal(value, culture); if ("problem" in read) return read.problem; }
   if (question.type === "date" && !isoDate.test(value)) return "date";
   if (question.maxLength !== null && value.length > question.maxLength) return "maxLength";
   return null;
 }
 
+// What the server reads: the canonical decimal; a text that does not read is sent as typed and the problem has stopped the send.
+const decimalText = (value: string, culture: string) => { const read = entryDecimal(value, culture); return "value" in read ? read.value : value.trim(); };
+
 // The canonical answer of a question with a single value: the chosen id or the value as typed, with a decimal written with a dot.
-function singleAnswer(question: FormEntryQuestion, values: Record<string, string>, choices: Record<string, FormEntryOption[]>): FormEntryItemAnswer | null {
+function singleAnswer(question: FormEntryQuestion, values: Record<string, string>, choices: Record<string, FormEntryOption[]>, culture: string): FormEntryItemAnswer | null {
   if (question.type === "choice") {
     const chosen = choices[question.fieldId]?.[0];
     return chosen ? { fieldId: question.fieldId, value: chosen.id } : null;
   }
   const value = values[question.fieldId] ?? "";
-  return value === "" ? null : { fieldId: question.fieldId, value: question.type === "decimal" ? value.trim().replace(",", ".") : value };
+  return value === "" ? null : { fieldId: question.fieldId, value: question.type === "decimal" ? decimalText(value, culture) : value };
 }
 
 /**
@@ -346,7 +363,7 @@ function singleAnswer(question: FormEntryQuestion, values: Record<string, string
  * with its items, even none, each with the answers of its questions in their order. A calculation never goes, the server
  * computes it (CA1-A), and neither does what was typed in a question its condition hides (CO1-A).
  */
-export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: string): FormEntrySend {
+export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: string, culture: string): FormEntrySend {
   const answers: FormEntryAnswer[] = [];
   const files: FormEntrySend["files"] = [];
   const block = entryBlock(entry);
@@ -355,7 +372,7 @@ export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: stri
     if (question.repeated || question.calculation || hidden.has(question.fieldId)) continue;
     if (question.type === "group") {
       answers.push({ fieldId: question.fieldId, rows: itemsOf(draft, question.fieldId)
-        .map(item => (block?.questions ?? []).filter(inner => !inner.calculation).map(inner => singleAnswer(inner, item.values, item.choices)).filter(answer => answer !== null)) });
+        .map(item => (block?.questions ?? []).filter(inner => !inner.calculation).map(inner => singleAnswer(inner, item.values, item.choices, culture)).filter(answer => answer !== null)) });
       continue;
     }
     if (isFile(question)) {
@@ -366,7 +383,7 @@ export function toEntrySend(entry: FormEntry, draft: EntryDraft, requestId: stri
       answers.push({ fieldId: question.fieldId, choiceIds: (draft.choices[question.fieldId] ?? []).map(option => option.id) });
       continue;
     }
-    const answer = singleAnswer(question, draft.values, draft.choices);
+    const answer = singleAnswer(question, draft.values, draft.choices, culture);
     if (answer) answers.push(answer);
   }
   return { requestId, versionId: entry.versionId, answers, files };
@@ -425,8 +442,8 @@ export function entryFileProblem(question: FormEntryQuestion, current: readonly 
 }
 
 /** What a send carries: the same signature repeats its request, so a retry neither duplicates nor takes another number. */
-export function entrySignature(entry: FormEntry, draft: EntryDraft): string {
-  const send = toEntrySend(entry, draft, "00000000-0000-4000-8000-000000000000");
+export function entrySignature(entry: FormEntry, draft: EntryDraft, culture: string): string {
+  const send = toEntrySend(entry, draft, "00000000-0000-4000-8000-000000000000", culture);
   return JSON.stringify([send.versionId, send.answers, send.files.map(({ fieldId, file }) => [fieldId, file.name, file.size, file.type, file.lastModified])]);
 }
 
@@ -518,8 +535,8 @@ export function correctionBefore(entry: FormEntry, initial: EntryDraft, draft: E
 }
 
 /** What a correction carries: the same signature repeats its request, so a retry neither duplicates nor takes another number. */
-export function correctionSignature(entry: FormEntry, draft: EntryDraft, reason: string): string {
-  return JSON.stringify([entrySignature(entry, draft), keptFileIds(draft).sort(), reason.trim()]);
+export function correctionSignature(entry: FormEntry, draft: EntryDraft, reason: string, culture: string): string {
+  return JSON.stringify([entrySignature(entry, draft, culture), keptFileIds(draft).sort(), reason.trim()]);
 }
 
 /** What a draft holds, to tell whether a correction changed anything: values, chosen ids, files and the files that stay. */

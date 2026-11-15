@@ -46,6 +46,7 @@
     "chooseAtMost_one": "Elegí hasta {{count}}.",
     "chooseAtMost_other": "Elegí hasta {{count}}.",
     "number": "Escribí un número, como 72,5.",
+    "numberAmbiguous": "Se puede leer de dos maneras: escribilo sin separador de miles, como 1500 o 1500,5.",
     "date": "Elegí una fecha.",
     "maxLength_one": "Hasta {{count}} carácter.",
     "maxLength_other": "Hasta {{count}} caracteres.",

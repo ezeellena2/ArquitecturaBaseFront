@@ -89,9 +89,9 @@ describe("loading the items of a block", () => {
     const draft = filled(entry, { item: glifo, quantity: "200,5" }, { item: urea, quantity: "abc" });
     const missing: EntryDraft = { ...draft, rows: { [ids.block]: [{ ...items(draft)[0], values: {}, choices: {} }] } };
 
-    expect(validateEntry(entry, draft)).toEqual({ [`${ids.block}.1.${ids.quantity}`]: "number" });
-    expect(validateEntry(entry, missing)).toEqual({ [ids.block]: "rowsAtLeast", [`${ids.block}.0.${ids.item}`]: "choose", [`${ids.block}.0.${ids.quantity}`]: "required" });
-    expect(validateEntry(blockEntry(0, 1), { ...draft, rows: { [ids.block]: [...items(draft), ...items(draft)] } })[ids.block]).toBe("rowsAtMost");
+    expect(validateEntry(entry, draft, "es")).toEqual({ [`${ids.block}.1.${ids.quantity}`]: "number" });
+    expect(validateEntry(entry, missing, "es")).toEqual({ [ids.block]: "rowsAtLeast", [`${ids.block}.0.${ids.item}`]: "choose", [`${ids.block}.0.${ids.quantity}`]: "required" });
+    expect(validateEntry(blockEntry(0, 1), { ...draft, rows: { [ids.block]: [...items(draft), ...items(draft)] } }, "es")[ids.block]).toBe("rowsAtMost");
   });
 
   it("lists the problems in the order of the form and says which question each one names", () => {
@@ -116,7 +116,7 @@ describe("loading the items of a block", () => {
 
   it("sends the block with its items, each with its answers in the order of the questions", () => {
     const entry = blockEntry();
-    const send = toEntrySend(entry, filled(entry, { item: glifo, quantity: "200,5", unit: true }, { item: urea, quantity: "100" }), "00000000-0000-4000-8000-0000000000d1");
+    const send = toEntrySend(entry, filled(entry, { item: glifo, quantity: "200,5", unit: true }, { item: urea, quantity: "100" }), "00000000-0000-4000-8000-0000000000d1", "es");
 
     expect(send.answers).toEqual([
       { fieldId: ids.supplier, value: "Agro Norte" },
@@ -125,7 +125,7 @@ describe("loading the items of a block", () => {
         [{ fieldId: ids.item, value: ids.urea }, { fieldId: ids.quantity, value: "100" }],
       ] },
     ]);
-    expect(toEntrySend(blockEntry(0, 3), initialEntryDraft(blockEntry(0, 3)), "00000000-0000-4000-8000-0000000000d1").answers)
+    expect(toEntrySend(blockEntry(0, 3), initialEntryDraft(blockEntry(0, 3)), "00000000-0000-4000-8000-0000000000d1", "es").answers)
       .toEqual([{ fieldId: ids.block, rows: [] }]);
   });
 
@@ -147,7 +147,7 @@ describe("loading the items of a block", () => {
     const other = filled(entry, { item: glifo, quantity: "201" });
 
     expect(items(keepForNextEntry(draft))).toEqual(items(draft));
-    expect(entrySignature(entry, other)).not.toBe(entrySignature(entry, draft));
+    expect(entrySignature(entry, other, "es")).not.toBe(entrySignature(entry, draft, "es"));
     expect(entryDraftKey(other)).not.toBe(entryDraftKey(draft));
     expect(entryDraftKey({ ...draft, rows: { [ids.block]: items(draft).map(item => ({ ...item, key: "otra" })) } })).toBe(entryDraftKey(draft));
   });

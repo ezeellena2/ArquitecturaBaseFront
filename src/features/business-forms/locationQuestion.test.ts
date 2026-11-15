@@ -26,13 +26,13 @@ describe("the location question (UB1-A)", () => {
   it("is required until the point is there, and travels as the text of the point", () => {
     const form = entry();
     const empty = initialEntryDraft(form);
-    expect(validateEntry(form, empty)[id(11)]).toBe("required");
-    expect(validateEntry(entry(false), initialEntryDraft(entry(false)))[id(11)]).toBeUndefined();
+    expect(validateEntry(form, empty, "es")[id(11)]).toBe("required");
+    expect(validateEntry(entry(false), initialEntryDraft(entry(false)), "es")[id(11)]).toBeUndefined();
 
     const loaded = { ...empty, values: { [id(11)]: point } };
-    expect(validateEntry(form, loaded)).toEqual({});
-    expect(toEntrySend(form, loaded, id(3)).answers).toEqual([{ fieldId: id(11), value: point }]);
-    expect(toEntrySend(entry(false), initialEntryDraft(entry(false)), id(3)).answers).toEqual([]);
+    expect(validateEntry(form, loaded, "es")).toEqual({});
+    expect(toEntrySend(form, loaded, id(3), "es").answers).toEqual([{ fieldId: id(11), value: point }]);
+    expect(toEntrySend(entry(false), initialEntryDraft(entry(false)), id(3), "es").answers).toEqual([]);
   });
 
   it("reads as its coordinates in «Antes: …» of a correction", () => {

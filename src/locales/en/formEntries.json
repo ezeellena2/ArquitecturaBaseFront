@@ -46,6 +46,7 @@
     "chooseAtMost_one": "Choose up to {{count}}.",
     "chooseAtMost_other": "Choose up to {{count}}.",
     "number": "Write a number, like 72.5.",
+    "numberAmbiguous": "It can be read two ways: write it without a thousands separator, like 1500 or 1500.5.",
     "date": "Choose a date.",
     "maxLength_one": "Up to {{count}} character.",
     "maxLength_other": "Up to {{count}} characters.",

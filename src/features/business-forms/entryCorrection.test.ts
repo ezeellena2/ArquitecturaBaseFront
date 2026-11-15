@@ -39,7 +39,7 @@ describe("correcting a response (CW10-A)", () => {
     expect(draft.choices[ids.crop]).toEqual([{ id: ids.soy, title: "Soja 1ª", description: null }]);
     expect(keptFileIds(draft)).toEqual([ids.file]);
     expect(correctionDraft(correction, "en").values[ids.density]).toBe("1.2");
-    expect(validateEntry(entry, draft)).toEqual({});
+    expect(validateEntry(entry, draft, "es")).toEqual({});
     expect(entryAnswered(entry.questions[4], draft)).toBe(true);
   });
 
@@ -60,18 +60,18 @@ describe("correcting a response (CW10-A)", () => {
     const initial = correctionDraft(correction, "es");
     const removed = { ...initial, kept: { [ids.photos]: [] } };
 
-    expect(validateEntry(entry, removed)).toEqual({ [ids.photos]: "filesAtLeast" });
+    expect(validateEntry(entry, removed, "es")).toEqual({ [ids.photos]: "filesAtLeast" });
     expect(keptFileIds(removed)).toEqual([]);
     expect(correctionBefore(entry, initial, removed, words)).toEqual({ [ids.photos]: "lote.jpg" });
   });
 
   it("is a new send when the reason or the kept files change, and the same while nothing changes", () => {
     const initial = correctionDraft(correction, "es");
-    const signature = correctionSignature(entry, initial, "La dosis era 1,5.");
+    const signature = correctionSignature(entry, initial, "La dosis era 1,5.", "es");
 
-    expect(correctionSignature(entry, initial, " La dosis era 1,5. ")).toBe(signature);
-    expect(correctionSignature(entry, initial, "Otro motivo")).not.toBe(signature);
-    expect(correctionSignature(entry, { ...initial, kept: {} }, "La dosis era 1,5.")).not.toBe(signature);
+    expect(correctionSignature(entry, initial, " La dosis era 1,5. ", "es")).toBe(signature);
+    expect(correctionSignature(entry, initial, "Otro motivo", "es")).not.toBe(signature);
+    expect(correctionSignature(entry, { ...initial, kept: {} }, "La dosis era 1,5.", "es")).not.toBe(signature);
     expect(entryDraftKey(initial)).toBe(entryDraftKey(correctionDraft(correction, "es")));
     expect(entryDraftKey({ ...initial, values: { ...initial.values, [ids.density]: "1,5" } })).not.toBe(entryDraftKey(initial));
   });
