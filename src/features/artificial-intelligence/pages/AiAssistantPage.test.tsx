@@ -608,7 +608,7 @@ describe("authenticated assistant", () => {
       http.post("/api/ai/assistant/turns", () =>
         HttpResponse.json(
           {
-            code: "Ai.Assistant.QuotaExceeded",
+            code: "Ai.Assistant.CapacityLimited",
             detail: "Esperá para continuar.",
             retryAfter: 42,
           },
@@ -624,6 +624,39 @@ describe("authenticated assistant", () => {
     expect(field).toHaveValue("Borrador de espera");
     expect(error).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+  });
+  // Decision 8: the quota counts by UTC day. With its 429, Home says the hour it renews in the profile's zone, from retryAfter,
+  // instead of hours of seconds: 00:00 UTC is 21:00 in Buenos Aires.
+  it("says the local hour the daily quota renews, from the 429's retryAfter", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-11-15T15:00:00Z"));
+      const error = vi.spyOn(toast, "error");
+      server.use(
+        http.post("/api/ai/assistant/turns", () =>
+          HttpResponse.json(
+            {
+              code: "Ai.Assistant.QuotaExceeded",
+              detail: "Alcanzaste la cuota de consultas aceptadas. Esperá el plazo indicado.",
+              retryAfter: 32400,
+            },
+            { status: 429 },
+          ),
+        ),
+      );
+      renderRouteWithProviders("/");
+      const field = await screen.findByRole("textbox", { name: "Tu pregunta" });
+      await pasteText(field, "Borrador de cuota");
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      expect(await screen.findByText("Podés enviar otra consulta a las 21:00, cuando se renueva la cuota del día."))
+        .toHaveAttribute("role", "status");
+      expect(screen.queryByText(/Esperá \d+ s/)).not.toBeInTheDocument();
+      expect(field).toHaveValue("Borrador de cuota");
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 // Every action that waits for the server shows it on the control that was touched: the spinner and what it is doing.
@@ -976,7 +1009,7 @@ describe("dictated turns (IA4)", () => {
   it("starts the common wait after a 429 on the recording's upload: Enviar off with «Esperá N s» and nothing goes up again", async () => {
     installMicrophone();
     const error = vi.spyOn(toast, "error");
-    const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.QuotaExceeded",
+    const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.CapacityLimited",
       detail: "Esperá para continuar.", retryAfter: 40 } }]);
     renderRouteWithProviders("/");
     await record();
@@ -1434,21 +1467,28 @@ describe("documents in Home (Stage 3)", () => {
     } finally { removeMicrophone(); }
   });
 
-  it("starts the common wait after a 429 on the upload: Enviar off with «Esperá N s» and nothing goes up again", async () => {
-    server.use(withKinds(all));
-    const error = vi.spyOn(toast, "error");
-    const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.QuotaExceeded",
-      detail: "Esperá para continuar.", retryAfter: 40 } }]);
-    renderRouteWithProviders("/");
-    await screen.findByRole("button", { name: "Adjuntar un archivo" });
-    choose("comprobante.pdf");
-    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    expect(await screen.findByText("Esperá 40 s para enviar otra consulta.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    expect(uploads).toHaveLength(1);
+  // The readings' own quota renews at 00:00 UTC too: the wait after its 429 on the upload says that hour, in the profile's zone.
+  it("starts the common wait after the reading quota's 429 on the upload: Enviar off with the hour it renews and nothing goes up again", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-11-15T23:59:20Z"));
+      server.use(withKinds(all));
+      const error = vi.spyOn(toast, "error");
+      const uploads = captureUploads([{ status: 429, body: { title: "Demasiados pedidos", status: 429, code: "Ai.Assistant.QuotaExceeded",
+        detail: "Esperá para continuar.", retryAfter: 40 } }]);
+      renderRouteWithProviders("/");
+      await screen.findByRole("button", { name: "Adjuntar un archivo" });
+      choose("comprobante.pdf");
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      expect(await screen.findByText("Podés enviar otra consulta a las 21:00, cuando se renueva la cuota del día.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(screen.getByText("comprobante.pdf")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+      expect(uploads).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("says the server's reason for a conflict on the upload, and the next attempt goes up under another request", async () => {
@@ -1525,7 +1565,7 @@ describe("documents in Home (Stage 3)", () => {
     server.use(withKinds(all));
     const uploads = captureUploads([{ status: 202, body: status("pending") }]);
     server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json({ title: "Demasiados pedidos", status: 429,
-      code: "Ai.Assistant.QuotaExceeded", detail: "Esperá para continuar.", retryAfter: 30 }, { status: 429 })));
+      code: "Http.TooManyRequests", detail: "Esperá para continuar.", retryAfter: 30 }, { status: 429 })));
     renderRouteWithProviders("/");
     await screen.findByRole("button", { name: "Adjuntar un archivo" });
     choose("comprobante.pdf");

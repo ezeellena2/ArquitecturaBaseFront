@@ -46,6 +46,7 @@
   "invalidQuestion": "Ingresá una pregunta.",
   "questionTooLong": "La pregunta admite hasta {{max}} caracteres.",
   "cooldown": "Esperá {{seconds}} s para enviar otra consulta.",
+  "quotaRenews": "Podés enviar otra consulta a las {{time}}, cuando se renueva la cuota del día.",
   "acceptanceUncertain": "No sabemos si se aceptó el pedido. Consultá su estado antes de enviar otro.",
   "acceptanceMissing": "Todavía no encontramos el pedido. Esto no confirma que haya fallado; podés consultar otra vez o repetir exactamente el mismo pedido.",
   "acceptanceState": "Aceptación por confirmar",

@@ -675,7 +675,10 @@ export function AiAssistantPage() {
                         ) : null}
                         {actions.cooldownSeconds > 0 ? (
                           <p role="status">
-                            {t("cooldown", { seconds: actions.cooldownSeconds })}
+                            {/* The daily quota renews at 00:00 UTC: its wait says that hour in the profile's zone, not hours of seconds. */}
+                            {actions.quotaRenewsAtUtc
+                              ? t("quotaRenews", { time: formatTimeInZone(actions.quotaRenewsAtUtc, i18n.language, user?.timeZoneId) })
+                              : t("cooldown", { seconds: actions.cooldownSeconds })}
                           </p>
                         ) : null}
                       </>

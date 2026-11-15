@@ -235,6 +235,25 @@ describe("durable assistant acceptance", () => {
     expect(test.result.current.cooldownSeconds).toBe(40);
     expect(await act(() => test.result.current.submit("pregunta", 7))).toBe(false);
   });
+  // Decision 8: the quota counts by UTC day; its 429 brings in retryAfter the seconds until 00:00 UTC, so Home can say the hour.
+  it("keeps when the daily quota renews from its 429's retryAfter, and not for another wait", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-11-15T15:00:00Z"));
+      const quota = new ApiError(429, { code: "Ai.Assistant.QuotaExceeded", detail: "Cuota.", retryAfter: 32400 });
+      vi.spyOn(assistantApi, "submit").mockRejectedValue(quota);
+      const test = setup();
+      await act(() => test.result.current.submit("pregunta", 7));
+      expect(test.result.current.cooldownSeconds).toBe(32400);
+      expect(test.result.current.quotaRenewsAtUtc).toBe("2026-11-16T00:00:00.000Z");
+      act(() => test.result.current.startCooldown(40, new ApiError(429, { code: "Ai.Assistant.CapacityLimited", retryAfter: 40 })));
+      expect(test.result.current.quotaRenewsAtUtc).toBeUndefined();
+      act(() => test.result.current.startCooldown(600, quota));
+      expect(test.result.current.quotaRenewsAtUtc).toBe("2026-11-15T15:10:00.000Z");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("sends a turn with a spreadsheet, says how much went up and repeats the same body and file only when asked", async () => {
     const file = new File(["Código,Cliente"], "clientes.csv", { type: "text/csv" });
     const sent: { body: AssistantSubmit; file: File }[] = [];

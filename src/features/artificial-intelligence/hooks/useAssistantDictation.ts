@@ -10,7 +10,7 @@ import { assistantApi } from "../api/assistant";
 export function useAssistantDictation({ userId, onForbidden, onWait }: {
   userId: string;
   onForbidden: () => void;
-  onWait: (seconds: number) => void;
+  onWait: (seconds: number, error: unknown) => void;
 }) {
   const { t } = useTranslation(["assistant", "common"]);
   const [normalizing, setNormalizing] = useState(false);
@@ -46,7 +46,7 @@ export function useAssistantDictation({ userId, onForbidden, onWait }: {
       if (feedback.kind === "cancelled" || feedback.kind === "session") return undefined;
       if (feedback.kind === "forbidden") { onForbidden(); return undefined; }
       if (feedback.kind === "fields") { pending.current = null; setError(t("audio.invalid")); return undefined; }
-      if (feedback.kind === "wait") onWait(feedback.retryAfterSeconds ?? 30);
+      if (feedback.kind === "wait") onWait(feedback.retryAfterSeconds ?? 30, failure);
       notify({ id: `assistant:${userId}:audio`, kind: feedback.kind === "uncertain" ? "warning" : "error",
         message: operationalErrorMessage(failure, t) });
       return undefined;

@@ -46,6 +46,7 @@
   "invalidQuestion": "Enter a question.",
   "questionTooLong": "Questions can contain up to {{max}} characters.",
   "cooldown": "Wait {{seconds}} s before sending another query.",
+  "quotaRenews": "You can send another query at {{time}}, when the daily quota renews.",
   "acceptanceUncertain": "We do not know whether the request was accepted. Check its status before sending another.",
   "acceptanceMissing": "We have not found the request yet. This does not confirm failure; check again or repeat the exact same request.",
   "acceptanceState": "Acceptance awaiting confirmation",

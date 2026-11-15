@@ -23,6 +23,12 @@ export type AssistantAction = "submit" | "retry" | "recover" | "cancel" | "remov
 /// The frozen request: its body and, in a turn with a spreadsheet or a Word, the same file, so repeating it recovers the same turn.
 /// The turn of a photo or a PDF names its reading in the body, and a dictated one its recording.
 export interface AssistantSubmission { readonly body: AssistantSubmit; readonly file?: File }
+/// The daily quota (of questions, or of readings) counts by UTC day and renews at 00:00 UTC: its 429 brings in `retryAfter` the
+/// seconds until then, so the instant it renews is now plus those seconds. Any other wait has no hour to say.
+function quotaRenewal(error: unknown, seconds: number) {
+  return error instanceof ApiError && error.code === "Ai.Assistant.QuotaExceeded" && error.retryAfterSeconds !== undefined
+    ? new Date(Date.now() + seconds * 1000).toISOString() : undefined;
+}
 export function useAssistantTurnActions({
   userId,
   onAccepted,
@@ -49,6 +55,11 @@ export function useAssistantTurnActions({
   const mounted = useRef(true);
   const generation = useRef(0);
   const cooldown = useCountdown(0);
+  const [renewsAtUtc, setRenewsAtUtc] = useState<string>();
+  function wait(seconds: number, error?: unknown) {
+    cooldown.restart(seconds);
+    setRenewsAtUtc(quotaRenewal(error, seconds));
+  }
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -125,7 +136,7 @@ export function useAssistantTurnActions({
       return;
     }
     if (feedback.kind === "wait") {
-      cooldown.restart(feedback.retryAfterSeconds ?? 30);
+      wait(feedback.retryAfterSeconds ?? 30, error);
       frozen.current = null;
     } else if (error instanceof ApiError && error.status === 409) {
       if (
@@ -289,9 +300,11 @@ export function useAssistantTurnActions({
     clearFileError: () => setFileError(undefined),
     progress,
     cooldownSeconds: cooldown.seconds,
+    /// While the wait is the daily quota's, the instant it renews (UTC), for Home to say its hour instead of the seconds.
+    quotaRenewsAtUtc: cooldown.isRunning ? renewsAtUtc : undefined,
     /// The common wait of Home, for a 429 on a request another hook made (the upload of a recording or of a document): the arrow is
-    /// off and says how long, as after a turn's own 429.
-    startCooldown: (seconds: number) => cooldown.restart(seconds),
+    /// off and says how long, as after a turn's own 429; with that 429, a quota's wait says when it renews.
+    startCooldown: (seconds: number, error?: unknown) => wait(seconds, error),
     submit,
     recover,
     retryIdentical,

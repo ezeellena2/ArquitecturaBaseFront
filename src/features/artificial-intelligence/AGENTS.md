@@ -22,7 +22,9 @@ implícita, Markdown, transporte propio ni herramientas en navegador. El borrado
 en el editor, fuera de MutationCache/storage/URL. GET/polling no generan. Una aceptación incierta conserva
 UUID/body; 404 no prueba rollback y sólo la acción explícita repite el body idéntico. Cancelar/eliminar usan
 la confirmación durable; navegación no cancela por desmontaje. Contenido blocked se retira del cache.
-Todos los textos usan assistant es/en y fechas el perfil/formatters comunes; cooldown usa useCountdown.
+Todos los textos usan assistant es/en y fechas el perfil/formatters comunes; cooldown usa useCountdown. La espera de
+un 429 de cuota (`Ai.Assistant.QuotaExceeded`, de consultas o de lecturas) no cuenta segundos: dice la hora en que se renueva,
+las 00:00 UTC que trae `retryAfter`, con `formatTimeInZone` en la zona del perfil (`quotaRenewsAtUtc`).
 La UI compartida está en shared/ui/assistant. Las fuentes sólo abren destinos lógicos admitidos con permiso.
 Cada pedido muestra su espera en el control que lo envió (`Button pending` y su gerundio): el aro reemplaza la flecha
 de Enviar; «Cancelar consulta», «Consultar estado», «Repetir el mismo pedido», «Reintentar» y «Cargar anteriores»

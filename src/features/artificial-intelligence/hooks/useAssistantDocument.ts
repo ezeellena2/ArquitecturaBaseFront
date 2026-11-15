@@ -16,7 +16,7 @@ import { wait } from "./useAssistantDictation";
 export function useAssistantDocument({ userId, onForbidden, onWait }: {
   userId: string;
   onForbidden: () => void;
-  onWait: (seconds: number) => void;
+  onWait: (seconds: number, error: unknown) => void;
 }) {
   const { t } = useTranslation(["assistant", "common"]);
   const client = useQueryClient();
@@ -63,7 +63,7 @@ export function useAssistantDocument({ userId, onForbidden, onWait }: {
     } catch (failure) {
       const feedback = errorFeedback(failure, { writing: true, fields: ["file"] });
       if (feedback.kind === "cancelled" || feedback.kind === "session") return undefined;
-      if (feedback.kind === "wait") onWait(feedback.retryAfterSeconds ?? 30);
+      if (feedback.kind === "wait") onWait(feedback.retryAfterSeconds ?? 30, failure);
       if (feedback.kind === "forbidden" && !(failure instanceof ApiError && failure.code === "Ai.Assistant.AttachmentDocumentForbidden")) {
         pending.current = null;
         onForbidden();
