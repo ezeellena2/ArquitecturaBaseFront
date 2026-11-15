@@ -526,13 +526,13 @@ export function AiAssistantPage() {
               ) : null}
               {conversationId && data.conversation.isPending ? (
                 <Spinner />
-              ) : data.blocked ? (
+              ) : data.blocked || data.unreadable ? (
                 <EmptyState
                   title={t(
-                    data.conversation.data?.contentAccess === "expired"
-                      ? "expiredContent"
-                      : data.conversation.data?.contentAccess === "unavailable"
-                        ? "unavailableContent"
+                    data.unreadable
+                      ? "unavailableContent"
+                      : data.conversation.data?.contentAccess === "expired"
+                        ? "expiredContent"
                         : "blocked",
                   )}
                   action={

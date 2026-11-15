@@ -458,6 +458,8 @@ describe("authenticated assistant", () => {
   it("explains an unreadable conversation and deletes it from the panel", async () => {
     access = "unavailable";
     let deleted: string | undefined;
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", () =>
+      HttpResponse.json(pageOf([{ ...turn, contentAccess: "unavailable", question: null, answer: null, evidences: [] }]))));
     server.use(http.delete("/api/ai/assistant/conversations/:id", ({ params }) => {
       deleted = String(params.id);
       return new HttpResponse(null, { status: 204 });
@@ -483,6 +485,20 @@ describe("authenticated assistant", () => {
     await screen.findByText("Hay tres usuarios activos.");
     expect(screen.getByText("Consulta anterior")).toBeInTheDocument();
     expect(screen.queryByText("No pudimos leer el contenido de esta conversación. Podés eliminarla desde Conversaciones.")).not.toBeInTheDocument();
+  });
+  // I8, review: the title comes from the first turn, so a conversation whose first turn cannot be read still shows the readable ones,
+  // does not say it cannot be read, and goes on.
+  it("keeps the readable turns of a conversation whose first turn cannot be read and lets it go on", async () => {
+    access = "unavailable";
+    const first = { ...turn, turnId: "0199a0c0-0000-7000-8000-000000000555", requestId: "0199a0c0-0000-7000-8000-000000000666", ordinal: 1,
+      contentAccess: "unavailable", question: null, answer: null, evidences: [] };
+    turn = { ...turn, ordinal: 2 };
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", () => HttpResponse.json(pageOf([first, turn]))));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await screen.findByText("Hay tres usuarios activos.");
+    expect(screen.queryByText("No pudimos leer el contenido de esta conversación. Podés eliminarla desde Conversaciones.")).not.toBeInTheDocument();
+    await userEvent.type(screen.getByRole("textbox", { name: "Tu pregunta" }), "¿Y los inactivos?");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
   });
   it("removes previously readable history when its source permission is revoked", async () => {
     renderRouteWithProviders(`/?conversacion=${conversationId}`);
