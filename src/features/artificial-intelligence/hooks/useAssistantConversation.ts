@@ -44,9 +44,12 @@ export function useAssistantConversation(
           : false,
     refetchIntervalInBackground: false,
   });
+  // A conversation without readable content (blocked, expired or unavailable, I8) shows no thread and keeps nothing in the cache. A
+  // single unreadable turn is a state of that turn only: the thread leaves it out, like an expired one.
   const blocked =
     conversation.data?.contentAccess === "blocked" ||
     conversation.data?.contentAccess === "expired" ||
+    conversation.data?.contentAccess === "unavailable" ||
     turn.data?.contentAccess === "blocked";
   const history = useInfiniteQuery({
     queryKey: [...key, "turns", conversationId, language, permissionsVersion],

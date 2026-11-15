@@ -43,6 +43,7 @@
   "cancelAndContinue": "Cancel and continue",
   "blocked": "You no longer have access to this conversation's content",
   "expiredContent": "This conversation's content has expired",
+  "unavailableContent": "We couldn't read this conversation's content. You can delete it from Conversations.",
   "invalidQuestion": "Enter a question.",
   "questionTooLong": "Questions can contain up to {{max}} characters.",
   "cooldown": "Wait {{seconds}} s before sending another query.",

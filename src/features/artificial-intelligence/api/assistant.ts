@@ -21,7 +21,8 @@ const stage = z.enum([
   "verifying",
   "finished",
 ]);
-const contentAccess = z.enum(["allowed", "blocked", "expired"]);
+// I8: «unavailable» is a row the server could not decrypt: generic title, no content, and it can still be deleted.
+const contentAccess = z.enum(["allowed", "blocked", "expired", "unavailable"]);
 const evidence = z.strictObject({
   id,
   sourceId: z.string(),

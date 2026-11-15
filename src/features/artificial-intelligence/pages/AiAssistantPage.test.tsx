@@ -454,6 +454,36 @@ describe("authenticated assistant", () => {
       ),
     ).not.toContain("Hay tres usuarios");
   });
+  // I8: a conversation the server cannot decrypt is listed with the generic title, says so and is deleted from the panel.
+  it("explains an unreadable conversation and deletes it from the panel", async () => {
+    access = "unavailable";
+    let deleted: string | undefined;
+    server.use(http.delete("/api/ai/assistant/conversations/:id", ({ params }) => {
+      deleted = String(params.id);
+      return new HttpResponse(null, { status: 204 });
+    }));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await screen.findByText("No pudimos leer el contenido de esta conversación. Podés eliminarla desde Conversaciones.");
+    expect(screen.queryByText(turn.question!)).not.toBeInTheDocument();
+    const panel = await screen.findByRole("complementary", { name: "Conversaciones" });
+    (await within(panel).findByRole("button", { name: "Acciones de Conversación" })).focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Eliminar conversación" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Eliminar esta conversación?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Eliminar conversación" }));
+    await waitFor(() => expect(deleted).toBe(conversationId));
+    expect(writes).toHaveLength(0);
+  });
+  // I8: a single unreadable turn leaves only that turn out of the thread.
+  it("leaves an unreadable turn out of the thread and still shows the others", async () => {
+    const unreadable = { ...turn, turnId: "0199a0c0-0000-7000-8000-000000000555", requestId: "0199a0c0-0000-7000-8000-000000000666", ordinal: 2,
+      contentAccess: "unavailable", question: null, answer: null, evidences: [] };
+    server.use(http.get("/api/ai/assistant/conversations/:id/turns", () => HttpResponse.json(pageOf([unreadable, turn]))));
+    renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await screen.findByText("Hay tres usuarios activos.");
+    expect(screen.getByText("Consulta anterior")).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos leer el contenido de esta conversación. Podés eliminarla desde Conversaciones.")).not.toBeInTheDocument();
+  });
   it("removes previously readable history when its source permission is revoked", async () => {
     renderRouteWithProviders(`/?conversacion=${conversationId}`);
     await screen.findByText("Hay tres usuarios activos.");

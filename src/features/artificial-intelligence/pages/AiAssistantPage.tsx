@@ -531,7 +531,9 @@ export function AiAssistantPage() {
                   title={t(
                     data.conversation.data?.contentAccess === "expired"
                       ? "expiredContent"
-                      : "blocked",
+                      : data.conversation.data?.contentAccess === "unavailable"
+                        ? "unavailableContent"
+                        : "blocked",
                   )}
                   action={
                     <Button size="touch" onClick={() => choose(null)}>
