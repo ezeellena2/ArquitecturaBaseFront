@@ -1076,11 +1076,11 @@ describe("dictated turns (IA4)", () => {
     installMicrophone();
     const error = vi.spyOn(toast, "error");
     const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.RequestReused",
-      detail: "Ese pedido ya se usó con otra grabación." } }, { status: 202, body: status("completed", "Armame un formulario de visitas") }]);
+      detail: "Ese identificador ya se usó con otra consulta. Revisá el intento original." } }, { status: 202, body: status("completed", "Armame un formulario de visitas") }]);
     renderRouteWithProviders("/");
     await record();
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese pedido ya se usó con otra grabación.", expect.anything()));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese identificador ya se usó con otra consulta. Revisá el intento original.", expect.anything()));
     expect(writes).toHaveLength(0);
     expect(screen.getByLabelText("Tu audio")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
@@ -1558,12 +1558,12 @@ describe("documents in Home (Stage 3)", () => {
     server.use(withKinds(all), turnsWithDocument());
     const error = vi.spyOn(toast, "error");
     const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.RequestReused",
-      detail: "Ese pedido ya se usó con otro archivo." } }, { status: 202, body: status("completed", read) }]);
+      detail: "Ese identificador ya se usó con otra consulta. Revisá el intento original." } }, { status: 202, body: status("completed", read) }]);
     renderRouteWithProviders("/");
     await screen.findByRole("button", { name: "Adjuntar un archivo" });
     choose("comprobante.pdf");
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
-    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese pedido ya se usó con otro archivo.", expect.anything()));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Ese identificador ya se usó con otra consulta. Revisá el intento original.", expect.anything()));
     expect(writes).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
     await waitFor(() => expect(writes).toHaveLength(1));
