@@ -119,8 +119,10 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
         setExpanded(validation.firstRuleId);
         requestAnimationFrame(() => { if (active.current && !controller.signal.aborted) host.current?.querySelector<HTMLElement>('[data-rule-id="' + validation.firstRuleId + '"] [aria-invalid="true"]')?.focus(); });
       }
-      if (!["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(normalizedFailure, { fields: validation?.fields }).kind)) { pendingNotices.current.add(kind); notify({ id: notificationRoot + ":" + kind, kind: "error", message: kind === "save" ? operationalErrorMessage(normalizedFailure, t, "save") : readErrorMessage(normalizedFailure, t) }); }
-      if (failure instanceof ApiError && failure.status === 403) onDenied();
+      // H6: the permission of an issuer is not the rules one: it is told, and the rules being edited stay.
+      const issuerDenied = failure instanceof ApiError && failure.code === "Forms.Rule.IssuerPermissionRequired";
+      if (issuerDenied || !["cancelled", "session", "forbidden", "fields"].includes(errorFeedback(normalizedFailure, { fields: validation?.fields }).kind)) { pendingNotices.current.add(kind); notify({ id: notificationRoot + ":" + kind, kind: "error", message: kind === "save" ? operationalErrorMessage(normalizedFailure, t, "save") : readErrorMessage(normalizedFailure, t) }); }
+      if (failure instanceof ApiError && failure.status === 403 && !issuerDenied) onDenied();
       if (failure instanceof ApiError && failure.status === 429) cooldown.restart(failure.retryAfterSeconds ?? 60);
     } finally { if (active.current) setRunning(null); }
   };

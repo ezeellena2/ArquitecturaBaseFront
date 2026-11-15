@@ -204,6 +204,22 @@ it("refreshes saved question options while preserving unsaved rules after the dr
 
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn(), dismissNotification: vi.fn() }));
 
+// H6: the permission of an issuer is not the rules one: the editor tells it and keeps what was being edited.
+it("tells a missing issuer permission and keeps the rules being edited", async () => {
+  setup();
+  const detail = "Las reglas de este formulario emiten comprobantes: necesitás también el permiso para emitirlos.";
+  server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rule.IssuerPermissionRequired", detail }, { status: 403 })));
+  renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Mi regla conservada");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: detail });
+  expect(screen.queryByText("Ya no tenés permiso para administrar las reglas.")).not.toBeInTheDocument();
+  expect(messageText(screen.getByRole("textbox", { name: "Mensaje" }))).toBe("Mi regla conservada");
+});
+
 it("notifies one rules save failure while retaining the editable draft", async () => {
   setup();
   server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Test.Save", detail: "No pudimos guardar estas reglas." }, { status: 400 })));
