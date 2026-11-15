@@ -53,6 +53,9 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
     () => { guard.allowNextNavigation(); void navigate("/sin-permiso"); }, editor.requireReview);
   const selectingModel = !manualModel && !!catalog.models?.length;
   const error = (field: string) => editor.errors[field] ?? probe.errors[field] ?? catalog.errors[field];
+  // I7: the saved key cannot be read here; its message goes under the key and «Reemplazar clave», which fixes it, is the one highlighted.
+  const keyUnreadable = catalog.credentialUnavailable || probe.credentialUnavailable;
+  const keyErrorId = useId();
   function provider(next: AiProvider) { editor.change(changeProvider(draft, next)); setNextProvider(null); setManualModel(false); }
   function replaceKey(replacing: boolean) { editor.change({ replacing, apiKey: "", credentialChange: replacing ? "Replace" : "Keep" }); }
   // La banda lleva el título, el estado del objeto («Sólo lectura») y las acciones: Guardar habilitado ya dice que hay
@@ -86,11 +89,12 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm">{t("keyConfigured")}</p>
                 {canManage ? <>
-                  <Button variant="outline" disabled={locked} onClick={() => replaceKey(true)}>{t("replace")}</Button>
+                  <Button variant={keyUnreadable ? "default" : "outline"} disabled={locked} aria-describedby={keyUnreadable ? keyErrorId : undefined}
+                    onClick={() => replaceKey(true)}>{t("replace")}</Button>
                   <Button variant="destructive-outline" disabled={locked} onClick={() => setRemoving(true)}>{t("remove")}</Button>
                 </> : null}
               </div>
-              {error("apiKey") ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error("apiKey")}</p> : null}
+              {error("apiKey") ? <p id={keyErrorId} role="alert" className="text-sm text-[var(--color-danger)]">{error("apiKey")}</p> : null}
             </div> : <FormField label={t(savedCredential ? "newKey" : "key")} error={error("apiKey")}
               beside={savedCredential && canManage ? <Button variant="outline" disabled={locked} onClick={() => replaceKey(false)}>{t("cancelReplace")}</Button> : undefined}>
               <Input className="sm:w-72" name="ai-provider-api-key" type="password" value={draft.apiKey} autoComplete="new-password" spellCheck={false} autoCapitalize="none" maxLength={4096} disabled={locked} onChange={event => editor.change({ apiKey: event.target.value, credentialChange: event.target.value ? "Replace" : savedCredential ? "Replace" : "Remove" })} />

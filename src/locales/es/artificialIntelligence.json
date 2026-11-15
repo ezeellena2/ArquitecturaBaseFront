@@ -23,6 +23,7 @@
   "key": "Clave de API",
   "newKey": "Nueva clave de API",
   "replace": "Reemplazar clave",
+  "credentialUnavailable": "No pudimos leer la clave guardada: reemplazala.",
   "cancelReplace": "Cancelar reemplazo",
   "remove": "Quitar clave",
   "test": "Probar conexión",

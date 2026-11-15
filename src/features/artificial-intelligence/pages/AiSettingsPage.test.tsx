@@ -109,6 +109,31 @@ describe("AI settings", () => {
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("fictional-model");
     expect(catalogs).toBe(1);
   });
+  // I7: a saved key the server can no longer decrypt is explained next to the key, with «Reemplazar clave» highlighted, not as an
+  // unexpected error in the Toaster; replacing the key withdraws the message.
+  it("explains an unreadable saved key beside the key and highlights replacing it", async () => {
+    const error = vi.spyOn(toast, "error");
+    const unreadable = { code: "Ai.Connection.CredentialUnavailable", detail: "Server text", status: 409, title: "Conflicto", traceId: "trace" };
+    let probes = 0;
+    server.use(http.post("/api/ai/connection/models", () => HttpResponse.json(unreadable, { status: 409 })),
+      http.post("/api/ai/connection/test", () => { probes++; return HttpResponse.json(unreadable, { status: 409 }); }));
+    renderRouteWithProviders("/configuracion/ia");
+    const key = await screen.findByRole("group", { name: "Clave de API" });
+    expect(await within(key).findByRole("alert")).toHaveTextContent("No pudimos leer la clave guardada: reemplazala.");
+    const replace = within(key).getByRole("button", { name: "Reemplazar clave" });
+    expect(replace).toHaveAttribute("data-variant", "default");
+    expect(replace).toHaveAccessibleDescription("No pudimos leer la clave guardada: reemplazala.");
+    expect(within(key).getByRole("button", { name: "Quitar clave" })).toHaveAttribute("data-variant", "destructive-outline");
+    await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
+    await waitFor(() => expect(probes).toBe(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Probar conexión" })).not.toHaveAttribute("aria-busy", "true"));
+    expect(within(key).getAllByRole("alert")).toHaveLength(1);
+    expect(error).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Ocurrió un error inesperado/)).not.toBeInTheDocument();
+    await userEvent.click(replace);
+    expect(keyField()).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos leer la clave guardada: reemplazala.")).not.toBeInTheDocument();
+  });
   it("ignores a late catalog after changing the candidate key", async () => {
     current = { ...current, hasCredential: false };
     let release: (() => void) | undefined;

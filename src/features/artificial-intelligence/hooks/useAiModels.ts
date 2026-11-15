@@ -5,7 +5,7 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { listAiModels, type AiConnection, type AiModels } from "../api/aiConnection";
 import { hasCredential, type AiDraft } from "../model";
-import { aiErrorMessage } from "../errors";
+import { aiErrorMessage, isCredentialUnavailable } from "../errors";
 
 // Credentials stay in the active editor. Neither query keys nor mutation variables
 // contain this request; a catalog belongs to one provider, credential and revision.
@@ -21,7 +21,7 @@ export function useAiModels(draft: AiDraft, current: AiConnection, observedRevis
   useLayoutEffect(() => { callbacks.current = { onForbidden, onConflict }; }, [onForbidden, onConflict]);
   const active = useRef(true);
   const controller = useRef<AbortController | null>(null);
-  const [state, setState] = useState<{ basis: object; busy: boolean; catalog?: AiModels; fields?: Record<string, string> }>();
+  const [state, setState] = useState<{ basis: object; busy: boolean; catalog?: AiModels; fields?: Record<string, string>; unreadable?: boolean }>();
   const [cooldown, setCooldown] = useState(0);
   const canLoad = allowed && hasCredential(draft, current) && revision === observedRevision;
 
@@ -40,10 +40,12 @@ export function useAiModels(draft: AiDraft, current: AiConnection, observedRevis
       if (feedback.kind === "forbidden") { callbacks.current.onForbidden(); return; }
       if (feedback.kind === "session") return;
       if (error instanceof ApiError && error.code === "Ai.Connection.RevisionConflict") callbacks.current.onConflict();
-      setState(previous => ({ basis, busy: false, catalog: previous?.basis === basis ? previous.catalog : undefined,
-        fields: Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])) }));
+      // I7: an unreadable saved key is told next to the key, where «Reemplazar clave» fixes it, and not in the Toaster.
+      const unreadable = isCredentialUnavailable(error);
+      setState(previous => ({ basis, busy: false, catalog: previous?.basis === basis ? previous.catalog : undefined, unreadable,
+        fields: unreadable ? { apiKey: aiErrorMessage(error, t) } : Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])) }));
       if (error instanceof ApiError && error.status === 429) setCooldown(Math.min(86400, Math.max(1, Math.ceil(error.retryAfterSeconds ?? 60))));
-      if (feedback.kind !== "fields") notify({ id: "ai:models", kind: "error", message: aiErrorMessage(error, t) });
+      if (feedback.kind !== "fields" && !unreadable) notify({ id: "ai:models", kind: "error", message: aiErrorMessage(error, t) });
     } finally {
       if (controller.current === abort) controller.current = null;
       if (active.current && latestBasis.current === basis) setState(previous => previous?.basis === basis ? { ...previous, busy: false } : previous);
@@ -64,5 +66,6 @@ export function useAiModels(draft: AiDraft, current: AiConnection, observedRevis
   useEffect(() => { active.current = true; return () => { active.current = false; controller.current?.abort(); dismissNotification("ai:models"); }; }, []);
   useEffect(() => { if (!cooldown) return; const timer = setTimeout(() => setCooldown(previous => Math.max(0, previous - 1)), 1000); return () => clearTimeout(timer); }, [cooldown]);
   const visible = state?.basis === basis ? state : undefined;
-  return { models: visible?.catalog?.models, busy: visible?.busy ?? false, errors: visible?.fields ?? {}, canLoad: canLoad && !cooldown, cooldown, load };
+  return { models: visible?.catalog?.models, busy: visible?.busy ?? false, errors: visible?.fields ?? {}, credentialUnavailable: visible?.unreadable ?? false,
+    canLoad: canLoad && !cooldown, cooldown, load };
 }

@@ -86,7 +86,8 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
       {/* El único aviso sobre datos sensibles va en la (i) del título de los datos del negocio. */}
       <Surface title={t("basics")} help={t("limitsHint")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>
       <div className="grid items-start gap-5 xl:grid-cols-2">
-        <BusinessLocationEditor value={details.location} onChange={location => editor.change({ details: { ...details, location } })} editable={canManage} locked={locked} error={editor.errors["details.location"]} legacy={legacy("location")} />
+        <BusinessLocationEditor value={details.location} onChange={location => editor.change({ details: { ...details, location } })} editable={canManage} locked={locked}
+          placeSearch={presentation.data?.installedFeatures?.includes("place-search") === true} error={editor.errors["details.location"]} legacy={legacy("location")} />
         <BusinessHoursEditor value={details.openingHours} onChange={openingHours => editor.change({ details: { ...details, openingHours } })} editable={canManage} locked={locked} error={editor.errors["details.openingHours"]} legacy={legacy("hours")} />
       </div>
       <Surface title={t("offering")} padded><div className="grid gap-4 sm:grid-cols-2">{field("services", true)}{field("policies", true)}</div></Surface>

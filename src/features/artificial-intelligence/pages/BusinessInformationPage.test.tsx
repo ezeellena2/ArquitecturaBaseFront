@@ -10,6 +10,7 @@ import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import type { BusinessInformation, BusinessSaveRequest } from "../api/businessInformation";
 import { emptyBusinessDetails } from "../businessDetailsModel";
+import { initialAppearance } from "@/shared/lib/appearance";
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 let current: BusinessInformation;
 let writes: BusinessSaveRequest[];
@@ -26,11 +27,15 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const save = () => screen.getByRole("button", { name: "Guardar" });
+// I7: the place search is offered only where the installation publishes `place-search` (it has the Google key).
+const withPlaceSearch = (installed: boolean) => server.use(http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance,
+  defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, installedFeatures: installed ? ["place-search"] : [] })));
 const field = () => screen.getByRole("textbox", { name: "Nombre del negocio" });
 describe("business information editor", () => {
   it("saves only the selected ID and manually entered address, without provider text or supplied URLs", async () => {
     current.details = emptyBusinessDetails("UTC");
     current.details.location = { mode: "local", address: "My address", reference: "", area: "", latitude: null, longitude: null };
+    withPlaceSearch(true);
     server.use(http.post("/api/ai/business-information/places/search", () => HttpResponse.json({ places: [{ placeId: "ChIJ_example", label: "Provider name and address" }] })));
     renderRouteWithProviders("/configuracion/negocio");
     const search = await screen.findByRole("combobox", { name: "Buscar un lugar" });
@@ -44,6 +49,19 @@ describe("business information editor", () => {
     expect(writes[0].details?.location).toEqual({ mode: "local", address: "My address", reference: "", area: "", latitude: null, longitude: null, placeId: "ChIJ_example" });
     expect(JSON.stringify(writes)).not.toContain("Provider name and address");
     expect(writes[0].details?.location).not.toHaveProperty("link");
+  });
+  it("does not offer the place search where the installation has no Google key, and the address stays manual", async () => {
+    withPlaceSearch(false);
+    let searches = 0;
+    server.use(http.post("/api/ai/business-information/places/search", () => { searches++; return HttpResponse.json({ places: [] }); }));
+    current.details = emptyBusinessDetails("UTC");
+    current.details.location = { mode: "local", address: "My address", reference: "", area: "", latitude: null, longitude: null };
+    renderRouteWithProviders("/configuracion/negocio");
+    const address = await screen.findByRole("textbox", { name: "Dirección del local" });
+    await userEvent.type(address, " 123");
+    expect(screen.queryByRole("combobox", { name: "Buscar un lugar" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Google Maps")).not.toBeInTheDocument();
+    expect(searches).toBe(0);
   });
   it("sends structured facts with one revision and no client supplied link", async () => {
     current.details = emptyBusinessDetails("UTC");
@@ -395,8 +413,10 @@ describe("business information editor", () => {
     current.details = emptyBusinessDetails("UTC");
     current.details.location = { mode: "local", address: "Address", reference: "", area: "", latitude: null, longitude: null };
     current.details.faq = [{ id: crypto.randomUUID(), question: "¿Hace falta reservar?", answer: "" }, { id: crypto.randomUUID(), question: "¿Qué medios de pago aceptan?", answer: "Efectivo" }];
+    withPlaceSearch(true);
     renderRouteWithProviders("/configuracion/negocio");
     const name = await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    await screen.findByRole("combobox", { name: "Buscar un lugar" });
     for (const control of [name, screen.getByRole("textbox", { name: "Qué hace el negocio" }), screen.getByRole("textbox", { name: "Productos y servicios" }),
       screen.getByRole("textbox", { name: "Políticas y condiciones" }), screen.getByRole("textbox", { name: "Dirección del local" }),
       screen.getByRole("combobox", { name: "Buscar un lugar" }), screen.getByRole("textbox", { name: "Enlace de la ubicación" })])

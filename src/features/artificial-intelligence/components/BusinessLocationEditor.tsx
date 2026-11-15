@@ -8,8 +8,9 @@ import { Textarea } from "@/shared/ui/textarea";
 import { businessLocationLink } from "../businessDetailsModel";
 import type { BusinessLocation } from "../api/businessInformation";
 import { BusinessPlaceSearch } from "./BusinessPlaceSearch";
-interface Props { value: BusinessLocation; onChange: (value: BusinessLocation) => void; editable: boolean; locked: boolean; error?: string; legacy: React.ReactNode }
-export function BusinessLocationEditor({ value, onChange, editable, locked, error, legacy }: Props) {
+// `placeSearch`: the installation has the Google key (`place-search`, I7); without it the search is not offered and the address is manual.
+interface Props { value: BusinessLocation; onChange: (value: BusinessLocation) => void; editable: boolean; locked: boolean; placeSearch: boolean; error?: string; legacy: React.ReactNode }
+export function BusinessLocationEditor({ value, onChange, editable, locked, placeSearch, error, legacy }: Props) {
   const { t } = useTranslation("businessInformation");
   const link = businessLocationLink(value);
   const cleared = { latitude: null, longitude: null, placeId: null };
@@ -22,7 +23,7 @@ export function BusinessLocationEditor({ value, onChange, editable, locked, erro
       {value.mode === "local" || value.mode === "both" ? <>
         {/* Sin leyendas: al cambiar la dirección el enlace se vacía a la vista, y el enlace vacío ya dice que no hay lugar elegido. */}
         <FormField label={t("address")}><Input value={value.address} maxLength={500} readOnly={!editable} disabled={locked} onChange={event => onChange({ ...value, address: event.target.value, ...cleared })} /></FormField>
-        {editable ? <BusinessPlaceSearch disabled={locked} placeId={value.placeId} onSelect={placeId => onChange({ ...value, latitude: null, longitude: null, placeId })} /> : null}
+        {editable && placeSearch ? <BusinessPlaceSearch disabled={locked} placeId={value.placeId} onSelect={placeId => onChange({ ...value, latitude: null, longitude: null, placeId })} /> : null}
         <FormField label={t("locationLink")}><Input type="url" value={link} readOnly /></FormField>
         {link ? <div className="flex flex-wrap items-center gap-3"><a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--color-brand-600)] underline underline-offset-2">{t("openLocation")}</a>{editable ? <Button variant="muted-link" disabled={locked} onClick={() => onChange({ ...value, ...cleared })}>{t("removePoint")}</Button> : null}</div> : null}
         <FormField label={t("reference")}><Input value={value.reference} maxLength={500} readOnly={!editable} disabled={locked} placeholder={t("referencePlaceholder")} onChange={event => onChange({ ...value, reference: event.target.value })} /></FormField>

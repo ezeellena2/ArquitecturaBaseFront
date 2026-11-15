@@ -23,6 +23,7 @@
   "key": "API key",
   "newKey": "New API key",
   "replace": "Replace key",
+  "credentialUnavailable": "We couldn't read the saved key: replace it.",
   "cancelReplace": "Cancel replacement",
   "remove": "Remove key",
   "test": "Test connection",

@@ -375,7 +375,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A); `forms-publication-without-channels` is
     // the template without a form channel (SA5).
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
-      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels"]] });
+      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels"]] });
     if (path === "/api/settings") return json(settings);
     if (path === "/api/roles/paged") return json(pageOf(roles));
     if (path === "/api/roles") return json(roles);

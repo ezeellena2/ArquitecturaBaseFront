@@ -5,13 +5,13 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { testAiConnection, type AiConnection } from "../api/aiConnection";
 import { saveRequest, type AiDraft } from "../model";
-import { aiErrorMessage } from "../errors";
+import { aiErrorMessage, isCredentialUnavailable } from "../errors";
 
 export function useAiConnectionTest(draft: AiDraft, draftVersion: number, current: AiConnection, observedRevision: number, onForbidden: () => void, onConflict: () => void) {
   const { t } = useTranslation("artificialIntelligence");
   const signature = `${draftVersion}:${current.revision}:${observedRevision}`;
   const [busyFor, setBusyFor] = useState<string>();
-  const [errorState, setErrorState] = useState<{ signature: string; fields: Record<string, string> }>();
+  const [errorState, setErrorState] = useState<{ signature: string; fields: Record<string, string>; unreadable?: boolean }>();
   const [cooldown, setCooldown] = useState(0);
   const active = useRef(true);
   const controller = useRef<AbortController | null>(null);
@@ -38,13 +38,17 @@ export function useAiConnectionTest(draft: AiDraft, draftVersion: number, curren
       if (feedback.kind === "forbidden") { onForbidden(); return; }
       if (feedback.kind === "session") return;
       if (error instanceof ApiError && error.code === "Ai.Connection.RevisionConflict") onConflict();
-      setErrorState({ signature, fields: Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])) });
+      // I7: an unreadable saved key is told next to the key, where «Reemplazar clave» fixes it, and not in the Toaster.
+      const unreadable = isCredentialUnavailable(error);
+      setErrorState({ signature, unreadable, fields: unreadable ? { apiKey: aiErrorMessage(error, t) }
+        : Object.fromEntries(Object.entries(feedback.fields).map(([key, value]) => [key, value.join(" ")])) });
       if (error instanceof ApiError && error.status === 429) setCooldown(Math.min(86400, Math.max(1, Math.ceil(error.retryAfterSeconds ?? 60))));
-      if (feedback.kind !== "fields") notify({ id: "ai:test", kind: "error", message: aiErrorMessage(error, t) });
+      if (feedback.kind !== "fields" && !unreadable) notify({ id: "ai:test", kind: "error", message: aiErrorMessage(error, t) });
     } finally {
       if (controller.current === abort) controller.current = null;
       if (active.current && startedVersion === version.current) setBusyFor(undefined);
     }
   }
-  return { busy: busyFor === signature, errors: errorState?.signature === signature ? errorState.fields : {}, cooldown, test };
+  const shown = errorState?.signature === signature ? errorState : undefined;
+  return { busy: busyFor === signature, errors: shown?.fields ?? {}, credentialUnavailable: shown?.unreadable ?? false, cooldown, test };
 }
