@@ -150,6 +150,7 @@ describe("why and what happened", () => {
     const repeated = { ...discarded, document: { ...discarded.document, reasonCode: "duplicate" },
       proposal: { outcome: "sure" as const, documentType: null, candidates: [], repetition: { atUtc: "2026-10-20T13:39:00Z", recordId: receivedDocumentIds.confirmed, recordNumber: "REC-000123", documentId: null } } };
     expect(receivedDocumentReason(repeated, "?")).toEqual({ key: "reasons.duplicateOf", values: { number: "REC-000123" } });
+    expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "expired" } }, "?")?.key).toBe("reasons.expired");
     expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "protected" } }, "?")?.key).toBe("reasons.protected");
     expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "tooManyRows" } }, "?")?.key).toBe("reasons.tooManyRows");
     expect(receivedDocumentReason({ ...discarded, document: { ...discarded.document, reasonCode: "somethingNew" } }, "?")?.key).toBe("reasons.notOpened");

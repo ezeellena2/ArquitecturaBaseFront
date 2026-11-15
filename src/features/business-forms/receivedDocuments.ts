@@ -197,6 +197,7 @@ export function receivedDocumentReason(detail: Pick<ReceivedDocumentDetail, "doc
     const discarded = [...detail.history].reverse().find(event => event.kind === "discarded");
     return discarded?.actor?.displayName ? { key: of("reasons.reviewerBy"), values: { person: discarded.actor.displayName } } : { key: of("reasons.reviewer") };
   }
+  if (reasonCode === "expired") return { key: of("reasons.expired") };
   if (reasonCode === "duplicate") {
     const repetition = detail.proposal?.repetition;
     if (row && repetition?.row) return repetition.row.sheet === null ? { key: "reasons.row.duplicateRow", values: { number: String(repetition.row.number) } }

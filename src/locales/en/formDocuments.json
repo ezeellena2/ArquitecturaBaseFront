@@ -126,6 +126,7 @@
     "unknown": "The AI did not recognize it in any form that reads documents.",
     "reviewerBy": "{{person}} discarded it.",
     "reviewer": "Someone of the team discarded it.",
+    "expired": "Nobody reviewed it in 90 days: it expired.",
     "duplicateOf": "It had already been loaded in {{number}}.",
     "duplicate": "The same document had already been received.",
     "unreadable": {
@@ -150,6 +151,7 @@
       "unseen": "The AI did not get to read it.",
       "reviewerBy": "{{person}} discarded it.",
       "reviewer": "Someone of the team discarded it.",
+      "expired": "Nobody reviewed it in 90 days: it expired.",
       "duplicateOf_one": "Repeated: the same {{data}} as {{number}}.",
       "duplicateOf_other": "Repeated: the same {{data}} as {{number}}.",
       "duplicateRow": "Repeated: the same as row {{number}}.",
