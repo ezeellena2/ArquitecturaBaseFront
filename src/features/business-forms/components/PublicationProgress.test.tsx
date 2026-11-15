@@ -91,6 +91,17 @@ describe("Chosen publication board EP1-A", () => {
     expect(consult()).not.toBeInTheDocument();
   });
 
+  it("offers «Descartar esta publicación» only for an unconfirmed one, and asks before discarding", async () => {
+    const discard = vi.fn(async () => undefined);
+    const view = await mount(session("Uncertain", { discard } as Partial<Publication>));
+    await userEvent.click(within(header()).getByRole("button", { name: "Descartar esta publicación" }));
+    expect(discard).not.toHaveBeenCalled();
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Descartar esta publicación" }));
+    expect(discard).toHaveBeenCalledTimes(1);
+    view.rerender(<Editor publication={{ ...session("Publishing"), phase: "Unconfirmed" }} />);
+    expect(within(header()).queryByRole("button", { name: "Descartar esta publicación" })).not.toBeInTheDocument();
+  });
+
   it("keeps «Consultar publicación» in sight, with its ring, while it consults after a failed consultation", async () => {
     const failed = session("Publishing", { error: new ApiError(500, { code: "General.Unexpected" }) });
     const view = await mount(failed);

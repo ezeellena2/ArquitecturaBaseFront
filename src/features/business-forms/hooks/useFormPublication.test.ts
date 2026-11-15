@@ -3,11 +3,11 @@ import { StrictMode, useEffect } from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/ApiError";
-import { acceptFormPublication, fetchFormPublication } from "../api/forms";
+import { acceptFormPublication, discardFormPublication, fetchFormPublication } from "../api/forms";
 import { fixtureDefinition } from "@/test/visual/formFixtures";
 import { openDraftSession } from "../draftSession";
 import { useFormPublication } from "./useFormPublication";
-vi.mock("../api/forms", () => ({ acceptFormPublication: vi.fn(), fetchFormPublication: vi.fn() }));
+vi.mock("../api/forms", () => ({ acceptFormPublication: vi.fn(), discardFormPublication: vi.fn(), fetchFormPublication: vi.fn() }));
 const definition = fixtureDefinition();
 const body = { ...openDraftSession({ actorId: "a", editorId: "p" }, definition).value, expectedRevision: 1 };
 const scope = { actorId: "a", culture: "es" as const, permissions: ["formtemplates.read", "formtemplates.publish"] };
@@ -18,7 +18,7 @@ const identity = { definitionId: definition.id, requestId: "01990000-0000-7000-8
   versionId: "01990000-0000-7000-8000-000000000092", versionNumber: 1, draftRevision: 1, acceptedAtUtc: "2026-10-10T16:00:00Z" } as const;
 const receipt = { ...identity, state: "Accepted" as const, recoveryPath: `/api/forms/definitions/${definition.id}/publications/${identity.requestId}` };
 const status = { ...identity, state: "Publishing" as const, stage: "Validate", updatedAtUtc: identity.acceptedAtUtc, nextCheckAtUtc: null, canRetry: false, requiresReview: false, issues: [], cultures: ["es" as const, "en" as const] };
-beforeEach(() => { vi.mocked(acceptFormPublication).mockReset(); vi.mocked(fetchFormPublication).mockReset(); vi.spyOn(crypto, "randomUUID").mockReturnValue(identity.requestId); });
+beforeEach(() => { vi.mocked(acceptFormPublication).mockReset(); vi.mocked(fetchFormPublication).mockReset(); vi.mocked(discardFormPublication).mockReset(); vi.spyOn(crypto, "randomUUID").mockReturnValue(identity.requestId); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 describe("owned publication attempt", () => {
   it("preserves a publication attempt when only Manage changes", async () => {
@@ -52,6 +52,23 @@ describe("owned publication attempt", () => {
     await act(() => vi.advanceTimersByTimeAsync(60000));
     expect(fetchFormPublication).toHaveBeenCalledTimes(1);
     expect(acceptFormPublication).toHaveBeenCalledTimes(1);
+  });
+  it("keeps asking, with a long wait, while the publication says it is unconfirmed, and discards it on request", async () => {
+    vi.useFakeTimers();
+    vi.mocked(acceptFormPublication).mockResolvedValue(receipt);
+    const uncertain = { ...status, state: "Uncertain" as const, requiresReview: true };
+    vi.mocked(fetchFormPublication).mockResolvedValue(uncertain);
+    const { result } = renderHook(() => useFormPublication(scope));
+    await act(() => result.current.accept(definition.id, body, checked));
+    await act(() => vi.advanceTimersByTimeAsync(30000));
+    expect(result.current.status?.state).toBe("Uncertain");
+    await act(() => vi.advanceTimersByTimeAsync(60000));
+    expect(vi.mocked(fetchFormPublication).mock.calls.length).toBeGreaterThan(1);
+    vi.mocked(discardFormPublication).mockResolvedValue(undefined);
+    vi.mocked(fetchFormPublication).mockResolvedValue({ ...uncertain, state: "Failed", stage: "Discarded", requiresReview: false });
+    await act(() => result.current.discard());
+    expect(discardFormPublication).toHaveBeenCalledWith(definition.id, identity.requestId, 1, expect.anything());
+    expect(result.current.status?.state).toBe("Failed");
   });
   // SA3-A: published only in the app, the receipt already says Published. Its status is read once, at once, for the languages it
   // sealed, and nothing is polled after it.

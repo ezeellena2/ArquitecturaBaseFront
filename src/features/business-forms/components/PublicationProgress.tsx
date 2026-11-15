@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Surface } from "@/shared/ui/Surface";
@@ -14,10 +16,16 @@ type Publication = ReturnType<typeof useFormPublication>;
 // forward. While it consults, also the periodic consultation, the button says so with its ring.
 export function PublicationActions({ publication, progress, onReplay }: { publication: Publication; progress: PublicationProgressState; onReplay: () => void }) {
   const { t } = useTranslation("forms");
+  const [discarding, setDiscarding] = useState(false);
   if (!progress.canConsult) return null;
+  const canDiscard = publication.phase === "Accepted" && publication.status?.state === "Uncertain";
   return <>
     <DisabledReason reason={progress.waitReason}><Button type="button" variant="outline" pending={publication.busy} disabled={progress.cooling} onClick={() => void publication.consult()}>{t(publication.busy ? "publication.consulting" : "publication.consult")}</Button></DisabledReason>
     {publication.canReplay ? <DisabledReason reason={progress.waitReason}><Button type="button" variant="outline" disabled={publication.busy || progress.cooling} onClick={onReplay}>{t("publication.replay")}</Button></DisabledReason> : null}
+    {canDiscard ? <Button type="button" variant="outline" disabled={publication.busy} onClick={() => setDiscarding(true)}>{t("publication.discard")}</Button> : null}
+    {discarding ? <ConfirmDialog open onOpenChange={open => { if (!open && !publication.busy) setDiscarding(false); }} title={t("publication.discardTitle")} description={t("publication.discardHint")}
+      confirmLabel={t("publication.discard")} destructive pending={publication.busy} pendingLabel={t("publication.discarding")}
+      onConfirm={() => { void publication.discard().finally(() => setDiscarding(false)); }} /> : null}
   </>;
 }
 

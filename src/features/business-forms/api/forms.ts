@@ -33,6 +33,9 @@ export const recoverFormDraft = async (requestId: string, signal?: AbortSignal) 
 export const checkFormPublication = async (id: string, body: DraftEditorValue & { readonly expectedRevision: number }, signal?: AbortSignal) => readFormPublicationCheck(await api.post<unknown>(`/api/forms/definitions/${formId(id)}/publication-checks`, { name: body.name, prefix: body.prefix, draft: draftWire(body.draft), expectedRevision: body.expectedRevision }, { signal }), id, body.expectedRevision, body.draft.fields);
 
 export const acceptFormPublication = async (id: string, body: FormPublicationWriteBody, signal?: AbortSignal) => readFormPublicationReceipt(await api.post<unknown>(`/api/forms/definitions/${formId(id)}/publications`, { name: body.name, prefix: body.prefix, draft: draftWire(body.draft), expectedRevision: body.expectedRevision, requestId: body.requestId, checkToken: body.checkToken }, { signal }), id, body.requestId, body.expectedRevision);
+export const discardFormPublication = async (id: string, requestId: string, expectedRevision: number, signal?: AbortSignal) => {
+  await api.post<unknown>(`${publicationPath(id, requestId)}/discard`, { expectedRevision }, { signal });
+};
 export const fetchFormPublication = async (id: string, requestId: string, signal?: AbortSignal) => readFormPublicationStatus(await api.get<unknown>(publicationPath(id, requestId), { signal }), id, requestId);
 
 export async function fetchFormPreview(id: string, versionId: string, culture: "es" | "en", signal?: AbortSignal) { return readFormPreview(await api.get<unknown>(`/api/forms/definitions/${formId(id)}/versions/${formId(versionId)}/preview?${new URLSearchParams({culture})}`, { signal, cache: "no-store" })); }

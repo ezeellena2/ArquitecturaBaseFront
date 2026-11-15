@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/shared/api/ApiError";
-import { acceptFormPublication, fetchFormPublication } from "../api/forms";
+import { acceptFormPublication, discardFormPublication, fetchFormPublication } from "../api/forms";
 import { UnsupportedFormResponse, publicationPath, type FormPublicationProjection, type FormPublicationCheck, type FormPublicationReceipt, type FormPublicationStatus } from "../api/response";
 import type { DraftEditorValue, FormPublicationWriteBody } from "../model";
 import { canReadForms, type FormReadScope } from "./useFormQueries";
@@ -89,6 +89,26 @@ export function useFormPublication(scope: FormReadScope) {
       update({ ...current.current, error, busy: false, canReplay: current.current.phase === "Unconfirmed" && missing });
     } finally { if (flight.current === controller) flight.current = null; }
   }, [owns, alive, update]);
+  // The way out of a publication that stays unconfirmed: whoever can publish closes it as failed, and the status that follows says so.
+  const discard = useCallback(async () => {
+    const known = current.current.status ?? current.current.receipt ?? current.current.reference;
+    if (!owns || !active.current || flight.current || !known || current.current.phase !== "Accepted" || current.current.status?.state !== "Uncertain") return;
+    const controller = new AbortController(); flight.current = controller;
+    update({ ...current.current, error: null, busy: true, canReplay: false });
+    try {
+      await discardFormPublication(known.definitionId, known.requestId, known.draftRevision, controller.signal);
+    } catch (error) {
+      if (!alive(controller)) return;
+      if (error instanceof ApiError && error.status === 401) { update(empty()); return; }
+      // Someone closed it first: the status tells what happened.
+      const closed = error instanceof ApiError && error.status === 404 && error.code === "Forms.Publication.NotFound";
+      update({ ...current.current, error: closed ? null : error, busy: false });
+      if (!closed) return;
+    } finally { if (flight.current === controller) flight.current = null; }
+    if (!alive(controller)) return;
+    update({ ...current.current, busy: false });
+    return consult();
+  }, [owns, alive, update, consult]);
   const resume = useCallback(async (definitionId: string, projection: FormPublicationProjection) => {
     const operation = projection.currentOperation;
     if (!owns || !active.current || flight.current || !operation?.requestId
@@ -112,12 +132,13 @@ export function useFormPublication(scope: FormReadScope) {
   const publishedOnAcceptance = session.receipt?.state === "Published" && !session.status;
   useEffect(() => {
     const state = session.status?.state ?? session.receipt?.state;
-    if (!owns || session.phase !== "Accepted" || session.busy || session.error || !publishedOnAcceptance && (state === "Published" || state === "Failed" || state === "Uncertain")) return;
-    const delay = publishedOnAcceptance ? 0 : session.status?.nextCheckAtUtc ? Math.min(300000, Math.max(1000, Date.parse(session.status.nextCheckAtUtc) - Date.now())) : 30000;
+    if (!owns || session.phase !== "Accepted" || session.busy || session.error || !publishedOnAcceptance && (state === "Published" || state === "Failed")) return;
+    // While it says «sin confirmar» it keeps asking, with a long wait: the server asks Meta again less and less often.
+    const delay = publishedOnAcceptance ? 0 : session.status?.nextCheckAtUtc ? Math.min(300000, Math.max(state === "Uncertain" ? 30000 : 1000, Date.parse(session.status.nextCheckAtUtc) - Date.now())) : state === "Uncertain" ? 60000 : 30000;
     const timer = window.setTimeout(() => { void consult(); }, delay);
     return () => window.clearTimeout(timer);
   }, [owns, session.phase, session.busy, session.error, session.status?.state, session.status?.nextCheckAtUtc, session.receipt?.state, publishedOnAcceptance, consult]);
   const visible = owns ? session : empty();
   return { phase: visible.phase, receipt: visible.receipt, status: visible.status, error: visible.error, busy: visible.busy,
-    aggregate: visible.reference, startedHere: visible.attempt !== null, canReplay: visible.canReplay, confirmed: visible.receipt !== null || visible.status !== null || visible.reference !== null, accept, consult, replay, resetRejected, resume };
+    aggregate: visible.reference, startedHere: visible.attempt !== null, canReplay: visible.canReplay, confirmed: visible.receipt !== null || visible.status !== null || visible.reference !== null, accept, consult, replay, discard, resetRejected, resume };
 }
