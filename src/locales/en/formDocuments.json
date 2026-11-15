@@ -258,7 +258,7 @@
     "standardUnavailable": "“{{name}}” is no longer in the library.",
     "standardLoadFailed": "We could not read the library.",
     "recognition": "How to recognize it",
-    "recognitionHelp": "What documents of this kind have in common. With it the AI recognizes the next ones that arrive by WhatsApp.",
+    "recognitionHelp": "The AI wrote it from a received document: review it before saving. It is what documents of this kind have in common; with it the AI recognizes the next ones that arrive by WhatsApp.",
     "recognitionRequired": "Write how to recognize it.",
     "questions_one": "Questions ({{count}})",
     "questions_other": "Questions ({{count}})",

@@ -1721,7 +1721,7 @@
     "lookupsCount_other": "{{count}} cruces con catálogos",
     "enabled": "Leer los documentos que lleguen por WhatsApp",
     "recognition": "Cómo reconocerlo",
-    "recognitionHelp": "Para la IA: qué es el documento y cómo distinguirlo de otro. Escribí lo propio de tu negocio, como de quién es la cuenta de destino.",
+    "recognitionHelp": "Para la IA: qué es el documento y cómo distinguirlo de otro. Escribí lo propio de tu negocio, como de quién es la cuenta de destino. Si el formulario lo armó la IA a partir de un documento recibido, este texto lo escribió ella: revisalo.",
     "recognitionRequired": "Escribí cómo reconocer el documento.",
     "standardData": "Datos del estándar",
     "standardDataHelp": "«Agregar» fijó qué pregunta recibe cada dato de «{{name}}», versión {{version}}, y no se cambia. Cambiarle el nombre o el lugar a una pregunta no corta la lectura, y su validación no se apaga.",

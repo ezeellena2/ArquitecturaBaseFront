@@ -258,7 +258,7 @@
     "standardUnavailable": "«{{name}}» ya no está en la biblioteca.",
     "standardLoadFailed": "No pudimos leer la biblioteca.",
     "recognition": "Cómo reconocerlo",
-    "recognitionHelp": "Lo que tienen en común los documentos de este tipo. Con esto la IA reconoce los próximos que lleguen por WhatsApp.",
+    "recognitionHelp": "Lo escribió la IA a partir de un documento recibido: revisalo antes de guardar. Es lo que tienen en común los documentos de este tipo; con esto la IA reconoce los próximos que lleguen por WhatsApp.",
     "recognitionRequired": "Escribí cómo reconocerlo.",
     "questions_one": "Preguntas ({{count}})",
     "questions_other": "Preguntas ({{count}})",

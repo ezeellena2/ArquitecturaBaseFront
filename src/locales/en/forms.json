@@ -1721,7 +1721,7 @@
     "lookupsCount_other": "{{count}} catalog lookups",
     "enabled": "Read the documents that arrive by WhatsApp",
     "recognition": "How to recognize it",
-    "recognitionHelp": "For the AI: what the document is and how to tell it from another one. Write what is particular to your business, such as whose the destination account is.",
+    "recognitionHelp": "For the AI: what the document is and how to tell it from another one. Write what is particular to your business, such as whose the destination account is. If the AI built the form from a received document, it wrote this text: review it.",
     "recognitionRequired": "Write how to recognize the document.",
     "standardData": "The standard's data",
     "standardDataHelp": "“Add” set which question receives each datum of “{{name}}”, version {{version}}, and it does not change. Renaming or moving a question does not stop the reading, and its validation is not turned off.",
