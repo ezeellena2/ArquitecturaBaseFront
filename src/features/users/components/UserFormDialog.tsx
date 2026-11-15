@@ -121,8 +121,13 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
 
   const mutation = useMutation({
     mutationFn: (body: CreateUserBody) => createUser(body),
-    onSuccess: async () => {
-      notify({ id: "features/users/components/UserFormDialog:1", kind: "success", message: t("create.success") });
+    onSuccess: async (result) => {
+      // Con el correo o el número de una cuenta eliminada, el backend la restaura en vez de crear otra (N4).
+      notify({
+        id: "features/users/components/UserFormDialog:1",
+        kind: "success",
+        message: t(result.restored ? "create.restored" : "create.success"),
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
         // El alta/edición/borrado cambia el `userCount` de los roles: sin esto, /roles muestra el conteo

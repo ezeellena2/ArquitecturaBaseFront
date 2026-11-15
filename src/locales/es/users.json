@@ -42,7 +42,8 @@
     "submit": "Crear",
     "submitAndInvite": "Crear e invitar",
     "creating": "Creando…",
-    "success": "Listo: ya puede ingresar."
+    "success": "Listo: ya puede ingresar.",
+    "restored": "Listo: ese correo o ese número eran de una cuenta eliminada. La restauramos con su historia y sólo con los datos que cargaste; ya puede ingresar."
   },
   "invitation": {
     "send": "Mandarle una invitación",

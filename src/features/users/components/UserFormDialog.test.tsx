@@ -18,9 +18,12 @@ vi.mock("react-oidc-context", async () => {
 
 const newUserId = "0199a0c0-0000-7000-8000-000000000001";
 
+/// Lo que responde el alta de una cuenta nueva: su id, y que no se restauró una eliminada.
+const createdUser = { id: newUserId, restored: false };
+
 /// El listado de un admin, los medios de ingreso que se pidan y el alta, que guarda lo que recibió y responde lo que se
-/// le pase (por defecto, el id de la cuenta nueva).
-function withCreate(methods: LoginMethods, respond: () => Response = () => HttpResponse.json(newUserId)) {
+/// le pase (por defecto, la cuenta nueva).
+function withCreate(methods: LoginMethods, respond: () => Response = () => HttpResponse.json(createdUser)) {
   const created: unknown[] = [];
 
   server.use(
@@ -198,13 +201,13 @@ describe("UserFormDialog", () => {
       const answered = new Promise<void>((resolve) => {
         release = resolve;
       });
-      const created = withCreate(whatsappLoginMethods, () => HttpResponse.json(newUserId));
+      const created = withCreate(whatsappLoginMethods, () => HttpResponse.json(createdUser));
       server.use(
         http.post("/api/users", async ({ request }) => {
           created.push(await request.json());
           await answered;
 
-          return HttpResponse.json(newUserId);
+          return HttpResponse.json(createdUser);
         }),
       );
 
@@ -219,6 +222,36 @@ describe("UserFormDialog", () => {
       expect(created).toHaveLength(1);
 
       release();
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nuevo usuario" })).not.toBeInTheDocument());
+    });
+
+    it("says the person can sign in when the account is new", async () => {
+      withCreate(whatsappLoginMethods);
+      const success = vi.spyOn(toast, "success");
+
+      const dialog = await openNewUser();
+      await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
+      await userEvent.click(dialog.getByRole("button", { name: "Crear" }));
+
+      await waitFor(() => expect(success).toHaveBeenCalledWith("Listo: ya puede ingresar.", expect.anything()));
+    });
+
+    it("says it restored the account when the email or the number were of a deleted one", async () => {
+      // N4: el backend restaura la cuenta eliminada, sólo con lo que se cargó, y lo dice; la pantalla no dice «creado».
+      withCreate(whatsappLoginMethods, () => HttpResponse.json({ id: newUserId, restored: true }));
+      const success = vi.spyOn(toast, "success");
+
+      const dialog = await openNewUser();
+      await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "vuelve@example.com");
+      await userEvent.click(dialog.getByRole("button", { name: "Crear" }));
+
+      await waitFor(() =>
+        expect(success).toHaveBeenCalledWith(
+          "Listo: ese correo o ese número eran de una cuenta eliminada. La restauramos con su historia y sólo con los datos que cargaste; ya puede ingresar.",
+          expect.anything(),
+        ),
+      );
+      expect(success).not.toHaveBeenCalledWith("Listo: ya puede ingresar.", expect.anything());
       await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nuevo usuario" })).not.toBeInTheDocument());
     });
 

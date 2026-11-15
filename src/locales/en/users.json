@@ -42,7 +42,8 @@
     "submit": "Create",
     "submitAndInvite": "Create and invite",
     "creating": "Creating…",
-    "success": "Done: they can sign in now."
+    "success": "Done: they can sign in now.",
+    "restored": "Done: that email or number belonged to a deleted account. We restored it with its history and only the details you entered; they can sign in now."
   },
   "invitation": {
     "send": "Send them an invitation",

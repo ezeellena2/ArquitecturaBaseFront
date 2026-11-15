@@ -163,9 +163,15 @@ export function fetchUser(id: string): Promise<UserDetail> {
   return api.get<UserDetail>(`/api/users/${id}`);
 }
 
-/// Devuelve el id del usuario nuevo: el handler es `ICommand<Guid>` y `ToHttpResult` responde 200 con el valor.
-export function createUser(body: CreateUserBody): Promise<string> {
-  return api.post<string>("/api/users", body);
+/// Lo que responde `POST /api/users` (201, `CreateUserResponse` del backend): el id de la cuenta y si era una borrada
+/// que se restauró con ese correo o ese número (N4). Una restaurada vuelve sólo con lo que cargó el admin.
+export interface CreateUserResult {
+  readonly id: string;
+  readonly restored: boolean;
+}
+
+export function createUser(body: CreateUserBody): Promise<CreateUserResult> {
+  return api.post<CreateUserResult>("/api/users", body);
 }
 
 export function updateUser(id: string, body: UpdateUserBody): Promise<void> {
