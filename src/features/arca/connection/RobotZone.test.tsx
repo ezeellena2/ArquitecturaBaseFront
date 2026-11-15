@@ -145,6 +145,24 @@ describe("the robot zone", () => {
     expect(within(screen.getByRole("region", { name: "Con tu clave" })).queryByText(/Pendiente/)).not.toBeInTheDocument();
   });
 
+  it("tries the platform key ARCA rejected again only when asked (H5)", async () => {
+    run = { enabled: true, company: side({ state: "Succeeded", completedSteps: [] }),
+      platform: side({ state: "Failed", failure: "LoginRejected", failedStep: "platform.login" }) };
+    let rearms = 0;
+    server.use(http.post("/api/arca/connection/robot-runs/current/platform-rearm", () => {
+      rearms++;
+      run = { enabled: true, company: side({ state: "Succeeded", completedSteps: [] }), platform: side({ state: "Waiting" }) };
+      return HttpResponse.json(run, { status: 202 });
+    }));
+    renderZone();
+
+    expect(await screen.findByText(/no la vuelve a probar solo/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Volver a probar la clave de la plataforma" }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Volver a probar la clave de la plataforma" })).not.toBeInTheDocument());
+    expect(rearms).toBe(1);
+  });
+
   it("tells that the platform finishes by hand when its side stopped", async () => {
     run = {
       enabled: true,

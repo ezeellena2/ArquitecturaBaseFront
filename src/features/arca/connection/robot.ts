@@ -27,6 +27,8 @@ export const fetchArcaRobotRun = (signal?: AbortSignal) => api.get<ArcaRobotRun>
 export const startArcaRobotRun = (request: StartArcaRobotRequest) => api.post<ArcaRobotRun>("/api/arca/connection/robot-runs", request);
 /// El cliente frenado hizo a mano los pasos de la guía (RB3-A): la plataforma sigue con aceptar, asignar y confirmar.
 export const completeArcaRobotByHand = () => api.post<ArcaRobotRun>("/api/arca/connection/robot-runs/current/manual-completion");
+/// H5: después de actualizar la clave de la plataforma que ARCA rechazó, la vuelve a probar (`arca.manage`).
+export const rearmArcaRobotPlatform = () => api.post<ArcaRobotRun>("/api/arca/connection/robot-runs/current/platform-rearm");
 
 /// Mientras algún lado trabaja, o la plataforma espera con el cliente terminado, el avance se vuelve a leer cada dos segundos.
 export function robotIsMoving(run: ArcaRobotRun | undefined): boolean {

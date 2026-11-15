@@ -15,7 +15,7 @@ import { StepList } from "@/shared/ui/StepList";
 import { testArcaConnection, type ArcaConnection, type ArcaTest } from "./api";
 import { ArcaZone } from "./ArcaZone";
 import { formatCuit, normalizeCuit } from "./model";
-import { arcaRobotQueryKey, completeArcaRobotByHand, robotPointOfSaleStep, startArcaRobotRun, useArcaRobotRun, type ArcaRobotSide } from "./robot";
+import { arcaRobotQueryKey, completeArcaRobotByHand, rearmArcaRobotPlatform, robotPointOfSaleStep, startArcaRobotRun, useArcaRobotRun, type ArcaRobotSide } from "./robot";
 import { companyStepsOf, guideFallbackOf, platformStepsOf, robotViewOf, stepsOf, type RobotStep } from "./robotSteps";
 import { useArcaAction } from "./useArcaAction";
 import { useArcaFormat } from "./useArcaFormat";
@@ -76,6 +76,11 @@ export function RobotZone({ step, available = true, connection, canManage, platf
     if (next) queryClient.setQueryData(arcaRobotQueryKey, next);
   }
 
+  async function rearmPlatform() {
+    const next = await action.run("rearm", rearmArcaRobotPlatform);
+    if (next) queryClient.setQueryData(arcaRobotQueryKey, next);
+  }
+
   if (!available) return <ArcaZone step={step} title={t("title")} state="off" />;
   if (robot.isPending) return <ArcaZone step={step} title={t("title")} state="open"><Skeleton className="h-16" /></ArcaZone>;
 
@@ -100,12 +105,17 @@ export function RobotZone({ step, available = true, connection, canManage, platf
   const companySteps = stepsOf(company, companyStepsOf(delegatedServices, familySteps));
   const platformSteps = stepsOf(platformSide, platformStepsOf(delegatedServices, authorizedServices));
   const platformStopped = company?.state === "Succeeded" && platformSide?.state === "Failed";
+  // H5: ARCA rechazó la clave de la plataforma: el robot no la vuelve a probar solo; lo pide quien administra ARCA.
+  const platformRejected = platformSide?.state === "Failed" && platformSide.failure === "LoginRejected";
   const waiting = company?.state === "Succeeded" && !done;
   return <ArcaZone step={step} title={t("title")} state={done ? "done" : "open"}
     summary={pointOfSale ? t("summary", { pointOfSale: pointOfSale.padStart(4, "0") }) : t("summaryWithoutPoint")}
     actions={<>{badge}{waiting && canManage ? <Button variant="outline" pending={action.pending === "check"} disabled={action.pending !== null}
-      onClick={() => void check()}>{t(action.pending === "check" ? "checking" : "check")}</Button> : null}</>}>
-    {platformStopped ? <Banner tone="warning">{t("platformStopped")}</Banner> : null}
+      onClick={() => void check()}>{t(action.pending === "check" ? "checking" : "check")}</Button> : null}
+      {platformRejected && canManage ? <Button variant="outline" pending={action.pending === "rearm"} disabled={action.pending !== null}
+        onClick={() => void rearmPlatform()}>{t("rearmPlatform")}</Button> : null}</>}>
+    {platformRejected ? <Banner tone="warning">{t("platformRejected", { platform: platform.name })}</Banner>
+      : platformStopped ? <Banner tone="warning">{t("platformStopped")}</Banner> : null}
     <div className="grid gap-5 sm:grid-cols-2">
       <RobotSteps title={t("columns.company")} steps={companySteps} side={company} label={stepLabel} retryAt={format.time} />
       <RobotSteps title={t("columns.platform", { platform: platform.name })} steps={platformSteps} side={platformSide} label={stepLabel}

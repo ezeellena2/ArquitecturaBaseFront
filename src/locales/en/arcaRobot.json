@@ -46,6 +46,8 @@
   "pointOfSale": "Point of sale {{number}}",
   "retryAt": "ARCA did not answer. It tries again at {{time}}",
   "platformStopped": "The platform has to finish this step by hand; we already let them know.",
+  "platformRejected": "ARCA did not accept the key of {{platform}}. The robot does not try it again by itself, so that it is not blocked: once it is updated, tap “Try the platform key again”.",
+  "rearmPlatform": "Try the platform key again",
   "check": "Check",
   "checking": "Checking…",
   "stopped": {
