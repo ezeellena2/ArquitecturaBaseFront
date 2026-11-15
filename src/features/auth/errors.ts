@@ -67,6 +67,8 @@ export function loginRedirectErrorMessage(code: string, t: Translate): string {
       return t("login.errors.googleFailed");
     case "Auth.ExternalLogin.EmailNotVerified":
       return t("login.errors.googleEmailNotVerified");
+    case "Auth.ExternalLogin.AccountEmailNotConfirmed":
+      return t("login.errors.accountEmailNotConfirmed");
     default:
       return t("login.errors.unknown");
   }

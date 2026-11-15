@@ -371,6 +371,15 @@ describe("LoginPage", () => {
       expect(await screen.findByRole("alert")).toHaveTextContent("No pudimos completar el ingreso con Google.");
     });
 
+    /// N4 del backend (2026-11-15): Google no se vincula por el correo a una cuenta que todavía no lo confirmó.
+    it("asks to enter first with a code when the account has not confirmed its email", async () => {
+      await arriveWithError("Auth.ExternalLogin.AccountEmailNotConfirmed");
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Esa cuenta todavía no confirmó su correo. Entrá primero con un código por correo; después vas a poder usar Google.",
+      );
+    });
+
     it("has a generic text for a code it does not know", async () => {
       await arriveWithError("Auth.Something.New");
 
