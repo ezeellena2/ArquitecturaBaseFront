@@ -37,7 +37,8 @@ Los tableros no lo dicen, o el contrato no lo permite; se resolvió con la opci�
 - **El estado de cada servicio** sale de la prueba de esta visita. El servidor guarda sólo el resultado general y la hora,
   y un servicio sumado después de la última prueba no se probó: al volver a la pantalla, los renglones quedan sin estado
   (la banda dice cuándo se probó y el título, si la conexión está activa), y «Sin probar» aparece sólo si nunca hubo una
-  prueba.
+  prueba. Desde B4 (2026-11-15), sumar un servicio a una conexión activa la deja «Requiere atención» hasta que una
+  prueba dé verde, porque antes hay que autorizarlo en ARCA; la pantalla no prueba sola.
 - **Los resúmenes plegados** dicen lo que el contrato tiene: el pedido, «Pedido generado para el alias «…»» (no guarda la
   fecha); el certificado, «Vence el …» (no guarda el nombre del archivo).
 - **El punto de venta** muestra el número y el tipo de emisión que devuelve `FEParamGetPtosVenta`, que no trae domicilio;
