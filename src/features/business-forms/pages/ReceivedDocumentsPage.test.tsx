@@ -296,6 +296,32 @@ describe("the panel", () => {
     expect(first!.answers.some(answer => answer.fieldId === receivedDocumentFields.destinationAccount)).toBe(false);
   }, 20_000);
 
+  it("warns that a response repeats a saved one and passes it again with the reviewer's mark", async () => {
+    const { requests, write } = setup();
+    let attempt = 0;
+    server.use(http.post("/api/forms/documents/:id/records", write(id => ++attempt === 1
+      ? HttpResponse.json({ status: 409, code: "Forms.ReceivedDocument.Repeated", detail: "Ya hay una respuesta.", recordNumber: "REC-000007" }, { status: 409 })
+      : HttpResponse.json({ documentId: id, recordId: requestId, number: "REC-000125", state: "Received" }))));
+    const user = userEvent.setup();
+    renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
+    const frame = await panel();
+    const operation = await within(frame).findByRole("textbox", { name: /^Número de operación/ });
+    await user.clear(operation);
+    await user.click(operation);
+    await user.paste("6120093745");
+    await user.selectOptions(within(frame).getByRole("combobox", { name: /^Moneda/ }), "Dólares");
+    await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "warning",
+      message: "Ya hay una respuesta con los mismos datos de este documento: REC-000007.", action: expect.objectContaining({ label: "Pasarlo igual" }) })));
+    const warning = vi.mocked(notify).mock.calls.map(([notice]) => notice).find(notice => notice.action?.label === "Pasarlo igual")!;
+    warning.action!.onClick();
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Se cargó como REC-000125." })));
+    const [first, second] = requests.writes.map(entry => entry.body as { requestId: string; confirmRepeated?: boolean });
+    expect(first!.confirmRepeated).toBeUndefined();
+    expect(second).toMatchObject({ confirmRepeated: true });
+    expect(second!.requestId).not.toBe(first!.requestId);
+  }, 20_000);
+
   it("asks for a required choice that was not read, with its options, before sending", async () => {
     const base = receivedDocumentDetailFixture(receivedDocumentIds.forReview);
     const candidate = base.proposal!.candidates[0]!;

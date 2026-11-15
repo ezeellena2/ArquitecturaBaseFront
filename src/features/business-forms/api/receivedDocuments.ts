@@ -221,7 +221,8 @@ export async function fetchReceivedDocumentExtraction(id: string, requestId: str
 }
 
 // Passing it to its form with what was reviewed, idempotent by the request's UUID: the same request answers its first response.
-export async function passReceivedDocument(id: string, body: { requestId: string; versionId: string; expectedRevision: number; answers: readonly ReceivedDocumentAnswer[] },
+// A pass that repeats a saved response answers 409 `Forms.ReceivedDocument.Repeated`; the reviewer who saw it passes it again with `confirmRepeated`.
+export async function passReceivedDocument(id: string, body: { requestId: string; versionId: string; expectedRevision: number; answers: readonly ReceivedDocumentAnswer[]; confirmRepeated?: boolean },
   signal?: AbortSignal): Promise<ReceivedDocumentRecord> {
   const result = readReceivedDocumentRecord(await api.post<unknown>(path(id) + "/records", body, { signal, cache: "no-store" }));
   if (result.documentId.toLowerCase() !== id.toLowerCase()) throw new UnsupportedFormResponse();

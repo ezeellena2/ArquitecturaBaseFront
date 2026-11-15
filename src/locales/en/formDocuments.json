@@ -182,6 +182,9 @@
     "notSaved": "It was not passed to the form.",
     "review": "Check {{label}}.",
     "failed": "It could not be passed to the form.",
+    "repeated": "There is already a response with this document's data.",
+    "repeatedOf": "There is already a response with this document's data: {{number}}.",
+    "anyway": "Pass it anyway",
     "noForm": "Choose a form to pass it."
   },
   "record": {

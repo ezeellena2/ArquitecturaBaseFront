@@ -182,6 +182,9 @@
     "notSaved": "No se pasó al formulario.",
     "review": "Revisá {{label}}.",
     "failed": "No se pudo pasar al formulario.",
+    "repeated": "Ya hay una respuesta con los mismos datos de este documento.",
+    "repeatedOf": "Ya hay una respuesta con los mismos datos de este documento: {{number}}.",
+    "anyway": "Pasarlo igual",
     "noForm": "Elegí un formulario para pasarlo."
   },
   "record": {

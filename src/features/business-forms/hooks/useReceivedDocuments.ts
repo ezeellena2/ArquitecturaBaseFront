@@ -330,7 +330,7 @@ export function useReceivedDocumentReview(detail: ReceivedDocumentDetail | undef
   }, [documentId, readAgain, say, t]);
 
   const problems = candidate ? receivedDocumentProblems(candidate, draft.values) : {};
-  const submit = async (): Promise<string | null> => {
+  const submit = async (confirmRepeated = false): Promise<string | null> => {
     if (!detail || !candidate || busy.current.has(detail.document.id) || cooldown.isRunning) return null;
     const first = candidate.values.find(value => problems[value.fieldId]);
     if (first) { setDraft(current => ({ ...current, attempted: true })); return first.fieldId; }
@@ -343,7 +343,8 @@ export function useReceivedDocumentReview(detail: ReceivedDocumentDetail | undef
     start(document.id, { work: "pass" });
     hush(document.id);
     try {
-      const record = await passReceivedDocument(document.id, { requestId: request.requestId, versionId: candidate.versionId, expectedRevision: document.revision, answers });
+      const record = await passReceivedDocument(document.id, { requestId: request.requestId, versionId: candidate.versionId, expectedRevision: document.revision, answers,
+        ...(confirmRepeated ? { confirmRepeated: true } : {}) });
       if (pass.current === request) pass.current = null;
       say(document.id, { kind: "success", message: t("pass.done", { number: record.number }) });
       await readAgain(document.id);
@@ -354,6 +355,14 @@ export function useReceivedDocumentReview(detail: ReceivedDocumentDetail | undef
         if (live.current) setDraft(current => current.base === asked ? { ...current, attempted: true, server } : current);
         say(document.id, { kind: "error", message: t("pass.notSaved"), description: marked ? t("pass.review", { label: marked.label }) : error.detail ?? undefined });
         return marked?.fieldId ?? null;
+      }
+      // F13: it repeats a saved response: the reviewer is told which one and passes it anyway from the notice (a request of its own: the
+      // server answers a rejection again to the same one), or reviews it first.
+      if (error instanceof ApiError && error.status === 409 && error.code === "Forms.ReceivedDocument.Repeated") {
+        const number = typeof error.problem.recordNumber === "string" ? error.problem.recordNumber : null;
+        say(document.id, { kind: "warning", message: number ? t("pass.repeatedOf", { number }) : t("pass.repeated"),
+          action: { label: t("pass.anyway"), onClick: () => { pass.current = null; void submit(true); } } });
+        return null;
       }
       // Its form was published again after it was read: its data are read again for it, from the notice.
       const own = document.form;
