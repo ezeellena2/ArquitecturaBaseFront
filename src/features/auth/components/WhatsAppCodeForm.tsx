@@ -12,6 +12,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { notifyOperationalError } from "@/shared/ui/notifications";
 import { codeRequestErrorMessage, phoneFieldError } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Button } from "@/shared/ui/button";
 import { PhoneField } from "@/shared/ui/PhoneField";
 import { FormField } from "@/shared/ui/FormField";
@@ -33,6 +34,7 @@ interface WhatsAppCodeFormProps extends CodeRequestFormProps {
 /// la respuesta es la misma exista o no la cuenta, y un 429 frena el botón con su cuenta regresiva.
 export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, registration = false, displayName, onDisplayNameChange }: WhatsAppCodeFormProps) {
   const { t } = useTranslation("auth");
+  const waitText = useWaitText();
   const navigate = useNavigate();
   const [country, setCountry] = useState(countries[0] ?? "");
   const [formError, setFormError] = useState<string | undefined>();
@@ -122,7 +124,7 @@ export function WhatsAppCodeForm({ returnUrl, countries, notice, onSubmitStart, 
       <Button type="submit" className="w-full" pending={isSubmitting} disabled={isRetryLimited}>
         {isSubmitting
           ? t("common:code.sending")
-          : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+          : isRetryLimited ? t("common:code.retryIn", { wait: waitText(retrySeconds) }) : t("common:code.send")}
       </Button>
     </form>
   );

@@ -8,6 +8,7 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataList } from "@/shared/ui/DataList";
@@ -64,6 +65,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   // A failure goes to the common notice (premise 5.9); the table keeps «Reintentar», which waits what a 429 asks.
   const library = useFormLibrary(scope);
   const wait = useCountdown(0);
+  const waitText = useWaitText();
   const waitAsked = library.error instanceof ApiError ? library.error.retryAfterSeconds : undefined;
   const { restart } = wait;
   useEffect(() => { if (waitAsked !== undefined) restart(waitAsked); }, [waitAsked, library.errorUpdatedAt, restart]);
@@ -163,7 +165,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
       <DataTable columns={columns} rows={rows} rowKey={row => row.kind + ":" + row.key} isLoading={library.isPending}
         hasData={library.data !== undefined}
         error={failure && !["cancelled", "session"].includes(failure.kind) ? t("library.loadError") : undefined}
-        onRetry={() => { void library.refetch(); }} retryReason={wait.isRunning ? t("common:code.retryIn", { seconds: wait.seconds }) : null}
+        onRetry={() => { void library.refetch(); }} retryReason={wait.isRunning ? t("common:code.retryIn", { wait: waitText(wait.seconds) }) : null}
         emptyTitle={filtered ? t("library.noMatches") : t("library.emptyTitle")}
         emptyAction={filtered ? <Button type="button" variant="outline" onClick={() => update({ search: undefined, availability: undefined })}>{t("clearFilters")}</Button> : undefined} />
     </Surface>

@@ -23,6 +23,7 @@ import {
 } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -130,6 +131,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const { channel, onClose, focusFallback } = props;
   const countries = props.channel === "whatsapp" ? props.countries : [];
   const { t } = useTranslation("profile");
+  const waitText = useWaitText();
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose(true, focusFallback);
   const sentToId = useId();
@@ -502,7 +504,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               <Button type="submit" pending={send.isPending} disabled={isRetryLimited}>
                 {send.isPending
                   ? t("common:code.sending")
-                  : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+                  : isRetryLimited ? t("common:code.retryIn", { wait: waitText(retrySeconds) }) : t("common:code.send")}
               </Button>
             </DialogFooter>
           </form>
@@ -562,7 +564,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
             >
               {resend.isPending
                 ? t("common:code.resending")
-                : isResendWaiting ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
+                : isResendWaiting ? t("common:code.resendIn", { wait: waitText(resendSeconds) }) : t("common:code.resend")}
             </Button>
 
             {/* N11: el código que confirma el cambio, al medio que la cuenta ya tiene, con su texto, su error y su
@@ -612,7 +614,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
                   {requestConfirmation.isPending
                     ? t(confirmationSent ? "common:code.resending" : "common:code.sending")
                     : isConfirmationWaiting
-                      ? t(`${confirmationKey}.${confirmationSent ? "resendIn" : "sendIn"}`, { seconds: confirmationSeconds })
+                      ? t(`${confirmationKey}.${confirmationSent ? "resendIn" : "sendIn"}`, { wait: waitText(confirmationSeconds) })
                       : t(`${confirmationKey}.${confirmationSent ? "resend" : "send"}`)}
                 </Button>
               </>

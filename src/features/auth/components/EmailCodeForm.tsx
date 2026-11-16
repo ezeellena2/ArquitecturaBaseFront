@@ -12,6 +12,7 @@ import { notifyOperationalError } from "@/shared/ui/notifications";
 import { codeRequestErrorMessage } from "@/shared/api/codeErrors";
 import { applyApiErrorToForm } from "@/shared/api/formErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -36,6 +37,7 @@ export interface CodeRequestFormProps {
 /// El pedido del código por correo, en `/login`.
 export function EmailCodeForm({ returnUrl, notice, onSubmitStart, registration = false, displayName, onDisplayNameChange }: CodeRequestFormProps) {
   const { t } = useTranslation("auth");
+  const waitText = useWaitText();
   const navigate = useNavigate();
   const [formError, setFormError] = useState<string | undefined>();
   const { seconds: retrySeconds, isRunning: isRetryLimited, restart: restartRetry } = useCountdown(0);
@@ -113,7 +115,7 @@ export function EmailCodeForm({ returnUrl, notice, onSubmitStart, registration =
       <Button type="submit" className="w-full" pending={isSubmitting} disabled={isRetryLimited}>
         {isSubmitting
           ? t("common:code.sending")
-          : isRetryLimited ? t("common:code.retryIn", { seconds: retrySeconds }) : t("common:code.send")}
+          : isRetryLimited ? t("common:code.retryIn", { wait: waitText(retrySeconds) }) : t("common:code.send")}
       </Button>
     </form>
   );

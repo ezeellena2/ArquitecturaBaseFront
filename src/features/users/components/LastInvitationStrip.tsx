@@ -23,6 +23,7 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { AlertCircleIcon, AlertTriangleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 
 type IconComponent = ComponentType<{ className?: string }>;
 
@@ -238,6 +239,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
   const [isOpen, setIsOpen] = useState(false);
   const [errors, setErrors] = useState<ResendErrors>({});
   const { seconds, wait } = useResendWait(invitation, receivedAt);
+  const waitText = useWaitText();
 
   /// Al cerrar el panel, el foco vuelve a "Reenviar invitación". Si quedó apagado por la espera (con su motivo, en
   /// `aria-disabled`: MA1-A), no lo toma: lo toma la franja, que dice qué pasó. Puede estar apagado aunque se cierre con Cancelar: el
@@ -428,7 +430,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
           {/* El botón queda siempre en el mismo lugar y con la misma forma: la espera es su motivo (`DisabledReason`), no
               un texto debajo. El contorno lo pide sólo una invitación que no llegó. */}
           <div className="col-start-2 row-start-3 mt-2 flex justify-self-start sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:justify-self-end">
-            <DisabledReason reason={waiting ? t("lastInvitation.resendIn", { seconds }) : null}>
+            <DisabledReason reason={waiting ? t("lastInvitation.resendIn", { wait: waitText(seconds) }) : null}>
               <Button
                 ref={resendRef}
                 type="button"

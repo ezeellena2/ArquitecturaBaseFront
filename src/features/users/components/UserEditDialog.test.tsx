@@ -1144,6 +1144,29 @@ describe("UserEditDialog", () => {
         expect(resend).toHaveAccessibleDescription("Podés reenviar en 42 s");
       });
 
+      // N7: el tope diario de las invitaciones por correo pide esperar hasta un día: desde una hora, en horas y minutos.
+      it("shows a daily limit of invitations by email in hours and minutes", async () => {
+        withResend(
+          invitedLaura,
+          detailOf(invitedLaura, { lastInvitation: invitation() }),
+          problem(429, {
+            code: "Users.Invitation.DailyLimitReached",
+            detail: "Por hoy no se pueden mandar más invitaciones por correo, y no se guardó nada. Si estás dando de alta a alguien, podés hacerlo sin invitación y mandársela más tarde.",
+            retryAfter: 82345,
+          }),
+        );
+
+        const dialog = await openEdit("laura.rios@gmail.com");
+        await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
+        const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
+        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
+
+        await waitFor(() =>
+          expect(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" })).toHaveAccessibleDescription("Podés reenviar en 22 h 53 min"),
+        );
+      });
+
       it("closes with Cancelar and gives the focus back to Reenviar invitación", async () => {
         const sent = withResend(invitedLaura, detailOf(invitedLaura, { lastInvitation: invitation() }));
 

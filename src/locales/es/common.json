@@ -73,19 +73,24 @@
     "label": "Código",
     "send": "Enviar código",
     "sending": "Enviando…",
-    "retryIn": "Reintentá en {{seconds}} s",
+    "retryIn": "Reintentá en {{wait}}",
     "verify": "Verificar",
     "verifying": "Verificando…",
     "attemptsLeft_one": "Te queda {{count}} intento",
     "attemptsLeft_other": "Te quedan {{count}} intentos",
     "resend": "Reenviar código",
     "resending": "Reenviando…",
-    "resendIn": "Reenviar en {{seconds}} s",
+    "resendIn": "Reenviar en {{wait}}",
     "otherEmail": "Usar otro correo",
     "otherPhone": "Usar otro número",
     "sentToEmail": "Te mandamos un código a {{email}}. Vence en 10 minutos.",
     "sentToPhone": "Te mandamos un código al <phone>{{phone}}</phone>. Vence en 10 minutos.",
     "whatsappNotice": "Llega al WhatsApp de tu celular. En WhatsApp Web no se muestra."
+  },
+  "wait": {
+    "seconds": "{{seconds}} s",
+    "hours": "{{hours}} h",
+    "hoursMinutes": "{{hours}} h {{minutes}} min"
   },
   "pagination": {
     "label": "Paginado",

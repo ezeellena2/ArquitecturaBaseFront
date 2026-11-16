@@ -95,6 +95,63 @@ describe("countdown consumers after a suspended tab", () => {
     expect(requests).toBe(1);
   });
 
+  // N7: los topes diarios (del correo y de WhatsApp) piden esperar hasta un día; desde una hora la espera se lee en horas y
+  // minutos, no en «82345 s».
+  it.each([
+    ["email", "Auth.LoginCode.DailyLimitReached"],
+    ["whatsapp", "Auth.LoginCode.TooManyRequests"],
+  ])("shows a daily limit of the %s request in hours and minutes", async (channel, code) => {
+    const endpoint = channel === "email" ? "/account/login-code" : "/account/login-code/whatsapp";
+    server.use(http.post(endpoint, () => HttpResponse.json({
+      status: 429,
+      code,
+      detail: "Por hoy no se pueden mandar más códigos. Probá de nuevo más tarde.",
+      retryAfter: 82345,
+    }, { status: 429 })));
+
+    renderWithProviders(
+      <MemoryRouter>
+        {channel === "email"
+          ? <EmailCodeForm returnUrl={returnUrl} onSubmitStart={() => {}} />
+          : <WhatsAppCodeForm returnUrl={returnUrl} countries={["AR"]} onSubmitStart={() => {}} />}
+      </MemoryRouter>,
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: channel === "email" ? "Correo electrónico" : "Número de WhatsApp" }),
+      channel === "email" ? "ana@example.com" : "11 2345-6789",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Enviar código" }));
+
+    expect(await screen.findByRole("button", { name: "Reintentá en 22 h 53 min" })).toBeDisabled();
+
+    resumeAfter(82345 - 3599);
+
+    expect(screen.getByRole("button", { name: "Reintentá en 3.599 s" })).toBeDisabled();
+  });
+
+  it.each([
+    ["email", "/api/me/email/code", "Auth.LoginCode.DailyLimitReached"],
+    ["whatsapp", "/api/me/whatsapp/code", "Auth.LoginCode.TooManyRequests"],
+  ] as const)("shows a daily limit of the %s code from the profile in hours and minutes", async (channel, endpoint, code) => {
+    server.use(http.post(endpoint, () => HttpResponse.json({
+      status: 429,
+      code,
+      detail: "Por hoy no se pueden mandar más códigos. Probá de nuevo más tarde.",
+      retryAfter: 3600,
+    }, { status: 429 })));
+    renderWithProviders(channel === "email"
+      ? <VerifyDestinationDialog channel="email" onClose={() => {}} />
+      : <VerifyDestinationDialog channel="whatsapp" countries={["AR"]} onClose={() => {}} />);
+
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.type(within(dialog).getByRole("textbox", {
+      name: channel === "email" ? "Correo electrónico" : "Número de WhatsApp",
+    }), channel === "email" ? "ana@example.com" : "11 2345-6789");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+
+    expect(await within(dialog).findByRole("button", { name: "Reintentá en 1 h" })).toBeDisabled();
+  });
+
   it.each(["email", "whatsapp"])("lets the shared %s destination dialog resend and restart its deadline", async (channel) => {
     const endpoint = channel === "email" ? "/api/me/email/code" : "/api/me/whatsapp/code";
     let requests = 0;

@@ -16,6 +16,7 @@ Agrupa estado de URL, paginado, filtros, foco, migas, cuenta regresiva y guardas
   sube nada: lo hace el dueño. Se prueba con el doble `FakeMediaRecorder` de `test/mocks/mediaRecorder`.
 - `useSettledValue(valor, demora = 300)` da el valor cuando deja de cambiar por esa demora: una búsqueda o un cálculo se pide en la pausa, nunca en cada tecla; mientras cambia, queda el último.
 - `useCountdown` conserva `initialSeconds` sólo al montar y `seconds`, `isRunning`, `restart` (incluido updater funcional). Calcula contra un deadline monotónico con `performance.now`; el timer sólo recalcula y `visibilitychange` visible recupera el plazo tras suspensión. Limpiá timer/listener al desmontar y verificá StrictMode, reinicio y consumidores de acceso/verificación. Es presentación: el servidor autoriza y define los plazos.
+- `useWaitText` escribe una espera para el texto de un botón o un aviso («Reintentá en {{wait}}»): hasta una hora en segundos («45 s») y desde una hora en horas y minutos («22 h 53 min»), con los minutos redondeados para arriba, porque los topes diarios (N7: los del correo y el de WhatsApp) piden esperar hasta un día. La usan los formularios de ingreso, los diálogos del perfil, el reenvío de una invitación y la biblioteca de formularios; un texto nuevo con una espera del servidor pasa por acá, no por `{{seconds}} s`.
 
 ## Referencias
 

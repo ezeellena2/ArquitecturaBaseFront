@@ -7,6 +7,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { attemptsLeftOf, codeRequestErrorMessage, isWrongCodeError, verifyCodeErrorMessage } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
@@ -81,6 +82,7 @@ export function UnlinkWhatsAppCodeDialog({ maskedPhone, email, focusFallback, on
   const [problem, setProblem] = useState<string | undefined>();
   const [wrong, setWrong] = useState(false);
   const { seconds, isRunning, restart } = useCountdown(0);
+  const waitText = useWaitText();
 
   /// Un 409 no es del código: el perfil a la vista está viejo. Lo dice el servidor, y el diálogo se cierra.
   async function closeOnConflict(error: ApiError) {
@@ -208,7 +210,7 @@ export function UnlinkWhatsAppCodeDialog({ maskedPhone, email, focusFallback, on
               >
                 {request.isPending
                   ? t("common:code.resending")
-                  : isRunning ? t("common:code.resendIn", { seconds }) : t("common:code.resend")}
+                  : isRunning ? t("common:code.resendIn", { wait: waitText(seconds) }) : t("common:code.resend")}
               </Button>
             </>
           ) : null}
@@ -225,7 +227,7 @@ export function UnlinkWhatsAppCodeDialog({ maskedPhone, email, focusFallback, on
               <Button type="button" pending={request.isPending} disabled={isRunning} onClick={() => request.mutate()}>
                 {request.isPending
                   ? t("common:code.sending")
-                  : isRunning ? t("common:code.retryIn", { seconds }) : t("common:code.send")}
+                  : isRunning ? t("common:code.retryIn", { wait: waitText(seconds) }) : t("common:code.send")}
               </Button>
             )}
           </DialogFooter>

@@ -80,18 +80,18 @@
       "sent": "Para confirmar que sos vos, te mandamos otro código por WhatsApp al <phone>{{phone}}</phone>.",
       "unsent": "Para confirmar que sos vos, hace falta otro código, que va por WhatsApp al <phone>{{phone}}</phone>.",
       "send": "Enviar código por WhatsApp",
-      "sendIn": "Enviar por WhatsApp en {{seconds}} s",
+      "sendIn": "Enviar por WhatsApp en {{wait}}",
       "resend": "Reenviar código por WhatsApp",
-      "resendIn": "Reenviar por WhatsApp en {{seconds}} s"
+      "resendIn": "Reenviar por WhatsApp en {{wait}}"
     },
     "email": {
       "label": "Código del correo",
       "sent": "Para confirmar que sos vos, te mandamos otro código a {{email}}.",
       "unsent": "Para confirmar que sos vos, hace falta otro código, que va a {{email}}.",
       "send": "Enviar código al correo",
-      "sendIn": "Enviar al correo en {{seconds}} s",
+      "sendIn": "Enviar al correo en {{wait}}",
       "resend": "Reenviar código al correo",
-      "resendIn": "Reenviar al correo en {{seconds}} s"
+      "resendIn": "Reenviar al correo en {{wait}}"
     },
     "nowRequired": "Tu cuenta cambió mientras tanto: para confirmar que sos vos, ahora hace falta también otro código. Pedilo y escribilo abajo."
   },

@@ -92,7 +92,7 @@
     "failedHintByEmail": "The email did not go out: the mail server rejected it or we could not send it in time.",
     "uncertainHintByEmail": "We don't know whether it arrived: the mail server did not confirm the send. Check with the person before resending it.",
     "resend": "Resend invitation",
-    "resendIn": "You can resend in {{seconds}} s",
+    "resendIn": "You can resend in {{wait}}",
     "resent": "We sent the invitation again."
   },
   "resend": {

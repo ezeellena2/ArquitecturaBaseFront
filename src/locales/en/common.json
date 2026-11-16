@@ -73,19 +73,24 @@
     "label": "Code",
     "send": "Send code",
     "sending": "Sending…",
-    "retryIn": "Retry in {{seconds}} s",
+    "retryIn": "Retry in {{wait}}",
     "verify": "Verify",
     "verifying": "Verifying…",
     "attemptsLeft_one": "{{count}} attempt left",
     "attemptsLeft_other": "{{count}} attempts left",
     "resend": "Resend code",
     "resending": "Resending…",
-    "resendIn": "Resend in {{seconds}} s",
+    "resendIn": "Resend in {{wait}}",
     "otherEmail": "Use a different email",
     "otherPhone": "Use a different number",
     "sentToEmail": "We sent a code to {{email}}. It expires in 10 minutes.",
     "sentToPhone": "We sent a code to <phone>{{phone}}</phone>. It expires in 10 minutes.",
     "whatsappNotice": "It arrives on WhatsApp on your phone. It doesn't show up on WhatsApp Web."
+  },
+  "wait": {
+    "seconds": "{{seconds}} s",
+    "hours": "{{hours}} h",
+    "hoursMinutes": "{{hours}} h {{minutes}} min"
   },
   "pagination": {
     "label": "Pagination",

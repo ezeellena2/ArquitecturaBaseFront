@@ -80,18 +80,18 @@
       "sent": "To confirm it's you, we sent you another code by WhatsApp to <phone>{{phone}}</phone>.",
       "unsent": "To confirm it's you, another code is needed, sent by WhatsApp to <phone>{{phone}}</phone>.",
       "send": "Send code by WhatsApp",
-      "sendIn": "Send by WhatsApp in {{seconds}} s",
+      "sendIn": "Send by WhatsApp in {{wait}}",
       "resend": "Resend code by WhatsApp",
-      "resendIn": "Resend by WhatsApp in {{seconds}} s"
+      "resendIn": "Resend by WhatsApp in {{wait}}"
     },
     "email": {
       "label": "Email code",
       "sent": "To confirm it's you, we sent you another code to {{email}}.",
       "unsent": "To confirm it's you, another code is needed, sent to {{email}}.",
       "send": "Send code by email",
-      "sendIn": "Send by email in {{seconds}} s",
+      "sendIn": "Send by email in {{wait}}",
       "resend": "Resend code by email",
-      "resendIn": "Resend by email in {{seconds}} s"
+      "resendIn": "Resend by email in {{wait}}"
     },
     "nowRequired": "Your account changed in the meantime: to confirm it's you, another code is now needed too. Request it and enter it below."
   },

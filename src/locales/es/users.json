@@ -92,7 +92,7 @@
     "failedHintByEmail": "El correo no salió: el servidor de correo lo rechazó o no pudimos mandarlo a tiempo.",
     "uncertainHintByEmail": "No sabemos si llegó: el servidor de correo no confirmó el envío. Revisá con la persona antes de reenviarla.",
     "resend": "Reenviar invitación",
-    "resendIn": "Podés reenviar en {{seconds}} s",
+    "resendIn": "Podés reenviar en {{wait}}",
     "resent": "Reenviamos la invitación."
   },
   "resend": {

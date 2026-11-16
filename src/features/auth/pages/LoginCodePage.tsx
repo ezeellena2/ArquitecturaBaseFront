@@ -14,6 +14,7 @@ import {
   verifyCodeErrorMessage,
 } from "@/shared/api/codeErrors";
 import { useCountdown } from "@/shared/hooks/useCountdown";
+import { useWaitText } from "@/shared/hooks/useWaitText";
 import { Button } from "@/shared/ui/button";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { OtpInput } from "@/shared/ui/OtpInput";
@@ -30,6 +31,7 @@ const whatsappLoginState: LoginState = { channel: "whatsapp" };
 /// «Código» y con qué se verifica y se reenvía. El destino llega en el estado de la ruta (`LoginCodeState`).
 export function LoginCodePage() {
   const { t } = useTranslation("auth");
+  const waitText = useWaitText();
   const noticeId = useId();
   const location = useLocation();
   const registration = location.pathname.startsWith("/registro");
@@ -257,7 +259,7 @@ export function LoginCodePage() {
       >
         {isResending
           ? t("common:code.resending")
-          : isResendRunning ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
+          : isResendRunning ? t("common:code.resendIn", { wait: waitText(resendSeconds) }) : t("common:code.resend")}
       </Button>
     </div>
   );
