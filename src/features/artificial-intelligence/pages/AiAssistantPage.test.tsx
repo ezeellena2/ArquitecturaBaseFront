@@ -454,6 +454,68 @@ describe("authenticated assistant", () => {
       ),
     ).not.toContain("Hay tres usuarios");
   });
+  // I3, review: the purge deletes a conversation once everything in it expired, and another tab may have deleted it: its GET and its
+  // turns answer 404. Home says it no longer exists and offers a new one, instead of a Retry that repeats the 404.
+  const notFound = () => HttpResponse.json({ title: "No encontrado", status: 404, code: "Ai.Assistant.NotFound",
+    detail: "No encontramos esa conversación u operación." }, { status: 404 });
+  it.each(["/api/ai/assistant/conversations/:id", "/api/ai/assistant/conversations/:id/turns"])(
+    "says a conversation no longer exists and offers a new one when %s answers 404", async (path) => {
+      server.use(http.get(path, notFound));
+      const { router } = renderRouteWithProviders(`/?conversacion=${conversationId}`);
+      await screen.findByText("Esta conversación ya no existe");
+      expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+      const panel = screen.getByRole("complementary", { name: "Conversaciones" });
+      const start = screen.getAllByRole("button", { name: "Nueva conversación" }).find((button) => !panel.contains(button));
+      await userEvent.click(start!);
+      await waitFor(() => expect(router.state.location.search).not.toContain("conversacion="));
+      expect(await screen.findByRole("textbox", { name: "Tu pregunta" })).toBeEnabled();
+    });
+  it("takes a 404 on delete as deleted: the row leaves the panel and no error shows", async () => {
+    let deleted = false;
+    server.use(
+      http.delete("/api/ai/assistant/conversations/:id", () => {
+        deleted = true;
+        return notFound();
+      }),
+      http.get("/api/ai/assistant/conversations", () => HttpResponse.json(pageOf(deleted ? [] : [{ conversationId, revision: 2,
+        title: "Conversación", contentAccess: access, lastActivityAtUtc: turn.submittedAtUtc }]))),
+    );
+    const error = vi.spyOn(toast, "error");
+    renderRouteWithProviders("/");
+    const panel = await screen.findByRole("complementary", { name: "Conversaciones" });
+    (await within(panel).findByRole("button", { name: "Acciones de Conversación" })).focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Eliminar conversación" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Eliminar esta conversación?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Eliminar conversación" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(within(panel).queryByRole("button", { name: "Acciones de Conversación" })).not.toBeInTheDocument());
+    expect(error).not.toHaveBeenCalled();
+  });
+  it("moves the draft to a new conversation when the one it was sent to no longer exists", async () => {
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      if (body.conversationId) return notFound();
+      turn = { ...turn, requestId: body.requestId, question: body.question };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    const warning = vi.spyOn(toast, "warning");
+    const { router } = renderRouteWithProviders(`/?conversacion=${conversationId}`);
+    await screen.findByText("Hay tres usuarios activos.");
+    await pasteText(screen.getByRole("textbox", { name: "Tu pregunta" }), "Y los inactivos?");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(router.state.location.search).not.toContain("conversacion="));
+    expect(screen.getByRole("textbox", { name: "Tu pregunta" })).toHaveValue("Y los inactivos?");
+    expect(warning).toHaveBeenCalledWith("Esa conversación ya no existe: tu mensaje quedó en una conversación nueva para que lo envíes.",
+      expect.anything());
+    // The new conversation is on screen (the old turns left), and its composer has the draft.
+    await waitFor(() => expect(screen.queryByText("Hay tres usuarios activos.")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(writes[1]).toMatchObject({ conversationId: null, expectedRevision: null, question: "Y los inactivos?" });
+  });
   // I8: a conversation the server cannot decrypt is listed with the generic title, says so and is deleted from the panel.
   it("explains an unreadable conversation and deletes it from the panel", async () => {
     access = "unavailable";

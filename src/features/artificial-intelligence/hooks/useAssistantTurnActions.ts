@@ -17,6 +17,7 @@ import {
 } from "../api/assistant";
 import type { PagedResult } from "@/shared/api/pagedResult";
 import { assistantKey, createSubmission } from "../assistant/model";
+import { isConversationGone } from "../errors";
 /// The request on its way and what it acts on (the turn it cancels, the conversation it deletes): only the control that
 /// sent it shows the spinner and its gerund.
 export type AssistantAction = "submit" | "retry" | "recover" | "cancel" | "remove";
@@ -34,6 +35,7 @@ export function useAssistantTurnActions({
   onAccepted,
   onForbidden,
   onSourceExpired,
+  onConversationGone,
 }: {
   userId: string;
   /// The accepted turn and the submission it was, also when «Consultar estado» or «Repetir el mismo pedido» confirmed it: the owner
@@ -42,6 +44,8 @@ export function useAssistantTurnActions({
   onForbidden: () => void;
   /// The recording or the reading the submission named is gone (I2): the owner forgets its request, so the next send uploads it again.
   onSourceExpired?: (submission: AssistantSubmission) => void;
+  /// The conversation the submission went to no longer exists (I3, review): the owner moves the composer, untouched, to a new one.
+  onConversationGone?: (submission: AssistantSubmission) => void;
 }) {
   const { t } = useTranslation(["assistant", "common"]);
   const client = useQueryClient();
@@ -112,6 +116,17 @@ export function useAssistantTurnActions({
       frozen.current = null;
       client.removeQueries({ queryKey: assistantKey(userId) });
       onForbidden();
+      return;
+    }
+    // I3, review: the conversation it went to no longer exists (deleted elsewhere, or purged once everything expired), and repeating it
+    // would only repeat the 404. The draft goes, as it is, to a new conversation, where the next send creates one.
+    if (acceptance && isConversationGone(error) && frozen.current?.body.conversationId) {
+      const submission = frozen.current;
+      frozen.current = null;
+      setUncertain(false);
+      void client.invalidateQueries({ queryKey: [...assistantKey(userId), "conversations"] });
+      onConversationGone?.(submission);
+      notify({ id: `assistant:${userId}:action`, kind: "warning", message: t("conversationGone") });
       return;
     }
     if (feedback.kind === "uncertain") {
@@ -265,6 +280,26 @@ export function useAssistantTurnActions({
       }
     }
   }
+  // The deleted conversation leaves the cache: its title, its turns and its row.
+  function forget(conversationId: string) {
+    client.removeQueries({
+      queryKey: [...assistantKey(userId), "conversation", conversationId],
+    });
+    client.removeQueries({
+      queryKey: [...assistantKey(userId), "turns", conversationId],
+    });
+    client.removeQueries({ predicate: query => {
+      if (query.queryKey[0] !== "assistant" || query.queryKey[1] !== userId || query.queryKey[2] !== "turn") return false;
+      return (query.state.data as AssistantTurn | undefined)?.conversationId === conversationId;
+    } });
+    client.setQueriesData<PagedResult<AssistantConversationSummary>>(
+      { queryKey: [...assistantKey(userId), "conversations"] },
+      page => page ? { ...page, items: page.items.filter(item => item.conversationId !== conversationId) } : page,
+    );
+    void client.invalidateQueries({
+      queryKey: [...assistantKey(userId), "conversations"],
+    });
+  }
   async function remove(conversationId: string) {
     if (inFlight.current) return false;
     inFlight.current = true;
@@ -273,25 +308,15 @@ export function useAssistantTurnActions({
     try {
       await assistantApi.remove(conversationId);
       if (!isCurrent(version)) return false;
-      client.removeQueries({
-        queryKey: [...assistantKey(userId), "conversation", conversationId],
-      });
-      client.removeQueries({
-        queryKey: [...assistantKey(userId), "turns", conversationId],
-      });
-      client.removeQueries({ predicate: query => {
-        if (query.queryKey[0] !== "assistant" || query.queryKey[1] !== userId || query.queryKey[2] !== "turn") return false;
-        return (query.state.data as AssistantTurn | undefined)?.conversationId === conversationId;
-      } });
-      client.setQueriesData<PagedResult<AssistantConversationSummary>>(
-        { queryKey: [...assistantKey(userId), "conversations"] },
-        page => page ? { ...page, items: page.items.filter(item => item.conversationId !== conversationId) } : page,
-      );
-      void client.invalidateQueries({
-        queryKey: [...assistantKey(userId), "conversations"],
-      });
+      forget(conversationId);
       return true;
     } catch (error) {
+      // I3, review: it no longer exists (deleted elsewhere, or purged), which is what was asked: it is taken as deleted, without an error.
+      if (isConversationGone(error)) {
+        if (!isCurrent(version)) return false;
+        forget(conversationId);
+        return true;
+      }
       handle(error, version, false);
       return false;
     } finally {

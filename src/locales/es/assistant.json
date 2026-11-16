@@ -43,6 +43,8 @@
   "cancelAndContinue": "Cancelar y continuar",
   "blocked": "Ya no tenés acceso al contenido de esta conversación",
   "expiredContent": "El contenido de esta conversación venció",
+  "goneContent": "Esta conversación ya no existe",
+  "conversationGone": "Esa conversación ya no existe: tu mensaje quedó en una conversación nueva para que lo envíes.",
   "unavailableContent": "No pudimos leer el contenido de esta conversación. Podés eliminarla desde Conversaciones.",
   "invalidQuestion": "Ingresá una pregunta.",
   "questionTooLong": "La pregunta admite hasta {{max}} caracteres.",

@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { assistantApi, type AssistantTurn } from "../api/assistant";
 import { assistantKey, isActiveTurn } from "../assistant/model";
+import { isConversationGone } from "../errors";
 export function useAssistantConversation(
   userId: string,
   conversationId: string | undefined,
@@ -100,6 +101,11 @@ export function useAssistantConversation(
       }
     }
   }, [blocked, client, userId, conversationId]);
+  // I3, review: its GET or its turns answer 404, so it no longer exists: the page offers a new one, and the panel reads its list again.
+  const gone = isConversationGone(conversation.error) || isConversationGone(history.error);
+  useEffect(() => {
+    if (gone) void client.invalidateQueries({ queryKey: [...assistantKey(userId), "conversations"] });
+  }, [gone, client, userId]);
   useEffect(() => {
     if (turn.data && !isActiveTurn(turn.data)) {
       void client.invalidateQueries({ queryKey: [...assistantKey(userId), "conversations"] });
@@ -126,6 +132,7 @@ export function useAssistantConversation(
     turn,
     turns: sorted,
     blocked,
+    gone,
     // Says it cannot be read only when no loaded turn can; the conversation still goes on.
     unreadable:
       conversation.data?.contentAccess === "unavailable" &&

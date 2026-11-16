@@ -254,6 +254,14 @@ export function AiAssistantPage() {
       if (body.audioRequestId) dictation.forget(body.audioRequestId);
       if (body.documentRequestId) reading.forget(body.documentRequestId);
     },
+    // I3, review: the conversation no longer exists. The composer, with its text, file and recording, moves to a new conversation, where
+    // the next send creates one; the history does not go back to the one that is gone.
+    onConversationGone: () => {
+      setAccepted(undefined);
+      navigation.allowNextNavigation();
+      setDrawerOpen(false);
+      update({ conversacion: undefined, page: undefined });
+    },
   });
   // IA4: one recording per message, up to the bound of a WhatsApp audio; leaving the page loses it like a draft.
   const recorder = useAudioRecorder(audioMaximumBytes);
@@ -531,10 +539,12 @@ export function AiAssistantPage() {
               ) : null}
               {conversationId && data.conversation.isPending ? (
                 <Spinner />
-              ) : data.blocked || data.unreadable ? (
+              ) : data.gone || data.blocked || data.unreadable ? (
                 <EmptyState
                   title={t(
-                    data.unreadable
+                    data.gone
+                      ? "goneContent"
+                      : data.unreadable
                       ? "unavailableContent"
                       : data.conversation.data?.contentAccess === "expired"
                         ? "expiredContent"
