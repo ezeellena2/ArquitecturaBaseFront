@@ -115,6 +115,17 @@ describe("RolesPage", () => {
     expect(within(table).getByText("4")).toBeInTheDocument();
   });
 
+  // N21: the count is a number with the thousands of the reader's region (es-AR «1.234»), as every number of the app.
+  it("writes how many users a role has with the thousands of the reader's region", async () => {
+    server.use(...managerHandlers());
+    server.use(http.get("/api/roles/paged", () => HttpResponse.json({ items: [{ ...roles[2], userCount: 1234 }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
+
+    renderRouteWithProviders("/roles");
+
+    const table = await screen.findByRole("table");
+    expect(within(table).getByRole("cell", { name: "1.234" })).toBeInTheDocument();
+  });
+
   it("aligns how many users each role has to the right, as every column of numbers", async () => {
     server.use(...managerHandlers());
 
