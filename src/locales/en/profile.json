@@ -12,7 +12,8 @@
     "email": {
       "label": "Email address",
       "empty": "No email",
-      "add": "Add email"
+      "add": "Add email",
+      "needsWhatsApp": "To add an email you have to confirm it with a code sent to your WhatsApp, and codes can't be sent by WhatsApp right now."
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -73,12 +74,35 @@
     "taken": "This email is already in another account. If it's yours, ask an administrator to release it.",
     "success": "Your email was added."
   },
+  "confirmChange": {
+    "whatsapp": {
+      "label": "WhatsApp code",
+      "sent": "To confirm it's you, we sent you another code by WhatsApp to <phone>{{phone}}</phone>.",
+      "unsent": "To confirm it's you, another code is needed, sent by WhatsApp to <phone>{{phone}}</phone>.",
+      "send": "Send code by WhatsApp",
+      "sendIn": "Send by WhatsApp in {{seconds}} s",
+      "resend": "Resend code by WhatsApp",
+      "resendIn": "Resend by WhatsApp in {{seconds}} s"
+    },
+    "email": {
+      "label": "Email code",
+      "sent": "To confirm it's you, we sent you another code to {{email}}.",
+      "unsent": "To confirm it's you, another code is needed, sent to {{email}}.",
+      "send": "Send code by email",
+      "sendIn": "Send by email in {{seconds}} s",
+      "resend": "Resend code by email",
+      "resendIn": "Resend by email in {{seconds}} s"
+    },
+    "nowRequired": "Your account changed in the meantime: to confirm it's you, another code is now needed too. Request it and enter it below."
+  },
   "unlinkWhatsApp": {
     "title": "Unlink your WhatsApp?",
     "description": "You won't be able to sign in with {{phone}} or from the chat anymore. You can link it again whenever you want.",
     "confirm": "Unlink",
     "unlinking": "Unlinking…",
-    "success": "Your WhatsApp was unlinked."
+    "success": "Your WhatsApp was unlinked.",
+    "codeIntro": "To confirm it, we'll send a code to {{email}}.",
+    "codeNowRequired": "Your account changed in the meantime: to unlink the number, a code sent to your email is now needed. Select “Unlink” again."
   },
   "feedback": {
     "saved": "Your profile was saved."

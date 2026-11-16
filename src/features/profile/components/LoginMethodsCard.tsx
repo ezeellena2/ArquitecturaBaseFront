@@ -5,7 +5,7 @@ import { notify } from "@/shared/ui/notifications";
 import { unlinkPhone } from "../api/loginMethods";
 import { profileActionErrorMessage } from "../errors";
 import { Surface } from "@/shared/ui/Surface";
-import { UnlinkWhatsAppDialog } from "./UnlinkWhatsAppDialog";
+import { UnlinkWhatsAppCodeDialog, UnlinkWhatsAppDialog } from "./UnlinkWhatsAppDialog";
 import { VerifyDestinationDialog } from "./VerifyDestinationDialog";
 import { currentUserQueryKey, type CurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
@@ -40,6 +40,10 @@ function hasLoginMethodBesidesPhone(user: CurrentUser): boolean {
 /// - Lo que se hace acá puede llevarse el botón con el que se hizo. Entonces el foco va al título de la zona, no a
 ///   `<body>`: agregar el correo se lleva "Agregar correo"; desvincular con WhatsApp apagado, la fila entera; y si el
 ///   servidor dice que el número es lo único, "Desvincular" vuelve apagado (es otro elemento, envuelto en su motivo).
+/// - Cada medio verificado confirma los cambios del otro (N11): agregar un correo con el número verificado pide también un
+///   código a ese número (si WhatsApp no manda códigos, «Agregar correo» queda apagado con el porqué), y vincular o
+///   desvincular el número con un correo verificado, un código a ese correo. Los dos diálogos de verificación lo resuelven
+///   solos con el perfil de la sesión; desvincular elige acá entre la confirmación y el diálogo con código.
 export function LoginMethodsCard({ user }: { user: CurrentUser }) {
   const { t, i18n } = useTranslation("profile");
   const queryClient = useQueryClient();
@@ -71,6 +75,11 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
   const whatsappCountries = methods?.whatsapp === true ? methods.whatsappCountries : [];
   const canLinkWhatsApp = whatsappCountries.length > 0;
   const canUnlinkWhatsApp = hasLoginMethodBesidesPhone(user);
+  const verifiedEmail = user.email !== null && user.emailConfirmed ? user.email : null;
+  // Sin canal que mande el código al número verificado, no se puede confirmar el correo nuevo. Mientras se leen los
+  // medios, no se apaga: si no llegan, lo dice el servidor.
+  const addEmailBlocked =
+    user.phoneNumber !== null && user.phoneNumberConfirmed && methods !== undefined && methods.whatsapp !== true;
 
   const unlink = useMutation({
     mutationFn: unlinkPhone,
@@ -79,11 +88,18 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
     },
     onError: async (error) => {
-      notify({ id: "features/profile/components/LoginMethodsCard:2", kind: "error", message: profileActionErrorMessage(error, t) });
+      // El servidor pide el código del correo: el perfil que se veía no tenía uno verificado (se verificó desde otro
+      // lado). Con el perfil nuevo, «Desvincular» abre el diálogo con el código.
+      const codeNowRequired = error instanceof ApiError && error.code === "Users.User.ConfirmationCodeRequired";
+      notify({
+        id: "features/profile/components/LoginMethodsCard:2",
+        kind: "error",
+        message: codeNowRequired ? t("unlinkWhatsApp.codeNowRequired") : profileActionErrorMessage(error, t),
+      });
 
       // El servidor dice que el número es lo único: el perfil que se ve está viejo (se sacó el correo o Google desde
       // otro lado). Con el perfil nuevo, «Desvincular» queda apagado con el porqué como motivo.
-      if (error instanceof ApiError && error.code === "Users.User.LastLoginMethod") {
+      if (codeNowRequired || (error instanceof ApiError && error.code === "Users.User.LastLoginMethod")) {
         await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       }
     },
@@ -111,9 +127,17 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
           badge={user.email === null ? undefined : badge(user.emailConfirmed)}
           action={
             user.email ? null : (
-              <Button ref={handOffFocusWhenRemoved} type="button" variant="outline" onClick={() => setOpenDialog("addEmail")}>
-                {t("methods.email.add")}
-              </Button>
+              <DisabledReason reason={addEmailBlocked ? t("methods.email.needsWhatsApp") : null}>
+                <Button
+                  ref={handOffFocusWhenRemoved}
+                  type="button"
+                  variant="outline"
+                  disabled={addEmailBlocked}
+                  onClick={() => setOpenDialog("addEmail")}
+                >
+                  {t("methods.email.add")}
+                </Button>
+              </DisabledReason>
             )
           }
         />
@@ -195,7 +219,16 @@ export function LoginMethodsCard({ user }: { user: CurrentUser }) {
         />
       ) : null}
 
-      {openDialog === "unlinkWhatsApp" ? (
+      {openDialog === "unlinkWhatsApp" && verifiedEmail !== null ? (
+        <UnlinkWhatsAppCodeDialog
+          maskedPhone={user.maskedPhoneNumber ?? ""}
+          email={verifiedEmail}
+          focusFallback={titleRef}
+          onClose={closeDialog}
+        />
+      ) : null}
+
+      {openDialog === "unlinkWhatsApp" && verifiedEmail === null ? (
         <UnlinkWhatsAppDialog
           maskedPhone={user.maskedPhoneNumber ?? ""}
           pending={unlink.isPending}

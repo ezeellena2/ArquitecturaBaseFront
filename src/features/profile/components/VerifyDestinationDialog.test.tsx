@@ -30,11 +30,15 @@ function nthWait(waits: readonly number[], count: number): number {
   return waits[Math.min(count, waits.length) - 1] ?? 0;
 }
 
+/// Una cuenta que entra con Google y tiene un correo sin verificar: vincular el número no pide el código de otro medio
+/// (con un correo verificado, sí: N11, más abajo).
+const googleUser: CurrentUser = { ...currentUser, emailConfirmed: false, hasGoogleLogin: true };
+
 /// Un `/api/me` que la confirmación modifica de verdad: es lo que prueba que el diálogo refresca el perfil y que la
 /// fila muestra lo que se acaba de agregar.
 function linkWhatsAppServer({ resendAfterSeconds = [45] }: { resendAfterSeconds?: readonly number[] } = {}): Calls {
   const calls: Calls = { codeRequests: [], confirmations: [] };
-  let profile: CurrentUser = currentUser;
+  let profile: CurrentUser = googleUser;
 
   server.use(
     http.get("/api/me", () => HttpResponse.json(profile)),
@@ -66,7 +70,8 @@ function linkWhatsAppServer({ resendAfterSeconds = [45] }: { resendAfterSeconds?
 
 function addEmailServer({ resendAfterSeconds = [45] }: { resendAfterSeconds?: readonly number[] } = {}): Calls {
   const calls: Calls = { codeRequests: [], confirmations: [] };
-  let profile: CurrentUser = phoneOnlyUser;
+  // El número sin verificar: con uno verificado, agregar el correo pide también su código (N11, más abajo).
+  let profile: CurrentUser = { ...phoneOnlyUser, phoneNumberConfirmed: false };
 
   server.use(
     http.get("/api/me", () => HttpResponse.json(profile)),
@@ -311,7 +316,7 @@ describe("linking WhatsApp", () => {
   });
 
   it("gives the focus back to the row, which now offers to unlink", async () => {
-    // La cuenta tiene un correo verificado: con el número, la fila ofrece desvincularlo en el mismo lugar.
+    // La cuenta entra con Google: con el número, la fila ofrece desvincularlo en el mismo lugar.
     linkWhatsAppServer();
 
     const dialog = await openAndSendNumber();
@@ -728,5 +733,277 @@ describe("adding an email", () => {
         "El correo es demasiado largo.",
       ),
     );
+  });
+});
+
+describe("adding an email with a verified number (N11)", () => {
+  beforeEach(() => {
+    queryClient.clear();
+  });
+
+  const sent = () => HttpResponse.json({ resendAfterSeconds: 0, maskedPhone }, { status: 202 });
+
+  /// `phoneCode` responde, en orden, cada pedido del código que confirma el cambio, mandado al número (el último se
+  /// repite). `profile` es el `/api/me` antes de la confirmación, y `after` el de después.
+  function addEmailWithPhoneServer({
+    confirm = () => new HttpResponse(null, { status: 204 }),
+    phoneCode = [sent],
+    profile = phoneOnlyUser,
+    after = profile,
+  }: {
+    confirm?: () => Response;
+    phoneCode?: readonly (() => Response)[];
+    profile?: CurrentUser;
+    after?: CurrentUser;
+  } = {}) {
+    const calls = { emailCodes: [] as unknown[], phoneCodes: 0, confirmations: [] as unknown[] };
+    let current = profile;
+
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(current)),
+      http.get("/account/login-methods", () => HttpResponse.json(whatsappLoginMethods)),
+      http.post("/api/me/email/code", async ({ request }) => {
+        calls.emailCodes.push(await request.json());
+
+        return HttpResponse.json({ resendAfterSeconds: 0 }, { status: 202 });
+      }),
+      // Sin cuerpo: el número es el de la cuenta.
+      http.post("/api/me/whatsapp/confirmation-code", () => {
+        calls.phoneCodes++;
+
+        return (phoneCode[Math.min(calls.phoneCodes, phoneCode.length) - 1] ?? sent)();
+      }),
+      http.put("/api/me/email", async ({ request }) => {
+        calls.confirmations.push(await request.json());
+        current = after;
+
+        return confirm();
+      }),
+    );
+
+    return calls;
+  }
+
+  async function openAndSend(email = "ana@example.com") {
+    const dialog = await openDialog("Agregar correo", "Agregar correo");
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Correo electrónico" }), email);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+    await within(dialog).findByRole("group", { name: "Código" });
+
+    return dialog;
+  }
+
+  async function typeBothAndVerify(dialog: HTMLElement, emailCode: string, phoneCode: string) {
+    await typeCode(dialog, emailCode);
+    const phoneBoxes = within(dialog).getByRole("group", { name: "Código de WhatsApp" });
+    await userEvent.type(within(phoneBoxes).getByRole("textbox", { name: "Código de WhatsApp 1" }), phoneCode);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
+  }
+
+  it("also asks the number for a code that confirms the change, and confirms the email with both", async () => {
+    const calls = addEmailWithPhoneServer();
+
+    const dialog = await openAndSend();
+
+    expect(
+      await within(dialog).findByText(/te mandamos otro código por WhatsApp al/),
+    ).toHaveTextContent("Para confirmar que sos vos, te mandamos otro código por WhatsApp al +54 9 11 •••• 6789.");
+    expect(within(dialog).getByRole("group", { name: "Código de WhatsApp" })).toHaveAccessibleDescription(
+      expect.stringContaining("te mandamos otro código por WhatsApp al +54 9 11 •••• 6789."),
+    );
+    await typeBothAndVerify(dialog, "482915", "135790");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(calls.emailCodes).toEqual([{ email: "ana@example.com" }]);
+    expect(calls.phoneCodes).toBe(1);
+    expect(calls.confirmations).toEqual([{ email: "ana@example.com", code: "482915", phoneCode: "135790" }]);
+  });
+
+  it("says a wrong code of the number under its own field, and leaves the email code alone", async () => {
+    addEmailWithPhoneServer({
+      confirm: () =>
+        problem(400, {
+          code: "Auth.LoginCode.Invalid",
+          detail: "El código no es válido.",
+          attemptsLeft: 4,
+          errors: { phoneCode: ["El código no es válido."] },
+        }),
+    });
+
+    const dialog = await openAndSend();
+    await typeBothAndVerify(dialog, "482915", "000000");
+
+    const phoneField = within(dialog).getByRole("group", { name: "Código de WhatsApp" });
+    await waitFor(() =>
+      expect(phoneField).toHaveAccessibleDescription(expect.stringContaining("El código no es válido. Te quedan 4 intentos")),
+    );
+    expect(within(dialog).getByRole("group", { name: "Código" })).toHaveAccessibleDescription(
+      "Te mandamos un código a ana@example.com. Vence en 10 minutos.",
+    );
+    expect(screen.getByRole("dialog", { name: "Agregar correo" })).toBeInTheDocument();
+  });
+
+  it("goes on to the codes when the number's code could not be sent, and says it under its field with its own button", async () => {
+    const calls = addEmailWithPhoneServer({
+      phoneCode: [
+        () => problem(429, { code: "Auth.LoginCode.TooManyRequests", detail: "Pediste demasiados códigos. Probá de nuevo más tarde." }),
+        sent,
+      ],
+    });
+
+    const dialog = await openAndSend();
+
+    const phoneField = within(dialog).getByRole("group", { name: "Código de WhatsApp" });
+    await waitFor(() =>
+      expect(phoneField).toHaveAccessibleDescription(
+        expect.stringContaining("Pediste demasiados códigos. Probá de nuevo más tarde."),
+      ),
+    );
+    expect(dialog).toHaveTextContent("Para confirmar que sos vos, hace falta otro código, que va por WhatsApp al +54 9 11 •••• 6789.");
+    // El error es del número, no del correo: el código del correo sigue sirviendo y no se pide otro.
+    expect(within(dialog).getByRole("group", { name: "Código" })).toHaveAccessibleDescription(
+      "Te mandamos un código a ana@example.com. Vence en 10 minutos.",
+    );
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código por WhatsApp" }));
+
+    expect(await within(dialog).findByRole("button", { name: "Reenviar código por WhatsApp" })).toBeEnabled();
+    expect(dialog).toHaveTextContent("Para confirmar que sos vos, te mandamos otro código por WhatsApp al +54 9 11 •••• 6789.");
+    expect(phoneField).not.toHaveAccessibleDescription(expect.stringContaining("Pediste demasiados códigos"));
+    expect(calls.phoneCodes).toBe(2);
+    expect(calls.emailCodes).toEqual([{ email: "ana@example.com" }]);
+  });
+
+  it("resends each code with its own button, and keeps the number's code when using another email", async () => {
+    const calls = addEmailWithPhoneServer();
+
+    const dialog = await openAndSend();
+    await within(dialog).findByRole("button", { name: "Reenviar código por WhatsApp" });
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Reenviar código" }));
+    await waitFor(() => expect(calls.emailCodes).toHaveLength(2));
+    expect(calls.phoneCodes).toBe(1);
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Reenviar código por WhatsApp" }));
+    await waitFor(() => expect(calls.phoneCodes).toBe(2));
+    expect(calls.emailCodes).toHaveLength(2);
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Usar otro correo" }));
+    const email = within(dialog).getByRole("textbox", { name: "Correo electrónico" });
+    await userEvent.clear(email);
+    await userEvent.type(email, "otra@example.com");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+
+    await waitFor(() => expect(calls.emailCodes).toHaveLength(3));
+    expect(await within(dialog).findByRole("group", { name: "Código de WhatsApp" })).toBeInTheDocument();
+    expect(calls.phoneCodes).toBe(2);
+  });
+
+  it("asks for the number's code when the profile on screen was out of date, and says so", async () => {
+    const warning = vi.spyOn(toast, "warning");
+    // Se veía el número sin verificar (se verificó desde otra pestaña): el servidor pide el código del número.
+    const calls = addEmailWithPhoneServer({
+      profile: { ...phoneOnlyUser, phoneNumberConfirmed: false },
+      after: phoneOnlyUser,
+      confirm: () =>
+        problem(400, {
+          code: "Users.User.ConfirmationCodeRequired",
+          detail: "Falta el código que te mandamos para confirmar que sos vos.",
+          errors: { phoneCode: ["Falta el código que te mandamos para confirmar que sos vos."] },
+        }),
+    });
+
+    const dialog = await openAndSend();
+    expect(within(dialog).queryByRole("group", { name: "Código de WhatsApp" })).not.toBeInTheDocument();
+    await typeCode(dialog, "482915");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
+
+    await waitFor(() =>
+      expect(warning).toHaveBeenCalledWith(
+        "Tu cuenta cambió mientras tanto: para confirmar que sos vos, ahora hace falta también otro código. Pedilo y escribilo abajo.",
+        expect.anything(),
+      ),
+    );
+    expect(await within(dialog).findByRole("group", { name: "Código de WhatsApp" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Enviar código por WhatsApp" })).toBeEnabled();
+    expect(dialog).toHaveTextContent("Para confirmar que sos vos, hace falta otro código, que va por WhatsApp al +54 9 11 •••• 6789.");
+    expect(calls.phoneCodes).toBe(0);
+  });
+});
+
+describe("linking WhatsApp with a verified email (N11)", () => {
+  beforeEach(() => {
+    queryClient.clear();
+  });
+
+  function linkWithEmailServer(confirm: () => Response = () => new HttpResponse(null, { status: 204 })) {
+    const calls = { phoneCodes: [] as unknown[], emailCodes: [] as unknown[], confirmations: [] as unknown[] };
+
+    server.use(
+      // `currentUser` tiene el correo verificado y no tiene número.
+      http.get("/api/me", () => HttpResponse.json(currentUser)),
+      http.get("/account/login-methods", () => HttpResponse.json(whatsappLoginMethods)),
+      http.post("/api/me/whatsapp/code", async ({ request }) => {
+        calls.phoneCodes.push(await request.json());
+
+        return HttpResponse.json({ resendAfterSeconds: 0, phone, maskedPhone }, { status: 202 });
+      }),
+      http.post("/api/me/email/confirmation-code", async ({ request }) => {
+        calls.emailCodes.push(await request.json());
+
+        return HttpResponse.json({ resendAfterSeconds: 0 }, { status: 202 });
+      }),
+      http.put("/api/me/whatsapp", async ({ request }) => {
+        calls.confirmations.push(await request.json());
+
+        return confirm();
+      }),
+    );
+
+    return calls;
+  }
+
+  async function sendAndTypeBoth(phoneCode: string, emailCode: string) {
+    const dialog = await openDialog("Agregar número", "Agregar número");
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" }), "11 2345-6789");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+    await within(dialog).findByRole("group", { name: "Código" });
+    await typeCode(dialog, phoneCode);
+    const emailBoxes = within(dialog).getByRole("group", { name: "Código del correo" });
+    await userEvent.type(within(emailBoxes).getByRole("textbox", { name: "Código del correo 1" }), emailCode);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Verificar" }));
+
+    return dialog;
+  }
+
+  it("also asks the email for a code that confirms the change, and links the number with both", async () => {
+    const calls = linkWithEmailServer();
+
+    const dialog = await sendAndTypeBoth("482915", "135790");
+
+    expect(dialog).toHaveTextContent("Para confirmar que sos vos, te mandamos otro código a ana@example.com.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(calls.phoneCodes).toEqual([{ country: "AR", number: "11 2345-6789" }]);
+    expect(calls.emailCodes).toEqual([{ change: "LinkPhone" }]);
+    expect(calls.confirmations).toEqual([{ phone, code: "482915", emailCode: "135790" }]);
+  });
+
+  it("says a wrong code of the email under its own field", async () => {
+    linkWithEmailServer(() =>
+      problem(400, {
+        code: "Auth.LoginCode.Invalid",
+        detail: "El código no es válido.",
+        attemptsLeft: 4,
+        errors: { emailCode: ["El código no es válido."] },
+      }),
+    );
+
+    const dialog = await sendAndTypeBoth("482915", "000000");
+
+    const emailField = within(dialog).getByRole("group", { name: "Código del correo" });
+    await waitFor(() =>
+      expect(emailField).toHaveAccessibleDescription(expect.stringContaining("El código no es válido. Te quedan 4 intentos")),
+    );
+    expect(screen.getByRole("dialog", { name: "Agregar número" })).toBeInTheDocument();
   });
 });

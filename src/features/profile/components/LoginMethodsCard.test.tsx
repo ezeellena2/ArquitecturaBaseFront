@@ -206,7 +206,8 @@ describe("LoginMethodsCard", () => {
   });
 
   describe("unlinking WhatsApp", () => {
-    const withEmailAndPhone: CurrentUser = { ...phoneOnlyUser, email: "ana@example.com", emailConfirmed: true };
+    // Sin correo verificado, el otro medio es Google y alcanza con confirmar; con correo, pide su código (N11, abajo).
+    const withEmailAndPhone: CurrentUser = { ...phoneOnlyUser, hasGoogleLogin: true };
     const withoutPhone: CurrentUser = {
       ...withEmailAndPhone,
       phoneNumber: null,
@@ -315,15 +316,16 @@ describe("LoginMethodsCard", () => {
 
       const methods = await confirmUnlink();
 
-      expect(await screen.findByText("Desvinculamos tu WhatsApp.")).toBeInTheDocument();
+      // El aviso del test anterior, con el mismo id, puede seguir a la vista y reemplazarse por este: alcanza con que esté.
+      expect(await screen.findAllByText("Desvinculamos tu WhatsApp.")).not.toHaveLength(0);
       expect(await methods.findByText("Sin número")).toBeInTheDocument();
       expect(methods.queryByText("+54 9 11 2345-6789")).not.toBeInTheDocument();
       expect(calls.deletes).toBe(1);
     });
 
     it("says why it could not unlink the number", async () => {
-      // El perfil cargado decía que había un correo verificado, pero el servidor ya no lo tiene (se sacó desde otro
-      // lado): gana el servidor. Con el perfil nuevo, «Desvincular» queda apagado con el porqué como motivo.
+      // El perfil cargado decía que había otro medio, pero el servidor ya no lo tiene (se sacó desde otro lado): gana el
+      // servidor. Con el perfil nuevo, «Desvincular» queda apagado con el porqué como motivo.
       unlinkServer({ after: phoneOnlyUser, respond: lastLoginMethod });
 
       const methods = await confirmUnlink();
@@ -331,6 +333,38 @@ describe("LoginMethodsCard", () => {
       expect(await screen.findByText("El detalle del servidor.")).toBeInTheDocument();
       await waitFor(() => expectUnlinkTurnedOff(methods));
       expect(methods.getByText("+54 9 11 2345-6789")).toBeInTheDocument();
+    });
+
+    it("asks for the email's code next time when the profile on screen was out of date", async () => {
+      // Se veía la cuenta sin correo verificado, pero ya tiene uno (se verificó desde otra pestaña): el servidor pide el
+      // código que llega a ese correo. Con el perfil nuevo, «Desvincular» lo pide.
+      unlinkServer({
+        after: { ...withEmailAndPhone, email: "ana@example.com", emailConfirmed: true },
+        respond: () =>
+          HttpResponse.json(
+            {
+              status: 400,
+              code: "Users.User.ConfirmationCodeRequired",
+              detail: "Falta el código que te mandamos para confirmar que sos vos.",
+              errors: { code: ["Falta el código que te mandamos para confirmar que sos vos."] },
+            },
+            { status: 400 },
+          ),
+      });
+
+      const methods = await confirmUnlink();
+
+      expect(
+        await screen.findByText(
+          "Tu cuenta cambió mientras tanto: para desvincular el número, ahora hace falta un código a tu correo. Tocá «Desvincular» de nuevo.",
+        ),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() => expect(methods.getByText("ana@example.com")).toBeInTheDocument());
+      await userEvent.click(methods.getByRole("button", { name: "Desvincular" }));
+      expect(await screen.findByRole("dialog", { name: "¿Desvincular tu WhatsApp?" })).toHaveTextContent(
+        "Para confirmarlo, te vamos a mandar un código a ana@example.com.",
+      );
     });
 
     describe("where the focus goes", () => {
@@ -366,6 +400,83 @@ describe("LoginMethodsCard", () => {
         await waitFor(() => expectUnlinkTurnedOff(methods));
         await waitFor(() => expect(title()).toHaveFocus());
       });
+    });
+  });
+
+  describe("with a verified email, unlinking WhatsApp asks for the code sent to it (N11)", () => {
+    const withEmailAndPhone: CurrentUser = { ...phoneOnlyUser, email: "ana@example.com", emailConfirmed: true };
+
+    function unlinkWithCodeServer(respond: () => Response) {
+      const calls = { codeRequests: [] as unknown[], deletes: [] as unknown[] };
+
+      server.use(
+        http.get("/api/me", () => HttpResponse.json(withEmailAndPhone)),
+        http.get("/account/login-methods", () => HttpResponse.json(whatsappLoginMethods)),
+        http.post("/api/me/email/confirmation-code", async ({ request }) => {
+          calls.codeRequests.push(await request.json());
+
+          return HttpResponse.json({ resendAfterSeconds: 0 }, { status: 202 });
+        }),
+        http.delete("/api/me/whatsapp", async ({ request }) => {
+          calls.deletes.push(await request.json());
+
+          return respond();
+        }),
+      );
+
+      return calls;
+    }
+
+    async function sendCodeAndType(code: string) {
+      const methods = await openMethods();
+      await userEvent.click(methods.getByRole("button", { name: "Desvincular" }));
+      const dialog = await screen.findByRole("dialog", { name: "¿Desvincular tu WhatsApp?" });
+      expect(dialog).toHaveTextContent("Para confirmarlo, te vamos a mandar un código a ana@example.com.");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+      await userEvent.type(await within(dialog).findByRole("textbox", { name: "Código 1" }), code);
+      await userEvent.click(within(dialog).getByRole("button", { name: "Desvincular" }));
+
+      return dialog;
+    }
+
+    it("sends the code to the email and unlinks with it", async () => {
+      const calls = unlinkWithCodeServer(() => new HttpResponse(null, { status: 204 }));
+
+      await sendCodeAndType("482915");
+
+      // El aviso de un test anterior puede seguir a la vista: alcanza con que esté.
+      expect(await screen.findAllByText("Desvinculamos tu WhatsApp.")).not.toHaveLength(0);
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(calls.codeRequests).toEqual([{ change: "UnlinkPhone" }]);
+      expect(calls.deletes).toEqual([{ code: "482915" }]);
+    });
+
+    it("says a wrong code under the field and keeps the dialog open", async () => {
+      unlinkWithCodeServer(() =>
+        HttpResponse.json(
+          { status: 400, code: "Auth.LoginCode.Invalid", detail: "El código no es válido.", attemptsLeft: 4 },
+          { status: 400 },
+        ),
+      );
+
+      const dialog = await sendCodeAndType("000000");
+
+      expect(await within(dialog).findByText("El código no es válido. Te quedan 4 intentos")).toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "¿Desvincular tu WhatsApp?" })).toBeInTheDocument();
+    });
+  });
+
+  describe("with a verified number and WhatsApp off (N11)", () => {
+    it("turns Agregar correo off, because the code to the number can't be sent", async () => {
+      withProfile(phoneOnlyUser, loginMethods);
+
+      const methods = await openMethods();
+      const add = methods.getByRole("button", { name: "Agregar correo" });
+
+      expect(add).toHaveAttribute("aria-disabled", "true");
+      expect(add).toHaveAccessibleDescription(
+        "Para agregar un correo hay que confirmarlo con un código a tu WhatsApp, y ahora no se pueden mandar códigos por WhatsApp.",
+      );
     });
   });
 });

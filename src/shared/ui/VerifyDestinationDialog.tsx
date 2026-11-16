@@ -3,9 +3,16 @@ import { useId, useState, type ComponentProps, type RefObject } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { notify, notifyOperationalError } from "@/shared/ui/notifications";
 import { z } from "zod";
-import { confirmEmail, confirmPhoneLink, requestEmailCode, requestPhoneLinkCode } from "@/shared/api/destinationVerification";
+import {
+  confirmEmail,
+  confirmPhoneLink,
+  requestEmailCode,
+  requestEmailConfirmationCode,
+  requestPhoneConfirmationCode,
+  requestPhoneLinkCode,
+} from "@/shared/api/destinationVerification";
 import { isSpentCodeError, isTakenError } from "@/shared/api/destinationErrors";
-import { currentUserQueryKey } from "@/auth/useCurrentUser";
+import { currentUserQueryKey, useCurrentUser, type CurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import {
   attemptsLeftOf,
@@ -52,6 +59,32 @@ type SentTo =
   | { readonly channel: "whatsapp"; readonly phone: string; readonly maskedPhone: string }
   | { readonly channel: "email"; readonly email: string };
 
+/// El medio verificado que la cuenta ya tiene y que confirma el cambio (N11, «cada medio confirma»).
+type ConfirmWith =
+  | { readonly channel: "whatsapp"; readonly maskedPhone: string }
+  | { readonly channel: "email"; readonly email: string };
+
+/// La misma regla que el backend (`ProfileEmailLinker`, `PhoneNumberLinker`): agregar un correo con el número verificado
+/// se confirma con un código a ese número; vincular un número, o verificar el que cargó un administrador, con el correo
+/// verificado, con un código a ese correo. Con el número ya verificado (vincular su chat) no hay cambio que confirmar.
+/// Los cambios son de la propia cuenta (`/api/me`): el medio sale del perfil de la sesión, el mismo que se refresca al
+/// terminar, así un perfil viejo se corrige solo al volver a pedirlo.
+function confirmationMediumOf(channel: SentTo["channel"], user: CurrentUser | undefined): ConfirmWith | undefined {
+  if (user === undefined) {
+    return undefined;
+  }
+
+  if (channel === "email") {
+    return user.phoneNumber !== null && user.phoneNumberConfirmed
+      ? { channel: "whatsapp", maskedPhone: user.maskedPhoneNumber ?? "" }
+      : undefined;
+  }
+
+  return user.email !== null && user.emailConfirmed && !user.phoneNumberConfirmed
+    ? { channel: "email", email: user.email }
+    : undefined;
+}
+
 /// Las casillas del código adentro de su `FormField`. El campo les pasa su descripción (la (i) y el error) y acá se le
 /// suma a dónde llegó el código: la descripción del diálogo se lee al entrar en él, no cuando cambia, y el foco salta
 /// directo a la primera casilla; sin esto, el lector de pantalla diría "Código, Código 1" y no a dónde llegó ni que
@@ -88,6 +121,10 @@ interface VerifyFailure {
 ///
 /// Que el destino ya sea de otra cuenta se dice recién con el código correcto, nunca antes (el punto 5 del tablero).
 ///
+/// Si la cuenta ya tiene otro medio verificado, el cambio se confirma también con un código a ese medio (N11,
+/// `confirmationMediumOf`): se pide junto con el del destino y va en un segundo campo, con su texto, su error y su propio
+/// reenvío. Cada código se pide y se reenvía por separado: que falle uno no vuelve atrás ni gasta el otro.
+///
 /// La pantalla lo monta solo mientras está abierto, así arranca vacío cada vez.
 export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const { channel, onClose, focusFallback } = props;
@@ -96,6 +133,9 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const queryClient = useQueryClient();
   const restoreFocus = useRestoreFocusOnClose(true, focusFallback);
   const sentToId = useId();
+  const confirmationSentToId = useId();
+  const { data: user } = useCurrentUser();
+  const confirmWith = confirmationMediumOf(channel, user);
 
   const [country, setCountry] = useState(countries[0] ?? "");
   // El número o el correo, como lo escribió la persona. Se conserva al volver desde el código.
@@ -107,9 +147,19 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   const [isChangingDestination, setIsChangingDestination] = useState(false);
   const [code, setCode] = useState("");
   const [failure, setFailure] = useState<VerifyFailure | undefined>();
+  // El código que confirma el cambio (N11): si ya se mandó uno, lo escrito y lo que respondió el servidor sobre él (al
+  // pedirlo, o al verificar en `errors.phoneCode` o `errors.emailCode`). No es del destino: sobrevive a «Usar otro».
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [confirmationFailure, setConfirmationFailure] = useState<VerifyFailure | undefined>();
 
   const { seconds: retrySeconds, isRunning: isRetryLimited, restart: restartRetry } = useCountdown(0);
   const { seconds: resendSeconds, isRunning: isResendWaiting, restart: restartResend } = useCountdown(0);
+  const {
+    seconds: confirmationSeconds,
+    isRunning: isConfirmationWaiting,
+    restart: restartConfirmation,
+  } = useCountdown(0);
 
   const whatsappCopy = props.channel === "whatsapp" ? props.copy : undefined;
   const copy =
@@ -127,6 +177,9 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     setFailure(undefined);
     restartResend(resendAfterSeconds);
   }
+
+  /// El servidor dijo algo que el perfil a la vista no sabía (un medio que se verificó o se quitó desde otro lado).
+  const refreshProfile = () => queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
 
   const send = useMutation({
     mutationFn: async (): Promise<{ destination: SentTo; resendAfterSeconds: number }> => {
@@ -167,6 +220,42 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
       if (error.retryAfterSeconds !== undefined) {
         restartRetry(error.retryAfterSeconds);
       }
+
+      // La cuenta no es la que se ve: ya tiene un correo verificado, que desde el perfil no se cambia.
+      if (error.status === 409) {
+        void refreshProfile();
+      }
+    },
+  });
+
+  /// El código que confirma el cambio, al medio que la cuenta ya tiene. Se pide a la par del del destino, pero por
+  /// separado: si falla, el diálogo pasa igual al paso del código y el error queda debajo de su campo, con su botón.
+  const requestConfirmation = useMutation({
+    mutationFn: async (medium: ConfirmWith) =>
+      medium.channel === "whatsapp"
+        ? (await requestPhoneConfirmationCode()).resendAfterSeconds
+        : (await requestEmailConfirmationCode("LinkPhone")).resendAfterSeconds,
+    onSuccess: (resendAfterSeconds) => {
+      setConfirmationSent(true);
+      setConfirmationCode("");
+      setConfirmationFailure(undefined);
+      restartConfirmation(resendAfterSeconds);
+    },
+    onError: (error) => {
+      if (notifyOperationalError(error, `destination:${channel}:confirmation`, t)) return;
+      const message = error instanceof ApiError ? codeRequestErrorMessage(error, t) : t("common:states.error");
+
+      // Un código mandado antes sigue como estaba: si ya no servía, sigue sin servir.
+      setConfirmationFailure((previous) => ({ message, wrong: false, spent: previous?.spent ?? false, taken: false }));
+
+      if (error instanceof ApiError && error.retryAfterSeconds !== undefined) {
+        restartConfirmation(error.retryAfterSeconds);
+      }
+
+      // Sin el medio verificado que se veía, o con el que se quería agregar ya verificado: el perfil está viejo.
+      if (error instanceof ApiError && error.status === 409) {
+        void refreshProfile();
+      }
     },
   });
 
@@ -200,17 +289,20 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   });
 
   const confirm = useMutation({
-    mutationFn: (destination: SentTo) =>
-      destination.channel === "whatsapp"
-        ? confirmPhoneLink({ phone: destination.phone, code })
-        : confirmEmail({ email: destination.email, code }),
+    mutationFn: (destination: SentTo) => {
+      const confirmation = confirmWith === undefined ? undefined : confirmationCode;
+
+      return destination.channel === "whatsapp"
+        ? confirmPhoneLink({ phone: destination.phone, code, emailCode: confirmation })
+        : confirmEmail({ email: destination.email, code, phoneCode: confirmation });
+    },
     onSuccess: async () => {
       notify({id: "verify-destination:success", kind: "success", message: copy.success});
       // El perfil lo usan las filas de esta pantalla, el menú del usuario, la barra lateral y el aviso del inicio.
       await queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       onClose();
     },
-    onError: (error) => {
+    onError: async (error) => {
       if (notifyOperationalError(error, `destination:${channel}:verify`, t)) return;
       if (!(error instanceof ApiError)) {
         setFailure({ message: t("common:states.error"), wrong: false, spent: false, taken: false });
@@ -220,6 +312,41 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
 
       if (isTakenError(error)) {
         setFailure({ message: copy.taken, wrong: false, spent: true, taken: true });
+
+        return;
+      }
+
+      // Lo demás que choca no es de ningún código y no se arregla en el diálogo: la cuenta ya tiene ese medio
+      // verificado, WhatsApp no manda códigos o es la cuenta del administrador inicial. Lo dice el servidor, el diálogo
+      // se cierra y el perfil se relee.
+      if (error.status === 409) {
+        notify({ id: `destination:${channel}:conflict`, kind: "error", message: error.detail ?? t("common:states.error") });
+        onClose();
+        await refreshProfile();
+
+        return;
+      }
+
+      // Lo que el servidor dice del código que confirma el cambio va en su campo; el del destino sigue sirviendo.
+      const confirmationMessage = error.errors?.[channel === "email" ? "phoneCode" : "emailCode"]?.[0];
+
+      if (confirmationMessage !== undefined) {
+        // El perfil a la vista no tenía ese medio verificado, así que el campo no estaba: con el perfil nuevo aparece,
+        // sin código pedido todavía, y el aviso dice por qué.
+        if (confirmWith === undefined) {
+          notify({ id: `destination:${channel}:confirmation-required`, kind: "warning", message: t("confirmChange.nowRequired") });
+          await refreshProfile();
+
+          return;
+        }
+
+        setConfirmationFailure({
+          message: confirmationMessage,
+          attemptsLeft: attemptsLeftOf(error),
+          wrong: isWrongCodeError(error),
+          spent: isSpentCodeError(error),
+          taken: false,
+        });
 
         return;
       }
@@ -250,6 +377,11 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     }
 
     send.mutate();
+
+    // El código que confirma el cambio sale a la par, si todavía no hay uno: volver para usar otro destino no lo gasta.
+    if (confirmWith !== undefined && !confirmationSent && !isConfirmationWaiting && !requestConfirmation.isPending) {
+      requestConfirmation.mutate(confirmWith);
+    }
   }
 
   function changeValue(next: string) {
@@ -270,16 +402,22 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     setIsChangingDestination(true);
   }
 
-  // El error del código: el mensaje y, si los dijo el servidor, los intentos que le quedan.
-  const codeProblem =
-    failure === undefined || failure.taken
+  // El error de un código: el mensaje y, si los dijo el servidor, los intentos que le quedan.
+  const problemOf = (codeFailure: VerifyFailure | undefined) =>
+    codeFailure === undefined || codeFailure.taken
       ? undefined
       : [
-          failure.message,
-          failure.attemptsLeft === undefined ? undefined : t("common:code.attemptsLeft", { count: failure.attemptsLeft }),
+          codeFailure.message,
+          codeFailure.attemptsLeft === undefined
+            ? undefined
+            : t("common:code.attemptsLeft", { count: codeFailure.attemptsLeft }),
         ]
           .filter(Boolean)
           .join(" ");
+  const codeProblem = problemOf(failure);
+  const confirmationProblem = problemOf(confirmationFailure);
+  const confirmationKey = confirmWith?.channel === "email" ? "confirmChange.email" : "confirmChange.whatsapp";
+  const confirmationState = confirmationSent ? "sent" : "unsent";
 
   return (
     <Dialog
@@ -379,6 +517,7 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               // pantalla lo vuelve a decir. Montado, un texto que no cambia no se anuncia. Con el código gastado o el
               // destino tomado, "Verificar" está apagado y no se llega acá.
               setFailure(undefined);
+              setConfirmationFailure(undefined);
               confirm.mutate(sentTo);
             }}
           >
@@ -426,6 +565,59 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
                 : isResendWaiting ? t("common:code.resendIn", { seconds: resendSeconds }) : t("common:code.resend")}
             </Button>
 
+            {/* N11: el código que confirma el cambio, al medio que la cuenta ya tiene, con su texto, su error y su
+                propio botón. Mientras no hay uno mandado, el texto dice a dónde va y el botón lo pide. */}
+            {confirmWith === undefined ? null : (
+              <>
+                <p id={confirmationSentToId} className="text-sm text-[var(--color-content-muted)]">
+                  {confirmWith.channel === "whatsapp" ? (
+                    <Trans
+                      t={t}
+                      i18nKey={`${confirmationKey}.${confirmationState}`}
+                      values={{ phone: confirmWith.maskedPhone }}
+                      components={{
+                        phone: <strong className="font-semibold whitespace-nowrap text-[var(--color-content)]" />,
+                      }}
+                    />
+                  ) : (
+                    t(`${confirmationKey}.${confirmationState}`, { email: confirmWith.email })
+                  )}
+                </p>
+                <FormField
+                  label={t(`${confirmationKey}.label`)}
+                  help={confirmWith.channel === "whatsapp" ? t("common:code.whatsappNotice") : undefined}
+                  error={confirmationProblem}
+                >
+                  <CodeBoxes
+                    length={CODE_LENGTH}
+                    value={confirmationCode}
+                    onChange={(next) => {
+                      setConfirmationCode(next);
+                      setConfirmationFailure((previous) => (previous ? { ...previous, wrong: false } : previous));
+                    }}
+                    label={t(`${confirmationKey}.label`)}
+                    disabled={confirm.isPending}
+                    invalid={confirmationFailure?.wrong}
+                    sentToId={confirmationSentToId}
+                  />
+                </FormField>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  pending={requestConfirmation.isPending}
+                  disabled={isConfirmationWaiting}
+                  onClick={() => requestConfirmation.mutate(confirmWith)}
+                >
+                  {requestConfirmation.isPending
+                    ? t(confirmationSent ? "common:code.resending" : "common:code.sending")
+                    : isConfirmationWaiting
+                      ? t(`${confirmationKey}.${confirmationSent ? "resendIn" : "sendIn"}`, { seconds: confirmationSeconds })
+                      : t(`${confirmationKey}.${confirmationSent ? "resend" : "send"}`)}
+                </Button>
+              </>
+            )}
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 {t("common:actions.cancel")}
@@ -433,7 +625,13 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
               <Button
                 type="submit"
                 pending={confirm.isPending}
-                disabled={code.length !== CODE_LENGTH || failure?.spent === true || failure?.taken === true}
+                disabled={
+                  code.length !== CODE_LENGTH ||
+                  (confirmWith !== undefined && confirmationCode.length !== CODE_LENGTH) ||
+                  failure?.spent === true ||
+                  (confirmWith !== undefined && confirmationFailure?.spent === true) ||
+                  failure?.taken === true
+                }
               >
                 {confirm.isPending ? t("common:code.verifying") : t("common:code.verify")}
               </Button>

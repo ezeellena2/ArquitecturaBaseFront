@@ -126,11 +126,17 @@ describe("UserEditDialog", () => {
     const self = { ...carla, phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null };
     withUser(self);
     const requests: unknown[] = [];
+    const confirmations: unknown[] = [];
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, id: self.id, permissions: ["users.read", "users.manage"] })),
       http.post("/api/me/whatsapp/code", async ({ request }) => {
         requests.push(await request.json());
         return HttpResponse.json({ phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789", resendAfterSeconds: 60 }, { status: 202 });
+      }),
+      // Su propio número va por /api/me: con su correo verificado, el cambio se confirma también con un código al correo (N11).
+      http.post("/api/me/email/confirmation-code", async ({ request }) => {
+        confirmations.push(await request.json());
+        return HttpResponse.json({ resendAfterSeconds: 60 }, { status: 202 });
       }),
     );
     const dialog = await openEdit(self.email!);
@@ -140,6 +146,8 @@ describe("UserEditDialog", () => {
     await userEvent.click(within(verification).getByRole("button", { name: "Enviar código" }));
     expect(await within(verification).findByRole("group", { name: "Código" })).toBeInTheDocument();
     expect(requests).toEqual([{ country: "AR", number: "11 2345-6789" }]);
+    expect(await within(verification).findByRole("group", { name: "Código del correo" })).toBeInTheDocument();
+    expect(confirmations).toEqual([{ change: "LinkPhone" }]);
   });
 
   it("offers verification for the signed-in user's previously saved unverified number", async () => {
@@ -165,6 +173,7 @@ describe("UserEditDialog", () => {
 
         return HttpResponse.json({ phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789", resendAfterSeconds: 60 }, { status: 202 });
       }),
+      http.post("/api/me/email/confirmation-code", () => HttpResponse.json({ resendAfterSeconds: 60 }, { status: 202 })),
     );
     const dialog = await openEdit(self.email!);
     await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));

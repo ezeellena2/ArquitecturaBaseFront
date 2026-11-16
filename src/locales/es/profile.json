@@ -12,7 +12,8 @@
     "email": {
       "label": "Correo electrónico",
       "empty": "Sin correo",
-      "add": "Agregar correo"
+      "add": "Agregar correo",
+      "needsWhatsApp": "Para agregar un correo hay que confirmarlo con un código a tu WhatsApp, y ahora no se pueden mandar códigos por WhatsApp."
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -73,12 +74,35 @@
     "taken": "Este correo ya está en otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
     "success": "Agregamos tu correo."
   },
+  "confirmChange": {
+    "whatsapp": {
+      "label": "Código de WhatsApp",
+      "sent": "Para confirmar que sos vos, te mandamos otro código por WhatsApp al <phone>{{phone}}</phone>.",
+      "unsent": "Para confirmar que sos vos, hace falta otro código, que va por WhatsApp al <phone>{{phone}}</phone>.",
+      "send": "Enviar código por WhatsApp",
+      "sendIn": "Enviar por WhatsApp en {{seconds}} s",
+      "resend": "Reenviar código por WhatsApp",
+      "resendIn": "Reenviar por WhatsApp en {{seconds}} s"
+    },
+    "email": {
+      "label": "Código del correo",
+      "sent": "Para confirmar que sos vos, te mandamos otro código a {{email}}.",
+      "unsent": "Para confirmar que sos vos, hace falta otro código, que va a {{email}}.",
+      "send": "Enviar código al correo",
+      "sendIn": "Enviar al correo en {{seconds}} s",
+      "resend": "Reenviar código al correo",
+      "resendIn": "Reenviar al correo en {{seconds}} s"
+    },
+    "nowRequired": "Tu cuenta cambió mientras tanto: para confirmar que sos vos, ahora hace falta también otro código. Pedilo y escribilo abajo."
+  },
   "unlinkWhatsApp": {
     "title": "¿Desvincular tu WhatsApp?",
     "description": "Ya no vas a poder entrar con {{phone}} ni desde el chat. Podés volver a vincularlo cuando quieras.",
     "confirm": "Desvincular",
     "unlinking": "Desvinculando…",
-    "success": "Desvinculamos tu WhatsApp."
+    "success": "Desvinculamos tu WhatsApp.",
+    "codeIntro": "Para confirmarlo, te vamos a mandar un código a {{email}}.",
+    "codeNowRequired": "Tu cuenta cambió mientras tanto: para desvincular el número, ahora hace falta un código a tu correo. Tocá «Desvincular» de nuevo."
   },
   "feedback": {
     "saved": "Guardamos tu perfil."
