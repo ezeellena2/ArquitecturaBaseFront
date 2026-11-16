@@ -22,7 +22,6 @@ vi.mock("react-oidc-context", async () => {
 });
 
 const returnUrl = "/connect/authorize?client_id=web";
-const token = "k7Qe2xV9-mB4_tLp0ZrH8sWc1YnJ6fGa3DuK5oXiE2q";
 const phone = "+5491123456789";
 const maskedPhone = "+54 9 11 •••• 6789";
 
@@ -60,29 +59,6 @@ describe("countdown consumers after a suspended tab", () => {
     resumeAfter(45);
 
     expect(screen.getByRole("button", { name: "Reenviar código" })).toBeEnabled();
-  });
-
-  it("allows LoginLinkPage to retry a preview after its cooldown without an automatic request", async () => {
-    let previews = 0;
-    server.use(http.post("/account/login-link/preview", () => {
-      previews += 1;
-
-      return HttpResponse.json({
-        status: 429,
-        code: "Http.TooManyRequests",
-        detail: "Esperá antes de intentar de nuevo.",
-        retryAfter: 45,
-      }, { status: 429 });
-    }));
-    globalThis.history.replaceState(null, "", `/ingresar#t=${token}`);
-    renderRouteWithProviders("/ingresar");
-
-    expect(await screen.findByRole("button", { name: "Reintentá en 45 s" })).toBeDisabled();
-
-    resumeAfter(45);
-
-    expect(screen.getByRole("button", { name: "Reintentar" })).toBeEnabled();
-    expect(previews).toBe(1);
   });
 
   it.each(["email", "whatsapp"])("preserves the %s request draft while its cooldown expires", async (channel) => {

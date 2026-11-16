@@ -99,10 +99,8 @@ Contrato: [WhatsApp](../../ArquitecturaBase/docs/features/whatsapp.md) (módulo 
   sin él, `LoginPage` lo prepara con `createSigninReturnUrl`. `loginRedirectError` guarda solo el código en
   `arquitecturabase.login-error` (nunca tokens ni datos de cuenta): prioriza la query, se borra con el pedido listo y se
   descarta al reenviar.
-- **`/ingresar`** canjea enlaces históricos, en `AuthLayout` y sin `lazy`. El token del fragmento (`#t=…`) se lee en el
-  primer render y se borra con `history.replaceState` (un efecto no sobrevive al doble montaje de `StrictMode`); después,
-  solo memoria. `preview` no lo gasta; **Continuar** (`redeem`) una sola vez, y sigue `signinRedirect`.
-  `loginLinkFailureOf` elige la pantalla; el reintento respeta `retryAfter`. "Volver a WhatsApp" solo con `whatsappNumber`.
+- **`/ingresar`** se retiró el 2026-11-16 (B4 del backend), con su API y sus textos: el servidor ya no emite ni canjea
+  enlaces de ingreso. Se entra con el código (por correo o por WhatsApp) o con Google.
 - **Cuenta sin correo:** `src/auth/accountName.ts` arma nombre e inicial (`displayName ?? email ?? phoneNumber`; primera
   letra o cifra, o "?"), no un `initialOf(...)` suelto. El número se muestra con `formattedPhoneNumber`, nunca en E.164.
 - **`/perfil`** (tablero PF1-A, 2026-11-03): tres zonas apiladas, como Configuración: "Datos del perfil", "Medios de

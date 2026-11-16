@@ -598,7 +598,7 @@ Sin elección; no se implementan sin ella.
 | Roles y permisos · RO1-A y RO2, en el lienzo aparte «Roles y permisos: rediseño» | `PermissionPicker` y `RoleEditorPage` | [Implementado](roles-y-permisos.md) el 2026-11-11; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | WhatsApp · Ingreso, Perfil, Usuarios con teléfono | `/login`, `/perfil`, diálogos de usuario | Implementado; mensajes por adoptar. El perfil y los medios de ingreso de usuario los reemplaza PF1-A |
 | Mi perfil · PF1-A, en el lienzo provisorio «Formularios desde la app» | `/perfil` y «Editar usuario» | [Implementado](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03); falta pasarlo al lienzo del sistema visual |
-| WhatsApp · El enlace del chat | `/ingresar` (`Spinner` de 20 px; el tablero, 28) | Compatibilidad: ya no se emiten enlaces |
+| WhatsApp · El enlace del chat | `/ingresar`, retirada | Retirado el 2026-11-16 (B4): sin enlaces de ingreso, la pantalla y su ruta ya no existen |
 | WhatsApp · Orientación y mensajes del sistema | backend | Panel 2 desactualizado: Meta aprobó la invitación como Marketing, con otro texto |
 | Plantilla · Listado | ejemplo `/usuarios` | Se duplica para cada listado |
 | Formularios por WhatsApp | `/formularios`, respuestas, aprobación, diseño PDF y chat | [Diseño y estado de calificación](formularios-whatsapp.md) |

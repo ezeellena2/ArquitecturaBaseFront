@@ -2,7 +2,7 @@ import { api } from "./httpClient";
 
 /// Los medios de ingreso que ofrece el servidor, además del correo, que está siempre (`GET /account/login-methods`).
 ///
-/// Vive en `shared/api` porque lo piden dos features: el ingreso (`/login` y `/ingresar`) y el perfil, que solo ofrece
+/// Vive en `shared/api` porque lo piden dos features: el ingreso (`/login`) y el perfil, que solo ofrece
 /// vincular WhatsApp si está prendido y con los países de acá.
 export interface LoginMethods {
   readonly registrationOpen: boolean;

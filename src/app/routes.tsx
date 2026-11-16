@@ -4,7 +4,6 @@ import { SessionRecovery } from "@/auth/SessionRecovery";
 import { SignOutFromOtherTabs } from "@/auth/SignOutFromOtherTabs";
 import { CallbackPage } from "@/features/auth/pages/CallbackPage";
 import { LoginCodePage } from "@/features/auth/pages/LoginCodePage";
-import { LoginLinkPage } from "@/features/auth/pages/LoginLinkPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { HomeLayout } from "@/layouts/HomeLayout";
@@ -175,8 +174,6 @@ const branches: RouteObject[] = [
       { path: "/registro", Component: LoginPage },
       { path: "/registro/codigo", Component: LoginCodePage },
       { path: "/login/codigo", Component: LoginCodePage },
-      // La entrada con el enlace que manda el bot al chat de WhatsApp (`/ingresar#t=…`).
-      { path: "/ingresar", Component: LoginLinkPage },
       { path: "/auth/callback", Component: CallbackPage },
     ],
   },
