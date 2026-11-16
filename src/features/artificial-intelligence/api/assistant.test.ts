@@ -54,7 +54,8 @@ describe("assistant contract", () => {
       "Invalid assistant contract.",
     );
   });
-  it("rejects an acceptance receipt with fields outside the contract", async () => {
+  // I11: a newer backend may add a field; an open tab drops what it does not know and keeps reading.
+  it("reads an acceptance receipt without the fields it does not know", async () => {
     server.use(
       http.post("/api/ai/assistant/turns", () =>
         HttpResponse.json(turn, { status: 202 }),
@@ -68,7 +69,8 @@ describe("assistant contract", () => {
         expectedConnectionRevision: 7,
         question: turn.question,
       }),
-    ).rejects.toThrow("Invalid assistant contract.");
+    ).resolves.toStrictEqual({ conversationId: turn.conversationId, requestId, conversationRevision: 2, turnRevision: 4,
+      state: "completed", stage: "finished", submittedAtUtc: turn.submittedAtUtc, serverNowUtc: turn.serverNowUtc, pollingAfterSeconds: 1 });
   });
   it("reads a complete turn including usage and cancellation time", async () => {
     server.use(
@@ -81,7 +83,7 @@ describe("assistant contract", () => {
     server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json(dictated)));
     await expect(assistantApi.turn(requestId)).resolves.toEqual(dictated);
     server.use(http.get("/api/ai/assistant/turns/:id", () => HttpResponse.json({ ...dictated, audio: { ...dictated.audio, extra: 1 } })));
-    await expect(assistantApi.turn(requestId)).rejects.toThrow("Invalid assistant contract.");
+    await expect(assistantApi.turn(requestId)).resolves.toStrictEqual(dictated);
   });
   it("uploads a recording in multipart under its own request and follows its normalization", async () => {
     const sends = captureUploads([{ status: 202,
@@ -210,7 +212,6 @@ describe("assistant contract", () => {
     ["more than ten pages", { ...read, pages: 11 }],
     ["a readability outside the contract", { ...read, readability: "blurry" }],
     ["a cause outside the contract", { ...read, problem: "torn" }],
-    ["a field outside the contract", { ...read, text: "Monto $ 1.000" }],
     ["no cause at all", { name: read.name, kind: read.kind, pages: read.pages, size: read.size, readability: read.readability }],
   ])("rejects the status of a reading whose document has %s", async (_, document) => {
     server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json(documentStatus("completed", document))));
@@ -227,9 +228,17 @@ describe("assistant contract", () => {
       documentRequestId });
     expect(sent).toEqual({ requestId, conversationId: null, expectedRevision: null, expectedConnectionRevision: 7, question: "", documentRequestId });
   });
+  it("reads a normalization and a reading status without the fields it does not know (I11)", async () => {
+    const normalized = { requestId: audioRequestId, state: "completed", transcript: "Hola", failure: null, pollingAfterSeconds: 1 };
+    server.use(http.get("/api/ai/assistant/audio/:id", () => HttpResponse.json({ ...normalized, text: "Hola" })));
+    await expect(assistantApi.audio(audioRequestId)).resolves.toStrictEqual(normalized);
+    server.use(http.get("/api/ai/assistant/documents/:id", () => HttpResponse.json(
+      { ...documentStatus("completed", { ...read, text: "Monto $ 1.000" }), text: "Monto $ 1.000" })));
+    await expect(assistantApi.document(documentRequestId)).resolves.toStrictEqual(documentStatus("completed", read));
+  });
   it("rejects a normalization status outside the contract", async () => {
     server.use(http.get("/api/ai/assistant/audio/:id", () => HttpResponse.json(
-      { requestId: audioRequestId, state: "completed", transcript: "Hola", failure: null, pollingAfterSeconds: 1, text: "Hola" })));
+      { requestId: audioRequestId, state: "Completed", transcript: "Hola", failure: null, pollingAfterSeconds: 1 })));
     await expect(assistantApi.audio(audioRequestId)).rejects.toThrow("Invalid assistant contract.");
   });
 });

@@ -32,13 +32,19 @@ de Enviar; «Cancelar consulta», «Consultar estado», «Repetir el mismo pedid
 dicen lo que hacen; «Cancelar y continuar» apaga las otras opciones y el diálogo espera abierto, como la confirmación
 de borrado, que se cierra con la respuesta.
 
-api/assistant valida cada respuesta con zod estricto y deriva sus tipos con z.infer; un cuerpo fuera del contrato
-lanza «Invalid assistant contract.». state (pending, running, completed, failed, uncertain, canceled, expired) y
+api/assistant valida cada respuesta con zod y deriva sus tipos con z.infer. Las respuestas, a diferencia del resto del
+front, no usan zod estricto: sus objetos son `z.object` y descartan los campos que no conocen, así una pestaña de Inicio
+abierta sigue leyendo cuando se despliega un backend que suma uno (I11, 2026-11-14). Un tipo distinto, un campo que falta
+o un valor fuera de un enum lanza «Invalid assistant contract.»: un valor nuevo (un estado, una etapa) lo escribe el
+backend un despliegue después del que ya lo lee, la regla de versiones de su despliegue. Lo estricto queda en
+assistantHttpContract, que compara cada lectura con su cuerpo exportado entero (un campo que el cliente descartaría no
+pasa). state (pending, running, completed, failed, uncertain, canceled, expired) y
 stage viajan en minúsculas como el DTO, y las comparaciones usan la unión AssistantState. usage, stage (nunca null),
 cancelRequestedAtUtc y configurationDestination son requeridos. El contrato son el DTO y los ejemplos exportados
 en test/fixtures/ai-assistant-http; los dobles de comportamiento no lo acreditan. assistantHttpContract lee esos
 cuerpos intactos con httpCohort("aiAssistant") por el cliente, MSW y los adaptadores del modelo: pending activo,
-completed con respuesta y canceled con un intento nuevo, y el texto es/en de cada estado.
+completed con respuesta y canceled con un intento nuevo, y el texto es/en de cada estado; y los seis con un campo de más
+en cada objeto, que el cliente lee sin él y la comparación con el cuerpo rechaza.
 
 Audio de Inicio (IA4): con `bootstrap.audio` y un navegador que graba, el micrófono abre la grabación de
 `useAudioRecorder` (tope de 1.000.000 bytes). Al mandar, `useAssistantDictation` sube el audio por `api.upload` con su

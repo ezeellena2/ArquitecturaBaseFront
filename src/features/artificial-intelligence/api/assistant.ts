@@ -23,7 +23,7 @@ const stage = z.enum([
 ]);
 // I8: «unavailable» is a row the server could not decrypt: generic title, no content, and it can still be deleted.
 const contentAccess = z.enum(["allowed", "blocked", "expired", "unavailable"]);
-const evidence = z.strictObject({
+const evidence = z.object({
   id,
   sourceId: z.string(),
   sourceVersion: z.number().int().positive(),
@@ -32,9 +32,9 @@ const evidence = z.strictObject({
   destination: z.string().nullable(),
   requiredPermissions: z.array(z.string()),
   rows: z.array(
-    z.strictObject({
+    z.object({
       id: id.nullable(),
-      values: z.array(z.strictObject({ label: z.string(), value: z.string() })),
+      values: z.array(z.object({ label: z.string(), value: z.string() })),
     }),
   ),
   isComplete: z.boolean(),
@@ -50,20 +50,20 @@ const acceptedFields = {
   serverNowUtc: utc,
   pollingAfterSeconds: z.number().int().positive(),
 };
-const accepted = z.strictObject(acceptedFields);
-const failure = z.strictObject({
+const accepted = z.object(acceptedFields);
+const failure = z.object({
   code: z.string(),
   detail: z.string(),
   recovery: z.enum(["reviewUncertainty", "newAttempt"]),
 });
-const turn = z.strictObject({
+const turn = z.object({
   ...acceptedFields,
   turnId: id,
   ordinal: z.number().int().positive(),
   contentAccess,
   question: z.string().nullable(),
   answer: z
-    .strictObject({
+    .object({
       kind: z.string(),
       text: z.string(),
       evidenceIds: z.array(id),
@@ -72,7 +72,7 @@ const turn = z.strictObject({
   evidences: z.array(evidence),
   failure: failure.nullable(),
   usage: z
-    .strictObject({
+    .object({
       inputTokens: z.number().int().nullable(),
       outputTokens: z.number().int().nullable(),
       audioSeconds: z.number().nullable(),
@@ -83,7 +83,7 @@ const turn = z.strictObject({
   cancelRequestedAtUtc: utc.nullable(),
   // Only a turn that closed on a proposal carries it; its content belongs to the module that owns the capability.
   proposal: z
-    .strictObject({
+    .object({
       id,
       capability: z.string().min(1),
       version: z.number().int().positive(),
@@ -91,11 +91,11 @@ const turn = z.strictObject({
     })
     .optional(),
   // A dictated turn names its recording and carries what the server heard in it (IA4).
-  audio: z.strictObject({ requestId: id, transcript: z.string() }).optional(),
+  audio: z.object({ requestId: id, transcript: z.string() }).optional(),
   // Only the turn that brought a file shows it: the turns that inherit it keep their shape. A spreadsheet (Stage 2) counts its rows
   // and a document (Stage 3) never does: a photo or a PDF may count its pages (a photo is one, a PDF up to ten), and a Word has none.
   attachment: z
-    .strictObject({
+    .object({
       name: z.string(),
       kind: z.enum(["xlsx", "csv", "pdf", "jpeg", "png", "docx"]),
       rows: count.optional(),
@@ -107,7 +107,7 @@ const turn = z.strictObject({
     .optional(),
 });
 // Where the normalization of a recording is; the transcript once it completed (IA4).
-const audioStatus = z.strictObject({
+const audioStatus = z.object({
   requestId: id,
   state: assistantStateSchema,
   transcript: z.string().nullable(),
@@ -116,11 +116,11 @@ const audioStatus = z.strictObject({
 });
 // Where the reading of a photo or a PDF is (Stage 3); once completed, the document it read (a photo is one page) and how readable it
 // was, with the cause when it was not whole; a failure says why.
-const documentStatus = z.strictObject({
+const documentStatus = z.object({
   requestId: id,
   state: assistantStateSchema,
   document: z
-    .strictObject({
+    .object({
       name: z.string(),
       kind: z.enum(["pdf", "jpeg", "png"]),
       pages: z.number().int().min(1).max(10),
@@ -132,7 +132,7 @@ const documentStatus = z.strictObject({
   failure: failure.nullable(),
   pollingAfterSeconds: z.number().int().positive(),
 });
-const bootstrap = z.strictObject({
+const bootstrap = z.object({
   availability: z.enum([
     "available",
     "paused",
@@ -141,8 +141,8 @@ const bootstrap = z.strictObject({
     "capacityLimited",
   ]),
   connectionRevision: revision,
-  suggestions: z.array(z.strictObject({ id: z.string(), question: z.string() })),
-  limits: z.strictObject({ questionMaxLength: z.number().int().positive() }),
+  suggestions: z.array(z.object({ id: z.string(), question: z.string() })),
+  limits: z.object({ questionMaxLength: z.number().int().positive() }),
   configurationDestination: z.literal("aiConfiguration").nullable(),
   // Whether Home takes a recording: a provider that hears what the browser records, and private storage.
   audio: z.boolean(),
@@ -161,13 +161,13 @@ const summaryFields = {
   lastActivityAtUtc: utc,
   contentAccess,
 };
-const conversationSummary = z.strictObject(summaryFields);
-const conversation = z.strictObject({
+const conversationSummary = z.object(summaryFields);
+const conversation = z.object({
   ...summaryFields,
   activeRequestId: id.nullable(),
 });
 const page = <T extends z.ZodType>(item: T) =>
-  z.strictObject({
+  z.object({
     items: z.array(item),
     page: z.number().int().positive(),
     pageSize: z.number().int().positive(),
@@ -203,6 +203,9 @@ export interface AssistantSubmit {
   /// The completed reading of a photo or a PDF: the server takes the document and its reading, never the browser (Stage 3).
   readonly documentRequestId?: string;
 }
+// I11: the objects drop the fields they do not know (`z.object`), so a tab left open reads the bodies of a newer backend that adds
+// one. A wrong type, a missing field or a value outside an enum still fails: a new value is written one deployment after the one that
+// reads it. The strict side is assistantHttpContract, which compares each read with its exported body.
 function read<T>(schema: z.ZodType<T>, body: unknown): T {
   const parsed = schema.safeParse(body);
   if (!parsed.success) throw new Error("Invalid assistant contract.");

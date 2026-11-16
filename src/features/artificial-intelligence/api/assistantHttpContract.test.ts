@@ -20,7 +20,8 @@ it("qualifies the six Home assistant captures and their actual producer", () => 
     expect(provenance.sources.some(item => item.path.endsWith("/" + source))).toBe(true);
 });
 
-it("reads bootstrap, acceptance, turn, turns and cancellation through the strict client, MSW and the adapters", async () => {
+// The client drops the fields it does not know (I11): each read equal to its exported body is what keeps this contract strict.
+it("reads bootstrap, acceptance, turn, turns and cancellation intact through the client, MSW and the adapters", async () => {
   const submitted = identity.parse(cohort.json("submitted.json"));
   const canceledIdentity = identity.parse(cohort.json("canceled.json"));
   const received: { path: string; body?: unknown }[] = [];
@@ -94,6 +95,41 @@ it("reads bootstrap, acceptance, turn, turns and cancellation through the strict
     { path: "/api/ai/assistant/conversations/" + submitted.conversationId + "/turns?page=1&pageSize=20&sort=-ordinal" },
     { path: "/api/ai/assistant/turns/" + canceledIdentity.requestId + "/cancel" },
   ]);
+});
+
+// I11: an open Home tab reads the bodies of a newer backend, which may bring a field this version does not know. The client
+// drops it and keeps reading; the strict side is the contract above, which compares each read with its exported body.
+it("reads every exported body with a field more in each object, and the contract comparison rejects it", async () => {
+  const withFieldMore = (value: unknown): unknown =>
+    Array.isArray(value) ? value.map(withFieldMore)
+      : value !== null && typeof value === "object"
+        ? { ...Object.fromEntries(Object.entries(value).map(([key, item]) => [key, withFieldMore(item)])), fieldOfANewerVersion: "new" }
+        : value;
+  const submitted = identity.parse(cohort.json("submitted.json"));
+  let body: unknown;
+  const respond = () => Response.json(body);
+  server.use(
+    http.get("/api/ai/assistant/bootstrap", respond),
+    http.post("/api/ai/assistant/turns", respond),
+    http.get("/api/ai/assistant/turns/:requestId", respond),
+    http.get("/api/ai/assistant/conversations/:conversationId/turns", respond),
+    http.post("/api/ai/assistant/turns/:requestId/cancel", respond),
+  );
+  const reads: readonly (readonly [string, () => Promise<unknown>])[] = [
+    ["bootstrap.json", () => assistantApi.bootstrap()],
+    ["submitted.json", () => assistantApi.submit(createSubmission(submitted.requestId, "Hola", 1))],
+    ["turn-pending.json", () => assistantApi.turn(submitted.requestId)],
+    ["turn-completed.json", () => assistantApi.turn(submitted.requestId)],
+    ["turns.json", () => assistantApi.turns(submitted.conversationId)],
+    ["canceled.json", () => assistantApi.cancel(submitted.requestId)],
+  ];
+  for (const [name, read] of reads) {
+    const exported = cohort.json(name);
+    body = withFieldMore(exported);
+    const value = await read();
+    expect(value, name).toEqual(exported);
+    expect(value, name).not.toEqual(body);
+  }
 });
 
 it.each([["es", es], ["en", en]] as const)("has the %s text of every captured state and of the stage of the active one", (_, texts) => {
