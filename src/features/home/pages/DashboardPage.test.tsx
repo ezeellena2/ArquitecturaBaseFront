@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
+import { loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
-import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
+import { currentUser, phoneOnlyUser, whatsappLoginMethods } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -43,7 +44,12 @@ describe("DashboardPage", () => {
   });
 
   it("takes to Mi perfil, where the email is added", async () => {
-    server.use(http.get("/api/me", () => HttpResponse.json(phoneOnlyUser)));
+    // La cuenta entra con su número, así que WhatsApp está prendido: el correo nuevo se confirma también con un código a
+    // ese número (N11). Sin WhatsApp, «Agregar correo» queda apagado con el porqué.
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(phoneOnlyUser)),
+      http.get("/account/login-methods", () => HttpResponse.json(whatsappLoginMethods)),
+    );
 
     const { router } = renderRouteWithProviders("/");
 
@@ -51,6 +57,7 @@ describe("DashboardPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Mi perfil" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/perfil");
-    expect(await screen.findByRole("button", { name: "Agregar correo" })).toBeInTheDocument();
+    await waitFor(() => expect(queryClient.getQueryState(loginMethodsQueryKey)?.status).toBe("success"));
+    expect(screen.getByRole("button", { name: "Agregar correo" })).toBeEnabled();
   });
 });
