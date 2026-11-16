@@ -48,23 +48,23 @@ interface UsersFilterBarProps {
 /// resto detrás de "Más filtros", con los chips de lo puesto debajo.
 ///
 /// Los roles y los plazos de "Creado" salen de `/api/users/filter-counts`, que trae también cuántos traería cada
-/// opción; esas cantidades no se muestran (FO1-A, 2026-11-03).
+/// opción; esas cantidades no se muestran (FO1-A, 2026-11-03), así que se pide una vez, sin la búsqueda ni los
+/// filtros, y no en cada búsqueda (N30).
 export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterBarProps) {
   const { t } = useTranslation("users");
   const { values, active, setFilter, clear } = filters;
 
-  // La misma clave raíz que el listado, así una mutación invalida las dos: unos conteos que sobreviven a un
-  // alta describen una lista que ya no existe.
+  // La misma clave raíz que el listado, así una mutación invalida las dos y un rol nuevo aparece entre las opciones.
   const { data: counts } = useQuery({
-    queryKey: userFilterCountsQueryKey({ ...values, search }),
-    queryFn: () => fetchUserFilterCounts({ ...values, search }),
+    queryKey: userFilterCountsQueryKey(),
+    queryFn: fetchUserFilterCounts,
   });
 
   // En plural: el segmentado filtra un conjunto, no rotula una fila. El singular se queda para la celda.
   const statusOptions = [
-    { value: undefined, label: t("filters.status.all"), count: counts?.status.all },
-    { value: "true", label: t("filters.status.active"), count: counts?.status.active },
-    { value: "false", label: t("filters.status.inactive"), count: counts?.status.inactive },
+    { value: undefined, label: t("filters.status.all") },
+    { value: "true", label: t("filters.status.active") },
+    { value: "false", label: t("filters.status.inactive") },
   ];
 
   // Sin conteos todavía no hay lista de roles que ofrecer: el catálogo lo trae la misma respuesta.

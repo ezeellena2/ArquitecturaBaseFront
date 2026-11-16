@@ -419,6 +419,30 @@ describe("UsersPage", () => {
     await waitFor(() => expect(requests.at(-1)).toContain("isActive=false"));
   });
 
+  it("asks for the filter options once, without the search or the filters, because it does not show their counts (N30)", async () => {
+    const listRequests: string[] = [];
+    const countRequests: string[] = [];
+    server.use(
+      http.get("/api/users", ({ request }) => {
+        listRequests.push(new URL(request.url).search);
+        return HttpResponse.json(page);
+      }),
+      http.get("/api/users/filter-counts", ({ request }) => {
+        countRequests.push(new URL(request.url).search);
+        return HttpResponse.json(counts);
+      }),
+    );
+
+    renderRouteWithProviders("/usuarios?isActive=true");
+    await screen.findByRole("table");
+    await userEvent.type(screen.getByRole("searchbox"), "ana");
+    await waitFor(() => expect(listRequests.at(-1)).toContain("search=ana"));
+    await userEvent.click(screen.getByRole("button", { name: "Inactivos" }));
+    await waitFor(() => expect(listRequests.at(-1)).toContain("isActive=false"));
+
+    expect(countRequests).toEqual([""]);
+  });
+
   it("shows a chip per filter and takes it out one by one", async () => {
     server.use(...listHandlers());
 

@@ -69,8 +69,9 @@ export interface UsersQuery extends UserFilters {
   readonly search?: string;
 }
 
-/// Lo que devuelve `GET /api/users/filter-counts`: cuántos traería cada opción con los demás filtros puestos
-/// e ignorando el propio. Por eso el número de "Inactivos" sigue estando cuando se está mirando activos.
+/// Lo que devuelve `GET /api/users/filter-counts`: las opciones de los filtros (los roles y los plazos de "Creado") y
+/// cuántos traería cada una. El front sólo usa las opciones, que no dependen de la búsqueda ni de los filtros, y no
+/// muestra las cantidades (N30).
 export interface UserFilterCounts {
   readonly status: { readonly all: number; readonly active: number; readonly inactive: number };
   readonly roles: readonly { readonly name: string; readonly count: number }[];
@@ -117,10 +118,9 @@ export const usersQueryKeyRoot = ["users"] as const;
 
 export const usersQueryKey = (query: UsersQuery) => ["users", query] as const;
 
-/// Cuelga del mismo prefijo que el listado: una mutación que invalida `usersQueryKeyRoot` se lleva también
-/// los conteos, que describen a ese listado y se quedarían mintiendo.
-export const userFilterCountsQueryKey = (filters: UserFilters & { readonly search?: string }) =>
-  ["users", "filter-counts", filters] as const;
+/// Cuelga del mismo prefijo que el listado: una mutación que invalida `usersQueryKeyRoot` se lleva también las
+/// opciones, por un rol nuevo. Sin la búsqueda ni los filtros: una sola por visita, no una por búsqueda (N30).
+export const userFilterCountsQueryKey = () => ["users", "filter-counts"] as const;
 
 export const userQueryKey = (id: string) => ["user", id] as const;
 
@@ -151,14 +151,10 @@ export function fetchUsers(query: UsersQuery): Promise<PagedResult<UserListItem>
   return api.get<PagedResult<UserListItem>>(`/api/users?${params.toString()}`);
 }
 
-export function fetchUserFilterCounts(
-  filters: UserFilters & { readonly search?: string },
-): Promise<UserFilterCounts> {
-  const params = new URLSearchParams();
-  appendFilters(params, filters);
-  const query = params.toString();
-
-  return api.get<UserFilterCounts>(`/api/users/filter-counts${query ? `?${query}` : ""}`);
+/// Sin filtros ni búsqueda: el backend cuenta sobre todas las cuentas, una vez, en lugar de cinco consultas más una por
+/// rol en cada búsqueda para unos números que no se muestran (N30).
+export function fetchUserFilterCounts(): Promise<UserFilterCounts> {
+  return api.get<UserFilterCounts>("/api/users/filter-counts");
 }
 
 export function fetchUser(id: string): Promise<UserDetail> {

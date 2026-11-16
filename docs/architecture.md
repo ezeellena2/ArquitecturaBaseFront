@@ -132,7 +132,8 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   query string. `setParams((previous) => …)` recibe la query **confirmada**: dos llamadas en el mismo tick se pisan. Lo que
   viaja junto va en una llamada (`setFilter` incluye el reset de página); lo cubre `useFilters.test.tsx`.
 - `useFilters` recibe las claves del backend (`userFilterKeys`). Escribe con `replace: true`.
-- Conteos: `GET /api/users/filter-counts`, bajo `usersQueryKeyRoot` como el listado, así una mutación invalida ambos.
+- Opciones de los filtros: `GET /api/users/filter-counts`, bajo `usersQueryKeyRoot` como el listado, así una mutación invalida
+  ambos. Se pide una vez, sin la búsqueda ni los filtros, porque las cantidades no se muestran (N30).
 - `DataTable` recibe `emptyTitle`, `emptyDescription` y `emptyAction`. Cambiar el orden también vuelve a la página 1.
 - Parámetros de `PagedRequest`; `sort`: `campo` o `-campo`; fuera de la whitelist, 400.
 
