@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ApiError } from "@/shared/api/ApiError";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { fetchFormEntry, fetchFormEntryCorrection, fetchFormEntryGroups, fetchFormEntryOptions, submitFormEntry, submitFormEntryCorrection, type FormEntry, type FormEntryGroup, type FormEntryQuestion, type FormEntrySubmitted } from "../api/entries";
 import { correctionSignature, entrySignature, keptFileIds, toEntrySend, type EntryDraft } from "../entryForm";
@@ -67,7 +68,7 @@ export function useEntryGroupChoice(entry: FormEntry, question: FormEntryQuestio
 
 /**
  * Sends the loaded response. The request keeps its id while it carries the same answers, so repeating it after a cut
- * returns the first result without another number; any change makes another request, and so does the next response
+ * returns the first result without another number (a 400 without questions starts another); any change makes another request, and so does the next response
  * once one arrived, even with the same kept answers (AR2-A). Nothing goes to MutationCache.
  */
 export function useFormEntrySubmit(formId: string) {
@@ -82,6 +83,10 @@ export function useFormEntrySubmit(formId: string) {
       const result = await submitFormEntry(formId, toEntrySend(entry, draft, last.current.requestId, i18n.language), fraction => setProgress(fraction));
       last.current = null;
       return result;
+    } catch (error) {
+      // A 400 that names no question is a rejection the server may not repeat (another copy, another version): the next try is a new request.
+      if (error instanceof ApiError && error.status === 400 && !error.errors) last.current = null;
+      throw error;
     } finally {
       setProgress(null);
     }
@@ -117,6 +122,10 @@ export function useFormEntryCorrectionSubmit(formId: string, recordId: string) {
         keptFileIds(draft), fraction => setProgress(fraction));
       last.current = null;
       return result;
+    } catch (error) {
+      // A 400 that names no question is a rejection the server may not repeat (another copy, another version): the next try is a new request.
+      if (error instanceof ApiError && error.status === 400 && !error.errors) last.current = null;
+      throw error;
     } finally {
       setProgress(null);
     }
