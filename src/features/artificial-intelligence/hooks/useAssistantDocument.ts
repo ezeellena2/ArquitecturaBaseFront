@@ -115,6 +115,11 @@ export function useAssistantDocument({ userId, onForbidden, onWait }: {
     setFileError(undefined);
   }
 
+  /// The server no longer keeps that reading (its turn said Expired, I2): the same file goes up again under another request.
+  function forget(requestId: string) {
+    if (pending.current?.requestId === requestId) pending.current = null;
+  }
+
   return {
     phase,
     progress,
@@ -126,5 +131,6 @@ export function useAssistantDocument({ userId, onForbidden, onWait }: {
     },
     read,
     cancel,
+    forget,
   };
 }

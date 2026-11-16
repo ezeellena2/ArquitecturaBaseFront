@@ -33,12 +33,15 @@ export function useAssistantTurnActions({
   userId,
   onAccepted,
   onForbidden,
+  onSourceExpired,
 }: {
   userId: string;
   /// The accepted turn and the submission it was, also when «Consultar estado» or «Repetir el mismo pedido» confirmed it: the owner
   /// clears what that turn took.
   onAccepted: (value: AssistantAccepted, submission: AssistantSubmission) => void;
   onForbidden: () => void;
+  /// The recording or the reading the submission named is gone (I2): the owner forgets its request, so the next send uploads it again.
+  onSourceExpired?: (submission: AssistantSubmission) => void;
 }) {
   const { t } = useTranslation(["assistant", "common"]);
   const client = useQueryClient();
@@ -150,6 +153,13 @@ export function useAssistantTurnActions({
         frozen.current = null;
         setUncertain(false);
         void client.invalidateQueries({ queryKey: assistantKey(userId) });
+      } else if (error.code === "Ai.Assistant.Expired" && acceptance
+        && (frozen.current?.body.audioRequestId || frozen.current?.body.documentRequestId)) {
+        // I2: the recording or the reading it named is gone (a draft left open for a day, or a removed conversation): repeating it
+        // would only repeat the 409. The composer keeps them and the next send uploads them again under new requests.
+        onSourceExpired?.(frozen.current);
+        frozen.current = null;
+        setUncertain(false);
       } else if (acceptance) setUncertain(true);
     } else frozen.current = null;
     notify({

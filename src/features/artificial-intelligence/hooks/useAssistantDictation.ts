@@ -69,7 +69,12 @@ export function useAssistantDictation({ userId, onForbidden, onWait }: {
     setError(undefined);
   }
 
-  return { normalizing, error, clearError: () => setError(undefined), normalize, cancel };
+  /// The server no longer keeps that normalization (its turn said Expired, I2): the same recording goes up again under another request.
+  function forget(requestId: string) {
+    if (pending.current?.requestId === requestId) pending.current = null;
+  }
+
+  return { normalizing, error, clearError: () => setError(undefined), normalize, cancel, forget };
 }
 
 /// The pause the server asks for between two reads of an operation (`pollingAfterSeconds`); leaving the page ends it.

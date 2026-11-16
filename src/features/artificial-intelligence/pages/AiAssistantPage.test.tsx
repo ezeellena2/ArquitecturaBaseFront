@@ -1114,6 +1114,38 @@ describe("dictated turns (IA4)", () => {
     expect(writes[1].audioRequestId).toBe(writes[0].audioRequestId);
     expect(writes[1].requestId).not.toBe(writes[0].requestId);
   });
+
+  // I2, review: a draft left open for more than a day, or one whose conversation was removed, names a recording the server no longer
+  // keeps. Its turn says Expired, and the next send uploads the recording again under another request instead of repeating the 409.
+  it("uploads the recording again under another request after its turn says it expired", async () => {
+    installMicrophone();
+    const uploads = captureUploads([{ status: 202, body: status("completed", "Armame un formulario de visitas") },
+      { status: 202, body: status("completed", "Armame un formulario de visitas") }]);
+    let rejected = false;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      if (!rejected) {
+        rejected = true;
+        return HttpResponse.json({ title: "Conflicto", status: 409, code: "Ai.Assistant.Expired",
+          detail: "El contenido de esa consulta ya venció." }, { status: 409 });
+      }
+      turn = { ...turn, requestId: body.requestId, question: body.question, audio: { requestId: audioRequestId, transcript: "Armame un formulario de visitas" } };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    expect(screen.getByLabelText("Tu audio")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(uploads).toHaveLength(2);
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect(writes[1].audioRequestId).toBe(uploads[1].body.get("requestId"));
+    expect(writes[1].requestId).not.toBe(writes[0].requestId);
+  });
 });
 
 // Stage 2: one spreadsheet per message, from the clip or from a suggestion that attaches; the browser stops what it sees does
@@ -1754,6 +1786,39 @@ describe("documents in Home (Stage 3)", () => {
     expect(writes[1].documentRequestId).toBe(uploads[0].body.get("requestId"));
     expect(writes[1].requestId).not.toBe(writes[0].requestId);
     expect(await screen.findByText("PDF · 2 páginas · 412 KB")).toBeInTheDocument();
+  });
+
+  // I2, review: the reading a turn names may be gone (a draft left open for a day, or a removed conversation): after its Expired, the
+  // next send uploads the same file again under another request.
+  it("uploads the document again under another request after its turn says it expired", async () => {
+    server.use(withKinds(all));
+    const uploads = captureUploads([{ status: 202, body: status("completed", read) }, { status: 202, body: status("completed", read) }]);
+    let rejected = false;
+    server.use(http.post("/api/ai/assistant/turns", async ({ request }) => {
+      const body = (await request.json()) as AssistantSubmit;
+      writes.push(body);
+      if (!rejected) {
+        rejected = true;
+        return HttpResponse.json({ title: "Conflicto", status: 409, code: "Ai.Assistant.Expired",
+          detail: "El contenido de esa consulta ya venció." }, { status: 409 });
+      }
+      turn = { ...turn, requestId: body.requestId, question: body.question, attachment: { name: read.name, kind: "pdf", pages: 2, size: read.size } };
+      return HttpResponse.json(acceptedOf(turn), { status: 202 });
+    }));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf", 412 * 1024);
+    const send = async () => {
+      await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+      await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    };
+    await send();
+    await waitFor(() => expect(writes).toHaveLength(1));
+    await send();
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(uploads).toHaveLength(2);
+    expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+    expect(writes[1].documentRequestId).toBe(uploads[1].body.get("requestId"));
   });
 
   it("says under the composer that this person can no longer attach documents, keeps Home and reads the bootstrap again", async () => {

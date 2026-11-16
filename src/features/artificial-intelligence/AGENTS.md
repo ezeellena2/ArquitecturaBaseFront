@@ -73,7 +73,8 @@ ya leído no se vuelve a pedir; un audio ya oído tampoco se vuelve a subir. Los
 falló dicen qué hacer («Tocá Enviar…»). Una lectura fallida deja su motivo debajo del editor y el próximo intento usa otro pedido.
 Un 400 en `file` o el 403 `AttachmentDocumentForbidden` quedan con el archivo, como en la Etapa 2, y
 `AttachmentDocumentUnavailable` relee el bootstrap. Un 429 al subir un audio o un documento arranca la espera común
-(`actions.startCooldown`). La aceptación del turno, también la que confirman «Consultar estado» o «Repetir el mismo pedido», saca
+(`actions.startCooldown`). Un 409 `Ai.Assistant.Expired` del turno que nombra un audio o un documento (un borrador de más de un
+día o una conversación borrada) olvida esos pedidos (`onSourceExpired` y `forget`): el próximo envío los vuelve a subir (I2). La aceptación del turno, también la que confirman «Consultar estado» o «Repetir el mismo pedido», saca
 del editor el archivo y el audio que llevó (`onAccepted` recibe el envío). Salir confirmando que se descarta el borrador saca el
 archivo y el audio y corta la normalización y la lectura (`cancel`); `sendMedia` vuelve a mirar después de cada espera que el
 envío no se haya retirado, así nada llega a la conversación que se dejó. Un Word va por `submitFile`. El mensaje dice «PDF ·

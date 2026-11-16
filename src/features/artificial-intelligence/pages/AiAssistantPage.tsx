@@ -249,6 +249,11 @@ export function AiAssistantPage() {
       setForbidden(true);
       void client.invalidateQueries({ queryKey: currentUserQueryKey });
     },
+    // I2: what the turn named expired, so the next send uploads the same recording and file again.
+    onSourceExpired: ({ body }) => {
+      if (body.audioRequestId) dictation.forget(body.audioRequestId);
+      if (body.documentRequestId) reading.forget(body.documentRequestId);
+    },
   });
   // IA4: one recording per message, up to the bound of a WhatsApp audio; leaving the page loses it like a draft.
   const recorder = useAudioRecorder(audioMaximumBytes);
