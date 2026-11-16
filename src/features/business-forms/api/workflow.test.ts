@@ -41,7 +41,7 @@ it("requires recipients and rejects the retired aggregate review contract", () =
   expect(() => readResponseWorkflow({ ...body, actions: [{ ...oldAction, canReview: true, canRetry: false, review: null }] }, recordId)).toThrow("Invalid response workflow contract.");
   expect(() => readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], recipients: [{ ...body.actions[0].recipients[0], review: { wasSent: true, reviewedAtUtc: "yesterday", reviewedBy: { userId: recordId, displayName: "Private name" } } }] }] }, recordId)).toThrow("Invalid response workflow contract.");
 });
-it.each(["NotFound", "Pending", "Sending", "Accepted", "Failed", "Uncertain"])("reads the explicit %s channel recipient state", state => {
+it.each(["NotFound", "Pending", "Sending", "Accepted", "Failed", "Uncertain", "NotApplicable"])("reads the explicit %s channel recipient state", state => {
   const body = actionResponse();
   expect(readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], recipients: [{ ...body.actions[0].recipients[0], state }] }] }, recordId).actions[0].recipients[0].state).toBe(state);
 });
@@ -109,4 +109,21 @@ it("requires the stored generator instead of inferring it for a document", () =>
     createdAtUtc: "2026-10-17T12:00:00Z" };
   expect(() => readResponseWorkflow({ ...actionResponse(), documents: [document] }, recordId)).toThrow("Invalid response workflow contract.");
   expect(() => readResponseWorkflow({ ...actionResponse(), documents: [{ ...document, runId: "not-a-guid" }] }, recordId)).toThrow("Invalid response workflow contract.");
+});
+
+it("reads a person with no notice because their 24 hour window is closed, with the reason the server gives", () => {
+  const body = actionResponse();
+  const recipient = { ...body.actions[0].recipients[0], channelId: "WhatsApp", state: "NotApplicable", canReview: false, canRetry: false, reasonCode: "Forms.Action.NoLongerInRole", reason: "Ya no tiene el rol." };
+  const response = { ...body, actions: [{ ...body.actions[0], kind: "NotifyRole", state: "NotApplicable", canConsult: false, reasonCode: recipient.reasonCode, reason: recipient.reason, recipients: [recipient] }] };
+  const read = readResponseWorkflow(response, recordId).actions[0];
+  expect(read.state).toBe("NotApplicable");
+  expect(read.recipients[0]).toEqual(recipient);
+});
+it("reads who last asked to retry or consult an action, and omits it when nobody did", () => {
+  const body = actionResponse();
+  const lastRequest = { kind: "Consult", by: { userId: recipientUserId, displayName: "Juan" }, atUtc: "2026-10-17T12:30:00Z" };
+  expect(readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], lastRequest }] }, recordId).actions[0].lastRequest).toEqual(lastRequest);
+  expect(readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], lastRequest: { ...lastRequest, kind: "RecipientRetry", by: null } }] }, recordId).actions[0].lastRequest?.by).toBeNull();
+  expect(readResponseWorkflow(body, recordId).actions[0].lastRequest).toBeUndefined();
+  expect(() => readResponseWorkflow({ ...body, actions: [{ ...body.actions[0], lastRequest: { ...lastRequest, kind: "Other" } }] }, recordId)).toThrow("Invalid response workflow contract.");
 });

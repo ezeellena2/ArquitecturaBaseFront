@@ -117,6 +117,7 @@ export function ResponseWorkflowHistory({ workflow, record, timeZoneId, document
         {documents.map(document => <Detail key={document.id}>{document.name}{document.culture !== menu ? " · " + t("cultures." + document.culture) : null}</Detail>)}
         {single ? <Detail>{single.user.displayName ?? unknown}</Detail> : action.recipients.length ? <Detail>{t("detail.recipients", { count: action.recipients.length })}</Detail> : null}
         {action.reason ? <Detail>{action.reason}</Detail> : null}
+        {action.lastRequest ? <Detail>{t("workflow.lastRequest." + action.lastRequest.kind, { name: action.lastRequest.by?.displayName ?? unknown })} <time dateTime={action.lastRequest.atUtc}>{when(action.lastRequest.atUtc)}</time></Detail> : null}
         {single ? recipientNotes(single) : null}
       </>,
       state: <Badge variant={actionTone(action.state)}>{t("workflow.states." + action.state)}</Badge>,

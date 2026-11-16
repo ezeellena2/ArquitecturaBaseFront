@@ -1187,7 +1187,13 @@
       "Sending": "Enviando",
       "Accepted": "Enviado",
       "Failed": "No se pudo enviar",
-      "Uncertain": "Envío sin confirmar"
+      "Uncertain": "Envío sin confirmar",
+      "NotApplicable": "No aplica"
+    },
+    "lastRequest": {
+      "Retry": "{{name}} pidió reintentar.",
+      "RecipientRetry": "{{name}} pidió reintentar el envío a una persona.",
+      "Consult": "{{name}} pidió consultar el estado."
     }
   },
   "approvals": {

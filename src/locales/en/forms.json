@@ -1187,7 +1187,13 @@
       "Sending": "Sending",
       "Accepted": "Sent",
       "Failed": "Could not send",
-      "Uncertain": "Send unconfirmed"
+      "Uncertain": "Send unconfirmed",
+      "NotApplicable": "Not applicable"
+    },
+    "lastRequest": {
+      "Retry": "{{name}} asked to retry.",
+      "RecipientRetry": "{{name}} asked to retry the send to one person.",
+      "Consult": "{{name}} asked to check the status."
     }
   },
   "approvals": {

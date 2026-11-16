@@ -491,3 +491,21 @@ it("names the spreadsheet, its sheet and its row in «Cómo empezó»", async ()
   expect(await screen.findByText("Salió de una planilla · cobranzas-semana.xlsx, fila 5 de «Ventas»")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Ver en Documentos recibidos" })).toHaveAttribute("href", "/formularios/documentos/" + id(40));
 });
+
+it("tells a person whose notice does not apply as neutral, with the reason, and not as a problem", async () => {
+  showActivity({ ...responseWorkflowFixture(), actions: [roleNotice({ recipients: [
+    { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "NotApplicable", reasonCode: "WhatsApp.FormAction.WindowClosed", reason: "Su ventana de 24 horas está cerrada.",
+      canReview: false, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
+  const effects = await receivedBand();
+  const beto = betoRow(effects);
+  expect(beto.getByText("No aplica")).toBeInTheDocument();
+  expect(beto.getByText("Su ventana de 24 horas está cerrada.")).toBeInTheDocument();
+  expect(beto.queryByRole("button")).not.toBeInTheDocument();
+});
+
+it("says who asked last to consult or retry an action and when, with numbers only", async () => {
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ lastRequest: { kind: "Consult", by: { userId: id(8), displayName: "Ana" }, atUtc: "2026-10-17T12:30:00Z" } })] });
+  const effects = await receivedBand();
+  expect(within(effects).getByText(/Ana pidió consultar el estado\./)).toHaveTextContent("Ana pidió consultar el estado. 17/10/2026, 12:30");
+  expect(effects.querySelector('time[datetime="2026-10-17T12:30:00Z"]')).toBeInTheDocument();
+});

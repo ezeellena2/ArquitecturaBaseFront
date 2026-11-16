@@ -5,7 +5,7 @@ export function workflowNextAction(action: { state: ActionState; canConsult: boo
   return action.state === "Failed" && action.canRetry ? "retry" : null;
 }
 
-export const recipientStates = ["NotFound", "Pending", "Sending", "Accepted", "Failed", "Uncertain"] as const;
+export const recipientStates = ["NotFound", "Pending", "Sending", "Accepted", "Failed", "Uncertain", "NotApplicable"] as const;
 export type RecipientState = typeof recipientStates[number];
 export interface WorkflowReviewTarget { readonly runId: string; readonly recipientUserId: string; readonly expectedRevision: number }
 export function workflowCanReview(recipient: { state: RecipientState; canReview: boolean }): boolean {
