@@ -1,7 +1,8 @@
 import { api } from "@/shared/api/httpClient";
 export type AiProvider = "OpenAI" | "Anthropic";
 export type CredentialChange = "Keep" | "Replace" | "Remove";
-export interface AiConnection { provider: AiProvider; model: string; hasCredential: boolean; enabled: boolean; revision: number; providers: AiProvider[] }
+// I4: the saved provider is one this version does not know (a newer one saved it): the connection reads empty and paused.
+export interface AiConnection { provider: AiProvider; model: string; hasCredential: boolean; enabled: boolean; revision: number; providers: AiProvider[]; unsupportedProvider?: boolean }
 export interface AiSaveRequest { provider: AiProvider; model: string; credentialChange: CredentialChange; apiKey: string | null; enabled: boolean; expectedRevision: number; requestId: string }
 export type AiTestRequest = Omit<AiSaveRequest, "enabled" | "requestId">;
 export type AiModelsRequest = Omit<AiTestRequest, "model">;

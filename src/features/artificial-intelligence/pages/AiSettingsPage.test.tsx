@@ -45,6 +45,13 @@ describe("AI settings", () => {
     expect(model.parentElement).toContainElement(screen.getByRole("button", { name: "Ingresar modelo manualmente" }));
     expect(within(zone).getByText("Disponibilidad")).toBeInTheDocument();
   });
+  it("says that a provider this version does not know left the connection paused, to choose another (I4)", async () => {
+    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true };
+    renderRouteWithProviders("/configuracion/ia");
+    const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
+    expect(notice.closest("[role=status]")).not.toBeNull();
+    expect(screen.getByRole("radio", { name: "Pausada" })).toBeChecked();
+  });
   it("replaces the key in its own row and cancels back to the saved one", async () => {
     renderRouteWithProviders("/configuracion/ia");
     await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));

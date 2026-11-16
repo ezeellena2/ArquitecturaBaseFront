@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
+import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
@@ -64,6 +65,8 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
     actions={canManage ? <><Button variant="outline" disabled={!editor.changed || locked} onClick={editor.discard}>{t("discard")}</Button>
       <Button disabled={!editor.changed || locked} pending={editor.working === "save"} onClick={() => void editor.save()}>{t(editor.working === "save" ? "saving" : "save")}</Button></> : undefined}>
     <div className="flex flex-col gap-5">
+      {/* I4: la conexión guardada usa un proveedor que esta versión no conoce; se lee vacía y pausada hasta elegir otro. */}
+      {baseline.unsupportedProvider ? <Banner tone="warning">{t("unsupportedProvider")}</Banner> : null}
       {/* Una cosa, una zona (IA1-A, 2026-11-08): toda la conexión en una superficie, un renglón por dato en el orden en
           que se completa (los modelos se cargan con la clave) y cada botón en el renglón del dato que toca. Probar actúa
           sobre todo junto y va en la banda: su resultado va al Toaster y la espera de un 429 es su motivo, sin textos al
