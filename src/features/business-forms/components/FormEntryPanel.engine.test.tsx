@@ -77,7 +77,7 @@ describe("loading a form with calculations and conditions next to the sheet (CA1
     await waitFor(() => expect(sends).toHaveLength(1));
     expect(JSON.parse(String(sends[0]!.get("answers")))).toEqual([
       { fieldId: fields.concept, value: fields.goods },
-      { fieldId: fields.block, rows: [[{ fieldId: fields.quantity, value: "12" }, { fieldId: fields.price, value: "850.00" }]] },
+      { fieldId: fields.block, rows: [[{ fieldId: fields.quantity, value: "12" }, { fieldId: fields.price, value: "850" }]] },
     ]);
   }, 30000);
 

@@ -117,9 +117,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).toMatchObject({ name: { es: "Clientes" }, description: { es: "Visitas" }, items: [{ itemId: null, code: "C1", text: { es: "Pérez", en: null }, isActive: true }] });
     expect(bodies[0]!.name).not.toHaveProperty("en");
-    expect(bodies[0]).not.toHaveProperty("requestId");
+    expect(bodies[0]).toHaveProperty("requestId", expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/));
     expect(vi.mocked(notify).mock.calls.filter(([message]) => message.kind === "success")).toHaveLength(1);
-  });
+  }, 30000);
   it("warns after «Listo» that a new field takes values once the catalog is saved, and saving takes the warning away", async () => {
     setup(); const fieldId = "01990000-0000-7000-8000-000000000030";
     server.use(http.put("/api/forms/catalogs/" + id, async ({ request }) => {

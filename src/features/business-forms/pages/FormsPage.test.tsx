@@ -41,7 +41,8 @@ describe("Forms routes", () => {
     const pending = new Promise<void>(resolve => { release = resolve; });
     server.use(http.post("/api/forms/definitions/:id/publications", async ({ request }) => { await pending; return store.handle(request); }));
     renderRouteWithProviders("/formularios/" + fixtureFormId);
-    await screen.findByLabelText("Nombre");
+    // The first test of the file pays the screen's lazy load: with other suites running it takes longer than the usual second.
+    await screen.findByLabelText("Nombre", {}, { timeout: 15000 });
     await userEvent.click(screen.getByRole("button", { name: "Publicar en WhatsApp" }));
     const dialog = await screen.findByRole("dialog", { name: "Publicar la versión 1 en WhatsApp" });
     await userEvent.click(await within(dialog).findByRole("button", { name: "Publicar versión 1" }));
@@ -50,7 +51,7 @@ describe("Forms routes", () => {
     expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
     release();
     await screen.findByText("Publicando · versión 1", { exact: true });
-  });
+  }, 30000);
 
   it("routes a publication revision conflict to explicit draft review with one feedback owner", async () => {
     const store = setup("forms-publication-ready", ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"]);

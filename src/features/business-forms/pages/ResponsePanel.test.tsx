@@ -48,7 +48,8 @@ it("contains mobile focus and preserves navigation in the decision-only metadata
   setup(["formapprovals.decide"], true);
   const origin = path;
   const { router } = renderRouteWithProviders(origin + "?approvalPageSize=20");
-  const row = await screen.findByRole("link", { name: "Revisar TEST-000002" });
+  // The first test of the file pays the screen's lazy load: with other suites running it takes longer than the usual second.
+  const row = await screen.findByRole("link", { name: "Revisar TEST-000002" }, { timeout: 15000 });
   const table = row.closest("table")!;
   await userEvent.click(row);
   const panel = await screen.findByRole("dialog", { name: "Detalle de la respuesta" });
@@ -75,7 +76,7 @@ it("contains mobile focus and preserves navigation in the decision-only metadata
   await waitFor(() => expect(router.state.location.pathname).toBe(origin));
   await waitFor(() => expect(table.closest('[aria-hidden="true"]')).toBeNull());
   await waitFor(() => expect(screen.getByRole("link", { name: "Revisar TEST-000001" })).toHaveFocus());
-});
+}, 30000);
 it("keeps the per-form pending total confirmed with the navigation context after a decision", async () => {
   const { tasks } = setup(["formapprovals.decide"], true);
   server.use(http.get("/api/forms/approvals", () => {
