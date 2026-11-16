@@ -2,8 +2,9 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CurrentUser } from "@/auth/useCurrentUser";
 import { queryClient } from "@/shared/api/queryClient";
-import { changeLanguage } from "@/shared/i18n";
+import i18n, { changeLanguage } from "@/shared/i18n";
 import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
@@ -20,17 +21,26 @@ interface ProfileBody {
   timeZoneId: string;
 }
 
-/// Un `/api/me` que el PUT modifica de verdad: es lo que hace que el idioma recién guardado llegue a la
-/// interfaz por el mismo camino que en la app (invalidar la consulta → volver a pedirla → aplicarlo).
-function profileHandlers(saved: ProfileBody[]) {
-  let profile = { ...currentUser };
+const conflictText = "La cuenta cambió mientras la editabas. Volvé a leerla y revisá tus cambios antes de guardar.";
 
+/// Un `/api/me` que el PUT modifica de verdad: es lo que hace que el idioma recién guardado llegue a la
+/// interfaz por el mismo camino que en la app (invalidar la consulta → volver a pedirla → aplicarlo). Como el servidor,
+/// compara la revisión (N2): con una vieja responde 409, y con la vigente guarda; sólo un nombre distinto la avanza (el idioma
+/// y la zona, no). `saved` junta los cuerpos sin la revisión; `account` deja cambiar el perfil como lo haría otra pestaña o
+/// un administrador.
+function profileHandlers(saved: ProfileBody[], account: { profile: CurrentUser } = { profile: { ...currentUser } }) {
   return [
-    http.get("/api/me", () => HttpResponse.json(profile)),
+    http.get("/api/me", () => HttpResponse.json(account.profile)),
     http.put("/api/me", async ({ request }) => {
-      const body = (await request.json()) as ProfileBody;
+      const { expectedRevision, ...body } = (await request.json()) as ProfileBody & { expectedRevision: number };
+
+      if (expectedRevision !== account.profile.revision) {
+        return HttpResponse.json({ status: 409, code: "Users.User.RevisionConflict", detail: conflictText }, { status: 409 });
+      }
+
       saved.push(body);
-      profile = { ...profile, ...body };
+      const revision = body.displayName === account.profile.displayName ? account.profile.revision : account.profile.revision + 1;
+      account.profile = { ...account.profile, ...body, revision };
 
       return new HttpResponse(null, { status: 204 });
     }),
@@ -119,7 +129,8 @@ describe("ProfilePage", () => {
     expect(puts).toBe(1);
 
     release();
-    expect(await screen.findByRole("button", { name: "Guardar" })).toBeEnabled();
+    // Lo guardado es la base nueva: no queda nada que guardar.
+    expect(await screen.findByRole("button", { name: "Guardar" })).toBeDisabled();
   });
 
   it("does not let the name grow past what the backend accepts", async () => {
@@ -154,6 +165,77 @@ describe("ProfilePage", () => {
     expect(await screen.findByRole("heading", { name: "My profile" })).toBeInTheDocument();
   });
 
+  it("saves twice in a row with the revision each save left", async () => {
+    const saved: ProfileBody[] = [];
+    server.use(...profileHandlers(saved));
+
+    renderRouteWithProviders("/perfil");
+
+    const name = await screen.findByRole("textbox", { name: "Nombre" });
+    await userEvent.clear(name);
+    await userEvent.type(name, "Ana María");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    await waitFor(() => expect(saved).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled());
+
+    await userEvent.type(name, " Paz");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(saved.at(-1)).toEqual({ displayName: "Ana María Paz", culture: "es", timeZoneId: currentUser.timeZoneId }));
+  });
+
+  it("keeps the draft on a conflict and keeps my changes over what changed elsewhere (N2)", async () => {
+    const saved: ProfileBody[] = [];
+    const account = { profile: { ...currentUser } };
+    server.use(...profileHandlers(saved, account));
+
+    renderRouteWithProviders("/perfil");
+
+    const zone = await screen.findByRole("combobox", { name: "Zona horaria" });
+    await userEvent.selectOptions(zone, "America/Montevideo");
+    // Un administrador le cambió el nombre mientras tanto.
+    account.profile = { ...account.profile, displayName: "Ana Paz", revision: 2 };
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    expect(await screen.findByText(conflictText)).toBeInTheDocument();
+    expect(zone).toHaveValue("America/Montevideo");
+    const main = within(screen.getByRole("main"));
+    expect(main.getByRole("button", { name: "Guardar" })).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.click(main.getByRole("button", { name: "Revisar valores actuales" }));
+
+    const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+    await waitFor(() => expect(within(comparison).getByRole("heading", { name: "Revisar cambios" })).toHaveFocus());
+    // «Mi borrador» es lo que quedaría al conservar: el nombre que cambió el otro y no toqué no se pisa, así que no está.
+    expect(within(comparison).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["Zona horaria"]);
+
+    await userEvent.click(within(comparison).getByRole("button", { name: "Conservar mis cambios" }));
+
+    expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Ana Paz");
+    expect(zone).toHaveValue("America/Montevideo");
+    await userEvent.click(main.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(saved).toEqual([{ displayName: "Ana Paz", culture: "es", timeZoneId: "America/Montevideo" }]));
+  });
+
+  it("saves without a comparison when the conflict did not touch the name (N2)", async () => {
+    const saved: ProfileBody[] = [];
+    const account = { profile: { ...currentUser } };
+    server.use(...profileHandlers(saved, account));
+
+    renderRouteWithProviders("/perfil");
+
+    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Zona horaria" }), "America/Montevideo");
+    // Un administrador le desactivó y volvió a activar la cuenta: avanza la revisión sin tocar lo que el PUT reemplaza.
+    account.profile = { ...account.profile, revision: 2 };
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(saved).toEqual([{ displayName: "Ana", culture: "es", timeZoneId: "America/Montevideo" }]));
+    expect(screen.queryByText(conflictText)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Revisar cambios" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled());
+  });
+
   it("follows the language when it is changed from the user menu, instead of reverting it on save", async () => {
     const saved: ProfileBody[] = [];
     server.use(...profileHandlers(saved));
@@ -172,16 +254,18 @@ describe("ProfilePage", () => {
     // en inglés, y el primer Guardar mandaba culture: "es" y devolvía la cuenta a español.
     const language = await screen.findByRole("combobox", { name: "Language" });
     await waitFor(() => expect(language).toHaveValue("en"));
+    await waitFor(() => expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: currentUser.timeZoneId }]));
+    // El idioma no avanza la revisión: la pantalla lo sigue aparte, y Guardar no queda prendido por él.
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Name" }), " Paz");
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
 
-    await waitFor(() =>
-      expect(saved.at(-1)).toEqual({
-        displayName: "Ana",
-        culture: "en",
-        timeZoneId: "America/Argentina/Buenos_Aires",
-      }),
-    );
+    await waitFor(() => expect(saved).toHaveLength(2));
+    expect(saved[1]).toEqual({ displayName: "Ana Paz", culture: "en", timeZoneId: currentUser.timeZoneId });
+    await waitFor(() => expect(i18n.language).toBe("en"));
   });
 
   it("shows the message of the field the backend rejected, without losing what was typed", async () => {

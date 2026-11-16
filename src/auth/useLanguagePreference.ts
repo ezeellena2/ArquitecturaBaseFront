@@ -3,7 +3,8 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useHasUnsavedChanges } from "@/shared/hooks/useUnsavedChangesGuard";
 import { notify } from "@/shared/ui/notifications";
-import { currentUserQueryKey, useCurrentUser } from "./useCurrentUser";
+import { currentUserQueryKey, fetchCurrentUser, useCurrentUser } from "./useCurrentUser";
+import { ApiError } from "@/shared/api/ApiError";
 import { updateProfile } from "@/shared/api/profile";
 import i18n, { changeLanguage, isSupportedLanguage, type SupportedLanguage } from "@/shared/i18n";
 
@@ -79,7 +80,20 @@ export function useLanguagePreference(): { change: (language: SupportedLanguage)
     }
 
     try {
-      await updateProfile({ displayName: user.displayName, culture: language, timeZoneId: user.timeZoneId });
+      try {
+        await updateProfile({ displayName: user.displayName, culture: language, timeZoneId: user.timeZoneId, expectedRevision: user.revision });
+      } catch (error) {
+        if (!(error instanceof ApiError && error.code === "Users.User.RevisionConflict")) {
+          throw error;
+        }
+
+        // 409 de revisión (N2): la cuenta cambió en otro lado y el perfil de acá quedó viejo. El menú no tiene un borrador
+        // de la persona que proteger: relee el perfil y guarda el idioma una sola vez más, con el nombre, la zona y la
+        // revisión releídos, nunca con los viejos. Si vuelve a fallar, queda el aviso de siempre.
+        const current = await queryClient.fetchQuery({ queryKey: currentUserQueryKey, queryFn: fetchCurrentUser, staleTime: 0, meta: { errorOwner: "local" } });
+        await updateProfile({ displayName: current.displayName, culture: language, timeZoneId: current.timeZoneId, expectedRevision: current.revision });
+      }
+
       // El perfil lo usa medio front (el menú, la barra lateral, las fechas de los listados) y además es de
       // donde `useProfileLanguageSync` toma el idioma: si esto no se invalida, la caché queda diciendo el
       // idioma viejo y lo reaplica en el próximo montaje.

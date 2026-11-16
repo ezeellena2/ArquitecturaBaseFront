@@ -19,7 +19,7 @@ export function createPersonDataVisualFixtures(language: "es" | "en", scenario: 
   ];
   const users: UserDetail[] = ["Ana Pérez", "Juan Gómez", "Laura Ríos Fernández", "Carla Paz", "Pablo Sosa", "Marta Ruiz"].map((displayName, index) => ({
     id: guid(411 + index), displayName, email: ["ana", "juan", "laura", "carla", "pablo", "marta"][index] + "@example.invalid", emailConfirmed: true,
-    phoneNumber: null, formattedPhoneNumber: null, phoneNumberConfirmed: false, isActive: true, createdAtUtc: "2026-10-21T12:00:00Z", roles: ["User"], lastInvitation: null,
+    phoneNumber: null, formattedPhoneNumber: null, phoneNumberConfirmed: false, isActive: true, createdAtUtc: "2026-10-21T12:00:00Z", roles: ["User"], lastInvitation: null, revision: 1,
   }));
   const records = new Map<string, PersonData>(users.map((user, index) => {
     const zone = index < 2 ? zones[0] : index === 2 ? zones[1] : index === 3 ? zones[2] : null;

@@ -3,11 +3,14 @@ import { api } from "./httpClient";
 /// Lo que `PUT /api/me` deja cambiar del perfil propio (sección 9 del spec de la Fase 4).
 ///
 /// Los tres campos viajan siempre, con el valor que tienen que quedar: el comando **reemplaza** el perfil, no
-/// lo parchea, así que mandar solo el idioma le borraría el nombre y la zona horaria a la persona.
+/// lo parchea, así que mandar solo el idioma le borraría el nombre y la zona horaria a la persona. `expectedRevision` es
+/// la `revision` del perfil del que salieron los tres: si la cuenta cambió en el medio, 409 `Users.User.RevisionConflict`
+/// (N2), en vez de pisar lo que cambió otro.
 export interface UpdateProfileBody {
   readonly displayName: string | null;
   readonly culture: string;
   readonly timeZoneId: string;
+  readonly expectedRevision: number;
 }
 
 /// Vive en `shared/api` y no en `features/profile` porque lo piden dos lugares: la pantalla del perfil y el

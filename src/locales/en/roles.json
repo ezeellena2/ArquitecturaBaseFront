@@ -50,6 +50,17 @@
       "description": "What you changed in this role wasn't saved.",
       "confirm": "Discard",
       "stay": "Keep editing"
+    },
+    "reviewFailed": "We could not check the current role.",
+    "review": {
+      "has": "With the permission",
+      "hasNot": "Without the permission"
+    },
+    "unknownPermissions": {
+      "title": "Save without the permissions this screen does not know?",
+      "description_one": "The role has a permission this screen does not know ({{codes}}): if you save, the role loses it.",
+      "description_other": "The role has permissions this screen does not know ({{codes}}): if you save, the role loses them.",
+      "confirm": "Save anyway"
     }
   },
   "picker": {

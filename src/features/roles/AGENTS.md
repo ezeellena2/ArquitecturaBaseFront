@@ -11,6 +11,8 @@ Contiene catálogo/listado, alta y edición en ruta propia y los permisos de un 
 - La casilla del área (vacía, parcial o completa) sólo existe en áreas de dos o más permisos y actúa sobre toda el área. Qué permite cada permiso va en la (i) del área, un permiso por renglón, y es la descripción accesible de su casilla: nunca una leyenda en la fila.
 - Admin se lee: una tilde donde tiene el permiso, sin casillas, sin la columna del área ni botones, y el porqué en la (i) del título. User conserva el nombre de sólo lectura con el porqué en la (i) de «Nombre».
 - Los roles del sistema y los asignados conservan sus restricciones; ocultá acciones sin permiso.
+- Editar manda la `revision` del rol sembrado (`expectedRevision`, N2). Ante `409 Roles.Role.RevisionConflict` el editor relee el rol: con el mismo nombre, descripción y permisos que lo sembrado guarda una sola vez más con la revisión releída. Si difieren o vuelve a chocar, el borrador queda y se revisa como en `/configuracion`: «Revisar valores actuales» en la banda, Guardar con su motivo y la comparación con el nombre, la descripción y cada permiso distinto; conservar los cambios mezcla los permisos de a uno (quedan los que sumó el borrador y se van los que sacó), y «Mi borrador» muestra lo que quedaría al conservar.
+- Un permiso que el catálogo cargado no declara no tiene casilla y se descarta al guardar, después de nombrarlo en un `ConfirmDialog` (B2): cancelar no guarda.
 - `Roles.Role.HasUsers` usa `userCount` de ProblemDetails y pluralización del front. Las mutaciones invalidan catálogo, detalle y permisos propios cuando corresponde.
 
 ## Referencias

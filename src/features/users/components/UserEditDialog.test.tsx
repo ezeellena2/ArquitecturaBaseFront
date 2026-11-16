@@ -349,7 +349,7 @@ describe("UserEditDialog", () => {
 
       // El PUT reemplaza nombre y roles: el nombre que ya tenía tiene que volver tal cual. El correo y el número no
       // cambian, así que no viajan.
-      await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["User", "Admin"] }]));
+      await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["User", "Admin"], expectedRevision: 1 }]));
     });
 
     it("says it is saving, with the spinner, and turns the button off meanwhile", async () => {
@@ -388,7 +388,7 @@ describe("UserEditDialog", () => {
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
       await waitFor(() =>
-        expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"], email: "juan@example.com" }]),
+        expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"], expectedRevision: 1, email: "juan@example.com" }]),
       );
     });
 
@@ -408,7 +408,7 @@ describe("UserEditDialog", () => {
 
       await waitFor(() =>
         expect(updates).toEqual([
-          { displayName: "Ana", roles: ["Admin"], phone: { country: "AR", number: "11 2345-6789" } },
+          { displayName: "Ana", roles: ["Admin"], expectedRevision: 1, phone: { country: "AR", number: "11 2345-6789" } },
         ]),
       );
     });
@@ -426,7 +426,7 @@ describe("UserEditDialog", () => {
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
       await waitFor(() =>
-        expect(updates).toEqual([{ displayName: "Ana", roles: ["Admin"], phone: { country: "UY", number: "94 123 456" } }]),
+        expect(updates).toEqual([{ displayName: "Ana", roles: ["Admin"], expectedRevision: 1, phone: { country: "UY", number: "94 123 456" } }]),
       );
     });
 
@@ -458,7 +458,7 @@ describe("UserEditDialog", () => {
 
         await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
-        await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["Admin"] }]));
+        await waitFor(() => expect(updates).toEqual([{ displayName: "Ana", roles: ["Admin"], expectedRevision: 1 }]));
       });
 
       it("does not send an email that is no longer on screen", async () => {
@@ -482,7 +482,7 @@ describe("UserEditDialog", () => {
 
         await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
-        await waitFor(() => expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"] }]));
+        await waitFor(() => expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"], expectedRevision: 1 }]));
       });
     });
 
@@ -520,7 +520,7 @@ describe("UserEditDialog", () => {
       await userEvent.click(dialog.getByRole("button", { name: "Agregar correo" }));
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
 
-      await waitFor(() => expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"] }]));
+      await waitFor(() => expect(updates).toEqual([{ displayName: "Juan Gómez", roles: ["User"], expectedRevision: 1 }]));
     });
 
     it("puts an email of another account under the email, and keeps what was written", async () => {

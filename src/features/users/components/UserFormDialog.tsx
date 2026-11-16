@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { notify } from "@/shared/ui/notifications";
 import { z } from "zod";
-import { createUser, usersQueryKeyRoot, type CreateUserBody, type InvitationChannel } from "../api/users";
+import { createUser, userQueryKey, usersQueryKeyRoot, type CreateUserBody, type InvitationChannel } from "../api/users";
 import { userFormErrors, type UserFormErrors, type UserFormField } from "../errors";
 import { RolesField } from "./RolesField";
 import { displayNameMaxLength } from "@/shared/api/accountRules";
@@ -130,6 +130,8 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+        // Restaurar una cuenta avanza su revisión (N2): el detalle que quedó en caché ya no es el de ahora.
+        queryClient.invalidateQueries({ queryKey: userQueryKey(result.id) }),
         // El alta/edición/borrado cambia el `userCount` de los roles: sin esto, /roles muestra el conteo
         // viejo durante los 30 s de staleTime, y puede ofrecer borrar un rol que todavía tiene gente.
         queryClient.invalidateQueries({ queryKey: rolesQueryKey }),

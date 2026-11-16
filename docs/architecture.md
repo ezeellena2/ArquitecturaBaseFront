@@ -74,7 +74,8 @@ y [auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md).
 - `RouteErrorPage` es el límite estático traducido de import/render; Recargar abre un documento nuevo sin repetir
   escrituras. `ProtectedRoute` conserva el caparazón si falla una hoja; el de la rama de la sesión cubre la carga
   inicial. La raíz sin path no tiene límite propio. Un error de carga no es falta de permiso ni vacío.
-- `/perfil` (desde «Mi perfil») no pide permiso. `PUT /api/me` reemplaza nombre, idioma y zona: van siempre los tres.
+- `/perfil` (desde «Mi perfil») no pide permiso. `PUT /api/me` reemplaza nombre, idioma y zona: van siempre los tres, con
+  `expectedRevision`.
 - **Inicio:** `src/app/AuthenticatedHome.tsx` carga `AiAssistantPage` solo si `installedFeatures` contiene `assistant` y
   hay `ai.assistant.use`; si no, `DashboardPage`; un fallo de lectura ofrece Reintentar. `home` no importa IA. La URL
   guarda solo `conversacion` y el paginado. `@assistant-ui/react` vive detrás de `shared/ui/assistant`.
@@ -186,6 +187,18 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - **Errores por `code`:** `errors.ts` de cada feature hace `switch` sobre `ApiError.code` para los códigos con texto propio
   (`Users.LastAdmin`) y deja pasar el `detail`. `Roles.Role.HasUsers` arma el texto con `userCount` (`ApiError.problem`);
   `{{count}}` necesita `_one` y `_other`.
+- **Usuarios, roles y perfil con revisión (N2):** cada PUT manda `expectedRevision`, la de lo que sembró el borrador, que en
+  «Editar usuario» y en el editor de roles sale de la lectura de ese montaje (`refetchOnMount: "always"` e
+  `isFetchedAfterMount`), nunca de la caché. Ante un 409 (`Users.User.RevisionConflict`, `Roles.Role.RevisionConflict`)
+  el editor relee: si lo que su PUT reemplaza sigue como en la base (el nombre y los roles de la cuenta; el nombre del
+  perfil; el nombre, la descripción y los permisos del rol), adopta la revisión y guarda una sola vez más, sin
+  comparación. Si algo difiere, la relectura falla o el reintento vuelve a chocar, conserva el borrador y repite el
+  recorrido de `/configuracion` (revisar, comparar con `ComparisonTable`, usar lo actual o conservar lo cambiado) con los
+  textos de `common:revisionReview`. Conservar mezcla los roles y los permisos de a uno (quedan los que sumó el borrador,
+  se van los que sacó), y la columna «Mi borrador» muestra eso, lo que quedaría al conservar. Una relectura con otra
+  revisión que no cambió lo que el PUT reemplaza la adopta sola (un desvínculo o una verificación en la misma pantalla).
+  El idioma y la zona no avanzan la revisión: el perfil sigue aparte el idioma que cambia el menú, que, sin borrador, ante
+  un 409 relee y guarda una sola vez más.
 - Lo de varias features sube a `shared/api` (`shared/api/roles.ts`). Las mutaciones invalidan por prefijo
   (`usersQueryKeyRoot`), detalle y `currentUserQueryKey` si cambian permisos propios.
 - **Editores privados** (IA, negocio, formularios, envíos de chat e Inicio): borrador y cuerpo/UUID congelados en memoria

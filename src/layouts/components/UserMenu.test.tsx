@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { UserMenu } from "./UserMenu";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import i18n, { changeLanguage, languageStorageKey } from "@/shared/i18n";
-import { phoneOnlyUser } from "@/test/mocks/handlers";
+import { currentUser, phoneOnlyUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
@@ -145,8 +145,61 @@ describe("UserMenu", () => {
     // porque el PUT lo reemplaza.
     await waitFor(() => expect(i18n.language).toBe("en"));
     await waitFor(() =>
-      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),
+      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires", expectedRevision: 1 }]),
     );
+  });
+
+
+  it("re-reads the profile after a revision conflict and saves the language once more with what it read (N2)", async () => {
+    // El perfil de la sesión es el de la revisión 1; en otra pestaña le cambiaron el nombre y la zona (revisión 2). El menú
+    // no tiene un borrador que proteger: relee y vuelve a guardar una sola vez, con lo releído y nunca con lo viejo.
+    let profile = currentUser;
+    const saved: unknown[] = [];
+    server.use(
+      http.get("/api/me", () => HttpResponse.json(profile)),
+      http.put("/api/me", async ({ request }) => {
+        const body = (await request.json()) as { expectedRevision: number };
+        saved.push(body);
+
+        return body.expectedRevision === profile.revision
+          ? new HttpResponse(null, { status: 204 })
+          : HttpResponse.json({ status: 409, code: "Users.User.RevisionConflict", detail: "La cuenta cambió mientras la editabas." }, { status: 409 });
+      }),
+    );
+
+    renderMenu();
+    await openMenu();
+    profile = { ...currentUser, displayName: "Ana Paz", timeZoneId: "America/Montevideo", revision: 2 };
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+
+    await waitFor(() => expect(saved).toEqual([
+      { displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires", expectedRevision: 1 },
+      { displayName: "Ana Paz", culture: "en", timeZoneId: "America/Montevideo", expectedRevision: 2 },
+    ]));
+    expect(i18n.language).toBe("en");
+  });
+
+  it("goes back to the previous language when the retry after a revision conflict also fails", async () => {
+    const toastError = vi.spyOn(toast, "error");
+    const saved: unknown[] = [];
+    server.use(
+      http.put("/api/me", async ({ request }) => {
+        saved.push(await request.json());
+
+        return HttpResponse.json({ status: 409, code: "Users.User.RevisionConflict", detail: "La cuenta cambió mientras la editabas." }, { status: 409 });
+      }),
+    );
+
+    renderMenu();
+    await openMenu();
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("No pudimos guardar el idioma en tu perfil. Probá de nuevo.", expect.objectContaining({ id: expect.any(String) })),
+    );
+    // Una sola vez más, no en un bucle.
+    expect(saved).toHaveLength(2);
+    expect(i18n.language).toBe("es");
   });
 
   it("asks before changing the menu language while an editor that remounts with it has unsaved changes", async () => {
@@ -173,7 +226,7 @@ describe("UserMenu", () => {
 
     await waitFor(() => expect(i18n.language).toBe("en"));
     await waitFor(() =>
-      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),
+      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires", expectedRevision: 1 }]),
     );
   });
 
@@ -188,7 +241,7 @@ describe("UserMenu", () => {
     await waitFor(() => expect(i18n.language).toBe("en"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await waitFor(() =>
-      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires" }]),
+      expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: "America/Argentina/Buenos_Aires", expectedRevision: 1 }]),
     );
   });
 

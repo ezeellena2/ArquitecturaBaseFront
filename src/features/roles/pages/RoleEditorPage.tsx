@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router";
-import { notify } from "@/shared/ui/notifications";
+import { dismissNotification, notify } from "@/shared/ui/notifications";
 import {
   createRole,
   fetchPermissions,
@@ -12,6 +12,7 @@ import {
   roleNameMaxLength,
   roleQueryKey,
   updateRole,
+  type PermissionGroup,
   type RoleBody,
 } from "../api/roles";
 import { PermissionPicker } from "../components/PermissionPicker";
@@ -21,11 +22,15 @@ import { isAdminRole } from "../lib/systemRoles";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
+import { errorFeedback } from "@/shared/api/errorFeedback";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { Button } from "@/shared/ui/button";
+import { CellText } from "@/shared/ui/CellText";
+import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
@@ -53,6 +58,57 @@ function isSameDraft(first: Draft, second: Draft): boolean {
     first.name.trim() === second.name.trim() &&
     first.description.trim() === second.description.trim() &&
     sameSelection(first.permissions, second.permissions)
+  );
+}
+
+/// Conservar mis cambios tras un conflicto de revisión (N2): de lo guardado ahora, con lo que el borrador cambió desde lo
+/// sembrado. Los permisos se mezclan de a uno, como cada ajuste en Configuración: quedan los que sumó el borrador, se van
+/// los que sacó, y del resto vale lo guardado.
+function keepDraftChanges(draft: Draft, seeded: Draft, current: Draft): Draft {
+  return {
+    name: draft.name.trim() === seeded.name.trim() ? current.name : draft.name,
+    description: draft.description.trim() === seeded.description.trim() ? current.description : draft.description,
+    permissions: [
+      ...current.permissions.filter((code) => draft.permissions.includes(code) || !seeded.permissions.includes(code)),
+      ...draft.permissions.filter((code) => !seeded.permissions.includes(code) && !current.permissions.includes(code)),
+    ],
+  };
+}
+
+/// La comparación de un conflicto de revisión (N2), como la de Configuración (`SettingsReview`): sólo lo distinto entre lo
+/// guardado y lo que quedaría al conservar mis cambios (`kept`), lado a lado (LR2-A). Cada permiso que difiere va con su
+/// nombre, en el orden del catálogo.
+function RoleReview({ current, kept, groups, disabled, titleRef, onAccept }: {
+  current: Draft;
+  kept: Draft;
+  groups: readonly PermissionGroup[];
+  disabled: boolean;
+  titleRef: Ref<HTMLHeadingElement>;
+  onAccept: (keepDraft: boolean) => void;
+}): ReactNode {
+  const { t } = useTranslation("roles");
+  const names = new Map(groups.flatMap((group) => group.permissions.map((permission) => [permission.code, permission.name] as const)));
+  const codes = [...new Set([...names.keys(), ...current.permissions, ...kept.permissions])];
+  const text = (value: string) => <CellText text={value === "" ? "—" : value} />;
+  const has = (on: boolean) => <CellText text={t(on ? "editor.review.has" : "editor.review.hasNot")} />;
+  const changes = [
+    ...(current.name.trim() === kept.name.trim() ? [] : [{ key: "name", identity: [t("form.name")],
+      lines: [{ key: "value", before: text(current.name.trim()), after: text(kept.name.trim()) }] }]),
+    ...(current.description.trim() === kept.description.trim() ? [] : [{ key: "description", identity: [t("form.descriptionLabel")],
+      lines: [{ key: "value", before: text(current.description.trim()), after: text(kept.description.trim()) }] }]),
+    ...codes.filter((code) => current.permissions.includes(code) !== kept.permissions.includes(code)).map((code) => ({
+      key: code, identity: [names.get(code) ?? code],
+      lines: [{ key: "value", before: has(current.permissions.includes(code)), after: has(kept.permissions.includes(code)) }],
+    })),
+  ];
+
+  return (
+    <Surface title={t("common:revisionReview.title")} titleRef={titleRef} padded actions={<>
+      <Button type="button" variant="outline" disabled={disabled} onClick={() => onAccept(false)}>{t("common:revisionReview.useCurrent")}</Button>
+      <Button type="button" disabled={disabled} onClick={() => onAccept(true)}>{t("common:revisionReview.keepMine")}</Button>
+    </>}>
+      <ComparisonTable columns={{ identity: [{ key: "field", header: t("common:revisionReview.field") }], before: t("common:revisionReview.current"), after: t("common:revisionReview.mine") }} groups={changes} />
+    </Surface>
   );
 }
 
@@ -174,6 +230,16 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const [draft, setDraft] = useState<Draft | undefined>(isEditing ? undefined : emptyDraft);
   const [nameError, setNameError] = useState<string | undefined>();
   const [descriptionError, setDescriptionError] = useState<string | undefined>();
+  // Un 409 de revisión (N2) conserva el borrador y pide releer antes de volver a guardar, como Configuración.
+  const [needsReview, setNeedsReview] = useState(false);
+  const [review, setReview] = useState<RoleListItem | undefined>();
+  const [reading, setReading] = useState(false);
+  const [confirmingDrop, setConfirmingDrop] = useState(false);
+  const reviewTitle = useRef<HTMLHeadingElement>(null);
+  const reviewNoticeId = `roles:review:${roleId ?? "new"}`;
+  useEffect(() => () => dismissNotification(reviewNoticeId), [reviewNoticeId]);
+  // La comparación aparece al final del contenido, a veces fuera de la vista: cada lectura lleva el foco a su título.
+  useEffect(() => { if (review) reviewTitle.current?.focus(); }, [review]);
 
   // Se siembra una sola vez, durante el render y no con un efecto que copia datos a otro estado (regla de
   // rendimiento del CLAUDE.md del front). Lo que se pida después (al guardar se invalidan los roles) ya no pisa
@@ -188,6 +254,12 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const isSystemRole = seededRole?.isSystemRole ?? false;
   const isReady = draft !== undefined && groups !== undefined;
   const isDirty = draft !== undefined && !isAdmin && !isSameDraft(draft, seededRole ? toDraft(seededRole) : emptyDraft);
+  // Un código que el catálogo cargado no declara (sacado del backend, o de un módulo que este navegador todavía no
+  // conoce) no tiene casilla, así que no hay forma de quitarlo, y si viaja el backend rechaza el rol entero. Se limpia al
+  // guardar y no al sembrar (sembrando sin él, la pantalla arrancaría con un cambio que nadie hizo), y antes se avisa
+  // cuáles se pierden (B2).
+  const catalog = groups === undefined ? undefined : new Set(groups.flatMap((group) => group.permissions.map((permission) => permission.code)));
+  const unknownPermissions = draft === undefined || catalog === undefined ? [] : draft.permissions.filter((code) => !catalog.has(code));
 
   // El título y la miga siguen al nombre escrito, como en el tablero; Admin no se edita y se llama por su nombre.
   const typedName = draft?.name.trim() ?? "";
@@ -219,14 +291,26 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   }, []);
 
   const mutation = useMutation({
-    mutationFn: async (body: RoleBody) => {
+    mutationFn: async ({ body, base }: { body: RoleBody; base: RoleListItem | undefined }) => {
       if (roleId === undefined) {
         await createRole(body);
 
         return;
       }
 
-      await updateRole(roleId, body);
+      try {
+        await updateRole(roleId, body, base?.revision ?? 0);
+      } catch (error) {
+        // 409 de revisión (N2): relee el rol. Si lo que el PUT reemplaza (el nombre, la descripción y los permisos) sigue
+        // como cuando se sembró, no hay nada ajeno que pisar y guarda una sola vez más con la revisión releída, como el
+        // idioma del menú. Si algo difiere, la relectura falla o el reintento vuelve a chocar, queda el 409 y se revisa.
+        if (!(error instanceof ApiError && error.code === "Roles.Role.RevisionConflict")) throw error;
+        const current = await queryClient
+          .fetchQuery({ queryKey: roleQueryKey(roleId), queryFn: () => fetchRole(roleId), staleTime: 0, meta: { errorOwner: "local" } })
+          .catch(() => undefined);
+        if (!current || !base || !isSameDraft(toDraft(current), toDraft(base))) throw error;
+        await updateRole(roleId, body, current.revision);
+      }
     },
     onSuccess: async () => {
       notify({ id: "features/roles/pages/RoleEditorPage:1", kind: "success", message: isEditing ? t("feedback.updated") : t("feedback.created") });
@@ -262,7 +346,56 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     return <ForbiddenPage />;
   }
 
+  /// Relee el rol para comparar (N2): la lectura queda en caché y la comparación, hasta elegir.
+  async function readCurrent() {
+    if (roleId === undefined || !isOnScreenRef.current) return;
+    setReading(true);
+    try {
+      const current = await queryClient.fetchQuery({ queryKey: roleQueryKey(roleId), queryFn: () => fetchRole(roleId), staleTime: 0, meta: { errorOwner: "local" } });
+      if (!isOnScreenRef.current) return;
+      if (current === null) {
+        // Lo borraron mientras tanto: no hay con qué comparar ni dónde guardar.
+        notify({ id: reviewNoticeId, kind: "error", message: t("editor.gone.title"), description: t("editor.gone.description") });
+
+        return;
+      }
+
+      setReview(current);
+      dismissNotification(reviewNoticeId);
+    } catch (error) {
+      if (!isOnScreenRef.current) return;
+      const feedback = errorFeedback(error);
+      if (feedback.kind !== "session") notify({ id: reviewNoticeId, kind: "error", message: t("editor.reviewFailed"),
+        description: feedback.traceId ? t("common:errors.traceId", { traceId: feedback.traceId }) : undefined,
+        action: { label: t("common:revisionReview.action"), onClick: () => void readCurrent() } });
+    } finally {
+      if (isOnScreenRef.current) setReading(false);
+    }
+  }
+
+  /// Conservar mis cambios mezcla lo guardado con lo que cambió el borrador; usar lo actual lo descarta. En los dos casos
+  /// lo leído pasa a ser el punto de partida, con su revisión.
+  function acceptReview(keepDraft: boolean) {
+    if (review === undefined || draft === undefined || seededRole === undefined) return;
+    // Conservar deja lo que mostraba la columna «Mi borrador» de la comparación.
+    setDraft(keepDraft ? keepDraftChanges(draft, toDraft(seededRole), toDraft(review)) : toDraft(review));
+    setSeededRole(review);
+    setNeedsReview(false);
+    setReview(undefined);
+    setNameError(undefined);
+    setDescriptionError(undefined);
+    dismissNotification(reviewNoticeId);
+  }
+
   function showSaveError(error: Error) {
+    if (error instanceof ApiError && error.code === "Roles.Role.RevisionConflict") {
+      setNeedsReview(true);
+      notify({ id: reviewNoticeId, kind: "error", message: roleActionErrorMessage(error, t),
+        action: { label: t("common:revisionReview.action"), onClick: () => void readCurrent() } });
+
+      return;
+    }
+
     // Lo que es de un campo va debajo de ese campo; lo demás, arriba de las dos columnas.
     if (error instanceof ApiError && error.code === "Roles.Role.AlreadyExists") {
       setNameError(t("errors.alreadyExists"));
@@ -294,10 +427,9 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (draft === undefined || groups === undefined || isAdmin) {
+    if (draft === undefined || groups === undefined || isAdmin || needsReview || reading) {
       return;
     }
-
 
     setDescriptionError(undefined);
 
@@ -311,14 +443,24 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
     setNameError(undefined);
 
-    // Un código que el catálogo ya no declara (sacado del backend, pero todavía guardado en el rol) no tiene
-    // casilla ni chip, así que no hay forma de quitarlo, y si viaja el backend rechaza el rol entero. Se limpia
-    // al guardar y no al sembrar: sembrando sin él, la pantalla arrancaría con un cambio que nadie hizo.
-    const catalog = new Set(groups.flatMap((group) => group.permissions.map((permission) => permission.code)));
+    if (unknownPermissions.length > 0) {
+      setConfirmingDrop(true);
+
+      return;
+    }
+
+    save();
+  }
+
+  function save() {
+    if (draft === undefined || catalog === undefined) {
+      return;
+    }
+
     const permissions = draft.permissions.filter((code) => catalog.has(code));
 
     mutation.mutate(
-      { name, description: draft.description.trim() || null, permissions },
+      { body: { name: draft.name.trim(), description: draft.description.trim() || null, permissions }, base: seededRole },
       {
         // Solo si la pantalla sigue ahí: a quien se fue mientras se guardaba no se lo trae de vuelta al listado.
         onSuccess: () => {
@@ -333,16 +475,26 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
   // Admin no se cambia: sin botones. Que tiene todo lo dicen las tildes de la matriz, y por qué no se cambia, la (i) del
   // título (RO1-A).
+  // Tras un 409 de revisión, «Revisar valores actuales» va en la banda antes de Cancelar, y Guardar se apaga con el motivo
+  // hasta elegir, aunque se cierre el aviso (como en Configuración).
+  const reviewReason = needsReview && !reading ? t("common:revisionReview.pending") : null;
   const actions = !isReady || isAdmin ? undefined : (
     <>
+      {needsReview ? (
+        <Button type="button" variant="outline" pending={reading} disabled={reading || mutation.isPending} onClick={() => void readCurrent()}>
+          {reading ? t("common:revisionReview.reading") : t("common:revisionReview.action")}
+        </Button>
+      ) : null}
       <Button asChild variant="outline">
         <Link to="/roles">{t("common:actions.cancel")}</Link>
       </Button>
       {/* Está en la banda, afuera del formulario: `form` lo ata a él, y así Enter en el nombre también guarda.
           Sin cambios se deshabilita: habilitado ya dice que hay algo que guardar, sin un «Cambios sin guardar». */}
-      <Button type="submit" form={formId} pending={mutation.isPending} disabled={!isDirty}>
-        {mutation.isPending ? t("editor.saving") : t("form.submit")}
-      </Button>
+      <DisabledReason reason={reviewReason}>
+        <Button type="submit" form={formId} pending={mutation.isPending} disabled={!isDirty || needsReview || reading}>
+          {mutation.isPending ? t("editor.saving") : t("form.submit")}
+        </Button>
+      </DisabledReason>
     </>
   );
 
@@ -407,8 +559,22 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
             onChange={(permissions) => changeDraft({ permissions })}
             readOnly={isAdmin}
           />
+
+          {review === undefined ? null : (
+            <RoleReview current={toDraft(review)} kept={seededRole === undefined ? draft : keepDraftChanges(draft, toDraft(seededRole), toDraft(review))} groups={groups} disabled={reading || mutation.isPending} titleRef={reviewTitle} onAccept={acceptReview} />
+          )}
         </form>
       )}
+
+      <ConfirmDialog
+        open={confirmingDrop}
+        onOpenChange={setConfirmingDrop}
+        title={t("editor.unknownPermissions.title")}
+        description={t("editor.unknownPermissions.description", { count: unknownPermissions.length, codes: unknownPermissions.join(", ") })}
+        confirmLabel={t("editor.unknownPermissions.confirm")}
+        destructive
+        onConfirm={save}
+      />
 
       <ConfirmDialog
         open={guard.isBlocked}

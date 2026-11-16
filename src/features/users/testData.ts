@@ -79,15 +79,15 @@ export function pageOf(items: readonly UserListItem[]) {
 
 /// El detalle de una fila: lo mismo, más si el correo está verificado y la última invitación.
 export function detailOf(user: UserListItem, overrides: Partial<UserDetail> = {}): UserDetail {
-  return { ...user, emailConfirmed: user.email !== null, lastInvitation: null, ...overrides };
+  return { ...user, emailConfirmed: user.email !== null, lastInvitation: null, revision: 1, ...overrides };
 }
 
 /// El perfil de quien sí puede administrar. El handler por defecto solo trae "users.read".
 export const admin: CurrentUser = { ...currentUser, permissions: ["users.read", "users.manage", "roles.read"] };
 
 export const roles = [
-  { id: "r1", name: "Admin", description: "Puede hacer todo.", isSystemRole: true, userCount: 1, permissions: [] },
-  { id: "r2", name: "User", description: null, isSystemRole: true, userCount: 3, permissions: [] },
+  { id: "r1", name: "Admin", description: "Puede hacer todo.", isSystemRole: true, userCount: 1, permissions: [], revision: 1 },
+  { id: "r2", name: "User", description: null, isSystemRole: true, userCount: 3, permissions: [], revision: 1 },
 ];
 
 export const counts = {

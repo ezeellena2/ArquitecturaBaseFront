@@ -10,7 +10,7 @@ async function installApi(page: Page, origin: string, permissions: string[], los
     id: "session-admin", displayName: "Operador", email: "operator@example.com", emailConfirmed: true,
     phoneNumber: null, formattedPhoneNumber: null, maskedPhoneNumber: null, phoneNumberConfirmed: false,
     hasGoogleLogin: false, culture: "es", timeZoneId: "America/Argentina/Buenos_Aires", lastLoginAtUtc: null,
-    roles: ["User"], permissions,
+    roles: ["User"], permissions, revision: 1,
   };
   const contact: Chat = {
     id: "chat-ana", profileName: "Ana Martínez", phoneNumber: "+54 9 351 555-1234", mode: "Manual", modeRevision: 1,

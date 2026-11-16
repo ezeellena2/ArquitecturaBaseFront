@@ -58,7 +58,8 @@
     "title": "Edit user",
     "submit": "Save",
     "saving": "Saving…",
-    "success": "Changes saved."
+    "success": "Changes saved.",
+    "reviewFailed": "We could not check the current account."
   },
   "methods": {
     "title": "Sign-in methods",

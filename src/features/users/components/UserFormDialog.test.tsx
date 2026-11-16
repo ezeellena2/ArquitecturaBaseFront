@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { admin, adminHandlers } from "../testData";
+import { userQueryKey } from "../api/users";
 import { loginMethodsQueryKey, type LoginMethods } from "@/shared/api/loginMethods";
 import { queryClient } from "@/shared/api/queryClient";
 import { loginMethods, whatsappLoginMethods } from "@/test/mocks/handlers";
@@ -240,6 +241,8 @@ describe("UserFormDialog", () => {
       // N4: el backend restaura la cuenta eliminada, sólo con lo que se cargó, y lo dice; la pantalla no dice «creado».
       withCreate(whatsappLoginMethods, () => HttpResponse.json({ id: newUserId, restored: true }));
       const success = vi.spyOn(toast, "success");
+      // El detalle de la cuenta eliminada que quedó en caché: restaurarla avanza su revisión (N2).
+      queryClient.setQueryData(userQueryKey(newUserId), { id: newUserId, revision: 1 });
 
       const dialog = await openNewUser();
       await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "vuelve@example.com");
@@ -253,6 +256,7 @@ describe("UserFormDialog", () => {
       );
       expect(success).not.toHaveBeenCalledWith("Listo: ya puede ingresar.", expect.anything());
       await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nuevo usuario" })).not.toBeInTheDocument());
+      expect(queryClient.getQueryState(userQueryKey(newUserId))?.isInvalidated).toBe(true);
     });
 
     it("creates a user with only an email", async () => {

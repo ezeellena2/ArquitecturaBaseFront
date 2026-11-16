@@ -8,6 +8,8 @@ export interface RoleListItem {
   readonly isSystemRole: boolean;
   readonly userCount: number;
   readonly permissions: readonly string[];
+  /// Vuelve en `expectedRevision` al editarlo (N2): la avanzan los cambios del nombre, la descripción o los permisos.
+  readonly revision: number;
 }
 
 /// Vive acá y no en `features/roles` porque lo piden dos módulos: la pantalla de roles y el diálogo de

@@ -25,16 +25,22 @@ export interface CurrentUser {
   readonly lastLoginAtUtc: string | null;
   readonly roles: readonly string[];
   readonly permissions: readonly string[];
+  /// La de la cuenta, la misma que compara la administración: `PUT /api/me` la manda de vuelta en `expectedRevision` (N2).
+  readonly revision: number;
 }
 
 export const currentUserQueryKey = ["current-user"] as const;
+
+export function fetchCurrentUser(): Promise<CurrentUser> {
+  return api.get<CurrentUser>("/api/me");
+}
 
 export function useCurrentUser() {
   const auth = useAuth();
 
   return useQuery({
     queryKey: currentUserQueryKey,
-    queryFn: () => api.get<CurrentUser>("/api/me"),
+    queryFn: fetchCurrentUser,
     enabled: auth.isAuthenticated,
     staleTime: 5 * 60_000,
   });

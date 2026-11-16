@@ -56,6 +56,7 @@ const admin: RoleListItem = {
   description: "Puede hacer todo.",
   isSystemRole: true,
   userCount: 1,
+  revision: 1,
   permissions: ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"],
 };
 
@@ -65,6 +66,7 @@ const user: RoleListItem = {
   description: "Lo que tiene cualquier cuenta.",
   isSystemRole: true,
   userCount: 2,
+  revision: 1,
   permissions: [],
 };
 
@@ -74,6 +76,7 @@ const support: RoleListItem = {
   description: "Atiende a los usuarios y revisa sus cuentas.",
   isSystemRole: false,
   userCount: 4,
+  revision: 1,
   permissions: ["users.read", "users.manage", "roles.read"],
 };
 
@@ -83,6 +86,7 @@ const audit: RoleListItem = {
   description: null,
   isSystemRole: false,
   userCount: 0,
+  revision: 1,
   permissions: ["settings.manage"],
 };
 
@@ -240,6 +244,7 @@ describe("RoleEditorPage", () => {
           name: "Soporte 2",
           description: "Atiende a los usuarios y revisa sus cuentas.",
           permissions: ["users.read", "users.manage", "roles.read"],
+          expectedRevision: 1,
         },
       ]),
     );
@@ -340,6 +345,7 @@ describe("RoleEditorPage", () => {
           name: "Soporte 2",
           description: "Atiende a los usuarios y revisa sus cuentas.",
           permissions: ["users.read", "users.manage", "roles.read"],
+          expectedRevision: 1,
         },
       ]),
     );
@@ -362,9 +368,9 @@ describe("RoleEditorPage", () => {
     expect(screen.queryByRole("textbox", { name: "Nombre" })).not.toBeInTheDocument();
   });
 
-  it("does not send a permission the catalog no longer declares", async () => {
-    // Sacado del catálogo del backend pero todavía guardado en el rol: no tiene casilla ni chip, así que no hay
-    // forma de quitarlo, y si viaja en el PUT el backend rechaza el rol entero.
+  it("warns which permissions the catalog no longer declares before saving without them (B2)", async () => {
+    // Sacado del catálogo que cargó la pantalla pero guardado en el rol: no tiene casilla, así que no hay forma de
+    // quitarlo, y si viaja en el PUT el backend rechaza el rol entero. Antes de quitarlo, la pantalla lo dice.
     const updates: unknown[] = [];
     server.use(
       ...editorHandlers([admin, user, { ...support, permissions: [...support.permissions, "reports.export"] }, audit]),
@@ -383,15 +389,142 @@ describe("RoleEditorPage", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
+    const warning = await screen.findByRole("dialog", { name: "¿Guardar sin los permisos que esta pantalla no conoce?" });
+    expect(warning).toHaveTextContent("El rol tiene un permiso que esta pantalla no conoce (reports.export): si guardás, el rol lo pierde.");
+    expect(updates).toEqual([]);
+
+    // Cancelar no guarda y deja el borrador como estaba.
+    await userEvent.click(within(warning).getByRole("button", { name: "Cancelar" }));
+    expect(updates).toEqual([]);
+    expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
+
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+    await userEvent.click(within(await screen.findByRole("dialog", { name: "¿Guardar sin los permisos que esta pantalla no conoce?" })).getByRole("button", { name: "Guardar igual" }));
+
     await waitFor(() =>
       expect(updates).toEqual([
         {
           name: "Soporte",
           description: "Atiende a los usuarios y revisa sus cuentas.",
           permissions: ["users.read", "users.manage", "roles.read", "roles.manage"],
+          expectedRevision: 1,
         },
       ]),
     );
+  });
+
+  describe("revision (N2)", () => {
+    const conflictText = "El rol cambió mientras lo editabas. Volvé a leerlo y revisá tus cambios antes de guardar.";
+
+    /// Soporte en el servidor (`state.current`), que el test cambia como lo haría otro administrador. El primer PUT
+    /// choca con la revisión; los demás se guardan.
+    function withConflict() {
+      const state = { current: support, updates: [] as unknown[] };
+
+      server.use(
+        http.get("/api/me", () => HttpResponse.json(manager)),
+        http.get("/api/roles", () => HttpResponse.json([admin, user, state.current, audit])),
+        http.get("/api/roles/:roleId", () => HttpResponse.json(state.current)),
+        http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+        http.put("/api/roles/r3", async ({ request }) => {
+          state.updates.push(await request.json());
+
+          return state.updates.length === 1
+            ? HttpResponse.json({ status: 409, code: "Roles.Role.RevisionConflict", detail: conflictText }, { status: 409 })
+            : new HttpResponse(null, { status: 204 });
+        }),
+      );
+
+      return state;
+    }
+
+    it("keeps the draft on a conflict and keeps my changes over what someone else saved", async () => {
+      const state = withConflict();
+      await renderSupport();
+
+      // Ana le suma «Administrar roles»; mientras tanto, Bruno le sacó «Administrar usuarios» y cambió la descripción.
+      await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+      state.current = { ...support, description: "Revisa cuentas.", permissions: ["users.read", "roles.read"], revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      expect(await screen.findByText(conflictText)).toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
+      expect(screen.getByRole("button", { name: "Guardar" })).toHaveAttribute("aria-disabled", "true");
+
+      await userEvent.click(within(screen.getByRole("main")).getByRole("button", { name: "Revisar valores actuales" }));
+
+      // Sólo lo distinto, lado a lado con lo que quedaría al conservar: lo que Bruno cambió y Ana no tocó queda también al
+      // conservar, así que no está; el permiso que ella sumó, sí.
+      const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+      await waitFor(() => expect(within(comparison).getByRole("heading", { name: "Revisar cambios" })).toHaveFocus());
+      expect(within(comparison).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["Administrar roles"]);
+
+      await userEvent.click(within(comparison).getByRole("button", { name: "Conservar mis cambios" }));
+
+      // Lo que Ana no tocó toma lo de Bruno; el permiso que ella sumó queda.
+      expect(screen.queryByRole("region", { name: "Revisar cambios" })).not.toBeInTheDocument();
+      expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveValue("Revisa cuentas.");
+      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).not.toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Administrar roles" })).toBeChecked();
+
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      await waitFor(() => expect(state.updates).toHaveLength(2));
+      expect(state.updates[1]).toEqual({
+        name: "Soporte",
+        description: "Revisa cuentas.",
+        permissions: ["users.read", "roles.read", "roles.manage"],
+        expectedRevision: 2,
+      });
+    });
+
+    it("saves without a comparison when what was saved meanwhile is what it opened with", async () => {
+      const state = { current: support, updates: [] as unknown[] };
+      server.use(
+        http.get("/api/me", () => HttpResponse.json(manager)),
+        http.get("/api/roles", () => HttpResponse.json([admin, user, state.current, audit])),
+        http.get("/api/roles/:roleId", () => HttpResponse.json(state.current)),
+        http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+        // Como el backend: compara la revisión y, si coincide, guarda.
+        http.put("/api/roles/r3", async ({ request }) => {
+          const body = (await request.json()) as { expectedRevision: number };
+          state.updates.push(body);
+
+          return body.expectedRevision === state.current.revision
+            ? new HttpResponse(null, { status: 204 })
+            : HttpResponse.json({ status: 409, code: "Roles.Role.RevisionConflict", detail: conflictText }, { status: 409 });
+        }),
+      );
+      await renderSupport();
+
+      await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+      // Otro administrador guardó el rol sin cambiarle nada de lo que el PUT reemplaza: avanzó la revisión.
+      state.current = { ...support, revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      // Relee, adopta la revisión y guarda una sola vez más, sin comparación ni aviso.
+      await waitFor(() => expect(state.updates).toHaveLength(2));
+      expect(state.updates.map((update) => (update as { expectedRevision: number }).expectedRevision)).toEqual([1, 2]);
+      expect(await screen.findByRole("heading", { level: 1, name: "Roles y permisos" })).toBeInTheDocument();
+      expect(screen.queryByText(conflictText)).not.toBeInTheDocument();
+    });
+
+    it("takes what is saved when asked to, and has nothing left to save", async () => {
+      const state = withConflict();
+      await renderSupport();
+
+      await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+      state.current = { ...support, permissions: ["users.read", "roles.read"], revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+      await userEvent.click(await within(screen.getByRole("main")).findByRole("button", { name: "Revisar valores actuales" }));
+      const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+
+      await userEvent.click(within(comparison).getByRole("button", { name: "Usar valores actuales" }));
+
+      expect(screen.getByRole("checkbox", { name: "Administrar roles" })).not.toBeChecked();
+      expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).not.toBeChecked();
+      expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    });
   });
 
   it("asks for a name before saving, and typing one takes the error away", async () => {
@@ -929,7 +1062,7 @@ describe("RoleEditorPage", () => {
 
     await waitFor(() =>
       expect(updates).toEqual([
-        { name: "User", description: "Lo que tiene cualquier cuenta.", permissions: ["users.read"] },
+        { name: "User", description: "Lo que tiene cualquier cuenta.", permissions: ["users.read"], expectedRevision: 1 },
       ]),
     );
   });

@@ -58,7 +58,8 @@
     "title": "Editar usuario",
     "submit": "Guardar",
     "saving": "Guardando…",
-    "success": "Guardamos los cambios."
+    "success": "Guardamos los cambios.",
+    "reviewFailed": "No pudimos consultar la cuenta actual."
   },
   "methods": {
     "title": "Medios de ingreso",

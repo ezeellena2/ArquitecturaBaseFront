@@ -6,6 +6,7 @@ import {
   deleteUser,
   fetchUsers,
   setUserActive,
+  userQueryKey,
   usersQueryKey,
   usersQueryKeyRoot,
   type UserListItem,
@@ -76,7 +77,11 @@ export function UsersPage() {
     mutationFn: ({ user, isActive }: { user: UserListItem; isActive: boolean }) => setUserActive(user.id, isActive),
     onSuccess: async (_result, variables) => {
       notify({ id: `users:active:${variables.user.id}`, kind: "success", message: variables.isActive ? t("feedback.activated") : t("feedback.deactivated") });
-      await queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot });
+      // El detalle también: activar y desactivar avanzan su revisión (N2), y la edición se abre con la que tiene.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+        queryClient.invalidateQueries({ queryKey: userQueryKey(variables.user.id) }),
+      ]);
     },
     onError: (mutationError, variables) => notify({ id: `users:active:${variables.user.id}`, kind: "error", message: userActionErrorMessage(mutationError, t) }),
   });
@@ -87,6 +92,7 @@ export function UsersPage() {
       notify({ id: `users:delete:${user.id}`, kind: "success", message: t("feedback.deleted") });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: usersQueryKeyRoot }),
+        queryClient.invalidateQueries({ queryKey: userQueryKey(user.id) }),
         // Eliminar o restaurar una cuenta cambia el `userCount` de sus roles: sin esto, /roles muestra el
         // conteo viejo durante los 30 s de staleTime.
         queryClient.invalidateQueries({ queryKey: rolesQueryKey }),

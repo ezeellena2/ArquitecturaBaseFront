@@ -65,8 +65,10 @@ export function createRole(body: RoleBody): Promise<string> {
   return api.post<string>("/api/roles", body);
 }
 
-export function updateRole(id: string, body: RoleBody): Promise<void> {
-  return api.put<void>(`/api/roles/${id}`, body);
+/// `expectedRevision` es la del rol con el que se abrió el borrador: si cambió en el medio, 409
+/// `Roles.Role.RevisionConflict` (N2).
+export function updateRole(id: string, body: RoleBody, expectedRevision: number): Promise<void> {
+  return api.put<void>(`/api/roles/${id}`, { ...body, expectedRevision });
 }
 
 export function deleteRole(id: string): Promise<void> {

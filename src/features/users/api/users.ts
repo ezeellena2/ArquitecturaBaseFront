@@ -43,10 +43,12 @@ export interface LastInvitation {
 export const invitationResendWaitSeconds = 60;
 
 /// El detalle que devuelve `GET /api/users/{id}`: lo de la fila, más si el correo está verificado y la última
-/// invitación. Es lo que usa el diálogo de edición.
+/// invitación. Es lo que usa el diálogo de edición. `revision` vuelve en `expectedRevision` al guardar (N2): la avanza
+/// cada cambio del nombre, el correo, el número, los roles o el estado.
 export interface UserDetail extends UserListItem {
   readonly emailConfirmed: boolean;
   readonly lastInvitation: LastInvitation | null;
+  readonly revision: number;
 }
 
 /// Lo que el backend sabe filtrar (`UserListRequest`). Los tres viajan como están en la URL.
@@ -104,10 +106,12 @@ export interface CreateUserBody {
 
 /// `PUT /api/users/{id}` reemplaza el nombre y los roles: mandar solo los roles le borraría el nombre a la persona. El
 /// correo y el número son opcionales y solo se mandan si se agregaron: ausentes, no cambian. Lo que se agrega queda
-/// sin verificar hasta que la persona entra con eso.
+/// sin verificar hasta que la persona entra con eso. `expectedRevision` es la del detalle con el que se abrió el borrador:
+/// si la cuenta cambió en el medio, 409 `Users.User.RevisionConflict` (N2).
 export interface UpdateUserBody {
   readonly displayName: string | null;
   readonly roles: readonly string[];
+  readonly expectedRevision: number;
   readonly email?: string;
   readonly phone?: PhoneInput;
 }

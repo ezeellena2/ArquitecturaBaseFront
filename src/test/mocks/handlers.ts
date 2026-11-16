@@ -22,6 +22,7 @@ export const currentUser: CurrentUser = {
   lastLoginAtUtc: null,
   roles: ["User"],
   permissions: ["users.read"],
+  revision: 1,
 };
 
 /// Una cuenta creada desde WhatsApp: sin correo, con el número verificado. `/api/me` manda el número tres veces: en

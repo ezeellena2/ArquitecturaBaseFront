@@ -105,6 +105,7 @@
     "codeNowRequired": "Tu cuenta cambió mientras tanto: para desvincular el número, ahora hace falta un código a tu correo. Tocá «Desvincular» de nuevo."
   },
   "feedback": {
-    "saved": "Guardamos tu perfil."
+    "saved": "Guardamos tu perfil.",
+    "reviewFailed": "No pudimos consultar tu perfil actual."
   }
 }

@@ -50,6 +50,17 @@
       "description": "Lo que cambiaste en este rol no se guardó.",
       "confirm": "Descartar",
       "stay": "Seguir editando"
+    },
+    "reviewFailed": "No pudimos consultar el rol actual.",
+    "review": {
+      "has": "Con el permiso",
+      "hasNot": "Sin el permiso"
+    },
+    "unknownPermissions": {
+      "title": "¿Guardar sin los permisos que esta pantalla no conoce?",
+      "description_one": "El rol tiene un permiso que esta pantalla no conoce ({{codes}}): si guardás, el rol lo pierde.",
+      "description_other": "El rol tiene permisos que esta pantalla no conoce ({{codes}}): si guardás, el rol los pierde.",
+      "confirm": "Guardar igual"
     }
   },
   "picker": {
