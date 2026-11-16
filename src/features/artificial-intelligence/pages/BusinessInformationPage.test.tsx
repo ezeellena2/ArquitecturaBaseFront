@@ -31,7 +31,8 @@ const save = () => screen.getByRole("button", { name: "Guardar" });
 const withPlaceSearch = (installed: boolean) => server.use(http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance,
   defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, installedFeatures: installed ? ["place-search"] : [] })));
 const field = () => screen.getByRole("textbox", { name: "Nombre del negocio" });
-describe("business information editor", () => {
+// The editor is long and several tests type into it: alone each takes 2 to 5 s, and with the whole suite they went past the 5 s.
+describe("business information editor", { timeout: 15_000 }, () => {
   it("saves only the selected ID and manually entered address, without provider text or supplied URLs", async () => {
     current.details = emptyBusinessDetails("UTC");
     current.details.location = { mode: "local", address: "My address", reference: "", area: "", latitude: null, longitude: null };
