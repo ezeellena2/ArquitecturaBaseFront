@@ -14,6 +14,10 @@ export type { FormReplyPresentation } from "../lib/formReplyPresentation";
 // than a line («VISLONGNAME1-9223372036854775807» at 320 px) wraps inside its box instead of running past the card.
 const recordNumber = { number: <span className="inline-block max-w-full" /> };
 
+// N22: a download from WhatsApp and the private storage keep their own codes; any other «Files.» code is about the file itself.
+const fileRejectionText = (code?: string | null) => code === "WhatsApp.Media.Unavailable" ? "forms.reply.filesUnavailable"
+  : code === "Files.Storage.Unavailable" ? "forms.reply.filesNotStored" : code?.startsWith("Files.") ? "forms.reply.filesRejected" : undefined;
+
 export function FormReplyCard({ reply, preserveViewport, onResend, actor="", timeZone }: {
   reply: FormReplyPresentation; actor?:string;timeZone?:string; preserveViewport?: (change: () => void) => void; onResend?: () => void;
 }) {
@@ -33,7 +37,7 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="", tim
   const completed = reply.state === "Completed";
   const label = completed ? t("forms.reply.savedName", { name, number: reply.recordNumber }) : t("forms.reply.stateName", { name });
   const inactive = reply.state === "Rejected" && reply.rejectionCode === "Forms.Record.CatalogItemInactive";
-  const fileRejection=reply.state==="Rejected"&&reply.rejectionCode?.startsWith("Files.Content.");
+  const fileRejection=reply.state==="Rejected"?fileRejectionText(reply.rejectionCode):undefined;
   // W3 (UC5): a send keeps one response, the first that arrives; the second one says which one was kept, like any rejection.
   const kept = reply.state === "Rejected" ? reply.savedNumber : undefined;
   const StateIcon = ["Pending","Downloading","RetryingFiles"].includes(reply.state) ? ClockIcon : reply.state === "Rejected" ? AlertTriangleIcon : InfoIcon;
@@ -46,7 +50,7 @@ export function FormReplyCard({ reply, preserveViewport, onResend, actor="", tim
         {reply.amendment ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-content-muted)]"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t(reply.amendment === "Replaced" ? "forms.reply.corrected" : "forms.reply.voided", { number: reply.recordNumber })}</p> : null}
         {reply.values === null || filePermissionLost ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t(reply.valuesRevoked || filePermissionLost ? "forms.reply.revoked" : "forms.reply.noPermission")}</p> : null}
         {reply.messageRemoved ? <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><InfoIcon className="mt-0.5 size-4 shrink-0" />{t("forms.reply.messageRemoved")}</p> : null}
-      </> : <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><span aria-hidden="true"><StateIcon className="mt-0.5 size-4 shrink-0" /></span>{kept ? <span><Trans t={t} i18nKey="forms.reply.alreadySaved" values={{ number: kept }} components={recordNumber} /></span> : inactive ? t("forms.reply.catalogInactive",{label:reply.rejectedQuestion??t("forms.formLabel")}) : fileRejection ? t(reply.rejectedQuestion?"forms.reply.filesRejectedQuestion":reply.rejectionCode==="Files.Content.Unavailable"?"forms.reply.filesUnavailable":"forms.reply.filesRejected",{label:reply.rejectedQuestion}) : t(reply.state === "Downloading" ? reply.fileCount===undefined ? "forms.reply.downloading" : "forms.reply.downloadingCount" : reply.state === "RetryingFiles" ? "forms.reply.retryingFiles" : reply.state === "Pending" ? "forms.reply.pending" : reply.state === "Rejected" ? "forms.reply.rejected" : reply.state === "Unrecognized" ? "forms.reply.unrecognized" : "forms.reply.valuesUnavailable",{count:reply.fileCount})}</p>}
+      </> : <p className="flex items-start gap-2 border-t border-[var(--color-border)] px-3 py-2 text-sm"><span aria-hidden="true"><StateIcon className="mt-0.5 size-4 shrink-0" /></span>{kept ? <span><Trans t={t} i18nKey="forms.reply.alreadySaved" values={{ number: kept }} components={recordNumber} /></span> : inactive ? t("forms.reply.catalogInactive",{label:reply.rejectedQuestion??t("forms.formLabel")}) : fileRejection ? t(reply.rejectedQuestion?"forms.reply.filesRejectedQuestion":fileRejection,{label:reply.rejectedQuestion}) : t(reply.state === "Downloading" ? reply.fileCount===undefined ? "forms.reply.downloading" : "forms.reply.downloadingCount" : reply.state === "RetryingFiles" ? "forms.reply.retryingFiles" : reply.state === "Pending" ? "forms.reply.pending" : reply.state === "Rejected" ? "forms.reply.rejected" : reply.state === "Unrecognized" ? "forms.reply.unrecognized" : "forms.reply.valuesUnavailable",{count:reply.fileCount})}</p>}
       {(inactive||fileRejection)&&onResend ? <div className="flex justify-end border-t border-[var(--color-border)] px-3 py-2"><Button type="button" variant="outline" size="sm" onClick={onResend}>{t("forms.reply.resend")}</Button></div> : null}
     </MessageCard>
   </div>;

@@ -220,6 +220,7 @@
       "downloading": "We received the form. We are downloading the files from WhatsApp and saving the reply.",
       "retryingFiles": "We are trying to download the files again.",
       "filesUnavailable": "We could not download the files from WhatsApp. The reply was not saved.",
+      "filesNotStored": "We could not store the files. The reply was not saved.",
       "filesRejected": "A file does not meet the allowed type, size or content. The reply was not saved.",
       "receiving": "Receiving form",
       "downloadingCount_one": "Received {{count}} file. Downloading it from WhatsApp and saving the response.",

@@ -16,7 +16,7 @@ export function FormFilesPreview(){
  <FormReplyCard reply={{...completed,values:null,recordNumber:"VIS-000033"}}/>
  <FormReplyCard reply={{state:"Downloading",name:completed.name}}/>
  <FormReplyCard reply={{state:"RetryingFiles",name:completed.name}}/>
- <FormReplyCard reply={{state:"Rejected",name:completed.name,rejectionCode:"Files.Content.Unavailable"}} onResend={()=>undefined}/>
+ <FormReplyCard reply={{state:"Rejected",name:completed.name,rejectionCode:"WhatsApp.Media.Unavailable"}} onResend={()=>undefined}/>
  <FormReplyCard reply={{state:"Rejected",name:completed.name,rejectionCode:"Files.Content.InvalidType"}} onResend={()=>undefined}/>
  </div></Page>;
 }

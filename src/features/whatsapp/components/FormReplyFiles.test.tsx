@@ -52,7 +52,7 @@ it.each(["Downloading","RetryingFiles"] as const)("shows %s without file values 
  expect(screen.queryByText(/Guardada como/)).not.toBeInTheDocument();
 });
 it("offers a manual resend for an unavailable file without exposing file names",async()=>{
- const resend=vi.fn();renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}} onResend={resend}/>);
+ const resend=vi.fn();renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"WhatsApp.Media.Unavailable"}} onResend={resend}/>);
  await userEvent.click(screen.getByRole("button",{name:"Mandar de nuevo"}));expect(resend).toHaveBeenCalledOnce();
 });
 
@@ -89,7 +89,7 @@ it("shows an explicit receiving title and the file count when the session is sti
 });
 
 it("does not offer resending in the file failure text without sending permission",()=>{
- renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}}/>);
+ renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"WhatsApp.Media.Unavailable"}}/>);
  expect(screen.queryByText(/Podés mandar el formulario de nuevo/)).not.toBeInTheDocument();
 });
 it("uses kilobytes for a small document",()=>{

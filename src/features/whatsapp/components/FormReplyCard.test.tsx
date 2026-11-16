@@ -78,9 +78,17 @@ it.each(["Forms.Record.CatalogOptionInvalid","WhatsApp.Flow.CaptureFailed","Form
 
 // The state is enough: the resend button says what can be done, without a sentence repeating it.
 it("says only the state of a file rejection above its resend action", () => {
-  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Content.Unavailable"}} onResend={() => {}} />);
+  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"WhatsApp.Media.Unavailable"}} onResend={() => {}} />);
   expect(screen.getByText("No pudimos bajar los archivos de WhatsApp. No se guardó la respuesta.")).toBeInTheDocument();
   expect(screen.queryByText(/Podés mandar el formulario de nuevo/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button",{name:"Mandar de nuevo"})).toBeInTheDocument();
+});
+
+// N22: the private storage has its own code; the card says the files could not be kept, not that WhatsApp failed.
+it("says the files could not be stored when the private storage failed", () => {
+  renderWithProviders(<FormReplyCard reply={{state:"Rejected",name:"Visita",rejectionCode:"Files.Storage.Unavailable"}} onResend={() => {}} />);
+  expect(screen.getByText("No pudimos guardar los archivos. No se guardó la respuesta.")).toBeInTheDocument();
+  expect(screen.queryByText(/WhatsApp/)).not.toBeInTheDocument();
   expect(screen.getByRole("button",{name:"Mandar de nuevo"})).toBeInTheDocument();
 });
 
