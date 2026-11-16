@@ -51,6 +51,15 @@ describe("AI settings", () => {
     const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
     expect(notice.closest("[role=status]")).not.toBeNull();
     expect(screen.getByRole("radio", { name: "Pausada" })).toBeChecked();
+    expect(notice).toHaveTextContent("Elegí un proveedor, cargá su clave y guardá.");
+  });
+  it("tells who only reads that a provider this version does not know left it paused, without what to do to fix it (I4, review)", async () => {
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.read"] })));
+    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true };
+    renderRouteWithProviders("/configuracion/ia");
+    const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
+    expect(notice.closest("[role=status]")).not.toBeNull();
+    expect(notice).not.toHaveTextContent(/Elegí un proveedor/);
   });
   it("replaces the key in its own row and cancels back to the saved one", async () => {
     renderRouteWithProviders("/configuracion/ia");
