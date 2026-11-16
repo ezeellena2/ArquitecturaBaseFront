@@ -35,7 +35,7 @@
   "delete": "Delete conversation",
   "deleting": "Deleting…",
   "deleteTitle": "Delete this conversation?",
-  "deleteHelp": "You will lose access to its questions, answers and sources. Any active query will also be asked to cancel.",
+  "deleteHelp": "You will lose access to its questions, answers and sources, and the files and audio you attached will be deleted, along with what was read and transcribed from them. Any active query will also be asked to cancel.",
   "newTitle": "Start another conversation?",
   "newHelp": "Your draft will be discarded. The active query can continue and you can find it in history.",
   "keepEditing": "Keep editing",

@@ -35,7 +35,7 @@
   "delete": "Eliminar conversación",
   "deleting": "Eliminando…",
   "deleteTitle": "¿Eliminar esta conversación?",
-  "deleteHelp": "Vas a perder el acceso a sus preguntas, respuestas y fuentes. También se pedirá cancelar cualquier consulta activa.",
+  "deleteHelp": "Vas a perder el acceso a sus preguntas, respuestas y fuentes, y se van a borrar los archivos y audios que adjuntaste, con lo que se leyó y transcribió de ellos. También se pedirá cancelar cualquier consulta activa.",
   "newTitle": "¿Empezar otra conversación?",
   "newHelp": "Se descartará el borrador. La consulta activa puede seguir y la vas a encontrar en el historial.",
   "keepEditing": "Seguir editando",
