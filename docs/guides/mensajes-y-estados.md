@@ -118,6 +118,9 @@ palabras en `detail` ni mostrando una excepción cruda.
 4. Red y errores inesperados usan el texto común. Para 5xx se puede añadir el `traceId` como
    código para reportar; el fallback de un error sin ApiError también es común. Los errores de
    negocio conservan el texto traducido del servidor salvo una explicación específica de la feature.
+   Un 5xx sin `traceId` no lo armó la Api (el 502 o el 504 del ingress, o un cuerpo que no es
+   ProblemDetails): `readErrorMessage` y `operationalErrorMessage` dicen que el servicio no responde
+   (`common:errors.unavailable`, `unavailableWrite` y `unavailableSave`), sin pedir un código que no hay (N9).
 5. Un 401 de una petición autenticada sigue la renovación y el flujo de expiración de sesión;
    un 403 por falta de permiso sigue la página/estado de acceso. No duplicarlos con un toast.
    Los códigos de negocio del ingreso público se clasifican en su flujo: no ocultar un código

@@ -15,8 +15,13 @@ export function errorFeedback(error: unknown, options: { writing?: boolean; publ
   return { kind, fields, detail: apiError?.detail, traceId: apiError?.traceId, retryAfterSeconds: apiError?.retryAfterSeconds, network: apiError?.isNetworkError ?? false };
 }
 
+/// Un 5xx sin referencia que informar: no lo armó la Api, que siempre manda `code` y `traceId`. Es el 502 o el 504 del
+/// ingress, o un cuerpo que no es ProblemDetails (N9). Su texto dice que el servicio no responde, sin «informá el código ?».
+const isUnavailable = (error: unknown) => error instanceof ApiError && error.status >= 500 && !error.traceId;
+
 export function operationalErrorMessage(error: unknown, t: (key: string, options?: Record<string, unknown>) => string, recovery: "review" | "save" = "review"): string {
   const feedback = errorFeedback(error, { writing: true });
+  if (feedback.kind === "uncertain" && isUnavailable(error)) return t(recovery === "save" ? "common:errors.unavailableSave" : "common:errors.unavailableWrite");
   if (feedback.kind === "uncertain") return t(recovery === "save" ? "common:errors.saveRetry" : "common:errors.writeUncertain", { traceId: feedback.traceId ?? "?" });
   return feedback.detail ?? t("common:states.error");
 }
@@ -24,6 +29,7 @@ export function operationalErrorMessage(error: unknown, t: (key: string, options
 export function readErrorMessage(error: unknown, t: (key: string, options?: Record<string, unknown>) => string): string {
   const feedback = errorFeedback(error);
   return feedback.network ? t("common:errors.network")
+    : isUnavailable(error) ? t("common:errors.unavailable")
     : error instanceof ApiError && error.status >= 500 ? t("common:errors.unexpected", { traceId: feedback.traceId ?? "?" })
     : feedback.detail ?? t("common:states.error");
 }

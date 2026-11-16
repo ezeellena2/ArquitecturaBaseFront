@@ -37,6 +37,9 @@
     },
     "network": "No pudimos conectarnos. Revisá tu conexión.",
     "unexpected": "Ocurrió un error inesperado. Si el problema continúa, informá el código {{traceId}}.",
+    "unavailable": "El servicio no responde en este momento. Probá de nuevo en unos minutos.",
+    "unavailableWrite": "El servicio no respondió y no sabemos si se hizo. Revisá el estado actual antes de repetir la operación.",
+    "unavailableSave": "El servicio no respondió y no sabemos si se guardó. Volvé a guardar en unos minutos.",
     "traceId": "Código para reportar: {{traceId}}",
     "generic": "Ocurrió un error. Probá de nuevo en un momento.",
     "forbidden": {
