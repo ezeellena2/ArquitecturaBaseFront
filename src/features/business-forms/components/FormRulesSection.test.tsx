@@ -220,6 +220,22 @@ it("tells a missing issuer permission and keeps the rules being edited", async (
   expect(messageText(screen.getByRole("textbox", { name: "Mensaje" }))).toBe("Mi regla conservada");
 });
 
+// F5: notices that quote responses need «Ver respuestas», which is not the rules permission either: the editor tells it with the server text.
+it("tells a missing responses permission for notices that quote responses and keeps the rules being edited", async () => {
+  setup();
+  const detail = "Estos avisos citan respuestas: necesitás también el permiso para verlas.";
+  server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Forms.Rule.RecordsReadRequired", detail }, { status: 403 })));
+  renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Mi regla conservada");
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(notify).toHaveBeenCalledOnce());
+  expect(vi.mocked(notify).mock.calls[0][0]).toMatchObject({ kind: "error", message: detail });
+  expect(screen.queryByText("Ya no tenés permiso para administrar las reglas.")).not.toBeInTheDocument();
+  expect(messageText(screen.getByRole("textbox", { name: "Mensaje" }))).toBe("Mi regla conservada");
+});
+
 it("notifies one rules save failure while retaining the editable draft", async () => {
   setup();
   server.use(http.post("/api/forms/definitions/:id/rules", () => HttpResponse.json({ code: "Test.Save", detail: "No pudimos guardar estas reglas." }, { status: 400 })));
