@@ -11,7 +11,8 @@ import { wait } from "./useAssistantDictation";
 /// Reads a photo or a PDF before its turn (Stage 3), like a recording: uploads it under its own request, saying how much went up,
 /// follows the reading and returns that request once the server read it. The same file keeps its request: after an upload whose
 /// outcome is unknown the retry uploads it again under it (the server recovers the same reading), once the server has it the retry
-/// only asks for the reading, and a file already read is not asked for again. After a failed reading the next attempt uses another
+/// only asks for the reading (also after a 409 UnknownVersion: the server has a reading a newer version sealed), and a file already
+/// read is not asked for again. After a failed reading the next attempt uses another
 /// request; a file the server did not take stays with its reason until it is removed or changed. A 429 starts Home's common wait.
 export function useAssistantDocument({ userId, onForbidden, onWait }: {
   userId: string;
@@ -75,6 +76,13 @@ export function useAssistantDocument({ userId, onForbidden, onWait }: {
         if (failure instanceof ApiError && failure.status === 404) current.uploaded = false;
         notify({ id: `assistant:${userId}:document`, kind: feedback.kind === "wait" ? "error" : "warning",
           message: feedback.kind === "wait" ? operationalErrorMessage(failure, t) : t("attachment.readingUnknown") });
+        return undefined;
+      }
+      // The server has a reading under this request that a newer version sealed: the next send asks for it, not for another upload that
+      // would spend the reading quota (I4, review).
+      if (failure instanceof ApiError && failure.code === "Ai.Assistant.UnknownVersion") {
+        current.uploaded = true;
+        notify({ id: `assistant:${userId}:document`, kind: "error", message: operationalErrorMessage(failure, t) });
         return undefined;
       }
       // Only an upload whose outcome is unknown keeps its request, so the retry recovers the same reading.

@@ -7,8 +7,9 @@ import { assistantApi } from "../api/assistant";
 
 /// Normalizes a recording before its turn (IA4): uploads it under its own request, follows the normalization and returns that
 /// request once the server heard it. The same recording keeps its request, so a retry never uploads it again and one already heard
-/// is not uploaded at all; after a failed normalization, or a conflict on its upload (409), the next attempt uses another one, as a
-/// document does. A 429 starts Home's common wait.
+/// is not uploaded at all; after a failed normalization, or another recording under its request (409 RequestReused), the next attempt
+/// uses another one, as a document does. A normalization a newer version sealed (409 UnknownVersion) keeps it. A 429 starts Home's
+/// common wait.
 export function useAssistantDictation({ userId, onForbidden, onWait }: {
   userId: string;
   onForbidden: () => void;
@@ -49,8 +50,9 @@ export function useAssistantDictation({ userId, onForbidden, onWait }: {
       if (feedback.kind === "forbidden") { onForbidden(); return undefined; }
       if (feedback.kind === "fields") { pending.current = null; setError(t("audio.invalid")); return undefined; }
       if (feedback.kind === "wait") onWait(feedback.retryAfterSeconds ?? 30, failure);
-      // The server has another recording under this request: repeating it would only repeat the conflict (B2).
-      if (failure instanceof ApiError && failure.status === 409) pending.current = null;
+      // The server has another recording under this request: repeating it would only repeat the conflict (B2). Any other 409 keeps it:
+      // with UnknownVersion the server has this one, and the next attempt finds it without spending the audio quota again (I4, review).
+      if (failure instanceof ApiError && failure.code === "Ai.Assistant.RequestReused") pending.current = null;
       notify({ id: `assistant:${userId}:audio`, kind: feedback.kind === "uncertain" ? "warning" : "error",
         message: operationalErrorMessage(failure, t) });
       return undefined;

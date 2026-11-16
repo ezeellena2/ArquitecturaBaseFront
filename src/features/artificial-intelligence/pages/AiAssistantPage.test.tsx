@@ -1151,6 +1151,26 @@ describe("dictated turns (IA4)", () => {
     expect(writes[0]).toMatchObject({ audioRequestId: uploads[1].body.get("requestId") });
   });
 
+  // I4, review: a copy that does not know how a newer one sealed the recording's normalization answers a 409 that may pass. The
+  // recording keeps its request, so the next attempt finds the same normalization instead of spending the audio quota again.
+  it("keeps the recording's request when the server does not know its normalization yet, and says why", async () => {
+    installMicrophone();
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.UnknownVersion",
+      detail: "Esta consulta usa algo que esta versión de la aplicación todavía no conoce. Probá de nuevo en unos minutos." } },
+    { status: 202, body: status("completed", "Armame un formulario de visitas") }]);
+    renderRouteWithProviders("/");
+    await record();
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith(
+      "Esta consulta usa algo que esta versión de la aplicación todavía no conoce. Probá de nuevo en unos minutos.", expect.anything()));
+    expect(writes).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(uploads[1].body.get("requestId")).toBe(uploads[0].body.get("requestId"));
+    expect(writes[0]).toMatchObject({ audioRequestId: uploads[0].body.get("requestId") });
+  });
+
   it("does not upload again a recording the server already heard when its turn did not go", async () => {
     installMicrophone();
     const uploads = captureUploads([{ status: 202, body: status("completed", "Armame un formulario de visitas") }]);
@@ -1662,6 +1682,34 @@ describe("documents in Home (Stage 3)", () => {
     await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(uploads[1].body.get("requestId")).not.toBe(uploads[0].body.get("requestId"));
+  });
+
+  // I4, review: the server has a reading under this request that a newer copy sealed; the next send asks for it instead of uploading the
+  // file again under another request, which would spend the reading quota.
+  it("keeps the request when the server does not know the reading yet, and the next send asks for it without uploading", async () => {
+    server.use(withKinds(all), turnsWithDocument());
+    const error = vi.spyOn(toast, "error");
+    const uploads = captureUploads([{ status: 409, body: { title: "Conflicto", status: 409, code: "Ai.Assistant.UnknownVersion",
+      detail: "Esta consulta usa algo que esta versión de la aplicación todavía no conoce. Probá de nuevo en unos minutos." } }]);
+    const polled: string[] = [];
+    server.use(http.get("/api/ai/assistant/documents/:id", ({ params }) => {
+      polled.push(String(params.id));
+      return HttpResponse.json(status("completed", read));
+    }));
+    renderRouteWithProviders("/");
+    await screen.findByRole("button", { name: "Adjuntar un archivo" });
+    choose("comprobante.pdf");
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith(
+      "Esta consulta usa algo que esta versión de la aplicación todavía no conoce. Probá de nuevo en unos minutos.", expect.anything()));
+    expect(writes).toHaveLength(0);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar" })).toBeEnabled());
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    const requestId = String(uploads[0].body.get("requestId"));
+    expect(uploads).toHaveLength(1);
+    expect(polled).toEqual([requestId]);
+    expect(writes[0].documentRequestId).toBe(requestId);
   });
 
   it("closes Home when the upload says this person can no longer use the assistant", async () => {
