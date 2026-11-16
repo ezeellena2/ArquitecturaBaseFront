@@ -88,7 +88,8 @@
     },
     "failedHint": "WhatsApp did not deliver it: it may be Meta's message limit or a rejection.",
     "uncertainHint": "We don't know whether it arrived: Meta did not confirm the send. Check with the person before resending it.",
-    "failedHintByEmail": "The email did not go out: we could not send it at that moment.",
+    "failedHintByEmail": "The email did not go out: the mail server rejected it or we could not send it in time.",
+    "uncertainHintByEmail": "We don't know whether it arrived: the mail server did not confirm the send. Check with the person before resending it.",
     "resend": "Resend invitation",
     "resendIn": "You can resend in {{seconds}} s",
     "resent": "We sent the invitation again."

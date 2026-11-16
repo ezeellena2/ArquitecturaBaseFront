@@ -745,7 +745,35 @@ describe("UserEditDialog", () => {
       );
     });
 
-    it("shows only the date of an invitation by email, which has no delivery status", async () => {
+    it.each([
+      ["Pending", "Pendiente"],
+      ["Sent", "Enviada"],
+    ] as const)("says an invitation by email that is %s, as the queue tells it", async (deliveryStatus, text) => {
+      // N5: por correo, el estado lo da la cola: pendiente mientras espera salir, enviada cuando el servidor la aceptó.
+      withUser(invitedLaura, detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus }) }));
+
+      const strip = stripOf(await openEdit("laura.rios@gmail.com"));
+
+      expect(strip.getByText("Invitación por correo")).toBeInTheDocument();
+      expect(strip.getByText(text)).toBeInTheDocument();
+    });
+
+    it("says an invitation by email that may have arrived is unconfirmed, and asks to check with the person", async () => {
+      withUser(
+        invitedLaura,
+        detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: "Uncertain" }) }),
+      );
+
+      const strip = stripOf(await openEdit("laura.rios@gmail.com"));
+
+      expect(strip.getByText("Sin confirmar")).toBeInTheDocument();
+      expect(strip.getByRole("button", { name: "Más información sobre Sin confirmar" })).toHaveAccessibleDescription(
+        "No sabemos si llegó: el servidor de correo no confirmó el envío. Revisá con la persona antes de reenviarla.",
+      );
+    });
+
+    it("shows no status for an invitation without one, and does not take it as sent", async () => {
+      // Sólo sin quién siga la entrega de su canal (un módulo que se quitó): no se sabe cómo le fue.
       withUser(
         invitedLaura,
         detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: null }) }),
@@ -761,7 +789,7 @@ describe("UserEditDialog", () => {
     });
 
     it("says an invitation by email did not go out, the same way as one by WhatsApp, and why", async () => {
-      // Por correo no hay estado que seguir, salvo uno: la cola de correo no la tomó (el backend dice `Failed`).
+      // Por correo, `Failed`: la cola no la tomó, el servidor la rechazó o venció sin salir (N5).
       withUser(
         invitedLaura,
         detailOf(invitedLaura, { lastInvitation: invitation({ channel: "Email", deliveryStatus: "Failed" }) }),
@@ -772,7 +800,7 @@ describe("UserEditDialog", () => {
       expect(strip.getByText("Invitación por correo")).toBeInTheDocument();
       expect(strip.getByText("No llegó")).toBeInTheDocument();
       expect(strip.getByRole("button", { name: "Más información sobre No llegó" })).toHaveAccessibleDescription(
-        "El correo no salió: no pudimos mandarlo en ese momento.",
+        "El correo no salió: el servidor de correo lo rechazó o no pudimos mandarlo a tiempo.",
       );
       // La explicación de WhatsApp no corresponde: no fue Meta.
       expect(strip.queryByText(/WhatsApp no la entregó/)).not.toBeInTheDocument();

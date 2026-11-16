@@ -22,13 +22,15 @@ export interface UserListItem {
 /// Por dónde sale una invitación (`UserInvitationChannel` del backend, que viaja por su nombre).
 export type InvitationChannel = "Email" | "WhatsApp";
 
-/// Cómo va una invitación. Por WhatsApp, cualquiera de estos; por correo, solo `Failed`, si la cola no la tomó.
-/// `Uncertain` (H7): no se sabe si salió (Meta pudo haberla recibido); se revisa el WhatsApp de la persona antes de reenviarla.
+/// Cómo va una invitación. Por WhatsApp, cualquiera de estos. Por correo lo dice la cola (N5): `Pending` mientras espera
+/// salir (se reintenta hasta que vence), `Sent` cuando el servidor de correo la aceptó, `Failed` si la cola no la tomó, el
+/// servidor la rechazó o venció sin salir, y `Uncertain` si se cortó mientras salía o su lugar en la cola venció sin
+/// noticias (un día). `Uncertain` (H7 y N8): no se sabe si salió; se revisa con la persona antes de reenviarla.
 export type InvitationDeliveryStatus = "Pending" | "Sent" | "Delivered" | "Read" | "Failed" | "Uncertain";
 
 /// La última invitación que se le mandó a la cuenta: la franja de abajo de los medios de ingreso en la edición (tablero
-/// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null por un correo que salió, que no tiene estado que
-/// seguir, y `Failed` por uno que la cola no tomó (`LastInvitation` del backend).
+/// "Editar usuario · B", puntos 1 y 4). `deliveryStatus` es null sólo si su canal no tiene quién siga la entrega (un
+/// módulo que se quitó): no dice que salió, y la franja no muestra ningún estado (`LastInvitation` del backend).
 export interface LastInvitation {
   readonly channel: InvitationChannel;
   readonly sentAtUtc: string;

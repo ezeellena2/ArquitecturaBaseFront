@@ -224,7 +224,7 @@ interface LastInvitationStripProps {
 
 /// La última invitación, aparte y debajo de los medios de ingreso (tablero "Editar usuario · B", puntos 1 y 4): es un
 /// envío, no un medio de ingreso. Dice por dónde salió, cuándo y cómo le fue: por WhatsApp, lo que avisa Meta; por
-/// correo, solo "No llegó" si la cola no lo tomó. "Reenviar invitación" se abre en el lugar, sin otro diálogo encima,
+/// correo, lo que dice la cola (pendiente, enviada, no llegó o sin confirmar). "Reenviar invitación" se abre en el lugar, sin otro diálogo encima,
 /// y después del envío hay que esperar un minuto.
 ///
 /// Solo se muestra si la cuenta tiene una invitación: el tablero no dibuja invitar a quien nunca se invitó desde acá.
@@ -331,13 +331,17 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
 
   const failed = invitation.deliveryStatus === "Failed";
   const uncertain = invitation.deliveryStatus === "Uncertain";
-  // "No llegó" se ve igual por los dos canales; lo que cambia es el porqué, que va en la (i) junto al estado. Por
-  // WhatsApp avisó Meta (su límite o un rechazo); por correo, la cola no lo tomó. "Sin confirmar" pide revisar antes.
+  const byEmail = invitation.channel === "Email";
+  // "No llegó" y "Sin confirmar" se ven igual por los dos canales; lo que cambia es el porqué, que va en la (i) junto al
+  // estado. Por WhatsApp avisó Meta (su límite o un rechazo); por correo, el servidor de correo o la cola (N5). "Sin
+  // confirmar" pide revisar antes.
   const failureHint = uncertain
-    ? t("lastInvitation.uncertainHint")
+    ? byEmail
+      ? t("lastInvitation.uncertainHintByEmail")
+      : t("lastInvitation.uncertainHint")
     : !failed
       ? undefined
-      : invitation.channel === "Email"
+      : byEmail
         ? t("lastInvitation.failedHintByEmail")
         : t("lastInvitation.failedHint");
   const waiting = seconds > 0;
