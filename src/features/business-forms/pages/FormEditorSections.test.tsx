@@ -9,6 +9,7 @@ import { createFormFixtureStore, fixtureFormId } from "@/test/visual/formFixture
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 
 // CW15-B in the list: «Agregar título» adds a title row at the end, ↑ ↓ move it among the questions and Guardar sends it apart.
+// Each test opens the whole editor and types: with the full suite or the backend running they went past the 5 s.
 let store: ReturnType<typeof createFormFixtureStore>;
 beforeEach(() => {
   queryClient.clear();
@@ -36,7 +37,7 @@ it("adds a title at the end, moves it among the questions and saves it apart fro
   expect(store.writes.at(-1)?.draft.sections).toEqual([{ start: 5, title: { es: "Cierre" } }]);
   // Six questions: the title is not one of them.
   expect(screen.getByText("6 preguntas")).toBeInTheDocument();
-});
+}, 20_000);
 
 it("moves a question across a title into the other section and removes a title without asking", async () => {
   renderRouteWithProviders("/formularios/" + fixtureFormId);
@@ -51,4 +52,4 @@ it("moves a question across a title into the other section and removes a title w
 
   expect(list()).toEqual(["Cliente", "Contacto", "Importe cobrado", "Fecha de visita", "Visita completada", "Observaciones"]);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-});
+}, 20_000);
