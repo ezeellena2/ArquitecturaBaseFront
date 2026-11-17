@@ -53,7 +53,8 @@ afterEach(() => vi.restoreAllMocks());
 it("opens full from the quick view and returns to the same selected row and private filters", async () => {
   const { reads } = setup();
   const { router } = renderRouteWithProviders(path + "?sort=-number&columns=none&pageSize=20");
-  const search = await screen.findByRole("searchbox", { name: "Buscar en textos largos" });
+  // The first test pays the lazy load of the page: in the full run it went past the 5 s.
+  const search = await screen.findByRole("searchbox", { name: "Buscar en textos largos" }, { timeout: 10_000 });
   await userEvent.type(search, "private observation");
   await waitFor(() => expect(reads.sheets.at(-1)?.search).toBe("private observation"));
   await userEvent.click(screen.getByRole("link", { name: "TEST-000002" }));
@@ -71,7 +72,7 @@ it("opens full from the quick view and returns to the same selected row and priv
   expect(row.closest("tr")).toHaveAttribute("aria-selected", "true");
   expect(router.state.location.search).toContain("columns=none");
   expect(screen.queryByRole("region", { name: "Detalle de la respuesta" })).not.toBeInTheDocument();
-});
+}, 20_000);
 
 it("anchors a shared direct link beyond page one using only public order and versions", async () => {
   const { reads } = setup();

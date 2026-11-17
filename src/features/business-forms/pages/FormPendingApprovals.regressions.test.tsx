@@ -94,7 +94,8 @@ function setup(read = false) {
 
 async function openFirst() {
   // Alone for whoever only decides, or in the tab «Por aprobar (2)» for whoever also reads responses (board PL1-A).
-  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
+  // The first test pays the lazy load of the page: in the full run it went past the 3 s.
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }, { timeout: 10_000 }));
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("button", { name: "Aprobar" });
   return panel;
@@ -119,7 +120,7 @@ it("requires a nonblank rejection reason and sends its trimmed value once from t
   expect(await within(panel).findByText("Revisá la visita")).toBeVisible();
   expect(fixture.reads.values).toBe(0);
   expect(fixture.reads.workflow).toBe(0);
-});
+}, 20_000);
 
 it("keeps a failed rejection reason and announces the cause once without repeating it in either surface", async () => {
   setup();

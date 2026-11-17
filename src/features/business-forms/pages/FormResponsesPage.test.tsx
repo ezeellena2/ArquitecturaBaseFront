@@ -177,12 +177,13 @@ describe("response sheet", () => {
     payload.records.totalCount = 1;
     server.use(http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
-    await screen.findByRole("columnheader", { name: "Estado" });
+    // The first case pays the lazy load of the page: alone and with a quiet machine it went past the 3 s once in three runs.
+    await screen.findByRole("columnheader", { name: "Estado" }, { timeout: 10_000 });
     const cell = within(screen.getByRole("table")).getByRole("cell", { name: label });
     const badge = within(cell).getByText(label);
     expect(badge).toHaveAttribute("data-slot", "badge");
     expect(badge).toHaveAttribute("data-variant", variant);
-  });
+  }, 20_000);
   it("keeps response values readable when approval permission is revoked",async()=>{setup(["formrecords.read","formapprovals.decide"]);const taskId=crypto.randomUUID();server.use(http.get("/api/forms/approvals/count",()=>HttpResponse.json({count:1})),http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"PendingApproval",task:{id:taskId,roleId:taskId,roleName:"Supervisión", requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",decidedAtUtc:null,decidedBy:null,reason:null}})),http.get("/api/forms/approvals/:id",()=>HttpResponse.json({id:taskId,definitionId:responseFormId,recordId:responseRecordId,number:"TEST-000002",formName:"Visita",author:{userId:taskId,displayName:"Ana"},role:{id:taskId,name:"Supervisión"},requestedAtUtc:"2026-10-16T12:00:00Z",revision:1,state:"Open",canDecide:true,cannotDecideReason:null,decidedAtUtc:null,decidedBy:null,reason:null})),http.post("/api/forms/approvals/:id/decisions",()=>HttpResponse.json({code:"Authorization.Forbidden"},{status:403})));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
     const responseView = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));await approveAndConfirm();await screen.findByText("Ya no tenés permiso para decidir esta aprobación.");expect(responseView.getByText("Texto completo para revisar")).toBeInTheDocument();});
   it("shows the historic decision to a reader without approval permission",async()=>{setup(["formrecords.read"]);const taskId=crypto.randomUUID();let metadataReads=0;server.use(http.get("/api/forms/records/:id/workflow",()=>HttpResponse.json({...responseWorkflowFixture(),recordState:"Rejected",task:{id:taskId,roleId:taskId,roleName:"Supervisión histórica", requestedAtUtc:"2026-10-16T12:00:00Z",revision:2,state:"Rejected",decidedAtUtc:"2026-10-16T13:00:00Z",decidedBy:{userId:taskId,displayName:"Luz"},reason:"Falta la firma"}})),http.get("/api/forms/approvals/:id",()=>{metadataReads++;return HttpResponse.json({});}));renderRouteWithProviders("/formularios/"+responseFormId+"/respuestas/"+responseRecordId);
