@@ -164,6 +164,9 @@ const row = z.strictObject({
   hasPdf: z.boolean(),
   // Only on a correction (CW10-A): the sheet says «Corregida» in its own column (UD4).
   corrected: z.literal(true).optional(),
+  // F2: only when an action of its rules failed or is uncertain without waiting for whoever loaded it (omitted otherwise, like
+  // «corrected»); «Reglas» says «Por resolver».
+  hasUnresolvedActions: z.literal(true).optional(),
   cells: z.array(responseCellSchema),
   results: z.record(z.string(), z.string().nullable()).optional(),
 });
@@ -191,6 +194,9 @@ export const responseSheetSchema = z
     ),
     records: page(row),
     resultColumns: z.array(resultColumn).min(1).optional(),
+    // F2: how many responses of the form, not voided and whatever the filters, have actions to resolve; only for whoever manages
+    // rules and sees every response of a form whose rules ran (omitted otherwise, and then there is no «Por resolver» tab).
+    unresolvedActionCount: z.number().int().nonnegative().optional(),
   })
   .superRefine((sheet, context) => {
     const columns = new Map(

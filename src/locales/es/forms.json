@@ -940,6 +940,7 @@
     "clear": "Limpiar todo",
     "tabs": {
       "pending": "Por aprobar ({{count}})",
+      "unresolved": "Por resolver ({{count}})",
       "all": "Todas",
       "responses": "Respuestas ({{count}})",
       "dashboard": "Tablero"
@@ -969,6 +970,9 @@
     "unknownPerson": "Persona sin información",
     "noMatches": "Ninguna respuesta coincide",
     "empty": "Todavía no hay respuestas",
+    "noUnresolved": "Ninguna respuesta tiene acciones por resolver",
+    "rules": "Reglas",
+    "unresolved": "Por resolver",
     "detail": "Detalle de la respuesta",
     "unavailable": "No encontramos esa respuesta o no está disponible",
     "back": "Volver a la planilla",

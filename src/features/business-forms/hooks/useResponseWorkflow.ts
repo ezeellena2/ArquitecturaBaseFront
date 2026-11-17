@@ -6,7 +6,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import type { ApprovalTask } from "../api/approvals";
 import { continueResponseAction, fetchResponseWorkflow, retryResponseRecipient, reviewResponseAction, type ResponseWorkflow } from "../api/workflow";
 import { sameWorkflowReviewTarget, workflowCanRetryRecipient, workflowCanReview, workflowNextAction, type WorkflowReviewTarget } from "../workflow";
-import { useResponseScope } from "./useResponseQueries";
+import { responseSheetKeyRoot, useResponseScope } from "./useResponseQueries";
 /** The flow of a response, by actor, form and response: the issuance of the zone «Comprobante» writes it too. */
 export const responseWorkflowKey = (owner: string, formId: string, recordId: string) => ["form-responses", owner, "workflow", formId, recordId];
 export function useResponseWorkflow(formId: string, recordId: string, retainPreviousForm = false) {
@@ -30,6 +30,20 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
   const busy = operation?.owner === owner && operation.busy;
   const controlsDenied = deniedManageOwner === owner;
   const canManage = !!scope.user?.permissions.includes("formrules.manage") && !controlsDenied;
+  // F2: what was resolved changes the sheet beside it (its «Reglas» mark, its «Por resolver» tab and count), read again in the background.
+  const sheetOwner = scope.owner;
+  const readSheet = () => { void client.invalidateQueries({ queryKey: responseSheetKeyRoot(sheetOwner, formId) }); };
+  // A retry or a consultation leaves «Por resolver» while it waits; when the flow, read again while it waits, stops waiting (the
+  // worker finished or failed again), the sheet is read again too, or it would keep saying it was resolved.
+  const waiting = !!query.data?.actions.some(action => action.state === "Waiting" || action.state === "Running");
+  const settled = !!query.data && !query.isPlaceholderData;
+  const lastWaiting = useRef<{ owner: string; waiting: boolean } | null>(null);
+  useEffect(() => {
+    if (!settled) return;
+    const before = lastWaiting.current;
+    lastWaiting.current = { owner, waiting };
+    if (before?.owner === owner && before.waiting && !waiting) void client.invalidateQueries({ queryKey: responseSheetKeyRoot(sheetOwner, formId) });
+  }, [client, formId, owner, settled, sheetOwner, waiting]);
   const observeApproval = async (task: ApprovalTask) => {
     if (!scope.allowed || task.definitionId !== formId || task.recordId !== recordId || liveOwner.current !== owner) return false;
     await client.cancelQueries({ queryKey: key, exact: true });
@@ -48,6 +62,7 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
       const result = await fetchResponseWorkflow(recordId, request.signal);
       if (liveOwner.current !== owner || request.signal.aborted) return false;
       client.setQueryData(key, result);
+      readSheet();
       setReviewCheck(null);
       const current = result.actions.find(action => action.id === target.runId);
       const recipient = current?.recipients.find(item => item.user.userId === target.recipientUserId);
@@ -84,6 +99,7 @@ export function useResponseWorkflow(formId: string, recordId: string, retainPrev
           : await continueResponseAction(recordId, runId, method as "consult" | "retry", request.signal);
       if (liveOwner.current !== expected || request.signal.aborted) return false;
       client.setQueryData(key, result);
+      readSheet();
       setOperation({ owner, busy: false, error: null });
       return true;
     } catch (error) {

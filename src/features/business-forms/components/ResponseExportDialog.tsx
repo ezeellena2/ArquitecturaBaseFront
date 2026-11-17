@@ -76,7 +76,10 @@ export function ResponseExportDialog({
   const feedbackId = `responses:export:${formId}`;
   const restore = useRestoreFocusOnClose();
   const count = formatExactDecimal(String(total), i18n.language) ?? String(total);
-  const voided = includeVoided && !filter.state;
+  // F2: from «Por resolver» it exports what the tab shows, which says so among the filters; that tab never shows the voided.
+  const offersVoided = !filter.state && !filter.unresolvedActions;
+  const voided = includeVoided && offersVoided;
+  const filters = filter.unresolvedActions ? [t("responses.unresolved"), ...filterLabels] : filterLabels;
   const allColumns = exportedColumns(columns) + resultColumns.length;
   // The visible catalog fields and data of the results come apart: each visible question counts only its own columns.
   const visibleColumns = visible.reduce((sum, column) => sum + (column.type === "group"
@@ -110,7 +113,7 @@ export function ResponseExportDialog({
           // The data of the results that are seen, by their ids (RE1-A); null takes them all.
           resultColumns: selection === "visible" ? visibleResults.map((column) => column.id) : null,
           // The voided go only when asked (CW11-A); unchecked, the body stays as it always was.
-          ...(includeVoided && !filter.state ? { includeVoided: true } : {}),
+          ...(voided ? { includeVoided: true } : {}),
         },
         { signal: current.signal },
       );
@@ -166,8 +169,8 @@ export function ResponseExportDialog({
             key: "filters",
             label: t("responses.exportFilters"),
             // The same chips of the sheet, without their cross: the filters are not removed here.
-            value: filterLabels.length
-              ? <span className="flex flex-wrap gap-1.5">{filterLabels.map(label => <FilterChip key={label}>{label}</FilterChip>)}</span>
+            value: filters.length
+              ? <span className="flex flex-wrap gap-1.5">{filters.map(label => <FilterChip key={label}>{label}</FilterChip>)}</span>
               : <span className="text-[var(--color-content-muted)]">{t("responses.exportNoFilters")}</span>,
           },
         ]} />
@@ -191,7 +194,7 @@ export function ResponseExportDialog({
           />
         </div>
         {/* Voided responses stay out of the file unless they are asked for (CW11-A); with a state chosen, the state says which go. */}
-        {filter.state ? null : <CheckboxField label={t("responses.includeVoided")} help={t("responses.includeVoidedHelp")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
+        {!offersVoided ? null : <CheckboxField label={t("responses.includeVoided")} help={t("responses.includeVoidedHelp")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
         <DataList items={[
           { key: "file", label: t("responses.exportFile"), value: `${prefix}-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}.xlsx` },
           {

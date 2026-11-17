@@ -27,6 +27,15 @@ it.each(["", "?", privateSearch, "?" + privateSearch, "approval=" + fieldId + "&
   expect(responseFullPath(formId, recordId, search)).toBe(base + "/" + recordId + "/completa");
   expect(responseSheetPath(formId, search)).toBe(base);
 });
+// F2: «Por resolver» changes which responses the full view walks and where it goes back; the other tabs do not travel.
+it("keeps the tab «Por resolver» in the full view and on the way back, and no other tab", () => {
+  expect(responseFullPath(formId, recordId, "view=unresolved&sort=-number&columns=none")).toBe(base + "/" + recordId + "/completa?sort=-number&view=unresolved");
+  expect(responseSheetPath(formId, "?view=unresolved&page=2")).toBe(base + "?page=2&view=unresolved");
+  for (const view of ["pending", "all", "dashboard"]) {
+    expect(responseFullPath(formId, recordId, "view=" + view)).toBe(base + "/" + recordId + "/completa");
+    expect(responseSheetPath(formId, "view=" + view)).toBe(base);
+  }
+});
 it("treats the optional question mark consistently without changing the public values", () => {
   const source = "sort=-field&sortFieldId=" + fieldId + "&versionIds=" + recordId + "," + fieldId;
   expect(responseFullPath(formId, recordId, source)).toBe(responseFullPath(formId, recordId, "?" + source));

@@ -73,6 +73,8 @@ export function useResponseFeedback(
     [id],
   );
 }
+/** The sheets of a form, under the reader of responses: what reads it again after a change seen elsewhere (F2: an action resolved). */
+export const responseSheetKeyRoot = (owner: string, formId: string) => ["form-responses", owner, "sheet", formId] as const;
 export function useResponseSheet(
   id: string,
   filter: ResponseQuery,
@@ -86,7 +88,7 @@ export function useResponseSheet(
     data: Awaited<ReturnType<typeof fetchResponseSheet>>;
   } | null>(null);
   const query = useQuery({
-    queryKey: ["form-responses", scope.owner, "sheet", id, filter],
+    queryKey: [...responseSheetKeyRoot(scope.owner, id), filter],
     queryFn: ({ signal }) => fetchResponseSheet(id, filter, signal),
     enabled: enabled && scope.allowed && !!id,
     gcTime: 0,

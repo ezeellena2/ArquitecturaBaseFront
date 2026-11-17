@@ -21,6 +21,22 @@ it("requires explicit PDF presence on every response row", () => {
   expect(responseSheetSchema.safeParse(body).success).toBe(true);
   expect(responseSheetSchema.safeParse({ ...body, records: { ...body.records, items: body.records.items.map(row => ({ ...row, hasPdf: undefined })) } }).success).toBe(false);
 });
+// F2: a row with actions to resolve says so and the others omit the mark, like «corrected»; the sheet counts them only for whoever
+// manages rules (omitted otherwise, like «resultColumns»).
+it("reads the mark of actions to resolve only when it comes and their count only when it comes", () => {
+  const sheet = responseSheetFixture();
+  const body = { ...sheet, records: { ...sheet.records, items: sheet.records.items.map((row, index) => index === 0 ? { ...row, hasUnresolvedActions: true } : row) } };
+  expect(responseSheetSchema.safeParse(sheet).success).toBe(true);
+  const parsed = responseSheetSchema.parse(body).records.items;
+  expect(parsed[0]!.hasUnresolvedActions).toBe(true);
+  expect(parsed[1]!.hasUnresolvedActions).toBeUndefined();
+  expect(responseSheetSchema.safeParse({ ...body, records: { ...body.records, items: body.records.items.map(row => ({ ...row, hasUnresolvedActions: false })) } }).success).toBe(false);
+  expect(responseSheetSchema.safeParse({ ...body, records: { ...body.records, items: body.records.items.map(row => ({ ...row, hasUnresolvedActions: null })) } }).success).toBe(false);
+  expect(responseSheetSchema.parse({ ...body, unresolvedActionCount: 0 }).unresolvedActionCount).toBe(0);
+  expect(responseSheetSchema.parse({ ...body, unresolvedActionCount: 3 }).unresolvedActionCount).toBe(3);
+  expect(responseSheetSchema.parse(body).unresolvedActionCount).toBeUndefined();
+  for (const count of [null, -1, 1.5, "3"]) expect(responseSheetSchema.safeParse({ ...body, unresolvedActionCount: count }).success).toBe(false);
+});
 it.each(["Manual", "Assistant"])("requires the explicit %s sender kind without inventing an origin", senderKind => {
   const record = responseDetailFixture();
   const body = { ...record, origin: { ...record.origin, senderKind } };

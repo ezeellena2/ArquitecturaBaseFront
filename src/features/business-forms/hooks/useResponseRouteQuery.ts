@@ -42,6 +42,9 @@ export function responseQueryFromParams(params: URLSearchParams, filter: Respons
     versionIds: (params.get("versionIds") ?? "")
       .split(",")
       .filter((value) => guid.test(value)),
+    // F2: the tab «Por resolver» is the same sheet with only those responses, also for its panel's ↑ ↓ and the full page. It
+    // goes after the filter: the bar copies the query into the private filter, which must not carry it to the other tabs.
+    unresolvedActions: params.get("view") === "unresolved" ? true : undefined,
   };
 }
 export function useResponseRouteQuery(formId: string) {

@@ -153,6 +153,29 @@ describe("ResponseExportDialog (EX1-A)", () => {
     expect(within(dialog).queryByRole("checkbox", { name: "Incluir las anuladas" })).not.toBeInTheDocument();
   });
 
+  // F2: from «Por resolver» it exports what the tab shows, so the dialog says so; that tab never shows the voided.
+  it("says «Por resolver» among the filters from its tab, without «Ninguno» and without offering the voided, and asks for those responses", async () => {
+    let sent: unknown;
+    server.use(http.post("/api/forms/definitions/:id/records/export", async ({ request }) => {
+      sent = await request.json();
+      return new HttpResponse(new Uint8Array([80, 75]), { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": "attachment; filename=rmp.xlsx" } });
+    }));
+    const dialog = await show({ filter: { ...all, unresolvedActions: true } });
+
+    expect(within(valueOf(dialog, "Filtros")).getByText("Por resolver")).toBeInTheDocument();
+    expect(valueOf(dialog, "Filtros")).not.toHaveTextContent("Ninguno");
+    expect(within(dialog).queryByRole("checkbox", { name: "Incluir las anuladas" })).not.toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
+    await waitFor(() => expect(sent).toMatchObject({ filter: { unresolvedActions: true } }));
+    expect(sent).not.toHaveProperty("includeVoided");
+  });
+
+  it("puts «Por resolver» before the chips of the bar", async () => {
+    const dialog = await show({ filter: { ...all, unresolvedActions: true }, filterLabels: ["Canal: App"] });
+
+    expect(valueOf(dialog, "Filtros").textContent).toBe("Por resolverCanal: App");
+  });
+
   it("writes a large count of responses with the separators of the language", async () => {
     const dialog = await show({ total: 12430 });
 

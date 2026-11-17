@@ -26,7 +26,7 @@ import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { notify } from "@/shared/ui/notifications";
 import { useResponsePanelNavigation } from "../hooks/useResponsePanelNavigation";
 import { IconButton } from "@/shared/ui/IconButton";
-import { useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueries";
+import { responseSheetKeyRoot, useResponseFeedback, useResponseSheet } from "../hooks/useResponseQueries";
 import { useRereadSignal } from "../hooks/useRereadSignal";
 import { useResponseRouteQuery } from "../hooks/useResponseRouteQuery";
 import { ResponseWorkspaceContext } from "../hooks/useResponseWorkspace";
@@ -95,17 +95,33 @@ export function FormResponsesPage() {
   // Who sees responses and approves has two tabs (board PL1-A): «Por aprobar (N)», the same query as its table, and «Todas».
   // The sheet opens in «Por aprobar» when there is something to decide and otherwise in «Todas»; the tab goes in the address.
   // «Tablero» follows (DOC7-A): for whoever reads or loads; next to «Respuestas (N)» when there is nothing to approve.
+  // «Por resolver (N)» (F2, option B) goes after «Por aprobar»: the same sheet with only the responses whose rules have an action to
+  // resolve, while the server counts some (only for whoever manages rules and sees every response) or it is the chosen tab, so
+  // resolving the last one shows its empty state. It is never where the sheet opens.
   const decide = !!scope.user?.permissions.includes("formapprovals.decide");
   const pending = useFormPendingApprovals(formId, Math.max(1, Number(route.params.get("approvalPage") ?? 1) || 1),
     Math.max(1, Number(route.params.get("approvalPageSize") ?? 20) || 20), route.params.get("approval") ?? undefined, decide);
   const pendingCount = pending.query.data?.totalCount;
   const tabs = decide && !pending.forbidden;
-  const view = route.params.get("view") === "dashboard" ? "dashboard" : !tabs ? "all"
-    : route.params.get("view") ?? (route.params.get("approval") ? "pending" : pendingCount !== undefined ? pendingCount > 0 ? "pending" : "all" : pending.query.isError ? "all" : undefined);
+  const chosen = route.params.get("view");
+  const view = chosen === "dashboard" || chosen === "unresolved" ? chosen : !tabs ? "all"
+    : chosen ?? (route.params.get("approval") ? "pending" : pendingCount !== undefined ? pendingCount > 0 ? "pending" : "all" : pending.query.isError ? "all" : undefined);
+  const unresolvedCount = query.data?.unresolvedActionCount;
+  const unresolvedTab = view === "unresolved" || unresolvedCount !== undefined && unresolvedCount > 0;
+  // «Respuestas (N)» counts every response with the bar's filters. In «Por resolver» the sheet counts only those: the tab keeps the
+  // count last read with the same filters, or goes without a number.
+  const totalKey = JSON.stringify([scope.owner, formId, { ...route.query, page: 0, pageSize: 0, sort: "", sortFieldId: "", unresolvedActions: undefined }]);
+  const [total, setTotal] = useState<{ key: string; count: number } | null>(null);
+  if (query.data && !query.isPlaceholderData && !route.query.unresolvedActions && (total?.key !== totalKey || total.count !== query.data.records.totalCount))
+    setTotal({ key: totalKey, count: query.data.records.totalCount });
+  const responsesCount = !route.query.unresolvedActions ? query.data?.records.totalCount : total?.key === totalKey ? total.count : undefined;
   // The dashboard opens without a response or a load beside it; going back to the sheet without approvals takes `view` away.
-  const changeView = (next: string) => next === "dashboard"
-    ? update({ view: next, approval: undefined, tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas" })
-    : update({ view: next === "all" && !tabs ? undefined : next, approval: undefined, tab: undefined });
+  // «Por resolver» and «Todas» share the sheet's page in the address: going in or out of it starts on the first one.
+  const changeView = (next: string) => {
+    const page = next === "unresolved" || view === "unresolved" ? { page: undefined } : {};
+    if (next === "dashboard") update({ view: next, approval: undefined, tab: undefined, ...page }, { pathname: "/formularios/" + formId + "/respuestas" });
+    else update({ view: next === "all" && !tabs ? undefined : next, approval: undefined, tab: undefined, ...page });
+  };
   useBreadcrumbLeaf(query.data?.name);
   useLayoutEffect(() => {
     if (!baseMatch || recordId || workspace?.fullEntry?.locationKey === null || workspace?.navigation?.origin !== "sheet" || !workspace.fullEntry || !query.data || query.isPlaceholderData) return;
@@ -140,7 +156,7 @@ export function FormResponsesPage() {
   const motion = useResponsePanelNavigation({ contextKey, ids: data?.records.items.map(row => row.id) ?? [], index, page: data?.records.page ?? route.query.page ?? 1, disabled: !data || query.isPlaceholderData,
     loadPage: async page => {
       const filter = { ...route.query, page };
-      const result = await client.fetchQuery({ queryKey: ["form-responses", scope.owner, "sheet", formId, filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
+      const result = await client.fetchQuery({ queryKey: [...responseSheetKeyRoot(scope.owner, formId), filter], queryFn: ({ signal }) => fetchResponseSheet(formId, filter, signal), gcTime: 0, meta: { errorOwner: "local" } });
       return { ids: result.records.items.map(row => row.id), totalCount: result.records.totalCount };
     },
     onNavigate: (id, page) => { rememberSheet(id, page); update({ page: page === 1 ? undefined : String(page) }, { pathname: "/formularios/" + formId + "/respuestas/" + id, replace: true }); },
@@ -194,6 +210,8 @@ export function FormResponsesPage() {
         {row.channel === "app" ? t("formEntries:sheet.channels.app") : row.channel === "phone" ? t("responses.whatsapp") : "—"}</span>,
     },
     ...(data?.hasApproval || route.query.state === "Voided" ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
+    // F2: a response with actions to resolve says so in its own column after «Estado», only when the page has one or in its tab.
+    ...(view === "unresolved" || data?.records.items.some(row => row.hasUnresolvedActions === true) ? [{ id: "rules", header: t("responses.rules"), cell: (row: ResponseRow) => row.hasUnresolvedActions === true ? <Badge variant="warning">{t("responses.unresolved")}</Badge> : "—" }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
@@ -244,8 +262,9 @@ export function FormResponsesPage() {
         }}
         sort={sort}
         onSortChange={route.toggleSort}
-        emptyTitle={t(hasFilters ? "responses.noMatches" : "responses.empty")}
-        // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out.
+        emptyTitle={t(hasFilters ? "responses.noMatches" : view === "unresolved" ? "responses.noUnresolved" : "responses.empty")}
+        // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out. Adding a
+        // response resolves nothing: «Por resolver» empty has only its title.
         emptyAction={
           hasFilters ? (
             <Button
@@ -255,7 +274,7 @@ export function FormResponsesPage() {
             >
               {t("responses.clear")}
             </Button>
-          ) : canCreate ? <Button type="button" variant="outline" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : undefined
+          ) : canCreate && view !== "unresolved" ? <Button type="button" variant="outline" onClick={addResponse}>{t("formEntries:addResponse")}</Button> : undefined
         }
       />
       {data ? (
@@ -300,12 +319,14 @@ export function FormResponsesPage() {
       <Tabs value={view ?? ""} onValueChange={changeView}>
         <TabsList aria-label={t("responses.title")}>
           {tabs ? <TabsTrigger value="pending">{pendingCount === undefined ? t("overview.pendingColumn") : t("responses.tabs.pending", { count: pendingCount })}</TabsTrigger> : null}
-          <TabsTrigger value="all">{tabs ? t("responses.tabs.all") : data ? t("responses.tabs.responses", { count: data.records.totalCount }) : t("responses.title")}</TabsTrigger>
+          {unresolvedTab ? <TabsTrigger value="unresolved">{unresolvedCount === undefined ? t("responses.unresolved") : t("responses.tabs.unresolved", { count: unresolvedCount })}</TabsTrigger> : null}
+          <TabsTrigger value="all">{tabs ? t("responses.tabs.all") : responsesCount !== undefined ? t("responses.tabs.responses", { count: responsesCount }) : t("responses.title")}</TabsTrigger>
           <TabsTrigger value="dashboard">{t("responses.tabs.dashboard")}</TabsTrigger>
         </TabsList>
         {tabs && view === undefined ? <Spinner/> : null}
         {decide ? <TabsContent value="pending" forceMount hidden={view === "dashboard" || tabs && view !== "pending"}><FormPendingApprovals formId={formId} onDecided={readAgain} inTab={tabs} pending={pending}/></TabsContent> : null}
-        <TabsContent value="all" forceMount hidden={view === "dashboard" || tabs && view !== "all"}>{sheet}</TabsContent>
+        {/* «Por resolver» is the same sheet, mounted once: its panel takes the value of the tab in sight. */}
+        <TabsContent value={view === "unresolved" ? "unresolved" : "all"} forceMount hidden={view !== "all" && view !== "unresolved"}>{sheet}</TabsContent>
         <TabsContent value="dashboard">{view === "dashboard" ? <Suspense fallback={<div className={dashboardFrame}><DashboardFilterBar formId={formId} route={route} sheet={data}/><DashboardSkeleton/></div>}>
           <FormDashboard formId={formId} route={route} sheet={data}/>
         </Suspense> : null}</TabsContent>
@@ -341,7 +362,7 @@ export function FormResponsesPage() {
       onSaved={id => { setCorrecting(null); readAgain(); navigate({ pathname: "/formularios/" + formId + "/respuestas/" + id, search: route.params.toString() }); }}/> : null}
     {recordId && !(correcting === recordId && !mobile) ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId}
       onCorrect={id => mobile ? navigate(responseCorrectionPath(formId, id), { state: { from: "sheet" } }) : setCorrecting(id)}
-      onVoided={() => { readAgain(); update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); }} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious, next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
+      onVoided={() => { readAgain(); update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); }} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious || motion.gap !== null && (motion.gap > 0 || !!data?.records.hasPrevious), next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext) || motion.gap !== null && (motion.gap < (data?.records.items.length ?? 0) || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
     </div>
   );
 }

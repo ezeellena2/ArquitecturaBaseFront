@@ -940,6 +940,7 @@
     "clear": "Clear all",
     "tabs": {
       "pending": "To approve ({{count}})",
+      "unresolved": "To resolve ({{count}})",
       "all": "All",
       "responses": "Responses ({{count}})",
       "dashboard": "Dashboard"
@@ -969,6 +970,9 @@
     "unknownPerson": "Person unavailable",
     "noMatches": "No matching responses",
     "empty": "No responses yet",
+    "noUnresolved": "No response has actions to resolve",
+    "rules": "Rules",
+    "unresolved": "To resolve",
     "detail": "Response details",
     "unavailable": "The response could not be found or is unavailable",
     "back": "Back to the sheet",

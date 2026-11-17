@@ -91,6 +91,8 @@ export interface ResponseQuery extends ResponseFilter {
   sort?: string;
   sortFieldId?: string;
   versionIds?: readonly string[];
+  /** F2: only the responses with actions to resolve. It comes from the tab in the address (`view=unresolved`), never from the bar. */
+  unresolvedActions?: true;
 }
 export function normalizeResponseQuery(
   query: ResponseQuery,

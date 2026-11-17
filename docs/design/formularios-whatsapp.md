@@ -1062,3 +1062,33 @@ Lo que el tablero RG4-A no fijaba se resolvió con lo más simple que cumple las
 - **El diseño del PDF.** Lista el bloque con su nombre y no sus preguntas. Una pregunta del bloque que un diseño viejo
   eligió sola aparece como «Pregunta retirada», para poder destildarla.
 - **La tarjeta del chat.** El nombre del bloque y un ítem por línea, sin lo que quedó sin respuesta, como «Así llega».
+
+## Acciones por resolver: la pestaña «Por resolver», F2 — 2026-11-17
+
+Una regla que no puede seguir (un aviso que falló o quedó en duda, una emisión que no salió) avisa a quien cargó, y sólo
+una duda por un error local se vuelve a consultar sola; en la planilla no se veía qué respuestas esperaban a alguien que
+administra reglas. Del lienzo aparte
+«Acciones por resolver» el usuario eligió **B** el 2026-11-17. Quedó programada el mismo día.
+
+- **Qué cuenta.** Una respuesta tiene acciones por resolver cuando alguna acción de sus reglas falló o quedó en duda,
+  salvo el «¿La emito?», que espera a quien cargó. La consulta automática, lo que espera, lo hecho y lo que no aplica no
+  cuentan; las anuladas no entran en la cuenta. Lo decide el servidor (`hasUnresolvedActions`, sólo en las filas que la
+  tienen). Una falla sin reintento sigue «Por resolver» hasta anular o corregir la respuesta.
+- **La pestaña «Por resolver (N)»** va después de «Por aprobar» y antes de «Todas» o «Respuestas (N)». Sale sólo cuando
+  el servidor cuenta alguna (`unresolvedActionCount`, que llega sólo a quien administra reglas y ve todas las
+  respuestas de un formulario cuyas reglas corrieron) o cuando ya es la elegida, así resolver la última muestra su
+  vacío: «Ninguna respuesta tiene acciones por resolver», sin «Agregar respuesta». Es la misma planilla que «Todas»
+  (la barra, que comparten, «Filtros» y las columnas), con sólo esas respuestas; va en la dirección
+  (`view=unresolved`), que conservan la pantalla completa y su «Volver», y entrar o salir vuelve a la primera página.
+  La planilla nunca abre en ella: con algo por aprobar sigue abriendo en «Por aprobar».
+- **El Excel** desde la pestaña exporta lo que se ve, y su diálogo lo dice: «Por resolver» va primero entre los filtros
+  y no ofrece «Incluir las anuladas», que la pestaña nunca muestra.
+- **La columna «Reglas»**, después de «Estado», dice «Por resolver» (`Badge` warning) en las respuestas con la marca y
+  «—» en las demás. Sale cuando alguna fila de la página la tiene o en su pestaña, como «Corregida».
+- **Al resolver desde el detalle** (Consultar, Reintentar, «Resolver envío», revisar, «No emitir» o «Volver a probar»),
+  además del detalle se vuelve a leer la planilla, con su marca y su cuenta, y otra vez cuando lo que esperaba (un
+  reintento, una consulta) termina: una acción que vuelve a fallar regresa a «Por resolver». En la pestaña la respuesta
+  resuelta sale de la lista y ↑ ↓ siguen desde su lugar: ↓ a la que ahora lo ocupa y ↑ a la anterior.
+- «Formularios», el menú lateral y «Filtros» no cambian.
+
+Falta la prueba manual, `test:visual` con una escena de la pestaña y pasar el tablero al lienzo del sistema visual.

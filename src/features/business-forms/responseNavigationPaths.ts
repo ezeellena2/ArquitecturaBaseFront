@@ -1,4 +1,5 @@
-const fullKeys = ["sort", "sortFieldId", "versionIds"] as const;
+// `view` travels only as «Por resolver» (F2): that tab changes which responses the full view walks and where it goes back.
+const fullKeys = ["sort", "sortFieldId", "versionIds", "view"] as const;
 const sheetKeys = ["page", "pageSize", ...fullKeys, "columns", "approvalPage", "approvalPageSize"] as const;
 
 function withPublicSearch(path: string, search: string, keys: readonly string[]): string {
@@ -6,7 +7,7 @@ function withPublicSearch(path: string, search: string, keys: readonly string[])
   const target = new URLSearchParams();
   for (const key of keys) {
     const value = source.get(key);
-    if (value) target.set(key, value);
+    if (value && (key !== "view" || value === "unresolved")) target.set(key, value);
   }
   const query = target.toString();
   return path + (query ? "?" + query : "");
