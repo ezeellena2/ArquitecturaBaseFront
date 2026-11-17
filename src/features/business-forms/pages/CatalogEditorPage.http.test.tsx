@@ -32,6 +32,7 @@ function setup() {
 }
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
 afterEach(() => { cleanup(); queryClient.clear(); });
+// It opens the whole editor and fills each condition: with the full suite or the backend running it went past the 5 s.
 it("renders unchanged real K4 detail/options and the result of the captured preview request", async () => {
   setup(); const detail = readCatalog(JSON.parse(capturedDetailRaw)); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); const preview = readCatalogFilterPreview(JSON.parse(capturedPreviewRaw));
   const person = options.sampleUsers!.items.find(person => person.id === capturedPreviewRequest.sampleUserId)!;
@@ -51,4 +52,4 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
   await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
   await user.click(screen.getByRole("button", { name: "Probar" }));
   await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
-});
+}, 20_000);
