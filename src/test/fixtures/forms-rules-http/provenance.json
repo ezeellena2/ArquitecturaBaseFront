@@ -1,109 +1,4 @@
 {
-  "captures": [
-    {
-      "length": 281,
-      "sha256": "8f89fefaf879582c2599d7d94c2883fcc66161ab9d33e29d760305d04dd5800b",
-      "name": "conflict-es.json"
-    },
-    {
-      "length": 537,
-      "sha256": "0b186e5d6a6b124027132a07ba8c945a23ad9bdf9c82312e7859c69f3e63b5f7",
-      "name": "current-reference-es.json"
-    },
-    {
-      "length": 146,
-      "sha256": "e1159e9bfa6f42478c76aed45df4b8e40efabc4f553223252a6cf3bc8c484d71",
-      "name": "empty-es.json"
-    },
-    {
-      "length": 377,
-      "sha256": "becd09a204a9257007e48b3303d6a3fbec5db89b8f1ca60d20048a2e4ab39507",
-      "name": "history-es.json"
-    },
-    {
-      "length": 51895,
-      "sha256": "b513aade69afc8dbbfa660252aa101770f296595027e0f44476032c917511826",
-      "name": "options-en.json"
-    },
-    {
-      "length": 51895,
-      "sha256": "b513aade69afc8dbbfa660252aa101770f296595027e0f44476032c917511826",
-      "name": "options-es.json"
-    },
-    {
-      "length": 537,
-      "sha256": "c630f6bba73bb86bf9b1f57ee7131165dd79e782d0b20d0a5b7fdd3f76002b12",
-      "name": "revision-es.json"
-    },
-    {
-      "length": 338,
-      "sha256": "7128defa03ab288a414be0cd33d008aa2d203c44bb1910d8338616edbbbbe1f4",
-      "name": "role-unavailable-es.json"
-    },
-    {
-      "length": 63188,
-      "sha256": "725d51fe1ce05c362ee92b79473354dbae196cba82271fa4cdf553a0ce01d91e",
-      "name": "rows-options-en.json"
-    },
-    {
-      "length": 63099,
-      "sha256": "bada95f81fb8dac949c417fef5af514474f879020359dc2f2c6538e460c32b74",
-      "name": "rows-options-es.json"
-    },
-    {
-      "length": 721,
-      "sha256": "ae6613ea54af61e0b915f02dcf82c013952f8be9b9dd589b0a805070fa2e96ce",
-      "name": "rows-saved-es.json"
-    },
-    {
-      "length": 533,
-      "sha256": "d491a9a9c7422b66ad3ea8fd532fc74d3e27333602cc6e22e20b2df683b6341b",
-      "name": "saved-es.json"
-    },
-    {
-      "length": 533,
-      "sha256": "e5fce65634b5b4555181ef0c8173915f8be143ebc4665253ee3aa7c44d13422c",
-      "name": "saved-reference-es.json"
-    }
-  ],
-  "schemaVersion": 1,
-  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
-  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
-  "sources": [
-    {
-      "sha256": "a82237ed7d420efbf5fba088e216d92030b144254a4e432baf473d6a0b46c0b7",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs"
-    },
-    {
-      "sha256": "a3f5492c60a5efc6954062f519262188393d0407a7e3d8d3e9514b4c0a98a5e4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsRuleHttpTests.cs"
-    },
-    {
-      "sha256": "f90a0bcadb87b11d803182f3886c280bd0fb2b9a66bbb0f0c11d5966e2edd810",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsReadHttpTests.cs"
-    },
-    {
-      "sha256": "2bca399b5fde774a1a5ecd2379c1d8cb20cd04308be31c0943676e8a87738edd",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsCaptureIntegrationTests.cs"
-    },
-    {
-      "sha256": "7c3a934a1971db23eb6bda0900bbb92d1760c50a380985215c47a998b5fdfb8e",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRecordCaptureIntegrationTests.cs"
-    },
-    {
-      "sha256": "f1975415a9f01c5a64e5b7cde87827918db029d0f012e7b95bc72e66c0f259ca",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPublishedVersionFixture.cs"
-    },
-    {
-      "sha256": "948dcf1f6abc3594e7ccc768cdee707eb48024f481e578df9249690dd24fa4f4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs"
-    }
-  ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
-  "producer": "FormRuleHttpTests and FormRowsRuleHttpTests and FormRowsReadHttpTests and FormRowsCaptureIntegrationTests and FormRecordCaptureIntegrationTests and FormPublishedVersionFixture and FormRuleContractCapture",
-  "artifactSet": "rules",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sourceState": [
     " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
     " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
@@ -114,5 +9,110 @@
     "?? ../../../.head",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
-  ]
+  ],
+  "captures": [
+    {
+      "name": "conflict-es.json",
+      "length": 281,
+      "sha256": "36cdc9e68e4f13f057d5fae170dd01a32a14a04a87560960241d84e5aa23d75d"
+    },
+    {
+      "name": "current-reference-es.json",
+      "length": 537,
+      "sha256": "a15a114a2092c7f93ce4af19e13142968b8e36dcdbe5199d509b96595f23e940"
+    },
+    {
+      "name": "empty-es.json",
+      "length": 146,
+      "sha256": "4e5c78c26d655e406ab2f3afc33e555e974f7631aa92310bc134781a1e48de9e"
+    },
+    {
+      "name": "history-es.json",
+      "length": 377,
+      "sha256": "67407f978b815ca336f4f7da64247e04e71b12512d426c71aa58cd653a0cb176"
+    },
+    {
+      "name": "options-en.json",
+      "length": 63265,
+      "sha256": "691aefd397f17eb38d1e834a311496acb8d4ddad3613a27349896d4475af35cf"
+    },
+    {
+      "name": "options-es.json",
+      "length": 63265,
+      "sha256": "691aefd397f17eb38d1e834a311496acb8d4ddad3613a27349896d4475af35cf"
+    },
+    {
+      "name": "revision-es.json",
+      "length": 537,
+      "sha256": "387b0562c34e2e421be53a8f4007fb72faac6e3f4fead530549948eac3fdc23f"
+    },
+    {
+      "name": "role-unavailable-es.json",
+      "length": 338,
+      "sha256": "7a33b7d811d258ef6010e9d7ebbf11f6de61354eaf8441a8821ef176109d97d4"
+    },
+    {
+      "name": "rows-options-en.json",
+      "length": 67696,
+      "sha256": "a06566563d0d71eccb3fe5fcffc190bd450979d2fc616fed7a437e055a8ce03f"
+    },
+    {
+      "name": "rows-options-es.json",
+      "length": 67795,
+      "sha256": "f568fc0413ce83400b7e87bcb56e8aae7b2594f917c4686e615eff88f52abbf9"
+    },
+    {
+      "name": "rows-saved-es.json",
+      "length": 721,
+      "sha256": "34503fbbddb46333a1d750480ff93932425ba7db372a6e45cf7c14d84476b1b2"
+    },
+    {
+      "name": "saved-es.json",
+      "length": 533,
+      "sha256": "bfbe922bb6efa6c3cf606cde50e337f70f740f620d0fb57aebd6eb03828aface"
+    },
+    {
+      "name": "saved-reference-es.json",
+      "length": 533,
+      "sha256": "4fa0944a3b81c0c277ba584a9795091db6afd7224ddd83cc31cdb573eee86b5b"
+    }
+  ],
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
+  "artifactSet": "rules",
+  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "FormRuleHttpTests and FormRowsRuleHttpTests and FormRowsReadHttpTests and FormRowsCaptureIntegrationTests and FormRecordCaptureIntegrationTests and FormPublishedVersionFixture and FormRuleContractCapture",
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRuleHttpTests.cs",
+      "sha256": "a82237ed7d420efbf5fba088e216d92030b144254a4e432baf473d6a0b46c0b7"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsRuleHttpTests.cs",
+      "sha256": "a3f5492c60a5efc6954062f519262188393d0407a7e3d8d3e9514b4c0a98a5e4"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsReadHttpTests.cs",
+      "sha256": "f90a0bcadb87b11d803182f3886c280bd0fb2b9a66bbb0f0c11d5966e2edd810"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRowsCaptureIntegrationTests.cs",
+      "sha256": "2bca399b5fde774a1a5ecd2379c1d8cb20cd04308be31c0943676e8a87738edd"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRecordCaptureIntegrationTests.cs",
+      "sha256": "7c3a934a1971db23eb6bda0900bbb92d1760c50a380985215c47a998b5fdfb8e"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPublishedVersionFixture.cs",
+      "sha256": "f1975415a9f01c5a64e5b7cde87827918db029d0f012e7b95bc72e66c0f259ca"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormRuleContractCapture.cs",
+      "sha256": "948dcf1f6abc3594e7ccc768cdee707eb48024f481e578df9249690dd24fa4f4"
+    }
+  ],
+  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
 }

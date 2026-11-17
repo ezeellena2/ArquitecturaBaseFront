@@ -1,104 +1,4 @@
 {
-  "captures": [
-    {
-      "length": 792,
-      "sha256": "0ce9c621372c793b764767ee57ec1f88da48ac950a0d46b6882a816f10c16b25",
-      "name": "always-send-receipt.json"
-    },
-    {
-      "length": 784,
-      "sha256": "efc3d2cc53049d63f5c1c8ee0bd6d27b4aa7de26c646feb05cd787da7240102b",
-      "name": "send-receipt.json"
-    },
-    {
-      "length": 507,
-      "sha256": "db49a6a353348ff77405cf3e89b8b17060d6d57160a323907fc2c1c3d72d08b6",
-      "name": "suggestion-always-ready.json"
-    },
-    {
-      "length": 159,
-      "sha256": "56571c3ed5a64d24f6f10e3c5c62d172078fec37927904bdfa88a52e7e682938",
-      "name": "suggestion-blocked.json"
-    },
-    {
-      "length": 161,
-      "sha256": "6b8e330257f28bab15a165cbaf47f828d0859fb8981f5cfef327855488bc6157",
-      "name": "suggestion-discarded.json"
-    },
-    {
-      "length": 159,
-      "sha256": "09f14d8c6047370328a17112200aba9b385e641fdf54040e458a18d53dd60fc6",
-      "name": "suggestion-no-reply.json"
-    },
-    {
-      "length": 159,
-      "sha256": "b8f5e5dd14b87e139f360bbcce1f80d9e60c33c1130ca14c118993d27e8e39cc",
-      "name": "suggestion-pending.json"
-    },
-    {
-      "length": 550,
-      "sha256": "b5bd65c78249877b18d74b54e05497b84fa7caa9722f8e8c00b4e6ada1378104",
-      "name": "suggestion-ready.json"
-    },
-    {
-      "length": 956,
-      "sha256": "da0df1115ce9269af645f2bf39e01f7fdb80a5444f4ef5e89f77e50f68de77c7",
-      "name": "suggestion-sent.json"
-    },
-    {
-      "length": 2669,
-      "sha256": "c5e5b04883be05e873b91db6235467c425e355af15da139297c78cd8881f2939",
-      "name": "thread-always-ready.json"
-    },
-    {
-      "length": 2013,
-      "sha256": "63ed438c8f20fa698504df8f998f2e77f9db0b6106f3ab24bd64697019802c8d",
-      "name": "thread-restricted.json"
-    },
-    {
-      "length": 2197,
-      "sha256": "bbb671cdc8ca6005869dab46430b0d36cf5bbd02dfca44a860db2fa4235cf86d",
-      "name": "thread.json"
-    }
-  ],
-  "schemaVersion": 1,
-  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
-  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
-  "sources": [
-    {
-      "sha256": "b9658b1840b2969e4ce0db4d9887e86478109659bd9550029c348c1a14644bf8",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs"
-    },
-    {
-      "sha256": "2b45da2e094900d4a5ee23d44a4abd37f5a9a948632df142af6e858a9f47d60e",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs"
-    },
-    {
-      "sha256": "7e4b4c6ad07fa92c79c81f69b201afd48ae9a12f69522b993851b9302b6a711c",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs"
-    },
-    {
-      "sha256": "9618c6084fad29b02023a6061043ee1bd270266aa73de1537a2a6ea4b1243652",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs"
-    },
-    {
-      "sha256": "ce256d51f0b4de0607a12dfb233946a356c85e46279b16f3a6ba0cba99f04edc",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs"
-    },
-    {
-      "sha256": "5e9fa6328c9bb7c417a0578c506cb3f4573c4ab0094854dead0eaba5c4d0c17b",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs"
-    },
-    {
-      "sha256": "1dbb122403187b58750867bd6a3cef40f287f99ed6ef2c720ed3ee7bdbdd2600",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs"
-    }
-  ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
-  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort",
-  "artifactSet": "whatsapp-assistant",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sourceState": [
     " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
     " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
@@ -109,5 +9,105 @@
     "?? ../../../.head",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
-  ]
+  ],
+  "captures": [
+    {
+      "name": "always-send-receipt.json",
+      "length": 792,
+      "sha256": "117552e37f0c7c4ae85ad61281077dfb15224dfb633b637651441549a4dc283f"
+    },
+    {
+      "name": "send-receipt.json",
+      "length": 784,
+      "sha256": "3ac71f5372685a8bbfe6805971dc8ad26cd6a5c45a460fe401e692e22c09c11a"
+    },
+    {
+      "name": "suggestion-always-ready.json",
+      "length": 507,
+      "sha256": "bf33d3c96c13363ae315f063fdb751a87f007b4cb5a26d7e6b1d0811377410d8"
+    },
+    {
+      "name": "suggestion-blocked.json",
+      "length": 159,
+      "sha256": "8b47229007b1e4defb9f6feb437466d66db69cf0786ce4503ff4dd7ee00babac"
+    },
+    {
+      "name": "suggestion-discarded.json",
+      "length": 161,
+      "sha256": "7194ad275592b37c12c1d44e9b7969d160d91076c7fa4023d3db25535b420729"
+    },
+    {
+      "name": "suggestion-no-reply.json",
+      "length": 159,
+      "sha256": "3be90b3e66edb574689e1dd8c8447b224e9210a8796742b67153b1adfcff698e"
+    },
+    {
+      "name": "suggestion-pending.json",
+      "length": 159,
+      "sha256": "5513da9f724c28ff4c1cd9aa8985caaf708344d72e027a4f58a90335b6566742"
+    },
+    {
+      "name": "suggestion-ready.json",
+      "length": 550,
+      "sha256": "0a1ccf0ea3df561de9f2b6ca3a211b99bcde8dd5a5e861db9c264419f1dbc24b"
+    },
+    {
+      "name": "suggestion-sent.json",
+      "length": 956,
+      "sha256": "bb17ac54a8eb4a9b4fc0389a7579a2c5f32fdb5b6eaf4da0fbb3f0446ae8bfa6"
+    },
+    {
+      "name": "thread-always-ready.json",
+      "length": 2669,
+      "sha256": "adbf5289ec2b3101fd46b650814f090e58a98b4941b50109fc80e2defab97d3e"
+    },
+    {
+      "name": "thread-restricted.json",
+      "length": 2013,
+      "sha256": "e890c7a112860bd0f2f90340741e9750747673162c73203f87c51302767a5e54"
+    },
+    {
+      "name": "thread.json",
+      "length": 2197,
+      "sha256": "68c6552260ffcb69a8b8a5c23448abb1fbf6e197326bacf9aab70b4fbc20efb1"
+    }
+  ],
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
+  "artifactSet": "whatsapp-assistant",
+  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "WhatsAppAssistantHttpTests and WhatsAppAssistantHttpTests.Suggestions and WhatsAppAssistantScenario and WhatsAppAssistantContractCapture and WhatsAppAssistantOperationsDouble and WhatsAppAssistantCaptureFixture and CapturingStructuredRecordPort",
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.cs",
+      "sha256": "b9658b1840b2969e4ce0db4d9887e86478109659bd9550029c348c1a14644bf8"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantHttpTests.Suggestions.cs",
+      "sha256": "2b45da2e094900d4a5ee23d44a4abd37f5a9a948632df142af6e858a9f47d60e"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantScenario.cs",
+      "sha256": "7e4b4c6ad07fa92c79c81f69b201afd48ae9a12f69522b993851b9302b6a711c"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantContractCapture.cs",
+      "sha256": "9618c6084fad29b02023a6061043ee1bd270266aa73de1537a2a6ea4b1243652"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantOperationsDouble.cs",
+      "sha256": "ce256d51f0b4de0607a12dfb233946a356c85e46279b16f3a6ba0cba99f04edc"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantCaptureFixture.cs",
+      "sha256": "5e9fa6328c9bb7c417a0578c506cb3f4573c4ab0094854dead0eaba5c4d0c17b"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredRecordPort.cs",
+      "sha256": "1dbb122403187b58750867bd6a3cef40f287f99ed6ef2c720ed3ee7bdbdd2600"
+    }
+  ],
+  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
 }

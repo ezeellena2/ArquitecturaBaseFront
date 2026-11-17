@@ -1,107 +1,4 @@
 {
-  "captures": [
-    {
-      "length": 624,
-      "sha256": "e8014987a67fea5f4cc51409306b397a81b83a166a797a50b3f0028ace6f9de1",
-      "name": "bootstrap.json"
-    },
-    {
-      "length": 734,
-      "sha256": "30e1655be6d77bbe98bcbae31d7e6dbef60ba324ff911528dbf60ebd82d1bcbc",
-      "name": "canceled.json"
-    },
-    {
-      "length": 222,
-      "sha256": "cddb217e943ff0b17f7c8fc4256abcc889ebe0935812d47643ac388129ba1642",
-      "name": "document-status.json"
-    },
-    {
-      "length": 292,
-      "sha256": "35876214a07cb147c2c3ab4db4ca8aa924bf0883270d28913e52a2f7dcbf863f",
-      "name": "file-submitted.json"
-    },
-    {
-      "length": 292,
-      "sha256": "19828494c88114a60b4589de887766a308ea269426cca13d08a17ee4719b7966",
-      "name": "submitted.json"
-    },
-    {
-      "length": 1109,
-      "sha256": "d72a3516acc8d5c0e1998083cbd2b89f1293228390893d59b178fe26a9afe419",
-      "name": "turn-attachment.json"
-    },
-    {
-      "length": 1003,
-      "sha256": "4199e32b1a7c5f79e8d81220fa751741c3e7b9499b37d5c793deb9bde020dee5",
-      "name": "turn-completed.json"
-    },
-    {
-      "length": 1113,
-      "sha256": "12a5d85d6c0dd370f942121b09189de7e6ea41e1d1bb949605e10f117ea46eca",
-      "name": "turn-document.json"
-    },
-    {
-      "length": 528,
-      "sha256": "a0bab0acc600f11851dc2972dbd193dc13710ee29835ae76abd271f0f403ef5f",
-      "name": "turn-pending.json"
-    },
-    {
-      "length": 1091,
-      "sha256": "b8572b727375e71a80834816727e1c0e6a98d4bc8f3e53cb693457858d25cbd4",
-      "name": "turn-word.json"
-    },
-    {
-      "length": 1104,
-      "sha256": "518ca08f3c3c0edc1777f660890b11b1c5ecdfe89cee3177e63a2fc420c74d75",
-      "name": "turns.json"
-    }
-  ],
-  "schemaVersion": 1,
-  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
-  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
-  "sources": [
-    {
-      "sha256": "35972a67643976aaa5a36988bfb7091d17c9dde5610cbd04659ed502aa60df07",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs"
-    },
-    {
-      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs"
-    },
-    {
-      "sha256": "47b937dfdde105a7119d30dc1cb85a1b2966c1272f582a41ff2fa139d8dc02ba",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs"
-    },
-    {
-      "sha256": "689945df506968b3fab0503fdc1033e3f196943c42126a9c366b97ae85883791",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs"
-    },
-    {
-      "sha256": "36c8e84b919c13aa54d12172273ccd9745cd8760a42448952f7a9618f91ee1f2",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/HomeAudioFiles.cs"
-    },
-    {
-      "sha256": "214d42ab12d54d11d71efb605a6c54b362d30e3e25c7f22bea194c77b0f06c93",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/HomeAttachmentReader.cs"
-    },
-    {
-      "sha256": "5b3240118e978c3141bda38c4bffe9ae283b0bcf8aa4c367346acdd57104bdbe",
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/DocumentReadingProviderFixture.cs"
-    },
-    {
-      "sha256": "26403d91ba3e558da94336f98cd464f0444405a708e9761c61c3478ad365bcbf",
-      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs"
-    },
-    {
-      "sha256": "39e87c758b43242d5c276509c3d902071b72ca062243d94bb4a37c1fd6023f7b",
-      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantDocumentModels.cs"
-    }
-  ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
-  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and HomeAudioFiles and HomeAttachmentReader and DocumentReadingProviderFixture and AiAssistantResponses and AiAssistantDocumentModels",
-  "artifactSet": "ai-assistant",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "sourceState": [
     " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
     " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
@@ -112,5 +9,108 @@
     "?? ../../../.head",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
     "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
-  ]
+  ],
+  "captures": [
+    {
+      "name": "bootstrap.json",
+      "length": 624,
+      "sha256": "e8014987a67fea5f4cc51409306b397a81b83a166a797a50b3f0028ace6f9de1"
+    },
+    {
+      "name": "canceled.json",
+      "length": 734,
+      "sha256": "766b304a8eb7d03b8c3b3c1b089fc0326459867467d4cc53f27d8fcd736a5275"
+    },
+    {
+      "name": "document-status.json",
+      "length": 222,
+      "sha256": "c964d3f482bc9943d265a39bca4d5e2bab4443aac7420f2d4f9465cf99461353"
+    },
+    {
+      "name": "file-submitted.json",
+      "length": 292,
+      "sha256": "a6b23449815b6e517601486d0c07d3b17b704344be0440468572ef40a5cd81df"
+    },
+    {
+      "name": "submitted.json",
+      "length": 292,
+      "sha256": "3de6142d24a0ca628519a4cd0d1262054bcec55f837f50b0a17abeff5b157d05"
+    },
+    {
+      "name": "turn-attachment.json",
+      "length": 1109,
+      "sha256": "20b3226567eab35bff54197e80ed735461e1f914f74b9ea8fef1a174089b6440"
+    },
+    {
+      "name": "turn-completed.json",
+      "length": 1003,
+      "sha256": "20a07ba10abccb736b87e91cc941a36056b8b1e6c1dc3083e4c07e6984b98b4b"
+    },
+    {
+      "name": "turn-document.json",
+      "length": 1113,
+      "sha256": "06c3d8691764cef7b0a27f0c2758b2d8d8424693811624955ac555c0f7a65588"
+    },
+    {
+      "name": "turn-pending.json",
+      "length": 528,
+      "sha256": "ad5c44cdad54a75757286983de0054c5a83c0021e912ead90b14ab15ba039e46"
+    },
+    {
+      "name": "turn-word.json",
+      "length": 1091,
+      "sha256": "5313d129b3ce3f42243f09b6751be00d8eeb3f02515495ff0c6cf9e1e85221e0"
+    },
+    {
+      "name": "turns.json",
+      "length": 1104,
+      "sha256": "e7aa9af4582d9486f116469e023779fa7ac0706768c2f45bc2e19918e513335b"
+    }
+  ],
+  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
+  "artifactSet": "ai-assistant",
+  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and HomeAudioFiles and HomeAttachmentReader and DocumentReadingProviderFixture and AiAssistantResponses and AiAssistantDocumentModels",
+  "sources": [
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/ArtificialIntelligence/AiAssistantHttpContractTests.cs",
+      "sha256": "35972a67643976aaa5a36988bfb7091d17c9dde5610cbd04659ed502aa60df07"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantContractCapture.cs",
+      "sha256": "1c38cc8d6f920f988352ec031a634220fad619a2ad11ad25fa0854c2d75801f4"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionScenario.cs",
+      "sha256": "47b937dfdde105a7119d30dc1cb85a1b2966c1272f582a41ff2fa139d8dc02ba"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/AiAssistantExecutionProviderHandler.cs",
+      "sha256": "689945df506968b3fab0503fdc1033e3f196943c42126a9c366b97ae85883791"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/HomeAudioFiles.cs",
+      "sha256": "36c8e84b919c13aa54d12172273ccd9745cd8760a42448952f7a9618f91ee1f2"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/HomeAttachmentReader.cs",
+      "sha256": "214d42ab12d54d11d71efb605a6c54b362d30e3e25c7f22bea194c77b0f06c93"
+    },
+    {
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/ArtificialIntelligence/DocumentReadingProviderFixture.cs",
+      "sha256": "5b3240118e978c3141bda38c4bffe9ae283b0bcf8aa4c367346acdd57104bdbe"
+    },
+    {
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantResponses.cs",
+      "sha256": "26403d91ba3e558da94336f98cd464f0444405a708e9761c61c3478ad365bcbf"
+    },
+    {
+      "path": "src/ArquitecturaBase.Application/Modules/ArtificialIntelligence/Models/AiAssistantDocumentModels.cs",
+      "sha256": "39e87c758b43242d5c276509c3d902071b72ca062243d94bb4a37c1fd6023f7b"
+    }
+  ],
+  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
 }

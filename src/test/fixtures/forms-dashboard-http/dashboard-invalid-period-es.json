@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Elegí cómo agrupar el tablero: por día, por semana o por mes.","traceId":"00-1e3589c94fe5454c4e37da0a8ec597b8-25e6d6fa5c8ca619-01","code":"Forms.Record.PeriodInvalid"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Elegí cómo agrupar el tablero: por día, por semana o por mes.","traceId":"00-b17b3825cd1a052d9917b7f1ca3bb55c-41dd7a45768b39d8-01","code":"Forms.Record.PeriodInvalid"}
