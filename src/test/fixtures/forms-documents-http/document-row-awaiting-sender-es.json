@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Quien lo mandó todavía puede completarlo por su canal. Esperá a que venza su respuesta.","traceId":"00-e24db6ded654b87e78904cce420e39c5-51daf8c7c8ca32cf-01","code":"Forms.ReceivedDocument.AwaitingSender"}

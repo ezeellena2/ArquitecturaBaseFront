@@ -11,11 +11,12 @@ import { approveManualCatalogProposal, fetchCatalog } from "./catalogs";
 const cohort = httpCohort("assistantProposals");
 const names = ["draft-created.json", "draft-status-created.json", "draft-status-not-created.json", "draft-name-taken.json",
   "draft-prefix-taken.json", "draft-replaced.json", "draft-unavailable.json", "draft-invalid.json", "catalog-created.json",
-  "catalog-status-created.json", "catalog-detail-pending.json", "catalog-approved.json", "catalog-name-taken.json", "catalog-replaced.json"];
+  "catalog-status-created.json", "catalog-detail-pending.json", "catalog-approved.json", "catalog-name-taken.json", "catalog-replaced.json",
+  "catalog-mapped-created.json", "catalog-mapped-detail-pending.json"];
 const proposalOf = (file: string) => z.object({ proposalId: z.uuid() }).parse(cohort.json(file)).proposalId;
 const requestId = "0199a0c0-0000-7000-8000-000000000777";
 
-it("qualifies the fourteen captures and their actual producer", () => {
+it("qualifies the sixteen captures and their actual producer", () => {
   const provenance = cohort.verify();
   expect(provenance.captures.map(capture => capture.name).sort()).toEqual([...names].sort());
   for (const source of ["FormAssistantProposalHttpTests.cs", "FormAssistantProposalContractCapture.cs", "ScriptedAssistantProposalLookup.cs"])
@@ -70,4 +71,12 @@ it("creates the Manual catalog inactive and pending, says it was asked in Home a
   expect(await fetchCatalog(pending.id)).toEqual(pending);
   const approved = await approveManualCatalogProposal(pending.id, pending.revision);
   expect([approved.catalog.isActive, approved.catalog.proposal?.state]).toEqual([true, "Approved"]);
+});
+
+// Stage 2: a proposal that came with a spreadsheet creates the same Manual catalog, inactive and pending.
+it("creates the catalog of a proposal with a spreadsheet the same way, inactive and pending", async () => {
+  server.use(http.post("/api/forms/catalogs/assistant-proposals", () => cohort.response("catalog-mapped-created.json", 201)));
+  const created = await createProposalCatalog({ requestId, proposalId: proposalOf("catalog-mapped-created.json") });
+  const pending = readCatalog(cohort.json("catalog-mapped-detail-pending.json"));
+  expect([pending.id, pending.kind, pending.isActive, pending.proposal?.state]).toEqual([created.catalogId, "Manual", false, "Pending"]);
 });

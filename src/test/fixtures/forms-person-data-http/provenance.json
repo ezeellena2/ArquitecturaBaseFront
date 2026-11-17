@@ -1,175 +1,183 @@
 {
-  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
-      "sha256": "22595ab8c2c7ae5fce52647e4d8ed3036713cd1ff8ec57aa348f2f03b08bc263",
-      "name": "attribute-conflict-en.json",
-      "length": 264
+      "length": 264,
+      "sha256": "6683b229d909cd8ba47348ba930ae87f9c2322ce95f5669e7689acf9c0524e2b",
+      "name": "attribute-conflict-en.json"
     },
     {
-      "sha256": "9b36298ba5be152bf2c07b29811576e7bfc8f2fad13f7bc671ddc49f60fdd94f",
-      "name": "attribute-conflict-es.json",
-      "length": 271
+      "length": 271,
+      "sha256": "70314d5d5b4ece20a2303e109625765342651fc29ef63874cbd48f1b27972066",
+      "name": "attribute-conflict-es.json"
     },
     {
-      "sha256": "c47a9f37c2e874bd8153ef9ec78f0905406d420329d70805e9455c9767c94f4c",
-      "name": "attribute-created-en.json",
-      "length": 288
+      "length": 288,
+      "sha256": "08d6ed85ec98eecbdf497eff9082da7375b5271949dd400c55482b24bbf952be",
+      "name": "attribute-created-en.json"
     },
     {
-      "sha256": "1eade1f8787178b1359bdc9bd07ab7f837b0cbcd9b83abc6c04011be601b9809",
-      "name": "attribute-created-english-original-en.json",
-      "length": 231
+      "length": 231,
+      "sha256": "a50fb844b7a68319d2339243aa5bd4f04682d63d7ac76f0ed555aa7f8bc13e0a",
+      "name": "attribute-created-english-original-en.json"
     },
     {
-      "sha256": "9fe649fefabd0d1b76da99625205cd3c55fefdee578c85ac2734fb72b3f262ca",
-      "name": "attribute-created-es.json",
-      "length": 288
+      "length": 288,
+      "sha256": "c30dbc6e860153f10937506a288b8b2a179d09ada68a7c4b32a756e085221c76",
+      "name": "attribute-created-es.json"
     },
     {
-      "sha256": "6d49e5c2489e29c47e3fb732ae049d19f2a72e481bbbabac021629e477bc5ba1",
-      "name": "attribute-updated-en.json",
-      "length": 313
+      "length": 313,
+      "sha256": "31a542a3f567524d04bfe1c845b786a435868d3cb9842674e24adc048d346dfb",
+      "name": "attribute-updated-en.json"
     },
     {
-      "sha256": "cb0ab8f11980c6874959109c7ba38deff3e632cad15726e6ac5b19ac1ace84d7",
-      "name": "attribute-updated-es.json",
-      "length": 313
+      "length": 313,
+      "sha256": "4a0bd65a21f62ddb13df4a26ebf25c520ea5c0440218c5f4a96f79c93260a09a",
+      "name": "attribute-updated-es.json"
     },
     {
-      "sha256": "b57e3db583c026b9b27377568c7d1225ff85be8903c2203aba606bc81604b9b6",
-      "name": "attribute-value-removal-confirmation-en.json",
-      "length": 430
+      "length": 430,
+      "sha256": "7f24acbecad7d84d278724cb45200bc8ae2ce64ef07abc9243eb242e3ba9fbb4",
+      "name": "attribute-value-removal-confirmation-en.json"
     },
     {
-      "sha256": "c749084e4a9474f8385aeff9bea9ab386b48ac3845f8d62a8f995c7f62bc5d43",
-      "name": "attribute-value-removal-confirmation-es.json",
-      "length": 454
+      "length": 454,
+      "sha256": "b4fa658749b2554c13ced9902012d3f94bf208d11c1113ff014eb7560d914d89",
+      "name": "attribute-value-removal-confirmation-es.json"
     },
     {
-      "sha256": "e5080827ae624af0b77368d9a130edba161b8d2839e8f95204c5db0c6b0ba850",
-      "name": "attributes-en.json",
-      "length": 1655
+      "length": 325,
+      "sha256": "e7b11e326d91f04055275939964df42b8baf40cc71001f4dd3dae8d565859de3",
+      "name": "attributes-en.json"
     },
     {
-      "sha256": "61c3ee33c6f47ea256416c4d7596676ff04cc9c0421fcd0ce91cdc5f4d4b0756",
-      "name": "attributes-english-original-es.json",
-      "length": 2119
+      "length": 789,
+      "sha256": "c06b47014759b30e3ef75cd4858dd39eae7df96b02099cf4221a6155217fb8b7",
+      "name": "attributes-english-original-es.json"
     },
     {
-      "sha256": "d6e65740fa878ab751fd6b28b5d7c25bf2a3f979c292b83c71fc79619857c2e3",
-      "name": "attributes-es.json",
-      "length": 1920
+      "length": 590,
+      "sha256": "64d00f8cc03cc3175a2a6b8b96a60a1d09c3229c0df02497bae7b0fa1e817a88",
+      "name": "attributes-es.json"
     },
     {
-      "sha256": "0b452f6e2f4d31e075789809c961092b269fbd0608cf247dda445de2ed9be809",
-      "name": "conflict-en.json",
-      "length": 259
+      "length": 259,
+      "sha256": "5020ca4cf8e3e996c8a4bb027be4e383da2ed97de1774e1f7f192c1838caf409",
+      "name": "conflict-en.json"
     },
     {
-      "sha256": "9fb5114fc7aab3fc7adc8aac2852d424abf921d72d9d963fbbb50316984dc87f",
-      "name": "conflict-es.json",
-      "length": 271
+      "length": 271,
+      "sha256": "94f7e034d3548fb4f3b6244a0c11fb6270276ea00c21fb115c722fadfdb5e580",
+      "name": "conflict-es.json"
     },
     {
-      "sha256": "10e956b088dfedafc57b12de06d218b4223d01be6f6cf4d2facf8411cc5b8ddf",
-      "name": "forbidden-en.json",
-      "length": 247
+      "length": 247,
+      "sha256": "0cf957e384fbb432acb4ce9cea1e69ddb81932fea81ddcdd9be2b67ff9392261",
+      "name": "forbidden-en.json"
     },
     {
-      "sha256": "68cc62b154cea24898a9de619427908cb9212f334f8e12bf3a0299bdc08372c9",
-      "name": "forbidden-es.json",
-      "length": 249
+      "length": 249,
+      "sha256": "7dcbc69681905d9f7096423aa4a503bf0a608ef780ce06efdde35e77884ef033",
+      "name": "forbidden-es.json"
     },
     {
-      "sha256": "3b3ca6ec7c6530ac946fce434b794ddf96d33c253e9486cfe9261731e537100a",
-      "name": "invalid-value-en.json",
-      "length": 356
+      "length": 356,
+      "sha256": "971720328841bbc46286768ab59b104e122227656836797818eb91dd5e455a0b",
+      "name": "invalid-value-en.json"
     },
     {
-      "sha256": "07efa0a316c7d5f24161dcdd316d5753132dac06f89b3267e05e05395cf6f5f4",
-      "name": "invalid-value-es.json",
-      "length": 346
+      "length": 346,
+      "sha256": "13a746062ebcc23852447a289830d919ecc25df8780c6afaec6e3d8326e30468",
+      "name": "invalid-value-es.json"
     },
     {
-      "sha256": "dd7c3de6d997e86b3fac9ea250ffe4392b13a25ad5f6d587cc2fe180f7e7aa3f",
-      "name": "people-en.json",
-      "length": 639
+      "length": 379,
+      "sha256": "fae16c55783ba727dbb60cf2e943e13e1093a26eddba426257e1bfb175afe051",
+      "name": "people-en.json"
     },
     {
-      "sha256": "9150b5dbdccef3a7f494a4e352a84f879485365c96b521bc86e3aef472d29c31",
-      "name": "people-es.json",
-      "length": 703
+      "length": 443,
+      "sha256": "0681db5dfce60743c9cc5372e129078b975e19129283c6d18c1f22bea34814b9",
+      "name": "people-es.json"
     },
     {
-      "sha256": "de014de63f9b49bb1a29a4d95ed43b4a525199a6cf1f1ddc3ae69a75c24ac445",
-      "name": "person-data-empty-en.json",
-      "length": 77
+      "length": 77,
+      "sha256": "f4ab33f6536933b468cffbb2e4b171298edb511fff7748e7622fe60b34bd58d2",
+      "name": "person-data-empty-en.json"
     },
     {
-      "sha256": "b1b83ea85c2f7731ecd53235aeda4701ca133f1bc26c82208c0516e47ee345de",
-      "name": "person-data-empty-es.json",
-      "length": 77
+      "length": 77,
+      "sha256": "afdb83deef128059e85527f671ffcbd50ecc2ac99529b37f878c368a246de9ba",
+      "name": "person-data-empty-es.json"
     },
     {
-      "sha256": "1dbd64517b7d9d2e8a0f1019f4d2253d3811603f6f93a32af94128c772dcdea4",
-      "name": "person-data-en.json",
-      "length": 178
+      "length": 178,
+      "sha256": "a8ff1d1b009be1a308c34d9bf01cc23aa56e5750e9215523afcf71b9dd49ac04",
+      "name": "person-data-en.json"
     },
     {
-      "sha256": "d7dc85f1b2e00c348619794ef32ec5190f71ccfac63a658c5e7af1d160e5108b",
-      "name": "person-data-es.json",
-      "length": 177
+      "length": 177,
+      "sha256": "1023d6c46f5b76efe04eedeb77a88c3da60e4908c9da1d3f436d47cf7a44bdfa",
+      "name": "person-data-es.json"
     },
     {
-      "sha256": "1dbd64517b7d9d2e8a0f1019f4d2253d3811603f6f93a32af94128c772dcdea4",
-      "name": "person-data-saved-en.json",
-      "length": 178
+      "length": 178,
+      "sha256": "a8ff1d1b009be1a308c34d9bf01cc23aa56e5750e9215523afcf71b9dd49ac04",
+      "name": "person-data-saved-en.json"
     },
     {
-      "sha256": "d7dc85f1b2e00c348619794ef32ec5190f71ccfac63a658c5e7af1d160e5108b",
-      "name": "person-data-saved-es.json",
-      "length": 177
+      "length": 177,
+      "sha256": "1023d6c46f5b76efe04eedeb77a88c3da60e4908c9da1d3f436d47cf7a44bdfa",
+      "name": "person-data-saved-es.json"
     },
     {
-      "sha256": "8c5509809a2e3430dd78d18e34d3eeefb7dae1fec4089cccc27b655c558796a8",
-      "name": "person-options-en.json",
-      "length": 224
+      "length": 224,
+      "sha256": "d1ae1a8489c9463417acab5565a92f78543550a4cd618e4e7d101745bc371354",
+      "name": "person-options-en.json"
     },
     {
-      "sha256": "c612511bd12e8da641f14edba072b0f67548100aaa0de2f71d152c5fe4cfdd9e",
-      "name": "person-options-es.json",
-      "length": 221
+      "length": 221,
+      "sha256": "a58fa62686f6360e94da20813e1f3aa1646a0ada545c21b611c9ac23076ce751",
+      "name": "person-options-es.json"
     },
     {
-      "sha256": "239b641c04227f5a517cd84ba78dae739915487bcaf845e00e134d90dfa41d4d",
-      "name": "source-in-use-en.json",
-      "length": 292
+      "length": 292,
+      "sha256": "d383a6af3667e4ab0301d7c8564c690cd7b47eac9f270780955c8185e096ba5f",
+      "name": "source-in-use-en.json"
     },
     {
-      "sha256": "3d153b8b3da28d899835b0780db550c2bb1239f366dda3fce961a5c1c7f14a20",
-      "name": "source-in-use-es.json",
-      "length": 305
+      "length": 305,
+      "sha256": "3ec9919ada0c4800721ddb5881898b39e956fcb9686829a899fad000fa70f06a",
+      "name": "source-in-use-es.json"
     }
   ],
-  "sourceState": [
-    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
-  ],
-  "artifactSet": "person-data",
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
+  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
+  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs",
-      "sha256": "71f95b6d6085975d02b8af72ff5f91a1b08de74e307c7db2ac97f3c80509601d"
+      "sha256": "71f95b6d6085975d02b8af72ff5f91a1b08de74e307c7db2ac97f3c80509601d",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPersonDataHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs",
-      "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664"
+      "sha256": "0626cd8063a110035567f06eacb567b5a2b8c5191e2a8ee90b4b2dca6d557664",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormPersonDataContractCapture.cs"
     }
   ],
-  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture"
+  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
+  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
+  "artifactSet": "person-data",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [
+    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
+    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
+    "?? ../../../.blob",
+    "?? ../../../.chk",
+    "?? ../../../.head",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  ]
 }

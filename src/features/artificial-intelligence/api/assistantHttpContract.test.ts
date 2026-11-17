@@ -1,23 +1,52 @@
 import { http } from "msw";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { z } from "zod";
 import en from "@/locales/en/assistant.json";
 import es from "@/locales/es/assistant.json";
 import { httpCohort } from "@/test/httpCohort";
 import { server } from "@/test/mocks/server";
+import { captureUploads } from "@/test/mocks/xhrUpload";
 import { createSubmission, isActiveTurn, projectMessages } from "../assistant/model";
 import { assistantApi, type AssistantTurn } from "./assistant";
 
 // The Home assistant bodies come unchanged from the joint backend export; nothing here is serialized by hand.
 const cohort = httpCohort("aiAssistant");
 const names = ["bootstrap.json", "submitted.json", "turn-pending.json", "turn-completed.json", "turns.json", "canceled.json"];
+// Stage 3 and the attached files: the multipart acceptance, a document's reading and the turns with a sheet, a PDF or a Word.
+const fileNames = ["file-submitted.json", "document-status.json", "turn-attachment.json", "turn-document.json", "turn-word.json"];
 const identity = z.object({ requestId: z.uuid(), conversationId: z.uuid() });
 
-it("qualifies the six Home assistant captures and their actual producer", () => {
+it("qualifies the eleven Home assistant captures and their actual producer", () => {
   const provenance = cohort.verify();
-  expect(provenance.captures.map(capture => capture.name).sort()).toEqual([...names].sort());
-  for (const source of ["AiAssistantHttpContractTests.cs", "AiAssistantContractCapture.cs", "AiAssistantResponses.cs"])
+  expect(provenance.captures.map(capture => capture.name).sort()).toEqual([...names, ...fileNames].sort());
+  for (const source of ["AiAssistantHttpContractTests.cs", "AiAssistantContractCapture.cs", "AiAssistantResponses.cs", "AiAssistantDocumentModels.cs"])
     expect(provenance.sources.some(item => item.path.endsWith("/" + source))).toBe(true);
+});
+
+it("reads the file acceptance, a document's reading and the turns with a sheet, a PDF or a Word intact through the adapters", async () => {
+  const fileSubmitted = identity.parse(cohort.json("file-submitted.json"));
+  const sends = captureUploads([{ status: 202, body: cohort.json("file-submitted.json") }]);
+  try {
+    const file = new File(["Código,Cliente"], "clientes.csv", { type: "text/csv" });
+    await expect(assistantApi.submitFile(createSubmission(fileSubmitted.requestId, "Armame un catálogo con esta planilla", 1), file, () => {}))
+      .resolves.toEqual(cohort.json("file-submitted.json"));
+    expect(sends.map(send => send.url)).toEqual(["/api/ai/assistant/file-turns"]);
+  } finally { vi.unstubAllGlobals(); }
+
+  const reading = z.object({ requestId: z.uuid() }).parse(cohort.json("document-status.json"));
+  let turnName = "";
+  server.use(
+    http.get("/api/ai/assistant/documents/:requestId", () => cohort.response("document-status.json")),
+    http.get("/api/ai/assistant/turns/:requestId", () => cohort.response(turnName)),
+  );
+  expect(await assistantApi.document(reading.requestId)).toEqual(cohort.json("document-status.json"));
+  for (const name of ["turn-attachment.json", "turn-document.json", "turn-word.json"]) {
+    turnName = name;
+    const exported = cohort.json(name) as AssistantTurn;
+    const turn = await assistantApi.turn(exported.requestId);
+    expect(turn, name).toEqual(exported);
+    expect(turn.attachment, name).not.toBeNull();
+  }
 });
 
 // The client drops the fields it does not know (I11): each read equal to its exported body is what keeps this contract strict.

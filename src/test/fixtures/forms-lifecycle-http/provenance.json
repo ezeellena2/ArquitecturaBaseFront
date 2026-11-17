@@ -1,207 +1,215 @@
 {
-  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
-      "sha256": "455f6eb7f1fe00c7587c7cb28d9771dbcc974b53abac3fdcf8a8d09555fcb0f5",
-      "name": "en/deactivated.json",
-      "length": 521
+      "length": 520,
+      "sha256": "b408e881002c6abc72c16b0eac8ef8047b365bda293ecf25c3e067707900b069",
+      "name": "en/deactivated.json"
     },
     {
-      "sha256": "92a105c23e781653a869b498b10ad60796b56afb1050a04e4122e27e91d32522",
-      "name": "en/delete-responses-conflict.json",
-      "length": 266
+      "length": 266,
+      "sha256": "4d9d3cb08850309c9f32721742ab71bc1895f65962a49afa08a77d4d763a1805",
+      "name": "en/delete-responses-conflict.json"
     },
     {
-      "sha256": "d078fc083cd6ffdef0d57813bf3ff42bfd1f6ad741c94407d05461d1abab5342",
-      "name": "en/detail-deactivated.json",
-      "length": 1873
+      "length": 1869,
+      "sha256": "0d5487056a7b2a4c0e73dd48a3d859a76be9d8c50a516df6869676a5a07d595c",
+      "name": "en/detail-deactivated.json"
     },
     {
-      "sha256": "95fd1fd9a2e93bfb13abef63ede4c4fa8c8bc358d8210e7cfeb43938f9f46ffb",
-      "name": "en/detail-reactivated.json",
-      "length": 1666
+      "length": 1663,
+      "sha256": "9fb2e6bfd139c68301aa60175866285b3007fea2894c25dced815dba4f249a80",
+      "name": "en/detail-reactivated.json"
     },
     {
-      "sha256": "7152360a9315454e31c632ef951c9b9871254c97839e5b5c21b43beceb821bc2",
-      "name": "en/detail-reactivation-pending.json",
-      "length": 1769
+      "length": 1906,
+      "sha256": "8398796c933ffd660db94a40384ff28a50e058f08874fc2afab8c2d2ba536421",
+      "name": "en/detail-reactivation-pending.json"
     },
     {
+      "length": 53,
       "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "name": "en/facets.json",
-      "length": 53
+      "name": "en/facets.json"
     },
     {
-      "sha256": "d369f7ac5294a65dadb5780b766d1e1de033f3e1911601eff970efd893c941a3",
-      "name": "en/list-deactivated.json",
-      "length": 902
+      "length": 900,
+      "sha256": "a9697b3246c45e6ee61a33e76163e5bf795785dac11255b327fb9bf5cf51b519",
+      "name": "en/list-deactivated.json"
     },
     {
-      "sha256": "d77bc3e83da8845178905c4d0f330c16255371dd13ceefb77f799ee69cc141bb",
-      "name": "en/options-deleted.json",
-      "length": 105333
+      "length": 201322,
+      "sha256": "b44059b7dd687863e470d5ac52f459dcc15bbaf5cb7aa8cba7094ab4650da703",
+      "name": "en/options-deleted.json"
     },
     {
-      "sha256": "525d1ed4b8e35f1041b3de45a4fe5ecdc24ddcfd670019c0fa42cacd62796fa0",
-      "name": "en/options-unavailable.json",
-      "length": 136486
+      "length": 119371,
+      "sha256": "329998cef5a5c493ba034e80fc0b8ba83299500c51320ffa1ebdafcf3ff56de2",
+      "name": "en/options-unavailable.json"
     },
     {
-      "sha256": "f371eb54108654402119bccd9b30456692d1f17f84b650fadd654e7e8053c69e",
-      "name": "en/preview-affected.json",
-      "length": 579
+      "length": 579,
+      "sha256": "2bf1aac5d94398003e871e58cea4f58b7b98eb06ac6547249376d650db85d146",
+      "name": "en/preview-affected.json"
     },
     {
-      "sha256": "97af578978a9372d1725fcdd541633d21653ce4152f0202fa3dd5db88951e369",
-      "name": "en/preview.json",
-      "length": 579
+      "length": 579,
+      "sha256": "88614e33aba5b7c34ce23ff448f8157eafb880211382e0df27084a6ea975b660",
+      "name": "en/preview.json"
     },
     {
-      "sha256": "93e75f0a3f1a87e7ee8790dba8bec179cc12d0826634ea661617430bcc4f3651",
-      "name": "en/status-deprecated.json",
-      "length": 1828
+      "length": 1823,
+      "sha256": "095b51ebe210ac99aa80ef4c44b3c2ffe4c2954f8f911c5e5b8ff863912ad591",
+      "name": "en/status-deprecated.json"
     },
     {
-      "sha256": "3444c8bff41ac5f6c687a8f831d0d7983d19d678e3c4bed1e1d19b8bcb0fb1fa",
-      "name": "en/status-needsattention.json",
-      "length": 1811
+      "length": 1807,
+      "sha256": "16821b2d8a4a02f71daf4d38e38d4cace9ad4c0b25ba28594cdd50359e01440e",
+      "name": "en/status-needsattention.json"
     },
     {
-      "sha256": "d8afe3e06c98bfa6db6d10ce01d774023d38d3e1c05feb9d163ffea5b5aac88d",
-      "name": "en/status-pending.json",
-      "length": 1833
+      "length": 1828,
+      "sha256": "b50693badaa92d90037fc3cc6dc27d527adbd3562f854464358e471f6fad4471",
+      "name": "en/status-pending.json"
     },
     {
-      "sha256": "5dfe4400e55277d544cfa45517d3b7d6e1a3e4bcdd0c7664c5cd33a5ecb9cc72",
-      "name": "en/status-uncertain.json",
-      "length": 1806
+      "length": 1802,
+      "sha256": "15e6a6c21e9c5a7ccea6921b5bd42e0274d5ed6219952a9d6d2d5b757508a976",
+      "name": "en/status-uncertain.json"
     },
     {
-      "sha256": "1bb3a3f6a4af97de9764d8dd5e27ceedbad413e1a04a4435a6848c29696acd51",
-      "name": "es/deactivated.json",
-      "length": 521
+      "length": 520,
+      "sha256": "818862a666f196d94918d606589b0eabf230300d098e89afc322a072e508cda4",
+      "name": "es/deactivated.json"
     },
     {
-      "sha256": "2da43dfe90b78ab79b91692ebf07065e7483d0cf9d2c84529d0506b2ad696165",
-      "name": "es/delete-responses-conflict.json",
-      "length": 276
+      "length": 276,
+      "sha256": "529d3f7712fa09c2158434ad531bc302bcd4d023ddc6d9e8e977b54a7f1799a8",
+      "name": "es/delete-responses-conflict.json"
     },
     {
-      "sha256": "9d165068bda6897d29ea300ff40b2e10ff895c3059ba826b77473a018ce8c554",
-      "name": "es/detail-deactivated.json",
-      "length": 1873
+      "length": 1869,
+      "sha256": "388b8891f8e2174bdad95599817918166e4b1761cd6d77e8b8574ec19477186b",
+      "name": "es/detail-deactivated.json"
     },
     {
-      "sha256": "7719f74dbed07779887cc2eed21591fe48d3a290c0458c3cec9dca6617efa303",
-      "name": "es/detail-reactivated.json",
-      "length": 1666
+      "length": 1663,
+      "sha256": "d10d6e904d80b1847151e745262148e636bd8a252f281c19ef72d52d234873d5",
+      "name": "es/detail-reactivated.json"
     },
     {
-      "sha256": "6675506297f9e956a57c24b3950436c65963b06f152a5dc1591fa2a7d0723c13",
-      "name": "es/detail-reactivation-pending.json",
-      "length": 1769
+      "length": 1906,
+      "sha256": "f4b7de02143a57bbe05e1a0462c83602e2cfd998cd0cd05ad7ad572bd1136d92",
+      "name": "es/detail-reactivation-pending.json"
     },
     {
+      "length": 53,
       "sha256": "facd999f068f323dc5759d8b85f5938e747a43ff35f81d6e5f8e721fa945e9a4",
-      "name": "es/facets.json",
-      "length": 53
+      "name": "es/facets.json"
     },
     {
-      "sha256": "446d4585ca3d19a611348596933b243ef302f39e34aa6c7a79e1eaf3729217f2",
-      "name": "es/list-deactivated.json",
-      "length": 902
+      "length": 900,
+      "sha256": "f2ffffb7fd4b9f50f391c1db33c94bb4fb6ef84e838d4fcde0596a58a63614d3",
+      "name": "es/list-deactivated.json"
     },
     {
-      "sha256": "d77bc3e83da8845178905c4d0f330c16255371dd13ceefb77f799ee69cc141bb",
-      "name": "es/options-deleted.json",
-      "length": 105333
+      "length": 201322,
+      "sha256": "b44059b7dd687863e470d5ac52f459dcc15bbaf5cb7aa8cba7094ab4650da703",
+      "name": "es/options-deleted.json"
     },
     {
-      "sha256": "4ee51cb63fd9321895956c95598744245de49e68af73c31dbad6bd4b69b83cff",
-      "name": "es/options-unavailable.json",
-      "length": 135565
+      "length": 120292,
+      "sha256": "672fc5cf24f2d8d3b3cb15ca3ac3e9229be14e3335c6f8d6ba5daa238c5a5e58",
+      "name": "es/options-unavailable.json"
     },
     {
-      "sha256": "f371eb54108654402119bccd9b30456692d1f17f84b650fadd654e7e8053c69e",
-      "name": "es/preview-affected.json",
-      "length": 579
+      "length": 579,
+      "sha256": "2bf1aac5d94398003e871e58cea4f58b7b98eb06ac6547249376d650db85d146",
+      "name": "es/preview-affected.json"
     },
     {
-      "sha256": "8aefd78d09ed2d31c2c9b2bdcb1f926e344aaf7de5b06fc9f27810b6c6d70ae9",
-      "name": "es/preview.json",
-      "length": 579
+      "length": 579,
+      "sha256": "b2bbdb2ba7fe946be406059c5067cff645d199e64531b2bb07d4f82183511aa0",
+      "name": "es/preview.json"
     },
     {
-      "sha256": "feebf21fa125e0ac3c3ba115bfcc951be52541777ca0a2022b96ec34d6baa6f9",
-      "name": "es/status-deprecated.json",
-      "length": 1828
+      "length": 1823,
+      "sha256": "1c889506b4a9c22f70467776339bc5bf8b570ae012fa4edbd0ed6946d1e66dd8",
+      "name": "es/status-deprecated.json"
     },
     {
-      "sha256": "9a89b7f3763128b852e16b662057c083174b8e61b8e3788d2c411df23a30b7dd",
-      "name": "es/status-needsattention.json",
-      "length": 1811
+      "length": 1807,
+      "sha256": "6134c4395417c718c04ad025c1c51527bd625e4bb24be98d8fab805316dc80cb",
+      "name": "es/status-needsattention.json"
     },
     {
-      "sha256": "7cd64eff4a27136095fb9f346821207be0059ecdf565ad0d0b7372666c28a02f",
-      "name": "es/status-pending.json",
-      "length": 1833
+      "length": 1828,
+      "sha256": "d48989afa80fd3641d8cea67fb5a7395c911e7d2b292c809f869e335ec91a7a3",
+      "name": "es/status-pending.json"
     },
     {
-      "sha256": "796faafc346c8496642e36df7b18287e89a9ca747bd15495a9a93bec47116678",
-      "name": "es/status-uncertain.json",
-      "length": 1806
+      "length": 1802,
+      "sha256": "199dc416f78f1f6978174140a916448d8fad216ccacd68ac8d9e575d00d8bd30",
+      "name": "es/status-uncertain.json"
     }
   ],
-  "sourceState": [
-    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
-  ],
-  "artifactSet": "lifecycle",
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
+  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
+  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeactivationHttpTests.cs",
-      "sha256": "aaa0a2176f64962c84b1e90a9c58bd3f8812ce8cdf1a8da043ce9ed3e48d8c6c"
+      "sha256": "aaa0a2176f64962c84b1e90a9c58bd3f8812ce8cdf1a8da043ce9ed3e48d8c6c",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeactivationHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeletionHttpTests.cs",
-      "sha256": "a595214ccfb0f6be0918ed8d6bc3059fbf0bdde5959017901664e82237b0deef"
+      "sha256": "a595214ccfb0f6be0918ed8d6bc3059fbf0bdde5959017901664e82237b0deef",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDeletionHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRetirementStatusHttpTests.cs",
-      "sha256": "9cffd43943a79b5bc5e11d0bb54c4c87ace181fdc93f5e717e3f5e12aefaf57a"
+      "sha256": "9cffd43943a79b5bc5e11d0bb54c4c87ace181fdc93f5e717e3f5e12aefaf57a",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormRetirementStatusHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormLifecycleContractCapture.cs",
-      "sha256": "3597496e13aa9c689bb5e7ea4d3000d388032611f6b41cac251f2726df2d5a7f"
+      "sha256": "3597496e13aa9c689bb5e7ea4d3000d388032611f6b41cac251f2726df2d5a7f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormLifecycleContractCapture.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/ControlledFormChannelStateSource.cs",
-      "sha256": "d46f2e241da204ceeaa4e5300d0b1bc47e43c466bbc6dac2f1286bccd5a1ca10"
+      "sha256": "d46f2e241da204ceeaa4e5300d0b1bc47e43c466bbc6dac2f1286bccd5a1ca10",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/ControlledFormChannelStateSource.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftEditingTests.cs",
-      "sha256": "182031582029acdaf991e277836a7f46966c0f06ffaafe0116008190410c3c51"
+      "sha256": "182031582029acdaf991e277836a7f46966c0f06ffaafe0116008190410c3c51",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftEditingTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftDurabilityTests.cs",
-      "sha256": "634abc8d4ca1d4380b82e29c724574a85354ef39885653539edd81a400c6d8ac"
+      "sha256": "ecb48e384d3ce914bd33681e9d7f1e185c4c97f6f66c9b8ff8877637488e6cc8",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDraftDurabilityTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs",
-      "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71"
+      "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationAcceptanceTests.cs",
-      "sha256": "544e0bd7a26575147b774c812bda2be22b669b930a571b497bf4084502a40d36"
+      "sha256": "b4cae5b9d0e253eb19828b80cc9be6ceb32f1536f7dd0f2f8979615f6eabe5ed",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublicationAcceptanceTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublishedSelectionTests.cs",
-      "sha256": "70988d62379b7391199af36cd4bfbaddab9d6d5a70ea1b7ede9b592e7bab4953"
+      "sha256": "70988d62379b7391199af36cd4bfbaddab9d6d5a70ea1b7ede9b592e7bab4953",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormPublishedSelectionTests.cs"
     }
   ],
-  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormDeactivationHttpTests and FormDeletionHttpTests and FormRetirementStatusHttpTests and FormLifecycleContractCapture and ControlledFormChannelStateSource and FormDraftEditingTests and FormDraftDurabilityTests and FormSuggestionHttpTests and FormPublicationAcceptanceTests and FormPublishedSelectionTests"
+  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
+  "producer": "FormDeactivationHttpTests and FormDeletionHttpTests and FormRetirementStatusHttpTests and FormLifecycleContractCapture and ControlledFormChannelStateSource and FormDraftEditingTests and FormDraftDurabilityTests and FormSuggestionHttpTests and FormPublicationAcceptanceTests and FormPublishedSelectionTests",
+  "artifactSet": "lifecycle",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [
+    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
+    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
+    "?? ../../../.blob",
+    "?? ../../../.chk",
+    "?? ../../../.head",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  ]
 }

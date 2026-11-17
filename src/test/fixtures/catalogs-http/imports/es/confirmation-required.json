@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Confirmá las bajas o las filas con errores antes de aplicar.","traceId":"00-483c554b044d0a2072994172c44d09d8-9b005b94468b0652-01","code":"Forms.CatalogImport.ConfirmationRequired"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Confirmá las bajas o las filas con errores antes de aplicar.","traceId":"00-7113bd5842dd905f0cba5764a907fa7d-dd68f89a6007d235-01","code":"Forms.CatalogImport.ConfirmationRequired"}

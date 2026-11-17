@@ -80,10 +80,12 @@ for (const culture of ["es", "en"] as const) describe("Actual WhatsApp form HTTP
 const originalPresentationCaptures = ["original-only", "empty-secondary"] as const;
 it("qualifies the full WhatsApp form cohort including original-language and multiple-selection captures", () => {
   const manifest = httpCohort("whatsappForms").verify();
-  expect(manifest.captures).toHaveLength(78);
+  expect(manifest.captures).toHaveLength(83);
   expect(manifest.captures.map(capture => capture.name)).toEqual(expect.arrayContaining(
     [...originalPresentationCaptures.flatMap(sample => ["choices", "preparation", "receipt", "history"].map(part => "en/" + sample + "-" + part + ".json")),
-      "es/reply-multiple-choice.json", "en/reply-multiple-choice.json", "es/reply-rows.json", "en/reply-rows.json"],
+      "es/reply-multiple-choice.json", "en/reply-multiple-choice.json", "es/reply-rows.json", "en/reply-rows.json",
+      // The shared location and contact (W3) arrived with the 2026-11-17 export, still without a reader.
+      ...["location-received", "location-requested", "shared-pending", "shared-resend", "shared-second-reply"].map(name => "es/thread-" + name + ".json")],
   ));
 });
 it.each(originalPresentationCaptures)("consumes real %s maps from an English account through preparation, receipt and history", sample => {

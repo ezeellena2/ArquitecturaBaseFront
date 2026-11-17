@@ -11,12 +11,13 @@ const cohort=httpCohort("manualCatalogs");
 const raw=(name:string)=>cohort.bytes(name).toString("utf8");
 const fieldCaptures = ["fields-create.request.json", "fields-update.request.json", "fields-created.json", "fields-required-error.json", "fields-values-saved.json", "fields-conversion-error.json", "fields-unique-error.json", "fields-detail.json", "fields-items.json", "fields-removal-confirmation.json", "fields-removed.json", "fields-presentation.json", "fields-source-items.json", "fields-source-in-use.json", "fields-rules-error-es.json", "fields-rules-error-en.json", "fields-in-use.json", "fields-usage-detail.json"];
 const languageCaptures = ["description-optional-created.json", "english-original-created.json", "english-original-detail-es.json", "original-missing-error.json"];
-it("verifies the 49 exact current Manual and field captures from the common run", () => {
+// The sort request (FormCatalogEndpointsTests.Sort) arrived with the 2026-11-17 export.
+it("verifies the 50 exact current Manual and field captures from the common run", () => {
  const provenance=cohort.verify();
  expect(provenance.sources.some(source=>source.path.endsWith("FormCatalogEndpointsTests.cs"))).toBe(true);
  expect(provenance.sources.some(source=>source.path.endsWith("/FormCatalogFieldInUseIntegrationTests.cs"))).toBe(true);
- expect(provenance.captures).toHaveLength(49);
- expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","update-request.request.json", ...["text","integer","decimal","date"].flatMap(type=>["typed-"+type+"-created.json","typed-"+type+"-items.json"]), "typed-invalid-value-es.json","typed-invalid-value-en.json","typed-required-value.json","typed-type-change-rejected.json", ...fieldCaptures, ...languageCaptures].sort());
+ expect(provenance.captures).toHaveLength(50);
+ expect(provenance.captures.map(entry=>entry.name).sort()).toEqual(["created.json","updated.json","detail.json","items.json","list-es.json","list-en.json","conflict-es.json","conflict-en.json","create-request.request.json","create-duplicate-positions-request.request.json","missing-revision-request.request.json","inactive-request.request.json","conflict-request.request.json","queued-moves-request.request.json","sorted-request.request.json","update-request.request.json", ...["text","integer","decimal","date"].flatMap(type=>["typed-"+type+"-created.json","typed-"+type+"-items.json"]), "typed-invalid-value-es.json","typed-invalid-value-en.json","typed-required-value.json","typed-type-change-rejected.json", ...fieldCaptures, ...languageCaptures].sort());
 });
 it("reads a catalog without description, one created only in its English original, and the error of a missing original", async () => {
   const optional = readCatalogSave(cohort.json("description-optional-created.json"), []);

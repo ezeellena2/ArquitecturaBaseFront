@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Quien mandó el documento ya no está activo.","traceId":"00-1efb6ba3938f22cf04f6ebe6f38ca36b-978f43752d7e6172-01","code":"Forms.ReceivedDocument.SenderInactive"}

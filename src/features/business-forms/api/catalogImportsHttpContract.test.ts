@@ -24,12 +24,14 @@ function preview(culture: typeof cultures[number], name: string, revision: numbe
 
 // With the menu in Spanish, the preview and the export of a catalog whose original is English.
 const englishOriginal = ["es/en-original-preview.json", "es/en-original-export.xlsx", "es/en-original-export.http.json"];
+// Importing from the sheet the assistant read (FormCatalogAssistantImportHttpTests): no reader consumes them yet.
+const assistant = ["pending", "preview", "applied", "none", "proposal-unavailable", "sheet-unavailable"].map(name => "es/assistant-" + name + ".json");
 
-it("qualifies the 33 intact import captures and their actual producers", () => {
+it("qualifies the 39 intact import captures and their actual producers", () => {
   const provenance = cohort.verify();
-  expect(provenance.captures).toHaveLength(33);
-  expect(provenance.captures.map(item => item.name).sort()).toEqual([...cultures.flatMap(culture => names.map(name => capture(culture, name))), ...englishOriginal].sort());
-  for (const source of ["FormCatalogImportHttpTests.cs", "FormCatalogImportFieldsHttpTests.cs", "FormCatalogEndpointsTests.cs", "FormCatalogImportContractCapture.cs", "FormCatalogImportModels.cs", "FormCatalogImportTemplate.cs", "Catalogs.resx", "Catalogs.en.resx"]) {
+  expect(provenance.captures).toHaveLength(39);
+  expect(provenance.captures.map(item => item.name).sort()).toEqual([...cultures.flatMap(culture => names.map(name => capture(culture, name))), ...englishOriginal, ...assistant].sort());
+  for (const source of ["FormCatalogImportHttpTests.cs", "FormCatalogImportFieldsHttpTests.cs", "FormCatalogEndpointsTests.cs", "FormCatalogImportContractCapture.cs", "FormCatalogImportModels.cs", "FormCatalogImportTemplate.cs", "Catalogs.resx", "Catalogs.en.resx", "FormCatalogAssistantImportHttpTests.cs"]) {
     expect(provenance.sources.some(item => item.path.endsWith("/" + source))).toBe(true);
   }
 });

@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Revisá los campos marcados.","traceId":"00-b0a1d412f7372f4bd0fb260576944692-ee76393250355499-01","code":"Validation.Failed","errors":{"cases[0].when":["Este campo es obligatorio."],"cases[1].action.buttons[0].title":["Ingresá como máximo 20 caracteres."]}}

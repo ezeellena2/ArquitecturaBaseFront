@@ -17,9 +17,11 @@ it("qualifies all multiple-choice capture names and producer sources from the jo
   const responses = httpCohort("responses").verify();
   const pdf = httpCohort("pdf").verify();
   // 70: the four recipient maximums (fixed and per person, es/en) that recipientPreviewHttpContract consumes, the four rows bodies
-  // (with the minimum that WhatsApp does not load, RG13-A) and the two of section titles.
-  expect(definitions.captures).toHaveLength(70);
-  expect(responses.captures).toHaveLength(63);
+  // (with the minimum that WhatsApp does not load, RG13-A) and the two of section titles; 93 with the library, the folders, app-only,
+  // document reading and the shared location and contact of the 2026-11-17 export.
+  expect(definitions.captures).toHaveLength(93);
+  // 67 with the location and shared contact read in WhatsApp and the result of a document and of a sheet (2026-11-17 export).
+  expect(responses.captures).toHaveLength(67);
   expect(pdf.captures).toHaveLength(36);
   expect(definitions.captures.map(item => item.name)).toEqual(expect.arrayContaining([
     "multiple-choice/draft.json", "multiple-choice/catalog-too-large.json",

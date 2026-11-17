@@ -30,6 +30,10 @@ const cohorts = {
   whatsappAudio: ["whatsapp-audio-http", "WHATSAPP_AUDIO_HTTP_CONTRACT_INPUT", "whatsapp-audio"],
   whatsappForms: ["whatsapp-forms-http", "WHATSAPP_FORMS_HTTP_CONTRACT_INPUT", "whatsapp-forms"],
   aiAssistant: ["ai-assistant-http", "AI_ASSISTANT_HTTP_CONTRACT_INPUT", "ai-assistant"],
+  // Exported since 2026-11-17, still without a reading consumer: only the joint run qualifies them.
+  dashboard: ["forms-dashboard-http", "FORMS_DASHBOARD_HTTP_CONTRACT_INPUT", "dashboard"],
+  documents: ["forms-documents-http", "FORMS_DOCUMENTS_HTTP_CONTRACT_INPUT", "documents"],
+  whatsappAssistantAgent: ["whatsapp-assistant-agent-http", "WHATSAPP_ASSISTANT_AGENT_HTTP_CONTRACT_INPUT", "whatsapp-assistant-agent"],
 } as const;
 export type HttpCohort = keyof typeof cohorts;
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/);

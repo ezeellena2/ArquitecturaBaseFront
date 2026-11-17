@@ -1,59 +1,67 @@
 {
-  "repositoryHead": "7a2cb140332d58408c3a13f062be2c351a95b120",
   "captures": [
     {
-      "sha256": "8dfaebc00f966634a0377f87c38e00faebd6f0ac6ba99d9c352437bd15ab2d91",
-      "name": "approved-en.json",
-      "length": 1694
+      "length": 1691,
+      "sha256": "8d1b5ac516c34284507751eb033532ad387dfa3dc9b749e72ddb0e1b485d21be",
+      "name": "approved-en.json"
     },
     {
-      "sha256": "56eb8581357e06557fcb9c49e3df2a2217807ba052ded56f80f0dc999021cfec",
-      "name": "conflict.json",
-      "length": 267
+      "length": 267,
+      "sha256": "4a05f782b81afecb3c6b2e34c0d9e639e07d4cb247a6a3a95a120b674895640a",
+      "name": "conflict.json"
     },
     {
-      "sha256": "1e1e58835147e7987849b9955c15e6dae233d05ce837488f6b34fdb43059aeac",
-      "name": "detail-pending-en.json",
-      "length": 1654
+      "length": 1652,
+      "sha256": "d02d76619d7abc2514b8ba4c1fec1cda6b9a79a07d5b34635181d216e5ab0201",
+      "name": "detail-pending-en.json"
     },
     {
-      "sha256": "d0a30c034145ae3a2f3284b652bc245327f38ffe26da8acb5e803fbad0fb7cad",
-      "name": "detail-pending-es.json",
-      "length": 1660
+      "length": 1658,
+      "sha256": "529ed2a95b83384cf84c6da4353acc6ee432b03d474b4c8825e48a0369504806",
+      "name": "detail-pending-es.json"
     },
     {
-      "sha256": "179276bd956ef4665b76a34c89f4e45528585fb904d66b2b40f9851425e104a6",
-      "name": "discarded-es.json",
-      "length": 1643
+      "length": 1640,
+      "sha256": "75b019700cd05f1825531f1138f9fc304762911172a63ae54337910c8234f51f",
+      "name": "discarded-es.json"
     },
     {
-      "sha256": "9516f7588455797ab7cf4f8b343d9c2ea9c38c1228436d4dec5e3b7a97e7e601",
-      "name": "list-original-en-in-es.json",
-      "length": 402
+      "length": 402,
+      "sha256": "8a0d6eeb60082940d85c348be47d054907369b1d717cefd88c330a0bd5c0a168",
+      "name": "list-original-en-in-es.json"
     }
   ],
-  "sourceState": [
-    " M ../../../../docs/plans/2026-11-07-renglones-etapa-4-implementacion.md"
-  ],
-  "artifactSet": "catalog-proposals",
   "schemaVersion": 1,
-  "generatedAtUtc": "2026-11-08T20:38:41.4331862Z",
+  "repositoryHead": "c82ec50de201843deb0cca03c926886b78b331e0",
+  "generatedAtUtc": "2026-11-17T10:37:43.9122417Z",
   "sources": [
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs",
-      "sha256": "17bb661be182b52f01ed3c2e177840927991efa38178db15afdbada37e8a9679"
+      "sha256": "17bb661be182b52f01ed3c2e177840927991efa38178db15afdbada37e8a9679",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogProposalHttpTests.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs",
-      "sha256": "578e893c12dba892f89d18259d0cd12d14f6f9e2228ebd1dc2e272e174e02430"
+      "sha256": "578e893c12dba892f89d18259d0cd12d14f6f9e2228ebd1dc2e272e174e02430",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalScenario.cs"
     },
     {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs",
-      "sha256": "672eab0c9908e6fd935aae5511a9049457171ad8526d20b1069282afa58a1fa7"
+      "sha256": "672eab0c9908e6fd935aae5511a9049457171ad8526d20b1069282afa58a1fa7",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormCatalogProposalContractCapture.cs"
     }
   ],
-  "runId": "20261108-182909-7356e5b46b624ff28f64771b6366c519",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture"
+  "runId": "20261117-084038-cba1c60cde7142039c11849d5b67c9c2",
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
+  "artifactSet": "catalog-proposals",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
+  "sourceState": [
+    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
+    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
+    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
+    "?? ../../../.blob",
+    "?? ../../../.chk",
+    "?? ../../../.head",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
+    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  ]
 }

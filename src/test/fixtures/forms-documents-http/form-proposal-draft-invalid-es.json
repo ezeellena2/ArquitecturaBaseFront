@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"Datos inválidos","status":400,"detail":"Revisá el valor y los límites de autoría del borrador.","traceId":"00-93836a17ffd330f80d7bfc9d3256e255-72f5a50039a4e12e-01","code":"Forms.Draft.ContentInvalid","errors":{"recognition":["Revisá el valor y los límites de autoría del borrador."]}}

@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"La planilla que viste en el chat ya no está disponible. Podés subir el archivo a mano.","traceId":"00-9ccc4de3da9a04c516df30e19dad0bd9-fbfcf36afdfa4cb1-01","code":"Forms.CatalogImport.SheetUnavailable"}

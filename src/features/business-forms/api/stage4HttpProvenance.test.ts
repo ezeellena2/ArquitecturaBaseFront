@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 import { httpCohort, type HttpCohort } from "@/test/httpCohort";
-it("qualifies the 25 HTTP cohorts of the joint export from one complete backend run with intact bytes", () => {
-  const names = ["personData", "responses", "rules", "workflow", "approvals", "pdf", "whatsappActions", "whatsappForms", "suggestions", "catalogProposals", "suggestionDetails", "whatsappAudio", "missingRequests", "whatsappAssistant", "forms", "lifecycle", "catalogImports", "manualCatalogs", "catalogFilters", "catalogSource", "formFiles", "whatsappCatalogs", "aiAssistant", "entries", "assistantProposals"] as const satisfies readonly HttpCohort[];
-  expect(new Set(names).size).toBe(25);
+it("qualifies the 28 HTTP cohorts of the joint export from one complete backend run with intact bytes", () => {
+  const names = ["personData", "responses", "rules", "workflow", "approvals", "pdf", "whatsappActions", "whatsappForms", "suggestions", "catalogProposals", "suggestionDetails", "whatsappAudio", "missingRequests", "whatsappAssistant", "forms", "lifecycle", "catalogImports", "manualCatalogs", "catalogFilters", "catalogSource", "formFiles", "whatsappCatalogs", "aiAssistant", "entries", "assistantProposals", "dashboard", "documents", "whatsappAssistantAgent"] as const satisfies readonly HttpCohort[];
+  expect(new Set(names).size).toBe(28);
   const manifests = names.map(name => httpCohort(name).verify());
   const original = manifests[0];
   for (const manifest of manifests) {
