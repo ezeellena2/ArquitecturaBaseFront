@@ -104,7 +104,7 @@ it("keeps a shared pending read alive when one selector unmounts", async () => {
 
 // A failed read says so in the open dropdown, and touching it again reads once more.
 it("keeps the shared failure visible until its last selector leaves and reads again from the dropdown", async () => {
-  let reads = 0; server.use(http.get("/api/forms/catalogs", () => { reads++; return HttpResponse.json({ code: "General.Unexpected", status: 500 }, { status: 500 }); }));
+  let reads = 0; server.use(http.get("/api/forms/catalogs", () => { reads++; return HttpResponse.json({ code: "General.Unexpected", status: 500, traceId: "00-test-01" }, { status: 500 }); }));
   const notify = vi.spyOn(notifications, "notify"); const dismiss = vi.spyOn(notifications, "dismissNotification"); const onChange = vi.fn(), user = userEvent.setup();
   let rendered!: ReturnType<typeof renderWithProviders>;
   await act(async () => { rendered = renderWithProviders(pairedSelectors(true, onChange)); });
