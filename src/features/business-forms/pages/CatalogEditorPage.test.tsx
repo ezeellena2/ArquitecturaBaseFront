@@ -21,6 +21,8 @@ import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// The heaviest editor of the front: alone a dozen tests take 2.3 to 3.2 s, and with the full run they went past the 5 s.
+vi.setConfig({ testTimeout: 20_000 });
 // Whole-value configuration cases do not exercise character-by-character search behavior.
 async function pasteText(user: ReturnType<typeof userEvent.setup>, control: HTMLElement, text: string) {
   await user.click(control);
