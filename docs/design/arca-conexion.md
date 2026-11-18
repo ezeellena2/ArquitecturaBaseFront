@@ -1,7 +1,7 @@
 # La conexión con ARCA: tableros elegidos
 
 Fecha: **2026-11-05**, con los tableros dibujados del 2026-11-01 al 2026-11-03. Estado: **programado** (Etapa 1, tarea 9). El
-alcance y las decisiones están en el [diseño de la etapa](../../../ArquitecturaBase/docs/plans/2026-11-03-arca-etapa-1-conexion.md)
+alcance y las decisiones están en las [reglas del módulo](../../../ArquitecturaBase/docs/features/arca.md)
 y en el [ADR 0025](../../../ArquitecturaBase/docs/decisions/0025-familias-de-servicios-arca.md). Las pantallas, los textos y los
 estados salen de acá.
 

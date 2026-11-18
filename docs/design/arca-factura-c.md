@@ -60,6 +60,8 @@ dice y se relee la actividad.
   (una factura ya autorizada que espera su PDF) sigue «Emitiendo». Sin «te avisamos por WhatsApp»: el front no sabe por qué
   canal llega el aviso. El aviso lleva el ícono de su tono (AV1-A), no un reloj. «Rechazada» dice «No se emitió el
   comprobante» · el texto de ARCA que manda el servidor («10015 · …»); lo mismo «No se pudo anular».
+- **«Emitiendo» al programarse:** dice «Se está emitiendo el comprobante. La página se actualiza sola.», sin nombrar a ARCA,
+  porque formularios no nombra módulos.
 - **El cliente nuevo** (decisión 4 del plan) tampoco: «Otro: escribir la CUIT» y, si ARCA no la tiene o no responde, el
   resumen lo dice con «Volver a probar» y «No emitir». En el detalle (2026-11-11), «Esperando que lo confirmes» muestra
   «Todavía no se puede emitir» · el motivo, con «No emitir» y «Volver a probar»; probar de nuevo deja «Se está emitiendo…».

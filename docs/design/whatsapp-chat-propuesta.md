@@ -61,9 +61,11 @@ un test concurrente de Roles. Se retiró sólo esa opción: el nombre de rol ya 
 coincidencia exacta por defecto. Se conservó el recorrido y se verificó su consumidor
 con el archivo de tests del editor de Roles y un nuevo build.
 
-No se cambió backend ni se levantó Aspire. Persistencia, concurrencia real, generación
-y sincronización del Artifact privado siguen pendientes del
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
+No se cambió backend ni se levantó Aspire. La persistencia y la concurrencia real llegaron con la
+[implementación productiva](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md#información-del-negocio--2026-10-03);
+la generación, con la sugerencia del asistente (AS4,
+[regla](../../../ArquitecturaBase/docs/features/whatsapp.md#casos-del-asistente--2026-11-11)). La sincronización
+del Artifact privado sigue pendiente.
 
 ## Propuesta de color de acciones — 2026-10-03
 
@@ -73,9 +75,9 @@ Sugerir con IA usa ahora Button principal (`default`): verde sólido del sistema
 la misma forma/tamaño. Panel, otros botones, íconos, tipografía, navegación y recorrido
 de revisión humana mantienen el diseño previo. No hay tokens nuevos ni CSS propio
 del botón. El usuario aprobó este ajuste y eligió historial + información básica del negocio,
-con su editor maquetado primero. La implementación sigue el
-[plan actualizado](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md);
-los controles del laboratorio todavía usan datos ficticios.
+con su editor maquetado primero. No se implementó así: la reemplazó la sugerencia del asistente
+(AS4, [regla](../../../ArquitecturaBase/docs/features/whatsapp.md#casos-del-asistente--2026-11-11));
+los controles del laboratorio usan datos ficticios.
 
 Fecha inicial: 2026-10-01. **Ronda final de maqueta: 2026-10-02; chat y configuración/prueba de IA promovidos, demás destinos pendientes.**
 El laboratorio sigue siendo una simulación aislada. La bandeja productiva, sus permisos,

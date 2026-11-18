@@ -2,7 +2,7 @@
 
 Área independiente de WhatsApp e IA. Diseña formularios en el idioma del menú, con la traducción opcional al otro, y los publica, administra su ciclo de vida y los catálogos, y muestra respuestas, aprobaciones, reglas, PDF, sugerencias y formularios que faltan. Enviar desde el chat y mostrar la respuesta en la conversación pertenece a WhatsApp, que no importa esta feature.
 
-Lectura obligatoria: la [regla funcional del backend](../../../../ArquitecturaBase/docs/features/formularios.md), los [tableros elegidos](../../../docs/design/formularios-whatsapp.md), los de la [carga desde la app](../../../docs/design/carga-desde-la-app.md) y el [resumen de la etapa en curso](../../../../ArquitecturaBase/docs/plans/formularios/README.md). Los DTO, el OpenAPI y los ejemplos HTTP exportados fijan el contrato.
+Lectura obligatoria: la [regla funcional del backend](../../../../ArquitecturaBase/docs/features/formularios.md), los [tableros elegidos](../../../docs/design/formularios-whatsapp.md), los de la [carga desde la app](../../../docs/design/carga-desde-la-app.md) y los [pendientes del módulo](../../../../ArquitecturaBase/docs/plans/formularios/README.md). Los DTO, el OpenAPI y los ejemplos HTTP exportados fijan el contrato.
 
 - [`api/`](api/AGENTS.md): clientes HTTP y guards zod por familia, con los tests que consumen los cuerpos exportados.
 - [`hooks/`](hooks/AGENTS.md): dueños de lecturas, borradores en memoria, publicación, workflow, navegación del panel y descargas.

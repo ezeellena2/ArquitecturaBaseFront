@@ -580,11 +580,11 @@ Sin elección; no se implementan sin ella.
 
 - Contactos, Plantillas y diagnóstico de la conexión de WhatsApp ([propuesta](whatsapp-chat-propuesta.md)); no es el
   contrato del chat productivo.
-- Sugerencias de IA (`?screen=sugerencias`). Aprobados: Sugerir con IA como `Button` principal verde y el contexto
-  historial + información del negocio. [Plan](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
-  El chat ya muestra la sugerencia del asistente con «Usar como borrador» (AS4, 2026-11-12), sin este botón: falta
-  decidir si la propuesta se retira.
 - Burbujas con forma inspirada en Chatscope (`libraries/shapes.html`): [diseño](whatsapp-bibliotecas-propuesta.md).
+
+Las sugerencias de IA (`?screen=sugerencias`, con «Sugerir con IA») dejaron de ser propuesta: el chat muestra la sugerencia
+del asistente con «Usar como borrador» (AS4, 2026-11-12), sin ese botón
+([regla](../../../ArquitecturaBase/docs/features/whatsapp.md#casos-del-asistente--2026-11-11)). La maqueta queda como antecedente.
 
 La ubicación por ficha de Maps (`?screen=ubicacion-lugar`) dejó de ser propuesta: el buscador con el PlaceId está en
 Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como antecedente.

@@ -7,8 +7,8 @@ front el 2026-11-11; faltan la prueba integral y las capturas del backend en los
 Origen: el lienzo aparte [ARCA · motor para documentos](https://claude.ai/artifact/JPwMtoM9TqM8fyqGCr9QVP), una fila por
 pregunta con la recomendada primero. El Sistema visual es de otra cuenta y el lienzo provisorio lo comparten a la vez las
 sesiones de las etapas 3 a 6, así que, como en renglones, carpetas, la IA y «Formularios sólo en la app», este documento
-congela lo elegido. El alcance y el backend están en el
-[plan de la etapa](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-2-motor.md); las carpetas siguen su propio
+congela lo elegido. Las reglas y el backend están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md#cálculos--ca1-a-2026-11-09),
+de «Cálculos» a «Biblioteca de estándares»; las carpetas siguen su propio
 [diseño](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md) (CP1-A a CP5-A).
 
 ## Los tableros

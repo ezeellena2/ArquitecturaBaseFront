@@ -7,7 +7,7 @@ de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)), y la lectura
 el 2026-11-11 ([cómo quedó](#doc1--la-biblioteca-y-la-lectura-2026-11-11)). DOC7-A, el
 tablero de cada formulario, quedó programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
 El mismo día se eligieron UC1-A y VC1-A, de un lienzo aparte, para la ubicación y el contacto que se comparten y varias cargas
-desde un Excel ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)), por programar.
+desde un Excel ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)), programados el 2026-11-12 y el 2026-11-13.
 
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
@@ -310,6 +310,10 @@ Lo programado se compara con su tablero, y cada diferencia lleva su motivo. Los 
 aplica lo que piden ella y las reglas más nuevas, sin volver a preguntar lo que decidió el
 [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#implementación-lectura-carga-bandeja-etapa-3-de-la-ia-y-tableros).
 
+Cada sección cuenta cómo se programó. Donde dice «cuerpos sintéticos hasta que se exporte», la cohorte ya se exportó el
+2026-11-17 (front 9aa157ae y 844a5c13); las capturas de `forms-dashboard-http`, `forms-documents-http` y la lectura de
+documentos todavía no tienen lector.
+
 ### DOC7-A · Tarjetas armadas solas (2026-11-11)
 
 Tarea 16 del plan (decisiones 22 a 24 y sus [diferencias](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#diferencias-con-los-tableros)),
@@ -542,6 +546,9 @@ conversación con cuenta vinculada, también con el historial arriba, y la de un
 - **Lo que DOC2 y DOC4 no dibujan en el chat del operador:** un PDF con sus páginas, un Word, uno de otro tipo y uno vencido, que
   siguen la tarjeta de la planilla, y varios seguidos de un número sin cuenta, con la línea una vez, debajo del último.
 - «Por qué lo propuso» y «Por qué preguntó» debajo del documento: la tarea 9 los manda en `why` y el guard los lee, pero el chat todavía no los dibuja (pendiente).
+- **El aviso de «no se le puede mandar» no dice el monto.** DOC4 dibuja «Gracias, recibí tu comprobante de $412.000…»; el
+  código nombra el formulario («Gracias, recibí tu documento para «{formulario}»…»), porque el puerto del canal no trae el monto
+  (tarea 9). Sumarlo queda como propuesta en el [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md).
 
 ### UC1-A · Ubicación y contacto en el editor (2026-11-12)
 
@@ -675,9 +682,9 @@ exporte la cohorte `forms-documents-http`: `ReceivedDocumentsPage` en `/formular
 en `/formularios/documentos/{id}`, la pieza nueva `DocumentViewer` de `shared/ui`, la entrada del menú con su número y, en «Cómo
 empezó» del detalle de una respuesta, de qué documento salió, quién la pasó al formulario y «Ver en Documentos recibidos» (con «Ver
 documentos recibidos», que es a quien el servidor se lo nombra). La escena `receivedDocuments.spec.ts` deja las capturas es/en a
-1440, 390 y 320 en `test-results/documents` (sin golden). Quedan para sus tareas el documento en el chat del operador, la línea de
-un número sin cuenta y la marca «Necesita una persona» (tareas 8 y 9) y el aviso de los parecidos con «Armar formulario con la IA»
-(tarea 14).
+1440, 390 y 320 en `test-results/documents` (sin golden). Después llegaron, con sus tareas, el documento en el chat del operador, la
+línea de un número sin cuenta y la marca «Necesita una persona» (tareas 8 y 9, [DOC2 y DOC4](#doc2-y-doc4--el-documento-en-el-chat-del-operador-2026-11-12))
+y el aviso de los parecidos con «Armar formulario con la IA» (tarea 14, [DOC6](#doc6--armar-formulario-con-la-ia-2026-11-12)).
 
 **La lista de chequeo:**
 

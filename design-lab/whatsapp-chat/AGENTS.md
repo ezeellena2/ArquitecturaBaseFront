@@ -79,8 +79,8 @@ y ajustar sólo un botón; descartó el azul petróleo por diferir del resto. Su
 usa ahora Button principal (`default`), con el verde sólido del sistema y su forma/tamaño
 anteriores. Panel, otros botones e íconos conservan el tablero previo; sin tokens nuevos
 ni CSS propio del botón. El usuario aprobó el ajuste y eligió historial + información
-básica del negocio. Primero se maqueta su editor; generación productiva sigue pendiente
-del [plan actualizado](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
+básica del negocio. No se integró: lo reemplazó la sugerencia del asistente (AS4,
+[regla](../../../ArquitecturaBase/docs/features/whatsapp.md#casos-del-asistente--2026-11-11)).
 
 Información del negocio (2026-10-03): `?screen=negocio` compone
 `BusinessInformationProposal` y `businessInformationCopy.ts`, con Page/Surface y
