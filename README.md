@@ -54,7 +54,8 @@ src/
   auth/       sesión OIDC, rutas protegidas y permisos
   shared/     cliente HTTP, hooks, i18n y la biblioteca de componentes (ui)
   layouts/    AuthLayout, AppLayout, menú lateral, barra superior
-  features/   un módulo por área (auth, home, users, roles, settings, profile, errors, whatsapp), con sus páginas y llamadas
+  features/   un módulo por área (auth, home, users, roles, settings, profile, errors, whatsapp,
+              artificial-intelligence, business-forms, arca), con sus páginas y llamadas
   locales/    traducciones, un archivo por idioma y módulo
   test/       arnés Vitest/MSW, reglas de arquitectura visual y catálogo/Playwright
 ```
@@ -86,10 +87,14 @@ vincular WhatsApp depende del backend. El idioma guardado vale para la cuenta: a
 otra máquina se aplica esa preferencia.
 
 Con WhatsApp habilitado, `/whatsapp/chat` ofrece bandeja, historial y respuesta manual.
-Requiere `whatsapp.read`; enviar pide además `whatsapp.send`, y tomar Manual desde un
-contacto legado en Bot, `whatsapp.manage`. Una operación aceptada queda en cola durable;
-no implica entrega. Reglas y verificaciones externas pendientes:
+Requiere `whatsapp.read`; enviar y tomar la atención manual piden además `whatsapp.send`, y activar el
+asistente, `whatsapp.configureassistant`, que también abre `/whatsapp/asistente`. Una operación aceptada
+queda en cola durable; no implica entrega. Reglas y verificaciones externas pendientes:
 [WhatsApp](../ArquitecturaBase/docs/features/whatsapp.md).
+
+Los módulos opcionales suman sus rutas, cada una con su permiso en `src/app/routes.tsx`: formularios
+(`/formularios`, `/catalogos`, `/datos-de-personas`), IA (`/configuracion/ia`, `/configuracion/negocio`)
+y ARCA (`/configuracion/arca`). Sus reglas están en `docs/architecture.md` y en la guía de cada área.
 
 ## Producción
 
@@ -100,7 +105,7 @@ Sin módulo/permiso se conserva el Inicio base. El [contrato](../ArquitecturaBas
 y [registro de entrega](../ArquitecturaBase/docs/reviews/2026-10-04-inicio-asistente.md)
 distinguen automatización con handlers ficticios y piloto real pendiente.
 
-`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS). **Hoy no hay nada que copie `dist/` a `wwwroot`:** ese paso todavía no existe y lo tiene que resolver el pipeline de despliegue. La [guía de despliegue](../ArquitecturaBase/docs/guides/despliegue.md#front-dentro-de-la-imagen) explica el paso faltante; el [registro de pendientes](../ArquitecturaBase/docs/plans/verificacion-y-produccion.md) conserva su seguimiento.
+`npm run build` deja el sitio estático en `dist/`. En producción lo sirve la Api desde su `wwwroot` (un solo origen, sin CORS): el workflow de despliegue del backend compila este repo y copia todo `dist/` a `wwwroot/` antes de publicar ([guía de despliegue](../ArquitecturaBase/docs/guides/despliegue.md#front-dentro-de-la-imagen)). La comprobación en un ambiente real sigue en el [registro de pendientes](../ArquitecturaBase/docs/plans/verificacion-y-produccion.md).
 
 ## Diseño y planes
 

@@ -153,7 +153,7 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Los números usan `formatNumber` o `numberFormat` de `shared/lib/numberFormat`, con el estándar CLDR de la región de
   cada idioma: es-AR (`1.210`, `1.234,5`) y en-US (`1,210`, `1,234.5`). No crear un `Intl.NumberFormat` ni un
   `toLocaleString` por pantalla: con el idioma de la interfaz, el español no agrupa «1210». Los números de un texto se
-  formatean solos, y un identificador se pasa como texto ([números](../design/visual-baseline.md#números-con-la-región-de-cada-idioma--2026-11-12)).
+  formatean solos, un porcentaje sale de `formatPercent`, pegado al número («21%»), y un identificador se pasa como texto ([números](../design/visual-baseline.md#números-con-la-región-de-cada-idioma--2026-11-12)).
 
 ## Formularios y selección
 

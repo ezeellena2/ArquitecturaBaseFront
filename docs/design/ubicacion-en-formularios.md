@@ -1,8 +1,8 @@
 # La pregunta «Ubicación» en los formularios: tableros elegidos
 
 Fecha: **2026-11-11**. Estado: **elegidos y programados** (Etapa 1, en la app; 2026-11-11, para la prueba integral final). El usuario eligió UB1-A a UB4-A el
-2026-11-11. La Etapa 2, por WhatsApp, eligió W1-A el mismo día y tiene su [tablero entero](#etapa-2-por-whatsapp-w1-a),
-por programar. El alcance, las reglas por defecto y las tareas están en el
+2026-11-11. La Etapa 2, por WhatsApp, eligió W1-A el mismo día y su [tablero entero](#etapa-2-por-whatsapp-w1-a)
+quedó programado el mismo día, también por el asistente. El alcance, las reglas por defecto y las tareas están en el
 [plan del backend](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación);
 las pantallas, los textos y los estados salen de acá.
 

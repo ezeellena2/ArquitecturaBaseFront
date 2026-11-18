@@ -1,6 +1,12 @@
 # Unificación de mensajes del front
 
 Fecha: **2026-09-30**. Estado: **adopción transversal del emisor implementada; revisión de recuperaciones específicas pendiente**.
+
+Al 2026-11-18: el emisor, el clasificador, la fábrica de consultas y el límite de imports están hechos (sólo
+`shared/ui/notifications.ts` y `shared/ui/sonner.tsx` importan Sonner: `src/test/architecture/designArchitecture.test.ts`).
+Las casillas de abajo no se marcaron: se leen con el [avance del 2026-10-03](#avance-transversal-2026-10-03). Sigue abierta
+la revisión de la recuperación incierta en los flujos de código y de redirects (ingreso y registro con código, el regreso
+de Google y `VerifyDestinationDialog`). El enlace de ingreso (`/ingresar`) se retiró el 2026-11-16: sus filas ya no aplican.
 El usuario pidió establecer un criterio transversal como en el backend y mantener el orden
 diseño → plan → desarrollo. El [contrato de mensajes y estados](../guides/mensajes-y-estados.md)
 fija la interacción; este plan propone el mecanismo técnico, releva desvíos y define el cierre.

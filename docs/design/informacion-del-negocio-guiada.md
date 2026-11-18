@@ -8,18 +8,17 @@ La vista local actual usa la página productiva con datos ficticios:
 La antigua entrada `?screen=negocio-guiado` redirige allí; el prototipo ya no es una pantalla
 activa. Sus archivos previos sin versionar se preservan como referencia y no se importan en producto.
 
-Implementado: Leaflet 1.9.4 con teselas OSM al abrir el diálogo, navegación/clic y coordenadas
-manuales; dirección escrita manualmente y enlace generado en el servidor. Sin búsqueda por
-dirección ni integración Google Places. Horarios locales, zona IANA, hasta cuatro franjas por
+Implementado: la ubicación se busca con Google Places por la API (`BusinessPlaceSearch`) y se
+guarda el PlaceId con los datos manuales; el enlace lo arma el servidor. El mapa Leaflet/OSM se
+quitó el 2026-11-08 (front 98cf7f38). Horarios locales, zona IANA, hasta cuatro franjas por
 día y 32 fechas especiales; hasta 20 FAQ con respuestas vacías. JSONB nullable conserva textos,
 revisión, auditoría y comprobantes anteriores; el editor permite revisión manual de esos textos.
 Conflicto combina grupos atómicos; guardado incierto conserva cuerpo/UUID. Bootstrap y fixtures
-no se copiaron al producto. WhatsApp y generación siguen pendientes.
+no se copiaron al producto. Mandar el enlace de la ubicación por WhatsApp sigue sin programar.
 
-Mapa real revisado en navegador con ubicación de prueba; pruebas automáticas usan teselas y
-API simuladas. Disponibilidad/licencia de otro proveedor y validación en producción requieren
-su comprobación propia. [Política OSM](https://operations.osmfoundation.org/policies/tiles/),
-[evidencia y verificaciones](../../../ArquitecturaBase/docs/reviews/2026-10-03-informacion-del-negocio-guiada.md).
+Las pruebas automáticas simulan la búsqueda de lugares; límites, atribución y condiciones de
+Google están en [configurar Google Places](../../../ArquitecturaBase/docs/guides/configurar-google-places.md).
+La revisión del mapa anterior: [evidencia y verificaciones](../../../ArquitecturaBase/docs/reviews/2026-10-03-informacion-del-negocio-guiada.md).
 
 ## Procedencia: propuesta anterior
 

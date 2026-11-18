@@ -1,4 +1,4 @@
-# Ubicación por lugar: propuesta para aprobación
+# Ubicación por lugar: antecedente del buscador implementado
 
 Fecha: 2026-10-04. El recorrido externo original queda como antecedente. El pedido posterior de
 integrar autocomplete se implementó: nombre/ciudad → sugerencia → ficha completa de Google

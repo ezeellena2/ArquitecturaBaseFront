@@ -66,7 +66,7 @@ el resultado de la corrida completa, sin declarar una suite completa limpia ni u
 causa definitiva. No se actualizaron snapshots. Persisten HydrateFallback,
 NO_COLOR/FORCE_COLOR y, en la corrida larga, un intento de renovación silenciosa
 del arnés que encontró la API local apagada. Se cerraron sólo los servidores propios
-de pruebas en 5187; la vista compilada en 5185 queda disponible para evaluar.
+de pruebas en 5187; la vista compilada estuvo en 5185 durante esa ronda.
 
 ## Segunda ronda: composición nativa, solicitada el 2026-10-04
 
@@ -156,7 +156,7 @@ definitiva a esos timeouts ni se declara una corrida completa limpia. No se
 actualizaron snapshots. Persisten los avisos conocidos HydrateFallback y
 NO_COLOR/FORCE_COLOR. El cierre de Vite del arnés siguió esperando después de
 los casos; se identificó y cerró sólo cada servidor propio (5178/5187), obteniendo
-los códigos finales de las corridas. La vista compilada en 5185 queda para evaluación.
+los códigos finales de las corridas. La vista compilada estuvo en 5185 durante esa ronda.
 
 ## Primera ronda: rechazada, conservada como procedencia
 

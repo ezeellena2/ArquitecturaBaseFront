@@ -95,5 +95,5 @@ cuando se cerró la etapa 1, a pedido del chat que coordina la tanda del 11/11.
 | Sin conexión y no se pudo leer | `EmptyState` |
 | Cargando | `Skeleton` |
 
-Las escenas `arca-empty`, `arca-setup`, `arca-unverified`, `arca-active`, `arca-renewal` y `arca-read` de
-`src/test/visual/arca.spec.ts` guardan las capturas `arca-*.png`.
+Las escenas `arca-empty`, `arca-setup`, `arca-unverified`, `arca-active` y `arca-renewal` de
+`src/test/visual/arca.spec.ts` guardan las capturas `arca-*.png`; `arca-read` comprueba «Solo lectura» sin captura.

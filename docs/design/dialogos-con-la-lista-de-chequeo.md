@@ -160,7 +160,7 @@ asistente tiene el mismo problema («Texto · opción 1, opción 2 · Obligatori
   sintaxis no distingue una viñeta con datos de una lista de cosas: hay diez archivos con listas legítimas dentro de un
   diálogo (opciones, campos, el historial, las revisiones, los problemas de publicar). Lo cubren la lista de chequeo y la
   revisión.
-- La prueba manual y `test:visual`, con cada referencia que cambió revisada: la exportación, la baja, la eliminación,
+- La prueba manual. El `test:visual` pasó el 2026-11-11 (0977a90f), con cada referencia que cambió revisada: la exportación, la baja, la eliminación,
   publicar, los editores y los diálogos del catálogo, el envío de un formulario, la foto, la fecha especial, verificar y
   nuevo usuario.
 - Pasar los tableros al lienzo del sistema visual. T5 ya figura como reemplazado en [formularios](formularios-whatsapp.md).

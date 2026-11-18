@@ -2,7 +2,7 @@
 
 Fecha: **2026-10-08**, con las variantes de los cuatro incrementos de la Etapa 1 y el botón «Abrir formulario»
 agregados el **2026-10-10**.
-Estado al **2026-10-21**: Etapas 1–5, idioma original/traducción opcional (I1–I3), baja/reactivación/eliminación y menú/detalle **MF1, DC0 y DC1** implementados localmente. Los cierres fechados siguientes conservan su alcance histórico; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md). El [piloto total con Meta, OpenAI y Azure del 2026-10-20](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-total-con-proveedores-reales--2026-10-20) acreditó el recorrido anterior. Los pilotos propios de ciclo de vida y menú/detalle esperan su code review.
+Estado al **2026-11-18**: todo lo elegido está programado, de la Etapa 1 a «Por resolver» (F2, 2026-11-17). Al **2026-10-21** ya estaban las Etapas 1–5, idioma original/traducción opcional (I1–I3), baja/reactivación/eliminación y menú/detalle **MF1, DC0 y DC1**. Los cierres fechados siguientes conservan su alcance histórico; las reglas vigentes están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md). El [piloto total con Meta, OpenAI y Azure del 2026-10-20](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#formularios-piloto-total-con-proveedores-reales--2026-10-20) acreditó el recorrido anterior. Los code review de baja y de menú/detalle se hicieron el 2026-10-21 (abajo); sus pilotos con Meta son pruebas aparte.
 
 Origen: la página «Formularios por WhatsApp» del Artifact
 [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el Artifact es privado
@@ -83,8 +83,8 @@ Incremento 1 de la Etapa 1, crear y editar (2026-10-10). Son variantes de los ta
 | [E · Textos en dos idiomas](evidence/formularios-whatsapp/e1-e-idiomas.png) | Español e inglés en el mismo editor: un idioma a la vez con el original debajo, lo que falta marcado en la fila, el campo y la vista previa. Se guarda incompleto; para publicar hacen falta los dos. Su regla de idioma la reemplaza I1 (2026-10-18). |
 
 Incremento 2 de la Etapa 1, publicar en WhatsApp (2026-10-10). Variantes del tablero 04 y del editor e1-1, sobre el
-contrato de publicación de entonces (hoy en [formularios](../../../ArquitecturaBase/docs/features/formularios.md)). Quedan a
-definir las acciones de «Necesita revisión». Decidido el 2026-10-10: se publica solo lo guardado (D4) y en español e
+contrato de publicación de entonces (hoy en [formularios](../../../ArquitecturaBase/docs/features/formularios.md)). Las acciones
+de «Necesita revisión» las fijó después EP1-A (2026-11-06). Decidido el 2026-10-10: se publica solo lo guardado (D4) y en español e
 inglés, con las traducciones cargadas en el editor (D5, variante E). Desde el 2026-10-18, I2 e I3 reemplazan esa exigencia de idioma.
 
 | Captura | Qué define |
@@ -156,7 +156,7 @@ reemplazado** el 2026-11-11 por [EX1-A](dialogos-con-la-lista-de-chequeo.md#el-d
 lo que se exporta en dos columnas, «Columnas» con su (i) y «Archivo» y «Filas» al final.
 
 Etapa 3, planilla de respuestas (2026-10-10). **Diseño elegido**: los tableros 06 y 07 recortados a esta etapa,
-sin aprobación, PDF ni asistente. Cargar desde la web queda para después (decidido el 2026-10-10).
+sin aprobación, PDF ni asistente. Cargar desde la web quedó para después (decidido el 2026-10-10) y llegó el 2026-10-30 con la [carga desde la app](carga-desde-la-app.md).
 
 | Captura | Qué define |
 | --- | --- |
@@ -213,7 +213,7 @@ por día en cada conversación; cambiar el modo pide el permiso nuevo «Configur
 | [H6 · Audios en el chat](evidence/formularios-whatsapp/asi-h6-audios.png) | **Elegido el 2026-10-16.** El audio se baja y se pasa a texto; el operador lo escucha con su transcripción y el asistente lo lee como texto. Sin transcripción, queda para un operador; sigue la retención de los mensajes. |
 | [H7 · Formularios que faltan](evidence/formularios-whatsapp/asi-h7-faltan.png) | **Elegido el 2026-10-16.** Los pedidos agrupados por tema, con cuántos, de cuántas personas y cuándo, sin nombres ni mensajes; crear el formulario o descartar. |
 
-Los tableros s1–s4 están elegidos para la Etapa 5: un formulario puede sugerir otro sin convertirlos en un circuito.
+Los tableros s1–s4 se eligieron y se programaron en la Etapa 5: un formulario puede sugerir otro sin convertirlos en un circuito.
 El modelo y las reglas están en los
 [resúmenes por etapa](../../../ArquitecturaBase/docs/plans/formularios/README.md).
 
@@ -375,7 +375,7 @@ Las respuestas de la Etapa 1 ya se guardan con su versión y su número: cuando 
 | Acciones de fila | `RowActions` |
 | Etiquetas de estado | `Badge` |
 | Burbujas y línea del tiempo | `MessageBubble`, `MessageHistory`, `MessageDateDivider` |
-| Íconos | `shared/ui/icons`; faltan el del formulario (portapapeles) y el de arrastre |
+| Íconos | `shared/ui/icons`; el del formulario es `ClipboardIcon` y no hay ícono de arrastre |
 
 Una pieza que no exista se sube a `shared/ui` con su prueba, no se dibuja local en la feature.
 

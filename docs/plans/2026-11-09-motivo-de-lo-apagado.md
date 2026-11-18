@@ -41,7 +41,8 @@ prueba integral, y se aplicó al front en un momento con el front quieto.
   60 s por test, sólo en la copia). `test:visual`: 1001 de 1017; las 16 de `formOverview` fallan igual sin este cambio,
   desde UD1. Sobre `c1a8251c` se repitieron los 14 tests y las 4 escenas que cambiaron después: pasan, salvo los dos
   primeros de `FormsPage` por la carga (solo, 58 de 58) y 6 de `formLifecycle` y `responsesRows`, que fallan igual sin
-  este cambio. Falta repetir la corrida completa normal con la PC tranquila.
+  este cambio. La corrida completa de `vitest` pasó después, el 2026-11-17, sobre `93eb8eb0` (tipos, lint, build y 6.022
+  tests).
 
 Falta la prueba manual guiada: en el celular, tocar «Permitir elegir varias» en una pregunta del bloque y una (i); en la
 compu, llegar con Tab a un botón apagado y escucharlo con el lector. También falta pasar el tablero al lienzo del sistema

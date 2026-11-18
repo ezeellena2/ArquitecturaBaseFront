@@ -36,7 +36,10 @@ y [auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md).
 - `aspire run` desde `../ArquitecturaBase`: Postgres, Redis, Api y front en `https://localhost:5173`.
 - `npm run dev`: solo el front en `http://localhost:5173`, con la Api aparte; el ingreso real no anda por http (las
   redirect URIs son `https`).
-- `npm run test` o `npm run test:watch`.
+- `npm run build` (`tsc -b` y Vite), `npm run lint` (Oxlint y las reglas de `src/test/architecture`, que
+  `npm run test:design` corre solas) y `npm run test` o `npm run test:watch`.
+- `npm run test:visual` (Playwright contra las capturas versionadas; `test:visual:update` sólo tras una decisión
+  autorizada) y `npm run catalog` (el catálogo local en el puerto 5178): [estándar](guides/estandar-visual.md#catálogo-y-revisión-con-navegador).
 
 ## Estructura
 
@@ -150,7 +153,7 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   `Accept-Language`; `lang` sigue a `languageChanged`. Configurar la instalación no cambia la sesión actual.
 - Datos con TanStack Query, sin `useEffect` con `fetch`; HTTP solo por `shared/api/httpClient` (token, idioma, `ApiError`).
   Tokens en memoria. Los permisos del front son experiencia; decide el backend.
-- Tailwind y tokens de `index.css`; `shared/ui` sin colores propios. Clases con `cn` (de `shared/lib/utils`), sin `clsx` ni `tailwind-merge`.
+- Tailwind y tokens de `index.css`; `shared/ui` sin colores propios. Clases con `cn` de `shared/lib/utils`, que reexporta el paquete `cn` de shadcn (los generados lo importan directo), sin `clsx` ni `tailwind-merge`.
 - Un `fieldset` con rótulo propio deja el `legend` en `sr-only` y dibuja la banda con `aria-hidden`. Nunca `fieldset` en
   una tabla: en las bandas de `PermissionPicker` (el celular) cada área es un `tbody` con `aria-labelledby`, y en su matriz
   (escritorio) la nombra un `TableRowHeader`.
@@ -163,7 +166,8 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - Fechas: además de los formateadores de las premisas, `formatTimeInZone` (hora de un mensaje) y `calendarDateInZone`
   (agrupar por día) en `shared/lib/dateTime`. Un valor tipado (entero, decimal, fecha sin hora, sí/no) se muestra sólo con
   `shared/lib/typedValue`, igual en tablas, importación, resúmenes, respuestas y el chat; las fechas con hora siguen con
-  `formatDateInZone`/`formatDateTimeInZone`.
+  `formatDateInZone`/`formatDateTimeInZone`. Un porcentaje sale de `formatPercent` (`shared/lib/numberFormat`), pegado al
+  número en los dos idiomas («21%»), como los demás números de las premisas.
 - `IconButton` incluye `ActionTooltip` y usa `disabledLabel` con un motivo concreto. En `RowActions`, sin permiso se pasa
   `hidden`: un botón deshabilitado no recibe foco. Un control con texto deshabilitado por un motivo que no es obvio usa
   `DisabledReason`: el motivo sobre el mismo control, que se abre al pasar el mouse, con el foco, con un clic o con un
@@ -239,6 +243,9 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
 - **IA** ([guía](../src/features/artificial-intelligence/AGENTS.md)): `/configuracion/ia` (`ai.read`, `ai.manage`) y
   `/configuracion/negocio` (`ai.business.read`/`manage`), sin depender de settings ni WhatsApp. Plegar o paginar el panel
   de Inicio no llama al modelo.
+- **ARCA** ([guía](../src/features/arca/AGENTS.md), [diseño](design/arca-conexion.md)): `/configuracion/arca` (`arca.read`),
+  una sola pantalla por zonas (AC1-A, AC2-A), con la delegación guiada (DG1-A, DG2-A) y el robot (RB1-A a RB5-A). Cada
+  familia (conexión, padrón, facturación) tiene su carpeta y no importa a otra.
 - **Formularios** ([guía](../src/features/business-forms/AGENTS.md), [diseño](design/formularios-whatsapp.md),
   [contrato](../../ArquitecturaBase/docs/features/formularios.md)): `/formularios` implementa A–E y P1–P3, con I1–I3 como reemplazo de E/P1 para idiomas; WhatsApp,
   C1–C5 y R1–R3, sin importar `business-forms`. MF1 reúne formularios según Read o Decide; cada formulario contiene su planilla y pendientes. D2 conserva URL, orden y un único dueño de decisión; DC0/DC1 reutiliza ese dueño en pantalla completa.

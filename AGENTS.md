@@ -12,7 +12,7 @@ Antes de desarrollar o modificar una pantalla, leé [`docs/guides/premisas-de-de
 
 Los mensajes tienen un [contrato único](docs/guides/mensajes-y-estados.md), obligatorio en todas las
 pantallas públicas y privadas, incluidos formularios y diálogos. Una feature no define su propia
-política. La [adopción del código existente](docs/plans/2026-09-30-unificacion-mensajes.md) está pendiente:
+política. La [adopción](docs/plans/2026-09-30-unificacion-mensajes.md) sigue abierta en las recuperaciones:
 seguir ese inventario; no declarar una pantalla unificada solo por documentarla o encontrar el texto
 en un test. El diseño define canal, dueño y recuperación antes del desarrollo; el cierre requiere
 pruebas de ubicación, duplicación y conservación del borrador, además de los checks generales.

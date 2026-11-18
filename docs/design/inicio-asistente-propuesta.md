@@ -30,8 +30,8 @@ continúa la elección ya aprobada, sin reabrir comparaciones.
 La aplicación ahora compone el Inicio en app/AuthenticatedHome, con `@assistant-ui/react` 0.15.23
 y estado confirmado por la API. El código del laboratorio y sus transportes no se promocionaron.
 Fixtures sólo en tests acreditan la interacción/representación; la revisión conjunta del backend
-registra por separado PostgreSQL, workers y handlers falsos. Los perfiles reales/proveedor facturable
-y la sincronización del Artifact permanecen pendientes explícitos.
+registra por separado PostgreSQL, workers y handlers falsos. Los perfiles reales
+de Inicio ya están calificados con OpenAI ([configurar IA](../../../ArquitecturaBase/docs/guides/configurar-ia.md)); sigue pendiente sincronizar el Artifact.
 
 El [registro del front](../verification/inicio-asistente-2026-10-04.md) conserva comandos,
 comprobación de retirada y alcance de las simulaciones. Las secciones históricas siguientes

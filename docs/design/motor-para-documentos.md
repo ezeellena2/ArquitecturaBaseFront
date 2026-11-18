@@ -46,7 +46,7 @@ congela lo elegido. El alcance y el backend están en el
   anterior a esa premisa (UD1); en el celular, una tarjeta por estándar con la línea en gris y «Agregar» de todo el ancho.
   `FormStandardAddDialog` pide nombre, prefijo (el que sugiere el servidor, `suggestedPrefix`, que mira los prefijos en uso) y
   carpeta («La del estándar» o una de Diseñar formularios). Escena en `src/test/visual/forms-library.spec.ts`.
-- RE1-A: la zona `ResponseResults`, primera en `ResponseAnswer`, y una columna por dato en la planilla, agrupadas por acción en
+- RE1-A: la zona `ResponseResults`, dentro de la zona de la emisión (`ResponseIssuance`, EM1-A), que va primera en el detalle y en la pantalla completa, y una columna por dato en la planilla, agrupadas por acción en
   «Columnas» (`responseResultColumnId`). El grupo «De «Emitir comprobante en ARCA»» de «Agregar dato» lo sumó la etapa 4 con
   su acción.
 - Escenas sin golden en `src/test/visual/formEngine.spec.ts`. Faltan la prueba manual y las capturas del backend.

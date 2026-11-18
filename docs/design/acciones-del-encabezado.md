@@ -8,7 +8,7 @@ etiqueta «Recibida» y los íconos (⋮, pantalla completa, conversación, ↑ 
 puntitos». Pidió un estándar para toda la app que diga qué acciones van a la vista y cuáles en ⋮, y que entre en la
 [lista de chequeo](visual-baseline.md#lista-de-chequeo-de-diseño). Los tableros están en el lienzo aparte
 [Diálogos con la lista de chequeo](https://claude.ai/artifact/NUTGFtcXh7QPq8wnpJ6K6c), fila «Las acciones de un
-encabezado». El [plan](../plans/2026-11-09-acciones-del-encabezado.md) lo lleva al código cuando se elija.
+encabezado». El [plan](../plans/2026-11-09-acciones-del-encabezado.md) lo llevó al código el 2026-11-11 (tareas 1 a 5).
 
 ## Hoy (AC0)
 

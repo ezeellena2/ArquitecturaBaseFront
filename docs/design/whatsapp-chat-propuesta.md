@@ -6,7 +6,7 @@ Esta sección conserva la ronda inicial. El usuario pidió la implementación pr
 el 2026-10-03: /configuracion/negocio, permisos ai.business.read/ai.business.manage,
 persistencia y comprobantes reales. [Reglas finales](../../../ArquitecturaBase/docs/features/inteligencia-artificial.md#información-del-negocio--2026-10-03)
 y [evidencia posterior](../../../ArquitecturaBase/docs/reviews/2026-10-03-informacion-del-negocio.md).
-Las sugerencias siguen siendo simuladas. Los 80/82 citados abajo pertenecen a esa
+Las sugerencias de esta maqueta son simuladas; en el producto, el chat muestra la sugerencia del asistente con «Usar como borrador» (AS4, 2026-11-12). Los 80/82 citados abajo pertenecen a esa
 ronda; la nueva ejecución completa terminó 95/95 sin actualizar referencias de Usuarios.
 
 El usuario pidió realizar el siguiente paso del plan: maquetar el editor antes de
@@ -144,7 +144,7 @@ No se modificó backend ni se levantó Aspire.
 El tablero de sugerencias usa `AiReviewChatProposal` y `aiReviewCopy.ts`; la conexión
 de IA sigue en `?screen=ia`. El 2026-10-03 se aprobó conservar el diseño y ajustar sólo
 Sugerir con IA al verde principal, con historial + información básica del negocio como
-contexto. Su integración productiva está pendiente y no modifica `/whatsapp/chat`,
+contexto. No se integró así (el chat suma la sugerencia del asistente, AS4, sin «Sugerir con IA») y no modifica `/whatsapp/chat`,
 sus endpoints ni el backend. Conserva Campo, Public Sans,
 la bandeja y los componentes MessageHistory/MessageBubble ya aprobados.
 
@@ -213,7 +213,7 @@ Ejecutar `npm run dev -- --host 127.0.0.1 --port 5181` y abrir
 La arquitectura del front permite fuentes locales operativas cuando el Artifact
 privado requiere sesión. Esta revisión se conserva en el laboratorio local, como
 la propuesta de Configuración. **No se modificó ni sincronizó el Artifact externo**;
-Contactos, IA, Plantillas y Conexión siguen pendientes de elección/promoción según el fundamento
+Contactos, Plantillas y Conexión siguen pendientes de elección (la IA se promovió a `/configuracion/ia` y `/configuracion/negocio`) según el fundamento
 visual. La elección del chat y el panel compartido ya se aplicaron al producto; no se importa
 el layout temporal del laboratorio desde una ruta productiva.
 

@@ -139,9 +139,10 @@ npm run test:visual
 ```
 
 La suite levanta Vite, lo detiene al terminar y compara capturas con los
-[archivos versionados](../../src/test/visual/screenshots/). Comprueba Usuarios, Roles, editor,
-Configuración, Perfil y catálogo a 1440 y 320 px; inglés y acceso público a 390 px;
-scroll de tabla, foco con cabecera adherida, filtros por teclado, diálogo y comparación de revisiones.
+[archivos versionados](../../src/test/visual/screenshots/). Hay una escena por área (86 archivos `*.spec.ts`):
+administración, perfil, acceso público, catálogo, Inicio, IA, WhatsApp, formularios, catálogos, documentos y ARCA, por lo
+general en es/en a 1440, 390 y 320 px, con scroll de tabla, foco con cabecera adherida, teclado, diálogos y comparaciones.
+Algunas escenas sólo dejan evidencia en `test-results`, sin referencia versionada; su encabezado lo dice.
 La base se revisó en Windows con el Chromium instalado por la versión de Playwright del lockfile.
 Un cambio de navegador o plataforma puede requerir una nueva revisión de la rasterización de fuentes.
 

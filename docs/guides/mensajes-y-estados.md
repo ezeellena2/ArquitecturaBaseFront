@@ -180,7 +180,7 @@ todavía no ocurrió: ver el [plan y el relevamiento de las pantallas](../plans/
 
 Los errores desconocidos y de red tienen dos reintentos como máximo (tres pedidos en total); HTTP y cancelación no se reintentan. QueryCache conserva datos anteriores, deduplica por queryHash y retira una acción al salir el último observador. Las tablas sólo reemplazan contenido si no hubo datos; incluso una colección vacía conocida cuenta como datos.
 
-Alta/edición de usuarios, roles y perfil notifican fallos generales conservando valores; los campos permanecen en sus controles. Una respuesta de campo después de cerrar el diálogo se notifica sin reabrirlo. El nombre guardado que impide reenviar una invitación no se presenta como campo del reenvío. Acceso y verificación comparten cancelación, error técnico y distinción de 401/403 públicos. El canje incierto de un enlace requiere una nueva vista previa antes de repetir.
+Alta/edición de usuarios, roles y perfil notifican fallos generales conservando valores; los campos permanecen en sus controles. Una respuesta de campo después de cerrar el diálogo se notifica sin reabrirlo. El nombre guardado que impide reenviar una invitación no se presenta como campo del reenvío. Acceso y verificación comparten cancelación, error técnico y distinción de 401/403 públicos. El canje de un enlace de ingreso se retiró el 2026-11-16 con `/ingresar`.
 
 El único Toaster se aloja en un host manual de la capa superior del navegador dentro del Dialog activo. Conserva el foco modal, la ubicación global, anuncios y cierre por teclado sin otro Toaster. Las pruebas de escritorio y 320 px también conservan las capturas previas.
 

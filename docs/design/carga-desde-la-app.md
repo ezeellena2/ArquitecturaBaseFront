@@ -1,7 +1,7 @@
 # Carga desde la app: tableros elegidos
 
 Fecha: **2026-10-29**, con las reglas de cómo se arma un formulario (CW12, CW13-A y CW16) agregadas el **2026-10-30**.
-Estado al **2026-10-30**: Etapa 1 implementada localmente en el backend y el front. Las reglas vigentes están en
+Estado al **2026-11-18**: las cinco etapas están programadas en el backend y el front (la 1 el 2026-10-30 y las demás hasta el 2026-11-05, con su fecha en cada sección), también AR1-A, AR2-A y LD1-A a LD3-A. Las reglas vigentes están en
 [formularios](../../../ArquitecturaBase/docs/features/formularios.md#carga-desde-la-app--etapa-1-2026-10-30) y el alcance y las
 decisiones, en el [plan](../../../ArquitecturaBase/docs/plans/2026-10-29-cargar-formularios-desde-la-app.md).
 
@@ -38,7 +38,7 @@ Cómo se arma un formulario (2026-10-30):
 | **CW13-A · Unidades en la etiqueta** (elegida) | La unidad la escribe el autor en la etiqueta, «Densidad (kg/ha)», igual en todos lados; el campo no la muestra adentro. |
 | **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) deja dos anchos, una columna o el renglón entero, y el panel con sus zonas. |
 
-Quedan para etapas siguientes, con su tablero en el mismo lienzo: la vista propia de quien sólo completa (Etapa 2, [hecha](#lo-propio-etapa-2--2026-11-04)), corregir
+Las etapas siguientes, con su tablero en el mismo lienzo, también quedaron programadas: la vista propia de quien sólo completa (Etapa 2, [hecha](#lo-propio-etapa-2--2026-11-04)), corregir
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
 Etapa 5 ([hechos](#títulos-de-sección-cw15-b--2026-11-05)).
 
@@ -177,8 +177,8 @@ mostrar las casillas en columnas.
   columna, con las fotos y los documentos al final y no donde los puso el autor. Número y fecha siguen angostos.
 
 Con A, los tres formularios del tablero llenan sus renglones, salvo uno en el de fotos y documentos: la cuarta pregunta de un
-valor antes de un texto largo queda sola. Para ordenar un formulario largo están los títulos de sección (CW15-B), que siguen
-en la Etapa 5 del plan.
+valor antes de un texto largo queda sola. Para ordenar un formulario largo están los títulos de sección (CW15-B), programados
+en la Etapa 5 (2026-11-05).
 
 ## Mantener lo cargado en la página, AR2-A — 2026-11-02
 
@@ -345,7 +345,7 @@ Diferencias con el dibujo:
 ## Elegir primero por un campo, LD1-A a LD3-A — 2026-11-07
 
 El editor y la carga, también en la tabla de ítems, quedaron programados el 2026-11-07, y LD3-A el mismo día, con la Etapa 2
-de renglones; WhatsApp sigue por programar. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones
+de renglones; por WhatsApp (LD2-A), en el backend el 2026-11-07 y el 2026-11-08. Una pregunta de catálogo pide primero el valor de un campo del mismo catálogo y después lista sólo las opciones
 con ese valor, como dibujan
 **LD1-A** («Elegir primero por un campo»), **LD2-A** («Las dos listas en la misma pantalla») y, para las listas
 dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del

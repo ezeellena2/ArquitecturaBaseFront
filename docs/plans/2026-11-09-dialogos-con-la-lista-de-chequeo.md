@@ -1,7 +1,8 @@
 # Diálogos con la lista de chequeo
 
 Fecha: **2026-11-09**. Estado: **elegidas las recomendadas el 2026-11-11 y programadas el mismo día (tareas 1 a 7; la 8
-no se agregó); falta el cierre**.
+no se agregó); el `test:visual` se revisó el 2026-11-11 (0977a90f) y los controles completos del front pasaron el
+2026-11-17 sobre `93eb8eb0`. Faltan la prueba manual y pasar los tableros al lienzo; después se retira el plan**.
 
 El [diseño](../design/dialogos-con-la-lista-de-chequeo.md) rehace el diálogo «Exportar respuestas a Excel» con la
 [lista de chequeo de diseño](../design/visual-baseline.md#lista-de-chequeo-de-diseño) y propone cómo quedan los demás

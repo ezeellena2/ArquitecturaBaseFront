@@ -1,6 +1,8 @@
 # Las acciones de un encabezado
 
-Fecha: **2026-11-09**. Estado: **AC1-A elegida el 2026-11-11 y programada el mismo día (tareas 1 a 5); falta el cierre**.
+Fecha: **2026-11-09**. Estado: **AC1-A elegida el 2026-11-11 y programada el mismo día (tareas 1 a 5); las referencias visuales se revisaron el 2026-11-11 (0977a90f)
+y los controles completos del front pasaron el 2026-11-17 sobre `93eb8eb0`. Faltan la prueba manual y pasar los tableros
+al lienzo; después se retira el plan**.
 
 El [diseño](../design/acciones-del-encabezado.md) propone qué acciones van a la vista y cuáles en ⋮, en toda la app.
 Este plan supone AC1-A, la recomendada; con otra, cambian las tareas 2 a 4. Los tableros están en el lienzo aparte

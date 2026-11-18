@@ -582,8 +582,12 @@ Sin elección; no se implementan sin ella.
   contrato del chat productivo.
 - Sugerencias de IA (`?screen=sugerencias`). Aprobados: Sugerir con IA como `Button` principal verde y el contexto
   historial + información del negocio. [Plan](../../../ArquitecturaBase/docs/plans/2026-10-03-sugerencias-ia-whatsapp.md).
+  El chat ya muestra la sugerencia del asistente con «Usar como borrador» (AS4, 2026-11-12), sin este botón: falta
+  decidir si la propuesta se retira.
 - Burbujas con forma inspirada en Chatscope (`libraries/shapes.html`): [diseño](whatsapp-bibliotecas-propuesta.md).
-- Ubicación por ficha de Maps (`?screen=ubicacion-lugar`): [diseño](ubicacion-por-lugar.md).
+
+La ubicación por ficha de Maps (`?screen=ubicacion-lugar`) dejó de ser propuesta: el buscador con el PlaceId está en
+Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como antecedente.
 
 ## Mapa Artifact → proyecto
 
@@ -605,16 +609,16 @@ Sin elección; no se implementan sin ella.
 | Casos del asistente | Pantalla Asistente del panel de WhatsApp y el chat | [Pantalla programada el 2026-11-11](asistente-casos.md#diferencias-de-lo-programado--2026-11-11); [el chat (AS4), el 2026-11-12](asistente-casos.md#el-chat-as4--2026-11-12): «Necesita una persona» con su filtro, el porqué de cada respuesta, sus líneas y el texto para el compositor; falta la prueba manual |
 | Mejoras de catálogos | Editor de catálogos, «Elegir de un catálogo» y las respuestas | [E1 implementado y recorrido local](catalogos-mejoras.md#recorrido-local-de-e1--2026-10-22) |
 | Campos extra de catálogos | Editor de catálogos, «Elegir de un catálogo», «Datos de las personas», «Editar usuario» y las respuestas | [E2 implementado; alcance y evidencia](catalogos-campos-extra.md) |
-| Documentos por WhatsApp · DOC1 a DOC7; UC0 a UC6 y VC1 a VC5, en el lienzo aparte «Ubicación, contacto y varias cargas por WhatsApp» | «Biblioteca», «Lectura de documentos» y «Ubicación y contacto» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Tableros elegidos, por programar](documentos.md), también [UC1-A y VC1-A](documentos.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel) (2026-11-11) |
+| Documentos por WhatsApp · DOC1 a DOC7; UC0 a UC6 y VC1 a VC5, en el lienzo aparte «Ubicación, contacto y varias cargas por WhatsApp» | «Biblioteca», «Lectura de documentos» y «Ubicación y contacto» en el editor, el chat, «Documentos recibidos» y la pestaña «Tablero» | [Programados](documentos.md) del 2026-11-11 al 2026-11-13, también [UC1-A y VC1-A](documentos.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel); faltan dibujar el porqué de un documento en el chat (DOC2), la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Implementado](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; falta la prueba manual y pasar los tableros al lienzo del sistema visual |
-| Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [EX1-A, EX2-A y DL implementados](dialogos-con-la-lista-de-chequeo.md) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar los tableros al lienzo del sistema visual |
+| Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [EX1-A, EX2-A y DL implementados](dialogos-con-la-lista-de-chequeo.md) el 2026-11-11, con el `test:visual` revisado el mismo día (0977a90f); faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas, y «Filas» llegó al diálogo el 2026-11-11 con EX1-A |
 | Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [AC1-A implementada](acciones-del-encabezado.md) el 2026-11-11, con la regla en [íconos y acciones](#íconos-y-acciones); falta la prueba manual |
-| Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Tableros elegidos, por programar](formularios-solo-en-la-app.md) |
-| La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md) |
+| Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Implementados](formularios-solo-en-la-app.md) el 2026-11-11, con la escena `formAppOnly`; faltan el lector del contrato `app-only`, la prueba manual y pasar los tableros al lienzo del sistema visual |
+| La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md); faltan sus escenas de `test:visual`, los lectores del contrato y la prueba manual |
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
-| Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
+| Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -660,7 +664,7 @@ Al verificar el arnés compilado se comprobó que la optimización de Tailwind t
 
 ## Menú y detalle de formularios — 2026-10-21
 
-MF1 y DC0/DC1 ajustado de la versión 96 están implementados junto con D2 como vista rápida. El [cierre visual y su evidencia](formularios-whatsapp.md#cierre-local-de-menú-y-detalle--2026-10-21) conserva es/en a 1440/390/320, la distinción Read/Decide y el alcance del visor PDF; las referencias elegidas se mantienen. El piloto real con Meta espera el code review propio.
+MF1 y DC0/DC1 ajustado de la versión 96 están implementados junto con D2 como vista rápida. El [cierre visual y su evidencia](formularios-whatsapp.md#cierre-local-de-menú-y-detalle--2026-10-21) conserva es/en a 1440/390/320, la distinción Read/Decide y el alcance del visor PDF; las referencias elegidas se mantienen. Su code review se hizo el mismo día; el piloto real con Meta es una prueba aparte.
 
 
 ## Catálogos E2 — 2026-10-23

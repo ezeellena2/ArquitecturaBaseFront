@@ -2,9 +2,9 @@
 
 Fecha: **2026-10-22**. **Elegidos DOC5-A y DOC7-A, con DOC1–DOC4 y DOC6**, de la versión 116 del lienzo; la 117 los marca
 y suma las correcciones al elegir (abajo), la 118 agranda DOC5-A para que entren sus notas y la 119 deja DOC2 y DOC4 como
-quedaron en el plan. Por programar, salvo DOC1: la pantalla «Biblioteca», sin la lectura de documentos, llegó con la etapa 2
+quedaron en el plan. Todos programados en el backend y el front del 2026-11-11 al 2026-11-13, con sus cohortes HTTP exportadas el 2026-11-17 (front 9aa157ae), salvo el porqué de un documento en el chat del operador (DOC2), que el chat todavía no dibuja. DOC1: la pantalla «Biblioteca», sin la lectura de documentos, llegó con la etapa 2
 de ARCA (BI1-A, [motor para documentos](motor-para-documentos.md)), y la lectura en el editor y lo que lee cada estándar, al front
-el 2026-11-11 ([cómo quedó](#doc1--la-biblioteca-y-la-lectura-2026-11-11)), mientras se programa su backend. DOC7-A, el
+el 2026-11-11 ([cómo quedó](#doc1--la-biblioteca-y-la-lectura-2026-11-11)). DOC7-A, el
 tablero de cada formulario, quedó programado en back y front el 2026-11-11 ([cómo quedó](#doc7-a--tarjetas-armadas-solas-2026-11-11)).
 El mismo día se eligieron UC1-A y VC1-A, de un lienzo aparte, para la ubicación y el contacto que se comparten y varias cargas
 desde un Excel ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)), por programar.
@@ -67,7 +67,7 @@ lienzo) y la maqueta ya lo muestran, y las capturas de arriba son las corregidas
 
 ## Ubicación y contacto por WhatsApp (W3) y varias cargas desde un Excel
 
-Fecha: **2026-11-11**. **Elegidos UC1-A y VC1-A**, los recomendados, por programar: son las tareas 19 a 30 del
+Fecha: **2026-11-11**. **Elegidos UC1-A y VC1-A**, los recomendados, y programados el 2026-11-12 y el 2026-11-13: son las tareas 19 a 30 del
 [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel),
 después de las tareas 1 a 16 y antes del cierre. Es lo que la implementación de DOC1 a DOC7 dejaba afuera, aunque DOC2 lo había
 dibujado: la ubicación y el contacto que la persona comparte por su cuenta mientras tiene un formulario abierto (W3 de la
@@ -541,7 +541,7 @@ conversación con cuenta vinculada, también con el historial arriba, y la de un
   «Foto», sin segunda línea; los tableros la nombran («comprobante.jpg»).
 - **Lo que DOC2 y DOC4 no dibujan en el chat del operador:** un PDF con sus páginas, un Word, uno de otro tipo y uno vencido, que
   siguen la tarjeta de la planilla, y varios seguidos de un número sin cuenta, con la línea una vez, debajo del último.
-- «Por qué lo propuso» y «Por qué preguntó» debajo del documento llegan con el circuito (tarea 9).
+- «Por qué lo propuso» y «Por qué preguntó» debajo del documento: la tarea 9 los manda en `why` y el guard los lee, pero el chat todavía no los dibuja (pendiente).
 
 ### UC1-A · Ubicación y contacto en el editor (2026-11-12)
 
