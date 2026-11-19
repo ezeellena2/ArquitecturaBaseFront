@@ -64,16 +64,15 @@
     }
   },
   "picker": {
-    "columns": {
-      "wholeArea": "Todo el área",
-      "area": "Área",
-      "read": "Ver",
-      "manage": "Administrar",
-      "others": "Otros permisos"
-    },
     "title": "Permisos",
+    "permission": "Permiso",
+    "open": "Abrir {{area}}",
+    "close": "Cerrar {{area}}",
     "pickAllFor": "Elegir todos los permisos de {{area}}",
-    "clearAllFor": "Quitar todos los permisos de {{area}}"
+    "clearAllFor": "Quitar todos los permisos de {{area}}",
+    "quoted": "«{{name}}»",
+    "includedBy_one": "Lo incluye {{names}}.",
+    "includedBy_other": "Lo incluyen {{names}}."
   },
   "delete": {
     "title": "Eliminar el rol {{name}}",

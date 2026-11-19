@@ -16,16 +16,18 @@ vi.mock("react-oidc-context", async () => {
   return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) };
 });
 
+// El catálogo del núcleo, como lo manda el backend: «Administrar» incluye «Ver».
 const permissionGroups: PermissionGroup[] = [
   {
     area: "users",
     name: "Usuarios",
     permissions: [
-      { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
+      { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta.", includes: [] },
       {
         code: "users.manage",
         name: "Administrar usuarios",
         description: "Dar de alta, editar, desactivar y eliminar cuentas.",
+        includes: ["users.read"],
       },
     ],
   },
@@ -33,8 +35,8 @@ const permissionGroups: PermissionGroup[] = [
     area: "roles",
     name: "Roles",
     permissions: [
-      { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno." },
-      { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles." },
+      { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno.", includes: [] },
+      { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles.", includes: ["roles.read"] },
     ],
   },
   {
@@ -45,10 +47,18 @@ const permissionGroups: PermissionGroup[] = [
         code: "settings.manage",
         name: "Administrar la configuración",
         description: "El modo de registro y los ajustes del sistema.",
+        includes: [],
       },
     ],
   },
 ];
+
+const areas = ["Usuarios", "Roles", "Configuración"];
+
+/// La flecha de un área, que dice si está abierta.
+function areaArrow(area: string) {
+  return within(screen.getByRole("rowgroup", { name: area })).getByRole("button", { name: new RegExp(`^(Abrir|Cerrar) ${area}$`) });
+}
 
 const admin: RoleListItem = {
   id: "r1",
@@ -153,7 +163,7 @@ describe("RoleEditorPage", () => {
     vi.restoreAllMocks();
   });
 
-  it("creates a role, says so and goes back to the listing", async () => {
+  it("creates a role with every area closed at first, says so and goes back to the listing", async () => {
     const toastSuccess = vi.spyOn(toast, "success");
     const created: unknown[] = [];
     server.use(
@@ -177,13 +187,17 @@ describe("RoleEditorPage", () => {
     await userEvent.paste("  Mesa de ayuda  ");
     await userEvent.click(screen.getByRole("textbox", { name: "Descripción" }));
     await userEvent.paste(" Atiende a los usuarios. ");
-    // Todas las áreas están a la vista: no hay nada que abrir.
-    await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
+    // Un rol nuevo no tiene nada: todas sus áreas empiezan cerradas, y se abre la que se quiere dar.
+    areas.forEach((area) => expect(areaArrow(area)).toHaveAttribute("aria-expanded", "false"));
+    expect(screen.queryByRole("checkbox", { name: "Ver usuarios" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Abrir Usuarios" }));
+    // «Administrar usuarios» incluye «Ver usuarios»: se guarda lo que el rol permite.
+    await userEvent.click(screen.getByRole("checkbox", { name: "Administrar usuarios" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     await waitFor(() =>
       expect(created).toEqual([
-        { name: "Mesa de ayuda", description: "Atiende a los usuarios.", permissions: ["users.read"] },
+        { name: "Mesa de ayuda", description: "Atiende a los usuarios.", permissions: ["users.manage", "users.read"] },
       ]),
     );
     expect(await screen.findByRole("heading", { level: 1, name: "Roles y permisos" })).toBeInTheDocument();
@@ -413,6 +427,37 @@ describe("RoleEditorPage", () => {
     );
   });
 
+  it("opens an old role with «Administrar» and without «Ver» with both, with nothing to save, and saves both", async () => {
+    // Guardado antes de que «Administrar usuarios» incluyera «Ver usuarios»: el backend lo devuelve como quedó.
+    const legacy: RoleListItem = { id: "r5", name: "Mesa", description: null, isSystemRole: false, userCount: 1, revision: 1, permissions: ["users.manage"] };
+    const updates: unknown[] = [];
+    server.use(
+      ...editorHandlers([...roles, legacy]),
+      http.put("/api/roles/r5", async ({ request }) => {
+        updates.push(await request.json());
+
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderRouteWithProviders("/roles/r5");
+    expect(await screen.findByRole("heading", { level: 1, name: "Editar el rol Mesa" })).toBeInTheDocument();
+
+    // Se siembra con lo que el rol permite de verdad: «Ver usuarios» llega marcado y apagado, y no es un cambio de nadie.
+    const read = within(screen.getByRole("rowgroup", { name: "Usuarios" })).getByRole("checkbox", { name: "Ver usuarios" });
+    expect(read).toBeChecked();
+    expect(read).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() =>
+      expect(updates).toEqual([{ name: "Mesa 2", description: null, permissions: ["users.manage", "users.read"], expectedRevision: 1 }]),
+    );
+  });
+
   describe("revision (N2)", () => {
     const conflictText = "El rol cambió mientras lo editabas. Volvé a leerlo y revisá tus cambios antes de guardar.";
 
@@ -474,6 +519,35 @@ describe("RoleEditorPage", () => {
         name: "Soporte",
         description: "Revisa cuentas.",
         permissions: ["users.read", "roles.read", "roles.manage"],
+        expectedRevision: 2,
+      });
+    });
+
+    it("compares and keeps what each version allows, with what is included", async () => {
+      const state = withConflict();
+      await renderSupport();
+
+      // Ana le suma «Administrar roles»; Bruno cambió la descripción desde un rol viejo, con «Administrar usuarios» y sin
+      // «Ver usuarios»: lo que permite es lo mismo.
+      await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
+      state.current = { ...support, description: "Revisa cuentas.", permissions: ["users.manage", "roles.read"], revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+      await userEvent.click(await within(screen.getByRole("main")).findByRole("button", { name: "Revisar valores actuales" }));
+
+      // «Ver usuarios» no es una diferencia: las dos versiones lo permiten.
+      const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
+      expect(within(comparison).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["Administrar roles"]);
+
+      await userEvent.click(within(comparison).getByRole("button", { name: "Conservar mis cambios" }));
+
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAttribute("aria-disabled", "true");
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      await waitFor(() => expect(state.updates).toHaveLength(2));
+      expect(state.updates[1]).toEqual({
+        name: "Soporte",
+        description: "Revisa cuentas.",
+        permissions: ["users.manage", "roles.read", "users.read", "roles.manage"],
         expectedRevision: 2,
       });
     });
@@ -544,6 +618,7 @@ describe("RoleEditorPage", () => {
     // intentar guardarlo.
     const save = await screen.findByRole("button", { name: "Guardar" });
     expect(save).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Abrir Usuarios" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
     await userEvent.click(save);
 
@@ -1027,11 +1102,20 @@ describe("RoleEditorPage", () => {
     expect(screen.getByRole("textbox", { name: "Descripción" })).toHaveAttribute("readonly");
     expect(screen.getByRole("textbox", { name: "Descripción" })).not.toHaveAttribute("placeholder");
 
-    // Una lectura: sin casillas que no se pueden tocar, cada permiso que tiene, con su nombre.
+    // Una lectura: sin casillas que no se pueden tocar. Tiene todo, así que sus áreas empiezan cerradas, y cada una se
+    // abre para leer los nombres de lo que tiene.
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    areas.forEach((area) => expect(areaArrow(area)).toHaveAttribute("aria-expanded", "false"));
+    expect(screen.queryByText("Ver usuarios")).not.toBeInTheDocument();
+
+    for (const area of areas) {
+      await userEvent.click(areaArrow(area));
+    }
+
     for (const permission of ["Ver usuarios", "Administrar usuarios", "Ver roles", "Administrar roles", "Administrar la configuración"]) {
       expect(screen.getByText(permission)).toBeInTheDocument();
     }
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("shows the name of User read-only, and saves a change of its permissions", async () => {
@@ -1057,6 +1141,8 @@ describe("RoleEditorPage", () => {
     expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();
 
+    // User no tiene permisos: sus áreas empiezan cerradas.
+    await userEvent.click(areaArrow("Usuarios"));
     await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 

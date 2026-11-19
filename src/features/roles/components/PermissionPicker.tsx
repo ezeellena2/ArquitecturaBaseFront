@@ -1,50 +1,65 @@
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { PermissionGroup, PermissionItem } from "../api/roles";
-import { areaColumns, areaHelp, areaProgress, hasOtherPermissions, toggleArea } from "../lib/permissionPicker";
-import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
+import { allowedPermissions, areaHelp, areaProgress, areaStartsOpen, changePermission, includedBy, toggleArea } from "../lib/permissionPicker";
+import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { CheckIcon } from "@/shared/ui/icons";
+import { DisabledReason } from "@/shared/ui/DisabledReason";
+import { CheckIcon, ChevronRightIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Surface } from "@/shared/ui/Surface";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableRowHeader } from "@/shared/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 
 interface PermissionPickerProps {
   groups: readonly PermissionGroup[];
+  /// Lo que el rol permite: lo elegido con lo que incluye (`allowedPermissions`).
   picked: readonly string[];
+  /// Lo guardado del rol: un área con algo guardado arranca abierta, aunque después se le quite todo.
+  saved: readonly string[];
   onChange: (picked: string[]) => void;
   /// Admin: se lee lo que tiene, con una tilde, y no se cambia.
   readOnly?: boolean;
 }
 
-/// Lo que comparten la matriz y las bandas: lo elegido, si se lee o se elige, y cómo cambia.
-interface PickerPartProps {
+/// Lo que comparten las filas de un área: el catálogo, lo elegido, si se lee o se elige, y cómo cambia.
+interface AreaPartProps {
+  groups: readonly PermissionGroup[];
   picked: readonly string[];
   readOnly: boolean;
   onChange: (picked: string[]) => void;
 }
 
-/// Desde acá entran las cuatro columnas de la matriz; más angosto, cada área es una banda con sus permisos debajo.
-const desktopQuery = "(min-width: 768px)";
+/// La celda de cada fila: el alto lo pone su contenido, el nombre se corta en renglones a 320 px en lugar de desplazar la
+/// tabla de costado, y una casilla no le quita el margen derecho, como hace la tabla con una columna de casillas.
+const cellClassName = "whitespace-normal py-0 [&:has([role=checkbox])]:pr-4";
 
-/// El blanco de la casilla de un área: 24 px en escritorio y 44 en el celular, aunque el cuadradito mida 16.
-const checkTarget = "inline-flex min-h-6 min-w-6 items-center justify-center max-md:min-h-11 max-md:min-w-11";
+/// El blanco de la flecha: el botón en escritorio y 44 px en el celular, aunque el dibujo mida 24. La etiqueta le pasa el
+/// clic al botón, y los márgenes negativos dejan la flecha al borde de la celda, como en el tablero.
+const arrowTarget = "inline-flex shrink-0 items-center justify-center -mx-1.25 max-md:size-11 max-md:-mx-3.5";
 
-/// El blanco de una casilla de la matriz, que sólo se ve en escritorio: el cuadradito queda al principio de la celda, debajo
-/// del comienzo de su encabezado.
-const matrixTarget = "inline-flex min-h-6 min-w-6 items-center";
+/// El blanco de la casilla del área: 24 px en escritorio y 44 en el celular, aunque el cuadradito mida 16. Los márgenes
+/// negativos le dejan ocupar sólo el cuadradito, así la casilla de cada permiso queda justo debajo.
+const checkTarget = "inline-flex shrink-0 items-center justify-center min-h-6 min-w-6 -mx-1 max-md:min-h-11 max-md:min-w-11 max-md:-mx-3.5";
 
-/// Los permisos de un rol (tablero RO1-A del lienzo «Roles y permisos: rediseño», 2026-11-11). En escritorio, una matriz
-/// con una fila por área y las columnas Ver, Administrar y «Otros permisos», como los permisos de DigitalOcean: con todos
-/// los módulos son 13 filas y el rol entero entra en una pantalla, así que no hay buscador, filtros ni áreas que se
-/// plieguen. En el celular las columnas no entran: cada área es una banda y sus permisos van debajo, con el nombre entero.
+/// Un permiso empieza donde la casilla del área: después de la flecha y su espacio. En Admin, que no tiene la casilla del
+/// área, la tilde queda debajo del nombre del área.
+const permissionRow = "flex min-h-9 items-center gap-2.5 pl-6 max-md:min-h-11 max-md:pl-6.5";
+
+/// Los permisos de un rol (tablero RO3-D del lienzo «Roles y permisos: rediseño», 2026-11-19), igual en escritorio y en el
+/// celular: una tabla de una columna, «Permiso», con una banda por área (la flecha, la casilla del área, el nombre y su (i))
+/// y, abierta, una fila por permiso con su casilla y su nombre entero. Sin buscador, filtros ni descripciones a la vista: qué
+/// permite cada permiso va en la (i) del área.
 ///
-/// Lo elegido lo guarda la pantalla; el selector no guarda nada propio.
-export function PermissionPicker({ groups, picked, onChange, readOnly = false }: PermissionPickerProps): ReactNode {
+/// Un permiso marcado marca lo que incluye («Administrar usuarios» incluye «Ver usuarios») y lo deja apagado, con el motivo
+/// encima (MA1-A); quitarlo deja lo incluido marcado. Lo elegido lo guarda la pantalla; el selector sólo guarda qué áreas
+/// abrió o cerró la persona.
+export function PermissionPicker({ groups, picked, saved, onChange, readOnly = false }: PermissionPickerProps): ReactNode {
   const { t } = useTranslation("roles");
   const titleId = useId();
-  const desktop = useMediaQuery(desktopQuery);
-  const part = { picked, readOnly, onChange };
+  // Las áreas que la persona abrió o cerró; las demás siguen a lo que tienen (`areaStartsOpen`).
+  const [toggled, setToggled] = useState<Readonly<Record<string, boolean>>>({});
+  const part = { groups, picked, readOnly, onChange };
 
   return (
     <section aria-labelledby={titleId} className="min-w-0">
@@ -52,217 +67,148 @@ export function PermissionPicker({ groups, picked, onChange, readOnly = false }:
         {t("picker.title")}
       </h2>
       <Surface>
-        {desktop ? <PermissionMatrix groups={groups} titleId={titleId} {...part} /> : <PermissionBands groups={groups} titleId={titleId} {...part} />}
+        <Table aria-labelledby={titleId}>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col">{t("picker.permission")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          {groups.map((group) => {
+            // Admin tiene todo: sus áreas empiezan cerradas, y cada una se abre para leer los nombres.
+            const open = toggled[group.area] ?? (!readOnly && areaStartsOpen(group, saved, picked));
+
+            return (
+              <PermissionArea
+                key={group.area}
+                group={group}
+                open={open}
+                onToggle={() => setToggled((current) => ({ ...current, [group.area]: !open }))}
+                {...part}
+              />
+            );
+          })}
+        </Table>
       </Surface>
     </section>
   );
 }
 
-function PermissionMatrix({ groups, titleId, ...part }: PickerPartProps & { groups: readonly PermissionGroup[]; titleId: string }): ReactNode {
+/// Un área: su banda y, abierta, sus permisos. Es un grupo de filas nombrado por el área, para el lector de pantalla.
+function PermissionArea({ group, open, onToggle, ...part }: AreaPartProps & { group: PermissionGroup; open: boolean; onToggle: () => void }): ReactNode {
   const { t } = useTranslation("roles");
-  // Sin módulos todo es ver o administrar: una columna vacía en todas las filas no diría nada.
-  const showOthers = hasOtherPermissions(groups);
-
-  return (
-    // `table-fixed` respeta los anchos de los encabezados; sin él, el navegador le daba el sobrante a «Área». El mínimo
-    // deja lugar para los otros permisos: más angosto, la tabla se desplaza dentro de su caja.
-    <Table aria-labelledby={titleId} className={showOthers ? "min-w-200 table-fixed" : "min-w-140 table-fixed"}>
-      <TableHeader>
-        <TableRow>
-          {part.readOnly ? null : (
-            <TableHead scope="col" className="w-11">
-              <span className="sr-only">{t("picker.columns.wholeArea")}</span>
-            </TableHead>
-          )}
-          {/* Anchos fijos y la última columna se queda con lo que sobra: sin módulos es «Administrar», y las casillas no
-              se van al borde derecho de una pantalla ancha. */}
-          <TableHead scope="col" className="w-72">{t("picker.columns.area")}</TableHead>
-          <TableHead scope="col" className="w-24">{t("picker.columns.read")}</TableHead>
-          <TableHead scope="col" className={showOthers ? "w-30" : undefined}>{t("picker.columns.manage")}</TableHead>
-          {showOthers ? <TableHead scope="col">{t("picker.columns.others")}</TableHead> : null}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {groups.map((group) => (
-          <MatrixRow key={group.area} group={group} showOthers={showOthers} {...part} />
-        ))}
-      </TableBody>
-    </Table>
-  );
-}
-
-function MatrixRow({ group, showOthers, ...part }: PickerPartProps & { group: PermissionGroup; showOthers: boolean }): ReactNode {
-  const { read, manage, others } = areaColumns(group);
-
-  return (
-    <TableRow>
-      {part.readOnly ? null : (
-        <TableCell className="pr-0">
-          {group.permissions.length > 1 ? <AreaCheckbox group={group} picked={part.picked} onChange={part.onChange} /> : null}
-        </TableCell>
-      )}
-      <TableRowHeader>
-        <AreaName group={group} />
-      </TableRowHeader>
-      <TableCell>{read ? <PermissionMark permission={read} {...part} /> : <NotApplicable />}</TableCell>
-      <TableCell>{manage ? <PermissionMark permission={manage} {...part} /> : <NotApplicable />}</TableCell>
-      {showOthers ? (
-        <TableCell className="whitespace-normal">
-          {others.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-              {others.map((permission) => (
-                <NamedPermission key={permission.code} permission={permission} {...part} />
-              ))}
-            </div>
-          ) : null}
-        </TableCell>
-      ) : null}
-    </TableRow>
-  );
-}
-
-function PermissionBands({ groups, titleId, ...part }: PickerPartProps & { groups: readonly PermissionGroup[]; titleId: string }): ReactNode {
-  return (
-    <Table aria-labelledby={titleId}>
-      {groups.map((group) => (
-        <AreaBand key={group.area} group={group} {...part} />
-      ))}
-    </Table>
-  );
-}
-
-/// Un área en el celular: su banda, con su nombre y su (i) a la izquierda y la casilla del área a la derecha, como en el
-/// tablero, así los nombres de las áreas quedan alineados; debajo, sus permisos, cada uno de 44 px.
-function AreaBand({ group, ...part }: PickerPartProps & { group: PermissionGroup }): ReactNode {
+  const arrowId = useId();
   const nameId = useId();
+  // Admin lee lo que tiene: sólo esos permisos, cada uno con su tilde.
   const permissions = part.readOnly ? group.permissions.filter((permission) => part.picked.includes(permission.code)) : group.permissions;
 
   return (
-    <TableBody striped={false} aria-labelledby={nameId} className="[&:not(:last-child)>tr:last-child]:border-b">
+    <TableBody striped={false} aria-labelledby={nameId}>
       <TableRow tone="section" highlightExpanded={false}>
-        <TableCell className="whitespace-normal">
-          <span className="flex min-h-11 items-center justify-between gap-2">
-            <AreaName group={group} id={nameId} />
-            {part.readOnly || group.permissions.length < 2 ? null : <AreaCheckbox group={group} picked={part.picked} onChange={part.onChange} />}
-          </span>
+        <TableCell className={cellClassName}>
+          <div className="flex min-h-10 items-center gap-2.5 max-md:min-h-11">
+            <label className={arrowTarget}>
+              <Button
+                id={arrowId}
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-expanded={open}
+                aria-label={t(open ? "picker.close" : "picker.open", { area: group.name })}
+                onClick={onToggle}
+              >
+                <ChevronRightIcon className={cn("size-3.5 transition-transform motion-reduce:transition-none", open ? "rotate-90" : "")} />
+              </Button>
+            </label>
+            {/* Admin no tiene la casilla del área, ni una tilde en su lugar: lo que tiene se lee al abrirla. */}
+            {part.readOnly ? null : <AreaCheckbox group={group} groups={part.groups} picked={part.picked} onChange={part.onChange} />}
+            {/* El nombre también abre y cierra, con el mouse o un toque: es otra etiqueta de la flecha, que es la que está en el
+                recorrido del teclado. */}
+            <label id={nameId} htmlFor={arrowId} className="min-w-0 cursor-pointer font-medium">
+              {group.name}
+            </label>
+            <span className="-my-1 inline-flex">
+              <InfoTip text={areaHelp(group)} label={t("common:actions.moreInfo", { label: group.name })} />
+            </span>
+          </div>
         </TableCell>
       </TableRow>
-      {permissions.map((permission) => (
-        <TableRow key={permission.code}>
-          <TableCell className="whitespace-normal">
-            <NamedPermission permission={permission} {...part} />
-          </TableCell>
-        </TableRow>
-      ))}
+      {open
+        ? permissions.map((permission) =>
+            part.readOnly ? (
+              <ReadPermission key={permission.code} permission={permission} />
+            ) : (
+              <PermissionChoice key={permission.code} permission={permission} groups={part.groups} picked={part.picked} onChange={part.onChange} />
+            ),
+          )
+        : null}
     </TableBody>
   );
 }
 
-/// El nombre del área y su (i), que dice qué permite cada uno de sus permisos.
-function AreaName({ group, id }: { group: PermissionGroup; id?: string }): ReactNode {
-  const { t } = useTranslation("roles");
-
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span id={id} className="font-medium">
-        {group.name}
-      </span>
-      <span className="-my-1 inline-flex">
-        <InfoTip text={areaHelp(group)} label={t("common:actions.moreInfo", { label: group.name })} />
-      </span>
-    </span>
-  );
-}
-
-/// Elige o quita el área entera: vacía, parcial o completa. Sólo la tiene un área de dos o más permisos; en una de uno
-/// repetiría la casilla de ese permiso.
-function AreaCheckbox({ group, picked, onChange }: { group: PermissionGroup; picked: readonly string[]; onChange: (picked: string[]) => void }): ReactNode {
+/// Elige o quita el área entera: vacía, parcial o completa. La lleva toda área, también la de un solo permiso, para elegirla
+/// sin abrirla. Elegir el área suma también lo que incluyen sus permisos.
+function AreaCheckbox({ group, groups, picked, onChange }: Omit<AreaPartProps, "readOnly"> & { group: PermissionGroup }): ReactNode {
   const { t } = useTranslation("roles");
   const progress = areaProgress(group, picked);
 
   return (
     <label className={checkTarget}>
       <Checkbox
-        aria-label={progress.all ? t("picker.clearAllFor", { area: group.name }) : t("picker.pickAllFor", { area: group.name })}
+        aria-label={t(progress.all ? "picker.clearAllFor" : "picker.pickAllFor", { area: group.name })}
         checked={progress.all ? true : progress.picked > 0 ? "indeterminate" : false}
-        onCheckedChange={() => onChange(toggleArea(group, picked))}
+        onCheckedChange={() => onChange(allowedPermissions(groups, toggleArea(group, picked)))}
       />
     </label>
   );
 }
 
-/// La casilla de Ver o de Administrar, que se nombra con el permiso («Ver usuarios»): la columna dice sólo «Ver». Lo que
-/// permite es su descripción accesible; a la vista va en la (i) del área. En un rol de sólo lectura, una tilde.
-function PermissionMark({ permission, picked, readOnly, onChange }: PickerPartProps & { permission: PermissionItem }): ReactNode {
+/// Un permiso con su casilla y su nombre entero: tocar el nombre lo marca. Lo que permite es la descripción accesible de la
+/// casilla; a la vista va en la (i) del área. Si un permiso marcado lo incluye, queda marcado y apagado con el motivo, que
+/// nombra a todos los que lo incluyen.
+function PermissionChoice({ permission, groups, picked, onChange }: Omit<AreaPartProps, "readOnly"> & { permission: PermissionItem }): ReactNode {
+  const { t, i18n } = useTranslation("roles");
   const descriptionId = useId();
   const checked = picked.includes(permission.code);
-
-  if (readOnly) {
-    return checked ? (
-      <span className="inline-flex align-middle text-[var(--color-brand-600)]">
-        <CheckIcon aria-hidden="true" className="size-4" />
-        <span className="sr-only">{permission.name}</span>
-      </span>
-    ) : null;
-  }
+  const includers = checked ? includedBy(groups, picked, permission.code) : [];
+  // «Lo incluye «X».» con uno; con más, los nombra a todos con la conjunción del idioma: «Lo incluyen «X» y «Y».».
+  const reason = includers.length === 0 ? null : t("picker.includedBy", {
+    count: includers.length,
+    names: new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(includers.map((name) => t("picker.quoted", { name }))),
+  });
 
   return (
-    <>
-      <label className={matrixTarget}>
-        <Checkbox
-          aria-label={permission.name}
-          aria-describedby={descriptionId}
-          checked={checked}
-          onCheckedChange={(value) => onChange(change(picked, permission.code, value === true))}
-        />
-      </label>
-      <span id={descriptionId} hidden>
-        {permission.description}
-      </span>
-    </>
+    <TableRow>
+      <TableCell className={cellClassName}>
+        <label className={cn("relative", permissionRow, reason ? "" : "cursor-pointer")}>
+          {/* Con motivo, el envoltorio de la casilla se estira sobre la fila, como en `CheckboxField`: la fila entera muestra
+              el motivo, anclado en el cuadradito, y un clic no la cambia. */}
+          <DisabledReason reason={reason} className="after:absolute after:inset-0">
+            <Checkbox
+              checked={checked}
+              aria-describedby={descriptionId}
+              onCheckedChange={(value) => onChange(changePermission(groups, picked, permission.code, value === true))}
+            />
+          </DisabledReason>
+          {permission.name}
+        </label>
+        <span id={descriptionId} hidden>
+          {permission.description}
+        </span>
+      </TableCell>
+    </TableRow>
   );
 }
 
-/// Un permiso con su nombre a la vista: los de «Otros permisos» y todos los del celular. Tocar el nombre lo marca.
-function NamedPermission({ permission, picked, readOnly, onChange }: PickerPartProps & { permission: PermissionItem }): ReactNode {
-  const descriptionId = useId();
-  const checked = picked.includes(permission.code);
-
-  if (readOnly) {
-    return checked ? (
-      <span className="inline-flex items-center gap-1.5">
-        <CheckIcon aria-hidden="true" className="size-4 shrink-0 text-[var(--color-brand-600)]" />
-        {permission.name}
-      </span>
-    ) : null;
-  }
-
+/// Un permiso de Admin: una tilde y su nombre, sin casilla.
+function ReadPermission({ permission }: { permission: PermissionItem }): ReactNode {
   return (
-    <>
-      <label className="inline-flex min-h-6 cursor-pointer items-center gap-2 max-md:min-h-11 max-md:w-full max-md:gap-3">
-        <Checkbox
-          aria-describedby={descriptionId}
-          checked={checked}
-          onCheckedChange={(value) => onChange(change(picked, permission.code, value === true))}
-        />
-        {permission.name}
-      </label>
-      <span id={descriptionId} hidden>
-        {permission.description}
-      </span>
-    </>
+    <TableRow>
+      <TableCell className={cellClassName}>
+        <span className={permissionRow}>
+          <CheckIcon aria-hidden="true" className="size-4 shrink-0 text-[var(--color-brand-600)]" />
+          {permission.name}
+        </span>
+      </TableCell>
+    </TableRow>
   );
-}
-
-/// Un guion donde el área no tiene ese permiso: no hay nada que elegir.
-function NotApplicable(): ReactNode {
-  return (
-    <span aria-hidden="true" className="text-[var(--color-content-muted)]">
-      —
-    </span>
-  );
-}
-
-function change(picked: readonly string[], code: string, checked: boolean): string[] {
-  return checked ? [...picked, code] : picked.filter((item) => item !== code);
 }

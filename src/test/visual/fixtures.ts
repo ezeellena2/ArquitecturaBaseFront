@@ -127,15 +127,15 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   ];
   const permissions: PermissionGroup[] = [
     { area: "users", name: english ? "Users" : "Usuarios", permissions: [
-      { code: "users.read", name: english ? "View users" : "Ver usuarios", description: english ? "Account lists and details." : "El listado y el detalle de cada cuenta." },
-      { code: "users.manage", name: english ? "Manage users" : "Administrar usuarios", description: english ? "Create, edit and deactivate accounts." : "Dar de alta, editar, desactivar y eliminar cuentas." },
+      { code: "users.read", name: english ? "View users" : "Ver usuarios", description: english ? "Account lists and details." : "El listado y el detalle de cada cuenta.", includes: [] },
+      { code: "users.manage", name: english ? "Manage users" : "Administrar usuarios", description: english ? "Create, edit and deactivate accounts." : "Dar de alta, editar, desactivar y eliminar cuentas.", includes: ["users.read"] },
     ] },
     { area: "roles", name: english ? "Roles" : "Roles", permissions: [
-      { code: "roles.read", name: english ? "View roles" : "Ver roles", description: english ? "Roles and assigned permissions." : "Los roles y los permisos que da cada uno." },
-      { code: "roles.manage", name: english ? "Manage roles" : "Administrar roles", description: english ? "Create, edit and delete roles." : "Crear, editar y eliminar roles." },
+      { code: "roles.read", name: english ? "View roles" : "Ver roles", description: english ? "Roles and assigned permissions." : "Los roles y los permisos que da cada uno.", includes: [] },
+      { code: "roles.manage", name: english ? "Manage roles" : "Administrar roles", description: english ? "Create, edit and delete roles." : "Crear, editar y eliminar roles.", includes: ["roles.read"] },
     ] },
     { area: "settings", name: english ? "Settings" : "Configuración", permissions: [
-      { code: "settings.manage", name: english ? "Manage settings" : "Administrar la configuración", description: english ? "Registration and general preferences." : "El modo de registro y los ajustes generales." },
+      { code: "settings.manage", name: english ? "Manage settings" : "Administrar la configuración", description: english ? "Registration and general preferences." : "El modo de registro y los ajustes generales.", includes: [] },
     ] },
   ];
   const counts: UserFilterCounts = { status: { all: 4, active: 3, inactive: 1 }, roles: [{ name: "Admin", count: 1 }, { name: "User", count: 3 }], createdWithin: [{ days: 7, count: 0 }, { days: 30, count: 4 }] };
@@ -145,15 +145,15 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   let ai: AiConnection = { provider: "OpenAI", model: scenario === "ai-empty" ? "" : "fictional-model", hasCredential: scenario !== "ai-empty", enabled: scenario !== "ai-empty", revision: 1, providers: ["OpenAI", "Anthropic"] };
   const aiReceipts = new Map<string, { requestId: string; connection: AiConnection }>();
   if (roleGroupsScenario) permissions.push({ area: "whatsapp", name: "WhatsApp", permissions: [
-    { code: "whatsapp.read", name: english ? "View chats" : "Ver chats", description: english ? "Read business conversations." : "Leer las conversaciones del negocio." },
-    { code: "whatsapp.send", name: english ? "Reply to chats" : "Responder chats", description: english ? "Send manual replies." : "Enviar respuestas manuales." },
-    { code: "whatsapp.configureassistant", name: english ? "Configure the assistant" : "Configurar el asistente", description: english ? "Enable assistant attention for a conversation." : "Habilitar la atención del asistente en una conversación." },
+    { code: "whatsapp.read", name: english ? "View chats" : "Ver chats", description: english ? "Read business conversations." : "Leer las conversaciones del negocio.", includes: [] },
+    { code: "whatsapp.send", name: english ? "Reply to chats" : "Responder chats", description: english ? "Send manual replies." : "Enviar respuestas manuales.", includes: ["whatsapp.read"] },
+    { code: "whatsapp.configureassistant", name: english ? "Configure the assistant" : "Configurar el asistente", description: english ? "Enable assistant attention for a conversation." : "Habilitar la atención del asistente en una conversación.", includes: [] },
   ] });
   if (businessScenario) permissions.push({ area: "ai", name: english ? "Artificial intelligence" : "Inteligencia artificial", permissions: [
-    { code: "ai.read", name: english ? "View connection" : "Ver conexión", description: english ? "Read AI connection settings." : "Consultar la configuración de IA sin ver su clave." },
-    { code: "ai.manage", name: english ? "Manage connection" : "Administrar conexión", description: english ? "Configure and test the AI provider." : "Configurar la conexión y probar el proveedor de IA." },
-    { code: "ai.business.read", name: english ? "View business information" : "Ver información del negocio", description: english ? "Read the business facts without changing them." : "Consultar los datos del negocio sin modificarlos." },
-    { code: "ai.business.manage", name: english ? "Manage business information" : "Administrar información del negocio", description: english ? "Edit and save the business facts." : "Editar y guardar los datos del negocio." },
+    { code: "ai.read", name: english ? "View connection" : "Ver conexión", description: english ? "Read AI connection settings." : "Consultar la configuración de IA sin ver su clave.", includes: [] },
+    { code: "ai.manage", name: english ? "Manage connection" : "Administrar conexión", description: english ? "Configure and test the AI provider." : "Configurar la conexión y probar el proveedor de IA.", includes: ["ai.read"] },
+    { code: "ai.business.read", name: english ? "View business information" : "Ver información del negocio", description: english ? "Read the business facts without changing them." : "Consultar los datos del negocio sin modificarlos.", includes: [] },
+    { code: "ai.business.manage", name: english ? "Manage business information" : "Administrar información del negocio", description: english ? "Edit and save the business facts." : "Editar y guardar los datos del negocio.", includes: ["ai.business.read"] },
   ] });
   let business: BusinessInformation = { name: english ? "Your business" : "Tu negocio", description: english ? "Bicycle repairs." : "Reparación de bicicletas.",
     hours: "9–18", location: english ? "In-store service" : "Atención en el local", services: english ? "Maintenance and accessories." : "Mantenimiento y accesorios.",
@@ -225,7 +225,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   }
   if (scenario === "tall") {
     for (let index = 1; index <= 25; index++) {
-      permissions.push({ area: `area-${index}`, name: `Área ${index}`, permissions: [{ code: `area-${index}.read`, name: "Consultar", description: "Consultar los datos de esta sección." }] });
+      permissions.push({ area: `area-${index}`, name: `Área ${index}`, permissions: [{ code: `area-${index}.read`, name: "Consultar", description: "Consultar los datos de esta sección.", includes: [] }] });
     }
   }
   const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });

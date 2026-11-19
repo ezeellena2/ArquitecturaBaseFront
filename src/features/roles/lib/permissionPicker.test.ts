@@ -1,18 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { PermissionGroup } from "../api/roles";
-import { areaColumns, areaHelp, areaProgress, hasOtherPermissions, sameSelection, toggleArea } from "./permissionPicker";
+import { allowedPermissions, areaHelp, areaProgress, areaStartsOpen, changePermission, includedBy, sameSelection, toggleArea } from "./permissionPicker";
 
-// Las tres áreas del núcleo, con los textos del backend en español, más dos con permisos que no son ver ni
-// administrar: una de ejemplo y la de IA, cuyo segundo par (`ai.business.*`) también termina en `.read` y `.manage`.
+// Las áreas del núcleo y la de Formularios, con los textos del backend en español y sus inclusiones: «Administrar»
+// incluye «Ver», y en Formularios también «Publicar» incluye «Ver formularios».
 const users: PermissionGroup = {
   area: "users",
   name: "Usuarios",
   permissions: [
-    { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
+    { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta.", includes: [] },
     {
       code: "users.manage",
       name: "Administrar usuarios",
       description: "Dar de alta, editar, desactivar y eliminar cuentas.",
+      includes: ["users.read"],
     },
   ],
 };
@@ -21,8 +22,8 @@ const roles: PermissionGroup = {
   area: "roles",
   name: "Roles",
   permissions: [
-    { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno." },
-    { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles." },
+    { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno.", includes: [] },
+    { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles.", includes: ["roles.read"] },
   ],
 };
 
@@ -34,73 +35,94 @@ const settings: PermissionGroup = {
       code: "settings.manage",
       name: "Administrar la configuración",
       description: "El modo de registro y los ajustes del sistema.",
+      includes: [],
     },
   ],
 };
 
+const forms: PermissionGroup = {
+  area: "formtemplates",
+  name: "Formularios",
+  permissions: [
+    { code: "formtemplates.read", name: "Ver formularios", description: "Consultar los formularios y sus borradores.", includes: [] },
+    { code: "formtemplates.manage", name: "Administrar formularios", description: "Crear y editar borradores de formularios.", includes: ["formtemplates.read"] },
+    { code: "formtemplates.publish", name: "Publicar formularios", description: "Publicar un formulario en WhatsApp.", includes: ["formtemplates.read"] },
+  ],
+};
+
+// Un área de ejemplo con inclusiones en cadena: anular incluye emitir, y emitir incluye ver. Hoy ningún permiso real
+// lo hace, pero lo que un rol permite sigue la cadena entera.
 const billing: PermissionGroup = {
   area: "billing",
   name: "Facturación",
   permissions: [
-    { code: "billing.read", name: "Ver comprobantes", description: "Facturas, notas de crédito y su estado." },
-    { code: "billing.emit", name: "Emitir comprobantes", description: "Crear y enviar facturas." },
-    { code: "billing.void", name: "Anular comprobantes", description: "Anular una factura ya emitida." },
+    { code: "billing.read", name: "Ver comprobantes", description: "Facturas, notas de crédito y su estado.", includes: [] },
+    { code: "billing.emit", name: "Emitir comprobantes", description: "Crear y enviar facturas.", includes: ["billing.read"] },
+    { code: "billing.void", name: "Anular comprobantes", description: "Anular una factura ya emitida.", includes: ["billing.emit"] },
   ],
 };
 
-const ai: PermissionGroup = {
-  area: "ai",
-  name: "Inteligencia artificial",
-  permissions: [
-    { code: "ai.read", name: "Ver conexión", description: "Consultar la configuración de IA sin ver su clave." },
-    { code: "ai.manage", name: "Administrar conexión", description: "Configurar la conexión y probar el proveedor de IA." },
-    { code: "ai.business.read", name: "Ver información del negocio", description: "Consultar los datos del negocio sin modificarlos." },
-    { code: "ai.business.manage", name: "Administrar información del negocio", description: "Editar y guardar los datos del negocio." },
-  ],
-};
+const catalog = [users, roles, settings, forms, billing];
 
-const codes = (items: readonly { code: string }[]) => items.map((item) => item.code);
-
-describe("areaColumns", () => {
-  it("puts the area's read and manage permissions in their columns and nothing else", () => {
-    const columns = areaColumns(users);
-
-    expect(columns.read?.code).toBe("users.read");
-    expect(columns.manage?.code).toBe("users.manage");
-    expect(columns.others).toEqual([]);
+describe("allowedPermissions", () => {
+  it("adds what each picked permission includes", () => {
+    expect(allowedPermissions(catalog, ["users.manage"])).toEqual(["users.manage", "users.read"]);
   });
 
-  it("leaves a column empty when the area does not have that permission", () => {
-    const columns = areaColumns(settings);
-
-    expect(columns.read).toBeUndefined();
-    expect(columns.manage?.code).toBe("settings.manage");
+  it("keeps the picked order when nothing is missing, so a saved role reads the same", () => {
+    expect(allowedPermissions(catalog, ["users.read", "users.manage", "roles.read"])).toEqual(["users.read", "users.manage", "roles.read"]);
   });
 
-  it("puts the rest in the other permissions, in the catalog order", () => {
-    const columns = areaColumns(billing);
-
-    expect(columns.read?.code).toBe("billing.read");
-    expect(columns.manage).toBeUndefined();
-    expect(codes(columns.others)).toEqual(["billing.emit", "billing.void"]);
+  it("follows what is included in a chain", () => {
+    expect(allowedPermissions(catalog, ["billing.void"])).toEqual(["billing.void", "billing.emit", "billing.read"]);
   });
 
-  it("only reads the area's own code: a second pair that also ends in read and manage goes to the others", () => {
-    const columns = areaColumns(ai);
+  it("never returns a code twice, even when two picked permissions include the same one", () => {
+    expect(allowedPermissions(catalog, ["formtemplates.manage", "formtemplates.publish", "formtemplates.manage"])).toEqual([
+      "formtemplates.manage", "formtemplates.publish", "formtemplates.read",
+    ]);
+  });
 
-    expect(columns.read?.code).toBe("ai.read");
-    expect(columns.manage?.code).toBe("ai.manage");
-    expect(codes(columns.others)).toEqual(["ai.business.read", "ai.business.manage"]);
+  it("keeps a code the catalog does not declare, which the editor names before saving without it", () => {
+    expect(allowedPermissions(catalog, ["reports.export", "users.manage"])).toEqual(["reports.export", "users.manage", "users.read"]);
   });
 });
 
-describe("hasOtherPermissions", () => {
-  it("is false when every permission is to read or to manage, as in the core without modules", () => {
-    expect(hasOtherPermissions([users, roles, settings])).toBe(false);
+describe("includedBy", () => {
+  it("names the picked permissions that include it, in the catalog order", () => {
+    const picked = ["formtemplates.publish", "formtemplates.read", "formtemplates.manage"];
+
+    expect(includedBy(catalog, picked, "formtemplates.read")).toEqual(["Administrar formularios", "Publicar formularios"]);
   });
 
-  it("is true when any area has another permission", () => {
-    expect(hasOtherPermissions([users, billing])).toBe(true);
+  it("is empty when no picked permission includes it, and the permission can be changed", () => {
+    expect(includedBy(catalog, ["users.read"], "users.read")).toEqual([]);
+    expect(includedBy(catalog, ["users.read", "users.manage"], "users.manage")).toEqual([]);
+  });
+});
+
+describe("changePermission", () => {
+  it("adds a permission with what it includes", () => {
+    expect(changePermission(catalog, ["roles.read"], "users.manage", true)).toEqual(["roles.read", "users.manage", "users.read"]);
+  });
+
+  it("removes only that permission: what it included stays picked", () => {
+    expect(changePermission(catalog, ["users.manage", "users.read", "roles.read"], "users.manage", false)).toEqual(["users.read", "roles.read"]);
+  });
+});
+
+describe("areaStartsOpen", () => {
+  it("opens an area with something saved, even when nothing of it is picked any more", () => {
+    expect(areaStartsOpen(users, ["users.read"], [])).toBe(true);
+  });
+
+  it("opens an area with something picked", () => {
+    expect(areaStartsOpen(users, [], ["users.manage", "users.read"])).toBe(true);
+  });
+
+  it("leaves closed an area with nothing saved or picked, as every area of a new role", () => {
+    expect(areaStartsOpen(users, ["roles.read"], ["roles.read", "settings.manage"])).toBe(false);
+    expect(areaStartsOpen(users, [], [])).toBe(false);
   });
 });
 
@@ -120,11 +142,7 @@ describe("areaProgress", () => {
   });
 
   it("says when every permission of the area is picked", () => {
-    expect(areaProgress(users, ["users.manage", "roles.read", "users.read"])).toEqual({
-      picked: 2,
-      total: 2,
-      all: true,
-    });
+    expect(areaProgress(users, ["users.manage", "roles.read", "users.read"])).toEqual({ picked: 2, total: 2, all: true });
   });
 });
 
@@ -140,13 +158,6 @@ describe("toggleArea", () => {
   it("never returns a code twice, even when the picked list repeats one", () => {
     expect(toggleArea(users, ["users.read", "users.read"])).toEqual(["users.read", "users.manage"]);
     expect(toggleArea(users, ["roles.read", "users.read", "roles.read", "users.manage"])).toEqual(["roles.read"]);
-  });
-
-  it("adds a code only once when the area repeats it", () => {
-    const read = { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." };
-    const repeated: PermissionGroup = { area: "users", name: "Usuarios", permissions: [read, read] };
-
-    expect(toggleArea(repeated, [])).toEqual(["users.read"]);
   });
 });
 

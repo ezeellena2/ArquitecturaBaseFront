@@ -64,16 +64,15 @@
     }
   },
   "picker": {
-    "columns": {
-      "wholeArea": "Whole area",
-      "area": "Area",
-      "read": "View",
-      "manage": "Manage",
-      "others": "Other permissions"
-    },
     "title": "Permissions",
+    "permission": "Permission",
+    "open": "Open {{area}}",
+    "close": "Close {{area}}",
     "pickAllFor": "Pick all permissions in {{area}}",
-    "clearAllFor": "Remove all permissions in {{area}}"
+    "clearAllFor": "Remove all permissions in {{area}}",
+    "quoted": "“{{name}}”",
+    "includedBy_one": "Included in {{names}}.",
+    "includedBy_other": "Included in {{names}}."
   },
   "delete": {
     "title": "Delete the {{name}} role",

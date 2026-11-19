@@ -47,11 +47,12 @@ const permissionGroups: PermissionGroup[] = [
     area: "users",
     name: "Usuarios",
     permissions: [
-      { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
+      { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta.", includes: [] },
       {
         code: "users.manage",
         name: "Administrar usuarios",
         description: "Dar de alta, editar, desactivar y eliminar cuentas.",
+        includes: ["users.read"],
       },
     ],
   },
@@ -63,6 +64,7 @@ const permissionGroups: PermissionGroup[] = [
         code: "settings.manage",
         name: "Cambiar la configuración",
         description: "El modo de registro y los ajustes del sistema.",
+        includes: [],
       },
     ],
   },

@@ -17,7 +17,7 @@ import {
 } from "../api/roles";
 import { PermissionPicker } from "../components/PermissionPicker";
 import { roleActionErrorMessage } from "../errors";
-import { sameSelection } from "../lib/permissionPicker";
+import { allowedPermissions, sameSelection } from "../lib/permissionPicker";
 import { isAdminRole } from "../lib/systemRoles";
 import { currentUserQueryKey } from "@/auth/useCurrentUser";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -37,6 +37,7 @@ import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
 
 interface Draft {
@@ -47,8 +48,10 @@ interface Draft {
 
 const emptyDraft: Draft = { name: "", description: "", permissions: [] };
 
-function toDraft(role: RoleListItem): Draft {
-  return { name: role.name, description: role.description ?? "", permissions: [...role.permissions] };
+/// Un rol se lee con lo que permite de verdad: lo guardado más lo que incluye cada permiso. Un rol viejo con «Administrar
+/// usuarios» y sin «Ver usuarios» abre con los dos sin que sea un cambio de nadie, y al guardar se manda lo que permite.
+function toDraft(role: RoleListItem, groups: readonly PermissionGroup[]): Draft {
+  return { name: role.name, description: role.description ?? "", permissions: allowedPermissions(groups, role.permissions) };
 }
 
 /// Si hay algo que guardar: se compara lo que se mandaría (recortado) y el conjunto de permisos, no el orden en
@@ -63,21 +66,23 @@ function isSameDraft(first: Draft, second: Draft): boolean {
 
 /// Conservar mis cambios tras un conflicto de revisión (N2): de lo guardado ahora, con lo que el borrador cambió desde lo
 /// sembrado. Los permisos se mezclan de a uno, como cada ajuste en Configuración: quedan los que sumó el borrador, se van
-/// los que sacó, y del resto vale lo guardado.
-function keepDraftChanges(draft: Draft, seeded: Draft, current: Draft): Draft {
+/// los que sacó, y del resto vale lo guardado. Lo que queda suma lo que incluye, como todo lo que el rol permite: un permiso
+/// que trajo lo guardado puede incluir uno que el borrador había sacado.
+function keepDraftChanges(draft: Draft, seeded: Draft, current: Draft, groups: readonly PermissionGroup[]): Draft {
   return {
     name: draft.name.trim() === seeded.name.trim() ? current.name : draft.name,
     description: draft.description.trim() === seeded.description.trim() ? current.description : draft.description,
-    permissions: [
+    permissions: allowedPermissions(groups, [
       ...current.permissions.filter((code) => draft.permissions.includes(code) || !seeded.permissions.includes(code)),
       ...draft.permissions.filter((code) => !seeded.permissions.includes(code) && !current.permissions.includes(code)),
-    ],
+    ]),
   };
 }
 
 /// La comparación de un conflicto de revisión (N2), como la de Configuración (`SettingsReview`): sólo lo distinto entre lo
 /// guardado y lo que quedaría al conservar mis cambios (`kept`), lado a lado (LR2-A). Cada permiso que difiere va con su
-/// nombre, en el orden del catálogo.
+/// nombre, en el orden del catálogo. Las dos versiones llegan con lo que permiten (`toDraft`): un permiso incluido no es una
+/// diferencia si las dos lo permiten.
 function RoleReview({ current, kept, groups, disabled, titleRef, onAccept }: {
   current: Draft;
   kept: Draft;
@@ -114,8 +119,15 @@ function RoleReview({ current, kept, groups, disabled, titleRef, onAccept }: {
 
 const detailsClassName = "grid w-full max-w-2xl grid-cols-1 gap-3.5";
 
-/// Mantiene el espacio de los datos y de la matriz de permisos mientras llegan el rol y el catálogo (ES3).
+/// El largo de cada nombre de área mientras carga, para que las bandas no parezcan una sola barra.
+const loadingAreaNames = ["w-20", "w-14", "w-28", "w-24", "w-36"];
+
+/// Mantiene el espacio de los datos y de la lista de permisos mientras llegan el rol y el catálogo (ES3): la tabla con su
+/// encabezado y unas bandas de área, cerradas, con el lugar de la flecha, la casilla y el nombre. Los bloques sobre la banda
+/// son un tinte de su texto (`loading-tint`): el gris de carga casi no se distingue de ella.
 function EditorSkeleton(): ReactNode {
+  const { t } = useTranslation("roles");
+
   return (
     <div aria-hidden="true" className="flex flex-col gap-6">
       <Surface padded><div className={detailsClassName}>
@@ -123,13 +135,26 @@ function EditorSkeleton(): ReactNode {
         <div className="space-y-2.5"><Skeleton className="h-3 w-24" /><Skeleton className="h-16" /></div>
       </div></Surface>
       <Surface>
-        <div className="flex flex-col gap-2 p-4">
-          <Skeleton className="h-6" />
-          <Skeleton className="h-7.5" />
-          <Skeleton className="h-7.5" />
-          <Skeleton className="h-7.5" />
-          <Skeleton className="h-7.5" />
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("picker.permission")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody striped={false}>
+            {loadingAreaNames.map((width) => (
+              <TableRow key={width} tone="section" highlightExpanded={false}>
+                <TableCell className="py-0">
+                  <div className="flex min-h-10 items-center gap-2.5 max-md:min-h-11">
+                    <span className="size-3.5 shrink-0" />
+                    <Skeleton className="loading-tint size-4 shrink-0" />
+                    <Skeleton className={`loading-tint h-3 ${width}`} />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Surface>
     </div>
   );
@@ -241,19 +266,23 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   // La comparación aparece al final del contenido, a veces fuera de la vista: cada lectura lleva el foco a su título.
   useEffect(() => { if (review) reviewTitle.current?.focus(); }, [review]);
 
+  const groups = groupsQuery.data;
+
   // Se siembra una sola vez, durante el render y no con un efecto que copia datos a otro estado (regla de
   // rendimiento del CLAUDE.md del front). Lo que se pida después (al guardar se invalidan los roles) ya no pisa
-  // lo que la persona está escribiendo.
-  if (freshRole && seededRole === undefined) {
+  // lo que la persona está escribiendo. Espera también al catálogo, que dice qué incluye cada permiso: el borrador
+  // arranca con lo que el rol permite de verdad.
+  if (freshRole && groups && seededRole === undefined) {
     setSeededRole(freshRole);
-    setDraft(toDraft(freshRole));
+    setDraft(toDraft(freshRole, groups));
   }
 
-  const groups = groupsQuery.data;
+  // Lo sembrado, con lo que permite: con eso se compara si hay cambios, y un área con algo guardado arranca abierta.
+  const seeded = seededRole === undefined || groups === undefined ? emptyDraft : toDraft(seededRole, groups);
   const isAdmin = seededRole ? isAdminRole(seededRole) : false;
   const isSystemRole = seededRole?.isSystemRole ?? false;
   const isReady = draft !== undefined && groups !== undefined;
-  const isDirty = draft !== undefined && !isAdmin && !isSameDraft(draft, seededRole ? toDraft(seededRole) : emptyDraft);
+  const isDirty = draft !== undefined && !isAdmin && !isSameDraft(draft, seeded);
   // Un código que el catálogo cargado no declara (sacado del backend, o de un módulo que este navegador todavía no
   // conoce) no tiene casilla, así que no hay forma de quitarlo, y si viaja el backend rechaza el rol entero. Se limpia al
   // guardar y no al sembrar (sembrando sin él, la pantalla arrancaría con un cambio que nadie hizo), y antes se avisa
@@ -308,7 +337,8 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
         const current = await queryClient
           .fetchQuery({ queryKey: roleQueryKey(roleId), queryFn: () => fetchRole(roleId), staleTime: 0, meta: { errorOwner: "local" } })
           .catch(() => undefined);
-        if (!current || !base || !isSameDraft(toDraft(current), toDraft(base))) throw error;
+        // Se compara lo que permite cada versión: un rol viejo guardado sin lo incluido no es otra cosa.
+        if (!current || !base || !isSameDraft(toDraft(current, groups ?? []), toDraft(base, groups ?? []))) throw error;
         await updateRole(roleId, body, current.revision);
       }
     },
@@ -376,9 +406,9 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   /// Conservar mis cambios mezcla lo guardado con lo que cambió el borrador; usar lo actual lo descarta. En los dos casos
   /// lo leído pasa a ser el punto de partida, con su revisión.
   function acceptReview(keepDraft: boolean) {
-    if (review === undefined || draft === undefined || seededRole === undefined) return;
+    if (review === undefined || draft === undefined || seededRole === undefined || groups === undefined) return;
     // Conservar deja lo que mostraba la columna «Mi borrador» de la comparación.
-    setDraft(keepDraft ? keepDraftChanges(draft, toDraft(seededRole), toDraft(review)) : toDraft(review));
+    setDraft(keepDraft ? keepDraftChanges(draft, seeded, toDraft(review, groups), groups) : toDraft(review, groups));
     setSeededRole(review);
     setNeedsReview(false);
     setReview(undefined);
@@ -473,7 +503,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     );
   }
 
-  // Admin no se cambia: sin botones. Que tiene todo lo dicen las tildes de la matriz, y por qué no se cambia, la (i) del
+  // Admin no se cambia: sin botones. Que tiene todo lo dicen las tildes de cada área, y por qué no se cambia, la (i) del
   // título (RO1-A).
   // Tras un 409 de revisión, «Revisar valores actuales» va en la banda antes de Cancelar, y Guardar se apaga con el motivo
   // hasta elegir, aunque se cierre el aviso (como en Configuración).
@@ -556,12 +586,13 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
           <PermissionPicker
             groups={groups}
             picked={draft.permissions}
+            saved={seeded.permissions}
             onChange={(permissions) => changeDraft({ permissions })}
             readOnly={isAdmin}
           />
 
           {review === undefined ? null : (
-            <RoleReview current={toDraft(review)} kept={seededRole === undefined ? draft : keepDraftChanges(draft, toDraft(seededRole), toDraft(review))} groups={groups} disabled={reading || mutation.isPending} titleRef={reviewTitle} onAccept={acceptReview} />
+            <RoleReview current={toDraft(review, groups)} kept={seededRole === undefined ? draft : keepDraftChanges(draft, seeded, toDraft(review, groups), groups)} groups={groups} disabled={reading || mutation.isPending} titleRef={reviewTitle} onAccept={acceptReview} />
           )}
         </form>
       )}

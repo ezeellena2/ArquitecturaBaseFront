@@ -8,11 +8,13 @@ export function fetchPagedRoles(page: number, pageSize: number): Promise<PagedRe
 }
 
 /// Un permiso del catálogo (`GET /api/permissions`): el código estable, y su nombre y su descripción ya
-/// traducidos por el backend.
+/// traducidos por el backend. `includes` son los códigos que ese permiso incluye («Administrar usuarios» incluye
+/// «Ver usuarios»): quien lo tiene también tiene esos, y el editor los marca y los apaga.
 export interface PermissionItem {
   readonly code: string;
   readonly name: string;
   readonly description: string;
+  readonly includes: readonly string[];
 }
 
 /// Los permisos agrupados por área (el prefijo del código: users, roles, settings), que es como se eligen
