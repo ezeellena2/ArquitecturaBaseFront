@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 for (const language of ["es", "en"] as const) {
   for (const width of [1440, 390, 320]) {
     test(`business information saves without overflow at ${width}px in ${language}`, async ({ page }) => {
@@ -41,23 +41,28 @@ for (const language of ["es", "en"] as const) {
       }).map(select => select.getAttribute("aria-label")))).toEqual([]);
     });
   }
-  // RO1-A: the business permissions are IA's second pair, so on a desktop they go in «Otros permisos» of its row, with
-  // their names; on a phone each area is a band in the tone of a section and its permissions are white rows under it.
-  test(`business permissions read in the row of IA and under its band in ${language}`, async ({ page }) => {
+  // RO3-D: the business permissions are IA's second pair, so Admin reads them as rows of that area, with their names and a
+  // tick, once it opens; each area is a band in the tone of a section and its permissions are white rows under it.
+  test(`business permissions read as rows of IA under its band in ${language}`, async ({ page }) => {
     const es = language === "es";
     await page.goto(`/src/test/visual/index.html?screen=/roles/admin&scenario=business-roles&lang=${language}`);
     const table = page.getByRole("table");
-    const ai = table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: es ? "Inteligencia artificial" : "Artificial intelligence" }) });
-    await expect(ai.getByRole("cell").last()).toContainText(es ? "Ver información del negocio" : "View business information");
-    await expect(ai.getByRole("cell").last()).toContainText(es ? "Administrar información del negocio" : "Manage business information");
+    const area = es ? "Inteligencia artificial" : "Artificial intelligence";
+    await table.getByRole("button", { name: es ? `Abrir ${area}` : `Open ${area}` }).click();
+    const ai = table.getByRole("rowgroup", { name: area });
+    await expect(ai).toContainText(es ? "Ver información del negocio" : "View business information");
+    await expect(ai).toContainText(es ? "Administrar información del negocio" : "Manage business information");
     await expect(page.getByRole("checkbox")).toHaveCount(0);
+    // The pointer leaves the arrow, so no row is under it after the resize: a row under the pointer takes the hover color.
+    await page.mouse.move(0, 0);
     await page.setViewportSize({ width: 390, height: 900 });
     const bands = table.locator('tbody tr[data-tone="section"]');
     await expect(bands).toHaveCount(4);
-    const bandColor = await bands.first().evaluate(el => getComputedStyle(el).backgroundColor);
+    const color = (row: Locator) => row.evaluate(el => getComputedStyle(el).backgroundColor);
+    const bandColor = await color(bands.first());
     expect(bandColor).not.toBe("rgb(255, 255, 255)");
-    for (const row of await bands.all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe(bandColor);
-    for (const row of await table.locator('tbody tr:not([data-tone="section"])').all()) expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(255, 255, 255)");
+    for (const row of await bands.all()) await expect.poll(() => color(row)).toBe(bandColor);
+    for (const row of await table.locator('tbody tr:not([data-tone="section"])').all()) await expect.poll(() => color(row)).toBe("rgb(255, 255, 255)");
   });
   test(`lost replies recover by receipt in ${language}`, async ({ page }) => {
     await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-uncertain&lang=${language}`);

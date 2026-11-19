@@ -84,6 +84,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const assistantEntryScenario = scenario?.endsWith("-assistant-entry") ?? false;
   const assistantFixture = assistantScenario || assistantEntryScenario ? createAssistantVisualFixtures(language, scenario!) : undefined;
   const roleGroupsScenario = scenario === "role-groups";
+  // RO3-D (RO4 · 4): Soporte also manages and publishes forms, and both include «Ver formularios».
+  const roleIncludedScenario = scenario === "role-included";
   const chatScenario = chatFormsScenario || scenario === "chat" || scenario === "chat-states" || scenario === "chat-history" || scenario === "chat-audio" || scenario === "chat-spreadsheet" || scenario === "chat-access" || scenario === "chat-legacy" || roleGroupsScenario;
   const aiScenario = scenario?.startsWith("ai-") ?? false;
   const arcaFixture = scenario?.startsWith("arca-") ? createArcaVisualFixtures(scenario) : undefined;
@@ -123,7 +125,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const roles: RoleListItem[] = [
     { id: "admin", name: "Admin", description: english ? "Full administration." : "Administra todo el sistema.", isSystemRole: true, userCount: 1, permissions: profile.permissions, revision: 1 },
     { id: "user", name: "User", description: english ? "Default account permissions." : "Permisos de una cuenta nueva.", isSystemRole: true, userCount: 3, permissions: [], revision: 1 },
-    { id: "support", name: "Soporte", description: english ? "Reviews accounts." : "Consulta las cuentas y su estado.", isSystemRole: false, userCount: 2, permissions: [...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), "users.read", "roles.read"], revision: 1 },
+    { id: "support", name: "Soporte", description: english ? "Reviews accounts." : "Consulta las cuentas y su estado.", isSystemRole: false, userCount: 2, permissions: [...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), "users.read", "roles.read", ...(roleIncludedScenario ? ["formtemplates.read", "formtemplates.manage", "formtemplates.publish"] : [])], revision: 1 },
   ];
   const permissions: PermissionGroup[] = [
     { area: "users", name: english ? "Users" : "Usuarios", permissions: [
@@ -154,6 +156,11 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     { code: "ai.manage", name: english ? "Manage connection" : "Administrar conexión", description: english ? "Configure and test the AI provider." : "Configurar la conexión y probar el proveedor de IA.", includes: ["ai.read"] },
     { code: "ai.business.read", name: english ? "View business information" : "Ver información del negocio", description: english ? "Read the business facts without changing them." : "Consultar los datos del negocio sin modificarlos.", includes: [] },
     { code: "ai.business.manage", name: english ? "Manage business information" : "Administrar información del negocio", description: english ? "Edit and save the business facts." : "Editar y guardar los datos del negocio.", includes: ["ai.business.read"] },
+  ] });
+  if (roleIncludedScenario) permissions.push({ area: "formtemplates", name: english ? "Forms" : "Formularios", permissions: [
+    { code: "formtemplates.read", name: english ? "View forms" : "Ver formularios", description: english ? "Read forms and their drafts." : "Consultar los formularios y sus borradores.", includes: [] },
+    { code: "formtemplates.manage", name: english ? "Manage forms" : "Administrar formularios", description: english ? "Create and edit form drafts." : "Crear y editar borradores de formularios.", includes: ["formtemplates.read"] },
+    { code: "formtemplates.publish", name: english ? "Publish forms" : "Publicar formularios", description: english ? "Allows publishing when available." : "Habilita la publicación cuando esté disponible.", includes: ["formtemplates.read"] },
   ] });
   let business: BusinessInformation = { name: english ? "Your business" : "Tu negocio", description: english ? "Bicycle repairs." : "Reparación de bicicletas.",
     hours: "9–18", location: english ? "In-store service" : "Atención en el local", services: english ? "Maintenance and accessories." : "Mantenimiento y accesorios.",

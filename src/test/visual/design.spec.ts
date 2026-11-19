@@ -188,28 +188,31 @@ test("table scrolling stays inside the table on mobile", async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
-// RO1-A: on a phone the permissions of a role are one band per area with its permissions under it, named in full and
-// 44 px tall to touch, so nothing scrolls sideways; from 768 px they are the matrix.
-test("the permissions of a role stack on a phone and are a matrix on a desktop", async ({ page }) => {
+// RO3-D (2026-11-19): the permissions of a role are the same folding list on a phone and on a desktop, one column,
+// «Permiso», with a band per area and its permissions under it, named in full; on a phone each row is 44 px tall to
+// touch, and nothing scrolls sideways.
+test("the permissions of a role are the same folding list on a phone and on a desktop", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await openScreen(page, "/roles/support");
   const table = page.getByRole("table", { name: "Permisos" });
   await expect(table.getByRole("rowgroup", { name: "Usuarios" })).toBeVisible();
-  await expect(table.getByRole("columnheader")).toHaveCount(0);
+  await expect(table.getByRole("columnheader")).toHaveText(["Permiso"]);
   const scroll = table.locator("xpath=..");
   expect(await scroll.evaluate(element => element.scrollWidth)).toBeLessThanOrEqual(await scroll.evaluate(element => element.clientWidth));
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
-  // The name is the label of its checkbox, the whole row to touch.
+  // The name is the label of its checkbox, the whole row to touch. «Administrar usuarios» includes «Ver usuarios», which
+  // stays checked and off.
   const permission = page.getByText("Administrar usuarios", { exact: true });
   expect(await permission.evaluate(element => element.tagName)).toBe("LABEL");
   expect((await permission.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await permission.click();
   await expect(page.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAttribute("aria-disabled", "true");
 
   await page.setViewportSize({ width: 1440, height: 900 });
-  await expect(table.getByRole("columnheader")).toHaveText(["Todo el área", "Área", "Ver", "Administrar"]);
-  await expect(table.getByRole("rowheader", { name: "Usuarios" })).toBeVisible();
-  // The picked one is still picked: the screen keeps what was chosen, not the layout.
+  await expect(table.getByRole("columnheader")).toHaveText(["Permiso"]);
+  await expect(table.getByRole("rowgroup", { name: "Usuarios" })).toBeVisible();
+  // The picked one is still picked: it is the same list, and the screen keeps what was chosen.
   await expect(page.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked();
 });
 
@@ -251,7 +254,7 @@ test("a table closes with a line under its last row unless it touches the edge o
   expect(await closingLine(page.getByRole("table"))).toBe("0px");
 });
 
-// RO1-A: the role is two zones, its fields and its permissions; the bar of filters went with the search and the folding.
+// RO3-D: the role is two zones, its fields and its permissions, with no bar of filters between them: no search or filters.
 test("role fields and permissions have separate shared containers, with no bar of filters between them", async ({ page }) => {
   for (const width of [1440, 320]) {
     await page.setViewportSize({ width, height: 900 });
