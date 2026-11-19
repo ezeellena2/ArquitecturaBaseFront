@@ -430,7 +430,9 @@ crecen todos a 44 px en móvil.
   solo permiso. Qué permite cada permiso va en la (i) del área, un permiso por renglón.
 - Un permiso incluye a otro («Administrar usuarios» incluye «Ver usuarios»): marcarlo marca lo incluido y lo deja
   apagado, con el motivo encima (`DisabledReason`, MA1-A), que nombra a todos los que lo incluyen.
-- En el celular, la misma lista con la banda y cada permiso de 44 px para tocar, sin desplazar de costado.
+- En el celular, la misma lista con la banda y cada permiso de 44 px para tocar, sin desplazar de costado; la flecha y la
+  casilla del área, cada una con su zona de 44 × 44, sin pisarse. La banda usa los tokens y las medidas de
+  `TableSectionToggle`, pero no es esa pieza porque lleva la casilla al frente.
 - Admin se lee: sin casillas ni botones, la banda sin tilde ni casilla y sus áreas cerradas; cada una se abre para leer
   sus permisos, con una tilde. Por qué no se cambia va en la (i) del título. User: el nombre de solo lectura, con el porqué
   en la (i) de «Nombre».

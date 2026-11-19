@@ -62,29 +62,61 @@ aparte). Qué permiso incluye a cuál lo decide el backend: está en el
 - **Rol nuevo.** Todas las áreas cerradas y nada marcado. La descripción lleva un ejemplo como placeholder.
 - **En el celular.** La misma lista, con la banda y cada permiso de 44 px para tocar. A 320 los nombres largos pasan a dos
   renglones y nada se desplaza de costado.
+  - La flecha y la casilla del área tienen cada una su zona de 44 × 44, una al lado de la otra y sin pisarse
+    ([medidas](#la-banda-una-excepción-a-tablesectiontoggle)).
+  - Cada permiso se corre con la casilla del área: su casilla queda debajo de ella y su nombre, debajo del nombre del área.
 - **Carga.** La tabla con «Permiso» y bandas cerradas, con el lugar de la flecha, la casilla y el nombre.
 - **Error, rol borrado y sin permiso.** Como en RO2.
 - **Conflicto de revisión** (`RoleReview`). No cambia de forma; compara lo que cada versión permite, con lo incluido.
+  Si conservar mis cambios deja justo lo guardado (saqué «Ver usuarios» y otro sumó «Administrar usuarios», que lo
+  incluye), no hay nada que elegir: toma lo releído, sin una comparación vacía, y el motivo de lo incluido dice por qué
+  volvió.
 - **El listado.** No cambia.
+
+## La banda: una excepción a `TableSectionToggle`
+
+La biblioteca pide `TableSectionToggle` para las secciones de una tabla, pero esa pieza es un botón entero, con la flecha
+y el nombre, y una casilla no puede ir dentro de un botón. La banda del área lleva al frente su casilla, así que se arma en
+la feature (`PermissionPicker`) con los tokens y las medidas de `TableSectionToggle`: 40 px de alto (44 debajo de `sm`,
+el mismo corte), `px-4`, 10 px entre lo que lleva (`gap-2.5`), el nombre en `text-sm font-medium` con `py-2`, y la flecha
+de 14 px en `--color-content-muted`, que gira al abrir. La flecha es un `Button`, y el nombre, otra etiqueta suya.
+
+Las zonas para tocar no se pisan. Se miden desde el borde del contenido de la celda, en px de diseño (en la compu, al
+75 %); a 390 px y a 320, ese borde está en x = 37:
+
+| | Escritorio | Celular, debajo de `sm` | A 390 px |
+| --- | --- | --- | --- |
+| La flecha | Zona de 24, de −5 a 19; dibujo de 0 a 14 | Zona de 44 × 44, de −14 a 30; dibujo de 1 a 15 | Zona 23–67; dibujo 38–52 |
+| La casilla del área | Zona de 24, de 20 a 44; cuadradito de 24 a 40 | Zona de 44 × 44, de 30 a 74; cuadradito de 44 a 60 | Zona 67–111; cuadradito 81–97 |
+| El nombre del área | Desde 50; en Admin, desde 24 | Desde 74; en Admin, desde 44 | Desde 111; en Admin, desde 81 |
+| La (i) | 10 después del nombre, de 24 | 10 después del nombre, de 24 | Después de «Usuarios», 178–202 |
+| Cada permiso | Casilla de 24 a 40; nombre desde 50 | Casilla de 44 a 60; nombre desde 74 | Casilla 81–97; nombre desde 111 |
+
+En Admin la tilde de cada permiso va donde la casilla, debajo del nombre del área. Un toque cerca de la línea entre dos
+zonas lo resuelve el navegador, que lo lleva a una de las dos: por eso cada zona está centrada en su dibujo.
 
 ## En el código
 
 - `PermissionPicker`: la tabla de una columna.
   - Cada área es un `tbody` nombrado por el área (`aria-labelledby`), con su banda (`TableRow tone="section"`).
   - La flecha es un `Button` con `aria-expanded`; el nombre es otra etiqueta de la flecha.
+  - La banda (`bandClassName`) y las zonas de la flecha y de la casilla del área (`arrowTarget` y `checkTarget`), como
+    dice [la excepción](#la-banda-una-excepción-a-tablesectiontoggle).
   - `AreaCheckbox`, `PermissionChoice` con `DisabledReason`, y `ReadPermission` para Admin, con una tilde.
+  - `PermissionAreaLoading`: la banda cerrada del esqueleto, con las mismas zonas.
   - Sólo guarda qué áreas abrió o cerró la persona; lo elegido lo guarda la pantalla.
 - `lib/permissionPicker`: `allowedPermissions` (lo elegido más lo que incluye, en cadena), `includedBy`,
   `changePermission`, `areaStartsOpen`, `areaHelp`, `areaProgress`, `toggleArea` y `sameSelection`.
 - `RoleEditorPage`: `toDraft` siembra con lo que el rol permite y espera también al catálogo. `keepDraftChanges` y el 409
-  comparan lo que permite cada versión. El esqueleto tiene la forma de las bandas.
+  comparan lo que permite cada versión; si conservar mis cambios deja justo lo releído, lo adopta durante el render, sin
+  comparación. El esqueleto son bandas de `PermissionAreaLoading`.
 - `PermissionItem.includes` (`api/roles.ts`): lo trae `GET /api/permissions`, sin esquema de validación.
 - Textos en `roles.json`: `picker.permission`, `picker.open`, `picker.close`, `picker.quoted` y `picker.includedBy`.
 - Se fueron la matriz, `areaColumns`, `hasOtherPermissions`, `useMediaQuery`, los anchos fijos y `picker.columns`.
 - Pruebas:
   - `PermissionPicker.test.tsx`, `permissionPicker.test.ts` y `RoleEditorPage.test.tsx`.
-  - `role-groups.spec.ts`: Admin cerrado y con WhatsApp abierto, el editor con módulos y lo incluido con su motivo
-    (escenario `role-included`).
+  - `role-groups.spec.ts`: Admin cerrado y con WhatsApp abierto, el editor con módulos, lo incluido con su motivo
+    (escenario `role-included`) y, con toques a 390 y 320, la flecha y la casilla del área con sus zonas, que no se pisan.
   - `design.spec.ts`: la misma lista a 320 y a 1440.
   - `business-information.spec.ts`: el segundo par de IA, como filas de su área.
   - Capturas: `role-groups-admin-{1440,390}`, `role-groups-admin-open-1440`, `role-groups-editor-{1440,390}`,
@@ -111,10 +143,11 @@ Pasa la de [visual-baseline](visual-baseline.md), sobre RO3-D y sus estados (RO4
   con la forma de las bandas.
 - **Estados y mensajes.** Carga, error con reintento, rol borrado, sin permiso, conflicto y nombre repetido junto al
   campo. El resultado, en el aviso de abajo.
-- **Lo mismo en toda la app.** La banda como `TableSectionToggle`, `Checkbox`, `InfoTip`, `DisabledReason`,
-  `ComparisonTable` y los avisos comunes; tokens, los cinco niveles de letra y medidas en rem.
-- **Celular, teclado e idiomas.** 390 y 320, con 44 px y sin desplazar de costado. Tab recorre la flecha, la casilla del
-  área, la (i) y los permisos abiertos. Textos en es y en.
+- **Lo mismo en toda la app.** La banda con los tokens y las medidas de `TableSectionToggle`, que no puede ser porque
+  lleva la casilla al frente ([la excepción](#la-banda-una-excepción-a-tablesectiontoggle)); `Checkbox`, `InfoTip`,
+  `DisabledReason`, `ComparisonTable` y los avisos comunes; tokens, los cinco niveles de letra y medidas en rem.
+- **Celular, teclado e idiomas.** 390 y 320, con 44 px, la flecha y la casilla del área sin pisarse y sin desplazar de
+  costado. Tab recorre la flecha, la casilla del área, la (i) y los permisos abiertos. Textos en es y en.
 - **No aplican.** Diálogos nuevos, el menú ⋮, los dos vacíos, la espera de un 429, fechas y números, y el estado en la URL.
 - **Diferencia aceptada.** El dibujo a mano con los tokens, como en RO2.
 
@@ -142,10 +175,12 @@ Pasa la de [visual-baseline](visual-baseline.md), sobre RO3-D y sus estados (RO4
    flecha abre y cierra; Espacio marca una casilla.
 7. **En el celular,** a 390 y a 320.
    - La misma lista, con bandas y filas de 44 px.
+   - Tocar la flecha, también en su borde derecho, sólo abre o cierra el área; tocar la casilla del área sólo la marca.
    - Tocar el nombre marca el permiso; tocar lo incluido muestra su motivo.
    - Nada se desplaza de costado.
 8. **Conflicto.** Con el rol abierto en dos pestañas, guardar en una y después en la otra deja «Revisar valores actuales»
-   en la banda; la comparación cuenta lo incluido.
+   en la banda; la comparación cuenta lo incluido. Si la primera sumó «Administrar usuarios» y la otra le había sacado
+   «Ver usuarios», «Revisar valores actuales» toma lo guardado, sin comparación, y no queda nada que guardar.
 9. **En inglés,** los mismos pasos con «Permission» y «Included in “Manage users”.».
 
 ## Antes: la matriz (RO1-A), del 2026-11-11 al 2026-11-19
