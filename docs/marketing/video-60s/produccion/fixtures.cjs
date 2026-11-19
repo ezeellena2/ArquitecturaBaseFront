@@ -40,29 +40,31 @@ const users = people.map(([displayName, alias, roles, isActive, created], index)
   isActive, createdAtUtc: `${created}T13:00:00Z`, roles,
 }));
 
+// `includes`: lo que incluye cada permiso, como lo manda el backend en `GET /api/permissions` (`Permissions.Includes` y
+// el `Includes` de cada módulo): «Administrar» incluye «Ver», y «Responder chats», «Ver chats».
 const permissionGroups = [
   { area: "users", name: "Usuarios", permissions: [
-    { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta." },
-    { code: "users.manage", name: "Administrar usuarios", description: "Dar de alta, editar, desactivar y eliminar cuentas." },
+    { code: "users.read", name: "Ver usuarios", description: "El listado y el detalle de cada cuenta.", includes: [] },
+    { code: "users.manage", name: "Administrar usuarios", description: "Dar de alta, editar, desactivar y eliminar cuentas.", includes: ["users.read"] },
   ] },
   { area: "roles", name: "Roles", permissions: [
-    { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno." },
-    { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles." },
+    { code: "roles.read", name: "Ver roles", description: "Los roles y qué permisos da cada uno.", includes: [] },
+    { code: "roles.manage", name: "Administrar roles", description: "Crear, editar y eliminar roles.", includes: ["roles.read"] },
   ] },
   { area: "settings", name: "Configuración", permissions: [
-    { code: "settings.manage", name: "Administrar la configuración", description: "El modo de registro y los ajustes del sistema." },
+    { code: "settings.manage", name: "Administrar la configuración", description: "El modo de registro y los ajustes del sistema.", includes: [] },
   ] },
   { area: "whatsapp", name: "WhatsApp", permissions: [
-    { code: "whatsapp.read", name: "Ver chats", description: "Leer conversaciones y tus mensajes sin leer." },
-    { code: "whatsapp.send", name: "Responder chats", description: "Enviar respuestas manuales en conversaciones autorizadas." },
-    { code: "whatsapp.manage", name: "Cambiar modo de atención", description: "Administrar el modo compartido y habilitar atención manual." },
+    { code: "whatsapp.read", name: "Ver chats", description: "Leer conversaciones y tus mensajes sin leer.", includes: [] },
+    { code: "whatsapp.send", name: "Responder chats", description: "Enviar respuestas manuales en conversaciones autorizadas.", includes: ["whatsapp.read"] },
+    { code: "whatsapp.manage", name: "Cambiar modo de atención", description: "Administrar el modo compartido y habilitar atención manual.", includes: [] },
   ] },
   { area: "ai", name: "Inteligencia artificial", permissions: [
-    { code: "ai.read", name: "Ver conexión", description: "Consultar la configuración de IA sin ver su clave." },
-    { code: "ai.manage", name: "Administrar conexión", description: "Configurar la conexión y probar el proveedor de IA." },
-    { code: "ai.business.read", name: "Ver información del negocio", description: "Consultar los datos del negocio sin modificarlos." },
-    { code: "ai.business.manage", name: "Administrar información del negocio", description: "Editar y guardar los datos del negocio." },
-    { code: "ai.assistant.use", name: "Usar el asistente", description: "Consultar fuentes autorizadas y administrar el historial privado del asistente." },
+    { code: "ai.read", name: "Ver conexión", description: "Consultar la configuración de IA sin ver su clave.", includes: [] },
+    { code: "ai.manage", name: "Administrar conexión", description: "Configurar la conexión y probar el proveedor de IA.", includes: ["ai.read"] },
+    { code: "ai.business.read", name: "Ver información del negocio", description: "Consultar los datos del negocio sin modificarlos.", includes: [] },
+    { code: "ai.business.manage", name: "Administrar información del negocio", description: "Editar y guardar los datos del negocio.", includes: ["ai.business.read"] },
+    { code: "ai.assistant.use", name: "Usar el asistente", description: "Consultar fuentes autorizadas y administrar el historial privado del asistente.", includes: [] },
   ] },
 ];
 
