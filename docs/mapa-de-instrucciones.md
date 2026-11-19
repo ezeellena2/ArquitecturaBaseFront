@@ -39,7 +39,7 @@ vigente de la migración: el emisor y sus controles están hechos y sigue la rev
 | [`src/features/errors/`](../src/features/errors/AGENTS.md) | Contiene la página de ruta inexistente; falta de permiso es compartida en shared/ui/ForbiddenPage. |
 | [`src/features/home/`](../src/features/home/AGENTS.md) | `DashboardPage` conserva el inicio base; app/AuthenticatedHome compone el asistente según módulo/permisos. |
 | [`src/features/profile/`](../src/features/profile/AGENTS.md) | Muestra medios de ingreso y datos del perfil. |
-| [`src/features/roles/`](../src/features/roles/AGENTS.md) | Contiene catálogo/listado, alta y edición en ruta propia y los permisos de un rol: una matriz Ver · Administrar · Otros permisos en escritorio y una banda por área en el celular (RO1-A); Admin se lee con tildes. |
+| [`src/features/roles/`](../src/features/roles/AGENTS.md) | Contiene catálogo/listado, alta y edición en ruta propia y los permisos de un rol: áreas plegables con un permiso por fila, iguales en escritorio y en el celular, y lo incluido marcado y apagado con su motivo (RO3-D); Admin se lee con tildes. |
 | [`src/features/settings/`](../src/features/settings/AGENTS.md) | Muestra y modifica los ajustes funcionales publicados por el backend. |
 | [`src/features/users/`](../src/features/users/AGENTS.md) | Muestra listado, filtros y conteos, alta, roles, medios e invitaciones; aloja una sección opcional de datos por contrato neutral y coordina su guardado separado. |
 | [`src/features/whatsapp/`](../src/features/whatsapp/AGENTS.md) | Índice del chat: permisos, modo, frontera, página (bandeja, `?conversacion=`, borradores por conversación) y entrada a las guías de `api`, `lib`, `hooks` y `components`. |

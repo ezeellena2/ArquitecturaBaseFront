@@ -155,8 +155,8 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   Tokens en memoria. Los permisos del front son experiencia; decide el backend.
 - Tailwind y tokens de `index.css`; `shared/ui` sin colores propios. Clases con `cn` de `shared/lib/utils`, que reexporta el paquete `cn` de shadcn (los generados lo importan directo), sin `clsx` ni `tailwind-merge`.
 - Un `fieldset` con rótulo propio deja el `legend` en `sr-only` y dibuja la banda con `aria-hidden`. Nunca `fieldset` en
-  una tabla: en las bandas de `PermissionPicker` (el celular) cada área es un `tbody` con `aria-labelledby`, y en su matriz
-  (escritorio) la nombra un `TableRowHeader`.
+  una tabla: en `PermissionPicker` cada área es un `tbody` con `aria-labelledby`, nombrado por su banda, en escritorio y
+  en el celular.
 - **Tests:** Vitest y Testing Library por rol y texto; MSW para HTTP. Radix se abre con teclado (foco y `{Enter}`), no con
   `userEvent.click`. `src/test/setup.ts` simula `matchMedia`, `ResizeObserver` y `scrollIntoView`. Una ruta `lazy` no pinta
   sincrónicamente: `findBy*` o `waitFor`.
@@ -199,7 +199,7 @@ Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una
   comparación. Si algo difiere, la relectura falla o el reintento vuelve a chocar, conserva el borrador y repite el
   recorrido de `/configuracion` (revisar, comparar con `ComparisonTable`, usar lo actual o conservar lo cambiado) con los
   textos de `common:revisionReview`. Conservar mezcla los roles y los permisos de a uno (quedan los que sumó el borrador,
-  se van los que sacó), y la columna «Mi borrador» muestra eso, lo que quedaría al conservar. Una relectura con otra
+  se van los que sacó; un rol se compara y se mezcla con lo que incluye cada permiso, RO3-D), y la columna «Mi borrador» muestra eso, lo que quedaría al conservar. Una relectura con otra
   revisión que no cambió lo que el PUT reemplaza la adopta sola (un desvínculo o una verificación en la misma pantalla).
   El idioma y la zona no avanzan la revisión: el perfil sigue aparte el idioma que cambia el menú, que, sin borrador, ante
   un 409 relee y guarda una sola vez más.

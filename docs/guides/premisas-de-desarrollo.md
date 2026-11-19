@@ -135,7 +135,7 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   componentes comunes son la referencia: no cambiar la densidad de filas en una feature.
 - El cuerpo alterna blanco y el tono Campo suave (`table-row-alternate`); hover, selección y bandas de
   sección conservan prioridad. El alternado vive en la biblioteca, sin clases por listado. Una tabla con grupos que se
-  leen como bandas (los permisos de un rol en el celular, RO1-A) deja blancas las filas de cada grupo y marca su banda con
+  leen como bandas (las áreas plegables de los permisos de un rol, RO3-D) deja blancas las filas de cada grupo y marca su banda con
   TableRow tone="section"; TableBody striped=false y highlightExpanded=false conservan esa jerarquía (aclaración del
   2026-10-03).
 - Toda tabla lleva una línea fina entre columnas y cierra abajo con la de su última fila, que pone la biblioteca,

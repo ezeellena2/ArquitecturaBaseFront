@@ -420,17 +420,20 @@ crecen todos a 44 px en móvil.
 - Editor: datos en `Surface padded`, Descripción debajo de Nombre (672 px máximo), sin insignia para Admin y User; la
   descripción lleva un ejemplo como placeholder. Cancelar y Guardar en la banda de `Page`; Guardar se habilita solo con
   cambios, sin «Cambios sin guardar» junto al título.
-- **Los permisos, en una matriz** ([RO1-A, 2026-11-11](roles-y-permisos.md)): una fila por área con Área, Ver
-  (`<área>.read`), Administrar (`<área>.manage`) y «Otros permisos» (el resto, con su nombre); «—» donde el área no tiene
-  ese permiso, y sin módulos la columna de otros permisos no aparece. Sin buscador, filtros ni áreas que se pliegan: con
-  todos los módulos son 13 filas y el rol entra en una pantalla. «Área» tiene ancho fijo y la última columna se queda con
-  el sobrante; Ver y Administrar, con la casilla al principio de la celda.
-- La casilla del área, al principio de la fila, admite vacío, parcial y completo y actúa sobre toda el área; un área de
-  un solo permiso no la tiene. Qué permite cada permiso va en la (i) del área, un permiso por renglón.
-- Desde 768 px la matriz; más angosto, una banda por área (`TableRow tone="section"`) con su (i) y la casilla del área a
-  la derecha, y sus permisos debajo, con el nombre entero y 44 px para tocar, sin desplazar de costado.
-- Admin se lee: una tilde donde tiene el permiso, sin casillas ni botones, y por qué no se cambia en la (i) del título.
-  User: el nombre de solo lectura, con el porqué en la (i) de «Nombre».
+- **Los permisos, en áreas plegables** ([RO3-D, 2026-11-19](roles-y-permisos.md)), que reemplazan a la matriz RO1-A:
+  una tabla de una columna, «Permiso», igual en escritorio y en el celular.
+- Cada área es una banda (`TableRow tone="section"`) con la flecha, la casilla del área, el nombre y su (i). La flecha
+  o el nombre la abren y la cierran. Abierta, cada permiso es una fila con su casilla y su nombre entero.
+- Al entrar se abren las áreas con algo guardado o elegido, hasta que la persona abre o cierra una. Sin buscador,
+  filtros, cuentas ni descripciones a la vista.
+- La casilla del área admite vacío, parcial y completo y actúa sobre toda el área; la lleva toda área, también la de un
+  solo permiso. Qué permite cada permiso va en la (i) del área, un permiso por renglón.
+- Un permiso incluye a otro («Administrar usuarios» incluye «Ver usuarios»): marcarlo marca lo incluido y lo deja
+  apagado, con el motivo encima (`DisabledReason`, MA1-A), que nombra a todos los que lo incluyen.
+- En el celular, la misma lista con la banda y cada permiso de 44 px para tocar, sin desplazar de costado.
+- Admin se lee: sin casillas ni botones, la banda sin tilde ni casilla y sus áreas cerradas; cada una se abre para leer
+  sus permisos, con una tilde. Por qué no se cambia va en la (i) del título. User: el nombre de solo lectura, con el porqué
+  en la (i) de «Nombre».
 
 ### Configuración general (2026-09-30)
 
@@ -598,8 +601,8 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | Avisos | Toaster y estados comunes | Adopción parcial; el tipo de cada aviso, [AV1-A implementado](#avisos-según-el-tipo--2026-11-08) |
 | Anatomía; Encabezados, íconos y color; Las mismas piezas | `index.css`, `shared/ui`, 17 íconos | Implementado; biblioteca pendiente |
 | Cómo se sostiene | tokens + componentes + tests | Norma de gobierno |
-| Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado; los permisos del editor los reemplaza RO1-A |
-| Roles y permisos · RO1-A y RO2, en el lienzo aparte «Roles y permisos: rediseño» | `PermissionPicker` y `RoleEditorPage` | [Implementado](roles-y-permisos.md) el 2026-11-11; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
+| Roles (editar, estados, acciones) | `RoleEditorPage`, `RolesPage` | Implementado; los permisos del editor los reemplaza RO3-D |
+| Roles y permisos · RO3-D y RO4, en el lienzo aparte «Roles y permisos: rediseño» (antes RO1-A y RO2) | `PermissionPicker` y `RoleEditorPage` | [Implementado](roles-y-permisos.md) el 2026-11-19; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | WhatsApp · Ingreso, Perfil, Usuarios con teléfono | `/login`, `/perfil`, diálogos de usuario | Implementado; mensajes por adoptar. El perfil y los medios de ingreso de usuario los reemplaza PF1-A |
 | Mi perfil · PF1-A, en el lienzo provisorio «Formularios desde la app» | `/perfil` y «Editar usuario» | [Implementado](#mi-perfil-y-el-chat-de-whatsapp--2026-11-03); falta pasarlo al lienzo del sistema visual |
 | WhatsApp · El enlace del chat | `/ingresar`, retirada | Retirado el 2026-11-16 (B4): sin enlaces de ingreso, la pantalla y su ruta ya no existen |
@@ -654,7 +657,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Acciones de fila | **Un grupo**, rojo al interactuar |
 | Paso de página | **Flechas** con nombre completo en `aria-label` |
 | Alta y edición de un rol | **Pantalla propia** |
-| Permisos de un rol | **Matriz** Área · Ver · Administrar · Otros permisos (RO1-A, 2026-11-11), sobre un nivel por área (RO1-B) y la lista de áreas con sus permisos (RO1-C) |
+| Permisos de un rol | **Áreas plegables**, un permiso por fila, como el multitenant (RO3-D, 2026-11-19). Reemplaza a la matriz Área · Ver · Administrar · Otros permisos (RO1-A, 2026-11-11), sobre la matriz con «Administrar incluye Ver» (RO3-A) y un nivel por área (RO3-B) |
 | Chat de Inicio | **assistant-ui** |
 
 
@@ -951,7 +954,7 @@ deshabilitada».
 
 No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven) y las condiciones de una regla o
 una sugerencia, que pueden elegir varias opciones. «Elegidos · N», el filtro del selector de permisos de un rol, se fue con
-la matriz (RO1-A, 2026-11-11).
+la matriz (RO1-A, 2026-11-11) y no volvió con las áreas plegables (RO3-D, 2026-11-19).
 
 ## Comparaciones lado a lado — 2026-11-03
 
