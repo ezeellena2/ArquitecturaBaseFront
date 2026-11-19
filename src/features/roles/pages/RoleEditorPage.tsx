@@ -15,7 +15,7 @@ import {
   type PermissionGroup,
   type RoleBody,
 } from "../api/roles";
-import { PermissionPicker } from "../components/PermissionPicker";
+import { PermissionAreaLoading, PermissionPicker } from "../components/PermissionPicker";
 import { roleActionErrorMessage } from "../errors";
 import { allowedPermissions, sameSelection } from "../lib/permissionPicker";
 import { isAdminRole } from "../lib/systemRoles";
@@ -37,7 +37,7 @@ import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { Textarea } from "@/shared/ui/textarea";
 
 interface Draft {
@@ -123,8 +123,7 @@ const detailsClassName = "grid w-full max-w-2xl grid-cols-1 gap-3.5";
 const loadingAreaNames = ["w-20", "w-14", "w-28", "w-24", "w-36"];
 
 /// Mantiene el espacio de los datos y de la lista de permisos mientras llegan el rol y el catálogo (ES3): la tabla con su
-/// encabezado y unas bandas de área, cerradas, con el lugar de la flecha, la casilla y el nombre. Los bloques sobre la banda
-/// son un tinte de su texto (`loading-tint`): el gris de carga casi no se distingue de ella.
+/// encabezado y unas bandas de área, cerradas, con el lugar de la flecha, la casilla y el nombre (`PermissionAreaLoading`).
 function EditorSkeleton(): ReactNode {
   const { t } = useTranslation("roles");
 
@@ -143,15 +142,7 @@ function EditorSkeleton(): ReactNode {
           </TableHeader>
           <TableBody striped={false}>
             {loadingAreaNames.map((width) => (
-              <TableRow key={width} tone="section" highlightExpanded={false}>
-                <TableCell className="py-0">
-                  <div className="flex min-h-10 items-center gap-2.5 max-md:min-h-11">
-                    <span className="size-3.5 shrink-0" />
-                    <Skeleton className="loading-tint size-4 shrink-0" />
-                    <Skeleton className={`loading-tint h-3 ${width}`} />
-                  </div>
-                </TableCell>
-              </TableRow>
+              <PermissionAreaLoading key={width} nameWidth={width} />
             ))}
           </TableBody>
         </Table>
@@ -279,6 +270,23 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
 
   // Lo sembrado, con lo que permite: con eso se compara si hay cambios, y un área con algo guardado arranca abierta.
   const seeded = seededRole === undefined || groups === undefined ? emptyDraft : toDraft(seededRole, groups);
+  // Tras un conflicto de revisión (N2), lo releído y lo que quedaría al conservar mis cambios, que compara `RoleReview`.
+  const reviewed = review === undefined || groups === undefined ? undefined : toDraft(review, groups);
+  const kept = reviewed === undefined || draft === undefined || groups === undefined ? undefined : keepDraftChanges(draft, seeded, reviewed, groups);
+
+  // Si conservar mis cambios deja justo lo guardado ahora (saqué «Ver usuarios» y otro sumó «Administrar usuarios», que lo
+  // vuelve a incluir), no hay nada que elegir: los dos botones darían lo mismo y la comparación quedaría vacía. Se adopta
+  // lo releído, como cuando el reintento guarda solo, y el motivo de lo incluido dice por qué volvió. Durante el render,
+  // como la siembra: así vale el borrador de ahora, aunque la lectura la haya pedido el aviso de antes.
+  if (review !== undefined && reviewed !== undefined && kept !== undefined && isSameDraft(kept, reviewed)) {
+    setDraft(reviewed);
+    setSeededRole(review);
+    setNeedsReview(false);
+    setReview(undefined);
+    setNameError(undefined);
+    setDescriptionError(undefined);
+  }
+
   const isAdmin = seededRole ? isAdminRole(seededRole) : false;
   const isSystemRole = seededRole?.isSystemRole ?? false;
   const isReady = draft !== undefined && groups !== undefined;
@@ -406,9 +414,9 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   /// Conservar mis cambios mezcla lo guardado con lo que cambió el borrador; usar lo actual lo descarta. En los dos casos
   /// lo leído pasa a ser el punto de partida, con su revisión.
   function acceptReview(keepDraft: boolean) {
-    if (review === undefined || draft === undefined || seededRole === undefined || groups === undefined) return;
+    if (review === undefined || reviewed === undefined || kept === undefined) return;
     // Conservar deja lo que mostraba la columna «Mi borrador» de la comparación.
-    setDraft(keepDraft ? keepDraftChanges(draft, seeded, toDraft(review, groups), groups) : toDraft(review, groups));
+    setDraft(keepDraft ? kept : reviewed);
     setSeededRole(review);
     setNeedsReview(false);
     setReview(undefined);
@@ -503,8 +511,8 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
     );
   }
 
-  // Admin no se cambia: sin botones. Que tiene todo lo dicen las tildes de cada área, y por qué no se cambia, la (i) del
-  // título (RO1-A).
+  // Admin no se cambia: sin botones. Sus áreas arrancan cerradas y la banda no lleva tilde ni casilla: que tiene todos los
+  // permisos y que por eso no se cambia lo dice la (i) del título (RO1-A).
   // Tras un 409 de revisión, «Revisar valores actuales» va en la banda antes de Cancelar, y Guardar se apaga con el motivo
   // hasta elegir, aunque se cierre el aviso (como en Configuración).
   const reviewReason = needsReview && !reading ? t("common:revisionReview.pending") : null;
@@ -591,8 +599,8 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
             readOnly={isAdmin}
           />
 
-          {review === undefined ? null : (
-            <RoleReview current={toDraft(review, groups)} kept={seededRole === undefined ? draft : keepDraftChanges(draft, seeded, toDraft(review, groups), groups)} groups={groups} disabled={reading || mutation.isPending} titleRef={reviewTitle} onAccept={acceptReview} />
+          {reviewed === undefined || kept === undefined ? null : (
+            <RoleReview current={reviewed} kept={kept} groups={groups} disabled={reading || mutation.isPending} titleRef={reviewTitle} onAccept={acceptReview} />
           )}
         </form>
       )}

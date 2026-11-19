@@ -483,6 +483,28 @@ describe("RoleEditorPage", () => {
       return state;
     }
 
+    /// El rol en el servidor (`state.current`), que guarda como el backend: compara la revisión y, si coincide, guarda.
+    function withRevisionCheck(initial: RoleListItem) {
+      const state = { current: initial, updates: [] as unknown[] };
+
+      server.use(
+        http.get("/api/me", () => HttpResponse.json(manager)),
+        http.get("/api/roles", () => HttpResponse.json([admin, user, state.current, audit])),
+        http.get("/api/roles/:roleId", () => HttpResponse.json(state.current)),
+        http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
+        http.put("/api/roles/r3", async ({ request }) => {
+          const body = (await request.json()) as { expectedRevision: number };
+          state.updates.push(body);
+
+          return body.expectedRevision === state.current.revision
+            ? new HttpResponse(null, { status: 204 })
+            : HttpResponse.json({ status: 409, code: "Roles.Role.RevisionConflict", detail: conflictText }, { status: 409 });
+        }),
+      );
+
+      return state;
+    }
+
     it("keeps the draft on a conflict and keeps my changes over what someone else saved", async () => {
       const state = withConflict();
       await renderSupport();
@@ -553,22 +575,7 @@ describe("RoleEditorPage", () => {
     });
 
     it("saves without a comparison when what was saved meanwhile is what it opened with", async () => {
-      const state = { current: support, updates: [] as unknown[] };
-      server.use(
-        http.get("/api/me", () => HttpResponse.json(manager)),
-        http.get("/api/roles", () => HttpResponse.json([admin, user, state.current, audit])),
-        http.get("/api/roles/:roleId", () => HttpResponse.json(state.current)),
-        http.get("/api/permissions", () => HttpResponse.json(permissionGroups)),
-        // Como el backend: compara la revisión y, si coincide, guarda.
-        http.put("/api/roles/r3", async ({ request }) => {
-          const body = (await request.json()) as { expectedRevision: number };
-          state.updates.push(body);
-
-          return body.expectedRevision === state.current.revision
-            ? new HttpResponse(null, { status: 204 })
-            : HttpResponse.json({ status: 409, code: "Roles.Role.RevisionConflict", detail: conflictText }, { status: 409 });
-        }),
-      );
+      const state = withRevisionCheck(support);
       await renderSupport();
 
       await userEvent.click(screen.getByRole("checkbox", { name: "Administrar roles" }));
@@ -581,6 +588,45 @@ describe("RoleEditorPage", () => {
       expect(state.updates.map((update) => (update as { expectedRevision: number }).expectedRevision)).toEqual([1, 2]);
       expect(await screen.findByRole("heading", { level: 1, name: "Roles y permisos" })).toBeInTheDocument();
       expect(screen.queryByText(conflictText)).not.toBeInTheDocument();
+    });
+
+    it("saves without a comparison when what was saved meanwhile allows the same, with what is included", async () => {
+      // Abrió un rol viejo, con «Administrar usuarios» y sin «Ver usuarios». Mientras tanto otro lo guardó, y el backend lo
+      // guardó con lo incluido: los permisos guardados cambiaron, pero lo que el rol permite es lo mismo.
+      const state = withRevisionCheck({ ...support, permissions: ["users.manage"] });
+      await renderSupport();
+
+      await userEvent.type(screen.getByRole("textbox", { name: "Nombre" }), " 2");
+      state.current = { ...support, permissions: ["users.manage", "users.read"], revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+      await waitFor(() => expect(state.updates).toHaveLength(2));
+      expect(state.updates[1]).toEqual({ name: "Soporte 2", description: support.description, permissions: ["users.manage", "users.read"], expectedRevision: 2 });
+      expect(await screen.findByRole("heading", { level: 1, name: "Roles y permisos" })).toBeInTheDocument();
+      expect(screen.queryByText(conflictText)).not.toBeInTheDocument();
+    });
+
+    it("takes what is saved, without an empty comparison, when keeping my changes would leave just that", async () => {
+      const state = withConflict();
+      state.current = { ...support, permissions: ["users.read", "roles.read"] };
+      await renderSupport();
+
+      // Ana le saca «Ver usuarios»; mientras tanto, Bruno le sumó «Administrar usuarios», que lo incluye.
+      await userEvent.click(screen.getByRole("checkbox", { name: "Ver usuarios" }));
+      state.current = { ...support, permissions: ["users.read", "roles.read", "users.manage"], revision: 2 };
+      await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+      await userEvent.click(await within(screen.getByRole("main")).findByRole("button", { name: "Revisar valores actuales" }));
+
+      // Conservar sus cambios dejaría lo mismo que lo guardado, porque «Ver usuarios» vuelve con lo que lo incluye: no hay
+      // nada que elegir. Toma lo leído, sin una comparación vacía, y queda sin nada que guardar; por qué volvió lo dice el
+      // motivo de su casilla.
+      await waitFor(() => expect(screen.getByRole("checkbox", { name: "Administrar usuarios" })).toBeChecked());
+      expect(screen.queryByRole("region", { name: "Revisar cambios" })).not.toBeInTheDocument();
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("checkbox", { name: "Ver usuarios" })).toHaveAccessibleDescription(/Lo incluye «Administrar usuarios»/);
+      expect(within(screen.getByRole("main")).queryByRole("button", { name: "Revisar valores actuales" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
+      expect(state.updates).toHaveLength(1);
     });
 
     it("takes what is saved when asked to, and has nothing left to save", async () => {
@@ -1090,7 +1136,8 @@ describe("RoleEditorPage", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Admin" })).toBeInTheDocument();
     expect(screen.queryByText("Del sistema")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Lo que va a poder hacer" })).not.toBeInTheDocument();
-    // Las tildes ya dicen que tiene todo (RO1-A): la banda no lo repite, y por qué no se cambia va en la (i) del título.
+    // Sus áreas arrancan cerradas y la banda no lleva tilde: que tiene todo, y que por eso no se cambia, lo dice la (i) del
+    // título (RO1-A), sin un texto que lo repita.
     expect(screen.queryByText("Todos los permisos")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Más información sobre Admin" })).toHaveAccessibleDescription(
       "Es el rol del sistema con todos los permisos: no se cambia.",
