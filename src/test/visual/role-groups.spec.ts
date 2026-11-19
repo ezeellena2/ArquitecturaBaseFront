@@ -74,6 +74,70 @@ for (const width of [1440, 390]) {
   });
 }
 
+// The box of the name in a label, its text: the label of a permission also holds its checkbox and the reason, hidden, so
+// its own box starts before the name, and `getByText` with the name alone does not find it.
+const nameBox = (label: Locator) => label.evaluate(node => {
+  const range = document.createRange();
+  range.selectNodeContents([...node.childNodes].find(child => child.nodeType === Node.TEXT_NODE && child.textContent!.trim())!);
+  const { x, y, width, height } = range.getBoundingClientRect();
+  return { x, y, width, height };
+});
+
+// RO3-D on a phone: the arrow and the checkbox of an area each take 44 × 44 px to touch, side by side and without
+// overlapping. The review of 2026-11-19 found the checkbox taking the touches over the right half of the arrow: a touch on
+// the arrow of «Configuración» checked the whole area, which then opened as if the arrow had done it.
+test.describe("on a touch phone", () => {
+  test.use({ hasTouch: true });
+
+  for (const width of [390, 320]) {
+    test(`the arrow and the checkbox of an area do not take each other's touches at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/src/test/visual/index.html?screen=/roles/support&scenario=role-groups&lang=es");
+      const table = page.getByRole("table", { name: "Permisos" });
+      const settings = table.getByRole("rowgroup", { name: "Configuración" });
+      const arrow = settings.getByRole("button", { name: /^(Abrir|Cerrar) Configuración$/ });
+      const check = settings.getByRole("checkbox", { name: /todos los permisos de Configuración$/ });
+      await expect(arrow).toHaveAttribute("aria-expanded", "false");
+      await page.evaluate(() => document.fonts.ready);
+      const [button, square, arrowZone, checkZone, name] = await Promise.all(
+        [arrow, check, arrow.locator("xpath=.."), check.locator("xpath=.."), settings.locator("label[for]")].map(async (part) => (await part.boundingBox())!),
+      );
+      const middle = arrowZone.y + arrowZone.height / 2;
+
+      // The right edge of the arrow opens and closes the area, and its checkbox stays as it was.
+      for (const expanded of ["true", "false"]) {
+        await page.touchscreen.tap(button.x + button.width - 1, middle);
+        await expect(arrow).toHaveAttribute("aria-expanded", expanded);
+        await expect(check).not.toBeChecked();
+      }
+      // The left edge of the checkbox checks the area and leaves it closed, as the person left it.
+      await page.touchscreen.tap(square.x + 1, middle);
+      await expect(check).toBeChecked();
+      await expect(arrow).toHaveAttribute("aria-expanded", "false");
+
+      // Each zone measures 44 × 44; the checkbox's starts where the arrow's ends, and the name, where the checkbox's ends.
+      // Chromium moves a touch near the line between two zones to one of them (touch adjustment), so a touch is aimed at a
+      // drawing and the zones are measured.
+      for (const zone of [arrowZone, checkZone]) {
+        expect(zone.width).toBeGreaterThanOrEqual(44);
+        expect(zone.height).toBeGreaterThanOrEqual(44);
+      }
+      expect(arrowZone.x + arrowZone.width).toBeLessThanOrEqual(checkZone.x);
+      expect(checkZone.x + checkZone.width).toBeLessThanOrEqual(name.x);
+
+      // A permission starts under the checkbox of its area, and its name under the name of the area.
+      const users = table.getByRole("rowgroup", { name: "Usuarios" });
+      const permission = users.getByRole("checkbox", { name: "Ver usuarios" });
+      const [areaSquare, permissionSquare] = await Promise.all(
+        [users.getByRole("checkbox", { name: /todos los permisos de Usuarios$/ }), permission].map(async (part) => (await part.boundingBox())!),
+      );
+      expect(permissionSquare.x).toBeCloseTo(areaSquare.x, 0);
+      const permissionLabel = users.locator("label").filter({ has: page.getByRole("checkbox", { name: "Ver usuarios" }) });
+      expect((await nameBox(permissionLabel)).x).toBeCloseTo((await nameBox(users.locator("label[for]"))).x, 0);
+    });
+  }
+});
+
 const included = {
   es: {
     area: "Formularios", view: "Ver formularios", manage: "Administrar formularios", publish: "Publicar formularios", save: "Guardar",
@@ -97,14 +161,11 @@ async function expectReasonAbove(page: Page, control: Locator, reason: string) {
   expect(tip.x + tip.width).toBeGreaterThanOrEqual(middle);
 }
 
-// The middle of the name of a permission, the text of its label: the label also holds the reason, hidden, so `getByText`
-// with the name alone does not find it.
-const nameOf = (label: Locator) => label.evaluate(node => {
-  const range = document.createRange();
-  range.selectNodeContents([...node.childNodes].find(child => child.nodeType === Node.TEXT_NODE && child.textContent!.trim())!);
-  const box = range.getBoundingClientRect();
+// The middle of the name of a permission (`nameBox`).
+const nameOf = async (label: Locator) => {
+  const box = await nameBox(label);
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-});
+};
 
 // RO3-D with «Administrar incluye Ver» (RO4 · 4): Soporte manages and publishes forms, and both include «Ver formularios»,
 // which stays checked and off. Its reason names both above its square with the mouse anywhere on its row, a click that
