@@ -5,7 +5,6 @@ import { usePermissions } from "@/auth/usePermissions";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { useSettledValue } from "@/shared/hooks/useSettledValue";
 import { formatDateTimeInZone, formatTimeInZone } from "@/shared/lib/dateTime";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
@@ -18,6 +17,7 @@ import { InfoTip } from "@/shared/ui/InfoTip";
 import { MessageBubble } from "@/shared/ui/MessageBubble";
 import { MessageCard } from "@/shared/ui/MessageCard";
 import { MessageHistory } from "@/shared/ui/MessageHistory";
+import { Picker } from "@/shared/ui/Picker";
 import { Spinner } from "@/shared/ui/Spinner";
 import { StepList } from "@/shared/ui/StepList";
 import { Surface } from "@/shared/ui/Surface";
@@ -29,7 +29,7 @@ import { AssistantActionTag } from "./AssistantActionTag";
 
 /** What the panel keeps while the page is open: the account and the messages, so testing again after saving does not start over. */
 export interface AgentTestDraft { recipient: AgentTestRecipient | null; messages: string }
-const recipientLabel = (recipient: AgentTestRecipient | null) => recipient ? [recipient.name, recipient.email].filter(Boolean).join(" · ") : "";
+const recipientOption = (recipient: AgentTestRecipient) => ({ id: recipient.contactId, label: recipient.name, description: recipient.email });
 
 /**
  * Probar (AS3): a panel at the side that does not leave the tab. It tests as if a linked account wrote, with what is saved, and
@@ -43,8 +43,8 @@ export function AssistantTestPanel({ actor, timeZone, unsaved, unavailable, draf
   const { t } = useTranslation("whatsappAssistant");
   const restore = useRestoreFocusOnClose();
   const tests = useAssistantAgentTests(onForbidden);
-  const [search, setSearch] = useState<string | null>(null);
-  const settled = useSettledValue(search ?? "");
+  const [search, setSearch] = useState("");
+  const settled = useSettledValue(search.trim());
   const recipients = useQuery({ queryKey: [...assistantAgentKey, actor, "test-recipients", settled], queryFn: ({ signal }) => fetchAssistantTestRecipients(settled, signal),
     placeholderData: keepPreviousData, retry: false, refetchOnWindowFocus: false, meta: { errorOwner: "local" } });
   const [attempted, setAttempted] = useState(false);
@@ -52,9 +52,10 @@ export function AssistantTestPanel({ actor, timeZone, unsaved, unavailable, draf
   const issue = testMessagesIssue(testMessages(draft.messages));
   const recipientError = (attempted && !draft.recipient ? t("test.recipientRequired") : undefined) ?? serverErrors.recipient;
   const messagesError = (attempted && issue ? t(issue.key, issue.values) : undefined) ?? serverErrors.messages;
-  const searching = search !== null && search !== settled || recipients.isFetching;
-  const options = (recipients.data ?? []).map(recipient => ({ id: recipient.contactId, label: recipient.name, description: recipient.email, selected: recipient.contactId === draft.recipient?.contactId }));
-  const status = recipients.isError ? t("test.recipientsFailed") : searching && !options.length ? t("test.searching") : !options.length ? t("test.noRecipients") : undefined;
+  // The accounts are searched in the server, with what is typed in the search of the list after its wait; while another search reads,
+  // the list says so instead of the accounts of the search before, and a failure offers «Reintentar» inside it.
+  const failed = recipients.isError && !recipients.isFetching;
+  const waiting = !failed && (search.trim() !== settled || !recipients.data || recipients.isPlaceholderData || recipients.isError);
   const reason = unavailable ?? (tests.waitSeconds > 0 ? t("test.wait", { count: tests.waitSeconds }) : null);
   const run = async () => {
     setServerErrors({});
@@ -75,9 +76,10 @@ export function AssistantTestPanel({ actor, timeZone, unsaved, unavailable, draf
       <div className="min-h-0 flex-1 overflow-y-auto p-4"><div className="flex flex-col gap-4">
         {unsaved ? <Banner tone="warning">{t("test.unsaved")}</Banner> : null}
         <FormField label={t("test.recipient")} help={t("test.recipientHelp")} required error={recipientError}>
-          <Autocomplete id="agent-test-recipient" dropdown value={search ?? recipientLabel(draft.recipient)} placeholder={t("test.recipientPlaceholder")} options={options} status={status}
-            onValueChange={text => { setSearch(text); if (!text) onDraftChange({ ...draft, recipient: null }); }} onBlur={() => setSearch(null)}
-            onSelect={id => { const recipient = recipients.data?.find(item => item.contactId === id); if (recipient) { onDraftChange({ ...draft, recipient }); setSearch(null); setServerErrors(previous => ({ ...previous, recipient: undefined })); } }} />
+          <Picker id="agent-test-recipient" label={t("test.recipient")} value={draft.recipient?.contactId ?? null} placeholder={t("test.recipientPlaceholder")}
+            options={waiting || failed ? [] : (recipients.data ?? []).map(recipientOption)} selectedOptions={draft.recipient ? [recipientOption(draft.recipient)] : undefined}
+            search={search} onSearchChange={setSearch} loading={waiting} failed={failed} onRetry={() => void recipients.refetch()}
+            onChange={id => { const recipient = recipients.data?.find(item => item.contactId === id); if (recipient) { onDraftChange({ ...draft, recipient }); setServerErrors(previous => ({ ...previous, recipient: undefined })); } }} />
         </FormField>
         <FormField label={t("test.messages")} help={t("test.messagesHelp")} required error={messagesError}
           beside={<DisabledReason reason={reason}><Button type="button" disabled={!!reason} pending={tests.busy} onClick={() => void run()}>{t(tests.busy ? "test.running" : "test.run")}</Button></DisabledReason>}>

@@ -80,8 +80,9 @@ for (const language of ["es", "en"] as const) {
       await open(page, language, width);
       await page.getByRole("button", { name: text.test, exact: true }).click();
       const panel = page.getByRole("dialog", { name: text.panel });
-      await panel.getByRole("combobox", { name: text.recipient }).click();
-      await page.getByRole("option", { name: /Juan Gómez/ }).click();
+      // DS1-A: the account is the only piece to choose, its e-mail in grey under its name; on the phone the list takes the screen.
+      await panel.getByRole("button", { name: new RegExp("^" + text.recipient) }).click();
+      await page.getByRole("listbox", { name: text.recipient }).getByRole("option", { name: "Juan Gómez", exact: true }).click();
       await panel.getByRole("textbox", { name: text.messages }).fill(language === "es" ? "Hola\nEstoy en la sucursal Centro\nSe rompió la heladera y necesito un repuesto" : "Hi\nI'm at the Centro branch\nThe fridge broke and I need a part");
       await panel.getByRole("button", { name: text.test, exact: true }).click();
       await expect(panel.getByText(text.actions, { exact: true })).toBeVisible();

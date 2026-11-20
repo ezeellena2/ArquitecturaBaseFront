@@ -20,6 +20,13 @@ let current: AssistantAgent;
 let writes: AssistantAgentSaveRequest[];
 let permissions: string[];
 
+// The account is the only piece to choose (DS1-A): its list opens with the keyboard and searches inside.
+async function chooseRecipient(panel: HTMLElement, name: RegExp = /Juan Gómez/) {
+  const trigger = within(panel).getByRole("button", { name: /^Como si escribiera/ });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(await within(await screen.findByRole("listbox", { name: "Como si escribiera" })).findByRole("option", { name }));
+}
 function saved(): AssistantAgent {
   return {
     revision: 3, originalCulture: "es",
@@ -401,10 +408,13 @@ describe("Probar", () => {
     expect(within(panel).getByRole("status")).toHaveTextContent("Tenés cambios sin guardar: la prueba usa lo guardado.");
     // Without an account or messages, Probar marks its fields and sends nothing.
     await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
-    expect(within(panel).getByRole("combobox", { name: "Como si escribiera" })).toHaveAccessibleDescription(expect.stringContaining("Elegí una cuenta."));
+    const recipient = within(panel).getByRole("button", { name: "Como si escribiera Elegí una cuenta vinculada" });
+    expect(recipient).toHaveAccessibleDescription(expect.stringContaining("Elegí una cuenta."));
+    await waitFor(() => expect(recipient).toHaveFocus());
     expect(started).toHaveLength(0);
-    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
-    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await chooseRecipient(panel);
+    // The list says the account by its name, with its e-mail in grey; the field, by its name.
+    expect(recipient).toHaveAccessibleName("Como si escribiera Juan Gómez");
     await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
     await userEvent.paste("Hola\n\nSe rompió la heladera");
     await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
@@ -427,7 +437,7 @@ describe("Probar", () => {
     const again = await screen.findByRole("dialog", { name: "Probar el asistente" });
     expect(within(again).queryByRole("article")).not.toBeInTheDocument();
     expect(within(again).getByRole("textbox", { name: "Mensajes" })).toHaveValue("Hola\n\nSe rompió la heladera");
-    expect(within(again).getByRole("combobox", { name: "Como si escribiera" })).toHaveValue("Juan Gómez · juan@example.com");
+    expect(within(again).getByRole("button", { name: /^Como si escribiera/ })).toHaveAccessibleName("Como si escribiera Juan Gómez");
   });
 
   it("shows a hand-off with its reason and a test the server could not finish", async () => {
@@ -438,8 +448,7 @@ describe("Probar", () => {
     await open();
     await userEvent.click(within(header()).getByRole("button", { name: "Probar" }));
     const panel = await screen.findByRole("dialog", { name: "Probar el asistente" });
-    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
-    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await chooseRecipient(panel);
     await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
     await userEvent.paste("Quiero hablar con alguien");
     await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
@@ -469,8 +478,7 @@ describe("Probar", () => {
     await open();
     await userEvent.click(within(header()).getByRole("button", { name: "Probar" }));
     const panel = await screen.findByRole("dialog", { name: "Probar el asistente" });
-    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
-    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await chooseRecipient(panel);
     await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
     await userEvent.paste("Pasé por Juan");
     await userEvent.click(within(panel).getByRole("button", { name: "Probar" }));
@@ -485,8 +493,7 @@ describe("Probar", () => {
     await open();
     await userEvent.click(within(header()).getByRole("button", { name: "Probar" }));
     const panel = await screen.findByRole("dialog", { name: "Probar el asistente" });
-    await userEvent.click(within(panel).getByRole("combobox", { name: "Como si escribiera" }));
-    await userEvent.click(await screen.findByRole("option", { name: /Juan Gómez/ }));
+    await chooseRecipient(panel);
     await userEvent.click(within(panel).getByRole("textbox", { name: "Mensajes" }));
     await userEvent.paste("Hola");
     permissions = ["whatsapp.configureassistant", "ai.business.manage", "formtemplates.manage"];
