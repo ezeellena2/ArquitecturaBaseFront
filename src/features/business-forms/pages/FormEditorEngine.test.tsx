@@ -51,7 +51,9 @@ it("stops Guardar at a calculation still to complete, says what is missing and t
   await user.click(await screen.findByRole("button", { name: "Agregar pregunta" }, { timeout: 15000 }));
   const added = [...document.querySelectorAll<HTMLElement>("[data-question-local-id]")].at(-1)!;
   await user.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Total");
-  await user.selectOptions(within(added).getByRole("combobox", { name: "Tipo de respuesta" }), "calculation");
+  await act(async () => { within(added).getByRole("button", { name: /^Tipo de respuesta / }).focus(); });
+  await user.keyboard("{Enter}");
+  await user.click(within(await screen.findByRole("listbox", { name: "Tipo de respuesta" })).getByRole("option", { name: "Cálculo" }));
   // Another type is another question in the list: it is drawn again under its new local identity.
   const total = [...document.querySelectorAll<HTMLElement>("[data-question-local-id]")].at(-1)!;
   const writes = store.writes.length;
@@ -61,4 +63,20 @@ it("stops Guardar at a calculation still to complete, says what is missing and t
   expect(store.writes).toHaveLength(writes);
   expect(within(total).getByText("Elegí las preguntas que usa el cálculo.")).toBeVisible();
   await waitFor(() => expect(within(total).getByRole("button", { name: /^Multiplica / })).toHaveFocus());
+}, 30000);
+
+it("stops Guardar at a condition still to complete and takes the focus to the question to choose (CO1-A)", async () => {
+  const user = userEvent.setup();
+  renderRouteWithProviders("/formularios/" + fixtureFormId);
+  await user.click(await screen.findByRole("button", { name: "Agregar pregunta" }, { timeout: 15000 }));
+  const added = [...document.querySelectorAll<HTMLElement>("[data-question-local-id]")].at(-1)!;
+  await user.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Detalle");
+  await user.click(within(added).getByRole("button", { name: "Según otra respuesta" }));
+  const writes = store.writes.length;
+
+  await act(async () => { await user.click(screen.getByRole("button", { name: "Guardar borrador" })); });
+
+  // «Si» is the only piece to choose: the focus goes to its button, still without a question.
+  expect(store.writes).toHaveLength(writes);
+  await waitFor(() => expect(within(added).getByRole("button", { name: "Si Elegí una pregunta" })).toHaveFocus());
 }, 30000);

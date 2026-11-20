@@ -43,7 +43,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
 
     // CO1-A: «Se muestra» of the period, with «Si» and the chips of «es».
     await page.getByRole("button", { name: text(language, "Editar Período desde", "Edit Period from"), exact: true }).click();
-    await expect(page.getByRole("combobox", { name: text(language, "Si", "If"), exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Si", "If") + " ") })).toBeVisible();
     await expect(page.getByRole("group", { name: text(language, "es", "is"), exact: true })).toContainText(text(language, "Productos y servicios", "Goods and services"));
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/engine-condition-" + language + "-" + width + ".png", fullPage: true });

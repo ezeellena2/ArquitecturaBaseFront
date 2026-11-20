@@ -74,11 +74,11 @@ const FormRulesSection = lazy(() => import("../components/FormRulesSection").the
 // DOC1: a reading control is marked itself («Cómo reconocerlo») or around its Picker (a lookup), whose button takes the focus.
 const invalidReadingControl = "[data-reading-control][aria-invalid='true'], [data-reading-control] [aria-invalid='true']";
 
-// CA1-A and CO1-A: what to complete in a calculation or a condition: an empty list, then «+ Agregar» of its chips, then its operation.
+// CA1-A and CO1-A: what to complete in a calculation or a condition: an empty list (the button of its Picker, marked around it), then
+// «+ Agregar» of its chips, then its operation.
 function engineControl(container: HTMLElement | undefined, zone: string): HTMLElement | null {
   const root = container?.querySelector<HTMLElement>(`[data-question-control="${zone}"]`);
-  return [...root?.querySelectorAll<HTMLSelectElement>("select:not(:disabled)") ?? []].find(select => select.value === "")
-    ?? root?.querySelector<HTMLElement>("[data-engine-unset] button[aria-haspopup]:not(:disabled)")
+  return root?.querySelector<HTMLElement>("[data-engine-unset] button[aria-haspopup]:not(:disabled)")
     ?? root?.querySelector<HTMLElement>('[data-chips-add]:not([aria-disabled="true"]):not(:disabled)')
     ?? root?.querySelector<HTMLElement>('button[aria-pressed]:not([aria-disabled="true"])') ?? null;
 }

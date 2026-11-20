@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useState } from "react";
@@ -27,10 +27,14 @@ describe("«Se muestra» of a question (CO1-A)", () => {
     renderWithProviders(<Harness initial={from} others={[concept]} />);
 
     expect(screen.getByRole("button", { name: "Siempre" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("combobox", { name: "Si" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Si / })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Según otra respuesta" }));
     expect(screen.getByTestId("line")).toHaveTextContent("Según otra respuesta");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Si" }), "concept");
+    // «Si» is the only piece to choose (DS1-A): its list opens with the keyboard.
+    await act(async () => { screen.getByRole("button", { name: "Si Elegí una pregunta" }).focus(); });
+    await user.keyboard("{Enter}");
+    await user.click(within(await screen.findByRole("listbox", { name: "Si" })).getByRole("option", { name: /^Concepto/ }));
+    expect(screen.getByRole("button", { name: /^Si Concepto/ })).toBeInTheDocument();
 
     const answers = screen.getByRole("group", { name: "es" });
     for (const answer of ["Servicios", "Productos y servicios"]) {
@@ -45,7 +49,7 @@ describe("«Se muestra» of a question (CO1-A)", () => {
     expect(screen.getByTestId("line")).toHaveTextContent("Si Concepto es Servicios");
 
     await user.click(screen.getByRole("button", { name: "Siempre" }));
-    expect(screen.queryByRole("combobox", { name: "Si" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Si / })).not.toBeInTheDocument();
     expect(screen.getByTestId("line")).toBeEmptyDOMElement();
   });
 
@@ -56,7 +60,7 @@ describe("«Se muestra» of a question (CO1-A)", () => {
   });
 
   // What WhatsApp cannot publish is stopped or said here, in a form that goes through it; «Sólo en la app» takes it all.
-  it("takes one answer of a catalog question in a form that goes through WhatsApp, with its reason", async () => {
+  it("takes one answer of a catalog question in a form that goes through WhatsApp, with its reason in the (i)", async () => {
     const customer: DraftQuestion = { localId: "customer", fieldId: null, replacesFieldId: null, type: "choice", label: { es: "Cliente" }, help: null, required: true,
       source: { catalog: "customers" } };
     const other = "0199b000-0000-7000-8000-000000000001";
@@ -64,12 +68,21 @@ describe("«Se muestra» of a question (CO1-A)", () => {
       page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
     const chosen = { ...from, showWhen: { questionId: "customer", values: [other] } };
     const { unmount } = renderWithProviders(<Harness initial={chosen} others={[customer]} whatsApp />);
-    const search = await screen.findByRole("combobox", { name: "es" });
-    expect(search).toBeDisabled();
-    expect(search).toHaveAccessibleDescription("En WhatsApp, una pregunta de catálogo se compara con una sola respuesta. Con «Sólo en la app» se pueden elegir varias.");
+    // «es» is the only piece to choose several: in WhatsApp its list takes one, «Elegiste 1 de 1», and the (i) says why.
+    const answers = await screen.findByRole("button", { name: /^es / });
+    expect(answers).toHaveAccessibleDescription(expect.stringContaining("En WhatsApp, una pregunta de catálogo se compara con una sola respuesta."));
+    await act(async () => { answers.focus(); });
+    await userEvent.keyboard("{Enter}");
+    expect(await screen.findByRole("listbox", { name: "es" })).toHaveAttribute("aria-multiselectable", "true");
+    expect(screen.getByText("Elegiste 1 de 1")).toBeInTheDocument();
     unmount();
     renderWithProviders(<Harness initial={chosen} others={[customer]} />);
-    expect(await screen.findByRole("combobox", { name: "es" })).not.toBeDisabled();
+    const several = await screen.findByRole("button", { name: /^es / });
+    expect(several).not.toHaveAccessibleDescription();
+    await act(async () => { several.focus(); });
+    await userEvent.keyboard("{Enter}");
+    await screen.findByRole("listbox", { name: "es" });
+    expect(screen.queryByText("Elegiste 1 de 1")).not.toBeInTheDocument();
   });
 
   it("says that a fourth condition in a row does not reach WhatsApp", () => {

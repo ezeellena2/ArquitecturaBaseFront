@@ -1,19 +1,16 @@
-import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSettledValue } from "@/shared/hooks/useSettledValue";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { FilterChip } from "@/shared/ui/FilterChip";
 import { FormField } from "@/shared/ui/FormField";
 import { GroupLabel } from "@/shared/ui/GroupLabel";
-import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import type { CatalogItem } from "../api/catalogResponse";
 import { canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, conditionDepth, toggleConditionAnswer, withCondition, type ConditionAnswer } from "../conditions";
 import { questionIdentity } from "../dependentLists";
 import { administrativeName, localizedValue } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems, useCatalogItemsById } from "../hooks/useCatalogQueries";
+import { usePickerPages } from "../hooks/usePickerPages";
 import type { DraftQuestion, FormCulture } from "../model";
 import { QuestionChips } from "./QuestionChips";
 
@@ -52,33 +49,31 @@ function CatalogConditionLine({ scope, catalog, value, line }: { scope: CatalogR
 }
 
 /**
- * «es» for a catalog question: the chosen options as chips and a search among its active options, which adds or removes them. In a
- * form that goes through WhatsApp it takes one: the options of a catalog arrive with the message and cannot show a question for
- * several (r13).
+ * «es» for a catalog question, with the only piece to choose several (DS1-A): its active options, searched in the server twenty at a
+ * time with «Mostrar N más», and the chosen ones by their names and «y N más» (DS2-A), read by id when they are not in the page. In a
+ * form that goes through WhatsApp it takes one, as its (i) says: the options of a catalog arrive with the message and cannot show a
+ * question for several (r13). Without any chosen, the editor takes the focus there (`data-engine-unset`).
  */
-function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, single, onToggle }: {
+function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, single, onChange }: {
   scope: CatalogReadScope; catalog: string; values: readonly string[]; readOnly: boolean; lockedReason?: string | null; single: boolean;
-  onToggle: (value: string, chosen: boolean) => void;
+  onChange: (values: readonly string[]) => void;
 }) {
   const { t } = useTranslation("forms");
-  const id = useId();
-  const [search, setSearch] = useState("");
-  const settled = useSettledValue(search);
-  const reason = lockedReason ?? (single && values.length > 0 ? t("condition.catalogSingle") : null);
-  const off = readOnly || !!reason;
+  const pages = usePickerPages<CatalogItem>();
+  const off = readOnly || !!lockedReason;
   const detail = useCatalogDetail(scope, off ? "" : catalog, "global");
-  const items = useCatalogItems(scope, off ? "" : catalog, detail.data?.revision ?? null, { page: 1, pageSize: 20, search: settled, isActive: true, sort: "text" }, "global");
+  const items = useCatalogItems(scope, off ? "" : catalog, detail.data?.revision ?? null, { page: pages.page, pageSize: 20, search: pages.settled, isActive: true, sort: "text" }, "global");
+  const list = pages.list(items);
   const label = useCatalogAnswerLabels(scope, catalog, values);
-  const searching = search !== settled || items.isPlaceholderData;
-  const options = searching ? [] : (items.data?.items ?? []).map(item => ({ id: item.id, label: administrativeName(item.text, scope.culture), selected: values.includes(item.id) }));
-  const status = detail.isLoading || items.isLoading ? t("common:states.loading") : searching ? t("searching") : items.data && !options.length ? t(settled.trim() ? "catalogs.items.noMatches" : "catalogs.items.empty") : undefined;
-  return <div className="flex min-w-0 flex-col gap-1.5">
-    <Label htmlFor={id}>{t("condition.is")}</Label>
-    {values.length ? <div className="flex flex-wrap gap-1.5">{values.map(value => off ? <FilterChip key={value}>{label(value)}</FilterChip>
-      : <FilterChip key={value} removeLabel={t("condition.remove", { label: label(value) })} onRemove={() => onToggle(value, false)}>{label(value)}</FilterChip>)}</div> : null}
-    {readOnly ? null : <DisabledReason reason={reason} className="grid w-full"><Autocomplete id={id} dropdown multiple disabled={off} value={search} placeholder={t("condition.search")}
-      options={options} status={status} onValueChange={setSearch} onSelect={value => onToggle(value, !values.includes(value))} /></DisabledReason>}
-  </div>;
+  const failed = (detail.isError && !detail.isFetching) || list.failed;
+  return <div data-engine-unset={values.length === 0 ? "" : undefined}><FormField label={t("condition.is")} help={single ? t("condition.catalogSingle") : undefined}>
+    <DisabledReason reason={lockedReason} className="grid w-full"><Picker multiple label={t("condition.is")} disabled={off} value={values} placeholder={t("condition.chooseAnswers")}
+      max={single ? 1 : undefined} options={list.options.map(item => ({ id: item.id, label: administrativeName(item.text, scope.culture) }))}
+      selectedOptions={values.map(value => ({ id: value, label: label(value) }))}
+      search={pages.search} onSearchChange={pages.onSearchChange} total={list.total} loading={!failed && ((detail.isFetching && !detail.data) || list.loading)} failed={failed}
+      onRetry={() => { void detail.refetch(); void items.refetch(); }} onLoadMore={list.onLoadMore} loadingMore={list.loadingMore} pageSize={list.pageSize}
+      onChange={onChange} /></DisabledReason>
+  </FormField></div>;
 }
 
 /**
@@ -101,6 +96,9 @@ export function ConditionSettings({ question, questions, culture, original, read
   const answers = named ? conditionAnswers(named) : null;
   const order = answers?.map(answer => answer.id) ?? [];
   const toggle = (value: string, chosen: boolean) => onChange(toggleConditionAnswer(question, value, chosen, order));
+  // The list of several applies its marks at once (on the phone, all of them with «Listo»).
+  const answer = (next: readonly string[]) => onChange([...(showWhen?.values ?? []).filter(value => !next.includes(value)).map(value => [value, false] as const),
+    ...next.filter(value => !showWhen?.values.includes(value)).map(value => [value, true] as const)].reduce((current, [value, chosen]) => toggleConditionAnswer(current, value, chosen, order), question));
   const labelOf = (value: string) => { const answer = answers?.find(item => item.id === value); return answer ? answerLabel(answer, culture, original, t("yes"), t("no")) : t("condition.unavailable"); };
   return <div data-question-control="showWhen" className="flex flex-col gap-3">
     <div className="flex flex-col gap-1.5">
@@ -113,14 +111,14 @@ export function ConditionSettings({ question, questions, culture, original, read
       ]} />
     </div>
     {showWhen ? <div className="grid items-start gap-4 sm:grid-cols-2">
-      <FormField label={t("condition.if")}><DisabledReason reason={lockedReason}><NativeSelect disabled={readOnly || !!lockedReason} value={showWhen.questionId ?? ""}
-        onChange={event => { if (event.target.value) onChange(chooseConditionQuestion(question, event.target.value)); }}>
-        <option value="" disabled>{t("condition.choose")}</option>
-        {showWhen.questionId && !candidate ? <option value={showWhen.questionId}>{t("condition.unavailableQuestion")}</option> : null}
-        {candidates.map(item => <option key={item.id} value={item.id}>{t("condition.question", { label: item.label, number: item.number })}</option>)}
-      </NativeSelect></DisabledReason></FormField>
+      {/* The question still to choose is where the editor takes the focus (CO1-A). */}
+      <div data-engine-unset={showWhen.questionId ? undefined : ""}><FormField label={t("condition.if")}><DisabledReason reason={lockedReason}><Picker label={t("condition.if")}
+        disabled={readOnly || !!lockedReason} value={showWhen.questionId} placeholder={t("condition.choose")} onChange={id => onChange(chooseConditionQuestion(question, id))}
+        options={[...showWhen.questionId && !candidate ? [{ id: showWhen.questionId, label: t("condition.unavailableQuestion") }] : [],
+          ...candidates.map(item => ({ id: item.id, label: t("condition.question", { label: item.label, number: item.number }) }))]} />
+      </DisabledReason></FormField></div>
       {candidate?.kind === "catalog" && candidate.catalog
-        ? <CatalogAnswers scope={scope} catalog={candidate.catalog} values={showWhen.values} readOnly={readOnly} lockedReason={lockedReason} single={whatsApp} onToggle={toggle} />
+        ? <CatalogAnswers scope={scope} catalog={candidate.catalog} values={showWhen.values} readOnly={readOnly} lockedReason={lockedReason} single={whatsApp} onChange={answer} />
         : <QuestionChips label={t("condition.is")} chips={showWhen.values.map(value => ({ id: value, label: labelOf(value) }))}
           options={(answers ?? []).filter(answer => !showWhen.values.includes(answer.id)).map(answer => ({ id: answer.id, label: answerLabel(answer, culture, original, t("yes"), t("no")) }))}
           addLabel={t("condition.add")} removeLabel={label => t("condition.remove", { label })} readOnly={readOnly} lockedReason={lockedReason}
