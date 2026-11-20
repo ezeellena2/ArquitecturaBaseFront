@@ -130,7 +130,7 @@ de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.t
 `FilterChip` ya están en `shared/ui`. `FormError` general no se promueve: es un desvío a migrar al aviso común.
 
 **Deuda de sincronización** (está en `shared/ui` y no en la biblioteca; abrir el Artifact requiere autorización
-explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `Picker` (DS1-A y DS2-A), `Surface`, `FilterChip`, `FilterMenuTrigger`,
+explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `Picker` (DS1-A y DS2-A), `Surface`, `FilterChip`,
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`, `wrap="always"` de AS4), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
