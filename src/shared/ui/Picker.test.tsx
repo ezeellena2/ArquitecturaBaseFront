@@ -372,6 +372,12 @@ describe("Picker", () => {
     expect(screen.getByRole("button", { name: "Rol Admin" })).toBeInTheDocument();
   });
 
+  it("puts the marks of its owner on its button, such as the one an editor finds it by", () => {
+    renderWithProviders(<Picker label="Catálogo" options={places.slice(0, 2)} value={null} onChange={vi.fn()} data-question-control="catalog"/>);
+
+    expect(screen.getByRole("button", { name: /^Catálogo/ })).toHaveAttribute("data-question-control", "catalog");
+  });
+
   it("shows the short text of the chosen one and gives the reader its whole name", async () => {
     await act(async () => {
       renderWithProviders(<Picker label="País" options={[{ id: "AR", label: "Argentina, +54", short: "AR +54" }, { id: "UY", label: "Uruguay, +598", short: "UY +598" }]}

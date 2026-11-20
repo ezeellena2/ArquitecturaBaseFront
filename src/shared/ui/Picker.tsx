@@ -79,6 +79,8 @@ interface PickerBase {
   onOpenChange?: (open: boolean) => void;
   /** At most this many: the list says «Hasta 5» and, once they are chosen, «Elegiste 5 de 5», and turns the rest off. */
   max?: number;
+  /** The marks of its owner go on the button, such as the one an editor finds it by to take the focus there. */
+  [mark: `data-${string}`]: string | undefined;
 }
 
 export type PickerProps = PickerBase & (
@@ -275,7 +277,9 @@ export function Picker(props: PickerProps) {
 
   const nameId = `${uid}-name`, valueId = `${uid}-value`, listboxId = `${uid}-listbox`;
   const single = !multiple && !empty ? picks[0] : undefined;
+  const marks = Object.fromEntries(Object.entries(props).filter(([key]) => key.startsWith("data-")));
   const triggerProps = {
+    ...marks,
     ref: triggerRef,
     id: props.id,
     type: "button" as const,
