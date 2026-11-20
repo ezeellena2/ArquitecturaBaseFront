@@ -151,7 +151,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const sample = editor.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
     await sample.focus();
     await sample.press("ArrowDown");
-    await sample.press("Escape");
+    // The open list hides the rest of the page from the reader: Escape goes to the list, which gives the focus back.
+    await page.keyboard.press("Escape");
     await expect(sample).toBeFocused();
     await expect(sample).toHaveAttribute("aria-expanded", "false");
     await contained(page, editor, width);

@@ -391,7 +391,8 @@ for (const width of [1440, 320]) {
       await expect(pagination).toBeVisible();
       await expect(pagination).toContainText(english ? "0–0 of 0" : "0–0 de 0");
       await expect(pagination.getByText(english ? /Page \d+ of \d+/ : /Página \d+ de \d+/)).toHaveCount(0);
-      for (const button of await pagination.getByRole("button").all()) await expect(button).toBeDisabled();
+      // Without rows there is no page to go to; the rows per page stay in reach, as when they were a select.
+      for (const name of english ? ["Previous page", "Next page"] : ["Página anterior", "Página siguiente"]) await expect(pagination.getByRole("button", { name, exact: true })).toBeDisabled();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1);
       await page.screenshot({ path: testInfo.outputPath("empty-pagination.png"), fullPage: true });
     });
@@ -429,8 +430,8 @@ test("a settings conflict uses the common comparison table", async ({ page }) =>
   const title = page.getByRole("heading", { level: 2, name: "Revisar cambios", exact: true });
   await expect(title).toBeFocused();
   await expect(title).toBeInViewport();
-  // The time zone breaks only after its slashes and at its spaces, with whole words: no «America/Arg|entina» (2026-11-02).
-  const zones = page.getByRole("cell", { name: "America/Argentina/Buenos Aires", exact: true });
+  // The time zone goes by its city, as in its list, and breaks only at its spaces, with whole words (2026-11-02).
+  const zones = page.getByRole("cell", { name: "Buenos Aires", exact: true });
   await expect(zones).toHaveCount(1);
   for (const zone of await zones.all()) await expectWordsWhole(zone);
   await page.getByRole("table").scrollIntoViewIfNeeded();

@@ -44,11 +44,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const text = page.getByRole("button", { name: new RegExp("^" + label("Texto de cada opción", "Option text") + " ") });
     await text.waitFor();
     const sample = page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
-    await sample.fill("Persona");
-    await expect(sample).toBeFocused();
-    await expect(text).toBeVisible();
+    // DS1-A: the search goes inside the list of the piece; it asks the server once and keeps the focus where one types.
+    await sample.click();
+    const search = page.getByRole("combobox", { name: label("Buscar en Como si lo recibiera", "Search in As if received by"), exact: true });
+    await search.fill("Persona");
+    await expect(search).toBeFocused();
     await expect.poll(async () => page.evaluate(() => (globalThis as unknown as { catalogsFixture: { reads: string[] } }).catalogsFixture.reads.filter(read => read.includes("search=Persona")).length)).toBe(1);
-    await expect(text).toBeVisible(); await expect(sample).toBeFocused();
+    await expect(search).toBeFocused();
     await page.screenshot({ path: info.outputPath("catalog-search.png"), fullPage: true });
+    // Closing the list gives the focus back to its button, and the catalog keeps its filters.
+    await page.keyboard.press("Escape");
+    await expect(sample).toBeFocused(); await expect(text).toBeVisible();
   });
 }

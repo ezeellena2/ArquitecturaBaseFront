@@ -158,7 +158,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 }); await open(page, language);
     const region = page.locator(`[data-slot="table-container"][role="region"][aria-label="${es ? "Opciones" : "Options"}"]`);
     if (width < 640) await page.getByRole("button", { name: es ? "Editar Compresores Unidos" : "Edit Compresores Unidos", exact: true }).click();
-    const zone = page.getByRole("combobox", { name: width < 640 ? (es ? "Zona" : "Zone") : (es ? "Fila 6 · Zona" : "Row 6 · Zone"), exact: true });
+    // DS1-A: the cell chooses with the shared piece, a button named by the field and what it holds.
+    const label = width < 640 ? (es ? "Zona" : "Zone") : (es ? "Fila 6 · Zona" : "Row 6 · Zone");
+    const zone = page.getByRole("button", { name: new RegExp("^" + label + " ") });
     await zone.scrollIntoViewIfNeeded(); await zone.click();
     await expect(page.getByRole("listbox")).toBeVisible();
     if (width >= 640) {
@@ -171,7 +173,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(await option.evaluate(node => { const box = node.getBoundingClientRect(); return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2) === node; })).toBe(true);
     await page.screenshot({ path: info.outputPath("ce2-catalog-cell-list.png") });
     await option.click();
-    await expect(zone).toHaveValue(north); await expect(zone).toBeFocused();
+    await expect(zone).toHaveAccessibleName(label + " " + north); await expect(zone).toBeFocused();
     await noWrites(page);
   });
 }

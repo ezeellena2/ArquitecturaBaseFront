@@ -17,7 +17,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await enter(); const catalog = page.getByRole("button", { name: new RegExp("^" + label("Catálogo", "Catalog")) });
     // The dropdown of a catalog field (2026-10-31): the chosen name in the field, no search, pages, link or notes; when the
     // options are prepared and how the filters work are the help of their (i).
-    await expect(catalog).toHaveValue(label("Clientes", "Customers"));
+    await expect(catalog).toHaveAccessibleName(label("Catálogo Clientes", "Catalog Customers"));
     await expect(page.getByRole("searchbox", { name: label("Buscar catálogo", "Search catalogs"), exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: label("Ver el catálogo", "View catalog"), exact: true })).toHaveCount(0);
     await expect(page.getByText(label("Las opciones se preparan al mandar el formulario.", "Options are prepared when the form is sent."), { exact: true })).toHaveCount(0);
@@ -33,24 +33,29 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(preview.getByRole("option")).toHaveCount(4);
     await expect(preview.getByRole("option", { name: "Pérez", exact: true })).toHaveText("Pérez");
     // Touching it shows the first catalogs; the inactive and unavailable ones are off, with their reason.
-    await catalog.scrollIntoViewIfNeeded(); await catalog.click();
+    // The field fits in the width; it is measured closed, because the open list hides the rest of the page from the reader.
+    await catalog.scrollIntoViewIfNeeded();
+    const catalogBox = await catalog.boundingBox(); expect(catalogBox).not.toBeNull(); expect(catalogBox!.x).toBeGreaterThanOrEqual(0); expect(catalogBox!.x + catalogBox!.width).toBeLessThanOrEqual(width);
+    await catalog.click();
     const list = page.getByRole("listbox", { name: label("Catálogo", "Catalog"), exact: true });
-    await expect(list.getByRole("option", { name: label("Clientes · 3 opciones", "Customers · 3 options"), exact: true })).toBeVisible();
+    // DS1-A: each catalog says its options in grey, as the description of its name.
+    const customers = list.getByRole("option", { name: label("Clientes", "Customers"), exact: true });
+    await expect(customers).toBeVisible(); await expect(customers).toHaveAccessibleDescription(label("3 opciones", "3 options"));
     await expect(list.getByRole("option", { name: new RegExp(label("Responsables de obra", "Site managers")) })).toHaveAttribute("aria-disabled", "true");
     await expect(list.getByRole("option", { name: new RegExp(label("Archivados", "Archived")) })).toHaveAttribute("aria-disabled", "true");
     await geometry();
     expect(await page.locator("[data-question-local-id]").first().evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
-    const catalogBox = await catalog.boundingBox(); expect(catalogBox).not.toBeNull(); expect(catalogBox!.x).toBeGreaterThanOrEqual(0); expect(catalogBox!.x + catalogBox!.width).toBeLessThanOrEqual(width);
     await page.screenshot({ path: info.outputPath("catalog-selector.png"), fullPage: true });
     const filtersId = "01990000-0000-7000-8000-000000000081", supervisors = label("Supervisores activos", "Active supervisors");
-    // Typing filters the list; choosing another catalog asks first.
-    await catalog.fill(supervisors.slice(0, 5));
+    // Typing in the search of the list filters it; choosing another catalog asks first.
+    const search = page.getByRole("combobox", { name: label("Buscar en Catálogo", "Search in Catalog"), exact: true });
+    await search.fill(supervisors.slice(0, 5));
     await expect(list.getByRole("option")).toHaveCount(1);
     await list.getByRole("option", { name: supervisors, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: label("¿Cambiar el catálogo?", "Change the catalog?"), exact: true });
     await expect(dialog).toBeVisible();
-    await page.keyboard.press("Escape"); await expect(dialog).toBeHidden(); await expect(catalog).toBeFocused(); await expect(catalog).toHaveValue(label("Clientes", "Customers"));
-    await catalog.click(); await catalog.fill(supervisors.slice(0, 5));
+    await page.keyboard.press("Escape"); await expect(dialog).toBeHidden(); await expect(catalog).toBeFocused(); await expect(catalog).toHaveAccessibleName(label("Catálogo Clientes", "Catalog Customers"));
+    await catalog.click(); await search.fill(supervisors.slice(0, 5));
     await list.getByRole("option", { name: supervisors, exact: true }).click(); await expect(dialog).toBeVisible();
     await page.screenshot({ path: info.outputPath("catalog-replace.png"), fullPage: true });
     await dialog.getByRole("button", { name: label("Cambiar catálogo", "Change catalog"), exact: true }).click();
@@ -65,7 +70,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("table").getByRole("link", { name: label("Registrar visita", "Register visit"), exact: true }).click();
     await page.getByRole("heading", { name: label("Registrar visita", "Register visit"), exact: true }).waitFor();
     await page.getByRole("button", { name: label("Editar Cliente", "Edit Customer"), exact: true }).click();
-    await expect(catalog).toHaveValue(supervisors); await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-saved.png"), fullPage: true });
+    await expect(catalog).toHaveAccessibleName(label("Catálogo ", "Catalog ") + supervisors); await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-saved.png"), fullPage: true });
     const calls = await page.evaluate(() => (globalThis as unknown as { catalogsFixture: { calls: { path: string }[] } }).catalogsFixture.calls);
     expect(calls.some(call => call.path.endsWith("/items"))).toBe(true);
     expect(calls.some(call => call.path.includes("catalog-previews") || call.path.includes("catalog-filter-options"))).toBe(false);

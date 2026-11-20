@@ -103,8 +103,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await open(page, language, width, "documents");
     await page.getByRole("button", { name: text(language, "Filtros", "Filters"), exact: true }).click();
     if (width < 640) await page.getByRole("button", { name: text(language, "Formulario", "Form"), exact: true }).click();
-    // The filter is the only piece to choose (DS1-A): a button named by the filter and what is chosen.
-    await page.getByRole("button", { name: new RegExp("^" + text(language, "Formulario", "Form") + " ") }).click();
+    // The filter is the only piece to choose (DS1-A): a button named by the filter and what is chosen. It is looked for in
+    // «Filtros», because the menu has «Form management» in English.
+    const filters = page.getByRole("dialog", { name: text(language, "Filtros", "Filters"), exact: true });
+    await filters.getByRole("button", { name: new RegExp("^" + text(language, "Formulario", "Form") + " ") }).click();
     await expect(page.getByRole("option", { name: text(language, "Pagos de clientes", "Customer payments"), exact: true })).toBeVisible();
     await page.screenshot({ path: shot("documents-filters", language, width) });
     await page.getByRole("option", { name: text(language, "Pagos de clientes", "Customer payments"), exact: true }).click();

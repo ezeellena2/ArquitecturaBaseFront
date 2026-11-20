@@ -39,8 +39,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // A question of the block: marked, and what an item does not hold off with its reason (RG9-A); the block is no type.
     await page.getByRole("button", { name: text(language, "Editar Cantidad", "Edit Quantity"), exact: true }).click();
     await expect(page.getByRole("checkbox", { name: text(language, "Se carga varias veces", "Loaded several times"), exact: true })).toBeChecked();
-    await expect(page.getByRole("option", { name: text(language, "Foto · No se carga varias veces", "Photo · Not loaded several times"), exact: true })).toBeDisabled();
+    // The answer type chooses with the shared piece (DS1-A): its list shows what an item does not hold off, with its reason.
+    const type = page.getByRole("button", { name: new RegExp("^" + text(language, "Tipo de respuesta", "Answer type") + " ") });
+    await type.click();
+    const photo = page.getByRole("option", { name: text(language, "Foto", "Photo"), exact: true });
+    await expect(photo).toHaveAttribute("aria-disabled", "true");
+    await expect(photo).toHaveAccessibleDescription(text(language, "No se carga varias veces", "Not loaded several times"));
     await expect(page.getByRole("option", { name: /^(Bloque|Block|Renglones|Rows)\b/ })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(type).toBeFocused();
     // With a question of the block open, the preview shows the WhatsApp screen of an item (beside the editor on a wide screen).
     if (width >= 1024) await expect(page.getByText(text(language, "Artículos · ítem 1", "Items · item 1"), { exact: true })).toBeVisible();
     await noPageScroll(page, width);

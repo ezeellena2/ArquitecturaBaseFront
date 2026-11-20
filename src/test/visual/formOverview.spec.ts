@@ -20,7 +20,8 @@ async function assertContainedTable(page: Page, width: number, mustScroll: boole
 
 async function assertOverviewGeometry(page: Page, width: number) {
   if (width >= 1024) {
-    const controls = [page.getByRole("searchbox"), page.getByRole("group"), page.getByRole("checkbox")];
+    // The state of the bar, not the rows per page under the table, which is a segmented control too.
+    const controls = [page.getByRole("searchbox"), page.getByRole("group", { name: /^(Estado de los formularios|Form status)$/ }), page.getByRole("checkbox")];
     const bounds = await Promise.all(controls.map(control => control.boundingBox()));
     const boxes = bounds.map(box => box!);
     expect(Math.min(...boxes.map(box => box.y + box.height))).toBeGreaterThan(Math.max(...boxes.map(box => box.y)));

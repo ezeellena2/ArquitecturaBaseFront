@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 // DS1-A and DS2-A (2026-11-19) in the UI catalog: the only piece to choose from a list, closed, open with and without its
 // search, as the button of a listing bar and, on the phone, taking the screen. Evidence es/en at 1440, 390 and 320 px,
@@ -19,7 +19,8 @@ async function open(page: Page, lang: Lang, width: number) {
   return region;
 }
 
-const field = (page: Page, name: string) => page.getByRole("button", { name: new RegExp(`^${name} `) });
+// The catalog page has other examples with the same names: each field is looked for in the region of the piece.
+const field = (region: Locator, name: string) => region.getByRole("button", { name: new RegExp(`^${name} `) });
 
 for (const lang of ["es", "en"] as const) {
   test(`opens the list under its field, with its search when there are many (${lang})`, async ({ page }) => {
@@ -28,11 +29,11 @@ for (const lang of ["es", "en"] as const) {
     await region.screenshot({ path: `test-results/pickers-closed-${lang}-1440.png` });
 
     // Several: the names that fit and «y N más», in a field that does not grow.
-    const value = field(page, text.value);
+    const value = field(region, text.value);
     expect((await value.boundingBox())!.height).toBeLessThan(40);
 
     // Roles: the boxes on the left and the grey lines; marking does not close.
-    await field(page, text.roles).press("Enter");
+    await field(region, text.roles).press("Enter");
     const roles = page.getByRole("listbox", { name: text.roles });
     await expect(roles).toBeFocused();
     await page.keyboard.press("Home");
@@ -40,10 +41,10 @@ for (const lang of ["es", "en"] as const) {
     await expect(roles).toBeVisible();
     await page.screenshot({ path: `test-results/pickers-roles-${lang}-1440.png` });
     await page.keyboard.press("Escape");
-    await expect(field(page, text.roles)).toBeFocused();
+    await expect(field(region, text.roles)).toBeFocused();
 
     // Campo asignado: the search on top with the focus, how many there are and «Sin campo asignado» apart.
-    await field(page, text.place).press("Enter");
+    await field(region, text.place).press("Enter");
     await expect(page.getByRole("combobox")).toBeFocused();
     await page.screenshot({ path: `test-results/pickers-place-${lang}-1440.png` });
     await page.keyboard.type("es");
@@ -54,13 +55,13 @@ for (const lang of ["es", "en"] as const) {
     await expect(page.getByRole("button", { name: lang === "es" ? "Zona Sin zona" : "Zone No zone", exact: true })).toBeFocused();
 
     // The time zone: the city and, in grey, the time of its country and the offset.
-    await field(page, text.timeZone).press("Enter");
+    await field(region, text.timeZone).press("Enter");
     await page.keyboard.type("mont");
     await page.screenshot({ path: `test-results/pickers-time-zone-${lang}-1440.png` });
     await page.keyboard.press("Escape");
 
     // The filter of a listing bar keeps its button and opens the same list.
-    await field(page, text.role).press("Enter");
+    await field(region, text.role).press("Enter");
     await expect(page.getByRole("listbox", { name: text.role })).toBeVisible();
     await page.screenshot({ path: `test-results/pickers-bar-${lang}-1440.png` });
     await page.keyboard.press("Escape");
@@ -72,7 +73,7 @@ for (const lang of ["es", "en"] as const) {
       const region = await open(page, lang, width);
       await region.screenshot({ path: `test-results/pickers-closed-${lang}-${width}.png` });
 
-      await field(page, text.roles).click();
+      await field(region, text.roles).click();
       const roles = page.getByRole("dialog", { name: text.roles });
       await expect(roles).toBeVisible();
       expect((await roles.boundingBox())!.width).toBeGreaterThanOrEqual(width - 1);
@@ -80,7 +81,7 @@ for (const lang of ["es", "en"] as const) {
       await roles.getByRole("button", { name: text.close }).click();
       await expect(roles).toHaveCount(0);
 
-      await field(page, text.place).click();
+      await field(region, text.place).click();
       const place = page.getByRole("dialog", { name: text.place });
       await expect(place.getByRole("combobox")).toBeFocused();
       await page.screenshot({ path: `test-results/pickers-phone-place-${lang}-${width}.png` });

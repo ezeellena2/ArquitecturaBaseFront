@@ -47,14 +47,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: es ? "Editar Pérez Hnos." : "Edit Pérez Hnos.", exact: true })).toBeFocused();
     await page.getByRole("button", { name: es ? "Usuarios, con filtros" : "Users with filters", exact: true }).click();
     // The Picker (DS1-A): its button says the label and the chosen one, and its list opens with a click.
-    const column = page.getByRole("button", { name: es ? "Texto de cada opción Nombre" : "Option text Name", exact: true });
+    const column = page.getByRole("button", { name: es ? "Texto de cada opción nombre" : "Option text name", exact: true });
     await column.click();
     await expect(page.getByRole("listbox").getByRole("option")).toHaveCount(1);
     await page.keyboard.press("Escape");
     const detail = page.getByRole("button", { name: es ? /^Detalle / : /^Detail / });
     await detail.click();
-    await page.getByRole("option", { name: es ? "Activo" : "Active", exact: true }).click();
-    await expect(detail).toHaveAccessibleName(es ? "Detalle Activo" : "Detail Active");
+    await page.getByRole("option", { name: es ? "activo" : "active", exact: true }).click();
+    await expect(detail).toHaveAccessibleName(es ? "Detalle activo" : "Detail active");
     const exclude = page.getByRole("checkbox", { name: es ? "Sin incluir a quien lo recibe" : "Exclude the recipient" });
     await exclude.focus();
     await page.keyboard.press("Space");
