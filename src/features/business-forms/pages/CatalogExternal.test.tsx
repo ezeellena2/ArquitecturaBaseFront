@@ -102,7 +102,8 @@ describe("«Completar con …» in the options of a catalog a registry completes
     expect(lookups).toEqual([{ taxId: "30-50001091-2" }]);
     expect(taxId).toHaveValue("30500010912");
     expect(dialog.getByRole("textbox", { name: "Domicilio" })).toHaveValue("Ruta 5 km 3, Junín");
-    expect(dialog.getByRole("combobox", { name: "Condición frente al IVA" })).toHaveValue("Responsable inscripto");
+    // The condition is chosen with the shared piece: its button says the field and the chosen option.
+    expect(dialog.getByRole("button", { name: "Condición frente al IVA Responsable inscripto" })).toBeInTheDocument();
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Completamos los datos con ARCA." }));
     await user.type(dialog.getByRole("textbox", { name: "Domicilio" }), " (sucursal)");
     expect(dialog.getByRole("textbox", { name: "Domicilio" })).toHaveValue("Ruta 5 km 3, Junín (sucursal)");
