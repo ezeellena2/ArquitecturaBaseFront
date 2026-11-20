@@ -30,6 +30,22 @@ it("reads and discards aggregate requests with Manage only, while Create still r
  const dialog=await screen.findByRole("dialog",{name:"Descartar pedido"});await userEvent.click(within(dialog).getByRole("button",{name:"Descartar"}));
  await waitFor(()=>expect(body).toEqual({expectedRevision:2}));expect(vi.mocked(notify).mock.calls.filter(([notice])=>notice.kind==="success")).toHaveLength(1);
 });
+it("puts the actions of a topic as icons, and marking it reviewed swaps its drawing for the ring while it works",async()=>{
+ setup(["formtemplates.manage","formtemplates.read"]);let answer:(()=>void)|undefined;
+ server.use(http.post("/api/forms/missing-requests/:id/review",()=>new Promise<Response>(resolve=>{answer=()=>resolve(HttpResponse.json({...topic,revision:3}));})));
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
+ const table=screen.getByRole("table");const actions=cellUnder(table,within(table).getAllByRole("row")[1],"Acciones");
+ // A table row carries no text buttons: each action is an icon with its name in the tooltip; going elsewhere stays a link.
+ expect(actions).toHaveTextContent(/^$/);
+ expect(within(actions).getByRole("link",{name:"Crear formulario Reclamos de clientes"})).toHaveAttribute("href","/formularios/nuevo");
+ const review=within(actions).getByRole("button",{name:"Marcar como revisado Reclamos de clientes"});
+ await userEvent.hover(review);expect(await screen.findByRole("tooltip")).toHaveTextContent("Marcar como revisado");
+ await userEvent.click(review);
+ await waitFor(()=>expect(review).toHaveAttribute("aria-busy","true"));
+ expect(within(actions).getByRole("button",{name:"Descartar Reclamos de clientes"})).toBeDisabled();
+ answer?.();
+ await waitFor(()=>expect(review).not.toHaveAttribute("aria-busy"));
+});
 it("marks an unreviewed topic as reviewed with the expected revision, and a reviewed one has neither the badge nor the action",async()=>{
  setup();let body:unknown;const reviewed={...topic,id:"22222222-2222-4222-8222-222222222222",name:"Pedidos de compra",reviewedBy:{userId:id,displayName:"Ana"},reviewedAtUtc:"2026-10-17T13:00:00Z"};
  server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(page([topic,reviewed]))),http.post("/api/forms/missing-requests/:id/review",async({request})=>{body=await request.json();return HttpResponse.json({...topic,revision:3,reviewedBy:{userId:id,displayName:"Ana"},reviewedAtUtc:"2026-10-17T13:00:00Z"});}));

@@ -5,8 +5,7 @@ import { catalogItemColumns } from "../catalogColumns";
 import { Fragment, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
-import { AlertTriangleIcon, ChevronDownIcon, PencilIcon, TrashIcon } from "@/shared/ui/icons";
+import { AlertTriangleIcon, ChevronDownIcon, PencilIcon, RefreshIcon, TrashIcon, UndoIcon } from "@/shared/ui/icons";
 import { IconButton } from "@/shared/ui/IconButton";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { WideTable, WideTableCell, WideTableHead } from "@/shared/ui/WideTable";
@@ -109,9 +108,10 @@ export function CatalogItemsTable({ items, culture, original, valueType, fields 
           <WideTableCell pinned="end" className="text-right">{canManage ? <div className="flex justify-end gap-1">
             {onMove ? <><IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("up", { name }) }) : t("up", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === 1} onClick={() => onMove(item, -1)}><ChevronDownIcon className="size-4 rotate-180" /></IconButton>
             <IconButton size="icon-sm" label={item.itemId === null ? t("catalogs.items.moveAfterSave", { action: t("down", { name }) }) : t("down", { name })} disabled={moveDisabled || !hasPendingMoves && item.position === totalCount} onClick={() => onMove(item, 1)}><ChevronDownIcon className="size-4" /></IconButton></> : null}
-            {deleted ? <Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.restoreNamed", { name })} onClick={() => onRestore?.(item)}>{t("catalogs.items.restore")}</Button>
+            {/* A table row carries no text buttons (2026-11-20): restoring and reactivating are icons too, like editing. */}
+            {deleted ? <IconButton size="icon-sm" label={t("catalogs.items.restoreNamed", { name })} disabled={busy} onClick={() => onRestore?.(item)}><UndoIcon className="size-4" /></IconButton>
               : item.isActive ? <IconButton size="icon-sm" label={t("catalogs.editNamed", { name })} disabled={busy} onClick={() => onEdit(item)}><PencilIcon className="size-4" /></IconButton>
-              : <Button type="button" variant="outline" size="sm" disabled={busy} aria-label={t("catalogs.items.reactivateNamed", { name })} onClick={() => onChange({ ...item, isActive: true })}>{t("catalogs.items.reactivate")}</Button>}
+              : <IconButton size="icon-sm" label={t("catalogs.items.reactivateNamed", { name })} disabled={busy} onClick={() => onChange({ ...item, isActive: true })}><RefreshIcon className="size-4" /></IconButton>}
             {onRemove && item.itemId === null ? <IconButton size="icon-sm" label={t("catalogs.items.removeNamed", { name })} disabled={busy} onClick={() => onRemove(item)}><TrashIcon className="size-4" /></IconButton> : null}
             {onDelete && item.itemId !== null && !deleted ? <IconButton size="icon-sm" label={t("catalogs.items.deleteNamed", { name })} disabledLabel={deleteDisabledReason ?? undefined} disabled={busy || !!deleteDisabledReason} onClick={() => onDelete(item)}><TrashIcon className="size-4" /></IconButton> : null}
           </div> : null}</WideTableCell>

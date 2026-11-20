@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
@@ -13,8 +13,10 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { PlusIcon } from "@/shared/ui/icons";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
+import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
@@ -29,7 +31,6 @@ import { useResponseFeedback } from "../hooks/useResponseQueries";
 export function FormOverviewPage() {
   const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const [params] = useSearchParams();
-  const navigate = useNavigate();
   const update = useQueryUpdate();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
@@ -81,9 +82,10 @@ export function FormOverviewPage() {
       { id: "myLastEntry", header: t("overview.myLastEntry"), cell: lastNumber },
       { id: "received", header: t("responses.received"), cell: received },
     ] : []),
-    ...(scope.canCreate ? [{ id: "load", header: "", align: "right" as const, cell: (row: FormOverviewRow) => row.deactivatedAtUtc ? null
-      : <Button type="button" variant="outline" size="sm" aria-label={t("formEntries:loadForm", { name: row.name })}
-        onClick={() => navigate("/formularios/" + row.id + "/cargar", { state: { from: "overview" } })}>{t("formEntries:load")}</Button> }] : []),
+    // A table row carries no text buttons: loading is an icon with its name in the tooltip, and a link, since it goes elsewhere.
+    ...(scope.canCreate ? [{ id: "load", header: t("actionsColumn"), align: "right" as const, cell: (row: FormOverviewRow) => <RowActions actions={[{
+      hidden: !!row.deactivatedAtUtc, label: t("formEntries:load"), accessibleName: t("formEntries:loadForm", { name: row.name }), icon: PlusIcon,
+      to: "/formularios/" + row.id + "/cargar", state: { from: "overview" } }]}/> }] : []),
   ];
   return <Page title={t("overview.title")}>
     <FolderLayout folders={folders}>

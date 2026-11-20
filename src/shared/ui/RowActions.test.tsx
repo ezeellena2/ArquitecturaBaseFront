@@ -1,11 +1,12 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { RouterProvider, createMemoryRouter, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { RowActions, type RowAction } from "./RowActions";
-import { ShieldIcon } from "./icons";
+import { PlusIcon, ShieldIcon } from "./icons";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
-function accion(overrides: Partial<RowAction> = {}): RowAction {
+function accion(overrides: Partial<Extract<RowAction, { to?: undefined }>> = {}): RowAction {
   return {
     label: "Roles",
     accessibleName: "Editar los roles de ana@ejemplo.com",
@@ -108,5 +109,53 @@ describe("RowActions", () => {
 
     // Así la columna de acciones no deja un borde flotando en las filas donde no hay nada que hacer.
     expect(container.querySelector("button")).toBeNull();
+  });
+
+  it("goes to another place with a real link, its state and what it remembers before leaving", async () => {
+    const onSelect = vi.fn();
+    function Destino() {
+      const { state } = useLocation();
+      return <p>{(state as { seed: string } | null)?.seed}</p>;
+    }
+    const router = createMemoryRouter([
+      { path: "/", element: <RowActions actions={[{ label: "Crear formulario", accessibleName: "Crear formulario Reclamos de clientes", icon: PlusIcon, to: "/formularios/nuevo", state: { seed: "Reclamos de clientes" }, onSelect }]} /> },
+      { path: "/formularios/nuevo", element: <Destino /> },
+    ]);
+    renderWithProviders(<RouterProvider router={router} />);
+
+    // Ir a otro lado es un enlace de verdad: se abre en otra pestaña con Ctrl o con la rueda, y el lector lo anuncia
+    // como enlace. Lleva el mismo dibujo, el mismo tooltip y el mismo lugar en el grupo que un botón.
+    const enlace = screen.getByRole("link", { name: "Crear formulario Reclamos de clientes" });
+    expect(enlace).toHaveAttribute("href", "/formularios/nuevo");
+    await userEvent.hover(enlace);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Crear formulario");
+    await userEvent.click(enlace);
+
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect(router.state.location.pathname).toBe("/formularios/nuevo");
+    expect(await screen.findByText("Reclamos de clientes")).toBeInTheDocument();
+  });
+
+  it("keeps an action in sight but off while another one works", async () => {
+    const onSelect = vi.fn();
+    renderWithProviders(<RowActions actions={[accion({ onSelect, disabled: true })]} />);
+
+    // Lo que ya se está guardando en otra fila apaga ésta un momento; no la esconde, porque vuelve enseguida.
+    const boton = screen.getByRole("button", { name: "Editar los roles de ana@ejemplo.com" });
+    expect(boton).toBeDisabled();
+    await userEvent.click(boton);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("swaps its drawing for the ring while its own action works", () => {
+    renderWithProviders(<RowActions actions={[accion({ pending: true }), accion({ label: "Eliminar", accessibleName: "Eliminar a ana@ejemplo.com" })]} />);
+
+    // LC1-A: un ícono de fila cambia su dibujo por el aro, en el mismo lugar y sin otro clic; el resto del grupo sigue igual.
+    const boton = screen.getByRole("button", { name: "Editar los roles de ana@ejemplo.com" });
+    expect(boton).toHaveAttribute("aria-busy", "true");
+    expect(boton).toBeDisabled();
+    expect(boton.querySelector("svg")).toBeNull();
+    expect(boton.querySelector("[data-slot='button-spinner']")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Eliminar a ana@ejemplo.com" }).querySelector("svg")).not.toBeNull();
   });
 });

@@ -234,8 +234,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await open(page, "/formularios/respuestas", profile === "create-only" ? "entries-create-only" : "entries", language);
     await expect(page.getByRole("heading", { name: es ? "Formularios" : "Forms", level: 1, exact: true })).toBeVisible();
     const table = page.getByRole("table");
-    const load = table.getByRole("button", { name: (es ? "Cargar " : "Load ") + sowing, exact: true });
+    // «Cargar» is an icon of the row, with its name in the tooltip and no text in the cell.
+    const load = table.getByRole("link", { name: (es ? "Cargar " : "Load ") + sowing, exact: true });
     await expect(load).toBeVisible();
+    await expect(load).toHaveText("");
     await expect(table.getByRole("link", { name: sowing, exact: true })).toBeVisible();
     if (profile === "create-only") {
       // Their own entries and the last one, and the name opens the sheet of their own (CW6-C, CW9).

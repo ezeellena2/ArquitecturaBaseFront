@@ -290,7 +290,11 @@ it("shows whoever only completes forms their own entries, opens their sheet and 
   expect(cellUnder(table, none, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
   expect(cellUnder(table, own, "Estado del formulario")).toHaveTextContent(/^Activo$/);
   expect(screen.queryByRole("group", { name: "Estado de los formularios" })).not.toBeInTheDocument();
-  expect(within(table).queryByRole("button", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
-  await userEvent.click(within(table).getByRole("button", { name: "Cargar Registrar visita" }));
+  expect(within(table).queryByRole("link", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
+  // A table row carries no text buttons: loading is an icon with its name in the tooltip, and a link, since it goes elsewhere.
+  const load = within(table).getByRole("link", { name: "Cargar Registrar visita" });
+  expect(load).toHaveTextContent(/^$/);
+  expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
+  await userEvent.click(load);
   await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/cargar"));
 });

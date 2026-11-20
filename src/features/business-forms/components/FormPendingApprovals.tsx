@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -12,7 +12,9 @@ import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { DataTable } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { EyeIcon } from "@/shared/ui/icons";
 import { Pagination } from "@/shared/ui/Pagination";
+import { RowActions } from "@/shared/ui/RowActions";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import { fetchApprovalTask, type ApprovalTask } from "../api/approvals";
@@ -101,7 +103,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false, in
   useLayoutEffect(() => {
     if (taskId) previousTask.current = taskId;
     else if (previousTask.current) {
-      (table.current?.querySelector<HTMLElement>('[data-pending-task="' + previousTask.current + '"]') ?? table.current)?.focus();
+      (table.current?.querySelector<HTMLElement>('[data-pending-task="' + previousTask.current + '"] a') ?? table.current)?.focus();
       previousTask.current = undefined;
     }
   }, [taskId]);
@@ -115,7 +117,7 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false, in
   useLayoutEffect(() => {
     if (location.pathname !== "/formularios/" + formId + "/respuestas" || taskId || workspace.fullEntry?.locationKey === null || !workspace.fullEntry || workspace.navigation?.origin !== "pending" || !query.data || query.isPlaceholderData) return;
     const target = workspace.navigation.selection.taskId;
-    (table.current?.querySelector<HTMLElement>('[data-pending-task="' + target + '"]') ?? table.current)?.focus();
+    (table.current?.querySelector<HTMLElement>('[data-pending-task="' + target + '"] a') ?? table.current)?.focus();
     workspace.finishFull();
   }, [location.pathname, formId, taskId, workspace, query.data, query.isPlaceholderData]);
   useLayoutEffect(() => { if (forbidden && workspace.navigation?.origin === "pending") workspace.setNavigation(null); }, [forbidden, workspace]);
@@ -139,8 +141,12 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false, in
         { id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
         { id: "received", header: t("responses.received"), cell: row => formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId) },
         { id: "role", header: t("approvals.role"), cell: row => row.role.name },
-        { id: "review", header: t("actionsColumn"), cell: row => <Button variant="link" size="inline" asChild><Link data-pending-task={row.id} aria-label={t("overview.review") + " " + row.number} to={full ? responseFullPath(formId, row.recordId, params.toString()) : "/formularios/" + formId + "/respuestas?" + pendingSearch(row.id)}
-          onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { remember(row); if (full) workspace.prepareFull(row.recordId); if (row.id === taskId) setFocusRequest(value => value + 1); } }}>{t("overview.review")}</Link></Button> },
+        // A table row carries no text buttons or links (2026-11-20): «Revisar» is an icon with its name in the tooltip. The
+        // wrapper names the task, so closing the panel gives the focus back to its link.
+        { id: "review", header: t("actionsColumn"), align: "right", cell: row => <span data-pending-task={row.id} className="inline-flex"><RowActions actions={[{
+          label: t("overview.review"), accessibleName: t("overview.review") + " " + row.number, icon: EyeIcon,
+          to: full ? responseFullPath(formId, row.recordId, params.toString()) : "/formularios/" + formId + "/respuestas?" + pendingSearch(row.id),
+          onSelect: event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { remember(row); if (full) workspace.prepareFull(row.recordId); if (row.id === taskId) setFocusRequest(value => value + 1); } } }]}/></span> },
       ]} rows={query.data?.items ?? []} rowKey={row => row.id} selectedRowKey={taskId ?? (workspace.navigation?.origin === "pending" ? workspace.navigation.selection.taskId : undefined)} onRowClick={open}
         isLoading={query.isPending} refreshing={query.isPlaceholderData || query.isError && query.isFetching || reread.rereading} hasData={!!query.data} error={query.error ? t("approvals.loadFailed") : undefined} onRetry={() => void query.refetch()}
         emptyTitle={t("overview.noPending")}/>

@@ -95,7 +95,10 @@ function setup(read = false) {
 async function openFirst() {
   // Alone for whoever only decides, or in the tab «Por aprobar (2)» for whoever also reads responses (board PL1-A).
   // The first test pays the lazy load of the page: in the full run it went past the 3 s.
-  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }, { timeout: 10_000 }));
+  const review = await screen.findByRole("link", { name: "Revisar VIS-00001" }, { timeout: 10_000 });
+  // A table row carries no text buttons or links: reviewing is an icon with its name in the tooltip.
+  expect(review).toHaveTextContent(/^$/);
+  await userEvent.click(review);
   const panel = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await within(panel).findByRole("button", { name: "Aprobar" });
   return panel;

@@ -280,6 +280,15 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   en botones deshabilitados. Un botón con texto visible no repite su nombre en un tooltip; si está apagado por un
   motivo que no es obvio, `DisabledReason` lo muestra sobre el mismo botón ([MA1-A](#el-motivo-de-lo-apagado--2026-11-09)).
 - En una fila, inocuas primero y destructiva última; el rojo aparece al interactuar. Sin permiso, no se renderiza.
+- **Una fila de tabla no lleva botones ni enlaces con texto** (2026-11-20, en toda la app). Lo que se hace con la fila
+  (cargar, crear, revisar, agregar, restaurar, reactivar, descartar) es un ícono con su nombre en el tooltip y el dato de
+  la fila en el nombre accesible, en la columna «Acciones», al borde derecho: en un listado, el grupo de `RowActions`;
+  en una tabla que se edita en el lugar (las opciones de un catálogo, los renglones), `IconButton` como los demás de esa
+  fila. Ir a otro lado sigue siendo un enlace (`RowActions` con `to`); una acción que tarda cambia su dibujo por el aro
+  (LC1-A) y se apaga mientras otra fila guarda. Lo que es un dato de la fila (el nombre que la abre, el número de la
+  última respuesta, lo que espera aprobación) sigue siendo texto. En el celular, la tarjeta de un listado puede llevar
+  su botón con texto a todo el ancho, como la Biblioteca. Reemplazó a los botones con texto de Formularios («Cargar»),
+  Formularios que faltan, la Biblioteca, «Por aprobar» («Revisar») y las opciones de un catálogo.
 - **Qué va a la vista y qué en ⋮** (AC1-A, 2026-11-11, en toda la app). A la vista, con texto, la tarea de la pantalla:
   guardar y descartar en un editor, publicar, crear o agregar en un listado, exportar la planilla, aprobar o rechazar lo
   que espera una decisión; la principal, última. Ir a otro lado y bajar (pantalla completa, la conversación, el PDF): íconos

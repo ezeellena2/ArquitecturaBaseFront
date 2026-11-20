@@ -114,7 +114,10 @@ it("adds a copy with the name under the standard's language and a free prefix, a
   const { router } = renderRouteWithProviders("/formularios/biblioteca");
 
   expect(await screen.findByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
-  await userEvent.click(await screen.findByRole("button", { name: "Agregar «Factura»" }));
+  const add = await screen.findByRole("button", { name: "Agregar «Factura»" });
+  // A table row carries no text buttons: adding is an icon with its name in the tooltip.
+  expect(add).toHaveTextContent(/^$/);
+  await userEvent.click(add);
   const dialog = await screen.findByRole("dialog", { name: "Agregar «Factura»" });
   expect(within(dialog).getByRole("textbox", { name: /^Prefijo de numeración/ })).toHaveValue("FAC3");
   const name = within(dialog).getByRole("textbox", { name: /^Nombre/ });

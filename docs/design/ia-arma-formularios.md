@@ -144,7 +144,7 @@ Al programar cada etapa se reescribió lo que decía lo contrario (queda como re
 | «Ver cómo queda» | `Dialog` con la vista previa del editor (`FormPreview`, sobre `PhonePreview`), que aporta el módulo por el punto de extensión |
 | Adjuntar: el clip, el archivo en el editor y en el mensaje, el que no se lee | Pieza nueva de `shared/ui/assistant`, con `IconButton` |
 | Grabar: «Grabando», «Detener», «Descartar» y el audio listo | Pieza nueva de `shared/ui/assistant`; se escucha con `PrivateAudio` |
-| «Armar con la IA» | `Button` en las acciones de `Page` y en cada tema de Formularios que faltan |
+| «Armar con la IA» | `Button` en las acciones de `Page`; en cada tema de Formularios que faltan, un ícono (`SparklesIcon`) de `RowActions`, porque una fila de tabla no lleva botones con texto (2026-11-20) |
 | La banda «Propuesta del asistente» | La de H4: `Banner`, el estado en `Page.status` y «Descartar propuesta» y «Aprobar y activar» en las acciones |
 | «Importar opciones» con el archivo | `CatalogImportDialog` |
 

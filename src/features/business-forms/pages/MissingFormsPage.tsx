@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useLayoutEffect,useMemo,useRef,useState} from "react";
 import {useQuery,useQueryClient,keepPreviousData} from "@tanstack/react-query";
 import {useTranslation} from "react-i18next";
-import {Link,useSearchParams} from "react-router";
+import {useSearchParams} from "react-router";
 import { assistantDraftState, canAskAssistant } from "@/shared/hooks/assistantDraftState";
 import {useCurrentUser} from "@/auth/useCurrentUser";
 import {ApiError} from "@/shared/api/ApiError";
@@ -20,7 +20,8 @@ import {FilterBar} from "@/shared/ui/FilterBar";
 import {ForbiddenPage} from "@/shared/ui/ForbiddenPage";
 import {Page} from "@/shared/ui/Page";
 import {Pagination} from "@/shared/ui/Pagination";
-import {PlusIcon} from "@/shared/ui/icons";
+import {BanIcon,CheckIcon,PlusIcon,SparklesIcon} from "@/shared/ui/icons";
+import {RowActions} from "@/shared/ui/RowActions";
 import {SearchInput} from "@/shared/ui/SearchInput";
 import {SegmentedControl} from "@/shared/ui/SegmentedControl";
 import {Surface} from "@/shared/ui/Surface";
@@ -46,6 +47,8 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  if(list.data&&!list.isPlaceholderData&&!denied&&!list.error&&lastLoaded!==list.data)setLastLoaded(list.data);
  const data=list.data??lastLoaded;
  const [selected,setSelected]=useState<MissingTopic|null>(null);const [busy,setBusy]=useState(false);const [needsRefresh,setNeedsRefresh]=useState(false);
+ // The topic being marked as reviewed: its icon shows the ring while the others wait.
+ const [reviewing,setReviewing]=useState<string|null>(null);
  // An explicit read again (Reintentar, or after a conflict) keeps the rows in sight: the table says it reads until they arrive.
  const [rereading,setRereading]=useState(false);
  const cooldown=useCountdown(0);const {setSearch:updateSearch}=pagination;
@@ -81,7 +84,7 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  // Marking a topic as reviewed is not destructive: it needs no confirmation, and it answers a conflict like discarding does.
  async function review(row:MissingTopic){
   if(busy||cooldown.isRunning||needsRefresh||forbidden)return;
-  const pending=new AbortController();controller.current=pending;setBusy(true);dismissNotification(reviewId);
+  const pending=new AbortController();controller.current=pending;setBusy(true);setReviewing(row.id);dismissNotification(reviewId);
   try{await reviewMissingTopic(row.id,row.revision,pending.signal);if(!active.current||pending.signal.aborted)return;
    notify({id:reviewId+":success",kind:"success",message:t("missing.reviewedNotice")});await client.invalidateQueries({queryKey:root});
   }catch(error:unknown){
@@ -90,7 +93,7 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
    if(failure.kind==="cancelled")return;
    if(error instanceof ApiError&&error.status===409){setNeedsRefresh(true);notify({id:reviewId,kind:"warning",message:t("missing.reviewConflict"),action:{label:t("common:actions.retry"),onClick:()=>{if(active.current)void refresh();}}});await refresh();}
    else{if(failure.kind==="wait")cooldown.restart(failure.retryAfterSeconds??30);notify({id:reviewId,kind:"error",message:readErrorMessage(error,t)});}
-  }finally{if(active.current&&!pending.signal.aborted)setBusy(false);}
+  }finally{if(active.current&&!pending.signal.aborted){setBusy(false);setReviewing(null);}}
  }
  if(forbidden)return <ForbiddenPage/>;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
@@ -102,7 +105,14 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
   {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
   {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
-  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=><div className="flex justify-end gap-2">{canCreate&&askAssistant?<Button asChild size="sm" variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))} aria-label={t("assistantProposals.entries.labelFor",{name:row.name})}>{t("assistantProposals.entries.label")}</Link></Button>:null}{canCreate?<Button asChild size="sm" variant="outline"><Link to="/formularios/nuevo" state={{formSeed:{ownerActorId:actorId,name:row.name}}} aria-label={t("missing.createFor",{name:row.name})}><PlusIcon className="size-4"/>{t("missing.create")}</Link></Button>:null}{row.state==="Pending"&&row.reviewedAtUtc===null?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.reviewFor",{name:row.name})} onClick={()=>void review(row)}>{t("missing.review")}</Button>:null}{row.state==="Pending"?<Button type="button" size="sm" variant="outline" disabled={busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData} aria-label={t("missing.discardFor",{name:row.name})} onClick={()=>setSelected(row)}>{t("missing.discard")}</Button>:null}</div>},
+  // A table row carries no text buttons: each action is an icon with its name in the tooltip, in one group; going elsewhere
+  // (the assistant, a new form) stays a link, and «Marcar como revisado» swaps its drawing for the ring while it saves (LC1-A).
+  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=>{const off=busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData;return <RowActions actions={[
+   {hidden:!canCreate||!askAssistant,label:t("assistantProposals.entries.label"),accessibleName:t("assistantProposals.entries.labelFor",{name:row.name}),icon:SparklesIcon,to:"/",state:assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))},
+   {hidden:!canCreate,label:t("missing.create"),accessibleName:t("missing.createFor",{name:row.name}),icon:PlusIcon,to:"/formularios/nuevo",state:{formSeed:{ownerActorId:actorId,name:row.name}}},
+   {hidden:row.state!=="Pending"||row.reviewedAtUtc!==null,label:t("missing.review"),accessibleName:t("missing.reviewFor",{name:row.name}),icon:CheckIcon,disabled:off,pending:reviewing===row.id,onSelect:()=>void review(row)},
+   {hidden:row.state!=="Pending",label:t("missing.discard"),accessibleName:t("missing.discardFor",{name:row.name}),icon:BanIcon,destructive:true,disabled:off,onSelect:()=>setSelected(row)},
+  ]}/>;}},
  ];
  const filtered=!!query.search;const globallyEmpty=data?.stateCounts.pending===0&&data.stateCounts.discarded===0;
  // The wait of a 429 is the reason of every control it turns off: the filters and the table give it as their tooltip and

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Calendar, ChartColumn, Clipboard, File, Folder, Leaf, Package, Receipt, Store, Truck, Wrench } from "lucide-react";
+import { Calendar, ChartColumn, Clipboard, File, Folder, Leaf, Package, Receipt, Sparkles, Store, Truck, Undo2, Wrench } from "lucide-react";
 
 // El acceso público conserva los dibujos Lucide de su diseño aprobado. También
 // se consumen desde este módulo, para que una feature no arme otro set propio.
@@ -398,3 +398,7 @@ export function ZoomOutIcon(props: IconProps) { return <Icon {...props}><circle 
 export function RotateIcon(props: IconProps) { return <Icon {...props}><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M20 4v4h-4"/></Icon>; }
 /// A photo among the documents of «Documentos recibidos», where a PDF or a Word is `DocumentIcon`.
 export function ImageIcon(props: IconProps) { return <Icon {...props}><rect x="4" y="5" width="16" height="14" rx="1"/><circle cx="9" cy="10" r="1.5"/><path d="m20 16-4.5-4.5L7 19"/></Icon>; }
+/// The icons of a table row that used to be text buttons (2026-11-20): «Armar con la IA» in a topic of «Formularios que
+/// faltan», and «Restaurar» an option that would be deleted on Save.
+export function SparklesIcon({ className }: IconProps) { return <Sparkles className={className} strokeWidth={1.75} aria-hidden="true" />; }
+export function UndoIcon({ className }: IconProps) { return <Undo2 className={className} strokeWidth={1.75} aria-hidden="true" />; }

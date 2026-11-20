@@ -31,6 +31,17 @@ describe("The options of a catalog, one piece of data per column (UD3)", () => {
     expect(cellUnder(table, row, "Estado")).toHaveTextContent(/^Se elimina al guardar$/);
     const actions = cellUnder(table, row, "Acciones");
     expect(within(actions).getByRole("button", { name: "Restaurar Urea granulada" })).toBeVisible();
-    expect(actions).not.toHaveTextContent("Se elimina al guardar");
+    // A table row carries no text buttons: restoring is an icon with its name in the tooltip.
+    expect(actions).toHaveTextContent(/^$/);
+  });
+
+  it("reactivates an inactive option from an icon of its row", () => {
+    const onChange = vi.fn();
+    mount({ canManage: true, items: [{ ...urea, isActive: false }], onChange });
+    const table = screen.getByRole("table");
+    const actions = cellUnder(table, within(table).getAllByRole("row")[1], "Acciones");
+    expect(actions).toHaveTextContent(/^$/);
+    within(actions).getByRole("button", { name: "Reactivar Urea granulada" }).click();
+    expect(onChange).toHaveBeenCalledWith({ ...urea, isActive: true });
   });
 });

@@ -17,6 +17,7 @@ import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { LockIcon, PlusIcon } from "@/shared/ui/icons";
+import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
@@ -98,7 +99,8 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const none = <span className="text-[var(--color-content-muted)]">—</span>;
   const meta = (standard: FormStandard) => [t("library.meta", { version: standard.version }), standard.source, t("library.copies", { count: standard.copies })]
     .filter(Boolean).join(" · ");
-  const addButton = (standard: FormStandard, wide = false) => <Button type="button" size={wide ? "default" : "sm"} className={wide ? "w-full" : undefined} onClick={() => setAdding(standard)}
+  // On the phone each standard is a card and «Agregar» takes its whole width; in the table it is an icon of the row (2026-11-20).
+  const addButton = (standard: FormStandard) => <Button type="button" className="w-full" onClick={() => setAdding(standard)}
     aria-label={t("library.addTitle", { name: standard.name })}><PlusIcon className="size-4" aria-hidden="true" />{t("library.add")}</Button>;
   // One piece of data per column (UD1): what it reads, what it validates, the version, the module that brings it and how many of
   // your forms came from it; whether it is available, only where both kinds are listed.
@@ -120,7 +122,8 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
     ...availability === "All" && coming ? [{ id: "state", header: t("library.state"),
       cell: (row: Row) => <Badge variant="outline">{t(row.kind === "standard" ? "library.available" : "library.upcoming")}</Badge> }] : [],
     ...canAdd && has(standard => standard.key) ? [{ id: "actions", header: t("actionsColumn"), align: "right" as const,
-      cell: (row: Row) => row.kind === "standard" ? addButton(row.standard) : null }] : [],
+      cell: (row: Row) => row.kind === "standard" ? <RowActions actions={[{ label: t("library.add"), accessibleName: t("library.addTitle", { name: row.standard.name }),
+        icon: PlusIcon, onSelect: () => setAdding(row.standard) }]} /> : null }] : [],
   ];
   // The (i) says what the library is, how a standard that reads documents validates and, only to whoever can, invites to add one (premise 4.4).
   const help = [t("library.help"), ...library.data?.standards.some(standard => standard.reads) ? [t("library.helpReading")] : [], ...canAdd ? [t("library.helpAdd")] : []].join(" ");
@@ -152,7 +155,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
             ...row.standard.reads ? [{ key: "reads", label: t("library.reads"), value: reads(row.standard) }] : [],
             ...row.standard.validations ? [{ key: "validations", label: t("library.validations"), value: validations(row.standard) }] : [],
           ]} /> : null}
-          {canAdd && row.kind === "standard" ? addButton(row.standard, true) : null}
+          {canAdd && row.kind === "standard" ? addButton(row.standard) : null}
         </div>
       </Surface></li>)}
     </ul>
