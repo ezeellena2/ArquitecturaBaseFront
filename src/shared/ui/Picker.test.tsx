@@ -162,6 +162,16 @@ describe("Picker", () => {
     expect(screen.getByRole("button", { name: "Campo asignado LOS ÁLAMOS" })).toBeInTheDocument();
   });
 
+  it("takes the focus to the search when it arrives after the list opened", async () => {
+    const view = renderWithProviders(<Place options={places.slice(0, 3)}/>);
+    const { list } = await openList(/^Campo asignado/);
+    expect(list).toHaveFocus();
+
+    view.rerender(<Place options={places}/>);
+
+    expect(screen.getByRole("combobox", { name: "Buscar en Campo asignado" })).toHaveFocus();
+  });
+
   it("puts first the names that start with the search, and last what only the grey line answers", async () => {
     const zones = [{ id: "boise", label: "Boise", description: "hora de las Montañas Rocosas" }, { id: "la-paz", label: "La Paz", description: "hora de Bolivia" },
       { id: "monterrey", label: "Monterrey", description: "hora central" }, { id: "montevideo", label: "Montevideo", description: "hora de Uruguay" },
@@ -215,6 +225,26 @@ describe("Picker", () => {
 
     view.rerender(<FormField label="Persona"><Picker label="Persona" options={[]} value={null} onChange={vi.fn()} search="jz" onSearchChange={onSearchChange} failed onRetry={onRetry}/></FormField>);
     expect(await screen.findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers «Reintentar» only when there is a retry, off with its reason while it waits", async () => {
+    const onRetry = vi.fn();
+    const failed = (retry: { onRetry?: () => void; retryReason?: string | null }) =>
+      <FormField label="Persona"><Picker label="Persona" options={[]} value={null} onChange={vi.fn()} search="" onSearchChange={vi.fn()} failed {...retry}/></FormField>;
+    const view = renderWithProviders(failed({}));
+    const { user } = await openList(/^Persona/);
+
+    expect(screen.getByText("No se pudieron traer las opciones.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+
+    view.rerender(failed({ onRetry, retryReason: "Esperá 12 segundos." }));
+    const retry = await screen.findByRole("button", { name: "Reintentar" });
+    expect(retry).toHaveAttribute("aria-disabled", "true");
+    expect(retry).toHaveAccessibleDescription(/Esperá 12 segundos\./);
+
+    view.rerender(failed({ onRetry, retryReason: null }));
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });

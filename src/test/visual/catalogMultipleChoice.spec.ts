@@ -113,10 +113,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: label("Filtros", "Filters"), exact: true }).click();
     const filters = page.getByRole("dialog", { name: label("Filtros", "Filters") });
     await filters.getByRole("button", { name: label("Fallas", "Faults"), exact: true }).click();
-    const faults = filters.getByRole("combobox", { name: label("Fallas", "Faults"), exact: true });
+    // The filter is the only piece to choose (DS1-A): a button named by the question and what is chosen.
+    const faults = filters.getByRole("region", { name: label("Fallas", "Faults") }).getByRole("button", { name: new RegExp("^" + label("Fallas", "Faults") + " ") });
     await faults.click();
     await page.getByRole("listbox", { name: label("Fallas", "Faults"), exact: true }).getByRole("option", { name: label("Frío", "Cold"), exact: true }).click();
-    await expect(faults).toHaveValue(label("Frío", "Cold"));
+    await expect(faults).toHaveAccessibleName(label("Fallas", "Faults") + " " + label("Frío", "Cold"));
     await page.keyboard.press("Escape");
     await expect.poll(async () => (await fixture(page)).some(query => query.conditions?.some(condition => condition.operator === "anyOf"))).toBe(true);
     await expect(page.getByRole("link", { name: "TEST-000001", exact: true })).toHaveCount(0);

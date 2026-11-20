@@ -93,7 +93,7 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
       const selected = value(operator) || null;
       const selectedLabel = selected === null ? undefined : column.type === "boolean" ? (selected === "true" ? t("responses.yes") : t("responses.no"))
         : column.options.find(option => option.id === selected)?.label ?? names[selected];
-      return <ResponseFacetControl formId={formId} filter={facetFilter} onReadError={onReadError} dimension="choice" fieldId={column.fieldId} label={column.label} searchable={column.type !== "boolean"}
+      return <ResponseFacetControl formId={formId} filter={facetFilter} onReadError={onReadError} dimension="choice" fieldId={column.fieldId} label={column.label}
         selected={selected} selectedLabel={selectedLabel} onChange={(id, label) => set(operator, id ? [id] : [], named(id, label))}/>;
     }
     if (column.type === "decimal" || column.type === "date")

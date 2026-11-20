@@ -6,6 +6,7 @@ import { summarizeChoices } from "@/shared/lib/summarizeChoices";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogTitle } from "./dialog";
+import { DisabledReason } from "./DisabledReason";
 import { IconButton } from "./IconButton";
 import { CheckIcon, ChevronDownIcon, CloseIcon, SearchIcon } from "./icons";
 import { Input } from "./input";
@@ -61,7 +62,10 @@ interface PickerBase {
   countText?: string;
   loading?: boolean;
   failed?: boolean;
+  /** «Reintentar» after a failure; without it, the failure has nothing to retry. */
   onRetry?: () => void;
+  /** Why «Reintentar» waits, such as a 429: it stays off with its reason (MA1-A). */
+  retryReason?: string | null;
   /** The server has more: «Mostrar 50 más», which the down arrow on the last option also asks for. */
   onLoadMore?: () => void;
   loadingMore?: boolean;
@@ -174,6 +178,11 @@ export function Picker(props: PickerProps) {
   useLayoutEffect(() => {
     if (open && current >= 0) reveal(listRef.current, document.getElementById(`${uid}-option-${current}`), false);
   }, [open, current, uid]);
+
+  // The search may arrive after the list opened, once its owner learns there are many: the focus goes on to it.
+  useLayoutEffect(() => {
+    if (open && searchable && document.activeElement === listRef.current) searchRef.current?.focus();
+  }, [open, searchable]);
 
   // Once the list is in the page: the focus to the search or to the list, and the chosen one in sight.
   function focusList(event: Event) {
@@ -331,7 +340,9 @@ export function Picker(props: PickerProps) {
       <Skeleton className="h-3 w-3/4"/><Skeleton className="h-3 w-1/2"/><Skeleton className="h-3 w-2/3"/>
     </div>
       : props.failed ? <div className={cn("flex flex-wrap items-center gap-2 text-sm text-[var(--color-content-muted)]", phone ? "p-4" : "px-2.5 py-2")}>
-        {t("picker.failed")}<Button type="button" variant="outline" size="sm" {...keepFocus} onClick={props.onRetry}>{t("actions.retry")}</Button>
+        {t("picker.failed")}{props.onRetry ? <DisabledReason reason={props.retryReason}>
+          <Button type="button" variant="outline" size="sm" disabled={!!props.retryReason} {...keepFocus} onClick={props.onRetry}>{t("actions.retry")}</Button>
+        </DisabledReason> : null}
       </div>
         : <p role="status" className={cn("text-sm text-[var(--color-content-muted)]", phone ? "p-4" : "px-2.5 py-2")}>
           {searching ? t("picker.noMatches", { search: search.trim() }) : t("picker.empty")}

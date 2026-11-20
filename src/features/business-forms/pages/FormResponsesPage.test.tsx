@@ -148,6 +148,15 @@ async function openResponseTab(name: "Respuesta" | "Actividad" | "PDF") {
   return within(await panel.findByRole("tabpanel", { name }));
 }
 // Board PL1-A: «Filtros» opens what can be filtered on the left and, on the right, what is chosen in the marked one.
+/** A filter of «Filtros» is the only piece to choose (DS1-A): its button says the filter and what is chosen, and its list opens with
+ * the keyboard, like the other Radix lists in the tests. */
+async function openFacet(dialog: HTMLElement, name: string) {
+  const trigger = within(dialog).getByRole("button", { name: (accessible, element) => accessible.startsWith(name + " ") && element?.getAttribute("aria-haspopup") === "listbox" });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return within(await screen.findByRole("listbox", { name }));
+}
+
 async function openFilters(section?: string) {
   await userEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
   const dialog = await screen.findByRole("dialog", { name: "Filtros" });
@@ -888,17 +897,16 @@ describe("response sheet", () => {
     const dialog = await openFilters("Cargó");
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
     expect(vi.mocked(notify).mock.calls[0][0].action).toBeUndefined();
-    // The open list of the combo says it could not load (board PL2-A).
-    await userEvent.click(within(dialog).getByRole("combobox", { name: "Cargó" }));
-    const list = within(await screen.findByRole("listbox", { name: "Cargó" }));
-    expect(list.getByText("No pudimos cargar los datos")).toBeInTheDocument();
+    // The open list says it could not load (boards PL2-A and DS1-A).
+    await openFacet(dialog, "Cargó");
+    expect(screen.getByText("No se pudieron traer las opciones.")).toBeInTheDocument();
     if (status === 429) {
       // The wait of the facet is the reason of its disabled Reintentar, not a text in the list.
       const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
-      expect(list.getByRole("button", { name: "Reintentar" })).toHaveAttribute("aria-disabled", "true");
-      expect(list.getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
-      for (const text of list.getAllByText(wait)) expect(text).not.toBeVisible();
-    } else expect(list.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Reintentar" })).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("button", { name: "Reintentar" })).toHaveAccessibleDescription(wait);
+      for (const text of screen.getAllByText(wait)) expect(text).not.toBeVisible();
+    } else expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     expect(requested).toHaveBeenCalled();
   });
   it("names an account without a display name in the person filter", async () => {
@@ -922,18 +930,17 @@ describe("response sheet", () => {
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
     const dialog = await openFilters("Cargó");
-    await userEvent.click(within(dialog).getByRole("combobox", { name: "Cargó" }));
+    await openFacet(dialog, "Cargó");
     expect(await screen.findByRole("option", { name: "Persona sin información" })).toBeInTheDocument();
   });
-  it("offers yes and no directly without typing for a boolean question", async () => {
+  it("offers yes and no directly, without a search, for a boolean question", async () => {
     setup();
     renderRouteWithProviders(`/formularios/${responseFormId}/respuestas`);
     await screen.findByRole("table");
     const dialog = await openFilters("Confirmado");
-    const combo = within(dialog).getByRole("combobox", { name: "Confirmado" });
-    expect(combo).toHaveAttribute("readonly");
-    await userEvent.click(combo);
+    await openFacet(dialog, "Confirmado");
     expect(await screen.findByRole("option", { name: "No" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByRole("combobox", { name: "Buscar en Confirmado" })).not.toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Sí" })).toBeInTheDocument();
   });
   it("withdraws all values and counts after a denied filter count", async () => {
@@ -1342,7 +1349,7 @@ it("filters multi choices through anyOf while keeping their column unsortable", 
   // The first question to choose from is not a filter of its own over the sheet anymore: it is in «Filtros» (board PL1-A).
   expect(screen.queryByRole("button", { name: "Fallas" })).not.toBeInTheDocument();
   const dialog = await openFilters("Fallas");
-  await userEvent.click(within(dialog).getByRole("combobox", { name: "Fallas" }));
+  await openFacet(dialog, "Fallas");
   await userEvent.click(await screen.findByRole("option", { name: "Frío" }));
   await waitFor(() => expect(requests).toContainEqual(expect.objectContaining({ conditions: [{ fieldId: single.fieldId, operator: "anyOf", values: [options[0]!.id] }] })));
   await userEvent.keyboard("{Escape}");
@@ -1366,12 +1373,12 @@ it("names a catalog option in its chip and in its closed combo", async () => {
   renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas");
   await screen.findByRole("table");
   const dialog = await openFilters("Artículo");
-  await userEvent.click(within(dialog).getByRole("combobox", { name: "Artículo" }));
+  await openFacet(dialog, "Artículo");
   await userEvent.click(await screen.findByRole("option", { name: "Glifosato 48%" }));
   expect(await screen.findByText("Artículo: Glifosato 48%", { exact: true })).toBeInTheDocument();
   await userEvent.keyboard("{Escape}");
   const reopened = await openFilters("Artículo con filtro");
-  expect(within(reopened).getByRole("combobox", { name: "Artículo" })).toHaveValue("Glifosato 48%");
+  expect(within(reopened).getByRole("button", { name: "Artículo Glifosato 48%" })).toBeInTheDocument();
 });
 
 it("shows sealed data subcolumns without enabling sorting or requiring catalog permission", async () => {

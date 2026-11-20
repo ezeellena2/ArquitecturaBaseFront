@@ -47,7 +47,16 @@ const selected: ResponseQuery = { page: 3, pageSize: 20, state: "Approved", sear
 const menu = (query: ResponseQuery, apply = vi.fn(), names: Record<string, string> = {}) => renderWithProviders(<ResponseFiltersMenu formId={responseFormId} query={query}
   columns={[failures, article, delivered, dose, photo]} zone="UTC" names={names} onApply={apply}/>);
 const open = async () => { await userEvent.click(screen.getByRole("button", { name: /^Filtros/ })); return within(await screen.findByRole("dialog", { name: "Filtros" })); };
-const openCombo = async (panel: ReturnType<typeof within>, name: string) => { await userEvent.click(panel.getByRole("combobox", { name })); return within(await screen.findByRole("listbox", { name })); };
+// The filter of a question is the only piece to choose (DS1-A): its button says the filter and what is chosen, and its list
+// opens with the keyboard, like the other Radix lists in the tests.
+const filterButton = (panel: ReturnType<typeof within>, name: string) =>
+  panel.getByRole("button", { name: (accessible: string, element: Element | null) => accessible.startsWith(name + " ") && element?.getAttribute("aria-haspopup") === "listbox" });
+const openCombo = async (panel: ReturnType<typeof within>, name: string) => {
+  const trigger = filterButton(panel, name);
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return within(await screen.findByRole("listbox", { name }));
+};
 
 // Board PL1-A: the list on the left (Recibida, each question in order, Cargó and Versión) and what is chosen on the right.
 // A photo or a document has nothing to filter since «Respuesta» is gone (PL2-A), so it is not in the list.
@@ -79,19 +88,20 @@ it("applies the option chosen in a question's combo at once, without counts nor 
   menu(selected, apply);
   const panel = await open();
   await userEvent.click(panel.getByRole("button", { name: "Fallas" }));
-  const combo = panel.getByRole("combobox", { name: "Fallas" });
-  expect(combo).toHaveValue("");
-  expect(combo).toHaveAttribute("placeholder", "Todas");
+  expect(filterButton(panel, "Fallas")).toHaveAccessibleName("Fallas Todas");
   const list = await openCombo(panel, "Fallas");
   await list.findByRole("option", { name: "Frío" });
   expect(list.getAllByRole("option").map(option => option.textContent)).toEqual(["Todas", "Frío", "Ruido"]);
+  // Two options: no search in the list, and no count.
+  expect(screen.queryByRole("combobox", { name: "Buscar en Fallas" })).not.toBeInTheDocument();
+  expect(screen.queryByText("2 opciones")).not.toBeInTheDocument();
   expect(list.getByRole("option", { name: "Todas" })).toHaveAttribute("aria-selected", "true");
   // An option with zero is not off: the server's counts are not shown anymore.
   expect(list.getByRole("option", { name: "Ruido" })).not.toHaveAttribute("aria-disabled");
   await userEvent.click(list.getByRole("option", { name: "Frío" }));
   expect(apply).toHaveBeenCalledWith(expect.objectContaining({ state: "Approved", search: "visit",
     conditions: [{ fieldId: failures.fieldId, operator: "anyOf", values: [failures.options[0].id] }] }), [], { [failures.options[0].id]: "Frío" });
-  expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
 });
 
 // A catalog question's column has no options: its closed combo says the name remembered when it was chosen.
@@ -101,7 +111,7 @@ it("names the chosen catalog option in its closed combo and remembers the name o
   menu({ ...selected, conditions: [{ fieldId: article.fieldId, operator: "in", values: [glyphosate] }] }, apply, { [glyphosate]: "Glifosato 48%" });
   const panel = await open();
   await userEvent.click(panel.getByRole("button", { name: "Artículo con filtro" }));
-  expect(panel.getByRole("combobox", { name: "Artículo" })).toHaveValue("Glifosato 48%");
+  expect(filterButton(panel, "Artículo")).toHaveAccessibleName("Artículo Glifosato 48%");
   const list = await openCombo(panel, "Artículo");
   expect(await list.findByRole("option", { name: "Glifosato 48%" })).toHaveAttribute("aria-selected", "true");
   await userEvent.click(list.getByRole("option", { name: "Atrazina 50%" }));
@@ -114,25 +124,36 @@ it("takes the filter away with Todas", async () => {
   menu({ ...selected, conditions: [{ fieldId: failures.fieldId, operator: "anyOf", values: [failures.options[0].id] }] }, apply);
   const panel = await open();
   await userEvent.click(panel.getByRole("button", { name: "Fallas con filtro" }));
-  expect(panel.getByRole("combobox", { name: "Fallas" })).toHaveValue("Frío");
+  expect(filterButton(panel, "Fallas")).toHaveAccessibleName("Fallas Frío");
   const list = await openCombo(panel, "Fallas");
   await userEvent.click(await list.findByRole("option", { name: "Todas" }));
   expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({ state: "Approved", conditions: [] }), []);
 });
 
-// Typing in the combo searches among all the options in the server; meanwhile the open list says so.
-it("searches the options while typing and says Buscando… meanwhile", async () => {
+// With more than ten options the search goes inside the list (DS1-A) and searches among all of them in the server; meanwhile the
+// open list says so.
+it("searches the options in the list's search when they are many and says Buscando… meanwhile", async () => {
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   const counts = setup({ gate });
+  const articles = [...Array.from({ length: 11 }, (_, index) => ({ id: `01990000-0000-7000-8000-0000000011${String(index).padStart(2, "0")}`, label: `Atrazina ${index + 1}`, count: 1 })),
+    { id: glyphosate, label: "Glifosato 48%", count: 3 }];
+  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => {
+    const body = await request.json() as { fieldId?: string; search?: string };
+    counts.push(body);
+    if (body.search) await gate;
+    const items = articles.filter(item => !body.search || item.label.toLowerCase().includes(body.search.toLowerCase()));
+    return HttpResponse.json({ items, page: 1, pageSize: 20, totalCount: items.length, totalPages: 1, hasPrevious: false, hasNext: false });
+  }));
   menu({ page: 1, pageSize: 20 });
   const panel = await open();
   await userEvent.click(panel.getByRole("button", { name: "Artículo" }));
   const list = await openCombo(panel, "Artículo");
-  await list.findByRole("option", { name: "Atrazina 50%" });
-  await userEvent.type(panel.getByRole("combobox", { name: "Artículo" }), "gli");
-  expect(await screen.findByText("Buscando…")).toBeInTheDocument();
-  expect(screen.queryByRole("option", { name: "Atrazina 50%" })).not.toBeInTheDocument();
+  await list.findByRole("option", { name: "Atrazina 1" });
+  expect(await screen.findByText("12 opciones")).toBeInTheDocument();
+  await userEvent.type(await screen.findByRole("combobox", { name: "Buscar en Artículo" }), "gli");
+  expect(await screen.findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
+  expect(screen.queryByRole("option", { name: "Atrazina 1" })).not.toBeInTheDocument();
   await act(async () => release());
   expect(await screen.findByRole("option", { name: "Glifosato 48%" })).toBeInTheDocument();
   expect(screen.queryByRole("option", { name: "Todas" })).not.toBeInTheDocument();
@@ -152,22 +173,22 @@ it("shows the first 20 options and brings the rest with «Mostrar … más», ke
   const list = await openCombo(panel, "Artículo");
   await list.findByRole("option", { name: "Opción 20" });
   expect(list.queryByRole("option", { name: "Opción 21" })).not.toBeInTheDocument();
-  await userEvent.click(list.getByRole("button", { name: "Mostrar 5 más" }));
+  await userEvent.click(screen.getByRole("button", { name: "Mostrar 5 más" }));
   expect(await list.findByRole("option", { name: "Opción 25" })).toBeInTheDocument();
   expect(list.getByRole("option", { name: "Opción 01" })).toBeInTheDocument();
-  expect(list.queryByRole("button", { name: /^Mostrar/ })).not.toBeInTheDocument();
-  expect(panel.getByRole("combobox", { name: "Artículo" })).toHaveFocus();
+  expect(screen.queryByRole("button", { name: /^Mostrar/ })).not.toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Buscar en Artículo" })).toHaveFocus();
 });
 
-it("offers Sí and No without typing for a yes/no question", async () => {
+it("offers Sí and No without a search for a yes/no question", async () => {
   setup();
   const apply = vi.fn();
   menu(selected, apply);
   const panel = await open();
   await userEvent.click(panel.getByRole("button", { name: "¿Llegó completo?" }));
-  expect(panel.getByRole("combobox", { name: "¿Llegó completo?" })).toHaveAttribute("readonly");
   const list = await openCombo(panel, "¿Llegó completo?");
   await list.findByRole("option", { name: "No" });
+  expect(screen.queryByRole("combobox", { name: "Buscar en ¿Llegó completo?" })).not.toBeInTheDocument();
   expect(list.getAllByRole("option").map(option => option.textContent)).toEqual(["Todas", "Sí", "No"]);
   await userEvent.click(list.getByRole("option", { name: "No" }));
   expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [{ fieldId: delivered.fieldId, operator: "in", values: ["false"] }] }), [], { false: "No" });
@@ -243,7 +264,7 @@ it("on the phone shows the list first, then the combo with a way back, and Listo
   const panel = await open();
   expect(panel.queryByRole("region")).not.toBeInTheDocument();
   await userEvent.click(panel.getByRole("button", { name: "Fallas" }));
-  expect(panel.getByRole("combobox", { name: "Fallas" })).toBeInTheDocument();
+  expect(panel.getByRole("button", { name: "Fallas Todas" })).toBeInTheDocument();
   await userEvent.click(panel.getByRole("button", { name: "Volver a los filtros" }));
   expect(panel.getByRole("button", { name: "Dosis" })).toBeInTheDocument();
   await userEvent.click(panel.getByRole("button", { name: "Listo" }));

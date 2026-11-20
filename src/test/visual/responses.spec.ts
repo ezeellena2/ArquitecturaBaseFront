@@ -46,9 +46,11 @@ for (const language of ["es", "en"] as const)
       expect((await filters.boundingBox())!.width).toBeLessThanOrEqual(width);
       await filters.getByRole("button", { name: en ? "Method" : "Modalidad", exact: true }).click();
       await expect(filters.getByRole("region", { name: en ? "Method" : "Modalidad" })).toBeVisible();
-      // Board PL2-A: a question with options is a combo; open, «Todas» and its options, without counts, inside the screen.
-      const combo = filters.getByRole("combobox", { name: en ? "Method" : "Modalidad", exact: true });
-      await expect(combo).toHaveAttribute("placeholder", en ? "All" : "Todas");
+      // Boards PL2-A and DS1-A: a question with options is the only piece to choose; open, «Todas» and its options, without
+      // counts, inside the screen.
+      const method = en ? "Method" : "Modalidad";
+      const combo = filters.getByRole("region", { name: method }).getByRole("button", { name: new RegExp("^" + method + " ") });
+      await expect(combo).toHaveAccessibleName(method + " " + (en ? "All" : "Todas"));
       await combo.click();
       const options = page.getByRole("listbox", { name: en ? "Method" : "Modalidad", exact: true });
       await expect(options.getByRole("option", { name: en ? "All" : "Todas", exact: true })).toBeVisible();
@@ -61,7 +63,7 @@ for (const language of ["es", "en"] as const)
         fullPage: true,
       });
       // Escape closes the list first and then «Filtros», which gives the focus back to its button.
-      await combo.press("Escape");
+      await page.keyboard.press("Escape");
       await expect(options).toBeHidden();
       await filters.press("Escape");
       await expect(
