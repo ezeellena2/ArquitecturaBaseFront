@@ -10,7 +10,7 @@ export type SupportedLanguage = (typeof supportedLanguages)[number];
 export const languageStorageKey = "arquitecturabase.language";
 export const publicLanguageStorageKey = "arquitecturabase.public-language";
 
-/// Un valor cualquiera (lo guardado en el navegador, lo que trae el perfil, lo que eligió un `<select>`) es
+/// Un valor cualquiera (lo guardado en el navegador, lo que trae el perfil, lo que se eligió en pantalla) es
 /// uno de los idiomas que hay.
 export function isSupportedLanguage(value: string | null | undefined): value is SupportedLanguage {
   return supportedLanguages.includes(value as SupportedLanguage);

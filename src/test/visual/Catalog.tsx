@@ -7,15 +7,13 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { DataTable } from "@/shared/ui/DataTable";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { notify } from "@/shared/ui/notifications";
 import { Textarea } from "@/shared/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
-import { MultiSelect } from "@/shared/ui/MultiSelect";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SearchInput } from "@/shared/ui/SearchInput";
@@ -51,6 +49,7 @@ export function Catalog() {
   const [recording] = useState(() => new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], { type: "audio/webm" }));
   const [formOpen, setFormOpen] = useState(false);
   const [selection, setSelection] = useState<string[]>(["User"]);
+  const [role, setRole] = useState("User");
   const [choice, setChoice] = useState("InviteOnly");
   const [checked, setChecked] = useState(false);
   const [search, setSearch] = useState("");
@@ -91,11 +90,11 @@ export function Catalog() {
       <Surface title={text.controls} padded>
         <div className="grid gap-4 md:grid-cols-3">
           <FormField label={text.name} hint={text.hint}><Input defaultValue="Ana Pérez" /></FormField>
-          <FormField label={text.status}><NativeSelect><option>{text.chip}</option></NativeSelect></FormField>
+          <FormField label={text.status}><Picker label={text.status} options={[{ id: "chip", label: text.chip }]} value="chip" onChange={() => undefined} /></FormField>
           <FormField label={text.name} error={text.invalid}><Input defaultValue="" /></FormField>
           <FormField label={pieces.description}><Textarea defaultValue={english ? "Account details." : "Datos de la cuenta."} /></FormField>
-          <Select defaultValue="User"><FormField label={pieces.role}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger></FormField><SelectContent><SelectItem value="Admin">Admin</SelectItem><SelectItem value="User">User</SelectItem></SelectContent></Select>
-          <FormField label={pieces.roles}><MultiSelect options={[{ value: "Admin", label: "Admin" }, { value: "User", label: "User" }]} value={selection} onChange={setSelection} placeholder={pieces.choose} /></FormField>
+          <FormField label={pieces.role}><Picker label={pieces.role} options={[{ id: "Admin", label: "Admin" }, { id: "User", label: "User" }]} value={role} onChange={setRole} /></FormField>
+          <FormField label={pieces.roles}><Picker label={pieces.roles} multiple options={[{ id: "Admin", label: "Admin" }, { id: "User", label: "User" }]} value={selection} onChange={setSelection} placeholder={pieces.choose} /></FormField>
         </div>
       </Surface>
       <Surface title={pieces.selection} padded>

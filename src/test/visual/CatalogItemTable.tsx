@@ -4,7 +4,7 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { ItemCards, ItemTable, type ItemCellContext, type ItemTableColumn } from "@/shared/ui/ItemTable";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
@@ -61,8 +61,8 @@ export function CatalogItemTable() {
   const control = (owner: ReturnType<typeof useItems>, item: Item, column: ItemTableColumn, cell?: ItemCellContext) => {
     const value = item.values[column.key] ?? "", set = (next: string) => owner.change(item.key, column.key, next);
     const field = { "aria-label": cell?.label, "aria-invalid": cell?.invalid || undefined, "aria-describedby": cell?.describedBy };
-    if (column.key === "unit") return <NativeSelect {...field} value={value} onChange={event => set(event.target.value)}>
-      <option value="">{text.choose}</option><option value="liters">{text.liters}</option><option value="kilos">{text.kilos}</option></NativeSelect>;
+    if (column.key === "unit") return <Picker label={cell?.label ?? column.label} aria-invalid={field["aria-invalid"]} aria-describedby={field["aria-describedby"]}
+      placeholder={text.choose} options={[{ id: "liters", label: text.liters }, { id: "kilos", label: text.kilos }]} value={value || null} onChange={set} />;
     if (column.key === "state") return <SegmentedControl aria-label={cell?.label ?? column.label} options={[
       { key: "true", label: text.yes, pressed: value === "true", onSelect: () => set("true") },
       { key: "false", label: text.no, pressed: value === "false", onSelect: () => set("false") }]} />;
