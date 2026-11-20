@@ -10,12 +10,10 @@ import { useFilters } from "@/shared/hooks/useFilters";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { Button } from "@/shared/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/shared/ui/dropdown-menu";
-import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
-import { ChevronDownIcon } from "@/shared/ui/icons";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
+import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { CatalogListQuery } from "../api/catalogs";
@@ -69,7 +67,11 @@ export function CatalogsPage() {
   return <Page title={t("catalogs.title")} actions={newAction}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={kindOptions.map(key => ({ key,
       label: `${t(key === "All" ? "all" : catalogOriginKey(key))} (${list.data?.filterCounts.byKind[kindCounts[key]] ?? "…"})`,
-      pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div><DropdownMenu><FilterMenuTrigger>{t("catalogs.stateFilter", { state: state ? t("catalogs.state." + state) : t("all") })}<ChevronDownIcon aria-hidden="true" className="size-3.5" /></FilterMenuTrigger><DropdownMenuContent align="start"><DropdownMenuRadioGroup value={state ?? ""}>{([undefined, ...catalogStates] as const).map(value => <DropdownMenuRadioItem key={value ?? "All"} value={value ?? ""} onSelect={() => filters.setFilter("state", value)}>{value ? t("catalogs.state." + value) : t("all")}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu><FolderFilter folders={folders} /></div></FilterBar>
+      pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div>{/* The state is the only piece to choose with the button of the bar (DS1-A), as the role of Usuarios: «Todos los estados»
+      first and apart, which takes the filter out; choosing the one it has changes nothing (it would go back to page 1). */}
+    <Picker trigger="button" label={t("catalogs.columns.state")} first={{ id: "", label: t("catalogs.allStates") }}
+      options={catalogStates.map(value => ({ id: value, label: t("catalogs.state." + value) }))}
+      value={state ?? ""} onChange={id => { if (id !== (state ?? "")) filters.setFilter("state", id || undefined); }} /><FolderFilter folders={folders} /></div></FilterBar>
     <CatalogListTable page={visiblePage} canManage={canManage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
       sort={query.sort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}

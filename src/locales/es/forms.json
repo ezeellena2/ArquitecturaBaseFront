@@ -611,7 +611,7 @@
     },
     "search": "Buscar catálogo",
     "loadFailed": "No pudimos cargar los catálogos.",
-    "stateFilter": "Estado: {{state}}",
+    "allStates": "Todos los estados",
     "unavailableReason": "El catálogo tiene una configuración no válida.",
     "proposal": {
       "title": "Propuesta del asistente",

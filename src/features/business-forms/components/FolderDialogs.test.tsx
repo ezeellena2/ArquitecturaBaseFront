@@ -85,7 +85,7 @@ describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
     await userEvent.click(await within(dialog).findByRole("button", { name: "Nueva carpeta" }));
     const create = await screen.findByRole("dialog", { name: "Nueva carpeta" });
-    expect(within(create).getByRole("combobox", { name: "Ícono" })).toHaveTextContent("Paquete");
+    expect(within(create).getByRole("button", { name: "Ícono Paquete" })).toBeInTheDocument();
     await userEvent.type(within(create).getByRole("textbox", { name: "Nombre" }), "Compras{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nueva carpeta" })).not.toBeInTheDocument());
     expect(posted).toEqual([{ parentId: null, name: "Compras", icon: "package" }]);
@@ -148,7 +148,7 @@ describe("creating and editing a folder (CM2, CM4)", () => {
     await userEvent.keyboard("{Enter}");
     expect(await within(dialog).findByText("Escribí un nombre.")).toBeInTheDocument();
     expect(posted).toEqual([]);
-    await userEvent.click(within(dialog).getByRole("combobox", { name: "Ícono" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Ícono Paquete" }));
     await userEvent.click(await screen.findByRole("option", { name: "Hoja" }));
     await userEvent.type(name, "Compras{Enter}");
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -163,7 +163,7 @@ describe("creating and editing a folder (CM2, CM4)", () => {
     const onClose = vi.fn();
     renderDialog(scope => <FolderEditDialog scope={scope} folders={tree} target={{ kind: "create", parent: tree[1] }} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Nueva subcarpeta en «Repartos»" });
-    expect(within(dialog).queryByRole("combobox", { name: "Ícono" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /^Ícono/ })).not.toBeInTheDocument();
     await userEvent.type(within(dialog).getByRole("textbox", { name: "Nombre" }), "Sur");
     await userEvent.click(within(dialog).getByRole("button", { name: "Crear" }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -177,9 +177,9 @@ describe("creating and editing a folder (CM2, CM4)", () => {
     renderDialog(scope => <FolderEditDialog scope={scope} folders={tree} target={{ kind: "edit", folder: tree[1] }} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Editar «Repartos»" });
     expect(within(dialog).getByRole("textbox", { name: "Nombre" })).toHaveValue("Repartos");
-    expect(within(dialog).getByRole("combobox", { name: "Ícono" })).toHaveTextContent("Camión");
+    expect(within(dialog).getByRole("button", { name: "Ícono Camión" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Guardar" })).toBeDisabled();
-    await userEvent.click(within(dialog).getByRole("combobox", { name: "Ícono" }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Ícono Camión" }));
     await userEvent.click(await screen.findByRole("option", { name: "Paquete" }));
     await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -200,7 +200,7 @@ describe("creating and editing a folder (CM2, CM4)", () => {
     const onClose = vi.fn();
     renderDialog(scope => <FolderEditDialog scope={scope} folders={tree} target={{ kind: "edit", folder: tree[2] }} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Editar «Norte»" });
-    expect(within(dialog).queryByRole("combobox", { name: "Ícono" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /^Ícono/ })).not.toBeInTheDocument();
     const name = within(dialog).getByRole("textbox", { name: "Nombre" });
     await userEvent.clear(name);
     await userEvent.type(name, "Sur{Enter}");

@@ -7,7 +7,7 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { isMenuIconName, menuIconNames, menuIcons, type MenuIconName } from "@/shared/ui/menuIcons";
 import { notify } from "@/shared/ui/notifications";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Picker } from "@/shared/ui/Picker";
 import { folderNameMaxLength, type FormFolder } from "../api/folders";
 import { firstFreeIcon } from "../folderTree";
 import { useFolderWrites, type FolderScope } from "../hooks/useFormFolders";
@@ -71,18 +71,17 @@ export function FolderEditDialog({ scope, folders, target, onSaved, onClose, foc
             <Input autoFocus value={name} maxLength={folderNameMaxLength} readOnly={pending}
               onChange={event => { setName(event.target.value); setErrors(previous => ({ ...previous, name: undefined })); }} />
           </FormField>
+          {/* The icon is the only piece to choose (DS1-A): the drawing of each icon before its name, also in the closed field,
+              and the tick on the left (OE1-A). */}
           {topLevel ? (
-            <Select value={icon} disabled={pending} onValueChange={value => { if (isMenuIconName(value)) { setIcon(value); setErrors(previous => ({ ...previous, icon: undefined })); } }}>
-              <FormField label={t("editDialog.icon")} error={errors.icon}>
-                <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
-              </FormField>
-              <SelectContent>
-                {menuIconNames.map(option => {
+            <FormField label={t("editDialog.icon")} error={errors.icon}>
+              <Picker className="sm:w-56" label={t("editDialog.icon")} value={icon} disabled={pending}
+                onChange={value => { if (isMenuIconName(value)) { setIcon(value); setErrors(previous => ({ ...previous, icon: undefined })); } }}
+                options={menuIconNames.map(option => {
                   const Icon = menuIcons[option];
-                  return <SelectItem key={option} value={option}><Icon className="size-4" />{t("icons." + option)}</SelectItem>;
-                })}
-              </SelectContent>
-            </Select>
+                  return { id: option, label: t("icons." + option), icon: <Icon className="size-4" /> };
+                })} />
+            </FormField>
           ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" disabled={pending} onClick={onClose}>{t("common:actions.cancel")}</Button>

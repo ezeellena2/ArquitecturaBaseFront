@@ -611,7 +611,7 @@
     },
     "search": "Search catalogs",
     "loadFailed": "We could not load the catalogs.",
-    "stateFilter": "Status: {{state}}",
+    "allStates": "All statuses",
     "unavailableReason": "The catalog has an invalid configuration.",
     "proposal": {
       "title": "Assistant proposal",

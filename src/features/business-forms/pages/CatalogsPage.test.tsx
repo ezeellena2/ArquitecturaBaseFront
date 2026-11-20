@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
@@ -12,6 +12,16 @@ const listRaw = { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 function setup(permissions: string[]) { server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/catalogs", () => HttpResponse.json(listRaw))); }
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
+// The state is filtered with the button of the bar of the only piece to choose (DS1-A), named by «Estado» and what it says.
+async function openStates(current: string) {
+  const trigger = await screen.findByRole("button", { name: `Estado ${current}` });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Estado" });
+}
+async function chooseState(current: string, option: string) {
+  await userEvent.click(within(await openStates(current)).getByRole("option", { name: option }));
+}
 describe("Catalog routes and navigation", () => {
   it("chooses Manual without a write and navigates to the protected editor", async () => {
     setup(["formcatalogs.read", "formcatalogs.manage"]); let writes = 0;
@@ -56,20 +66,40 @@ it("requests the Unavailable state from the server and preserves origin/search/s
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } }); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];
   await act(async () => { router = renderRouteWithProviders("/catalogos?page=5&pageSize=1&kind=Filters&sort=-name&search=supervisores").router; });
-  const user = userEvent.setup(); const trigger = await screen.findByRole("button", { name: /^Estado:/ }); trigger.focus(); await user.keyboard("{Enter}"); await user.click(await screen.findByRole("menuitemradio", { name: "No se puede usar" }));
+  await chooseState("Todos los estados", "No se puede usar");
   await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("state")).toBe("Unavailable")); const params = new URLSearchParams(router.state.location.search);
   expect(params.get("kind")).toBe("Filters"); expect(params.get("search")).toBe("supervisores"); expect(params.get("sort")).toBe("-name"); expect(params.get("page")).toBeNull();
   await waitFor(() => expect(requests.some(request => request.get("state") === "Unavailable")).toBe(true)); expect(requests.at(-1)!.has("isActive")).toBe(false);
 });
 
-it("marks the chosen state in its menu", async () => {
+it("marks the chosen state in its list, with «Todos los estados» first and apart", async () => {
   // OE1-A (2026-11-03): el desplegable no decía cuál estaba elegido; ahora la elegida lleva su tilde.
   setup(["formcatalogs.read"]);
   server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } })));
   await act(async () => { renderRouteWithProviders("/catalogos?state=Inactive"); });
-  const user = userEvent.setup(); const trigger = await screen.findByRole("button", { name: /^Estado:/ }); trigger.focus(); await user.keyboard("{Enter}");
-  expect(await screen.findByRole("menuitemradio", { name: "Dado de baja" })).toHaveAttribute("aria-checked", "true");
-  expect(screen.getByRole("menuitemradio", { name: "Todos" })).toHaveAttribute("aria-checked", "false");
+  const list = await openStates("Dado de baja");
+  const options = within(list).getAllByRole("option");
+  expect(options.map(option => option.textContent)).toEqual(["Todos los estados", "Activo", "Dado de baja", "No se puede usar"]);
+  expect(options[0]!.nextElementSibling).toHaveAttribute("role", "presentation");
+  expect(within(list).getByRole("option", { name: "Dado de baja" })).toHaveAttribute("aria-selected", "true");
+  expect(within(list).getByRole("option", { name: "Todos los estados" })).toHaveAttribute("aria-selected", "false");
+});
+
+it("takes the state filter out with «Todos los estados», and choosing the one it has changes nothing", async () => {
+  setup(["formcatalogs.read"]);
+  const row = { valueType: "Text", id: "01990000-0000-7000-8000-000000000030", name: "Clientes", description: null, origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: true };
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ items: [row], page: 3, pageSize: 1, totalCount: 5, totalPages: 5, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 5, manual: 5, filters: 0 } } })));
+  let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+  await act(async () => { router = renderRouteWithProviders("/catalogos?page=3&pageSize=1&state=Active").router; });
+  const search = () => new URLSearchParams(router.state.location.search);
+  await chooseState("Activo", "Activo");
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+  expect(search().get("page")).toBe("3");
+  expect(search().get("state")).toBe("Active");
+  await chooseState("Activo", "Todos los estados");
+  await waitFor(() => expect(search().get("state")).toBeNull());
+  expect(search().get("page")).toBeNull();
+  expect(screen.getByRole("button", { name: "Estado Todos los estados" })).toBeInTheDocument();
 });
 
 // Searching, filtering, sorting or paging keeps the rows in sight, dimmed and out of reach, with the line under the header (LC2-A).
