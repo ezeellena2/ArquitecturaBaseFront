@@ -33,6 +33,9 @@ export interface PickerOption {
 interface PickerBase {
   /** The name of the field: it names the button and the list, and it is the title of the list on the phone. */
   label: string;
+  /** The id of what names the button instead of `label`: the label of its `FormField` when it says more than the name, such as the
+   * mark of a datum («Revisá»). `label` still names the list. */
+  labelledBy?: string;
   options: readonly PickerOption[];
   /** What the field says, in grey, while nothing is chosen («Sin zona»). */
   placeholder?: string;
@@ -280,7 +283,7 @@ export function Picker(props: PickerProps) {
     "aria-haspopup": phone ? "dialog" as const : "listbox" as const,
     "aria-expanded": open,
     "aria-controls": open && !phone ? listboxId : undefined,
-    "aria-labelledby": props.triggerLabel ? undefined : `${nameId} ${valueId}`,
+    "aria-labelledby": props.triggerLabel ? undefined : `${props.labelledBy ?? nameId} ${valueId}`,
     "aria-invalid": props["aria-invalid"],
     "aria-describedby": props["aria-describedby"],
     onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {

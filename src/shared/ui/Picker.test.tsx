@@ -284,6 +284,14 @@ describe("Picker", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Se muestran los 100 con más documentos\.$/);
   });
 
+  it("is named by the label of its field when that label says more than the name, such as the mark of a datum", () => {
+    renderWithProviders(<FormField label={<>Lote <span>Revisá</span></>}>
+      <Picker id="lote" label="Lote" labelledBy="lote-label" options={places.slice(0, 2)} value={places[0].id} onChange={vi.fn()}/>
+    </FormField>);
+
+    expect(screen.getByRole("button", { name: `Lote Revisá ${places[0].label}` })).toBeInTheDocument();
+  });
+
   it("does not count the options of the server when there are none, under the first option: the list already says so", async () => {
     renderWithProviders(<FormField label="Zona"><Picker label="Zona" options={[]} total={0} value={null} onChange={vi.fn()} search="" onSearchChange={vi.fn()}
       first={{ id: "", label: "Sin zona" }}/></FormField>);
