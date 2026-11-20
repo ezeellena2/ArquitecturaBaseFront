@@ -27,18 +27,19 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Necesidad | Pieza común | Responsabilidad de la pantalla |
 |---|---|---|
 | Cabecera, acciones y margen | `Page` | Título, estado y acciones |
-| Búsqueda y filtros | `FilterBar`, `SearchInput`, `SegmentedControl`, `FilterMenuTrigger`, `FilterChip` | Opciones, conteos, permisos y estado de URL |
+| Búsqueda y filtros | `FilterBar`, `SearchInput`, `SegmentedControl`, `Picker trigger="button"`, `FilterChip` | Opciones, conteos, permisos y estado de URL |
 | Listado | `Surface` con `DataTable` y `Pagination` | Columnas, datos y estados |
 | Tabla especial | `Surface` y primitivos `table` | Columnas y semántica; `TableRowHeader` identifica filas de una comparación |
 | Columnas de números | `numeric` en `TableHead` y `TableCell` o en la columna de `DataTable`; la línea entre columnas la pone la biblioteca en toda tabla | Cuáles columnas son números (cantidades, medidas, importes, número de fila) |
 | Secciones de una tabla | `TableSectionToggle` | Estado abierto, nombre, descripción y selección |
 | Superficie con título | `Surface` | Título y contenido; `headingLevel` conserva la jerarquía y `titleRef` permite devolver el foco |
-| Formulario | `FormField`, `Input`, `Textarea`, `NativeSelect`, campos especializados | Valores, reglas y errores de campo |
+| Formulario | `FormField`, `Input`, `Textarea`, `Picker`, campos especializados | Valores, reglas y errores de campo |
 | Formulario corto | `DialogContent`, `DialogHeader`, `DialogFooter` | Campos y acciones; conservar `useRestoreFocusOnClose` |
 | Decisión extensa en móvil | `DialogContent mobileFullscreen`, cuerpo desplazable y `DialogFooter` fuera del scroll | Variante optativa; conserva el diálogo predeterminado en otros usos |
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
 | Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
-| Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `DropdownMenuRadioItem` (tilde), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
+| Elegir una o varias opciones de una lista, en un campo o en el botón de una barra | `Picker`, la única pieza; la zona horaria, con la lista `timeZoneOptions` | Las opciones (su descripción, su motivo si están apagadas), la primera («Todas», «Sin …»), lo vacío, el tope y, si busca el servidor, la búsqueda, la cantidad, la carga y el error; nunca un select, un combo ni un menú propios. Dos a cuatro opciones fijas de un formulario van en radios o un segmentado ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista), DS1-A y DS2-A) |
+| Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `Picker` (tilde a la izquierda; en varias, la casilla), `DropdownMenuRadioItem` (tilde, en un menú de acciones), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
 | Lectura de algo que pasa en orden (una regla, una sugerencia) | `StepList` | Un paso por parte con su ícono; palabras que unen en gris y datos en negrita ([lecturas](../design/visual-baseline.md#lecturas), LR1-A) |
 | Datos de un registro, sin editar | `DataList` | Rótulos y valores ya formateados, en dos columnas; nunca «Rótulo: valor» en un renglón |
 | Lo que se lee de una cuenta: medios de ingreso, el chat de su número, el último ingreso | `AccountRows` y `AccountRow` | Ícono, dato, valor ya formateado, estado (`VerificationBadge`, con `hint` si hay un porqué) y acción; la lista elige un renglón, el dato arriba del valor o la acción junto al dato según el ancho de su contenedor (PF1-A) |
@@ -120,12 +121,13 @@ para copiar una variante local.
 Su entrada, datos ficticios y sesión simulada viven en `src/test/visual`; no se incluyen en las entradas
 del build ni agregan rutas productivas. No requiere una API ni hace escrituras reales.
 Muestra los componentes reales con sus variantes, campos normales e inválidos, carga, vacío y recuperación.
-Incluye Input, Textarea, NativeSelect, Select, MultiSelect, radios, checks, búsqueda y segmentados,
+Incluye Input, Textarea, radios, checks, búsqueda y segmentados,
 además de botones con ícono, tooltips de acciones deshabilitadas (con ícono y con texto, `DisabledReason`)
 y un formulario corto en Dialog.
 La variante `?scenario=mobile-dialog` muestra `mobileFullscreen`: al abrir el formulario, el cuerpo se desplaza y el pie conserva sus acciones en móvil.
 Los diálogos de baja, reactivación y eliminación de formularios aplican esta variante en móvil, con el cuerpo desplazable y el pie fuera del scroll.
 La variante `?scenario=item-table` muestra la tabla de ítems de un bloque y sus recuadros (RG2-A): vacía, con el máximo, con errores y en una columna.
+La variante `?scenario=pickers` muestra la pieza para elegir (DS1-A y DS2-A): una y varias, con «y N más», «Sin …» primero, un tope con una opción apagada, la zona horaria, el botón de una barra y una búsqueda del servidor; `pickers.spec.ts` la abre en es/en a 1440, 390 y 320 px, sin referencia versionada.
 La variante `?scenario=assistant-attachment` muestra el clip y el archivo del asistente (IA4): elegido en el editor con su X, mientras viaja y en un mensaje con sus filas.
 La variante `?scenario=charts` muestra las piezas de un tablero (DOC7-A): el número con su variación, con «—» y su motivo y mientras carga; las barras por día con los días sin respuestas y sus fechas, y cuatrocientos días en una tarjeta; los repartos, los estados y sus tablas; vacío y mientras vuelve a leer.
 También permite revisar rutas existentes con `?screen=/usuarios`, `?screen=/roles/support` o `?screen=/perfil`.

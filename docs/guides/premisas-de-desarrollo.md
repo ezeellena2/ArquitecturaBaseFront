@@ -65,9 +65,10 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   usuario, 2026-10-31): una explicación que sirve va en la (i) con su tooltip, junto a la etiqueta o el
   título (`help`), y lo demás se saca. No agregar datos técnicos, auditoría, instrucciones largas ni
   resúmenes que no ayudan a decidir.
-- Elegir el componente según el dato: una colección administrable usa tabla; un valor de un catálogo
-  usa selector; pocas alternativas que requieren explicación usan radios; varias selecciones usan
-  checks o MultiSelect; un dato libre usa un campo. No usar una tabla para presentar un único ajuste.
+- Elegir el componente según el dato: una colección administrable usa tabla; una o varias opciones de
+  una lista usan la pieza para elegir (`Picker`); dos a cuatro opciones fijas usan radios, si requieren
+  explicación, o un segmentado; varias entre pocas, checks; un dato libre usa un campo. No usar una tabla
+  para presentar un único ajuste.
 - Un formulario puede tener varios campos cuando resuelven la misma tarea. La relación entre ellos,
   no la cantidad de controles, decide si van juntos. Los temas independientes no se agrupan para
   llenar espacio y las superficies no se agregan como decoración.
@@ -90,11 +91,11 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - **Un filtro de opciones es un desplegable simple** (PL2-A y FO1-A, 2026-11-03), en toda la app:
   cerrado dice «Todas» (o «Cualquier …») o la elegida; abierto, una opción por renglón, sin la
   cantidad ni texto debajo, con la elegida tildada, y ninguna se apaga por no traer nada: si no hay
-  coincidencias, el vacío lo dice y ofrece limpiar. Con muchas opciones o que vienen del servidor
-  (las de un catálogo, las personas) es el combo común (`Autocomplete` con `dropdown`), donde se
-  busca escribiendo; con pocas y fijas, el desplegable del filtro (`FilterMenuTrigger` con opciones
-  de radio). Se elige una. Nada de listas de casillas, cajas de búsqueda sueltas ni «N respuestas»
-  debajo de cada opción.
+  coincidencias, el vacío lo dice y ofrece limpiar. Es la pieza para elegir (`Picker`), con su botón en
+  la barra y con el campo adentro de «Filtros»; con muchas opciones o que vienen del servidor (las de
+  un catálogo, las personas) se busca en el buscador de adentro de la lista, no escribiendo en el campo
+  (DS1-A, 2026-11-19). Se elige una. Nada de listas de casillas, cajas de búsqueda sueltas ni
+  «N respuestas» debajo de cada opción.
 - En listados, usar `usePagination`, `useFilters` y `useQueryUpdate`. Búsqueda, página, tamaño, orden
   y filtros viajan en la URL con los nombres del backend; no duplicarlos en estado de la pantalla.
   El borrador interno de `SearchInput` solo permite escribir antes de confirmar la búsqueda.
@@ -108,7 +109,7 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Mostrar cuántos resultados hay y una acción para limpiar cuando hay filtros activos. Distinguir
   “todavía no hay datos” de “ninguno coincide”: el primero ofrece crear cuando hay permiso; el segundo,
   limpiar los filtros. Conservar la composición de `UsersFilterBar` como referencia y usar
-  los controles genéricos ya compartidos (`FilterMenuTrigger`, `FilterChip`, `FilterBar` y
+  los controles genéricos ya compartidos (`Picker` con el botón de la barra, `FilterChip`, `FilterBar` y
   `SegmentedControl`); las consultas, opciones y composición siguen en la feature.
 
 ## Tablas
@@ -165,9 +166,12 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Cada campo usa `FormField` con una etiqueta visible, su control y su error asociado. El renglón de
   abajo es para el error o para un dato (`hint`: el texto original en el otro idioma, un valor), nunca
   para explicar; la explicación que sirve va en `help`, la (i) junto a la etiqueta, y es parte de la
-  descripción accesible del control. El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`, `Select`,
-  `MultiSelect` y `NativeSelect`; estos últimos sirven para listas extensas y selección nativa.
-  Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
+  descripción accesible del control. El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`
+  y, para elegir, `Picker`. Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
+- **Para elegir de una lista hay una sola pieza, `Picker`** (DS1-A y DS2-A, 2026-11-19): una o varias opciones, en un
+  campo o en el botón de la barra, con el buscador adentro si son más de diez o vienen del servidor; nunca un select, un
+  combo que se escribe ni un menú propio. Dos a cuatro opciones fijas de un formulario van en radios o un segmentado; un
+  filtro sigue siendo la pieza ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
   (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
   problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,
@@ -181,13 +185,14 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Un grupo de checks admite ninguno, algunos (`indeterminate`) y todos. El alcance de “todos” debe
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
-- Usar `RadioGroupField` para una única opción entre pocas y `MultiSelect` para varias. `Switch`
-  corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
-  Configuración usa guardado explícito: Registro usa radios; Idioma, Zona horaria y Listados usan
-  `NativeSelect`. No convertir esos borradores en guardados automáticos.
+- Usar `RadioGroupField` o `SegmentedControl` para una única opción entre pocas y `Picker` con `multiple` para varias
+  de una lista. `Switch` corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
+  Configuración usa guardado explícito: Registro usa radios; Idioma y Listados, un segmentado; Zona horaria, `Picker`.
+  No convertir esos borradores en guardados automáticos.
 - Lo elegido se distingue sin dudas, nunca sólo con un tinte (decisión del usuario, 2026-11-03; tablero OE1-A). Pocas
   opciones de un clic, como un Sí o no o un filtro de estado, usan `SegmentedControl`, que rellena la elegida; una
-  tarjeta, `RadioGroupField variant="cards"`; una sola elección en un desplegable, `DropdownMenuRadioItem` dentro de su
+  tarjeta, `RadioGroupField variant="cards"`; lo elegido de una lista, `Picker`, con la tilde a la izquierda y, en varias,
+  la casilla; una elección dentro de un menú de acciones, `DropdownMenuRadioItem` dentro de su
   `DropdownMenuRadioGroup`, con su tilde; la fila abierta de una tabla, `DataTable selectedRowKey`, y lo abierto en una
   lista con detalle, el tinte de la marca con una barra al inicio. No armar botones sueltos que se rellenan para hacer de
   segmentado ([detalle](../design/visual-baseline.md#opción-elegida--2026-11-03)).
