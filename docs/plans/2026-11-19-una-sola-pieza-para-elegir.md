@@ -1,7 +1,22 @@
 # Una sola pieza para elegir (DS1-A y DS2-A)
 
-Fecha: **2026-11-19**. Estado: **decidido el 2026-11-19; sin programar.** Se programa cuando el usuario lo diga, después
-de la prueba integral; hasta entonces no se toca el código. Sólo cambia el front: ni contratos ni servidor.
+Fecha: **2026-11-19**. Estado: **en programación (2026-11-20)**; decidido el 2026-11-19. Sólo cambia el front: ni
+contratos ni servidor. La regla está en el [fundamento visual](../design/visual-baseline.md#elegir-de-una-lista).
+
+## Avance (2026-11-20)
+
+- **Etapa 1, hecha.** `Picker` con su test, el teclado y el lector de la figura 7 y la lista a pantalla completa en el
+  celular; la lista única de zonas (`shared/lib/timeZones`); la escena `?scenario=pickers` del catálogo visual.
+- **Etapa 2, hecha.** Roles, los datos de la persona, el país del teléfono, Rol y «Más filtros» de Usuarios, y «Filas por
+  página» del paginado en un segmentado.
+- **Etapa 3, hecha.** Los combos y los selects de formularios, catálogos y documentos, la pregunta de catálogo de la carga
+  en la compu y en el celular, y Canal, Estado y «Columnas» de la planilla.
+- **Etapa 4, casi entera.** Falta la tarea 13: retirar `MultiSelect`, `NativeSelect` y `select.tsx`, dejar
+  `Autocomplete` sólo en `BusinessPlaceSearch` y sumar la regla de arquitectura.
+- **Etapa 5.** La tarea 14 está escrita: la pieza en [`shared/ui`](../../src/shared/ui/AGENTS.md), el fundamento visual
+  y su lista de chequeo, las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-selección) y el
+  [estándar](../guides/estandar-visual.md); el índice de premisas del backend ya enlaza esas fuentes. Faltan la corrida
+  completa y la prueba guiada (tarea 15), y pasar los tableros al lienzo y lo hecho al traspaso (tarea 16).
 
 ## Por qué
 
