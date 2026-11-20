@@ -25,6 +25,8 @@ export interface PickerOption {
   keywords?: string;
   /** A drawing before the name, such as the icon of a folder. */
   icon?: ReactNode;
+  /** What the closed field says when it is the chosen one, shorter than the name («AR +54»); the reader hears the name. */
+  short?: string;
 }
 
 interface PickerBase {
@@ -39,7 +41,8 @@ interface PickerBase {
   selectedOptions?: readonly PickerOption[];
   /** The field of a form, or the button of a listing bar, which keeps its look and opens the same list. */
   trigger?: "field" | "button";
-  /** What the button of a bar always says, whatever is chosen («Columnas»). */
+  /** What the button of a bar always says, whatever is chosen («Columnas», «Más filtros»): it names the button, and the
+   * label goes on top of the list. */
   triggerLabel?: ReactNode;
   /** 44 px, like `Button size="touch"`: who uses it asks for it on the phone. */
   size?: "default" | "touch";
@@ -261,7 +264,7 @@ export function Picker(props: PickerProps) {
     "aria-haspopup": phone ? "dialog" as const : "listbox" as const,
     "aria-expanded": open,
     "aria-controls": open && !phone ? listboxId : undefined,
-    "aria-labelledby": props.triggerLabel ? nameId : `${nameId} ${valueId}`,
+    "aria-labelledby": props.triggerLabel ? undefined : `${nameId} ${valueId}`,
     "aria-invalid": props["aria-invalid"],
     "aria-describedby": props["aria-describedby"],
     onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -273,7 +276,7 @@ export function Picker(props: PickerProps) {
   const arrow = <ChevronDownIcon aria-hidden="true" className="size-3.5 shrink-0 text-[var(--color-content-muted)] transition-transform group-aria-expanded:rotate-180"/>;
   const trigger = props.trigger === "button"
     ? <Button {...triggerProps} variant="outline" className={cn("group", props.className)}>
-      {words}<span aria-hidden="true" className="truncate">{props.triggerLabel ?? spoken}</span>{arrow}
+      {props.triggerLabel ? props.triggerLabel : <>{words}<span aria-hidden="true" className="truncate">{single?.short ?? spoken}</span></>}{arrow}
     </Button>
     : <button {...triggerProps} className={cn("group flex w-full min-w-0 items-center gap-2 rounded-md border border-input bg-[var(--color-control-surface)] px-2.5 text-left text-sm outline-none transition-[color,box-shadow]",
       props.size === "touch" ? "h-11" : "h-[var(--height-control)]",
@@ -283,7 +286,7 @@ export function Picker(props: PickerProps) {
       {single?.icon ? <span aria-hidden="true" className="flex shrink-0">{single.icon}</span> : null}
       {empty ? <span aria-hidden="true" className="min-w-0 flex-1 truncate text-[var(--color-content-muted)]">{spoken}</span>
         : multiple ? <ChoiceSummary labels={picks.map(option => option.label)}/>
-          : <span aria-hidden="true" className="min-w-0 flex-1 truncate">{spoken}</span>}
+          : <span aria-hidden="true" className="min-w-0 flex-1 truncate">{single?.short ?? spoken}</span>}
       {arrow}
     </button>;
 
@@ -328,8 +331,11 @@ export function Picker(props: PickerProps) {
         </p>;
   const moreLabel = t(props.loadingMore ? "picker.loadingMore" : "picker.more", { count: props.pageSize ?? 50 });
   // The search and how many there are stay on top, behind a line, while the list scrolls under them.
-  const header = searchBox || countRow
-    ? <div className={cn("border-b border-[var(--color-border)]", phone ? "p-3" : "p-1.5")}>{searchBox}{countRow}</div> : null;
+  // A bar's button that says something else («Más filtros») names the list on top of it; on the phone the title does.
+  const heading = props.triggerLabel && !phone
+    ? <p className="px-1 pb-1 text-[length:var(--text-caption)] font-semibold tracking-[0.06em] text-[var(--color-content-heading)] uppercase">{props.label}</p> : null;
+  const header = heading || searchBox || countRow
+    ? <div className={cn("border-b border-[var(--color-border)]", phone ? "p-3" : "p-1.5")}>{heading}{searchBox}{countRow}</div> : null;
 
   if (phone) return <>
     {trigger}

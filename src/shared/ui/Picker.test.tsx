@@ -284,6 +284,26 @@ describe("Picker", () => {
     expect(screen.getByRole("button", { name: "Rol Admin" })).toBeInTheDocument();
   });
 
+  it("shows the short text of the chosen one and gives the reader its whole name", async () => {
+    await act(async () => {
+      renderWithProviders(<Picker label="País" options={[{ id: "AR", label: "Argentina, +54", short: "AR +54" }, { id: "UY", label: "Uruguay, +598", short: "UY +598" }]}
+        value="AR" onChange={vi.fn()}/>);
+    });
+
+    const trigger = screen.getByRole("button", { name: "País Argentina, +54" });
+    expect(within(trigger).getByText("AR +54")).toBeInTheDocument();
+  });
+
+  it("names the button of a bar by what it says and puts the label on top of its list", async () => {
+    renderWithProviders(<Picker label="Creado" trigger="button" triggerLabel="Más filtros" first={{ id: "", label: "Cualquier fecha" }}
+      options={[{ id: "7", label: "Últimos 7 días" }]} value="" onChange={vi.fn()}/>);
+
+    const { list } = await openList(/^Más filtros$/);
+
+    expect(list).toHaveAccessibleName("Creado");
+    expect(screen.getByText("Creado")).toBeInTheDocument();
+  });
+
   describe("on the phone", () => {
     let media: MockInstance;
     beforeEach(() => {
