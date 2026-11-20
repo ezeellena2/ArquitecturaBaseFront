@@ -57,7 +57,7 @@ interface PickerBase {
   onSearchChange?: (search: string) => void;
   /** How many options the server has for that search. */
   total?: number;
-  /** What the count says instead of «38 opciones», in the owner's words: the answer the list depends on («4 opciones de El
+  /** What the count says instead of «38 opciones», in the owner's words, also in a short list: the answer the list depends on («4 opciones de El
    * Ombú», CW7) or that the list was cut. */
   countText?: string;
   loading?: boolean;
@@ -304,7 +304,7 @@ export function Picker(props: PickerProps) {
       {arrow}
     </button>;
 
-  const counted = server ? rows.length > 0 && !props.loading : searchable;
+  const counted = server ? rows.length > 0 && !props.loading : searchable || props.countText !== undefined;
   const countText = !counted ? null : props.countText ?? (server
     ? props.total !== undefined ? t("picker.count", { count: props.total }) : null
     : searching ? t("picker.countOf", { count: shown.length, total: props.options.length }) : t("picker.count", { count: props.options.length }));

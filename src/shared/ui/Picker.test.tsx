@@ -275,6 +275,15 @@ describe("Picker", () => {
     expect(screen.queryByText("2 opciones de El Ombú")).not.toBeInTheDocument();
   });
 
+  it("says the words of its owner also in a short list without its search, such as one the server cut", async () => {
+    renderWithProviders(<FormField label="Mandó"><Picker label="Mandó" options={places.slice(0, 3)} countText="Se muestran los 100 con más documentos." value={null}
+      onChange={vi.fn()}/></FormField>);
+    await openList(/^Mandó/);
+
+    expect(screen.queryByRole("combobox", { name: "Buscar en Mandó" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/^Se muestran los 100 con más documentos\.$/);
+  });
+
   it("says it is searching or that it failed under the first option and the chosen one from another page", async () => {
     const onRetry = vi.fn();
     const zone = (state: { loading?: boolean; failed?: boolean }) => <FormField label="Zona">

@@ -27,7 +27,6 @@
   "remove": "Remove {{name}}",
   "clear": "Clear all",
   "filterAll": "All",
-  "noOptions": "No options match.",
   "facetsTruncated": "Showing the 100 with the most documents.",
   "columns": {
     "document": "Document",
@@ -93,10 +92,6 @@
     "missingData": "There are no options for {{person}}: “{{datum}}” is missing. Complete it in People data."
   },
   "options": {
-    "search": "Search in {{label}}",
-    "loading": "Loading the options…",
-    "noMatches": "No option matches “{{search}}”.",
-    "empty": "There are no options.",
     "failed": "The options could not be loaded.",
     "truncated": "Showing the first 50: type to find others.",
     "clear": "Remove {{label}}"

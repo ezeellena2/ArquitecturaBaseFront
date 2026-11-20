@@ -27,7 +27,6 @@
   "remove": "Quitar {{name}}",
   "clear": "Limpiar todo",
   "filterAll": "Todos",
-  "noOptions": "No hay opciones que coincidan.",
   "facetsTruncated": "Se muestran los 100 con más documentos.",
   "columns": {
     "document": "Documento",
@@ -93,10 +92,6 @@
     "missingData": "No hay opciones para {{person}}: le falta «{{datum}}». Completalo en Datos de las personas."
   },
   "options": {
-    "search": "Buscar en {{label}}",
-    "loading": "Cargando las opciones…",
-    "noMatches": "Ninguna opción coincide con «{{search}}».",
-    "empty": "No hay opciones.",
     "failed": "No se pudieron traer las opciones.",
     "truncated": "Se muestran las primeras 50: escribí para buscar otras.",
     "clear": "Quitar {{label}}"

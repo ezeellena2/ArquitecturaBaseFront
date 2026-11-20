@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -76,6 +76,14 @@ function running(base: ReceivedDocumentDetail, request = requestId, form = { def
     history: [...base.history, { atUtc: "2026-11-12T12:00:00Z", kind: "extractionRequested", actor: { userId: "0199b0c0-0000-7000-8000-000000000999", displayName: "Marta Ruiz" }, detail: form.name }] };
 }
 
+/** A filter or a searched catalog choice is the only piece to choose (DS1-A): its list opens with the keyboard, like the other Radix
+ * lists in the tests. */
+async function openPicker(user: ReturnType<typeof userEvent.setup>, trigger: HTMLElement) {
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+
 describe("the list", () => {
   it("shows one document per row with each datum read in its column, the states with their counts and its menu entry with its number", async () => {
     setup();
@@ -139,20 +147,18 @@ describe("the list", () => {
     const { router } = renderRouteWithProviders("/formularios/documentos");
     await screen.findByRole("table", {}, { timeout: 10_000 });
     await user.click(screen.getByRole("button", { name: "Filtros" }));
-    const form = await screen.findByRole("combobox", { name: "Formulario" });
-    expect(form).toHaveAttribute("placeholder", "Todos");
-    await user.click(form);
-    expect(within(screen.getByRole("listbox", { name: "Formulario" })).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Pagos de clientes", "Gastos"]);
-    await user.click(screen.getByRole("option", { name: "Pagos de clientes" }));
+    const form = await openPicker(user, await screen.findByRole("button", { name: "Formulario Todos" }));
+    expect(within(form).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Pagos de clientes", "Gastos"]);
+    await user.click(within(form).getByRole("option", { name: "Pagos de clientes" }));
     await waitFor(() => expect(lastList(requests).definitionId).toBe(receivedDocumentForms.payments));
-    expect(screen.getByRole("combobox", { name: "Formulario" })).toHaveValue("Pagos de clientes");
+    expect(await screen.findByRole("button", { name: "Formulario Pagos de clientes" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^Mandó/ }));
-    const sender = await screen.findByRole("combobox", { name: "Mandó" });
-    await user.click(sender);
-    // Typing searches among them.
-    await user.paste("pab");
-    expect(within(screen.getByRole("listbox", { name: "Mandó" })).getAllByRole("option").map(option => option.textContent)).toEqual(["Pablo Sosa"]);
-    await user.click(screen.getByRole("option", { name: "Pablo Sosa" }));
+    // Three people: their list has no search (DS1-A), and a letter goes to the first one that starts with it.
+    const sender = await openPicker(user, await screen.findByRole("button", { name: "Mandó Todos" }));
+    expect(screen.queryByRole("combobox", { name: "Buscar en Mandó" })).not.toBeInTheDocument();
+    await user.keyboard("p");
+    expect(sender).toHaveAttribute("aria-activedescendant", within(sender).getByRole("option", { name: "Pablo Sosa" }).id);
+    await user.keyboard("{Enter}");
     await waitFor(() => expect(lastList(requests).senderUserId).toBe("0199b0c0-0000-7000-8000-000000000302"));
     await user.keyboard("{Escape}");
     expect(await screen.findByText("Formulario: Pagos de clientes")).toBeInTheDocument();
@@ -171,11 +177,13 @@ describe("the list", () => {
     renderRouteWithProviders("/formularios/documentos");
     await screen.findByRole("table", {}, { timeout: 10_000 });
     await user.click(screen.getByRole("button", { name: "Filtros" }));
-    await user.click(await screen.findByRole("combobox", { name: "Formulario" }));
+    await openPicker(user, await screen.findByRole("button", { name: "Formulario Todos" }));
     expect(screen.queryByText("Se muestran los 100 con más documentos.")).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: /^Mandó/ }));
-    await user.click(await screen.findByRole("combobox", { name: "Mandó" }));
-    expect(within(screen.getByRole("listbox", { name: "Mandó" })).getByText("Se muestran los 100 con más documentos.")).toBeInTheDocument();
+    await openPicker(user, await screen.findByRole("button", { name: "Mandó Todos" }));
+    expect(screen.getByText("Se muestran los 100 con más documentos.")).toBeInTheDocument();
   }, 20_000);
 
   it("says when nothing arrived yet, when nothing matches and when the list could not be read", async () => {
@@ -372,15 +380,16 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    const client = await within(frame).findByRole("combobox", { name: /^Cliente/ });
-    await user.click(client);
+    const client = await within(frame).findByRole("button", { name: /^Cliente/ });
+    await openPicker(user, client);
+    // The search is inside the list, with the focus on it.
     await user.paste("fer");
-    const option = await screen.findByRole("option", { name: /Ferretería Norte/ });
-    expect(option).toHaveTextContent("Rosario");
+    const option = await screen.findByRole("option", { name: "Ferretería Norte" });
+    expect(option).toHaveAccessibleDescription("Rosario");
     expect(screen.getByText("Se muestran las primeras 50: escribí para buscar otras.")).toBeInTheDocument();
     await waitFor(() => expect(searches.at(-1)).toEqual({ fieldId: receivedDocumentFields.client, search: "fer" }));
     await user.click(option);
-    expect(client).toHaveValue("Ferretería Norte");
+    expect(await within(frame).findByRole("button", { name: /^Cliente.* Ferretería Norte$/ })).toBe(client);
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     await waitFor(() => expect(requests.writes).toHaveLength(1));
     expect((requests.writes[0]!.body as { answers: unknown[] }).answers).toContainEqual({ fieldId: receivedDocumentFields.client, value: receivedDocumentOptions.hardware });
@@ -397,9 +406,10 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    const client = await within(frame).findByRole("combobox", { name: /^Cliente/ });
+    const client = await within(frame).findByRole("button", { name: /^Cliente/ });
     const reads = requests.details.length;
-    await user.click(client);
+    await act(async () => { client.focus(); });
+    await user.keyboard("{Enter}");
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "warning", message: "Este documento ya no se puede cambiar." })));
     await waitFor(() => expect(requests.details.length).toBeGreaterThan(reads));
   }, 20_000);
@@ -415,7 +425,7 @@ describe("the panel", () => {
     const frame = await panel();
     const reason = "No hay opciones para Pablo Sosa: le falta «Provincia». Completalo en Datos de las personas.";
     expect(await within(frame).findByText(reason)).toBeInTheDocument();
-    expect(within(frame).queryByRole("combobox", { name: /^Cliente/ })).not.toBeInTheDocument();
+    expect(within(frame).queryByRole("button", { name: /^Cliente/ })).not.toBeInTheDocument();
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     await waitFor(() => expect(document.getElementById("received-document-" + receivedDocumentFields.client)).toHaveFocus());
     expect(within(frame).getByRole("alert")).toHaveTextContent(reason);
