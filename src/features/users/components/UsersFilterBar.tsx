@@ -27,10 +27,13 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
   const { values, active, setFilter, clear } = filters;
 
   // La misma clave raíz que el listado, así una mutación invalida las dos y un rol nuevo aparece entre las opciones.
-  const { data: counts } = useQuery({
+  const countsQuery = useQuery({
     queryKey: userFilterCountsQueryKey(),
     queryFn: fetchUserFilterCounts,
   });
+  const counts = countsQuery.data;
+  // While the options arrive, or if they failed, the open list says so: they are not missing.
+  const optionsState = { loading: countsQuery.isPending, failed: countsQuery.isError, onRetry: () => void countsQuery.refetch() };
 
   // En plural: el segmentado filtra un conjunto, no rotula una fila. El singular se queda para la celda.
   const statusOptions = [
@@ -76,6 +79,7 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
         <Picker
           trigger="button"
           label={t("filters.role.label")}
+          {...optionsState}
           first={{ id: "", label: t("filters.role.any") }}
           options={roleOptions.map((role) => ({ id: role.name, label: role.name }))}
           // The role of the URL is named before its options arrive.
@@ -98,6 +102,7 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
             </>
           }
           label={t("columns.createdAtUtc")}
+          {...optionsState}
           first={{ id: "", label: t("filters.createdWithin.any") }}
           options={createdOptions.map((option) => ({
             id: String(option.days),

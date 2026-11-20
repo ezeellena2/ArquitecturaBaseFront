@@ -8,6 +8,8 @@ export const localizedValue = (text: LocalizedText | Readonly<Record<string, str
 type ContentTexts = Readonly<Record<string, string | null | undefined>> | null | undefined;
 const otherCulture = (culture: FormCulture): FormCulture => culture === "es" ? "en" : "es";
 export const administrativeName = (name: ContentTexts, culture: FormCulture) => name?.[culture]?.trim() ? name[culture]! : name?.[otherCulture(culture)] ?? "";
+/** A name inside a sentence («Sin campo asignado»): its first letter in lower case, unless it is an acronym such as «CUIT». */
+export const nameInSentence = (name: string, culture: FormCulture) => /^\p{Lu}\p{Ll}/u.test(name) ? name.charAt(0).toLocaleLowerCase(culture) + name.slice(1) : name;
 /** The original's text, shown as a hint (never copied) while the menu is in the other language. */
 export const contentReference = (text: ContentTexts, culture: FormCulture, original: FormCulture) => culture !== original && text?.[original]?.trim() ? text[original]! : undefined;
 /** Only the original is required; the other language is an optional translation. */

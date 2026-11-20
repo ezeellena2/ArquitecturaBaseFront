@@ -12,7 +12,7 @@ import { Picker } from "@/shared/ui/Picker";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { PersonAttribute } from "../api/personData";
-import { administrativeName } from "../editorModel";
+import { administrativeName, nameInSentence } from "../editorModel";
 import { usePersonAttributeOptions, usePersonData, type PersonDataScope } from "../hooks/usePersonData";
 
 /** A catalog datum with the only piece to choose (DS1-A): «Sin <dato>» first, which is no value, and the options of the server,
@@ -29,7 +29,7 @@ function PersonCatalogValue({ attribute, scope, value, text, disabled, onChange,
  const typing = search.trim() !== settled;
  const current = items.find(option => option.id === value)?.text ?? (selected?.id === value ? selected.text : text);
  return <Picker {...aria} label={label} value={value ?? ""} disabled={disabled} onOpenChange={setOpen}
-  first={{ id: "", label: t("personData.none", { label: label.charAt(0).toLocaleLowerCase(scope.culture) + label.slice(1) }) }}
+  first={{ id: "", label: t("personData.none", { label: nameInSentence(label, scope.culture) }) }}
   options={typing ? [] : items.map(option => ({ id: option.id, label: option.text }))} selectedOptions={value ? [{ id: value, label: current }] : undefined}
   search={search} onSearchChange={setSearch} total={options.data?.pages[0]?.totalCount} loading={typing || options.isLoading}
   failed={options.isError} onRetry={() => void options.refetch()} onLoadMore={options.hasNextPage ? () => void options.fetchNextPage() : undefined} loadingMore={options.isFetchingNextPage}
