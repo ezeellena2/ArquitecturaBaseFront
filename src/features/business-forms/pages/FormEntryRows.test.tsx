@@ -131,7 +131,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     await user.type(await screen.findByLabelText(/^Proveedor/), "Agro Norte");
     await choose(user, 1, "GLIFOSATO");
     await user.type(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" }), "200,5");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Ítem 1 · Unidad" }), "Litros");
+    await pick(user, "Ítem 1 · Unidad Elegí una opción", "Litros");
     await user.click(within(screen.getByRole("group", { name: "Ítem 1 · ¿Llegó en buen estado?" })).getByRole("button", { name: "Sí" }));
     await user.click(screen.getByRole("button", { name: "Agregar ítem" }));
     await choose(user, 2, "ATRAZINA");
@@ -227,7 +227,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
 
     expect(await screen.findByRole("button", { name: "Ítem 1 · Artículo ATRAZINA 50%" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Ítem 2 · Cantidad" })).toHaveValue("200,5");
-    expect(screen.getByRole("combobox", { name: "Ítem 2 · Unidad" })).toHaveValue(liters);
+    expect(screen.getByRole("button", { name: "Ítem 2 · Unidad Litros" })).toBeInTheDocument();
     await user.clear(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" }));
     await user.type(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" }), "120");
     await user.type(screen.getByLabelText(/^Motivo/), "Llegaron 120 litros.");

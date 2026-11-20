@@ -264,17 +264,24 @@ describe("loading a response from the app", () => {
     expect(sends).toHaveLength(0);
   });
 
-  it("offers more than five own options in a dropdown list", async () => {
+  it("offers more than five own options in the only piece to choose, with «Sin respuesta» first to leave it empty", async () => {
     const form = entry();
     form.questions.splice(1, 0, { fieldId: id(316), type: "choice", label: "Cultivo", help: null, required: true, maxLength: null,
       options: ["Soja 1ª", "Soja 2ª", "Maíz", "Trigo", "Girasol", "Sorgo"].map((label, index) => ({ id: id(340 + index), label })), selection: null, files: null, catalog: null });
     setup({ form });
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    const crop = await screen.findByRole("combobox", { name: "Cultivo" });
+    // Empty, it invites to choose; its list brings «Sin respuesta» first and then the options in their order.
+    const crop = await screen.findByRole("button", { name: "Cultivo Elegí una opción" });
     expect(screen.queryByRole("radio", { name: "Maíz" })).not.toBeInTheDocument();
-    await user.selectOptions(crop, "Maíz");
-    expect(crop).toHaveValue(id(342));
+    await act(async () => { crop.focus(); });
+    await user.keyboard("{Enter}");
+    expect(within(await screen.findByRole("listbox")).getAllByRole("option").map(option => option.textContent))
+      .toEqual(["Sin respuesta", "Soja 1ª", "Soja 2ª", "Maíz", "Trigo", "Girasol", "Sorgo"]);
+    await user.click(screen.getByRole("option", { name: "Maíz" }));
+    expect(crop).toHaveAccessibleName("Cultivo Maíz");
+    await pick(user, "Cultivo Maíz", "Sin respuesta");
+    expect(crop).toHaveAccessibleName("Cultivo Elegí una opción");
   });
 
   // Board AR1-A: the catalog takes one column like the number and the date, so on the computer the three fill a row.

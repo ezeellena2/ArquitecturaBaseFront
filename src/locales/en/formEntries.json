@@ -17,7 +17,8 @@
     "opening": "Opening the form",
     "loadFailed": "The form could not be opened",
     "required": "Required",
-    "choose": "Choose an option"
+    "choose": "Choose an option",
+    "noAnswer": "No answer"
   },
   "zone": {
     "expand": "Expand {{name}}",

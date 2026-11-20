@@ -9,7 +9,7 @@ import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { ItemCards, ItemTable, type ItemCellContext, type ItemTableColumn } from "@/shared/ui/ItemTable";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
@@ -321,13 +321,12 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   // UB3-A: «Usar mi ubicación»; the label names the question and the point travels as the text the server reads.
   if (question.type === "location") return grouped(<EntryLocationField id={id} value={value} onChange={setValue} invalid={!!error}
     describedBy={describedBy} disabled={disabled}/>, false);
-  // Up to five options in a row however long they are, and those that do not fit wrap; more, a dropdown list (AR1-A). A cell
-  // of the table of items always takes the list.
-  if (question.type === "choice" && (cell || !entryChoiceInRow(question))) return field(<NativeSelect value={choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
-    onChange={event => choose(question.options?.find(option => option.id === event.target.value))}>
-    <option value="">{t("page.choose")}</option>
-    {(question.options ?? []).map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
-  </NativeSelect>);
+  // Up to five options in a row however long they are, and those that do not fit wrap; more, the only piece to choose (AR1-A,
+  // DS1-A), which says «Elegí una opción» while there is none and offers «Sin respuesta» first to leave it empty. A cell of the
+  // table of items always takes the list.
+  if (question.type === "choice" && (cell || !entryChoiceInRow(question))) return field(<Picker label={cell?.label ?? question.label} value={choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
+    placeholder={t("page.choose")} first={{ id: "", label: t("page.noAnswer") }} onChange={choice => choose(question.options?.find(option => option.id === choice))}
+    options={(question.options ?? []).map(option => ({ id: option.id, label: option.label }))} />);
   if (question.type === "choice") return grouped(<div id={id} tabIndex={-1} className="outline-none">
     <RadioGroupField label={question.label} layout="row" value={choices[question.fieldId]?.[0]?.id}
       options={(question.options ?? []).map(option => ({ value: option.id, label: option.label, disabled }))}

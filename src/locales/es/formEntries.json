@@ -17,7 +17,8 @@
     "opening": "Abriendo el formulario",
     "loadFailed": "No se pudo abrir el formulario",
     "required": "Obligatoria",
-    "choose": "Elegí una opción"
+    "choose": "Elegí una opción",
+    "noAnswer": "Sin respuesta"
   },
   "zone": {
     "expand": "Expandir {{name}}",
