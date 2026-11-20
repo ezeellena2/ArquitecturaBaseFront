@@ -350,7 +350,7 @@ describe("SettingsPage", () => {
     expect(within(band).getByRole("button", { name: "Usar valores actuales" })).toHaveFocus();
   });
 
-  it("breaks the time zone in the comparison only after its slashes and at its spaces, with whole words", async () => {
+  it("names the time zone in the comparison by its city, as its list does", async () => {
     server.use(http.patch("/api/settings", async ({ request }) => {
       writes.push(await request.json());
       // The other person also changed the time zone: the comparison shows only what differs (LR2-A).
@@ -363,12 +363,10 @@ describe("SettingsPage", () => {
     const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
     await userEvent.click(await within(header).findByRole("button", { name: "Revisar valores actuales" }));
     const comparison = await screen.findByRole("region", { name: "Revisar cambios" });
-    // «America/Arg|entina/Bueno|s Aires» was cut at any letter (2026-11-02): now only after a slash or at a space.
-    for (const cell of within(comparison).getAllByRole("cell", { name: "America/Argentina/Buenos Aires" })) {
-      expect(cell).not.toHaveClass("break-all");
-      expect(Array.from(cell.querySelectorAll(".whitespace-nowrap"), part => part.textContent)).toEqual(["America/", "Argentina/", "Buenos"]);
-      expect(cell.querySelectorAll("wbr")).toHaveLength(2);
-    }
+    // The saved one and mine, as the list names them, not as the identifier that travels («America/Argentina/Buenos_Aires»).
+    expect(within(comparison).getByRole("cell", { name: "UTC" })).toBeInTheDocument();
+    expect(within(comparison).getByRole("cell", { name: "Buenos Aires" })).toBeInTheDocument();
+    expect(within(comparison).queryByText(/America\//)).not.toBeInTheDocument();
   });
 
   it("does not repeat a write that was committed before a 500 response", async () => {
