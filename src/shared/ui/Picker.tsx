@@ -304,7 +304,8 @@ export function Picker(props: PickerProps) {
       {arrow}
     </button>;
 
-  const counted = server ? rows.length > 0 && !props.loading : searchable || props.countText !== undefined;
+  // The server's count speaks of its options: without any, the list says why instead («No hay opciones.»).
+  const counted = server ? shown.length > 0 && !props.loading : searchable || props.countText !== undefined;
   const countText = !counted ? null : props.countText ?? (server
     ? props.total !== undefined ? t("picker.count", { count: props.total }) : null
     : searching ? t("picker.countOf", { count: shown.length, total: props.options.length }) : t("picker.count", { count: props.options.length }));

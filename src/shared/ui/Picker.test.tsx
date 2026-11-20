@@ -284,6 +284,15 @@ describe("Picker", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Se muestran los 100 con más documentos\.$/);
   });
 
+  it("does not count the options of the server when there are none, under the first option: the list already says so", async () => {
+    renderWithProviders(<FormField label="Zona"><Picker label="Zona" options={[]} total={0} value={null} onChange={vi.fn()} search="" onSearchChange={vi.fn()}
+      first={{ id: "", label: "Sin zona" }}/></FormField>);
+    await openList(/^Zona/);
+
+    expect(screen.getByText("No hay opciones.")).toBeInTheDocument();
+    expect(screen.queryByText("0 opciones")).not.toBeInTheDocument();
+  });
+
   it("says it is searching or that it failed under the first option and the chosen one from another page", async () => {
     const onRetry = vi.fn();
     const zone = (state: { loading?: boolean; failed?: boolean }) => <FormField label="Zona">
