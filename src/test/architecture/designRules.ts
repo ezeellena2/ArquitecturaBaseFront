@@ -60,10 +60,10 @@ export function inspectDesign(source: string): DesignViolation[] {
         const density = /(?:^|\s|:)(?:!?)(?:h-|min-h-|max-h-|text-(?!left\b|right\b|center\b)|font-|leading-|tracking-)/;
         const fieldAppearance = /(?:^|\s|:)(?:!?)(?:h-|size-|rounded|bg-|border|shadow|font-|leading-|tracking-|text-(?!left\b|right\b|center\b))/;
         if ((["Button", "IconButton", "TableHead", "TableHeader"].includes(component ?? "") && appearance.test(values)) || (component === "TableRow" && density.test(values))) add(node, "component-variant");
-        if (["Input", "Textarea", "NativeSelect", "SelectTrigger"].includes(component ?? "") && fieldAppearance.test(values)) add(node, "component-variant");
+        if (["Input", "Textarea", "NativeSelect", "Picker"].includes(component ?? "") && fieldAppearance.test(values)) add(node, "component-variant");
         const surfaceAppearance = /(?:^|\s|:)(?:!?)(?:rounded|bg-|border|shadow|font-|leading-|tracking-|text-(?!left\b|right\b|center\b|start\b|end\b))/;
         if (["Checkbox", "Switch"].includes(component ?? "") && fieldAppearance.test(values)) add(node, "component-variant");
-        if (["SelectContent", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription", "DialogOverlay", "TooltipContent"].includes(component ?? "") && surfaceAppearance.test(values)) add(node, "component-variant");
+        if (["DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription", "DialogOverlay", "TooltipContent"].includes(component ?? "") && surfaceAppearance.test(values)) add(node, "component-variant");
       }
       if (component === "DataTable") {
         let ancestor: ts.Node | undefined = node.parent;

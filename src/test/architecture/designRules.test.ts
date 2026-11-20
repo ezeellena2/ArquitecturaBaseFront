@@ -26,6 +26,11 @@ describe("design boundaries", () => {
       const Screen = () => <Field className="w-full bg-white text-lg" />;`)).toContainEqual({ line: 2, rule: "component-variant" });
     expect(inspectDesign(`import { Input } from '@/shared/ui/input';
       const Screen = () => <Input className="w-full pl-8" />;`)).toEqual([]);
+    // The only piece to choose (DS1-A) is a field too: its owner gives it a width, never a look.
+    expect(inspectDesign(`import { Picker } from '@/shared/ui/Picker';
+      const Screen = () => <Picker className="w-24 bg-white rounded-xl" />;`)).toContainEqual({ line: 2, rule: "component-variant" });
+    expect(inspectDesign(`import { Picker } from '@/shared/ui/Picker';
+      const Screen = () => <Picker className="min-w-0 flex-1 sm:w-72" />;`)).toEqual([]);
   });
 
   it("keeps table typography and row density in the library", () => {
@@ -52,7 +57,7 @@ describe("design boundaries", () => {
     expect(inspectDesign('// Example: <input /> bg-[#abc123]\nconst name = "Ana";')).toEqual([]);
   });
 
-  it.each(["Checkbox", "Switch", "SelectContent", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription", "DialogOverlay", "TooltipContent"])("keeps the appearance of %s in shared UI", component => {
+  it.each(["Checkbox", "Switch", "DialogContent", "DialogHeader", "DialogFooter", "DialogTitle", "DialogDescription", "DialogOverlay", "TooltipContent"])("keeps the appearance of %s in shared UI", component => {
     expect(inspectDesign(`import { ${component} as Piece } from '@/shared/ui/piece';
       const Screen = () => <Piece className="bg-white rounded-xl text-lg" />;`)).toContainEqual({ line: 2, rule: "component-variant" });
   });

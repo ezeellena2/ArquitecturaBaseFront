@@ -72,6 +72,23 @@ describe("the application uses the shared design system", () => {
     expect([...texts, ...code]).toEqual([]);
   });
 
+  // UNA SOLA PIEZA PARA ELEGIR (DS1-A, 2026-11-19): choosing from a list is the shared Picker. A select of the browser stays only in
+  // the preview of a form, which imitates WhatsApp (`NativeSelect`), and a field that suggests while it is typed, only in the
+  // search of a place (`Autocomplete`), which is not a known list.
+  it("chooses from a list only with the shared Picker", () => {
+    const allowed: Record<string, string> = {
+      NativeSelect: "features/business-forms/components/FormPreview.tsx",
+      Autocomplete: "features/artificial-intelligence/components/BusinessPlaceSearch.tsx",
+    };
+    const uses = sourceFiles(root).filter(file => !file.includes(`${path.sep}shared${path.sep}ui${path.sep}`)).flatMap(file => {
+      const name = path.relative(root, file).replaceAll("\\", "/"), code = readFileSync(file, "utf8");
+      const pieces = [...code.matchAll(/from "@\/shared\/ui\/(NativeSelect|MultiSelect|select|Autocomplete)"/g)].map(match => match[1])
+        .filter(piece => allowed[piece] !== name);
+      return [...pieces, ...(/<select[\s>]/.test(code) ? ["<select>"] : [])].map(piece => `${name} ${piece}`);
+    });
+    expect(uses, uses.join("\n")).toEqual([]);
+  });
+
   it("mounts notifications once in application providers", () => {
     const mounts = sourceFiles(root).filter(file => !file.includes(`${path.sep}test${path.sep}`))
       .filter(file => /<Toaster\b/.test(readFileSync(file, "utf8")));
