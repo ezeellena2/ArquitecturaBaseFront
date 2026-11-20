@@ -71,6 +71,9 @@ import { missingFormInitial } from "../missingFormSeed";
 const FormSuggestionsSection = lazy(() => import("../components/FormSuggestionsSection").then(module => ({ default: module.FormSuggestionsSection })));
 const FormRulesSection = lazy(() => import("../components/FormRulesSection").then(module => ({ default: module.FormRulesSection })));
 
+// DOC1: a reading control is marked itself («Cómo reconocerlo») or around its Picker (a lookup), whose button takes the focus.
+const invalidReadingControl = "[data-reading-control][aria-invalid='true'], [data-reading-control] [aria-invalid='true']";
+
 // CA1-A and CO1-A: what to complete in a calculation or a condition: an empty list, then «+ Agregar» of its chips, then its operation.
 function engineControl(container: HTMLElement | undefined, zone: string): HTMLElement | null {
   const root = container?.querySelector<HTMLElement>(`[data-question-control="${zone}"]`);
@@ -310,7 +313,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     // first control it lacks takes the focus. Off, a lookup left half chosen already went.
     if (action === editor.save && readingShown && documentReadingIncomplete(value?.draft.documentReading)) {
       setIncompleteShown(true);
-      requestAnimationFrame(() => requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>("[data-reading-control][aria-invalid='true']")?.focus(); }));
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (active.current) host.current?.querySelector<HTMLElement>(invalidReadingControl)?.focus(); }));
       return;
     }
     setLocatedIssue(null);
@@ -369,8 +372,11 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     // DOC1: a problem of the reading opens its zone and takes the focus to its control, a lookup's although it names its question.
     if (issue.path.startsWith("draft.documentReading")) {
       const control = issue.path.slice("draft.documentReading.".length);
-      requestAnimationFrame(() => requestAnimationFrame(() => { if (active.current) (host.current?.querySelector<HTMLElement>(`[data-reading-control="${control.replaceAll('"', "")}"]`)
-        ?? host.current?.querySelector<HTMLElement>("[data-reading-control][aria-invalid='true']"))?.focus(); }));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (!active.current) return;
+        const marked = host.current?.querySelector<HTMLElement>(`[data-reading-control="${control.replaceAll('"', "")}"]`);
+        (marked?.querySelector<HTMLElement>("button[aria-haspopup]") ?? marked ?? host.current?.querySelector<HTMLElement>(invalidReadingControl))?.focus();
+      }));
       return;
     }
     const section = publicationFieldIssues(value!, [issue])[0]?.sectionLocalId;

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { http, HttpResponse } from "msw";
@@ -74,9 +74,9 @@ describe("a copy of a library standard", () => {
     expect(await screen.findByRole("tooltip")).toHaveTextContent("«Agregar» fijó qué pregunta recibe cada dato de «Comprobante de transferencia», versión 1");
 
     // The lookup: the question read, the one it fills and the catalog field it compares.
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toHaveDisplayValue("CUIT o CUIL de origen (pregunta 5)");
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Completa" })).toHaveDisplayValue("Cliente (pregunta 1)");
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" })).toHaveDisplayValue("CUIT");
+    expect(screen.getByRole("button", { name: "Cruce 1 · Dato leído CUIT o CUIL de origen (pregunta 5)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cruce 1 · Completa Cliente (pregunta 1)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cruce 1 · Se busca por CUIT" })).toBeInTheDocument();
 
     expect(await screen.findByText("El mismo archivo, o uno que coincide en Número de operación, Monto y Fecha.")).toBeInTheDocument();
     expect(statsReads).toBe(1);
@@ -271,22 +271,25 @@ describe("the lookups", () => {
     renderWithProviders(<Harness definition={readingDefinition("es")} onValue={value => { last = value; }} />);
     await open();
     await userEvent.click(await screen.findByRole("button", { name: "Agregar cruce" }));
-    const read = screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" });
+    const read = screen.getByRole("button", { name: /^Cruce 2 · Dato leído / });
     await waitFor(() => expect(read).toHaveFocus());
     // What it reads: texts, numbers and dates outside the block; what it fills: the catalog questions of one choice, without
     // the one another lookup already fills.
-    expect(within(read).getAllByRole("option").map(option => option.textContent)).toContain("Monto (pregunta 10)");
-    const fills = screen.getByRole("combobox", { name: "Cruce 2 · Completa" });
-    expect(within(fills).getAllByRole("option").map(option => option.textContent)).toEqual(["Elegí una opción", "Banco o billetera de origen (pregunta 2)", "Banco o billetera de destino (pregunta 6)"]);
-    await userEvent.selectOptions(read, readingIds.operationNumber);
-    await userEvent.selectOptions(fills, readingIds.sourceBank);
-    const by = screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" });
-    expect(within(by).getAllByRole("option").map(option => option.textContent)).toEqual(["Elegí una opción", "Código", "Texto"]);
-    await userEvent.selectOptions(by, "code");
+    // «Elegí una opción» is what the field says while none is chosen, not an option.
+    const reads = await openList(read);
+    expect(within(reads).getAllByRole("option").map(option => option.textContent)).toContain("Monto (pregunta 10)");
+    await userEvent.click(within(reads).getByRole("option", { name: /^Número de operación \(pregunta \d+\)$/ }));
+    const fills = await openList(/^Cruce 2 · Completa /);
+    expect(within(fills).getAllByRole("option").map(option => option.textContent)).toEqual(["Banco o billetera de origen (pregunta 2)", "Banco o billetera de destino (pregunta 6)"]);
+    await userEvent.click(within(fills).getByRole("option", { name: "Banco o billetera de origen (pregunta 2)" }));
+    const by = screen.getByRole("button", { name: /^Cruce 2 · Se busca por / });
+    const ways = await openList(by);
+    expect(within(ways).getAllByRole("option").map(option => option.textContent)).toEqual(["Código", "Texto"]);
+    await userEvent.click(within(ways).getByRole("option", { name: "Código" }));
     expect(last?.draft.documentReading?.lookups[1]).toEqual({ questionId: readingIds.sourceBank, sourceQuestionId: readingIds.operationNumber, field: "code" });
     // Reading a number, the option's code no longer serves: it is chosen again.
-    await userEvent.selectOptions(read, readingIds.amount);
-    expect(by).toHaveValue("");
+    await pick(read, "Monto (pregunta 10)");
+    expect(by).toHaveAccessibleName("Cruce 2 · Se busca por Elegí una opción");
     await userEvent.click(screen.getByRole("button", { name: "Quitar el cruce 2" }));
     expect(last?.draft.documentReading?.lookups).toHaveLength(1);
     await waitFor(() => expect(screen.getByRole("button", { name: "Agregar cruce" })).toHaveFocus());
@@ -304,10 +307,10 @@ describe("the lookups", () => {
     expect(add).toHaveAccessibleDescription("Se pueden agregar hasta 5 cruces.");
     expect(screen.getAllByText("Elegí el dato leído, la pregunta que completa y por qué se busca.")).toHaveLength(4);
     // Only what is missing is marked.
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Completa" })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" })).not.toHaveAttribute("aria-invalid");
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Completa" })).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Completa / })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Se busca por / })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído / })).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByRole("button", { name: /^Cruce 1 · Completa / })).not.toHaveAttribute("aria-invalid");
   });
 
   it("does not add another one when every catalog question already has its lookup", async () => {
@@ -329,7 +332,7 @@ describe("the lookups", () => {
     expect(await screen.findByText(contentInvalid)).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByText("Se busca por: " + lookupInvalid.charAt(0).toLowerCase() + lookupInvalid.slice(1))).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Cruce 1 · Se busca por / })).toHaveAttribute("aria-invalid", "true");
   });
 
   it("turned off, drops a lookup still to complete, and a problem of what it hides neither opens it nor shows", async () => {
@@ -353,30 +356,30 @@ describe("the lookups", () => {
     server.use(http.get("/api/forms/catalogs/:id", async ({ params }) => { await held; return HttpResponse.json(readingCatalog(String(params.id))); }));
     renderWithProviders(<Harness definition={readingDefinition("es")} />);
     await open();
-    const by = screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" });
-    expect(by).toHaveDisplayValue("Cargando…");
+    const by = screen.getByRole("button", { name: /^Cruce 1 · Se busca por / });
+    expect(by).toHaveAccessibleName("Cruce 1 · Se busca por Cargando…");
     expect(by).toBeDisabled();
     expect(screen.queryByText("Campo no disponible")).not.toBeInTheDocument();
     release();
-    await waitFor(() => expect(by).toHaveDisplayValue("CUIT"));
+    await waitFor(() => expect(by).toHaveAccessibleName("Cruce 1 · Se busca por CUIT"));
     expect(by).toBeEnabled();
   });
 
   it("without «Ver catálogos» says why «Se busca por» cannot name a field, and offers the option's code or text for a text", async () => {
     renderWithProviders(<Harness definition={readingDefinition("es")} permissions={["formtemplates.read", "formtemplates.manage"]} />);
     await open();
-    const saved = screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" });
+    const saved = screen.getByRole("button", { name: /^Cruce 1 · Se busca por / });
     expect(saved).toBeDisabled();
-    expect(saved).toHaveDisplayValue("Campo no disponible");
+    expect(saved).toHaveAccessibleName("Cruce 1 · Se busca por Campo no disponible");
     expect(saved).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y ver sus campos.");
     await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Cruce 2 · Completa" }), readingIds.sourceBank);
+    await pick(/^Cruce 2 · Completa /, "Banco o billetera de origen (pregunta 2)");
     // A text compares with the option's code or text; a number, only with a field it cannot list.
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" }), readingIds.operationNumber);
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" })).toBeEnabled();
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" }), readingIds.amount);
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" })).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y ver sus campos.");
+    await pick(/^Cruce 2 · Dato leído /, /^Número de operación \(pregunta \d+\)$/);
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Se busca por / })).toBeEnabled();
+    await pick(/^Cruce 2 · Dato leído /, "Monto (pregunta 10)");
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Se busca por / })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Cruce 2 · Se busca por / })).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y ver sus campos.");
   });
 
   it("on the phone, adds, removes, retries and chooses on targets of 44 px", async () => {
@@ -387,7 +390,7 @@ describe("the lookups", () => {
       expect(await screen.findByRole("button", { name: "Ver los ejemplos (3)" })).toHaveClass("min-h-11");
       expect(screen.getByRole("button", { name: "Agregar cruce" })).toHaveClass("min-h-11");
       expect(screen.getByRole("button", { name: "Quitar el cruce 1" })).toHaveClass("min-h-11");
-      for (const select of within(screen.getByRole("heading", { name: "Cruce 1" }).closest("[data-reading-lookup]") as HTMLElement).getAllByRole("combobox")) expect(select).toHaveClass("h-11");
+      for (const select of within(screen.getByRole("heading", { name: "Cruce 1" }).closest("[data-reading-lookup]") as HTMLElement).getAllByRole("button", { name: /^(Dato leído|Completa|Se busca por) / })) expect(select).toHaveClass("h-11");
     } finally {
       vi.restoreAllMocks();
     }
@@ -398,13 +401,24 @@ describe("the lookups", () => {
     await open();
     expect(screen.getByRole("checkbox", { name: "Leer los documentos que lleguen por WhatsApp" })).toBeDisabled();
     expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).toHaveAttribute("readonly");
-    expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Cruce 1 · Dato leído / })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Agregar cruce" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Quitar el cruce 1" })).not.toBeInTheDocument();
     // Without «Ver catálogos» the field it compares cannot be named, and it says why; how it is reading is read with «Ver formularios».
-    const by = screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" });
-    expect(by).toHaveDisplayValue("Campo no disponible");
+    const by = screen.getByRole("button", { name: /^Cruce 1 · Se busca por / });
+    expect(by).toHaveAccessibleName("Cruce 1 · Se busca por Campo no disponible");
     expect(by).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y ver sus campos.");
     expect(await screen.findByText("Documentos confirmados")).toBeInTheDocument();
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

@@ -16,7 +16,7 @@ import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { IconButton } from "@/shared/ui/IconButton";
 import { AlertTriangleIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker, type PickerOption } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
@@ -171,7 +171,7 @@ function Lookups({ reading, value, change, readOnly, disabled, scope, culture, e
   const remove = (index: number) => { change({ ...reading, lookups: lookups.filter((_, position) => position !== index) }); requestAnimationFrame(() => add.current?.focus()); };
   const addLookup = () => {
     change({ ...reading, lookups: [...lookups, { questionId: "", sourceQuestionId: "", field: "" }] });
-    requestAnimationFrame(() => root.current?.querySelector<HTMLElement>(`[data-reading-control="lookups[${lookups.length}].sourceQuestionId"]`)?.focus());
+    requestAnimationFrame(() => root.current?.querySelector<HTMLElement>(`[data-reading-control="lookups[${lookups.length}].sourceQuestionId"] button[aria-haspopup]`)?.focus());
   };
   // Each lookup fills another catalog question: with all of them filled, another one could not be completed.
   const free = questions.targets.filter(target => !lookups.some(lookup => lookup.questionId.toLowerCase() === target.id.toLowerCase()));
@@ -229,17 +229,17 @@ function LookupRow({ index, lookup, lookups, questions, scope, readOnly, disable
   const missing = (part: LookupPart) => incomplete && lookup[part] === "";
   const messages = [...problems.map(problem => problem.text), ...whole ? [whole] : [], ...incomplete && parts.some(({ part }) => lookup[part] === "") ? [t("documentReading.incomplete")] : []];
   const messageId = `${ids}-message`;
-  const questionOption = (item: LookupQuestion) => <option key={item.id} value={item.id}>{t("documentReading.questionOption", { label: item.label, number: item.number })}</option>;
+  const questionOption = (item: LookupQuestion): PickerOption => ({ id: item.id, label: t("documentReading.questionOption", { label: item.label, number: item.number }) });
   const comparisonName = (field: string) => field === "code" ? t("documentReading.byCode") : field === "text" ? t("documentReading.byText")
     : catalogFields?.find(item => item.id === field) ? administrativeName(catalogFields.find(item => item.id === field)!.name, scope.culture) : t("documentReading.unavailableField");
   // In the table a control has no label in sight: its name says the lookup and the column. On the phone its label is above it, and
   // the list is 44 px tall.
-  const select = (part: LookupPart, label: string, options: ReactNode, unavailable: string | null, { loading = false, reason = null }: { loading?: boolean; reason?: string | null } = {}) => {
-    const control = <NativeSelect data-reading-control={`lookups[${index}].${part}`} id={`${ids}-${part}`} size={phone ? "touch" : "default"}
-      aria-label={phone ? undefined : t("documentReading.cell", { number, label })} aria-labelledby={phone ? `${ids}-${part}-label` : undefined}
+  // While the fields of the catalog arrive the list is off and says it is loading; with nothing chosen it says «Elegí una opción».
+  const select = (part: LookupPart, label: string, options: readonly PickerOption[], unavailable: string | null, { loading = false, reason = null }: { loading?: boolean; reason?: string | null } = {}) => {
+    const control = <Picker id={`${ids}-${part}`} size={phone ? "touch" : "default"} label={phone ? label : t("documentReading.cell", { number, label })}
       aria-invalid={problems.some(problem => problem.part === part) || missing(part) || undefined} aria-describedby={messages.length ? messageId : undefined}
-      aria-busy={loading || undefined} disabled={readOnly || disabled || loading || reason !== null} value={loading ? "" : lookup[part]} onChange={event => {
-        const chosen = event.target.value;
+      disabled={readOnly || disabled || loading || reason !== null} value={loading ? null : lookup[part] || null} placeholder={t(loading ? "common:states.loading" : "select")}
+      options={loading ? [] : [...unavailable !== null ? [{ id: lookup[part], label: unavailable }] : [], ...options]} onChange={chosen => {
         if (part === "field") { onChange({ ...lookup, field: chosen }); return; }
         if (part === "sourceQuestionId") {
           const next = questions.sources.find(item => same(item.id, chosen));
@@ -249,20 +249,15 @@ function LookupRow({ index, lookup, lookups, questions, scope, readOnly, disable
         // Another catalog has other fields: a field of the one it filled is chosen again.
         const next = questions.targets.find(item => same(item.id, chosen));
         onChange({ ...lookup, questionId: chosen, field: lookup.field === "code" || lookup.field === "text" || next?.catalog === target?.catalog ? lookup.field : "" });
-      }}>
-      {loading ? <option value="">{t("common:states.loading")}</option> : <>
-        <option value="">{t("select")}</option>
-        {unavailable !== null ? <option value={lookup[part]}>{unavailable}</option> : null}
-        {options}
-      </>}
-    </NativeSelect>;
-    return reason ? <DisabledReason reason={reason} className="grid w-full">{control}</DisabledReason> : control;
+      }} />;
+    // The mark the editor looks for goes around the control: the Picker takes only its own props.
+    return <div data-reading-control={`lookups[${index}].${part}`}>{reason ? <DisabledReason reason={reason} className="grid w-full">{control}</DisabledReason> : control}</div>;
   };
   const controls: Record<LookupPart, ReactNode> = {
     sourceQuestionId: select("sourceQuestionId", t("documentReading.source"), questions.sources.map(questionOption),
       lookup.sourceQuestionId && !source ? t("documentReading.unavailableQuestion") : null),
     questionId: select("questionId", t("documentReading.target"), targets.map(questionOption), lookup.questionId && !target ? t("documentReading.unavailableQuestion") : null),
-    field: select("field", t("documentReading.field"), comparisons.map(item => <option key={item.value} value={item.value}>{comparisonName(item.value)}</option>),
+    field: select("field", t("documentReading.field"), comparisons.map(item => ({ id: item.value, label: comparisonName(item.value) })),
       lookup.field && !comparisons.some(item => item.value === lookup.field) ? comparisonName(lookup.field) : null, { loading: loadingFields, reason: fieldReason }),
   };
   const list = messages.length ? <div id={messageId} className="flex flex-col gap-0.5">{messages.map(message => <p key={message} role="alert"

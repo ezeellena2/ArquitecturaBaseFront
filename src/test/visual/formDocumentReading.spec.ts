@@ -37,11 +37,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (width >= 640) await expect(zone.getByRole("table", { name: data, exact: true })).toContainText(text(language, "Quién transfirió", "Who transferred"));
     else await expect(zone.getByRole("list", { name: data, exact: true }).getByRole("listitem")).toHaveCount(14);
     // The lookup: in a table from 640 px, in its box on the phone, where what is touched is 44 px tall.
-    if (width >= 640) await expect(zone.getByRole("combobox", { name: text(language, "Cruce 1 · Se busca por", "Lookup 1 · Matched by"), exact: true })).toHaveValue(/.+/);
+    if (width >= 640) await expect(zone.getByRole("button", { name: new RegExp("^" + text(language, "Cruce 1 · Se busca por", "Lookup 1 · Matched by") + " ") })).not.toHaveAccessibleName(/ (Elegí una opción|Choose an option)$/);
     else {
       await expect(zone.getByRole("heading", { name: text(language, "Cruce 1", "Lookup 1"), exact: true })).toBeVisible();
       const targets = [zone.getByRole("button", { name: text(language, "Agregar cruce", "Add lookup"), exact: true }), zone.getByRole("button", { name: text(language, "Quitar el cruce 1", "Remove lookup 1"), exact: true }),
-        zone.getByRole("button", { name: text(language, "Ver los ejemplos (3)", "See the examples (3)"), exact: true }), ...await zone.getByRole("combobox").all()];
+        zone.getByRole("button", { name: text(language, "Ver los ejemplos (3)", "See the examples (3)"), exact: true }), ...await zone.getByRole("button", { name: /^(Cruce|Lookup) \d+ · / }).all()];
       for (const target of targets) expect((await target.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
     await noPageScroll(page, width);

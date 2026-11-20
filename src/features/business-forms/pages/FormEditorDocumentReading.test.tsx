@@ -62,12 +62,12 @@ it("keeps its controls while a save is in flight, off until it answers: it is no
   // Nothing goes away nor changes place: «Agregar cruce», the lookup with its trash and the switch stay, off.
   expect(screen.getByRole("button", { name: "Agregar cruce" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Quitar el cruce 1" })).toBeDisabled();
-  expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /^Cruce 1 · Dato leído / })).toBeDisabled();
   expect(screen.getByRole("checkbox", { name: "Leer los documentos que lleguen por WhatsApp" })).toBeDisabled();
   expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).toHaveAttribute("readonly");
   await act(async () => { release(); });
   await waitFor(() => expect(screen.getByRole("button", { name: "Agregar cruce" })).toBeEnabled());
-  expect(screen.getByRole("combobox", { name: "Cruce 1 · Dato leído" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /^Cruce 1 · Dato leído / })).toBeEnabled();
   expect(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ })).not.toHaveAttribute("readonly");
 });
 
@@ -99,7 +99,7 @@ it("shows under its lookup the problem the server found when saving, with the fo
   await userEvent.type(screen.getByRole("textbox", { name: /^Cómo reconocerlo/ }), " Banco Sur.");
   await save();
   expect(await screen.findByText("Se busca por: revisá el valor y los límites de autoría del borrador.")).toBeInTheDocument();
-  const field = screen.getByRole("combobox", { name: "Cruce 1 · Se busca por" });
+  const field = screen.getByRole("button", { name: /^Cruce 1 · Se busca por / });
   expect(field).toHaveAttribute("aria-invalid", "true");
   await waitFor(() => expect(field).toHaveFocus());
   expect(vi.mocked(notify).mock.calls.filter(([notice]) => notice.kind === "error")).toHaveLength(0);
@@ -112,7 +112,7 @@ it("does not save a lookup still to complete: it opens the zone and takes the fo
   await userEvent.click(screen.getByRole("button", { name: "Plegar «Lectura de documentos»" }));
   await save();
   expect(store.writes).toHaveLength(0);
-  await waitFor(() => expect(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" })).toHaveFocus());
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído / })).toHaveFocus());
   expect(screen.getByText("Elegí el dato leído, la pregunta que completa y por qué se busca.")).toBeInTheDocument();
 });
 
@@ -123,10 +123,9 @@ it("names a new question by its local identity, and once saved by the field iden
   await userEvent.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Referencia");
   await zone();
   await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
-  const read = screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" });
-  await userEvent.selectOptions(read, within(read).getByRole("option", { name: /^Referencia \(pregunta \d+\)$/ }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Cruce 2 · Completa" }), readingIds.sourceBank);
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Cruce 2 · Se busca por" }), "code");
+  await pick(/^Cruce 2 · Dato leído /, /^Referencia \(pregunta \d+\)$/);
+  await pick(/^Cruce 2 · Completa /, /^Banco o billetera de origen/);
+  await pick(/^Cruce 2 · Se busca por /, "Código");
   await save();
   const sent = store.writes.at(-1)!;
   const localId = sent.draft.fields.find(question => question.label.es === "Referencia")!.localId;
@@ -134,8 +133,7 @@ it("names a new question by its local identity, and once saved by the field iden
   const fieldId = store.definitions.get(fixtureFormId)!.draft.fields.find(question => question.label.es === "Referencia")!.fieldId;
   expect(fieldId).not.toBe(localId);
   if (screen.queryByRole("button", { name: "Expandir «Lectura de documentos»" })) await zone();
-  await waitFor(() => expect(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" })).toHaveValue(fieldId));
-  expect(screen.getByRole("combobox", { name: "Cruce 2 · Dato leído" })).toHaveDisplayValue(/^Referencia \(pregunta \d+\)$/);
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído Referencia \(pregunta \d+\)$/ })).toBeInTheDocument());
   expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled();
 });
 
@@ -144,7 +142,7 @@ it("takes away the lookup of a question that is removed, also from what is saved
   await userEvent.click(await screen.findByRole("button", { name: "Quitar Cliente" }, { timeout: 10_000 }));
   await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Quitar pregunta" }));
   await zone();
-  expect(screen.queryByRole("combobox", { name: "Cruce 1 · Dato leído" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Cruce 1 · Dato leído / })).not.toBeInTheDocument();
   await save();
   expect(store.writes.at(-1)?.draft.documentReading).toEqual({ ...saved(), lookups: [] });
 });
@@ -207,8 +205,19 @@ it("takes a problem of a lookup found when publishing to the lookup, with «Ir a
   await userEvent.click(await screen.findByRole("button", { name: "Publicar en WhatsApp" }, { timeout: 10_000 }));
   const dialog = await screen.findByRole("dialog");
   await userEvent.click(await within(dialog).findByRole("button", { name: "Ir al cruce" }));
-  const field = await screen.findByRole("combobox", { name: "Cruce 1 · Se busca por" });
+  const field = await screen.findByRole("button", { name: /^Cruce 1 · Se busca por / });
   await waitFor(() => expect(field).toHaveFocus());
   expect(field).toHaveAttribute("aria-invalid", "true");
   expect(screen.getByText("Se busca por: " + lookupInvalid.charAt(0).toLowerCase() + lookupInvalid.slice(1))).toBeInTheDocument();
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}
