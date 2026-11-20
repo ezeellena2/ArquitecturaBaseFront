@@ -389,7 +389,9 @@ export function Picker(props: PickerProps) {
           event.preventDefault();
           (nextTabbable(triggerRef.current) ?? triggerRef.current)?.focus();
         }}
-        className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-(--radix-popover-trigger-width) min-w-48 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none">
+        // The list of a field is as wide as the field; the one of a bar's button («Columnas») is as wide as its names, up to a limit.
+        className={cn("z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] min-w-48 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none",
+          props.trigger === "button" ? "w-max max-w-80" : "w-(--radix-popover-trigger-width)")}>
         {header}
         {options}
         {state}
