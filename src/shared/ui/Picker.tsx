@@ -43,8 +43,10 @@ interface PickerBase {
   /** The field of a form, or the button of a listing bar, which keeps its look and opens the same list. */
   trigger?: "field" | "button";
   /** What the button of a bar always says, whatever is chosen («Columnas», «Más filtros»): it names the button, and the
-   * label goes on top of the list. */
+   * label names the list. */
   triggerLabel?: ReactNode;
+  /** The label also goes on top of the list, for a bar's button that says something else («Más filtros» opens «Creado»). */
+  titled?: boolean;
   /** 44 px, like `Button size="touch"`: who uses it asks for it on the phone. */
   size?: "default" | "touch";
   id?: string;
@@ -351,7 +353,7 @@ export function Picker(props: PickerProps) {
   const moreLabel = t(props.loadingMore ? "picker.loadingMore" : "picker.more", { count: props.pageSize ?? 50 });
   // The search and how many there are stay on top, behind a line, while the list scrolls under them.
   // A bar's button that says something else («Más filtros») names the list on top of it; on the phone the title does.
-  const heading = props.triggerLabel && !phone
+  const heading = props.triggerLabel && props.titled && !phone
     ? <p className="px-1 pb-1 text-[length:var(--text-caption)] font-semibold tracking-[0.06em] text-[var(--color-content-heading)] uppercase">{props.label}</p> : null;
   const header = heading || searchBox || countRow
     ? <div className={cn("border-b border-[var(--color-border)]", phone ? "p-3" : "p-1.5")}>{heading}{searchBox}{countRow}</div> : null;

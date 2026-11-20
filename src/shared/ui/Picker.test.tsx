@@ -374,14 +374,24 @@ describe("Picker", () => {
     expect(within(trigger).getByText("AR +54")).toBeInTheDocument();
   });
 
-  it("names the button of a bar by what it says and puts the label on top of its list", async () => {
-    renderWithProviders(<Picker label="Creado" trigger="button" triggerLabel="Más filtros" first={{ id: "", label: "Cualquier fecha" }}
+  it("names the button of a bar by what it says and puts the label on top of its list when the button says something else", async () => {
+    renderWithProviders(<Picker label="Creado" trigger="button" triggerLabel="Más filtros" titled first={{ id: "", label: "Cualquier fecha" }}
       options={[{ id: "7", label: "Últimos 7 días" }]} value="" onChange={vi.fn()}/>);
 
     const { list } = await openList(/^Más filtros$/);
 
     expect(list).toHaveAccessibleName("Creado");
     expect(screen.getByText("Creado")).toBeInTheDocument();
+  });
+
+  it("does not repeat on top of the list what the button of a bar already says", async () => {
+    renderWithProviders(<Picker label="Columnas" trigger="button" triggerLabel="Columnas" multiple options={[{ id: "lote", label: "Lote" }]} value={[]}
+      onChange={vi.fn()}/>);
+
+    const { list } = await openList(/^Columnas$/);
+
+    expect(list).toHaveAccessibleName("Columnas");
+    expect(screen.getAllByText("Columnas")).toHaveLength(1);
   });
 
   describe("on the phone", () => {

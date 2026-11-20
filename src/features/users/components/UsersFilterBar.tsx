@@ -102,6 +102,7 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
             </>
           }
           label={t("columns.createdAtUtc")}
+          titled
           {...optionsState}
           first={{ id: "", label: t("filters.createdWithin.any") }}
           options={createdOptions.map((option) => ({
