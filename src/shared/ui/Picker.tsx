@@ -370,7 +370,10 @@ export function Picker(props: PickerProps) {
   if (phone) return <>
     {trigger}
     <Dialog open={open} onOpenChange={next => { if (!next) hide(); }}>
+      {/* The button is not the dialog's own trigger, so Radix would leave the focus nowhere when the screen closes: it goes
+          back to the button, as on a computer. */}
       <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} onOpenAutoFocus={focusList}
+        onCloseAutoFocus={event => { event.preventDefault(); triggerRef.current?.focus(); }}
         className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
           <DialogTitle className="min-w-0 flex-1 truncate">{props.label}</DialogTitle>

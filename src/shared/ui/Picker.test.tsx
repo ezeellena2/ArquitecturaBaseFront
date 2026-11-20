@@ -436,7 +436,21 @@ describe("Picker", () => {
       await user.click(within(dialog).getByRole("button", { name: "Listo (2)" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(screen.getByRole("button", { name: "Roles Admin, User" })).toBeInTheDocument();
+      // The screen closes and the focus goes back to the button that opened it, as on a computer.
+      await waitFor(() => expect(screen.getByRole("button", { name: "Roles Admin, User" })).toHaveFocus());
+    });
+
+    it("leaves the focus on its button when the × closes it without choosing", async () => {
+      renderWithProviders(<Roles initial={["user"]}/>);
+      const user = userEvent.setup();
+
+      await user.click(screen.getByRole("button", { name: /^Roles/ }));
+      const dialog = await screen.findByRole("dialog", { name: "Roles" });
+      await user.click(within(dialog).getByRole("option", { name: "Admin" }));
+      await user.click(within(dialog).getByRole("button", { name: "Cerrar la lista" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() => expect(screen.getByRole("button", { name: "Roles User" })).toHaveFocus());
     });
 
     it("chooses one with a touch and closes", async () => {
@@ -449,7 +463,7 @@ describe("Picker", () => {
       await user.click(within(dialog).getByRole("option", { name: "EL OMBÚ" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(screen.getByRole("button", { name: "Campo asignado EL OMBÚ" })).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByRole("button", { name: "Campo asignado EL OMBÚ" })).toHaveFocus());
     });
   });
 });
