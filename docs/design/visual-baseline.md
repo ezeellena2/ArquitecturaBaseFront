@@ -301,7 +301,10 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   catálogo, las personas), es el combo común (`Autocomplete` con su flecha) y se busca escribiendo, como adentro de
   «Filtros» de la planilla; si son pocas y fijas, el desplegable del filtro (`FilterMenuTrigger` con opciones de radio),
   como Rol en Usuarios. Se elige una. Un segmentado de pocas opciones fijas conserva la cantidad de cada conjunto
-  («Activos (8) · Dados de baja (2)»).
+  («Activos (8) · Dados de baja (2)»). Decidido el 2026-11-19 y sin programar: con la
+  [pieza única para elegir](../plans/2026-11-19-una-sola-pieza-para-elegir.md) (DS1-A), el filtro abre la misma lista
+  que el resto de la app y, si son muchas, se busca en el buscador de adentro de la lista, no escribiendo en el campo;
+  hasta que se programe vale lo de arriba.
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
@@ -624,6 +627,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md); faltan sus escenas de `test:visual`, los lectores del contrato y la prueba manual |
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
 | Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
+| Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19; sin programar: se programa cuando el usuario lo diga, después de la prueba integral |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
