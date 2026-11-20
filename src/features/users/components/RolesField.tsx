@@ -7,10 +7,9 @@ import { FormField } from "@/shared/ui/FormField";
 import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 
-/// Los roles de una cuenta, en el alta y en la edición, con la pieza única para elegir (DS1-A): el campo dice los
-/// elegidos y la lista lleva la descripción de cada rol en gris. El catálogo sale de `GET /api/roles`, que pide
-/// `roles.read`: sin ese permiso no hay qué ofrecer, y el campo queda apagado con ese motivo (`DisabledReason`), sin un
-/// texto en su lugar. Muestra los roles que ya tiene: un control apagado conserva su valor legible.
+/// Los roles de una cuenta, en el alta y en la edición. El catálogo sale de `GET /api/roles`, que pide `roles.read`:
+/// sin ese permiso no hay qué ofrecer, y el campo queda apagado con ese motivo (`DisabledReason`), sin un texto en su
+/// lugar. Muestra los roles que ya tiene: un control apagado conserva su valor legible.
 export function RolesField({ value, onChange }: { value: readonly string[]; onChange: (roles: string[]) => void }) {
   const { t } = useTranslation("users");
   const { has } = usePermissions();

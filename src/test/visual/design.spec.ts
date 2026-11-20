@@ -340,14 +340,17 @@ test("reaching a control of the sticky band with the keyboard does not move the 
 
 test("filter menus and removable filters work with keyboard", async ({ page }) => {
   await openScreen(page, "/usuarios");
-  const trigger = page.getByRole("button", { name: "Filtrar por rol", exact: true });
+  // DS1-A: the filter keeps the button of the bar, named by the filter and what it says, and opens the list of the Picker.
+  const trigger = page.getByRole("button", { name: "Filtrar por rol Cualquier rol", exact: true });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("menu")).toBeVisible();
-  // OE1-A: a single choice in a menu is a radio item that says which one is chosen, with its tick.
-  await expect(page.getByRole("menuitemradio", { name: "Cualquier rol" })).toHaveAttribute("aria-checked", "true");
+  const list = page.getByRole("listbox", { name: "Filtrar por rol", exact: true });
+  await expect(list).toBeVisible();
+  // OE1-A: the chosen one says so, with its tick; «Cualquier rol» goes first.
+  await expect(list.getByRole("option").first()).toHaveAccessibleName("Cualquier rol");
+  await expect(list.getByRole("option", { name: "Cualquier rol" })).toHaveAttribute("aria-selected", "true");
   // FO1-A: each option is its name alone, without the count, and none is off.
-  const admin = page.getByRole("menuitemradio", { name: "Admin", exact: true });
+  const admin = list.getByRole("option", { name: "Admin", exact: true });
   await expect(admin).not.toHaveAttribute("aria-disabled", "true");
   await admin.click();
   const remove = page.getByRole("button", { name: /Quitar.*[Rr]ol/ });

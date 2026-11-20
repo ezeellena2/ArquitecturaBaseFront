@@ -470,16 +470,41 @@ describe("UsersPage", () => {
     trigger.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByRole("menuitemradio", { name: "Soporte" })).not.toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("menuitemradio", { name: "Admin" })).not.toHaveAttribute("aria-disabled", "true");
+    expect(await screen.findByRole("option", { name: "Soporte" })).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("option", { name: "Admin" })).not.toHaveAttribute("aria-disabled", "true");
     await userEvent.keyboard("{Escape}");
 
     const more = screen.getByRole("button", { name: /más filtros/i });
     more.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByRole("menuitemradio", { name: "Últimos 7 días" })).not.toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("menuitemradio", { name: "Últimos 30 días" })).toBeInTheDocument();
+    // The bar's button keeps saying "Más filtros"; the list is named by what it filters, with "Cualquier fecha" first.
+    const created = await screen.findByRole("listbox", { name: "Creado" });
+    expect(within(created).getAllByRole("option")[0]).toHaveAccessibleName("Cualquier fecha");
+    expect(within(created).getByRole("option", { name: "Últimos 7 días" })).not.toHaveAttribute("aria-disabled", "true");
+    expect(within(created).getByRole("option", { name: "Últimos 30 días" })).toBeInTheDocument();
+  });
+
+  it("filters by the role chosen in its list and takes the filter out with «Cualquier rol»", async () => {
+    server.use(...listHandlers());
+
+    const { router } = renderRouteWithProviders("/usuarios");
+    await screen.findByRole("table");
+
+    const trigger = screen.getByRole("button", { name: "Filtrar por rol Cualquier rol" });
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("option", { name: "Soporte" }));
+
+    await waitFor(() => expect(router.state.location.search).toContain("role=Soporte"));
+    expect(screen.getByRole("button", { name: "Filtrar por rol Soporte" })).toBeInTheDocument();
+
+    screen.getByRole("button", { name: "Filtrar por rol Soporte" }).focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(await screen.findByRole("option", { name: "Cualquier rol" }));
+
+    await waitFor(() => expect(router.state.location.search).not.toContain("role="));
+    expect(screen.getByRole("button", { name: "Filtrar por rol Cualquier rol" })).toBeInTheDocument();
   });
 
   it("marks the chosen role in its menu", async () => {
@@ -493,8 +518,8 @@ describe("UsersPage", () => {
     trigger.focus();
     await userEvent.keyboard("{Enter}");
 
-    expect(await screen.findByRole("menuitemradio", { name: /admin/i })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("menuitemradio", { name: "Cualquier rol" })).toHaveAttribute("aria-checked", "false");
+    expect(await screen.findByRole("option", { name: /admin/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("option", { name: "Cualquier rol" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("tells apart an empty list from one that no filter matches", async () => {

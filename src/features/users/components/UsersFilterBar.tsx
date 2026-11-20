@@ -3,40 +3,12 @@ import { useTranslation } from "react-i18next";
 import { fetchUserFilterCounts, userFilterCountsQueryKey, type UserFilterKey } from "../api/users";
 import type { Filters } from "@/shared/hooks/useFilters";
 import { Button } from "@/shared/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/shared/ui/dropdown-menu";
-import { ChevronDownIcon, SlidersIcon } from "@/shared/ui/icons";
+import { SlidersIcon } from "@/shared/ui/icons";
+import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { FilterChip } from "@/shared/ui/FilterChip";
-import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { FilterBar } from "@/shared/ui/FilterBar";
-
-/// Una opción de un desplegable de filtro: un renglón con su nombre, sin la cantidad ni nada debajo, y ninguna se
-/// apaga por no traer nada (FO1-A, 2026-11-03): si no hay coincidencias, el vacío lo dice y ofrece limpiar.
-///
-/// Es una opción de radio de su grupo, que dice cuál está elegida: la elegida lleva la tilde (OE1-A, 2026-11-03). La
-/// de "cualquiera" tiene el valor vacío.
-function OptionRow({
-  value,
-  label,
-  onSelect,
-}: {
-  value: string;
-  label: string;
-  onSelect: () => void;
-}) {
-  return (
-    <DropdownMenuRadioItem value={value} onSelect={onSelect}>
-      {label}
-    </DropdownMenuRadioItem>
-  );
-}
 
 interface UsersFilterBarProps {
   filters: Filters<UserFilterKey>;
@@ -98,63 +70,42 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
           }))}
         />
 
-        <DropdownMenu>
-          <FilterMenuTrigger
-            aria-label={t("filters.role.label")}
-          >
-            {values.role ?? t("filters.role.any")}
-            <ChevronDownIcon aria-hidden="true" className="size-3.5" />
-          </FilterMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-48">
-            <DropdownMenuRadioGroup value={values.role ?? ""}>
-              <OptionRow
-                value=""
-                label={t("filters.role.any")}
-                onSelect={() => setFilter("role", undefined)}
-              />
-              {roleOptions.map((role) => (
-                <OptionRow
-                  key={role.name}
-                  value={role.name}
-                  label={role.name}
-                  onSelect={() => setFilter("role", role.name)}
-                />
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Role and "Más filtros" are the only piece to choose with the button of the bar (DS1-A): one option per row,
+            without its count, the chosen one ticked and none off (FO1-A). "Cualquier…" goes first, apart, and takes the
+            filter out. */}
+        <Picker
+          trigger="button"
+          label={t("filters.role.label")}
+          first={{ id: "", label: t("filters.role.any") }}
+          options={roleOptions.map((role) => ({ id: role.name, label: role.name }))}
+          // The role of the URL is named before its options arrive.
+          selectedOptions={values.role ? [{ id: values.role, label: values.role }] : undefined}
+          value={values.role ?? ""}
+          onChange={(role) => setFilter("role", role || undefined)}
+        />
 
-        <DropdownMenu>
-          <FilterMenuTrigger>
-            <SlidersIcon aria-hidden="true" className="size-4" />
-            {t("filters.more")}
-            {values.createdWithinDays ? (
-              <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[length:var(--text-caption)] font-semibold text-white">
-                1
-              </span>
-            ) : null}
-          </FilterMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-56">
-            <DropdownMenuLabel className="text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-content-heading)]">
-              {t("columns.createdAtUtc")}
-            </DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={values.createdWithinDays ?? ""}>
-              <OptionRow
-                value=""
-                label={t("filters.createdWithin.any")}
-                onSelect={() => setFilter("createdWithinDays", undefined)}
-              />
-              {createdOptions.map((option) => (
-                <OptionRow
-                  key={option.days}
-                  value={String(option.days)}
-                  label={t("filters.createdWithin.option", { count: option.days })}
-                  onSelect={() => setFilter("createdWithinDays", String(option.days))}
-                />
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Picker
+          trigger="button"
+          triggerLabel={
+            <>
+              <SlidersIcon aria-hidden="true" className="size-4" />
+              {t("filters.more")}
+              {values.createdWithinDays ? (
+                <span className="inline-flex size-4 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-brand-600)] text-[length:var(--text-caption)] font-semibold text-white">
+                  1
+                </span>
+              ) : null}
+            </>
+          }
+          label={t("columns.createdAtUtc")}
+          first={{ id: "", label: t("filters.createdWithin.any") }}
+          options={createdOptions.map((option) => ({
+            id: String(option.days),
+            label: t("filters.createdWithin.option", { count: option.days }),
+          }))}
+          value={values.createdWithinDays ?? ""}
+          onChange={(days) => setFilter("createdWithinDays", days || undefined)}
+        />
 
       </div>
 
