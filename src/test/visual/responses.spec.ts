@@ -34,7 +34,8 @@ for (const language of ["es", "en"] as const)
       await page
         .getByRole("button", { name: en ? "Columns" : "Columnas", exact: true })
         .click();
-      await expect(page.getByRole("menu")).toBeVisible();
+      // DS1-A: «Columnas» opens the list of the only piece to choose several (on the phone, on the whole screen).
+      await expect(page.getByRole("listbox", { name: en ? "Columns" : "Columnas", exact: true })).toBeVisible();
       await page.keyboard.press("Escape");
       // Board PL1-A: «Filtros» opens what can be filtered on the left and what is chosen in the marked one on the right; on
       // the phone it takes the screen, with the list first and the options after touching one.
@@ -344,20 +345,20 @@ for (const language of ["es", "en"] as const)
       await page
         .getByRole("button", { name: en ? "Columns" : "Columnas", exact: true })
         .click();
-      const menu = page.getByRole("menu");
+      const menu = page.getByRole("listbox", { name: en ? "Columns" : "Columnas", exact: true });
       await expect(
-        menu.getByRole("menuitemcheckbox", {
+        menu.getByRole("option", {
           name: en ? "Amount (since v2)" : "Importe (desde v2)",
           exact: true,
         }),
       ).toBeVisible();
       await expect(
-        menu.getByRole("menuitemcheckbox", {
+        menu.getByRole("option", {
           name: en ? "Amount" : "Importe",
           exact: true,
         }),
       ).toBeVisible();
-      await menu.press("Escape");
+      await page.keyboard.press("Escape");
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(width);

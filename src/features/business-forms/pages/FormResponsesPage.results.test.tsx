@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -48,11 +48,14 @@ it("shows the result data after the questions, «—» in a response without the
   expect(cellUnder(table, first!, "Vencimiento del código")).toHaveTextContent("19/11/2026");
   expect(cellUnder(table, second!, "Comprobante")).toHaveTextContent("—");
 
-  await userEvent.click(screen.getByRole("button", { name: /^Columnas/ }));
-  const group = await screen.findByRole("menu");
-  expect(within(group).getByText("Emitir comprobante en ARCA")).toBeInTheDocument();
-  await userEvent.click(within(group).getByRole("menuitemcheckbox", { name: "Vencimiento del código" }));
-  // The open menu hides the page from the accessibility tree: close it before reading the table.
+  // «Columnas» is the only piece to choose several (DS1-A): each datum says in grey the action that left it.
+  const trigger = screen.getByRole("button", { name: /^Columnas/ });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  const list = within(await screen.findByRole("listbox", { name: "Columnas" }));
+  expect(list.getByRole("option", { name: "Vencimiento del código" })).toHaveAccessibleDescription("Emitir comprobante en ARCA");
+  await userEvent.click(list.getByRole("option", { name: "Vencimiento del código" }));
+  // The open list hides the page from the accessibility tree: close it before reading the table.
   await userEvent.keyboard("{Escape}");
 
   await waitFor(() => expect(screen.queryByRole("columnheader", { name: "Vencimiento del código" })).not.toBeInTheDocument());

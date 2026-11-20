@@ -934,7 +934,7 @@
     "columns": "Columns",
     "columnsHidden_one": "Columns · {{count}} hidden",
     "columnsHidden_other": "Columns · {{count}} hidden",
-    "fixedColumns": "Always visible",
+    "alwaysShown": "Always shown.",
     "search": "Search long text answers",
     "filters": "Filters",
     "clear": "Clear all",

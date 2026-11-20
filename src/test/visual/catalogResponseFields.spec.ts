@@ -46,9 +46,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // Zona, a filter field, starts hidden; showing it and hiding the question keeps one hidden.
     const columns = page.getByRole("button", { name: label("Columnas · 1 oculta", "Columns · 1 hidden"), exact: true });
     await columns.focus(); await columns.press("Enter");
-    await page.getByRole("menuitemcheckbox", { name: zone + " · " + label("filtro", "filter"), exact: true }).click();
-    await page.getByRole("menuitemcheckbox", { name: question, exact: true }).click();
-    await page.keyboard.press("Escape");
+    // DS1-A: «Columnas» is the only piece to choose several; each subcolumn says its question in grey. On a computer each mark
+    // applies at once; on the phone the list takes the screen and «Listo (N)» applies them.
+    const list = page.getByRole("listbox", { name: label("Columnas", "Columns"), exact: true });
+    await expect(list.getByRole("option", { name: zone + " · " + label("filtro", "filter"), exact: true })).toHaveAccessibleDescription(question);
+    await list.getByRole("option", { name: zone + " · " + label("filtro", "filter"), exact: true }).click();
+    await list.getByRole("option", { name: question, exact: true }).click();
+    if (width < 640) await page.getByRole("button", { name: language === "es" ? /^Listo \(\d+\)$/ : /^Done \(\d+\)$/ }).click();
+    else await page.keyboard.press("Escape");
     await expect(columns).toBeFocused();
     await expect(table.getByRole("columnheader", { name: question, exact: true })).toHaveCount(0);
     await expect(table.getByRole("columnheader", { name: question + " · " + zone, exact: true })).toBeVisible();

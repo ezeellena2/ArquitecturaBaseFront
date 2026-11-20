@@ -735,12 +735,14 @@ describe("response sheet", () => {
       `/formularios/${responseFormId}/respuestas`,
     );
     await screen.findByRole("table");
+    // «Columnas» is the only piece to choose several (DS1-A): the fixed columns are marked and off, and marking applies at once.
     const trigger = screen.getByRole("button", { name: "Columnas" });
-    trigger.focus();
+    await act(async () => { trigger.focus(); });
     await userEvent.keyboard("{Enter}");
-    await userEvent.click(
-      await screen.findByRole("menuitemcheckbox", { name: "Observaciones" }),
-    );
+    const list = within(await screen.findByRole("listbox", { name: "Columnas" }));
+    expect(list.getByRole("option", { name: "N°" })).toHaveAttribute("aria-disabled", "true");
+    expect(list.getByRole("option", { name: "N°" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(list.getByRole("option", { name: "Observaciones" }));
     await userEvent.keyboard("{Escape}");
     expect(screen.getByRole("button", { name: "Columnas · 1 oculta" })).toBeInTheDocument();
     expect(
