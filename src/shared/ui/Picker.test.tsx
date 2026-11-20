@@ -231,6 +231,24 @@ describe("Picker", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(2);
   });
 
+  it("says it is searching or that it failed under the first option and the chosen one from another page", async () => {
+    const onRetry = vi.fn();
+    const zone = (state: { loading?: boolean; failed?: boolean }) => <FormField label="Zona">
+      <Picker label="Zona" options={[]} value="norte" onChange={vi.fn()} search="" onSearchChange={vi.fn()} first={{ id: "", label: "Sin zona" }}
+        selectedOptions={[{ id: "norte", label: "Norte" }]} onRetry={onRetry} {...state}/>
+    </FormField>;
+    const view = renderWithProviders(zone({ loading: true }));
+    const { user, list } = await openList(/^Zona/);
+
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Sin zona", "Norte"]);
+    expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument();
+
+    view.rerender(zone({ failed: true }));
+    expect(await screen.findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
   it("puts first the chosen ones that came from another page", async () => {
     renderWithProviders(<FormField label="Campos"><Picker label="Campos" multiple options={places.slice(0, 3)} selectedOptions={[{ id: "zapallar", label: "ZAPALLAR" }]} value={["zapallar"]}
       onChange={vi.fn()} search="" onSearchChange={vi.fn()} total={12}/></FormField>);

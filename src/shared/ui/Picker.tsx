@@ -319,7 +319,8 @@ export function Picker(props: PickerProps) {
         onHover={() => { if (index !== current) setActive(index); }} onChoose={() => choose(row)}/>
     </Fragment>)}
   </ul>;
-  const state = rows.length > 0 ? null
+  // The state speaks of the options: «Todas» or a chosen one from another page do not hide that they load or failed.
+  const state = shown.length > 0 ? null
     : props.loading ? <div role="status" aria-label={t("picker.searching")} className={cn("flex flex-col gap-2", phone ? "p-4" : "px-2.5 py-2")}>
       <Skeleton className="h-3 w-3/4"/><Skeleton className="h-3 w-1/2"/><Skeleton className="h-3 w-2/3"/>
     </div>
