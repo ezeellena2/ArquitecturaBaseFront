@@ -221,6 +221,23 @@
     "clear": "Quitar",
     "done": "Listo"
   },
+  "picker": {
+    "search": "Buscar en {{label}}",
+    "count_one": "{{count}} opción",
+    "count_other": "{{count}} opciones",
+    "countOf": "{{count}} de {{total}}",
+    "upTo": "Hasta {{count}}",
+    "chosenOf": "Elegiste {{count}} de {{max}}",
+    "more": "Mostrar {{count}} más",
+    "loadingMore": "Cargando…",
+    "searching": "Buscando…",
+    "noMatches": "Ninguna opción coincide con «{{search}}».",
+    "empty": "No hay opciones.",
+    "failed": "No se pudieron traer las opciones.",
+    "done": "Listo ({{count}})",
+    "close": "Cerrar la lista",
+    "andMore": "y {{count}} más"
+  },
   "itemTable": {
     "number": "Ítem",
     "actions": "Acciones",

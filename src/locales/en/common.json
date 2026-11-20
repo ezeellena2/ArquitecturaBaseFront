@@ -221,6 +221,23 @@
     "clear": "Remove",
     "done": "Done"
   },
+  "picker": {
+    "search": "Search in {{label}}",
+    "count_one": "{{count}} option",
+    "count_other": "{{count}} options",
+    "countOf": "{{count}} of {{total}}",
+    "upTo": "Up to {{count}}",
+    "chosenOf": "You chose {{count}} of {{max}}",
+    "more": "Show {{count}} more",
+    "loadingMore": "Loading…",
+    "searching": "Searching…",
+    "noMatches": "No option matches «{{search}}».",
+    "empty": "There are no options.",
+    "failed": "The options could not be loaded.",
+    "done": "Done ({{count}})",
+    "close": "Close the list",
+    "andMore": "and {{count}} more"
+  },
   "itemTable": {
     "number": "Item",
     "actions": "Actions",
