@@ -85,10 +85,10 @@ async function openEdit(identifier: string) {
 
 /// Elige un rol en el combo del diálogo, por teclado (en jsdom el clic deja de abrir el menú de Radix).
 async function pickRole(name: string) {
-  const combo = await screen.findByRole("button", { name: "Roles" });
+  const combo = await screen.findByRole("button", { name: /^Roles/ });
   combo.focus();
   await userEvent.keyboard("{Enter}");
-  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
+  await userEvent.click(await screen.findByRole("option", { name }));
   await userEvent.keyboard("{Escape}");
 }
 

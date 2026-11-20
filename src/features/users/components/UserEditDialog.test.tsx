@@ -95,10 +95,10 @@ function rowOf(dialog: ReturnType<typeof within>, index: number) {
 }
 
 async function pickRole(name: string) {
-  const combo = await screen.findByRole("button", { name: "Roles" });
+  const combo = await screen.findByRole("button", { name: /^Roles/ });
   combo.focus();
   await userEvent.keyboard("{Enter}");
-  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
+  await userEvent.click(await screen.findByRole("option", { name }));
   await userEvent.keyboard("{Escape}");
 }
 
@@ -197,7 +197,7 @@ describe("UserEditDialog", () => {
     // Debajo del título, a quién se está editando.
     expect(screen.getByRole("dialog", { name: "Editar usuario" })).toHaveAccessibleDescription("Juan Gómez");
     expect(dialog.getByRole("textbox", { name: "Nombre" })).toHaveValue("Juan Gómez");
-    expect(dialog.getByRole("button", { name: "Roles" })).toBeInTheDocument();
+    expect(dialog.getByRole("button", { name: "Roles User" })).toBeInTheDocument();
     expect(dialog.getByRole("region", { name: "Medios de ingreso" })).toBeInTheDocument();
     expect(dialog.getByRole("button", { name: "Guardar" })).toBeInTheDocument();
   });
@@ -216,7 +216,7 @@ describe("UserEditDialog", () => {
 
     const dialog = await openEdit("+54 9 11 2345-6789");
 
-    const roles = dialog.getByRole("button", { name: "Roles" });
+    const roles = dialog.getByRole("button", { name: "Roles User" });
     expect(roles).toBeDisabled();
     expect(roles).toHaveTextContent("User");
     expect(roles).toHaveAccessibleDescription("Para asignar roles necesitás permiso de lectura sobre ellos.");

@@ -4,12 +4,13 @@ import { usePermissions } from "@/auth/usePermissions";
 import { fetchRoles, rolesQueryKey } from "@/shared/api/roles";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
-import { MultiSelect } from "@/shared/ui/MultiSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 
-/// Los roles de una cuenta, en el alta y en la edición. El catálogo sale de `GET /api/roles`, que pide `roles.read`:
-/// sin ese permiso no hay qué ofrecer, y el campo queda apagado con ese motivo (`DisabledReason`), sin un texto en su
-/// lugar. Muestra los roles que ya tiene: un control apagado conserva su valor legible.
+/// Los roles de una cuenta, en el alta y en la edición, con la pieza única para elegir (DS1-A): el campo dice los
+/// elegidos y la lista lleva la descripción de cada rol en gris. El catálogo sale de `GET /api/roles`, que pide
+/// `roles.read`: sin ese permiso no hay qué ofrecer, y el campo queda apagado con ese motivo (`DisabledReason`), sin un
+/// texto en su lugar. Muestra los roles que ya tiene: un control apagado conserva su valor legible.
 export function RolesField({ value, onChange }: { value: readonly string[]; onChange: (roles: string[]) => void }) {
   const { t } = useTranslation("users");
   const { has } = usePermissions();
@@ -22,8 +23,10 @@ export function RolesField({ value, onChange }: { value: readonly string[]; onCh
     return (
       <FormField label={t("form.roles")}>
         <DisabledReason reason={t("form.rolesNeedPermission")} className="grid w-full">
-          <MultiSelect
-            options={value.map((role) => ({ value: role, label: role }))}
+          <Picker
+            label={t("form.roles")}
+            multiple
+            options={value.map((role) => ({ id: role, label: role }))}
             value={value}
             onChange={onChange}
             placeholder={t("form.rolesPlaceholder")}
@@ -44,12 +47,10 @@ export function RolesField({ value, onChange }: { value: readonly string[]; onCh
 
   return (
     <FormField label={t("form.roles")}>
-      <MultiSelect
-        options={availableRoles.map((role) => ({
-          value: role.name,
-          label: role.name,
-          description: role.description ?? undefined,
-        }))}
+      <Picker
+        label={t("form.roles")}
+        multiple
+        options={availableRoles.map((role) => ({ id: role.name, label: role.name, description: role.description }))}
         value={value}
         onChange={onChange}
         placeholder={t("form.rolesPlaceholder")}

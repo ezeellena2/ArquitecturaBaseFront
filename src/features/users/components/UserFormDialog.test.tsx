@@ -58,10 +58,10 @@ async function openNewUser() {
 /// Elige un rol en el combo del diálogo. Se abre por teclado y no con un clic: en jsdom, después de un test
 /// que ya abrió un menú de Radix, el clic sobre el disparador deja de abrirlo (en el navegador no pasa).
 async function pickRole(name: string) {
-  const combo = await screen.findByRole("button", { name: "Roles" });
+  const combo = await screen.findByRole("button", { name: /^Roles/ });
   combo.focus();
   await userEvent.keyboard("{Enter}");
-  await userEvent.click(await screen.findByRole("menuitemcheckbox", { name: new RegExp(`^${name}`) }));
+  await userEvent.click(await screen.findByRole("option", { name }));
   await userEvent.keyboard("{Escape}");
 }
 
@@ -88,7 +88,7 @@ describe("UserFormDialog", () => {
       // El país arranca en el primero de los habilitados.
       expect(dialog.getByRole("combobox", { name: "País: Argentina, +54" })).toBeInTheDocument();
       expect(dialog.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
-      expect(dialog.getByRole("button", { name: "Roles" })).toBeInTheDocument();
+      expect(dialog.getByRole("button", { name: "Roles Sin roles" })).toBeInTheDocument();
       expect(dialog.getByRole("checkbox", { name: "Mandarle una invitación" })).not.toBeChecked();
       expect(dialog.getByRole("button", { name: "Crear" })).toBeInTheDocument();
     });
@@ -101,7 +101,7 @@ describe("UserFormDialog", () => {
       const dialog = await openNewUser();
 
       // El campo está, apagado y sin un texto en su lugar: el motivo es su tooltip y su descripción.
-      const roles = await dialog.findByRole("button", { name: "Roles" });
+      const roles = await dialog.findByRole("button", { name: "Roles Sin roles" });
       expect(roles).toBeDisabled();
       expect(roles).toHaveAccessibleDescription("Para asignar roles necesitás permiso de lectura sobre ellos.");
       for (const text of dialog.queryAllByText("Para asignar roles necesitás permiso de lectura sobre ellos.")) {
@@ -127,7 +127,7 @@ describe("UserFormDialog", () => {
         dialog.getByRole("textbox", { name: "Correo electrónico" }),
         dialog.getByRole("textbox", { name: "Número de WhatsApp" }),
         dialog.getByRole("textbox", { name: "Nombre" }),
-        dialog.getByRole("button", { name: "Roles" }),
+        dialog.getByRole("button", { name: "Roles Sin roles" }),
         dialog.getByRole("checkbox", { name: "Mandarle una invitación" }),
       ];
 
