@@ -28,13 +28,20 @@ export interface SegmentedOption {
 /// La elegida va rellena con el color de los botones y su texto en blanco o negro, el que más contraste dé (OE1-A,
 /// 2026-11-03); las otras quedan blancas. Antes era un verde casi blanco sobre blanco y no se sabía cuál estaba elegida,
 /// sobre todo en un Sí o no. En el celular cada opción mide al menos 44 × 44 px.
+///
+/// En un formulario va dentro de `FormField`, como cualquier control: le pasa el id, la marca de inválido y la
+/// descripción (la (i) y el error), y su etiqueta dice lo mismo que el `aria-label`, que es el que nombra al grupo
+/// (DS1-A, 2026-11-20: el idioma y «Filas por página» de Configuración).
 export function SegmentedControl({
   options,
   fullWidth = false,
   appearance = "compact",
   disabled = false,
   wrap = false,
+  id,
   "aria-label": label,
+  "aria-invalid": invalid,
+  "aria-describedby": describedBy,
 }: {
   options: readonly SegmentedOption[];
   fullWidth?: boolean;
@@ -46,12 +53,18 @@ export function SegmentedControl({
   /// `"always"` las separa en todos los anchos, para una columna angosta también en la compu: los filtros de la bandeja del
   /// chat, donde «Necesita una persona» baja de renglón (AS4, 2026-11-12).
   wrap?: boolean | "always";
+  id?: string;
   "aria-label": string;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
 }): ReactNode {
   return (
     <div
+      id={id}
       role="group"
       aria-label={label}
+      aria-invalid={invalid}
+      aria-describedby={describedBy}
       className={cn(
         // Sin `overflow-hidden`: el contorno de foco va por fuera de la opción y el grupo no tiene que recortarlo.
         appearance === "public" ? "access-channel" : wrap === "always" ? "flex flex-wrap gap-1.5" : wrap

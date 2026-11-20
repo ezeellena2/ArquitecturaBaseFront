@@ -88,7 +88,7 @@ const screens = [
   { id: "users", path: "/usuarios", ready: "table" },
   { id: "roles", path: "/roles", ready: "table" },
   { id: "editor", path: "/roles/support", ready: "table" },
-  { id: "settings", path: "/configuracion", ready: "combobox" },
+  { id: "settings", path: "/configuracion", ready: "radiogroup" },
   { id: "profile", path: "/perfil", ready: "textbox" },
   { id: "catalog", path: "/catalogo", ready: "table" },
 ] as const;
@@ -363,8 +363,8 @@ test("filter menus and removable filters work with keyboard", async ({ page }) =
 test("settings revisit refreshes cached values after another administrator changes them", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openScreen(page, "/configuracion");
-  const size = page.getByRole("combobox", { name: "Filas por página", exact: true });
-  await expect(size).toHaveValue("20");
+  const size = page.getByRole("group", { name: "Filas por página", exact: true });
+  await expect(size.getByRole("button", { name: "20", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("link", { name: "Inicio", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Inicio", exact: true, level: 1 })).toBeVisible();
   const status = await page.evaluate(async () => (await fetch("/api/settings", {
@@ -376,7 +376,7 @@ test("settings revisit refreshes cached values after another administrator chang
   const configuration = page.getByRole("button", { name: "Configuración", exact: true });
   if (await configuration.getAttribute("aria-expanded") !== "true") await configuration.click();
   await page.locator('a[href="/configuracion"]').click();
-  await expect(size).toHaveValue("50");
+  await expect(size.getByRole("button", { name: "50", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "Guardar cambios", exact: true })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath("settings-fresh.png"), fullPage: true });
 });
@@ -419,7 +419,7 @@ test("a user dialog fits a narrow screen and restores focus", async ({ page }) =
 test("a settings conflict uses the common comparison table", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await openScreen(page, "/configuracion", "es", "conflict");
-  await page.getByRole("combobox", { name: "Filas por página", exact: true }).selectOption("100");
+  await page.getByRole("group", { name: "Filas por página", exact: true }).getByRole("button", { name: "100", exact: true }).click();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await page.getByRole("button", { name: "Revisar valores actuales", exact: true }).first().click();
   await expect(page.getByRole("table")).toBeVisible();
@@ -443,7 +443,7 @@ for (const width of [1024, 800]) {
   test(`a settings conflict keeps the whole title with its actions on the right at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await openScreen(page, "/configuracion", "es", "conflict");
-    await page.getByRole("combobox", { name: "Filas por página", exact: true }).selectOption("100");
+    await page.getByRole("group", { name: "Filas por página", exact: true }).getByRole("button", { name: "100", exact: true }).click();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     const title = page.getByRole("heading", { level: 1, name: "Configuración", exact: true });
     const header = page.locator("header").filter({ has: title });
@@ -469,13 +469,19 @@ for (const language of ["es", "en"]) {
     await page.setViewportSize({ width: 320, height: 740 });
     await openScreen(page, "/configuracion", language);
     const english = language === "en";
-    const culture = page.getByRole("combobox", { name: english ? "Default language" : "Idioma predeterminado", exact: true });
-    const zone = page.getByRole("combobox", { name: english ? "Default time zone" : "Zona horaria predeterminada", exact: true });
-    const size = page.getByRole("combobox", { name: english ? "Rows per page" : "Filas por página", exact: true });
+    // The language and the rows per page are segmented controls; the time zone is the Picker, which at 320 px takes the
+    // screen with its search (DS1-A).
+    const culture = page.getByRole("group", { name: english ? "Default language" : "Idioma predeterminado", exact: true });
+    const otherLanguage = culture.getByRole("button", { name: english ? "Spanish" : "Inglés", exact: true });
+    const zoneLabel = english ? "Default time zone" : "Zona horaria predeterminada";
+    const size = page.getByRole("group", { name: english ? "Rows per page" : "Filas por página", exact: true });
+    const fifty = size.getByRole("button", { name: "50", exact: true });
     await expect(page.getByRole("heading", { level: 2 })).toHaveCount(3);
-    await culture.selectOption(english ? "es" : "en");
-    await zone.selectOption("UTC");
-    await size.selectOption("50");
+    await otherLanguage.click();
+    await page.getByRole("button", { name: zoneLabel }).click();
+    await page.getByRole("combobox", { name: `${english ? "Search in" : "Buscar en"} ${zoneLabel}`, exact: true }).fill("UTC");
+    await page.getByRole("option", { name: "UTC", exact: true }).click();
+    await fifty.click();
     await page.getByRole("radio", { name: english ? "Open registration" : "Registro abierto", exact: true }).click();
     const save = page.getByRole("button", { name: english ? "Save changes" : "Guardar cambios", exact: true });
     await save.click();
@@ -487,14 +493,14 @@ for (const language of ["es", "en"]) {
     await page.screenshot({ path: testInfo.outputPath("settings-confirmation.png"), animations: "disabled" });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(culture).toHaveValue(english ? "es" : "en");
-    await expect(zone).toHaveValue("UTC");
-    await expect(size).toHaveValue("50");
+    await expect(otherLanguage).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: `${zoneLabel} UTC`, exact: true })).toBeVisible();
+    await expect(fifty).toHaveAttribute("aria-pressed", "true");
     await save.click();
     await dialog.getByRole("button", { name: english ? "Save changes" : "Guardar cambios", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(save).toBeDisabled();
-    await expect(size).toHaveValue("50");
+    await expect(fifty).toHaveAttribute("aria-pressed", "true");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   });
 }

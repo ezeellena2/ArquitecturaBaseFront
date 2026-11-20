@@ -32,6 +32,9 @@ Preservar el borrador ante un 409/500, consultar y comparar los cuatro valores a
 Al conservar ediciones, adoptar cambios ajenos en campos no tocados. No suponer rollback.
 La lectura usa el dueño global de QueryCache; la mutación y la relectura explícita tienen
 dueño local por el emisor shared/ui/notifications. Validación por FormField/RadioGroupField.
+El idioma y «Filas por página» (10, 20, 50 y 100) van en un `SegmentedControl` dentro de su `FormField`; la zona
+horaria, en la pieza para elegir (`Picker`) con la lista única de `timeZoneOptions`, que conserva la guardada, el alias
+de Buenos Aires y `UTC` aunque el navegador no los liste (DS1-A).
 No copiar helpers técnicos de errores, notificación o fechas en esta feature.
 
 Al abrir el editor, esperar una lectura exitosa de ese montaje antes de sembrar valores y revisión;

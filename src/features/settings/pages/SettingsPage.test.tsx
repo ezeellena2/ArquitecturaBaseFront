@@ -21,10 +21,38 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 
+// The language and «Filas por página» are segmented controls, and the time zone is the Picker (DS1-A).
+const sizes = () => screen.findByRole("group", { name: "Filas por página" });
+async function shownSize() {
+  return within(await sizes()).getByRole("button", { pressed: true }).textContent;
+}
+async function pickSize(size: string) {
+  await userEvent.click(within(await sizes()).getByRole("button", { name: size }));
+}
+async function pickLanguage(language: "Español" | "Inglés") {
+  await userEvent.click(within(await screen.findByRole("group", { name: "Idioma predeterminado" })).getByRole("button", { name: language }));
+}
+async function openZones() {
+  const trigger = await screen.findByRole("button", { name: /^Zona horaria predeterminada/ });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Zona horaria predeterminada" });
+}
+async function pickZone(city: string) {
+  const list = await openZones();
+  await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Zona horaria predeterminada" }), city);
+  await userEvent.click(within(list).getByRole("option", { name: city }));
+}
+function expectNoEditor() {
+  expect(screen.queryByRole("group", { name: "Idioma predeterminado" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Zona horaria predeterminada/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: "Filas por página" })).not.toBeInTheDocument();
+}
+
 describe("SettingsPage", () => {
   it("waits for the current values when returning with cached settings and saves their revision", async () => {
     const { router } = renderRouteWithProviders("/configuracion/listados");
-    expect(await screen.findByRole("combobox", { name: "Filas por página" })).toHaveValue("20");
+    expect(await shownSize()).toBe("20");
     await act(() => router.navigate("/"));
     settings = { ...settings, defaultPageSize: 50, revision: 2 };
     let complete: (() => void) | undefined;
@@ -35,10 +63,10 @@ describe("SettingsPage", () => {
 
     await act(() => router.navigate("/configuracion/listados"));
     await waitFor(() => expect(complete).toBeDefined());
-    expect(screen.queryByRole("combobox", { name: "Filas por página" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Filas por página" })).not.toBeInTheDocument();
     complete?.();
-    expect(await screen.findByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Filas por página" }), "100");
+    expect(await shownSize()).toBe("50");
+    await pickSize("100");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toEqual([{ expectedRevision: 2, defaultPageSize: 100 }]));
   });
@@ -51,17 +79,17 @@ describe("SettingsPage", () => {
     renderRouteWithProviders("/configuracion/listados");
 
     expect(await screen.findByText("Configuración no disponible")).toBeInTheDocument();
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expectNoEditor();
     expect(error).toHaveBeenCalledTimes(1);
     server.use(http.get("/api/settings", () => HttpResponse.json(settings)));
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(await screen.findByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
+    expect(await shownSize()).toBe("50");
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
   });
 
   it.each(["success", "failure"])("preserves the draft and its revision during a background refetch ending in %s", async result => {
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     settings = { ...settings, defaultPageSize: 100, revision: 2 };
     let complete: (() => void) | undefined;
     server.use(http.get("/api/settings", async () => {
@@ -70,10 +98,10 @@ describe("SettingsPage", () => {
     }));
     const refetch = queryClient.refetchQueries({ queryKey: systemSettingsQueryKey });
     await waitFor(() => expect(complete).toBeDefined());
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
+    expect(await shownSize()).toBe("50");
     complete?.();
     await act(() => refetch);
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
+    expect(await shownSize()).toBe("50");
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toEqual([{ expectedRevision: 1, defaultPageSize: 50 }]));
@@ -83,12 +111,35 @@ describe("SettingsPage", () => {
     const { router } = renderRouteWithProviders("/configuracion");
     expect(await screen.findByRole("heading", { level: 1, name: "Configuración" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/configuracion");
-    expect(await screen.findAllByRole("combobox")).toHaveLength(3);
+    expect(await screen.findByRole("group", { name: "Idioma predeterminado" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Zona horaria predeterminada/ })).toBeInTheDocument();
+    expect(within(screen.getByRole("group", { name: "Filas por página" })).getAllByRole("button").map(button => button.textContent)).toEqual(["10", "20", "50", "100"]);
     expect(screen.getByRole("region", { name: "Preferencias regionales" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Listados" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Registro de cuentas" })).toBeInTheDocument();
     expect(screen.getAllByRole("link").filter(link => link.getAttribute("href") === "/configuracion")).toHaveLength(1);
     for (const topic of ["idioma", "zona-horaria", "listados", "registro"]) expect(screen.getAllByRole("link").some(link => link.getAttribute("href") === `/configuracion/${topic}`)).toBe(false);
+  });
+
+  // The only list of time zones (DS1-A): the city and, in grey, the time of its country. The saved alias stays chosen,
+  // and what travels is still the IANA identifier.
+  it("offers the time zones by their city, with the saved one chosen even if the browser spells it another way", async () => {
+    renderRouteWithProviders("/configuracion");
+    expect(await screen.findByRole("button", { name: "Zona horaria predeterminada Buenos Aires" })).toBeInTheDocument();
+
+    // It opens on the chosen one. (The option is found by the search's active one: naming some 420 options is slow.)
+    const list = await openZones();
+    const search = screen.getByRole("combobox", { name: "Buscar en Zona horaria predeterminada" });
+    const chosen = document.getElementById(search.getAttribute("aria-activedescendant") ?? "");
+    expect(chosen).toHaveAccessibleName("Buenos Aires");
+    expect(chosen).toHaveAttribute("aria-selected", "true");
+    expect(chosen).toHaveAccessibleDescription(/Argentina · GMT-3$/);
+    // The search finds it by its city, its country or its identifier.
+    await userEvent.type(search, "Urug");
+    await userEvent.click(within(list).getByRole("option", { name: "Montevideo" }));
+    await pickLanguage("Inglés");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 1, defaultCulture: "en", defaultTimeZoneId: "America/Montevideo" }]));
   });
 
   it("puts the explanations in the information icons, with no lines under the titles, fields or options", async () => {
@@ -100,7 +151,7 @@ describe("SettingsPage", () => {
     );
     expect(screen.queryByText(/Valores iniciales para cuentas nuevas/, { selector: "p" })).not.toBeInTheDocument();
     // La de «Filas por página», junto a su etiqueta, y es la descripción del desplegable.
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("group", { name: "Filas por página" })).toHaveAccessibleDescription(
       "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
     );
     expect(screen.getByRole("button", { name: "Más información sobre Filas por página" })).toBeInTheDocument();
@@ -119,7 +170,7 @@ describe("SettingsPage", () => {
       return new HttpResponse(null, { status: 204 });
     }));
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     const saving = await screen.findByRole("button", { name: "Guardando…" });
@@ -135,7 +186,7 @@ describe("SettingsPage", () => {
   it("says it is reading the current values while they arrive", async () => {
     server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
     const review = await within(header).findByRole("button", { name: "Revisar valores actuales" });
@@ -155,15 +206,15 @@ describe("SettingsPage", () => {
 
   it.each(["idioma", "zona-horaria", "listados", "registro"])("redirects the former %s URL to the unified screen", async topic => {
     const { router } = renderRouteWithProviders(`/configuracion/${topic}`);
-    await screen.findByRole("combobox", { name: "Idioma predeterminado" });
+    await screen.findByRole("group", { name: "Idioma predeterminado" });
     expect(router.state.location.pathname).toBe("/configuracion");
   });
 
   it("saves changes from all sections in one explicit request", async () => {
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Zona horaria predeterminada" }), "UTC");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Filas por página" }), "50");
+    await pickLanguage("Inglés");
+    await pickZone("UTC");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("radio", { name: "Registro abierto" }));
     expect(writes).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
@@ -175,7 +226,7 @@ describe("SettingsPage", () => {
   it("saves only the selected topic and revision after an explicit action", async () => {
     const success = vi.spyOn(toast, "success");
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     expect(writes).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toEqual([{ expectedRevision: 1, defaultPageSize: 50 }]));
@@ -194,10 +245,10 @@ describe("SettingsPage", () => {
     const error = vi.spyOn(toast, "error");
     server.use(http.patch("/api/settings", async ({ request }) => { writes.push(await request.json()); return HttpResponse.error(); }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(error).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveValue("50");
+    expect(await shownSize()).toBe("50");
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(writes).toHaveLength(1);
@@ -205,7 +256,7 @@ describe("SettingsPage", () => {
   it("gives the pending review as the reason of the disabled Guardar and Descartar", async () => {
     server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const reason = "Primero revisá los valores actuales y elegí qué conservar.";
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toHaveAccessibleDescription(reason));
@@ -221,14 +272,14 @@ describe("SettingsPage", () => {
     const error = vi.spyOn(toast, "error");
     server.use(http.patch("/api/settings", () => HttpResponse.json({ errors: { defaultCulture: ["Elegí un idioma admitido."] } }, { status: 400 })));
     renderRouteWithProviders("/configuracion/idioma");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
+    await pickLanguage("Inglés");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Elegí un idioma admitido.");
     expect(error).not.toHaveBeenCalled();
   });
   it("guards navigation with a draft and discards it explicitly", async () => {
     renderRouteWithProviders("/configuracion/idioma");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
+    await pickLanguage("Inglés");
     await userEvent.click(within(screen.getByRole("navigation", { name: "Navegación principal" })).getByRole("link", { name: "Inicio" }));
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Descartar cambios" }));
@@ -243,7 +294,7 @@ describe("SettingsPage", () => {
       settings = { ...settings, defaultPageSize: 50, revision: 3 }; return new HttpResponse(null, { status: 204 });
     }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const main = within(screen.getByRole("main"));
     await userEvent.click(await main.findByRole("button", { name: "Revisar valores actuales" }));
@@ -257,11 +308,11 @@ describe("SettingsPage", () => {
 
   it("keeps the settings header without an unsaved status while the draft changes", async () => {
     renderRouteWithProviders("/configuracion");
-    const size = await screen.findByRole("combobox", { name: "Filas por página" });
+    await screen.findByRole("group", { name: "Filas por página" });
     const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
     expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
 
-    await userEvent.selectOptions(size, "50");
+    await pickSize("50");
 
     // Guardar habilitado ya dice que hay cambios: la banda tiene el título y sus acciones, sin estado del borrador.
     expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
@@ -276,7 +327,7 @@ describe("SettingsPage", () => {
       return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 });
     }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     // Revisar actúa sobre toda la pantalla: va en la banda de Page, antes de Descartar y Guardar.
@@ -307,7 +358,7 @@ describe("SettingsPage", () => {
       return HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 });
     }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
     await userEvent.click(await within(header).findByRole("button", { name: "Revisar valores actuales" }));
@@ -326,7 +377,7 @@ describe("SettingsPage", () => {
       return HttpResponse.json({ code: "General.Unexpected", traceId: "saved-500" }, { status: 500 });
     }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const main = within(screen.getByRole("main"));
     await userEvent.click(await main.findByRole("button", { name: "Revisar valores actuales" }));
@@ -345,15 +396,15 @@ describe("SettingsPage", () => {
       return new HttpResponse(null, { status: 204 });
     }));
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Filas por página" }), "50");
+    await pickLanguage("Inglés");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const main = within(screen.getByRole("main"));
     await userEvent.click(await main.findByRole("button", { name: "Revisar valores actuales" }));
     // Only what differs, each setting once with both values side by side (LR2-A): the registration did not change.
     expect(within(await main.findByRole("table")).getAllByRole("rowheader").map(header => header.textContent)).toEqual(["Idioma predeterminado", "Zona horaria predeterminada", "Filas por página"]);
     await userEvent.click(main.getByRole("button", { name: "Conservar mis cambios" }));
-    expect(screen.getByRole("combobox", { name: "Zona horaria predeterminada" })).toHaveValue("UTC");
+    expect(screen.getByRole("button", { name: "Zona horaria predeterminada UTC" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toEqual([
       { expectedRevision: 1, defaultCulture: "en", defaultPageSize: 50 },
@@ -367,13 +418,14 @@ describe("SettingsPage", () => {
       defaultCulture: ["Revisá el idioma."], defaultPageSize: ["Revisá el tamaño."],
     } }, { status: 400 })));
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Filas por página" }), "50");
+    await pickLanguage("Inglés");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(await screen.findByText("Revisá el idioma.")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Idioma predeterminado" })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveAttribute("aria-invalid", "true");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Idioma predeterminado" }), "es");
+    expect(screen.getByRole("group", { name: "Idioma predeterminado" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("group", { name: "Idioma predeterminado" })).toHaveAccessibleDescription("Revisá el idioma.");
+    expect(screen.getByRole("group", { name: "Filas por página" })).toHaveAttribute("aria-invalid", "true");
+    await pickLanguage("Español");
     expect(screen.queryByText("Revisá el idioma.")).not.toBeInTheDocument();
     expect(screen.getByText("Revisá el tamaño.")).toBeInTheDocument();
     expect(error).not.toHaveBeenCalled();
@@ -381,12 +433,12 @@ describe("SettingsPage", () => {
 
   it("discards all sections without submitting or confirming registration", async () => {
     renderRouteWithProviders("/configuracion");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Filas por página" }), "50");
+    await pickLanguage("Inglés");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("radio", { name: "Registro abierto" }));
     await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
-    expect(screen.getByRole("combobox", { name: "Idioma predeterminado" })).toHaveValue("es");
-    expect(screen.getByRole("combobox", { name: "Filas por página" })).toHaveValue("20");
+    expect(within(screen.getByRole("group", { name: "Idioma predeterminado" })).getByRole("button", { name: "Español" })).toHaveAttribute("aria-pressed", "true");
+    expect(await shownSize()).toBe("20");
     expect(screen.getByRole("radio", { name: "Solo por invitación" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     expect(writes).toHaveLength(0);
@@ -406,13 +458,13 @@ describe("SettingsPage", () => {
     server.use(http.get("/api/me", () => HttpResponse.json(currentUser)));
     renderRouteWithProviders("/configuracion/zona-horaria");
     expect(await screen.findByRole("heading", { name: /no tenés permiso/i })).toBeInTheDocument();
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expectNoEditor();
   });
 
   it("redirects after permission is revoked without a discard dialog", async () => {
     server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Http.Forbidden" }, { status: 403 })));
     renderRouteWithProviders("/configuracion/idioma");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma predeterminado" }), "en");
+    await pickLanguage("Inglés");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(await screen.findByRole("heading", { name: /no tenés permiso/i })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -426,11 +478,11 @@ describe("SettingsPage", () => {
       return HttpResponse.json({ code: "General.Unexpected", traceId: "late-settings" }, { status: 500 });
     }));
     renderRouteWithProviders("/configuracion/listados");
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Filas por página" }), "50");
+    await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(complete).toBeDefined());
     await userEvent.click(within(screen.getByRole("navigation", { name: "Navegación principal" })).getByRole("link", { name: "Inicio" }));
-    await waitFor(() => expect(screen.queryByRole("combobox")).not.toBeInTheDocument());
+    await waitFor(() => expectNoEditor());
     complete?.();
     await waitFor(() => expect(error).toHaveBeenCalledWith(expect.stringContaining("configuración"), expect.objectContaining({ duration: Infinity })));
   });

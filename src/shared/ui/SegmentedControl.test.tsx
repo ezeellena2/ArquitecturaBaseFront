@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { FormField } from "./FormField";
 import { SegmentedControl } from "./SegmentedControl";
 
 describe("SegmentedControl", () => {
@@ -23,6 +24,25 @@ describe("SegmentedControl", () => {
     expect(group).toContainElement(screen.getByRole("button", { name: "Todos" }));
     expect(screen.getByRole("button", { name: "Todos" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Elegidos · 3" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("goes in a FormField like any control: its help and its error describe the group, marked invalid", () => {
+    renderWithProviders(
+      <FormField label="Filas por página" help="Cantidad inicial de filas." error="Revisá el tamaño.">
+        <SegmentedControl
+          aria-label="Filas por página"
+          options={[
+            { key: "10", label: "10", pressed: true, onSelect: vi.fn() },
+            { key: "20", label: "20", pressed: false, onSelect: vi.fn() },
+          ]}
+        />
+      </FormField>,
+    );
+
+    const group = screen.getByRole("group", { name: "Filas por página" });
+    expect(group).toHaveAccessibleDescription("Cantidad inicial de filas. Revisá el tamaño.");
+    expect(group).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText("Filas por página", { selector: "label" })).toHaveAttribute("for", group.id);
   });
 
   it("selects the option that was clicked", async () => {
