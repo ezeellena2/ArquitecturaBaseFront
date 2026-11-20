@@ -12,6 +12,7 @@ Contiene formato de fechas por zona, de números y de valores tipados, nombres d
 - `typedValue` es el único formato de valores tipados (entero, decimal, fecha sin hora, sí/no) en tablas, importación, resúmenes, respuestas y el chat: `formatTypedValue` agrupa los números exactos (es-AR o en-US) y muestra la fecha numérica, y devuelve null si el valor no es canónico; `formatYesNo` nombra sólo true y false. Las fechas con hora siguen con `formatDateInZone`/`formatDateTimeInZone`.
 - `cn` se reexporta desde `utils`; no agregar otra librería para combinar clases.
 - `formatFileSize` (`fileSize`) escribe el tamaño de un archivo: KB enteros bajo el mega (nunca cero) y MB con un decimal, en el idioma del menú; lo usan los archivos de una respuesta y los del asistente.
+- `timeZones` es la única lista de zonas horarias (DS1-A), para Mi perfil, Configuración y el horario del negocio: `timeZoneOptions` da la ciudad y, en gris, la hora de su país y el desfase, ordenadas por ciudad, y suma lo de `keep` que el navegador no lista (la guardada, `UTC`, el alias de Buenos Aires). El valor sigue siendo el identificador de IANA. `summarizeChoices` arma las elegidas y «y N más» del campo de `Picker` (DS2-A).
 - El front envía país y número al backend: no implementar normalización telefónica acá.
 - Una utilidad nueva necesita un consumidor compartido y pruebas de su comportamiento cuando tenga lógica.
 
@@ -21,6 +22,7 @@ Contiene formato de fechas por zona, de números y de valores tipados, nombres d
 - [Formato común de fechas](dateTime.ts).
 - [Formato común de números](numberFormat.ts).
 - [Formato común de valores tipados](typedValue.ts).
+- [Lista única de zonas horarias](timeZones.ts).
 - [Combinación de clases](utils.ts).
 
 - `appearance` define la paleta inicial Campo, valida colores y deriva contraste de texto, foco y hover.
