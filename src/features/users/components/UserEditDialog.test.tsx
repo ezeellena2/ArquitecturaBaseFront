@@ -401,7 +401,7 @@ describe("UserEditDialog", () => {
       const number = rowOf(dialog, 1).getByRole("textbox", { name: "Número de WhatsApp" });
       expect(number).toHaveFocus();
       expect(number).not.toHaveAccessibleDescription();
-      expect(dialog.getByRole("combobox", { name: "País: Argentina, +54" })).toBeInTheDocument();
+      expect(dialog.getByRole("button", { name: "País Argentina, +54" })).toBeInTheDocument();
 
       await userEvent.type(number, "11 2345-6789");
       await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
@@ -419,7 +419,7 @@ describe("UserEditDialog", () => {
       const dialog = await openEdit("ana@example.com");
       await userEvent.click(dialog.getByRole("button", { name: "Agregar número" }));
       // Con teclado, como los demás desplegables de Radix en los tests (ver UserMenu.test.tsx).
-      dialog.getByRole("combobox", { name: "País: Argentina, +54" }).focus();
+      dialog.getByRole("button", { name: "País Argentina, +54" }).focus();
       await userEvent.keyboard("{Enter}");
       await userEvent.click(await screen.findByRole("option", { name: "Uruguay, +598" }));
       await userEvent.type(dialog.getByRole("textbox", { name: "Número de WhatsApp" }), "94 123 456");

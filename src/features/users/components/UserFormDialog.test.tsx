@@ -86,7 +86,7 @@ describe("UserFormDialog", () => {
       expect(dialog.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
       expect(dialog.getByRole("textbox", { name: "Número de WhatsApp" })).toBeInTheDocument();
       // El país arranca en el primero de los habilitados.
-      expect(dialog.getByRole("combobox", { name: "País: Argentina, +54" })).toBeInTheDocument();
+      expect(dialog.getByRole("button", { name: "País Argentina, +54" })).toBeInTheDocument();
       expect(dialog.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
       expect(dialog.getByRole("button", { name: "Roles Sin roles" })).toBeInTheDocument();
       expect(dialog.getByRole("checkbox", { name: "Mandarle una invitación" })).not.toBeChecked();
@@ -300,7 +300,7 @@ describe("UserFormDialog", () => {
 
       const dialog = await openNewUser();
       // Con teclado, como los demás desplegables de Radix en los tests (ver UserMenu.test.tsx).
-      dialog.getByRole("combobox", { name: "País: Argentina, +54" }).focus();
+      dialog.getByRole("button", { name: "País Argentina, +54" }).focus();
       await userEvent.keyboard("{Enter}");
       await userEvent.click(await screen.findByRole("option", { name: "Uruguay, +598" }));
       await userEvent.type(dialog.getByRole("textbox", { name: "Número de WhatsApp" }), "94 123 456");

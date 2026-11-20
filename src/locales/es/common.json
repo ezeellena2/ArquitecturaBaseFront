@@ -68,7 +68,7 @@
   },
   "phone": {
     "label": "Número de WhatsApp",
-    "country": "País: {{country}}",
+    "country": "País",
     "invalid": "Ingresá un número de celular válido.",
     "countryNotSupported": "Todavía no mandamos códigos a números de ese país."
   },

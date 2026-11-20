@@ -199,7 +199,7 @@ describe("LoginPage", () => {
       // La pestaña y «Enviar código» ya dicen que el código va por WhatsApp: el renglón de abajo queda para el error.
       expect(number).not.toHaveAccessibleDescription();
       expect(screen.queryByText("Te mandamos un código por WhatsApp.")).not.toBeInTheDocument();
-      expect(screen.getByRole("combobox", { name: "País: Argentina, +54" })).toHaveTextContent("AR +54");
+      expect(screen.getByRole("button", { name: "País Argentina, +54" })).toHaveTextContent("AR +54");
       expect(screen.getByRole("button", { name: "Enviar código" })).toBeEnabled();
     });
 

@@ -143,7 +143,7 @@ describe("linking WhatsApp", () => {
     // Sin descripción debajo del título: «Enviar código» ya dice lo que va a pasar.
     expect(dialog).not.toHaveAccessibleDescription();
     expect(within(dialog).queryByText(/para comprobar que es tuyo/)).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("combobox", { name: "País: Argentina, +54" })).toHaveTextContent("AR +54");
+    expect(within(dialog).getByRole("button", { name: "País Argentina, +54" })).toHaveTextContent("AR +54");
     expect(within(dialog).getByRole("textbox", { name: "Número de WhatsApp" })).toHaveAttribute("type", "tel");
     expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Enviar código" })).toBeInTheDocument();
@@ -521,7 +521,7 @@ describe("linking WhatsApp", () => {
     await waitFor(() => expect(number).toHaveAttribute("aria-invalid", "true"));
 
     // Con teclado, como los demás desplegables de Radix en los tests (ver UserMenu.test.tsx).
-    within(dialog).getByRole("combobox", { name: "País: Argentina, +54" }).focus();
+    within(dialog).getByRole("button", { name: "País Argentina, +54" }).focus();
     await userEvent.keyboard("{Enter}");
     await userEvent.click(await screen.findByRole("option", { name: "Uruguay, +598" }));
 
