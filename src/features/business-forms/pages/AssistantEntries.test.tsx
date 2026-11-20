@@ -29,6 +29,7 @@ async function open(path: string) {
   return router;
 }
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
+vi.setConfig({ testTimeout: 20_000 });
 
 it.each([
   ["/formularios", ["formtemplates.read", "formtemplates.manage", "ai.assistant.use"], "Armar con la IA", "Armame un formulario para "],
@@ -38,7 +39,8 @@ it.each([
   setup(permissions);
   const router = await open(path);
   await userEvent.click(await screen.findByRole("link", { name: label }));
-  expect(await screen.findByRole("textbox", { name: "Tu pregunta" })).toHaveValue(draft);
+  // Whichever case runs first pays the lazy load of Home: alone, under load, it went past the second findBy waits.
+  expect(await screen.findByRole("textbox", { name: "Tu pregunta" }, { timeout: 10_000 })).toHaveValue(draft);
   expect(router.state.location).toMatchObject({ pathname: "/", search: "", state: { assistantDraft: draft } });
 });
 

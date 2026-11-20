@@ -59,7 +59,8 @@ describe("correcting a response next to the sheet (CW10-A)", () => {
     const { sends } = setup();
     const user = userEvent.setup({ delay: null });
     const { router } = renderRouteWithProviders(sheet + "/" + responseRecordId);
-    await user.click(await screen.findByRole("button", { name: "Más acciones" }));
+    // The first case of the file pays the lazy load of the sheet; findBy's second is not enough under load.
+    await user.click(await screen.findByRole("button", { name: "Más acciones" }, { timeout: 10_000 }));
     await user.click(await screen.findByRole("menuitem", { name: "Corregir" }));
     const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
     const amount = await within(panel).findByLabelText(/^Importe/);
