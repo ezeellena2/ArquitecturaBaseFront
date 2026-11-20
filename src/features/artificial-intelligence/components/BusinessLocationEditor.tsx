@@ -2,12 +2,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { businessLocationLink } from "../businessDetailsModel";
 import type { BusinessLocation } from "../api/businessInformation";
 import { BusinessPlaceSearch } from "./BusinessPlaceSearch";
+const modes: readonly BusinessLocation["mode"][] = ["unknown", "local", "area", "both"];
 // `placeSearch`: the installation has the Google key (`place-search`, I7); without it the search is not offered and the address is manual.
 interface Props { value: BusinessLocation; onChange: (value: BusinessLocation) => void; editable: boolean; locked: boolean; placeSearch: boolean; error?: string; legacy: React.ReactNode }
 export function BusinessLocationEditor({ value, onChange, editable, locked, placeSearch, error, legacy }: Props) {
@@ -16,10 +17,13 @@ export function BusinessLocationEditor({ value, onChange, editable, locked, plac
   const cleared = { latitude: null, longitude: null, placeId: null };
   return <Surface title={t("locationSection")} padded>
     <div id="business-details.location" tabIndex={-1} role="group" aria-label={t("locationSection")} aria-invalid={!!error} aria-describedby={error ? "business-location-error" : undefined} className="space-y-4">
-      <FormField label={t("locationType")}><NativeSelect value={value.mode} disabled={!editable || locked} onChange={event => {
-        const mode = event.target.value as BusinessLocation["mode"];
-        onChange({ ...value, mode, ...(mode === "unknown" || mode === "area" ? { address: "", reference: "", ...cleared } : {}), ...(mode === "unknown" || mode === "local" ? { area: "" } : {}) });
-      }}>{["unknown", "local", "area", "both"].map(mode => <option key={mode} value={mode}>{t(mode)}</option>)}</NativeSelect></FormField>
+      {/* Four fixed options with long names, in sight (DS1-A): radios in a row that go down a line when they do not fit. */}
+      <RadioGroupField label={t("locationType")} showLabel layout="row" value={value.mode} options={modes.map(mode => ({ value: mode, label: t(mode), disabled: !editable || locked }))}
+        onValueChange={next => {
+          const mode = modes.find(item => item === next);
+          if (!mode) return;
+          onChange({ ...value, mode, ...(mode === "unknown" || mode === "area" ? { address: "", reference: "", ...cleared } : {}), ...(mode === "unknown" || mode === "local" ? { area: "" } : {}) });
+        }} />
       {value.mode === "local" || value.mode === "both" ? <>
         {/* Sin leyendas: al cambiar la dirección el enlace se vacía a la vista, y el enlace vacío ya dice que no hay lugar elegido. */}
         <FormField label={t("address")}><Input value={value.address} maxLength={500} readOnly={!editable} disabled={locked} onChange={event => onChange({ ...value, address: event.target.value, ...cleared })} /></FormField>

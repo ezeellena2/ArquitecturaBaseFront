@@ -7,11 +7,17 @@ for (const language of ["es", "en"] as const) {
       await page.goto(`/src/test/visual/index.html?screen=/configuracion/ia&lang=${language}&scenario=ai-normal`);
       await expect(page.getByRole("heading", { name: language === "es" ? "Inteligencia artificial" : "Artificial intelligence", exact: true })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      const model = page.getByRole("combobox", { name: language === "es" ? "Modelo" : "Model", exact: true });
-      await expect(model).toHaveValue("fictional-model");
-      await model.selectOption("fictional-next-model");
-      await expect(model).toHaveValue("fictional-next-model");
-      await model.selectOption("fictional-model");
+      // A model of the list is chosen in the Picker (DS1-A): its name and, in grey, its identifier; on the phone the list takes the screen.
+      const modelLabel = language === "es" ? "Modelo" : "Model";
+      const model = page.getByRole("button", { name: new RegExp(`^${modelLabel} `) });
+      const chooseModel = async (name: string) => {
+        await model.click();
+        await page.getByRole("listbox", { name: modelLabel, exact: true }).getByRole("option", { name, exact: true }).click();
+      };
+      await expect(model).toHaveAccessibleName(`${modelLabel} Fictional model`);
+      await chooseModel("Fictional next model");
+      await expect(model).toHaveAccessibleName(`${modelLabel} Fictional next model`);
+      await chooseModel("Fictional model");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await expect(page).toHaveScreenshot(`ai-${language}-${width}.png`, { fullPage: true });
       await page.getByRole("button", { name: language === "es" ? "Reemplazar clave" : "Replace key", exact: true }).click();
@@ -28,11 +34,15 @@ for (const language of ["es", "en"] as const) {
       await expect(model).toBeVisible();
       // Con el mouse encima, Sonner pausa el vencimiento del aviso: sólo el cambio del borrador puede quitarlo.
       await tested.hover();
-      await model.selectOption("fictional-next-model");
+      // With the keyboard, so the mouse stays on the notice: the list opens on the chosen one and the next is the other model.
+      await model.focus();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
       await expect(tested).toHaveCount(0);
       await page.getByRole("button", { name: language === "es" ? "Guardar cambios" : "Save changes", exact: true }).click();
       await expect(key).toHaveCount(0);
-      await expect(model).toHaveValue("fictional-next-model");
+      await expect(model).toHaveAccessibleName(`${modelLabel} Fictional next model`);
     });
   }
   test(`AI empty connection does not prefill model or key ${language}`, async ({ page }) => {

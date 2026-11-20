@@ -7,7 +7,7 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { ChevronDownIcon, TrashIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import type { BusinessFaq } from "../api/businessInformation";
@@ -20,8 +20,10 @@ export function BusinessFaqEditor({ value,onChange,editable,locked,error,legacy 
   function add(question:string) { const id = crypto.randomUUID();onChange([...value,{ id,question,answer:"" }]);setExpanded(id); }
   function update(id:string,next:Partial<BusinessFaq>) { onChange(value.map(entry => entry.id === id ? { ...entry,...next } : entry)); }
   // Qué pasa con una pregunta sin respuesta va en la (i) junto a «Sin respuesta», no como un pie de la lista.
+  // A predefined question is chosen in the Picker (DS1-A), which invites to choose one and adds it: the field stays empty and
+  // the list no longer offers the ones already added.
   return <Surface title={t("answers")} padded><div id="business-details.faq" tabIndex={-1} role="group" aria-label={t("answers")} aria-invalid={!!error} aria-describedby={error ? "business-faq-error" : undefined} className="space-y-4">
-    {editable ? <div className="flex flex-wrap items-end gap-3"><div className="min-w-0 flex-1"><FormField label={t("addPreset")}><DisabledReason reason={limitReason} className="grid w-full"><NativeSelect value="" disabled={locked || full} onChange={event => { if (event.target.value) add(t(`presets.${event.target.value}`)); }}><option value="">{t("chooseQuestion")}</option>{presets.filter(preset => !value.some(entry => entry.question === t(`presets.${preset}`))).map(preset => <option key={preset} value={preset}>{t(`presets.${preset}`)}</option>)}</NativeSelect></DisabledReason></FormField></div><DisabledReason reason={limitReason}><Button variant="outline" disabled={locked || full} onClick={() => add("")}>{t("customQuestion")}</Button></DisabledReason></div> : null}
+    {editable ? <div className="flex flex-wrap items-end gap-3"><div className="min-w-0 flex-1"><FormField label={t("addPreset")}><DisabledReason reason={limitReason} className="grid w-full"><Picker label={t("addPreset")} placeholder={t("chooseQuestion")} value={null} disabled={locked || full} options={presets.filter(preset => !value.some(entry => entry.question === t(`presets.${preset}`))).map(preset => ({ id: preset, label: t(`presets.${preset}`) }))} onChange={preset => add(t(`presets.${preset}`))} /></DisabledReason></FormField></div><DisabledReason reason={limitReason}><Button variant="outline" disabled={locked || full} onClick={() => add("")}>{t("customQuestion")}</Button></DisabledReason></div> : null}
     {!value.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("noQuestions")}</p> : <div className="divide-y divide-[var(--color-border)]">{value.map((entry,index) => <div key={entry.id} className="py-3">
       <div className="flex items-center gap-2"><Button variant="muted-link" className="min-w-0 flex-1 justify-start whitespace-normal text-left" aria-expanded={expanded === entry.id} aria-controls={`business-faq-${entry.id}`} onClick={() => setExpanded(expanded === entry.id ? null : entry.id)}><ChevronDownIcon className="size-4 shrink-0" />{entry.question || t("newQuestion",{ number:index+1 })}</Button>{entry.answer.trim() && entry.question.trim() ? <span className="text-xs text-[var(--color-content-muted)]">{t("answered")}</span>
         : <span className="flex items-center gap-1 text-xs text-[var(--color-content-muted)]">{t("unanswered")}<span className="-my-1 inline-flex"><InfoTip text={t("faqSafety")} label={t("common:actions.moreInfo", { label: t("unanswered") })} /></span></span>}{editable ? <IconButton label={`${t("removeQuestion")} · ${entry.question || index+1}`} size="icon-sm" disabled={locked} onClick={() => onChange(value.filter(previous => previous.id !== entry.id))}><TrashIcon className="size-4" /></IconButton> : null}</div>

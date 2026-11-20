@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
@@ -24,18 +24,31 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const keyField = () => screen.getByLabelText("Nueva clave de API");
+// The provider is a segmented control, and a model of the list is chosen in the Picker (DS1-A).
+const providers = () => screen.getByRole("group", { name: "Proveedor" });
+const chooseProvider = (name: string) => userEvent.click(within(providers()).getByRole("button", { name }));
+const modelPicker = () => screen.findByRole("button", { name: /^Modelo / });
+async function openModels() {
+  const trigger = await modelPicker();
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Modelo" });
+}
+async function chooseModel(name: string) {
+  await userEvent.click(within(await openModels()).getByRole("option", { name }));
+}
 
 describe("AI settings", () => {
   it("keeps the whole connection in one zone, in the order it is filled in, with each button beside its value (IA1-A)", async () => {
     server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "fictional-model", displayName: "Fictional model" }] })));
     renderRouteWithProviders("/configuracion/ia");
     const zone = await screen.findByRole("region", { name: "Conexión con el proveedor" });
-    const model = await within(zone).findByRole("combobox", { name: "Modelo" });
+    const model = await within(zone).findByRole("button", { name: "Modelo Fictional model" });
     // Una cosa, una zona: ya no hay una zona por tipo de control.
     for (const name of ["Proveedor y modelo", "Clave y prueba de conexión", "Disponibilidad"]) expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
     // El orden en que se completa: los modelos se cargan con la clave, así que la clave va antes que el modelo.
     const key = within(zone).getByRole("group", { name: "Clave de API" });
-    const order = [within(zone).getByRole("combobox", { name: "Proveedor" }), key, model, within(zone).getByRole("radiogroup", { name: "Disponibilidad de la conexión" })];
+    const order = [within(zone).getByRole("group", { name: "Proveedor" }), key, model, within(zone).getByRole("radiogroup", { name: "Disponibilidad de la conexión" })];
     for (const [index, element] of order.slice(1).entries()) expect(order[index].compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // Cada botón en el renglón del dato que toca; quitar va en rojo.
     expect(within(key).getByText("Configurada")).toBeInTheDocument();
@@ -77,9 +90,10 @@ describe("AI settings", () => {
       return HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "fictional-model", displayName: "Fictional model" }, { id: "next-model", displayName: "Next model" }] });
     }));
     renderRouteWithProviders("/configuracion/ia");
-    const model = await screen.findByRole("combobox", { name: "Modelo" });
+    await modelPicker();
     expect(catalogs).toEqual([{ provider: "OpenAI", credentialChange: "Keep", apiKey: null, expectedRevision: 1 }]);
-    await userEvent.selectOptions(model, "next-model");
+    await chooseModel("Next model");
+    expect(screen.getByRole("button", { name: "Modelo Next model" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Probar conexión" }));
     await waitFor(() => expect(tests).toHaveLength(1));
     expect(tests[0]).toMatchObject({ provider: "OpenAI", model: "next-model", apiKey: null });
@@ -95,9 +109,10 @@ describe("AI settings", () => {
     renderRouteWithProviders("/configuracion/ia");
     await userEvent.type(await screen.findByLabelText("Clave de API"), "fictional-private-key");
     await userEvent.click(screen.getByRole("button", { name: "Cargar modelos" }));
-    const model = await screen.findByRole("combobox", { name: "Modelo" });
-    expect(model).toHaveValue("");
-    await userEvent.selectOptions(model, "next-model");
+    // Nothing is chosen for them: the field invites to choose one.
+    expect(await screen.findByRole("button", { name: "Modelo Elegí un modelo" })).toBeInTheDocument();
+    await chooseModel("Next model");
+    expect(screen.getByRole("button", { name: "Modelo Next model" })).toBeInTheDocument();
     expect(catalogs).toEqual([{ provider: "OpenAI", credentialChange: "Replace", apiKey: "fictional-private-key", expectedRevision: 0 }]);
     expect(writes).toHaveLength(0);
     expect(tests).toHaveLength(0);
@@ -107,7 +122,14 @@ describe("AI settings", () => {
   it("keeps manual entry available when a saved model is missing from the catalog", async () => {
     server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "next-model", displayName: "Next model" }] })));
     renderRouteWithProviders("/configuracion/ia");
-    expect(await screen.findByRole("combobox", { name: "Modelo" })).toHaveValue("fictional-model");
+    expect(await screen.findByRole("button", { name: "Modelo fictional-model" })).toBeInTheDocument();
+    // The saved model goes first, with «Fuera de la lista» in grey; the ones of the list say their identifier there.
+    const options = within(await openModels()).getAllByRole("option");
+    expect(options.map(option => option.querySelector('[id$="-label"]')?.textContent)).toEqual(["fictional-model", "Next model"]);
+    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(options[0]).toHaveAccessibleDescription("Fuera de la lista");
+    expect(options[1]).toHaveAccessibleDescription("next-model");
+    await userEvent.keyboard("{Escape}");
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Ingresar modelo manualmente" }));
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("fictional-model");
@@ -165,7 +187,9 @@ describe("AI settings", () => {
     await userEvent.type(key, "-changed");
     release!();
     await waitFor(() => expect(screen.getByRole("button", { name: "Cargar modelos" })).toBeEnabled());
-    expect(screen.queryByRole("option", { name: "Old model" })).not.toBeInTheDocument();
+    // The late list is not offered: the model stays a text field, without the Picker of a list.
+    expect(screen.queryByRole("button", { name: /^Modelo / })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Modelo" })).toBeInTheDocument();
   });
   it("clears provider models and never sends the saved key to the new provider", async () => {
     const catalogs: unknown[] = [];
@@ -174,10 +198,14 @@ describe("AI settings", () => {
       return HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "fictional-model", displayName: "Fictional model" }] });
     }));
     renderRouteWithProviders("/configuracion/ia");
-    await screen.findByRole("combobox", { name: "Modelo" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Proveedor" }), "Anthropic");
-    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cambiar proveedor" }));
-    expect(screen.queryByRole("option", { name: /Fictional model/ })).not.toBeInTheDocument();
+    await modelPicker();
+    await chooseProvider("Anthropic / Claude");
+    const confirm = await screen.findByRole("dialog");
+    // The saved key asks first: the provider does not change until it is confirmed (the open dialog hides the page).
+    expect(within(screen.getByRole("group", { name: "Proveedor", hidden: true })).getByRole("button", { name: "OpenAI", hidden: true })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(confirm).getByRole("button", { name: "Cambiar proveedor" }));
+    expect(within(providers()).getByRole("button", { name: "Anthropic / Claude" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /^Modelo / })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("");
     expect(screen.getByRole("button", { name: "Cargar modelos" })).toBeDisabled();
     expect(catalogs).toHaveLength(1);
@@ -233,7 +261,7 @@ describe("AI settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await userEvent.click(await screen.findByRole("button", { name: "Leer configuración actual" }));
     await userEvent.click(await screen.findByRole("button", { name: "Revisar con mi borrador" }));
-    expect(screen.getByRole("combobox", { name: "Proveedor" })).toHaveValue("OpenAI");
+    expect(within(providers()).getByRole("button", { name: "OpenAI" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("fictional-model");
     expect(screen.getByLabelText("Clave de API")).toHaveValue("fictional-private-key");
     expect(writes).toHaveLength(1);
@@ -509,7 +537,11 @@ describe("AI settings", () => {
     renderRouteWithProviders("/configuracion/ia");
     await userEvent.click(await screen.findByRole("button", { name: "Reemplazar clave" }));
     await userEvent.type(keyField(), "fictional-private-key");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Proveedor" }), "Anthropic");
+    // Choosing the provider it already has changes nothing and asks nothing.
+    await chooseProvider("OpenAI");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(keyField()).toHaveValue("fictional-private-key");
+    await chooseProvider("Anthropic / Claude");
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: "Cambiar proveedor" }));
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("");

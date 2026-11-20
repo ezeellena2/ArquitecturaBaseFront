@@ -40,6 +40,17 @@ async function pick(field: string, search: string, option: string, container: HT
   await userEvent.click(within(list).getByRole("option", { name: option }));
 }
 const pickTime = (field: string, time: string, container?: HTMLElement) => pick(field, time, time, container);
+// A predefined question is chosen in the Picker, which invites to choose one and adds it; six, without the search.
+const presets = () => screen.getByRole("button", { name: /^Agregar una pregunta predefinida / });
+async function openPresets() {
+  const trigger = presets();
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Agregar una pregunta predefinida" });
+}
+async function addPreset(question: string) {
+  await userEvent.click(within(await openPresets()).getByRole("option", { name: question }));
+}
 // I7: the place search is offered only where the installation publishes `place-search` (it has the Google key).
 const withPlaceSearch = (installed: boolean) => server.use(http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance,
   defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, installedFeatures: installed ? ["place-search"] : [] })));
@@ -85,7 +96,12 @@ describe("business information editor", { timeout: 15_000 }, () => {
     await userEvent.type(address, " Updated");
     expect(screen.getByRole("textbox", { name: "Enlace de la ubicación" })).toHaveValue("");
     await chooseStatus("Lunes · Atención", "24 horas");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Agregar una pregunta predefinida" }), "booking");
+    expect(presets()).toHaveAccessibleName("Agregar una pregunta predefinida Elegí una pregunta");
+    await addPreset("¿Hace falta reservar?");
+    // The field invites to choose again, and the list no longer offers the question that was added.
+    expect(presets()).toHaveAccessibleName("Agregar una pregunta predefinida Elegí una pregunta");
+    expect(within(await openPresets()).queryByRole("option", { name: "¿Hace falta reservar?" })).not.toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
     const answer = screen.getByRole("textbox", { name: "Respuesta del negocio" });
     expect(answer).toHaveValue("");
     await userEvent.type(answer, "Confirmed answer");
@@ -97,6 +113,21 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(writes[0].details?.faq[0].answer).toBe("Confirmed answer");
     expect(writes[0].expectedRevision).toBe(1);
     expect(writes[0]).toMatchObject({ hours: "9–18", location: "Local" });
+  });
+  it("chooses where it serves among four radios, and serving only in an area leaves the store out", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    current.details.location = { mode: "local", address: "Address", reference: "Por el portón", area: "", latitude: null, longitude: null };
+    renderRouteWithProviders("/configuracion/negocio");
+    // Four fixed options with long names, in sight (DS1-A).
+    const where = await screen.findByRole("radiogroup", { name: "Dónde atendés" });
+    expect(within(where).getAllByRole("radio").map(radio => radio.closest("div")?.textContent)).toEqual(["Sin definir", "En un local", "Sólo en una zona", "Local y zona de atención"]);
+    expect(within(where).getByRole("radio", { name: "En un local" })).toBeChecked();
+    await userEvent.click(within(where).getByRole("radio", { name: "Sólo en una zona" }));
+    expect(screen.queryByRole("textbox", { name: "Dirección del local" })).not.toBeInTheDocument();
+    await userEvent.type(screen.getByRole("textbox", { name: "Zona de atención o entrega" }), "Zona norte");
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0].details?.location).toMatchObject({ mode: "area", address: "", reference: "", area: "Zona norte", latitude: null, longitude: null });
   });
   it("takes the zone of the hours from the only list, by its city, and sends its identifier", async () => {
     current.details = emptyBusinessDetails("UTC");
@@ -404,7 +435,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     current.details = { ...emptyBusinessDetails("UTC"), faq: Array.from({ length: 20 }, (_, index) => ({ id: crypto.randomUUID(), question: `Pregunta ${index + 1}`, answer: "Sí" })) };
     renderRouteWithProviders("/configuracion/negocio");
     const custom = await screen.findByRole("button", { name: "Escribir otra pregunta" });
-    const preset = screen.getByRole("combobox", { name: "Agregar una pregunta predefinida" });
+    const preset = presets();
     expect(custom).toHaveAttribute("aria-disabled", "true");
     expect(custom).toHaveAccessibleDescription("Podés agregar hasta 20 preguntas.");
     expect(preset).toBeDisabled();

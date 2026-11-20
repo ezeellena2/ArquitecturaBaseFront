@@ -11,7 +11,10 @@ for (const language of ["es", "en"] as const) {
       if (width === 1440) await expect(page.getByRole("link", { name: language === "es" ? "Información del negocio" : "Business information", exact: true })).toBeVisible();
       await expect(page).toHaveScreenshot(`business-information-${language}-${width}.png`, { fullPage: true });
       await name.fill(language === "es" ? "Negocio actualizado" : "Updated business");
-      await page.getByRole("combobox", { name: language === "es" ? "Agregar una pregunta predefinida" : "Add a predefined question", exact: true }).selectOption("booking");
+      // A predefined question is chosen in the Picker (DS1-A): on the phone its list takes the screen.
+      const preset = language === "es" ? "Agregar una pregunta predefinida" : "Add a predefined question";
+      await page.getByRole("button", { name: new RegExp(`^${preset} `) }).click();
+      await page.getByRole("listbox", { name: preset, exact: true }).getByRole("option", { name: language === "es" ? "¿Hace falta reservar?" : "Do I need to book?", exact: true }).click();
       const faq = page.getByRole("textbox", { name: language === "es" ? "Respuesta del negocio" : "Business answer", exact: true });
       await faq.fill("Confirmed answer");
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

@@ -12,10 +12,11 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Page } from "@/shared/ui/Page";
+import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { FormSkeleton } from "@/shared/ui/FormSkeleton";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { aiConnectionQueryKey, fetchAiConnection, type AiConnection, type AiProvider } from "../api/aiConnection";
 import { changeProvider, hasCredential } from "../model";
@@ -79,10 +80,14 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
         </DisabledReason> : undefined}>
         <div className="divide-y divide-[var(--color-border)] px-4">
           <div className="py-3">
-            <FormField label={t("provider")} error={error("provider")}><NativeSelect className="sm:w-72" value={draft.provider} disabled={locked} onChange={event => {
-              const next = event.target.value as AiProvider;
-              if (savedCredential || draft.apiKey) setNextProvider(next); else provider(next);
-            }}>{baseline.providers.map(item => <option key={item} value={item}>{item === "Anthropic" ? "Anthropic / Claude" : item}</option>)}</NativeSelect></FormField>
+            {/* Two fixed providers, in sight and one click away (DS1-A), as wide as their dropdown was. With a key, changing it asks
+                first, so the chosen one stays until it is confirmed; choosing the one it has changes nothing. */}
+            <div className="w-full sm:w-72"><FormField label={t("provider")} error={error("provider")}>
+              <SegmentedControl fullWidth aria-label={t("provider")} disabled={locked} options={baseline.providers.map(item => ({
+                key: item, label: item === "Anthropic" ? "Anthropic / Claude" : item, pressed: draft.provider === item,
+                onSelect: () => { if (item === draft.provider) return; if (savedCredential || draft.apiKey) setNextProvider(item); else provider(item); },
+              }))} />
+            </FormField></div>
           </div>
           <div className="py-3">
             {/* La clave guardada se nombra sin mostrarse: por qué, en la (i) de su etiqueta. Reemplazarla abre su campo en
@@ -114,11 +119,12 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
               </DisabledReason>
               {catalog.models?.length ? <Button variant="muted-link" disabled={locked} onClick={() => setManualModel(previous => !previous)}>{t(manualModel ? "chooseFromCatalog" : "manualModel")}</Button> : null}
             </> : undefined}>
-              {selectingModel ? <NativeSelect className="sm:w-72" name="ai-provider-model" value={draft.model} disabled={locked} onChange={event => editor.change({ model: event.target.value })}>
-                <option value="">{t("chooseModel")}</option>
-                {draft.model && !catalog.models?.some(model => model.id === draft.model) ? <option value={draft.model}>{draft.model} — {t("modelOutsideCatalog")}</option> : null}
-                {catalog.models?.map(model => <option key={model.id} value={model.id}>{model.displayName === model.id ? model.id : `${model.displayName} (${model.id})`}</option>)}
-              </NativeSelect> : <Input className="sm:w-72" name="ai-provider-model" value={draft.model} maxLength={150} disabled={locked} autoComplete="off" spellCheck={false} autoCapitalize="none" onChange={event => editor.change({ model: event.target.value })} />}
+              {/* A model of the list in the Picker (DS1-A): its name and, in grey, its identifier; the saved one that the list does not
+                  bring goes first, with «Fuera de la lista». Nothing is chosen for the user. */}
+              {selectingModel ? <Picker className="sm:w-72" label={t("model")} placeholder={t("chooseModel")} value={draft.model || null} disabled={locked}
+                options={[...draft.model && !catalog.models?.some(model => model.id === draft.model) ? [{ id: draft.model, label: draft.model, description: t("modelOutsideCatalog") }] : [],
+                  ...(catalog.models ?? []).map(model => ({ id: model.id, label: model.displayName, description: model.displayName === model.id ? null : model.id }))]}
+                onChange={model => editor.change({ model })} /> : <Input className="sm:w-72" name="ai-provider-model" value={draft.model} maxLength={150} disabled={locked} autoComplete="off" spellCheck={false} autoCapitalize="none" onChange={event => editor.change({ model: event.target.value })} />}
             </FormField>
             {/* Una lista vacía es el resultado de la consulta, no una explicación: queda como estado, sin instrucciones. */}
             {catalog.models?.length === 0 ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("modelsEmpty")}</p> : null}

@@ -47,7 +47,9 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await page.getByRole("button",{name:es?"Agregar fecha especial":"Add special date",exact:true}).click();
     await page.getByRole("dialog").getByLabel(es?"Fecha":"Date",{exact:true}).fill("2026-10-10");
     await page.getByRole("dialog").getByRole("button",{name:es?"Agregar fecha":"Add date",exact:true}).click();
-    await page.getByRole("combobox",{name:es?"Agregar una pregunta predefinida":"Add a predefined question",exact:true}).selectOption("delivery");
+    const preset=es?"Agregar una pregunta predefinida":"Add a predefined question";
+    await page.getByRole("button",{name:new RegExp(`^${preset} `)}).click();
+    await page.getByRole("listbox",{name:preset,exact:true}).getByRole("option",{name:es?"¿Hacen envíos o entregas?":"Do you ship or deliver?",exact:true}).click();
     const answer=page.getByRole("textbox",{name:es?"Respuesta del negocio":"Business answer",exact:true});
     await expect(answer).toHaveValue("");await answer.fill(es?"Consultar antes de confirmar el pedido.":"Ask before confirming the order.");
     await expect(page.getByText(es?"1 respuesta completa":"1 complete answer",{exact:true})).toBeVisible();
