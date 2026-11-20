@@ -8,8 +8,16 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await page.setViewportSize({ width,height:900 });
     await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-guided&lang=${language}`);
     await expect(page.getByRole("heading",{name:es?"Información del negocio":"Business information",exact:true})).toBeVisible();
-    const end=page.getByRole("combobox",{name:es?"Lunes 1 · Hasta":"Monday 1 · Until",exact:true});
-    await expect(end).toHaveValue("18:00");
+    // A time is chosen in the Picker, with its search inside (on the phone, the list takes the screen); the status of a
+    // day, in a segmented control (DS1-A).
+    const endLabel=es?"Lunes 1 · Hasta":"Monday 1 · Until";
+    const end=page.getByRole("button",{name:new RegExp(`^${endLabel} `)});
+    const pickEnd=async(time:string)=>{
+      await end.click();
+      await page.getByRole("combobox",{name:`${es?"Buscar en":"Search in"} ${endLabel}`,exact:true}).fill(time);
+      await page.getByRole("option",{name:time,exact:true}).click();
+    };
+    await expect(end).toHaveAccessibleName(`${endLabel} 18:00`);
     const hours=page.getByRole("region",{name:es?"Horario de atención":"Opening hours",exact:true});
     await end.scrollIntoViewIfNeeded();
     const box=await end.boundingBox(),bounds=await hours.boundingBox();
@@ -29,12 +37,13 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("link", { name: es ? "Ver ubicación" : "View location", exact: true })).toHaveAttribute("href", /query_place_id=ChIJ_fictionalClinic$/);
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
     // El horario se marca al intentar guardar, no mientras se elige; después sigue en vivo.
-    await end.selectOption("08:00");await expect(page.getByRole("alert")).toHaveCount(0);
+    await pickEnd("08:00");await expect(page.getByRole("alert")).toHaveCount(0);
     await page.getByRole("button",{name:es?"Guardar":"Save",exact:true}).click();
     await expect(page.getByRole("alert")).toContainText(es?"El cierre debe ser posterior":"Closing must be after");
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
-    await end.selectOption("18:00");await expect(page.getByRole("alert")).toHaveCount(0);
-    await page.getByRole("combobox",{name:es?"Domingo · Atención":"Sunday · Opening",exact:true}).selectOption("allDay");
+    await pickEnd("18:00");await expect(page.getByRole("alert")).toHaveCount(0);
+    const allDay=page.getByRole("group",{name:es?"Domingo · Atención":"Sunday · Opening",exact:true}).getByRole("button",{name:es?"24 horas":"24 hours",exact:true});
+    await allDay.click();
     await page.getByRole("button",{name:es?"Agregar fecha especial":"Add special date",exact:true}).click();
     await page.getByRole("dialog").getByLabel(es?"Fecha":"Date",{exact:true}).fill("2026-10-10");
     await page.getByRole("dialog").getByRole("button",{name:es?"Agregar fecha":"Add date",exact:true}).click();
@@ -46,7 +55,7 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("button",{name:es?"Guardar":"Save",exact:true})).toBeDisabled();
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);
     await expect(answer).toHaveValue(es?"Consultar antes de confirmar el pedido.":"Ask before confirming the order.");
-    await expect(page.getByRole("combobox",{name:es?"Domingo · Atención":"Sunday · Opening",exact:true})).toHaveValue("allDay");
+    await expect(allDay).toHaveAttribute("aria-pressed","true");
     expect(external).toEqual([]);
     await page.screenshot({path:`test-results/business-guided-${language}-${width}.png`,fullPage:true});
   });

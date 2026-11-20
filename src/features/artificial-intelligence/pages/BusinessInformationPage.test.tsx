@@ -1,5 +1,5 @@
 import "./BusinessInformationPage";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,6 +27,19 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const save = () => screen.getByRole("button", { name: "Guardar" });
+// The state of a day is a segmented control, and a time or the zone is the Picker, with its search inside (DS1-A).
+async function chooseStatus(group: string, status: string, container: HTMLElement = document.body) {
+  await userEvent.click(within(within(container).getByRole("group", { name: group })).getByRole("button", { name: status }));
+}
+async function pick(field: string, search: string, option: string, container: HTMLElement = document.body) {
+  const trigger = within(container).getByRole("button", { name: new RegExp(`^${field} `) });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  const list = await screen.findByRole("listbox", { name: field });
+  await userEvent.type(screen.getByRole("combobox", { name: `Buscar en ${field}` }), search);
+  await userEvent.click(within(list).getByRole("option", { name: option }));
+}
+const pickTime = (field: string, time: string, container?: HTMLElement) => pick(field, time, time, container);
 // I7: the place search is offered only where the installation publishes `place-search` (it has the Google key).
 const withPlaceSearch = (installed: boolean) => server.use(http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance,
   defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, installedFeatures: installed ? ["place-search"] : [] })));
@@ -71,7 +84,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const address = await screen.findByRole("textbox", { name: "Dirección del local" });
     await userEvent.type(address, " Updated");
     expect(screen.getByRole("textbox", { name: "Enlace de la ubicación" })).toHaveValue("");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "allDay");
+    await chooseStatus("Lunes · Atención", "24 horas");
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Agregar una pregunta predefinida" }), "booking");
     const answer = screen.getByRole("textbox", { name: "Respuesta del negocio" });
     expect(answer).toHaveValue("");
@@ -85,13 +98,23 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(writes[0].expectedRevision).toBe(1);
     expect(writes[0]).toMatchObject({ hours: "9–18", location: "Local" });
   });
+  it("takes the zone of the hours from the only list, by its city, and sends its identifier", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    expect(await screen.findByRole("button", { name: "Zona horaria del horario UTC" })).toBeInTheDocument();
+    await pick("Zona horaria del horario", "Montev", "Montevideo");
+    expect(screen.getByRole("button", { name: "Zona horaria del horario Montevideo" })).toBeInTheDocument();
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0].details?.openingHours.timeZoneId).toBe("America/Montevideo");
+  });
   it("blocks invalid structured hours before making a request", async () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Desde" }), "18:00");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Hasta" }), "09:00");
+    await chooseStatus("Lunes · Atención", "Abierto");
+    await pickTime("Lunes 1 · Desde", "18:00");
+    await pickTime("Lunes 1 · Hasta", "09:00");
     await userEvent.click(save());
     expect(await screen.findByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
     expect(writes).toHaveLength(0);
@@ -101,7 +124,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    await chooseStatus("Lunes · Atención", "Abierto");
     const hours = screen.getByRole("group", { name: "Horario de atención" });
     // Abrir un día deja su franja por completar: no es un error hasta intentar guardar.
     expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
@@ -111,10 +134,10 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(hours).toHaveFocus();
     expect(writes).toHaveLength(0);
     // Después del primer intento, el mensaje sigue lo que se corrige sin volver a tocar Guardar.
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Desde" }), "18:00");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Hasta" }), "09:00");
+    await pickTime("Lunes 1 · Desde", "18:00");
+    await pickTime("Lunes 1 · Hasta", "09:00");
     expect(within(hours).getByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes 1 · Hasta" }), "20:00");
+    await pickTime("Lunes 1 · Hasta", "20:00");
     expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
     expect(hours).toHaveAttribute("aria-invalid", "false");
     expect(writes).toHaveLength(0);
@@ -123,7 +146,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    await chooseStatus("Lunes · Atención", "Abierto");
     const add = screen.getByRole("button", { name: "Agregar franja · Lunes" });
     expect(add).toHaveTextContent("Agregar franja");
     expect(screen.queryByRole("button", { name: /^Quitar franja · Lunes/ })).not.toBeInTheDocument();
@@ -137,7 +160,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const limited = screen.getByRole("button", { name: "Agregar franja · Lunes" });
     expect(limited).toHaveAttribute("aria-disabled", "true");
     expect(limited).toHaveAccessibleDescription("Podés agregar hasta 4 franjas.");
-    expect(screen.getAllByRole("combobox", { name: /^Lunes \d · Desde$/ })).toHaveLength(4);
+    expect(screen.getAllByRole("button", { name: /^Lunes \d · Desde / })).toHaveLength(4);
     await userEvent.hover(limited);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Podés agregar hasta 4 franjas.");
   });
@@ -149,7 +172,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const dialog = await screen.findByRole("dialog");
     const confirm = within(dialog).getByRole("button", { name: "Agregar fecha" });
     const date = within(dialog).getByLabelText("Fecha");
-    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Atención" }), "open");
+    await chooseStatus("Atención", "Abierto", dialog);
     // Confirmar está habilitado y la franja recién abierta no se marca antes de tocarlo.
     expect(confirm).toBeEnabled();
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
@@ -161,8 +184,8 @@ describe("business information editor", { timeout: 15_000 }, () => {
     // Después del intento, cada error se va mientras se corrige.
     await userEvent.type(date, "2026-10-24");
     expect(date).not.toHaveAccessibleDescription("Elegí la fecha.");
-    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Desde" }), "09:00");
-    await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Fecha 1 · Hasta" }), "13:00");
+    await pickTime("Fecha 1 · Desde", "09:00", dialog);
+    await pickTime("Fecha 1 · Hasta", "13:00", dialog);
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     await userEvent.click(confirm);
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -179,14 +202,14 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const dialog = await screen.findByRole("dialog", { name: "Horario de una fecha especial" });
     // Like the date, each part has its visible label (lista de chequeo, 2026-11-11): «Atención» names the state and
     // «Horario» its time slots, which appear only when the date is open.
-    const state = within(dialog).getByRole("combobox", { name: "Atención" });
-    expect(within(dialog).getByText("Atención", { selector: "label" })).toBeVisible();
+    const state = within(dialog).getByRole("group", { name: "Atención" });
+    expect(within(dialog).getByText("Atención")).toBeVisible();
     expect(within(dialog).queryByRole("group", { name: "Horario" })).not.toBeInTheDocument();
-    await userEvent.selectOptions(state, "open");
+    await userEvent.click(within(state).getByRole("button", { name: "Abierto" }));
     const hours = within(dialog).getByRole("group", { name: "Horario" });
     expect(within(dialog).getByText("Horario", { selector: "label" })).toBeVisible();
-    expect(within(hours).getByRole("combobox", { name: "Fecha 1 · Desde" })).toBeInTheDocument();
-    expect(within(hours).getByRole("combobox", { name: "Fecha 1 · Hasta" })).toBeInTheDocument();
+    expect(within(hours).getByRole("button", { name: "Fecha 1 · Desde Elegir" })).toBeInTheDocument();
+    expect(within(hours).getByRole("button", { name: "Fecha 1 · Hasta Elegir" })).toBeInTheDocument();
     expect(within(hours).getByRole("button", { name: "Agregar franja · Fecha" })).toBeInTheDocument();
     expect(hours).not.toHaveAttribute("aria-invalid");
     await userEvent.type(within(dialog).getByLabelText("Fecha"), "2026-10-10");
@@ -197,8 +220,8 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(hours).toHaveAttribute("aria-invalid", "true");
     expect(hours).toHaveAccessibleDescription("Elegí apertura y cierre para cada franja.");
     expect(hours.parentElement).toContainElement(problem);
-    await userEvent.selectOptions(within(hours).getByRole("combobox", { name: "Fecha 1 · Desde" }), "09:00");
-    await userEvent.selectOptions(within(hours).getByRole("combobox", { name: "Fecha 1 · Hasta" }), "13:00");
+    await pickTime("Fecha 1 · Desde", "09:00", hours);
+    await pickTime("Fecha 1 · Hasta", "13:00", hours);
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     expect(hours).not.toHaveAttribute("aria-invalid");
     expect(hours).not.toHaveAccessibleDescription();
@@ -207,7 +230,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "open");
+    await chooseStatus("Lunes · Atención", "Abierto");
     await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText("Fecha"), "2026-10-10");
@@ -263,10 +286,10 @@ describe("business information editor", { timeout: 15_000 }, () => {
       http.get("/api/ai/business-information/changes/:id", () => HttpResponse.json({ code: "Ai.BusinessInformation.ChangeNotFound" }, { status: 404 })));
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "closed");
+    await chooseStatus("Lunes · Atención", "Cerrado");
     await userEvent.click(save());
     await userEvent.click(await screen.findByRole("button", { name: "Revisar guardado" }));
-    expect(screen.getByRole("combobox", { name: "Lunes · Atención" })).toBeDisabled();
+    for (const option of within(screen.getByRole("group", { name: "Lunes · Atención" })).getAllByRole("button")) expect(option).toBeDisabled();
     await userEvent.click(await screen.findByRole("button", { name: "Reintentar el mismo guardado" }));
     await waitFor(() => expect(writes).toHaveLength(2));
     expect(writes[1]).toEqual(writes[0]);
@@ -347,7 +370,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     }));
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Lunes · Atención" }), "closed");
+    await chooseStatus("Lunes · Atención", "Cerrado");
     await userEvent.click(save());
     const review = await screen.findByRole("region", { name: "Revisar cambios de otro administrador" });
     await userEvent.click(within(review).getByRole("button", { name: "Revisar cambios" }));
@@ -429,7 +452,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     // Lo que no es obvio va en la (i): los datos que no se cargan, la zona del horario, los textos anteriores y las preguntas sin respuesta.
     expect(screen.queryByText(/No cargues claves/, { selector: "p" })).toBeNull();
     expect(screen.getByRole("button", { name: "Más información sobre Datos del negocio" })).toHaveAccessibleDescription("Incluí sólo información confirmada. No cargues claves, códigos de acceso ni datos personales de clientes.");
-    expect(screen.getByRole("combobox", { name: "Zona horaria del horario" })).toHaveAccessibleDescription("Los horarios y fechas especiales corresponden a esta zona; no cambia la configuración general.");
+    expect(screen.getByRole("button", { name: /^Zona horaria del horario/ })).toHaveAccessibleDescription("Los horarios y fechas especiales corresponden a esta zona; no cambia la configuración general.");
     const legacy = "Texto guardado anteriormente. Conservá lo que siga vigente y revisalo al completar las opciones nuevas; no se convierte automáticamente.";
     expect(screen.queryByText(legacy, { selector: "p" })).toBeNull();
     expect(screen.getByRole("textbox", { name: "Horario de atención" })).toHaveAccessibleDescription(legacy);

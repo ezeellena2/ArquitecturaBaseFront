@@ -21,24 +21,27 @@ for (const language of ["es", "en"] as const) {
       await expect(name).toHaveValue(language === "es" ? "Negocio actualizado" : "Updated business");
       await expect(faq).toHaveValue("Confirmed answer");
     });
-    test(`business opening hours show the whole text of each select at ${width}px in ${language}`, async ({ page }) => {
+    test(`business opening hours show the whole text of each control at ${width}px in ${language}`, async ({ page }) => {
+      const es = language === "es";
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-normal&lang=${language}`);
-      const hours = page.getByRole("group", { name: language === "es" ? "Horario de atención" : "Opening hours", exact: true });
+      const hours = page.getByRole("group", { name: es ? "Horario de atención" : "Opening hours", exact: true });
       await expect(hours).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      // An open day adds its times: neither they nor the status of each day are narrower than their widest option.
-      await hours.getByRole("combobox", { name: language === "es" ? "Lunes · Atención" : "Monday · Opening", exact: true }).selectOption("open");
-      const selects = hours.getByRole("combobox", { name: language === "es" ? / · (Atención|Desde|Hasta)$/ : / · (Opening|From|Until)$/ });
-      await expect(selects).toHaveCount(9);
-      expect(await selects.evaluateAll(found => found.filter(select => {
-        const probe = select.cloneNode(true) as HTMLSelectElement;
-        probe.style.cssText = "position: absolute; visibility: hidden; width: auto";
-        select.after(probe);
-        const needed = probe.getBoundingClientRect().width;
-        probe.remove();
-        return select.getBoundingClientRect().width + 0.5 < needed;
-      }).map(select => select.getAttribute("aria-label")))).toEqual([]);
+      // The status of each day is a segmented control and the times are the Picker (DS1-A). An open day adds its times:
+      // neither they nor the options of each status cut their text, and none goes past the hours.
+      await hours.getByRole("group", { name: es ? "Lunes · Atención" : "Monday · Opening", exact: true }).getByRole("button", { name: es ? "Abierto" : "Open", exact: true }).click();
+      const states = hours.getByRole("group", { name: es ? / · Atención$/ : / · Opening$/ });
+      await expect(states).toHaveCount(7);
+      const times = hours.getByRole("button", { name: es ? /^Lunes 1 · (Desde|Hasta) / : /^Monday 1 · (From|Until) / });
+      await expect(times).toHaveCount(2);
+      const bounds = (await hours.boundingBox())!;
+      const cut = (controls: Locator) => controls.evaluateAll((found, right) => found.filter(control => {
+        const texts = [...control.querySelectorAll<HTMLElement>("button, span.truncate")];
+        return control.getBoundingClientRect().right > right + 0.5 || texts.some(text => text.scrollWidth > text.clientWidth + 0.5);
+      }).map(control => control.getAttribute("aria-label") ?? control.textContent), bounds.x + bounds.width);
+      expect(await cut(states)).toEqual([]);
+      expect(await cut(times)).toEqual([]);
     });
   }
   // RO3-D: the business permissions are IA's second pair, so Admin reads them as rows of that area, with their names and a
