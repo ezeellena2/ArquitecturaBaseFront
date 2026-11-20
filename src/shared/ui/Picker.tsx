@@ -78,8 +78,25 @@ const SEARCH_FROM = 10;
 const TABBABLE = "a[href], button, input, select, textarea, [tabindex]";
 
 const fold = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase();
-const matches = (option: PickerOption, search: string) =>
-  fold([option.label, option.description, option.keywords].filter(Boolean).join(" ")).includes(fold(search.trim()));
+
+/** How well an option answers a search, without accents: first the names that start with it, then a word of the name, then
+ * anywhere in the name and, last, the grey line or the other words (a country, an identifier). -1 does not answer it. */
+function rank(option: PickerOption, needle: string): number {
+  const label = fold(option.label);
+  if (label.startsWith(needle)) return 0;
+  if (label.split(/[\s/-]+/).some(word => word.startsWith(needle))) return 1;
+  if (label.includes(needle)) return 2;
+  return fold([option.description, option.keywords].filter(Boolean).join(" ")).includes(needle) ? 3 : -1;
+}
+
+/** Scrolls only the list, never the page, so the option is seen: centered when the list opens, the least while walking it. */
+function reveal(list: HTMLElement | null, option: HTMLElement | null, center: boolean) {
+  if (!list || !option) return;
+  const top = option.offsetTop, bottom = top + option.offsetHeight;
+  if (center) list.scrollTop = top - (list.clientHeight - option.offsetHeight) / 2;
+  else if (top < list.scrollTop) list.scrollTop = top;
+  else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+}
 
 const tabbables = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>(TABBABLE)]
   .filter(element => element.tabIndex >= 0 && !element.matches(":disabled") && !element.closest("[hidden], [inert]"));
@@ -126,7 +143,9 @@ export function Picker(props: PickerProps) {
   const searching = search.trim() !== "";
   const full = multiple && props.max !== undefined && chosen.size >= props.max;
   const others = (props.selectedOptions ?? []).filter(option => !props.options.some(item => item.id === option.id));
-  const shown = server || !searching ? props.options : props.options.filter(option => matches(option, search));
+  const needle = fold(search.trim());
+  const shown = server || !searching ? props.options : props.options.map((option, index) => ({ option, index, rank: rank(option, needle) }))
+    .filter(item => item.rank >= 0).sort((a, b) => a.rank - b.rank || a.index - b.index).map(item => item.option);
 
   const rows: Row[] = [];
   const push = (option: PickerOption, separated: boolean) => rows.push({ option, separated: rows.length > 0 && separated, selected: chosen.has(option.id),
@@ -143,9 +162,19 @@ export function Picker(props: PickerProps) {
   const empty = picks.length === 0 || (!multiple && props.first !== undefined && props.value === props.first.id);
   const spoken = empty ? props.placeholder ?? props.first?.label ?? "" : picks.map(option => option.label).join(", ");
 
+  // Walking the list keeps the marked option in sight; opening it centers the chosen one (`focusList`).
   useLayoutEffect(() => {
-    if (open && current >= 0) document.getElementById(`${uid}-option-${current}`)?.scrollIntoView({ block: "nearest" });
+    if (open && current >= 0) reveal(listRef.current, document.getElementById(`${uid}-option-${current}`), false);
   }, [open, current, uid]);
+
+  // Once the list is in the page: the focus to the search or to the list, and the chosen one in sight.
+  function focusList(event: Event) {
+    event.preventDefault();
+    (searchRef.current ?? listRef.current)?.focus();
+    // Radix places the list and gives it its height a frame later: the chosen one goes in sight after that.
+    const chosen = current >= 0 ? optionId(current) : null;
+    requestAnimationFrame(() => requestAnimationFrame(() => reveal(listRef.current, chosen ? document.getElementById(chosen) : null, true)));
+  }
 
   function show() {
     if (props.disabled) return;
@@ -264,7 +293,7 @@ export function Picker(props: PickerProps) {
   const limitText = multiple && props.max !== undefined
     ? full ? t("picker.chosenOf", { count: chosen.size, max: props.max }) : t("picker.upTo", { count: props.max }) : null;
   const countRow = countText !== null || limitText !== null
-    ? <div className={cn("flex min-h-4 items-center justify-between gap-3 text-xs text-[var(--color-content-muted)]", phone ? "mt-2" : "px-2.5 pt-1.5 pb-1")}>
+    ? <div className={cn("flex min-h-4 items-center justify-between gap-3 text-xs text-[var(--color-content-muted)]", phone ? "mt-2 first:mt-0" : "mt-1.5 px-1 first:mt-0")}>
       <span role="status">{countText}</span>{limitText ? <span className="shrink-0">{limitText}</span> : null}
     </div> : null;
   const searchBox = searchable
@@ -279,7 +308,7 @@ export function Picker(props: PickerProps) {
   const options = <ul ref={listRef} id={listboxId} role="listbox" aria-label={props.label} aria-multiselectable={multiple || undefined}
     tabIndex={searchable ? undefined : -1} aria-activedescendant={!searchable && current >= 0 ? optionId(current) : undefined}
     onKeyDown={searchable ? undefined : onListKeyDown}
-    className={cn("min-h-0 flex-1 overflow-y-auto outline-none [scrollbar-width:thin]", phone ? "" : "p-1")}>
+    className={cn("relative min-h-0 flex-1 overflow-y-auto outline-none [scrollbar-width:thin]", phone ? "" : "p-1")}>
     {rows.map((row, index) => <Fragment key={row.option.id}>
       {row.separated ? <li role="presentation" className={phone ? "h-px bg-[var(--color-border)]" : "-mx-1 my-1 h-px bg-[var(--color-border)]"}/> : null}
       <OptionRow row={row} id={optionId(index)} active={index === current} multiple={multiple} touch={phone}
@@ -298,18 +327,20 @@ export function Picker(props: PickerProps) {
           {searching ? t("picker.noMatches", { search: search.trim() }) : t("picker.empty")}
         </p>;
   const moreLabel = t(props.loadingMore ? "picker.loadingMore" : "picker.more", { count: props.pageSize ?? 50 });
+  // The search and how many there are stay on top, behind a line, while the list scrolls under them.
+  const header = searchBox || countRow
+    ? <div className={cn("border-b border-[var(--color-border)]", phone ? "p-3" : "p-1.5")}>{searchBox}{countRow}</div> : null;
 
   if (phone) return <>
     {trigger}
     <Dialog open={open} onOpenChange={next => { if (!next) hide(); }}>
-      <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined}
-        onOpenAutoFocus={event => { if (searchRef.current) { event.preventDefault(); searchRef.current.focus(); } }}
+      <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} onOpenAutoFocus={focusList}
         className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
           <DialogTitle className="min-w-0 flex-1 truncate">{props.label}</DialogTitle>
           <IconButton variant="ghost" label={t("picker.close")} onClick={hide}><CloseIcon className="size-5"/></IconButton>
         </header>
-        {searchBox || countRow ? <div className="border-b border-[var(--color-border)] p-3">{searchBox}{countRow}</div> : null}
+        {header}
         {options}
         {state}
         {props.onLoadMore ? <div className="p-3 text-center">
@@ -325,8 +356,7 @@ export function Picker(props: PickerProps) {
   return <PopoverPrimitive.Root modal open={open} onOpenChange={next => { if (next) show(); else hide(); }}>
     <PopoverPrimitive.Trigger asChild>{trigger}</PopoverPrimitive.Trigger>
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content align="start" sideOffset={4} collisionPadding={8} onKeyDown={leaveWithTab}
-        onOpenAutoFocus={event => { event.preventDefault(); (searchRef.current ?? listRef.current)?.focus(); }}
+      <PopoverPrimitive.Content align="start" sideOffset={4} collisionPadding={8} onKeyDown={leaveWithTab} onOpenAutoFocus={focusList}
         onCloseAutoFocus={event => {
           const direction = leaving.current;
           leaving.current = null;
@@ -334,9 +364,8 @@ export function Picker(props: PickerProps) {
           event.preventDefault();
           (nextTabbable(triggerRef.current) ?? triggerRef.current)?.focus();
         }}
-        className="z-50 flex max-h-[min(20rem,var(--radix-popover-content-available-height))] w-(--radix-popover-trigger-width) min-w-48 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none">
-        {searchBox ? <div className="border-b border-[var(--color-border)] p-1.5">{searchBox}</div> : null}
-        {countRow}
+        className="z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] w-(--radix-popover-trigger-width) min-w-48 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none">
+        {header}
         {options}
         {state}
         {props.onLoadMore ? <div className="border-t border-[var(--color-border)] px-2.5 py-1.5 text-right">

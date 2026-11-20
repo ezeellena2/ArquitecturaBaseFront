@@ -162,6 +162,18 @@ describe("Picker", () => {
     expect(screen.getByRole("button", { name: "Campo asignado LOS ÁLAMOS" })).toBeInTheDocument();
   });
 
+  it("puts first the names that start with the search, and last what only the grey line answers", async () => {
+    const zones = [{ id: "boise", label: "Boise", description: "hora de las Montañas Rocosas" }, { id: "la-paz", label: "La Paz", description: "hora de Bolivia" },
+      { id: "monterrey", label: "Monterrey", description: "hora central" }, { id: "montevideo", label: "Montevideo", description: "hora de Uruguay" },
+      ...places.slice(0, 8)];
+    renderWithProviders(<Place options={zones}/>);
+    const { user, list } = await openList(/^Campo asignado/);
+
+    await user.keyboard("mont");
+
+    expect(within(list).getAllByRole("option").map(option => option.querySelector('[id$="-label"]')?.textContent)).toEqual(["Monterrey", "Montevideo", "Boise"]);
+  });
+
   it("puts the first option apart and leaves it out while searching", async () => {
     renderWithProviders(<Place first={{ id: "", label: "Sin campo asignado" }} initial=""/>);
     const { user, list } = await openList(/^Campo asignado/);
