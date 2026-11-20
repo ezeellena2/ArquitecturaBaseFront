@@ -1,15 +1,17 @@
-import { useEffect, useId, useState, type JSX } from "react";
+import { useId, useRef, type JSX } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { Input } from "@/shared/ui/input";
+import { Picker } from "@/shared/ui/Picker";
+import type { CatalogItem } from "../api/catalogResponse";
 import { unconvertedFieldValue, type CatalogFieldDraft } from "../catalogFields";
 import type { FormCulture } from "../model";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems } from "../hooks/useCatalogQueries";
 import { administrativeName } from "../editorModel";
+import { usePickerPages } from "../hooks/usePickerPages";
 
 interface Props {
   field: CatalogFieldDraft; value: string | null | undefined; texts?: Readonly<Record<string, string | null>>;
@@ -23,25 +25,38 @@ interface Props {
   pendingText?: string;
 }
 
+// A field that picks from a catalog, with the only piece to choose (DS1-A): the active options of its source, searched in the
+// server twenty at a time with «Mostrar N más»; an optional one starts with «Sin valor», which clears it. The wait of the source and
+// of a search, its failure with «Reintentar» and a search that matches nothing are said inside the list. Leaving it, list closed,
+// is touching it for the page.
 function SourceOptionInput({ field, value, texts, culture, label, readOnly, error: _error, scope, onChange, onBlur, pendingText, ...aria }: Props) {
   const { t } = useTranslation("forms");
-  const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState(""), [retrying, setRetrying] = useState(false);
-  useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
+  const pages = usePickerPages<CatalogItem>();
   const owner = scope ?? { actorId: null, culture, permissions: [] };
   const detail = useCatalogDetail(owner, readOnly ? "" : field.sourceCatalogId ?? "", "global");
-  const items = useCatalogItems(owner, readOnly ? "" : field.sourceCatalogId ?? "", detail.data?.revision ?? null, { page: 1, pageSize: 20, search: settled, isActive: true, sort: "text" }, "global");
+  const items = useCatalogItems(owner, readOnly ? "" : field.sourceCatalogId ?? "", detail.data?.revision ?? null, { page: pages.page, pageSize: 20, search: pages.settled, isActive: true, sort: "text" }, "global");
   // A source offers its own options when it is Manual or External (kept by a module, such as the condition frente al IVA).
   const sourceActive = (detail.data?.kind === "Manual" || detail.data?.kind === "External") && detail.data.isActive && !detail.data.unavailableReasonCode;
-  // While the source and its first options load, or a search reads, the open list says so instead of the previous options.
-  const loading = detail.isLoading || (sourceActive && items.isLoading);
-  const searching = sourceActive && !loading && ((search ?? "") !== settled || items.isPlaceholderData);
+  const list = pages.list(items);
+  const failed = (detail.isError && !detail.isFetching) || (sourceActive && list.failed);
+  const loading = !failed && ((detail.isFetching && !detail.data) || (sourceActive && list.loading));
   // A cleared value shows no option, even while the caller still holds the texts of the previous one.
   const currentText = !value ? "" : pendingText ?? (texts ? administrativeName(texts, culture) : administrativeName(items.data?.items.find(item => item.id === value)?.text, culture) || (unconvertedFieldValue("catalog", value) ?? ""));
-  const options = sourceActive && !searching ? (items.data?.items ?? []).filter(item => item.isActive).map(item => ({ id: item.id, label: administrativeName(item.text, culture) })) : [];
-  const status = loading ? t("common:states.loading") : searching ? t("searching") : sourceActive && items.data && !options.length ? t(settled.trim() ? "catalogs.items.noMatches" : "catalogs.items.empty") : undefined;
-  // Retry stays in its place, working, until the source answers.
-  const retry = async () => { setRetrying(true); await Promise.all([detail.refetch(), items.refetch()]); setRetrying(false); };
-  return <div className="min-w-32"><Autocomplete {...aria} aria-label={label} disabled={readOnly || retrying || (!loading && !sourceActive)} value={search ?? currentText} options={options} status={status} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => { setSearch(null); onBlur?.(); }} onSelect={id => { const option = items.data?.items.find(item => item.id === id); if (option) { onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string"))); setSearch(null); } }} />{detail.isError || items.isError || retrying ? <Button type="button" variant="link" pending={retrying} onClick={() => void retry()}>{t(retrying ? "retrying" : "common:actions.retry")}</Button> : null}</div>;
+  const open = useRef(false);
+  return <div className="min-w-32" onBlur={event => { if (!open.current && !event.currentTarget.contains(event.relatedTarget)) onBlur?.(); }}>
+    <Picker {...aria} label={label} value={value || (field.required ? null : "")} disabled={readOnly || (!loading && !failed && !sourceActive)}
+      first={field.required ? undefined : { id: "", label: t("catalogs.fields.noValue") }} placeholder={field.required ? t("select") : undefined}
+      options={sourceActive ? list.options.filter(item => item.isActive).map(item => ({ id: item.id, label: administrativeName(item.text, culture) })) : []}
+      selectedOptions={value ? [{ id: value, label: currentText || "…" }] : undefined}
+      search={pages.search} onSearchChange={pages.onSearchChange} total={list.total} loading={loading} failed={failed}
+      onRetry={() => { void detail.refetch(); if (sourceActive) void items.refetch(); }} onLoadMore={list.onLoadMore} loadingMore={list.loadingMore} pageSize={list.pageSize}
+      onOpenChange={next => { open.current = next; }}
+      onChange={id => {
+        if (!id) { onChange(null); return; }
+        const option = list.options.find(item => item.id === id);
+        if (option) onChange(id, Object.fromEntries(Object.entries(option.text).filter((entry): entry is [string, string] => typeof entry[1] === "string")));
+      }} />
+  </div>;
 }
 
 export function CatalogExtraFieldInput(props: Props) {

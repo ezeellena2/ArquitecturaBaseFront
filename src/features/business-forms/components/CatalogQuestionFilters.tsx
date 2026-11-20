@@ -1,10 +1,9 @@
 import { Fragment, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { formatCatalogFieldValue, openCatalogField, parseCatalogFieldValue } from "../catalogFields";
 import { catalogScalarText } from "../catalogValues";
 import type { CatalogField } from "../api/catalogResponse";
@@ -54,30 +53,26 @@ function filterChoices(source: DraftQuestionSource, fields: readonly CatalogFiel
   return { match, eligible, compatible, available, answerable };
 }
 
-// «Respuesta de» (CW7): the other catalog questions of the form, «Campo (pregunta 1)», with what they choose from or why they
-// cannot give the answer; only those that can are chosen. Typing narrows the list.
-function AnswerQuestion({ scope, choices, current, value, readOnly, onChange, ...field }: { scope: CatalogReadScope; choices: readonly AnswerChoice[]; current: string; value: string | null; readOnly: boolean; onChange: (questionId: string) => void;
+// «Respuesta de» (CW7): the other catalog questions of the form, «Campo (pregunta 1)», with the only piece to choose (DS1-A): what
+// they choose from in grey under the name, and those that cannot give the answer off with why (MA1-A); only those that can are
+// chosen. With more than ten, the list brings its search. A question that is no longer there stays first, named as unavailable.
+function AnswerQuestion({ scope, label, choices, current, value, readOnly, onChange, ...field }: { scope: CatalogReadScope; label: string; choices: readonly AnswerChoice[]; current: string; value: string | null; readOnly: boolean; onChange: (questionId: string) => void;
   id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
   const { t } = useTranslation("forms");
-  const [search, setSearch] = useState<string | null>(null);
   const names = useCatalogNames(scope, choices.map(choice => choice.catalog));
   const name = (choice: AnswerChoice) => t("catalogQuestion.filter.answerQuestion", { label: choice.label, number: choice.number });
   const catalog = (choice: AnswerChoice) => names[choice.catalog] ? administrativeName(names[choice.catalog], scope.culture) : null;
   // In a question of the block (LD3-A) the catalog says where the answer comes from: its own item, or the one for all the items.
   const sameCatalog = (choice: AnswerChoice) => choice.items === "same" ? "catalogQuestion.filter.answerCatalogSameItem"
     : choice.items === "all" ? "catalogQuestion.filter.answerCatalogAllItems" : "catalogQuestion.filter.answerCatalog";
-  const description = (choice: AnswerChoice) => choice.reason === "later" ? t("catalogQuestion.filter.answerLater", { question: current })
+  const reason = (choice: AnswerChoice) => choice.reason === "later" ? t("catalogQuestion.filter.answerLater", { question: current })
     : choice.reason === "multiple" ? t("catalogQuestion.filter.answerMultiple")
     : choice.reason === "inBlock" ? t("catalogQuestion.filter.answerInBlock")
-    : catalog(choice) ? t(choice.reason === "otherCatalog" ? "catalogQuestion.filter.answerOtherCatalog" : sameCatalog(choice), { catalog: catalog(choice) }) : null;
-  const selected = choices.find(choice => choice.id === value);
-  const typed = search?.trim().toLocaleLowerCase(scope.culture) ?? "";
-  const shown = typed ? choices.filter(choice => name(choice).toLocaleLowerCase(scope.culture).includes(typed)) : choices;
-  return <Autocomplete {...field} dropdown disabled={readOnly} placeholder={t("select")}
-    value={search ?? (selected ? name(selected) : value ? t("catalogQuestion.filter.questionUnavailable") : "")}
-    status={shown.length ? undefined : t("catalogQuestion.filter.noAnswerMatches")}
-    options={shown.map(choice => ({ id: choice.id, label: name(choice), description: description(choice), disabled: !!choice.reason, selected: choice.id === value }))}
-    onValueChange={setSearch} onBlur={() => setSearch(null)} onSelect={questionId => { setSearch(null); onChange(questionId); }}/>;
+    : choice.reason === "otherCatalog" ? t("catalogQuestion.filter.answerOtherCatalog", { catalog: catalog(choice) ?? "…" }) : null;
+  const description = (choice: AnswerChoice) => !choice.reason && catalog(choice) ? t(sameCatalog(choice), { catalog: catalog(choice) }) : null;
+  const kept = value !== null && !choices.some(choice => choice.id === value) ? [{ id: value, label: t("catalogQuestion.filter.questionUnavailable") }] : [];
+  return <Picker {...field} label={label} disabled={readOnly} value={value} placeholder={t("select")} onChange={onChange}
+    options={[...kept, ...choices.map(choice => ({ id: choice.id, label: name(choice), description: description(choice), disabledReason: reason(choice) }))]}/>;
 }
 // Both additions act on the whole section, so they go in its header. Each one gives the reason it is off as its tooltip: no
 // filter fields, every filter field already in use or, for a filter by who receives it, no person data on their catalogs.
@@ -136,9 +131,14 @@ export function CatalogQuestionFilters({ source, fields, attributes, attributesL
       const changeField = (next: CatalogField): FormCatalogMatch<string | null> => person && next.type === "catalog" ? { fieldId: next.id, personAttributeId: null }
         : kind === "answer" ? { fieldId: next.id, questionId: null } : { fieldId: next.id, value: null };
       return <fieldset key={condition.fieldId} aria-label={t("catalogQuestion.filter.condition", { number: index + 1 })} className="min-w-0 space-y-2 rounded-md border border-[var(--color-border)] p-3"><legend className="px-1 text-xs text-[var(--color-content-muted)]">{t(person ? "catalogQuestion.filter.byPerson" : kind === "answer" ? "catalogQuestion.filter.byAnswer" : "catalogQuestion.filter.fixed")}</legend><div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-        <FormField label={t("catalogQuestion.filter.field")} error={rowErrors("fieldId")}><NativeSelect value={condition.fieldId} disabled={readOnly} onChange={event => { const id = event.target.value; const next = eligible.find(field => field.id === id); if (next) change(index, changeField(next)); }}><option value={condition.fieldId}>{fieldName}</option>{available.filter(fits).map(field => <option key={field.id} value={field.id}>{administrativeName(field.name, scope.culture)}</option>)}</NativeSelect></FormField>
-        {kind === "answer" ? <FormField label={t("catalogQuestion.filter.answerOf")} error={rowErrors("questionId")}><AnswerQuestion scope={scope} choices={answers?.choices(field?.sourceCatalogId ?? null) ?? []} current={answers?.current ?? ""} value={condition.questionId ?? null} readOnly={readOnly} onChange={questionId => change(index, { fieldId: condition.fieldId, questionId })}/></FormField>
-        : person ? <FormField label={t("catalogQuestion.filter.personData")} error={rowErrors("personAttributeId")}><NativeSelect value={condition.personAttributeId ?? ""} disabled={readOnly || !field} onChange={event => change(index, { fieldId: condition.fieldId, personAttributeId: event.target.value || null })}><option value="">{t("select")}</option>{field ? compatible(field).map(attribute => <option key={attribute.id} value={attribute.id}>{administrativeName(attribute.name, scope.culture)}</option>) : null}{condition.personAttributeId && (!field || !compatible(field).some(attribute => attribute.id === condition.personAttributeId)) ? <option value={condition.personAttributeId}>{selectedAttribute ? administrativeName(selectedAttribute.name, scope.culture) : attributesLoading ? "…" : t("catalogQuestion.filter.unavailable")}</option> : null}</NativeSelect></FormField> : field ? <FormField label={t("catalogQuestion.filter.fixedValue")}><FixedValue field={field} value={condition.value ?? null} scope={scope} readOnly={readOnly} error={rowErrors("value")} onChange={value => change(index, { fieldId: condition.fieldId, value })}/></FormField> : <p className="text-sm">{t("catalogQuestion.filter.unavailable")}</p>}
+        <FormField label={t("catalogQuestion.filter.field")} error={rowErrors("fieldId")}><Picker label={t("catalogQuestion.filter.field")} value={condition.fieldId} disabled={readOnly}
+          options={[{ id: condition.fieldId, label: fieldName }, ...available.filter(fits).map(field => ({ id: field.id, label: administrativeName(field.name, scope.culture) }))]}
+          onChange={id => { const next = eligible.find(field => field.id === id); if (next && id !== condition.fieldId) change(index, changeField(next)); }}/></FormField>
+        {kind === "answer" ? <FormField label={t("catalogQuestion.filter.answerOf")} error={rowErrors("questionId")}><AnswerQuestion scope={scope} label={t("catalogQuestion.filter.answerOf")} choices={answers?.choices(field?.sourceCatalogId ?? null) ?? []} current={answers?.current ?? ""} value={condition.questionId ?? null} readOnly={readOnly} onChange={questionId => change(index, { fieldId: condition.fieldId, questionId })}/></FormField>
+        : person ? <FormField label={t("catalogQuestion.filter.personData")} error={rowErrors("personAttributeId")}><Picker label={t("catalogQuestion.filter.personData")} value={condition.personAttributeId ?? null} disabled={readOnly || !field} placeholder={t("select")}
+          options={[...condition.personAttributeId && (!field || !compatible(field).some(attribute => attribute.id === condition.personAttributeId)) ? [{ id: condition.personAttributeId, label: selectedAttribute ? administrativeName(selectedAttribute.name, scope.culture) : attributesLoading ? "…" : t("catalogQuestion.filter.unavailable") }] : [],
+            ...field ? compatible(field).map(attribute => ({ id: attribute.id, label: administrativeName(attribute.name, scope.culture) })) : []]}
+          onChange={personAttributeId => change(index, { fieldId: condition.fieldId, personAttributeId })}/></FormField> : field ? <FormField label={t("catalogQuestion.filter.fixedValue")}><FixedValue field={field} value={condition.value ?? null} scope={scope} readOnly={readOnly} error={rowErrors("value")} onChange={value => change(index, { fieldId: condition.fieldId, value })}/></FormField> : <p className="text-sm">{t("catalogQuestion.filter.unavailable")}</p>}
         {!readOnly ? <Button type="button" variant="outline" aria-label={t("catalogQuestion.filter.remove", { number: index + 1 })} onClick={() => update(match.filter((_, position) => position !== index))}>×</Button> : null}
       </div></fieldset>;
     })}

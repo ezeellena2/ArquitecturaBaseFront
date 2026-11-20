@@ -50,6 +50,7 @@ Cada hook es dueño de un estado privado: fija su clave de consulta, cuándo se 
 
 ### Datos de personas
 
+- `usePickerPages` es la búsqueda y las páginas de una lista del servidor en la pieza única para elegir (DS1-A): lo escrito espera 300 ms, «Mostrar N más» pide la página siguiente y conserva las ya vistas, otra búsqueda vuelve a la primera, y dice si espera o falló. La usan el catálogo de un campo o una pregunta, el valor de un campo de catálogo, «es» de una condición y las personas para probar.
 - `usePersonData` conserva baseline, delta y revisión por actor, idioma, permisos y persona. No usa MutationCache. Ausente conserva y null limpia; un 409 exige releer definiciones y valores y adoptar explícitamente. Una respuesta tardía no cambia otro dueño. Un 401/403 retira valores y caché del alcance; las opciones del dato usan su ruta autorizada, sin CatalogsRead.
 
 ### Respuestas, aprobaciones y documentos

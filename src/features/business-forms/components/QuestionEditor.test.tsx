@@ -92,17 +92,16 @@ it("offers the catalog question type and shows invalid catalogs without allowing
   await mountCatalogQuestion();
   expect(within(await openList(/^Tipo de respuesta /)).getByRole("option", { name: "Elegir de un catálogo" })).toBeInTheDocument();
   await userEvent.keyboard("{Escape}");
-  await userEvent.click(screen.getByRole("combobox", { name: "Catálogo" }));
-  expect(await screen.findByRole("option", { name: "Responsables · El catálogo tiene una configuración no válida." })).toHaveAttribute("aria-disabled", "true");
-  expect(screen.getByRole("option", { name: "Archivados · 2 opciones · Dado de baja" })).toHaveAttribute("aria-disabled", "true");
+  const list = await openList(/^Catálogo/);
+  expect(await within(list).findByRole("option", { name: "Responsables" })).toHaveAccessibleDescription("El catálogo tiene una configuración no válida.");
+  expect(within(list).getByRole("option", { name: "Responsables" })).toHaveAttribute("aria-disabled", "true");
+  expect(within(list).getByRole("option", { name: "Archivados" })).toHaveAttribute("aria-disabled", "true");
   expect(screen.queryByRole("button", { name: "Agregar opción" })).not.toBeInTheDocument();
 });
 it("confirms catalog replacement before emitting a new question identity", async () => {
   server.use(http.get("/api/forms/catalogs", () => HttpResponse.json(catalogPage())));
   const onChange = await mountCatalogQuestion();
-  const catalog = await screen.findByRole("combobox", { name: "Catálogo" });
-  await userEvent.click(catalog);
-  await userEvent.click(await screen.findByRole("option", { name: "Supervisores" })); expect(onChange).not.toHaveBeenCalled();
+  await userEvent.click(await within(await openList(await screen.findByRole("button", { name: /^Catálogo/ }))).findByRole("option", { name: "Supervisores" })); expect(onChange).not.toHaveBeenCalled();
   await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cambiar catálogo" }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ fieldId: null, replacesFieldId: "confirmed-field", source: { catalog: catalogB }, label: catalogQuestion.label }));
 });
@@ -116,17 +115,17 @@ it("preserves a selected catalog outside the first ones and searches from page o
   const reads: URLSearchParams[] = []; let detailReads = 0;
   server.use(http.get("/api/forms/catalogs", ({ request }) => { const params = new URL(request.url).searchParams; reads.push(params); const page = catalogPage(); return HttpResponse.json({ ...page, items: page.items.slice(1), totalCount: 21, totalPages: 2, hasNext: true, filterCounts: { byKind: { all: 21, manual: 19, filters: 2 } } }); }), http.get("/api/forms/catalogs/" + catalogA, () => { detailReads++; return HttpResponse.json({ ...manualDetail, id: catalogA, key: catalogA.replaceAll("-", ""), name: { es: "Clientes", en: "Customers" }, itemsCount: 9 }); }));
   await mountCatalogQuestion();
-  const catalog = screen.getByRole("combobox", { name: "Catálogo" });
-  await waitFor(() => expect(catalog).toHaveValue("Clientes"));
+  const catalog = screen.getByRole("button", { name: /^Catálogo/ });
+  await waitFor(() => expect(catalog).toHaveAccessibleName("Catálogo Clientes"));
   expect(detailReads).toBe(1);
-  await userEvent.clear(catalog);
-  await userEvent.type(catalog, "Clientes");
+  await openList(catalog);
+  await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Catálogo" }), "Clientes");
   await waitFor(() => expect(reads.some(query => query.get("search") === "Clientes" && query.get("page") === "1")).toBe(true));
 });
 it("retains the field but makes no catalog reads without CatalogsRead", async () => {
   let reads = 0; server.use(http.get("/api/forms/catalogs", () => { reads++; return HttpResponse.json(catalogPage()); }));
   await mountCatalogQuestion(vi.fn(), ["formtemplates.read", "formtemplates.manage"]);
-  const catalog = screen.getByRole("combobox", { name: "Catálogo" });
+  const catalog = screen.getByRole("button", { name: /^Catálogo/ });
   expect(catalog).toBeDisabled();
   // Why it is off is its tooltip and description, not a text under it.
   expect(catalog).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y elegir uno.");

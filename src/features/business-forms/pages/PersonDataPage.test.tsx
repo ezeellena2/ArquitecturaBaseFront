@@ -10,6 +10,12 @@ import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { UserDataSectionContext } from "@/shared/hooks/userDataSectionContext";
 import { PersonDataPage } from "./PersonDataPage";
+// The catalog is the only piece to choose (DS1-A): its list opens with the keyboard and searches inside.
+async function openPicker(trigger: HTMLElement) {
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
 vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
 const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, originalCulture: "es", type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
@@ -168,16 +174,14 @@ it("says «Buscando…» in the catalog dropdown while a search is on its way", 
  }));
  await userEvent.click(await screen.findByRole("button", { name: "Agregar dato" }));
  const dialog = within(screen.getByRole("dialog", { name: "Agregar dato" }));
- const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
- await userEvent.click(catalog);
- expect(await screen.findByRole("option", { name: "Zonas · 3 opciones" })).toBeInTheDocument();
- await userEvent.type(catalog, "nor");
- const list = screen.getByRole("listbox", { name: "Catálogo" });
- await waitFor(() => expect(list).toHaveTextContent("Buscando…"));
+ const list = await openPicker(dialog.getByRole("button", { name: /^Catálogo/ }));
+ expect(await within(list).findByRole("option", { name: "Zonas" })).toHaveAccessibleDescription("3 opciones");
+ await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Catálogo" }), "nor");
+ await waitFor(() => expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument());
  expect(within(list).queryByRole("option")).not.toBeInTheDocument();
  await waitFor(() => expect(release).toBeTypeOf("function"));
  await act(async () => { release!(); });
- expect(await screen.findByRole("option", { name: "Zonas norte · 3 opciones" })).toBeInTheDocument();
+ expect(await within(list).findByRole("option", { name: "Zonas norte" })).toBeInTheDocument();
 });
 it("creates a text attribute with an immutable key and without reading catalogs", async () => {
  const bodies: unknown[] = [];
@@ -243,8 +247,7 @@ it("creates a person attribute named only in the menu language", async () => {
   expect(dialog.queryByRole("textbox", { name: "Name in English" })).not.toBeInTheDocument();
   await userEvent.type(dialog.getByRole("textbox", { name: "Name" }), "Zone");
   expect(dialog.getByRole("textbox", { name: "Key" })).toHaveValue("zone");
-  await userEvent.click(dialog.getByRole("combobox", { name: "Catalog" }));
-  await userEvent.click(await screen.findByRole("option", { name: "Zones · 2 options" }));
+  await userEvent.click(await within(await openPicker(dialog.getByRole("button", { name: /^Catalog/ }))).findByRole("option", { name: "Zones" }));
   await userEvent.click(dialog.getByRole("button", { name: "Save" }));
   await waitFor(() => expect(bodies).toEqual([{ key: "zone", name: { en: "Zone" }, type: "Catalog", sourceCatalogId: zones }]));
  } finally {
@@ -297,14 +300,14 @@ it("chooses the catalog in a dropdown, without its description, a separate searc
  await userEvent.hover(dialog.getByRole("button", { name: "Qué es la clave" }));
  expect(await screen.findByRole("tooltip")).toHaveTextContent(keyHelp);
  await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Zona");
- // The same dropdown as a catalog field: the first catalogs when it opens, without a search or a list of its own.
+ // The same list as a catalog field: the first catalogs when it opens, without a search or a list of its own beside it.
  expect(dialog.queryByRole("searchbox", { name: "Buscar catálogo" })).not.toBeInTheDocument();
  expect(dialog.queryByRole("link", { name: "Ver el catálogo" })).not.toBeInTheDocument();
- const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
- await userEvent.click(catalog);
- expect(await screen.findByRole("option", { name: "Regiones · 2 opciones" })).toBeInTheDocument();
- await userEvent.click(screen.getByRole("option", { name: "Zonas · 2 opciones" }));
- expect(catalog).toHaveValue("Zonas");
+ const catalog = dialog.getByRole("button", { name: /^Catálogo/ });
+ const list = await openPicker(catalog);
+ expect(await within(list).findByRole("option", { name: "Regiones" })).toHaveAccessibleDescription("2 opciones");
+ await userEvent.click(within(list).getByRole("option", { name: "Zonas" }));
+ expect(catalog).toHaveAccessibleName("Catálogo Zonas");
  expect(dialog.queryByText("Zonas de reparto")).not.toBeInTheDocument();
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "zona", name: { es: "Zona" }, type: "Catalog", sourceCatalogId: zones }]));
@@ -402,16 +405,16 @@ it("asks to confirm clearing stored values under the catalog when only the sourc
   }));
  await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
  const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
- const catalog = dialog.getByRole("combobox", { name: "Catálogo" });
- const choose = async (option: string) => { await userEvent.click(catalog); await userEvent.click(await screen.findByRole("option", { name: option })); };
- await waitFor(() => expect(catalog).toHaveValue("Zonas"));
- await choose("Regiones · 2 opciones");
+ const catalog = dialog.getByRole("button", { name: /^Catálogo/ });
+ const choose = async (option: string) => { await userEvent.click(await within(await openPicker(catalog)).findByRole("option", { name: option })); };
+ await waitFor(() => expect(catalog).toHaveAccessibleName("Catálogo Zonas"));
+ await choose("Regiones");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  const confirm = await dialog.findByRole("checkbox", { name: "Sí, cambiar el dato y borrar el valor que tiene cargado una persona" });
  expect(catalog).toHaveAccessibleDescription(notConfirmed);
  await userEvent.click(confirm);
  expect(confirm).toBeChecked();
- await choose("Sucursales · 2 opciones");
+ await choose("Sucursales");
  expect(confirm).not.toBeChecked();
  await userEvent.click(confirm);
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
@@ -502,8 +505,8 @@ it("gives why the catalog of an attribute in use is off as its reason", async ()
   page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
  await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
  const dialog = await screen.findByRole("dialog", { name: "Editar dato" });
- await waitFor(() => expect(within(dialog).getByRole("combobox", { name: "Catálogo" })).toHaveValue("Zonas"));
- expect(within(dialog).getByRole("combobox", { name: "Catálogo" })).toBeDisabled();
+ await waitFor(() => expect(within(dialog).getByRole("button", { name: /^Catálogo/ })).toHaveAccessibleName("Catálogo Zonas"));
+ expect(within(dialog).getByRole("button", { name: /^Catálogo/ })).toBeDisabled();
  expect(within(dialog).getByRole("group", { name: "Catálogo" })).toHaveAccessibleDescription(inUseReason);
  expect(valueOf(dialog, "Se usa en")).toHaveTextContent(/^Pedir repuesto$/);
 });

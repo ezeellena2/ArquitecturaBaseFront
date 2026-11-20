@@ -45,13 +45,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await contained(page, fields, width);
     await page.screenshot({ path: info.outputPath("ce1-fields-modal.png"), fullPage: true });
     await back(); await choose(es ? "Zona" : "Zone");
-    const source = fields.getByRole("combobox", { name: es ? "Catálogo" : "Catalog", exact: true });
-    await expect(source).toHaveValue(es ? "Zonas" : "Zones");
-    // A dropdown: the arrow at its end, and a click shows the first catalogs before typing anything.
-    await expect(source.locator("xpath=..").locator('[data-slot="autocomplete-arrow"]')).toBeVisible();
+    // DS1-A: the catalog is the only piece to choose; its list shows the first catalogs, each with its options in grey, and
+    // searches inside (on the phone it takes the screen).
+    const source = fields.getByRole("button", { name: es ? "Catálogo Zonas" : "Catalog Zones", exact: true });
     await source.click();
-    await expect(page.getByRole("option", { name: es ? /^Proveedores · \d+ opciones$/ : /^Suppliers · \d+ options$/ })).toBeVisible();
-    await expect(page.getByRole("option", { name: es ? /^Zonas · \d+ opciones$/ : /^Zones · \d+ options$/ })).toBeVisible();
+    const sources = page.getByRole("listbox", { name: es ? "Catálogo" : "Catalog", exact: true });
+    await expect(sources.getByRole("option", { name: es ? "Proveedores" : "Suppliers", exact: true })).toHaveAccessibleDescription(es ? /^\d+ opciones$/ : /^\d+ options$/);
+    await expect(sources.getByRole("option", { name: es ? "Zonas" : "Zones", exact: true })).toHaveAccessibleDescription(es ? /^\d+ opciones$/ : /^\d+ options$/);
     await page.screenshot({ path: info.outputPath("ce1-source-dropdown.png"), fullPage: true });
     await page.keyboard.press("Escape");
     await back(); await choose(es ? "Plazo de pago (días)" : "Payment term (days)");
@@ -113,9 +113,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     if (width < 640) await expectRightAligned(region.locator("tbody tr").first().locator("td").nth(await days.evaluate(node => (node as HTMLTableCellElement).cellIndex)));
     if (width < 1024) await expectPinnedLineWhileScrolled(region, region.locator('thead [data-pinned="start"]'));
     const menu = page.getByRole("button", { name: es ? "Columnas" : "Columns", exact: true });
-    await menu.click(); await page.getByRole("menuitemcheckbox", { name: "CUIT", exact: true }).click();
+    // DS1-A: «Columnas» is the only piece to choose several, with the button of the bar; on a computer each mark applies at once,
+    // on the phone «Listo (N)» applies them.
+    const columns = page.getByRole("listbox", { name: es ? "Columnas" : "Columns", exact: true });
+    await menu.click(); await columns.getByRole("option", { name: "CUIT", exact: true }).click();
+    if (width < 640) await page.getByRole("button", { name: es ? /^Listo \(\d+\)$/ : /^Done \(\d+\)$/ }).click();
     await expect(page.getByRole("columnheader", { name: "CUIT", exact: true })).toHaveCount(0);
-    await page.getByRole("menuitemcheckbox", { name: "CUIT", exact: true }).click(); await page.keyboard.press("Escape");
+    if (width < 640) await menu.click();
+    await columns.getByRole("option", { name: "CUIT", exact: true }).click();
+    if (width < 640) await page.getByRole("button", { name: es ? /^Listo \(\d+\)$/ : /^Done \(\d+\)$/ }).click(); else await page.keyboard.press("Escape");
     await expect(menu).toBeFocused();
     await expect(page.getByRole("columnheader", { name: "CUIT", exact: true })).toBeVisible();
     const edit = page.getByRole("button", { name: es ? "Editar Frío Sur S.A." : "Edit Frío Sur S.A.", exact: true });

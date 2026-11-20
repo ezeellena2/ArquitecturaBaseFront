@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Button } from "@/shared/ui/button";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { DataList } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
 import { AlertTriangleIcon, CheckIcon } from "@/shared/ui/icons";
@@ -18,6 +18,7 @@ import { administrativeName } from "../editorModel";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogItems, useCatalogPresentationCheck } from "../hooks/useCatalogQueries";
 import { usePersonAttributes } from "../hooks/usePersonData";
+import { usePickerPages } from "../hooks/usePickerPages";
 import { useRecipientMaximum, useRecipientPreview, useRecipientSamples } from "../hooks/useRecipientPreview";
 import type { CatalogQuestionPreview, DraftQuestionSource, FormCulture } from "../model";
 import { CatalogGroupBySetting } from "./CatalogGroupBy";
@@ -88,12 +89,13 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
   const items = useCatalogItems(scope, catalog?.kind === "Manual" ? catalog.id : "", catalog?.revision ?? null, { page: 1, pageSize: 20, isActive: true, sort: "text" });
   // Only a Manual catalog offers the per-person test: with any other one no person stays chosen and no samples are read.
   const preview = useRecipientPreview({ ...scope, culture: contentCulture }, catalog?.kind === "Manual" ? definitionId : null, questionId, type, source);
-  const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
-  useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
-  const samples = useRecipientSamples(scope, { page: 1, pageSize: 20, search: settled }, preview.available);
+  // The people to try with are the only piece to choose (DS1-A): searched in the server, twenty at a time with «Mostrar N más».
+  const samplePages = usePickerPages<{ id: string; name: string }>();
+  const samples = useRecipientSamples(scope, { page: samplePages.page, pageSize: 20, search: samplePages.settled }, preview.available);
+  const people = samplePages.list(samples);
   // Retrying the people says so in the line that offered it, until the answer arrives.
   const [samplesRetrying, setSamplesRetrying] = useState(false);
-  const sampleStatus = samples.isFetching || search !== null && search !== settled ? t("searching") : samples.data?.items.length === 0 ? t("personData.noPeople") : undefined;
+  const retrySamples = () => { setSamplesRetrying(true); void samples.refetch().finally(() => setSamplesRetrying(false)); };
   // The maximum depends only on the filters of a Manual catalog: no person and no saved form; its label is in the menu language.
   const maximum = useRecipientMaximum(scope, catalog?.kind === "Manual" ? source : null, catalog?.revision ?? null);
   const groupField = source.groupBy ? fields.find(field => field.id === source.groupBy) : undefined;
@@ -143,8 +145,13 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
         summary={<CatalogQuestionFilterSummary source={source} fields={fields} scope={scope} answers={answers}/>} actions={!readOnly ? <CatalogQuestionFilterActions source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} answers={answers} onChange={change}/> : null}>
         <div className="flex flex-col gap-4 p-4"><CatalogQuestionFilters source={source} fields={fields} attributes={attributes.data?.items ?? []} attributesLoading={attributes.isLoading} scope={scope} readOnly={readOnly} errors={errors} answers={answers} onChange={change}/>
         {attributes.isError ? <p role="alert" className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.filter.dataFailed")}</p> : null}
-        <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : dependsOnAnswer ? t("catalogQuestion.preview.dependsOnAnswer") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Autocomplete value={search ?? preview.person?.name ?? ""} options={(samples.data?.items ?? []).map(person => ({ id: person.id, label: person.name }))} disabled={!preview.available || !preview.complete} status={sampleStatus} aria-label={t("catalogQuestion.preview.asRecipient")} onValueChange={text => { setSearch(text); if (!text) { onPreviewChange?.(questionId, null); preview.select(null); } }} onBlur={() => setSearch(null)} onSelect={id => { const person = samples.data?.items.find(person => person.id === id); if (person) { onPreviewChange?.(questionId, null); preview.select(person); setSearch(null); } }}/></DisabledReason></FormField>
-        {preview.busy ? <div role="status" className="flex items-center gap-2"><Spinner/><p className="text-sm">{t("catalogQuestion.preview.loading")}</p></div> : samplesRetrying ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("searching")}</p></div> : preview.denied || samples.denied ? <p role="alert" className="text-sm">{t("catalogQuestion.preview.denied")}</p> : preview.error || samples.isError ? <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.preview.failed")}</p>{offerRetry ? <DisabledReason reason={retryDisabled ? t("wait", { count: retryWait }) : null}><Button type="button" variant="link" disabled={retryDisabled} onClick={() => { if (samples.isError) { setSamplesRetrying(true); void samples.refetch().finally(() => setSamplesRetrying(false)); } else preview.retry(); }}>{t("common:actions.retry")}</Button></DisabledReason> : null}</div> : preview.result ? <div role="status" className="space-y-1"><p className="text-sm font-medium">{t(preview.result.state === "Ready" ? "catalogQuestion.preview.count" : preview.result.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable", { count: preview.result.optionCount })}</p>{preview.result.recipient.values.length ? <DataList items={preview.result.recipient.values.map(value => ({ key: value.attributeId, label: value.name, value: value.text || "—" }))}/> : null}{preview.result.exceedsLimit ? <p className="text-sm text-[var(--color-warning-700)]">{t("catalogQuestion.preview.exceeds", { limit: preview.result.limit })}</p> : null}</div> : null}
+        <FormField label={t("catalogQuestion.preview.asRecipient")}><DisabledReason reason={!definitionId ? t("catalogQuestion.preview.saveFirst") : dependsOnAnswer ? t("catalogQuestion.preview.dependsOnAnswer") : !preview.complete ? t("catalogQuestion.preview.completeFilters") : null} className="grid w-full"><Picker label={t("catalogQuestion.preview.asRecipient")} value={preview.person?.id ?? null} placeholder={t("catalogs.filters.samplePlaceholder")} disabled={!preview.available || !preview.complete}
+          options={people.options.map(person => ({ id: person.id, label: person.name }))} selectedOptions={preview.person ? [{ id: preview.person.id, label: preview.person.name }] : undefined}
+          search={samplePages.search} onSearchChange={samplePages.onSearchChange} total={people.total} loading={people.loading} failed={people.failed}
+          onRetry={samples.retryable ? retrySamples : undefined} retryReason={samples.waitSeconds > 0 ? t("wait", { count: samples.waitSeconds }) : null}
+          onLoadMore={people.onLoadMore} loadingMore={people.loadingMore} pageSize={people.pageSize}
+          onChange={id => { const person = people.options.find(item => item.id === id); if (person && person.id !== preview.person?.id) { onPreviewChange?.(questionId, null); preview.select(person); } }}/></DisabledReason></FormField>
+        {preview.busy ? <div role="status" className="flex items-center gap-2"><Spinner/><p className="text-sm">{t("catalogQuestion.preview.loading")}</p></div> : samplesRetrying ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("searching")}</p></div> : preview.denied || samples.denied ? <p role="alert" className="text-sm">{t("catalogQuestion.preview.denied")}</p> : preview.error || samples.isError ? <div role="alert"><p className="text-sm text-[var(--color-danger)]">{t("catalogQuestion.preview.failed")}</p>{offerRetry ? <DisabledReason reason={retryDisabled ? t("wait", { count: retryWait }) : null}><Button type="button" variant="link" disabled={retryDisabled} onClick={() => { if (samples.isError) retrySamples(); else preview.retry(); }}>{t("common:actions.retry")}</Button></DisabledReason> : null}</div> : preview.result ? <div role="status" className="space-y-1"><p className="text-sm font-medium">{t(preview.result.state === "Ready" ? "catalogQuestion.preview.count" : preview.result.state === "RecipientDataMissing" ? "catalogQuestion.preview.missingData" : "catalogQuestion.preview.unavailable", { count: preview.result.optionCount })}</p>{preview.result.recipient.values.length ? <DataList items={preview.result.recipient.values.map(value => ({ key: value.attributeId, label: value.name, value: value.text || "—" }))}/> : null}{preview.result.exceedsLimit ? <p className="text-sm text-[var(--color-warning-700)]">{t("catalogQuestion.preview.exceeds", { limit: preview.result.limit })}</p> : null}</div> : null}
         <RecipientMaximumState maximum={maximum} type={type} inApp={inApp} byPerson={(source.match ?? []).some(match => "personAttributeId" in match)}
           groupName={groupField ? administrativeName(groupField.name, scope.culture) : null}/></div>
       </CollapsibleSection>

@@ -6,6 +6,7 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { Button } from "@/shared/ui/button";
 import { PlusIcon } from "@/shared/ui/icons";
 import { Pagination } from "@/shared/ui/Pagination";
+import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 import { administrativeName } from "../editorModel";
 import type { CatalogManualItemValue } from "../catalogItemEdits";
@@ -13,8 +14,6 @@ import type { FormCulture } from "../model";
 import { CatalogItemsTable } from "./CatalogItemsTable";
 import type { CatalogFieldDraft } from "../catalogFields";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem } from "@/shared/ui/dropdown-menu";
-import { FilterMenuTrigger } from "@/shared/ui/FilterMenuTrigger";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 
 export function CatalogManualItemsEditor({ items, culture, original, valueType, fields = [], scope, canManage, busy = false, refreshing = false, hasPendingMoves = false, errors, onEdit, onChange, onFieldBlur, onAdd, onMove, onRemove, deletedItemIds, deleteErrors, onDelete, onRestore, filters, pagination, totalCount = pagination?.totalCount, onPageChange, onPageSizeChange, actions, notice, warnings, pendingTexts, sortPending }: {
@@ -63,10 +62,16 @@ export function CatalogManualItemsEditor({ items, culture, original, valueType, 
   const addRef = useRef<HTMLButtonElement>(null);
   const [deleting, setDeleting] = useState<CatalogManualItemValue | null>(null);
   const fieldsInsideTable = useMediaQuery("(min-width: 640px)");
+  const activeFields = fields.filter(field => field.isActive);
   return <Surface title={t("catalogs.items.title")} actions={<>{canManage ? <Button ref={addRef} type="button" variant="outline" disabled={busy} onClick={onAdd}><PlusIcon className="size-4" />{t("addOption")}</Button> : null}{actions}</>}>
     {notice}
     {selected.length && canManage ? <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-4 py-2"><p className="mr-auto text-sm">{t("catalogs.items.selectedPage", { count: selected.length })}</p><Button variant="outline" size="sm" disabled={busy} onClick={() => items.filter(item => selected.includes(item.localId)).forEach(item => onChange({ ...item, isActive: false }))}>{t("catalogs.lifecycle.deactivate")}</Button><Button variant="outline" size="sm" disabled={busy} onClick={() => items.filter(item => selected.includes(item.localId)).forEach(item => onChange({ ...item, isActive: true }))}>{t("catalogs.items.reactivate")}</Button><Button variant="ghost" size="sm" onClick={() => setSelection({ pageKey, ids: [] })}>{t("catalogs.items.clearSelection")}</Button></div> : null}
-    {fields.some(field => field.isActive) ? <div className="flex flex-wrap items-center gap-3 p-4">{filters}<DropdownMenu><FilterMenuTrigger>{t("catalogs.fields.columns")}</FilterMenuTrigger><DropdownMenuContent align="start">{fields.filter(field => field.isActive).map(field => <DropdownMenuCheckboxItem key={field.localId} checked={!hiddenFields.includes(field.localId)} onSelect={event => event.preventDefault()} onCheckedChange={visible => setHiddenFields(current => visible ? current.filter(id => id !== field.localId) : [...current, field.localId])}>{administrativeName(field.name, culture) || t("catalogs.fields.new")}</DropdownMenuCheckboxItem>)}</DropdownMenuContent></DropdownMenu></div> : filters}
+    {/* «Columnas» is the only piece to choose several (DS1-A) with the button of the bar, which keeps saying «Columnas»: each mark
+        shows or hides the column of a field at once; on the phone, with «Listo». */}
+    {activeFields.length ? <div className="flex flex-wrap items-center gap-3 p-4">{filters}<Picker multiple trigger="button" label={t("catalogs.fields.columns")} triggerLabel={t("catalogs.fields.columns")}
+      options={activeFields.map(field => ({ id: field.localId, label: administrativeName(field.name, culture) || t("catalogs.fields.new") }))}
+      value={activeFields.filter(field => !hiddenFields.includes(field.localId)).map(field => field.localId)}
+      onChange={ids => setHiddenFields(activeFields.filter(field => !ids.includes(field.localId)).map(field => field.localId))} /></div> : filters}
     <CatalogItemsTable fields={fields} scope={scope} visibleFieldIds={fields.filter(field => !hiddenFields.includes(field.localId)).map(field => field.localId)} inline={fieldsInsideTable} selected={selected} onSelect={(id, checked) => setSelection({ pageKey, ids: checked ? [...selected, id] : selected.filter(value => value !== id) })} onSelectAll={checked => setSelection({ pageKey, ids: checked ? items.map(item => item.localId) : [] })} errors={errors} warnings={warnings} pendingTexts={pendingTexts} sortPending={sortPending} items={items} culture={culture} original={original} valueType={valueType} canManage={canManage} busy={busy} refreshing={refreshing} hasPendingMoves={hasPendingMoves} totalCount={totalCount}
       onEdit={onEdit} onChange={onChange} onFieldBlur={onFieldBlur} onMove={onMove} onRemove={onRemove ? item => { addRef.current?.focus(); onRemove(item); } : undefined}
       deletedItemIds={deletedItemIds} deleteErrors={deleteErrors} onDelete={onDelete ? setDeleting : undefined} onRestore={onRestore}

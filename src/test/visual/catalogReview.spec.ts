@@ -24,7 +24,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("menuitem", { name: label("Reactivar", "Reactivate"), exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: label("Reactivar", "Reactivate"), exact: true }).click();
     if (filters) {
-      await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click();
+      await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click();
       await page.getByRole("option", { name: filterOptions.sampleUsers.items[0]!.name, exact: true }).click();
     }
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
@@ -43,7 +43,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId, lang: language, scenario: "catalogs-filters" }));
     const text = page.getByRole("button", { name: new RegExp("^" + label("Texto de cada opción", "Option text") + " ") });
     await text.waitFor();
-    const sample = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    const sample = page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
     await sample.fill("Persona");
     await expect(sample).toBeFocused();
     await expect(text).toBeVisible();

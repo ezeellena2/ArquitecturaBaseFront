@@ -469,7 +469,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await applyFields(user);
     expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
-    expect(screen.getByRole("combobox", { name: "Zona" })).toHaveValue("Sur");
+    expect(screen.getByRole("button", { name: "Zona Sur" })).toBeInTheDocument();
   });
   const sourceId = "01990000-0000-7000-8000-000000000040", southId = "01990000-0000-7000-8000-000000000041";
   // Pérez's loaded value of a field saved as an option of «Zonas» or as a yes/no, shown in «En WhatsApp» after its text.
@@ -753,7 +753,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("2 opciones tienen valores que no cumplen las reglas del campo.")).toBeInTheDocument();
-    for (const name of ["Fila 1 · Zona", "Fila 2 · Zona"]) expect(screen.getByRole("combobox", { name })).toHaveAccessibleDescription(name + ": «Sur» se repite en otra opción activa.");
+    for (const name of ["Fila 1 · Zona", "Fila 2 · Zona"]) expect(screen.getByRole("button", { name: name + " Sur" })).toHaveAccessibleDescription(name + ": «Sur» se repite en otra opción activa.");
     expect(screen.queryByText(new RegExp(southId))).not.toBeInTheDocument();
   });
   it("quotes a saved decimal that breaks a new maximum as its cell shows it, next to the range", async () => {
@@ -1030,7 +1030,15 @@ function filterSetup(permissions = ["formcatalogs.read", "formcatalogs.manage"])
     { key: "active", dataType: "boolean", canDisplay: true, canFilter: true, canSort: true, operators: ["equals"], choices: [{ key: "true", label: "Active" }, { key: "false", label: "Inactive" }] }
   ], sampleUsers: permissions.includes("formcatalogs.manage") ? { items: [{ id: itemId, name: "Ana" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } : null })));
 }
-async function selectSample() { const user = userEvent.setup(); await user.click(await screen.findByRole("combobox", { name: "Como si lo recibiera" })); await user.click(await screen.findByRole("option", { name: "Ana" })); }
+async function selectSample() { await pick(await screen.findByRole("button", { name: /^Como si lo recibiera/ }), "Ana"); }
+// The sample people are the only piece to choose (DS1-A): its list opens with the keyboard and searches inside.
+async function openSamples() {
+  const trigger = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
+  await waitFor(() => expect(trigger).toBeEnabled());
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Como si lo recibiera" });
+}
 describe("Filters editor connected to current DTOs", () => {
   it("edits conditions, previews explicitly and saves only configuration", async () => {
     filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
@@ -1065,7 +1073,7 @@ describe("Filters editor connected to current DTOs", () => {
     expect(name).toHaveValue("Customers");
     expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes editado");
     expect(await screen.findByRole("button", { name: "Column for condition 1 Role" })).toBeInTheDocument();
-    await user.click(await screen.findByRole("combobox", { name: "As if received by" })); await user.click(await screen.findByRole("option", { name: "Ana" }));
+    await pick(await screen.findByRole("button", { name: /^As if received by/ }), "Ana");
     await user.click(screen.getByRole("button", { name: "Save" })); await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, filters: { conditions: [{ column: "role", operator: "has" }] } });
   });
@@ -1083,7 +1091,7 @@ describe("Filters editor connected to current DTOs", () => {
   it("renders permitted configuration read-only without sample identities or preview writes", async () => {
     filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
     expect(await screen.findByRole("button", { name: /^Texto de cada opción / })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
-    expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Probar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Como si lo recibiera/ })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Probar" })).not.toBeInTheDocument();
     // Without Manage there is nothing to test: no preview, and no text saying so (2026-10-31).
     expect(screen.queryByRole("region", { name: "Vista previa" })).not.toBeInTheDocument();
     expect(screen.queryByText(/para probar esta vista/)).not.toBeInTheDocument();
@@ -1098,7 +1106,7 @@ describe("Filters editor connected to current DTOs", () => {
     server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false }); }),
       http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: { ...filtersDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    const sample = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+    const sample = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
     await pasteText(user, screen.getByRole("textbox", { name: "Nombre" }), " editado");
     // Without a sample person Save stays enabled: trying it marks the person and takes the focus there, sending nothing.
     const save = screen.getByRole("button", { name: "Guardar" });
@@ -1193,7 +1201,7 @@ it("edits fixed Users filters without source availability flags", async () => {
   server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false })));
   await mount("/catalogos/" + id);
   expect(await screen.findByRole("button", { name: /^Texto de cada opción / })).toBeEnabled();
-  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: /^Como si lo recibiera/ })).toBeEnabled();
   await selectSample();
   expect(screen.getByRole("button", { name: "Probar" })).toBeEnabled();
   await userEvent.setup().click(screen.getByRole("button", { name: "Probar" }));
@@ -1211,20 +1219,21 @@ it("keeps sample search focused and enabled while its next page is loading", asy
     searches++; await gate;
     return HttpResponse.json({ ...options, sampleUsers: { items: [{ id: itemId, name: "Persona buscada" }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false } });
   }));
-  await mount("/catalogos/" + id); const user = userEvent.setup(); const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
-  await waitFor(() => expect(input).toBeEnabled());
+  await mount("/catalogos/" + id); const user = userEvent.setup(); const list = await openSamples();
+  const input = screen.getByRole("combobox", { name: "Buscar en Como si lo recibiera" });
   try {
-    await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("button", { name: /^Texto de cada opción / })).toBeInTheDocument(); expect(searches).toBe(1);
+    // The editor under the open list stays (hidden from the reader while the list is open).
+    await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("button", { name: /^Texto de cada opción /, hidden: true })).toBeInTheDocument(); expect(searches).toBe(1);
     // While it searches, the open list says so instead of showing the previous people.
-    expect(screen.getByRole("listbox")).toHaveTextContent("Buscando…");
-    expect(within(screen.getByRole("listbox")).queryByRole("option")).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument();
+    expect(within(list).queryByRole("option")).not.toBeInTheDocument();
   }
   finally { release(); }
-  expect(await screen.findByRole("option", { name: "Persona buscada" })).toBeInTheDocument();
-  expect(screen.queryByText("Buscando…")).not.toBeInTheDocument();
+  expect(await within(list).findByRole("option", { name: "Persona buscada" })).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Buscando…" })).not.toBeInTheDocument();
 });
 
-it("keeps Retry of the sample people in place, working, while they are read again", async () => {
+it("says in their list that the sample people failed and reads them again with «Reintentar»", async () => {
   filterSetup(); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); let fail = false, release: (() => void) | undefined;
   server.use(http.get("/api/forms/catalog-filter-options", async ({ request }) => {
     if (!new URL(request.url).searchParams.get("search")) return HttpResponse.json(options);
@@ -1232,15 +1241,16 @@ it("keeps Retry of the sample people in place, working, while they are read agai
     await new Promise<void>(resolve => { release = resolve; });
     return HttpResponse.json(options);
   }));
-  await mount("/catalogos/" + id); const user = userEvent.setup();
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
-  fail = true; await user.type(input, "Ana");
-  const retry = await screen.findByRole("button", { name: "Reintentar" });
-  fail = false; await user.click(retry);
-  expect(screen.getByRole("button", { name: "Reintentando…" })).toHaveAttribute("aria-busy", "true");
+  await mount("/catalogos/" + id); const user = userEvent.setup(); const list = await openSamples();
+  fail = true; await user.type(screen.getByRole("combobox", { name: "Buscar en Como si lo recibiera" }), "Ana");
+  expect(await screen.findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
+  fail = false; await user.click(screen.getByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
   await waitFor(() => expect(release).toBeDefined());
   await act(async () => { release!(); });
-  await waitFor(() => expect(screen.queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
+  await waitFor(() => expect(within(list).getAllByRole("option").length).toBeGreaterThan(0));
+  expect(screen.queryByRole("status", { name: "Buscando…" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
 
  it("preserves the filters editor and its draft when sample search fails", async () => {
@@ -1251,14 +1261,17 @@ it("keeps Retry of the sample people in place, working, while they are read agai
   const text = await screen.findByRole("button", { name: /^Texto de cada opción / });
   const detail = screen.getByRole("button", { name: /^Detalle / });
   await pick(detail, "Activo");
-  const input = screen.getByRole("combobox", { name: "Como si lo recibiera" });
-  await user.type(input, "Sin respuesta");
+  await openSamples();
+  await user.type(screen.getByRole("combobox", { name: "Buscar en Como si lo recibiera" }), "Sin respuesta");
   await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([message]) => message.kind === "error")).toBe(true));
+  expect(screen.getByRole("combobox", { name: "Buscar en Como si lo recibiera" })).toHaveFocus();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
   expect(screen.getByRole("button", { name: /^Texto de cada opción / })).toBe(text);
   expect(text).toHaveAccessibleName("Texto de cada opción Nombre");
   expect(screen.getByRole("button", { name: /^Detalle / })).toBe(detail);
   expect(detail).toHaveAccessibleName("Detalle Activo");
-  expect(input).toHaveFocus();
+  expect(screen.getByRole("button", { name: /^Como si lo recibiera/ })).toHaveFocus();
  });
 
 it.each([false, true])("saves and reloads deactivation and reactivation for Filters=%s", async filters => {
@@ -1353,8 +1366,7 @@ it("marks the complete unrepresentable person in the filter preview", async () =
   filterSetup(); const longName = "Una persona con nombre que supera treinta caracteres";
   server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({items:[{id,text:longName,detail:null,canSend:false}],totalCount:1,exceedsLimit:false})));
   await mount("/catalogos/" + id);
-  await userEvent.type(await screen.findByRole("combobox", {name:"Como si lo recibiera"}), "Ana");
-  await userEvent.click(await screen.findByRole("option", {name:"Ana"}));
+  await selectSample();
   await userEvent.click(screen.getByRole("button", {name:"Probar"}));
   expect(await screen.findByText(longName)).toBeInTheDocument();
   expect(screen.getByText("No entra en WhatsApp: máximo 30 caracteres de texto y 300 de detalle.")).toBeInTheDocument();
@@ -1374,38 +1386,37 @@ it.each([false,true].flatMap(filters=>["network",500,503].map(failure=>({filters
   await waitFor(()=>expect(writes).toBe(2));
 });
 
-it("does not reset the sample page when its initial search is unchanged", async () => {
+it("keeps the sample people of the next page when its initial search is unchanged", async () => {
   filterSetup();
   const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw));
   server.use(http.get("/api/forms/catalog-filter-options", ({request}) => {
     const page = Number(new URL(request.url).searchParams.get("page") ?? 1);
-    return HttpResponse.json({...options,sampleUsers:{items:[{id:itemId,name:page===1 ? "Primera persona" : "Segunda persona"}],page,pageSize:20,totalCount:21,totalPages:2,hasPrevious:page>1,hasNext:page===1}});
+    return HttpResponse.json({...options,sampleUsers:{items:[{id:page===1 ? itemId : "01990000-0000-7000-8000-000000000999",name:page===1 ? "Primera persona" : "Segunda persona"}],page,pageSize:20,totalCount:21,totalPages:2,hasPrevious:page>1,hasNext:page===1}});
   }));
   await mount("/catalogos/" + id);
-  await userEvent.click(await screen.findByRole("button", {name:"Página siguiente"}));
-  await screen.findByText("Página 2 de 2", {exact:true});
+  const list = await openSamples();
+  await userEvent.click(await screen.findByRole("button", {name:"Mostrar 20 más"}));
+  expect(await within(list).findByRole("option", {name:"Segunda persona"})).toBeInTheDocument();
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 350)); });
-  expect(screen.getByText("Página 2 de 2", {exact:true})).toBeInTheDocument();
-  expect(screen.getByRole("button", {name:"Página anterior"})).toBeEnabled();
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Primera persona", "Segunda persona"]);
 });
 
-it("shows a spinner beside the sample people's pages while another page is read", async () => {
+it("says it loads on «Mostrar N más» while the next sample people are read", async () => {
   filterSetup(); const options = readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)); let release: (() => void) | undefined;
   server.use(http.get("/api/forms/catalog-filter-options", async ({ request }) => {
     const page = Number(new URL(request.url).searchParams.get("page") ?? 1);
     if (page === 2) await new Promise<void>(resolve => { release = resolve; });
-    return HttpResponse.json({ ...options, sampleUsers: { items: [{ id: itemId, name: page === 1 ? "Primera persona" : "Segunda persona" }], page, pageSize: 20, totalCount: 21, totalPages: 2, hasPrevious: page > 1, hasNext: page === 1 } });
+    return HttpResponse.json({ ...options, sampleUsers: { items: [{ id: page === 1 ? itemId : "01990000-0000-7000-8000-000000000999", name: page === 1 ? "Primera persona" : "Segunda persona" }], page, pageSize: 20, totalCount: 21, totalPages: 2, hasPrevious: page > 1, hasNext: page === 1 } });
   }));
   await mount("/catalogos/" + id);
-  const preview = await screen.findByRole("region", { name: "Vista previa" });
-  await screen.findByText("Página 1 de 2", { exact: true });
-  expect(within(preview).queryByRole("status")).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Página siguiente" }));
+  const list = await openSamples();
+  await userEvent.click(await screen.findByRole("button", { name: "Mostrar 20 más" }));
   await waitFor(() => expect(release).toBeDefined());
-  expect(within(preview).getByRole("status")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Cargando…" })).toBeInTheDocument();
+  expect(within(list).getByRole("option", { name: "Primera persona" })).toBeInTheDocument();
   await act(async () => { release!(); });
-  await screen.findByText("Página 2 de 2", { exact: true });
-  expect(within(preview).queryByRole("status")).not.toBeInTheDocument();
+  expect(await within(list).findByRole("option", { name: "Segunda persona" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Cargando…" })).not.toBeInTheDocument();
 });
 
 it.each(["es", "en"] as const)("edits an exact typed value in %s, retains invalid input and never changes the persisted type", async language => {

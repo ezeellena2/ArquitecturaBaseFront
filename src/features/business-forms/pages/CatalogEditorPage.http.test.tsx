@@ -57,7 +57,7 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
     const label = "Valor de la condición " + (index + 1); const choice = options.columns.find(item => item.key === condition.column)?.choices?.find(item => item.key === condition.value);
     if (choice) await pick(label, choice.label); else await pasteText(user, screen.getByRole("textbox", { name: label }), condition.value);
   }
-  await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
+  await pick("Como si lo recibiera", person.name);
   await user.click(screen.getByRole("button", { name: "Probar" }));
   await screen.findByText(preview.items[0]!.text, { exact: true }); expect(screen.getByText(preview.items[0]!.detail!, { exact: true })).toBeInTheDocument(); expect(received).toEqual([capturedPreviewRequest]);
 }, 20_000);

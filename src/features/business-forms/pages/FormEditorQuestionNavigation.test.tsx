@@ -31,13 +31,13 @@ it("opens the question named by the catalog usage link and focuses its catalog",
   const label = await screen.findByRole("textbox", { name: "Pregunta" });
   expect(label).toHaveValue("Cliente");
   expect(expandedQuestions().map(button => button.getAttribute("aria-label"))).toEqual(["Editar Cliente"]);
-  // The catalog is a dropdown that can be chosen while its list loads (2026-10-31): it takes the focus on arrival.
-  const catalog = screen.getByRole("combobox", { name: "Catálogo" });
+  // The catalog is the only piece to choose, which can be opened while its list loads (2026-10-31): it takes the focus on arrival.
+  const catalog = screen.getByRole("button", { name: /^Catálogo/ });
   await waitFor(() => expect(catalog).toHaveFocus());
   expect(catalog).toBeEnabled();
 
   act(() => releaseCatalogs());
-  await waitFor(() => expect(catalog).toHaveValue("Clientes"));
+  await waitFor(() => expect(catalog).toHaveAccessibleName("Catálogo Clientes"));
   expect(catalog).toHaveFocus();
   cleanup();
 

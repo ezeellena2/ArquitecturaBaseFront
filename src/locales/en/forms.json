@@ -374,7 +374,7 @@
       "empty": "There are no extra fields yet.",
       "keyHint": "Used by the template, imports and stored data. It does not change after saving.",
       "optionalFirst": "A new field starts optional: every active option needs a value before it can be required.",
-      "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values", "saveToEnterValues": "Save the catalog to enter values for the new fields.", "limit_one": "A catalog can have up to {{count}} field.", "limit_other": "A catalog can have up to {{count}} fields.",
+      "unique": "Unique", "requiredLabel": "Required", "min": "Minimum", "max": "Maximum", "savedFirst": "Save to enter values", "noValue": "No value", "sourceOptions_one": "{{count}} option", "sourceOptions_other": "{{count}} options", "saveToEnterValues": "Save the catalog to enter values for the new fields.", "limit_one": "A catalog can have up to {{count}} field.", "limit_other": "A catalog can have up to {{count}} fields.",
       "removeTitle": "Remove “{{name}}”", "remove": "Remove field", "removeHint": "Removed from the table, template and Excel. Responses that already captured it keep it.",
       "confirmRemoval_one": "Yes, remove the field and its value", "confirmRemoval_other": "Yes, remove the field and its {{count}} values", "detail": { "between": "From {{min}} to {{max}}", "from": "From {{min}}", "to": "Up to {{max}}", "length_one": "{{count}} character", "length_other": "{{count}} characters", "source_one": "{{name}} · 1 option", "source_other": "{{name}} · {{count}} options" }, "inUse": "This field is in use. Remove those uses before removing it.",
       "usage": {
@@ -579,7 +579,7 @@
         "has": "Has role"
       },
       "previewTitle": "Preview",
-      "sample": "As if received by",
+      "sample": "As if received by", "samplePlaceholder": "Choose a person",
       "sampleRequired": "Choose a sample person to save.",
       "test": "Test",
       "chooseSample": "Choose a person to test before saving.",
@@ -785,12 +785,11 @@
   },
   "catalogQuestion": {
     "catalog": "Catalog",
+    "chooseCatalog": "Choose a catalog",
     "requiresRead": "You need permission to read catalogs and choose one.",
-    "empty": "No catalogs are available yet.",
     "changeTitle": "Change the catalog?",
     "changeDescription": "The saved question is replaced with a new one. Previous versions keep their catalog.",
     "changeAction": "Change catalog",
-    "noResults": "No catalogs match your search.",
     "groupBy": {
       "label": "Choose by a field first",
       "help": "Whoever fills it in first picks a value of the field, and the list brings only the options with that value. Only the option is saved.",
@@ -830,7 +829,6 @@
       "answerMultiple": "Chooses several",
       "answerLater": "Comes after {{question}}",
       "noAnswerQuestion": "No earlier single-choice question chooses from the catalog of these fields.",
-      "noAnswerMatches": "No question matches.",
       "questionUnavailable": "Question not available"
     },
     "presentation": {

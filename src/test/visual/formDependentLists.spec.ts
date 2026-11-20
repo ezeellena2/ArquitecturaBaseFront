@@ -31,12 +31,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await editor.getByRole("button", { name: text(language, "Expandir «" + filters + "»", "Expand “" + filters + "”"), exact: true }).click();
     const condition = editor.getByRole("group", { name: text(language, "Condición 1", "Condition 1"), exact: true });
     await expect(condition.getByText(text(language, "Según otra respuesta", "By another answer"), { exact: true })).toBeVisible();
-    const answer = condition.getByRole("combobox", { name: text(language, "Respuesta de", "Answer to"), exact: true });
-    await expect(answer).toHaveValue(text(language, "Zona (pregunta 2)", "Zone (question 2)"));
+    // DS1-A: «Respuesta de» is the only piece to choose; what each question chooses from goes in grey under its name.
+    const answer = condition.getByRole("button", { name: text(language, "Respuesta de Zona (pregunta 2)", "Answer to Zone (question 2)"), exact: true });
     await expect(editor.getByRole("button", { name: text(language, "Agregar filtro según otra respuesta", "Add filter by another answer"), exact: true })).toBeVisible();
     await answer.click();
-    const option = page.getByRole("listbox").getByRole("option", { name: new RegExp(text(language, "Zona \\(pregunta 2\\)", "Zone \\(question 2\\)")) });
-    await expect(option).toContainText(text(language, "Elige de Zonas", "Chooses from Zones"));
+    const option = page.getByRole("listbox").getByRole("option", { name: text(language, "Zona (pregunta 2)", "Zone (question 2)"), exact: true });
+    await expect(option).toHaveAccessibleDescription(text(language, "Elige de Zonas", "Chooses from Zones"));
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/cw7-editor-" + language + "-" + width + ".png", fullPage: true });
     await page.keyboard.press("Escape");

@@ -14,7 +14,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.getByRole("button", { name: scenario === "forms-catalog-read" ? label("Ver pregunta Cliente", "View question Customer") : label("Editar Cliente", "Edit Customer"), exact: true }).click();
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    await enter(); const catalog = page.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true });
+    await enter(); const catalog = page.getByRole("button", { name: new RegExp("^" + label("Catálogo", "Catalog")) });
     // The dropdown of a catalog field (2026-10-31): the chosen name in the field, no search, pages, link or notes; when the
     // options are prepared and how the filters work are the help of their (i).
     await expect(catalog).toHaveValue(label("Clientes", "Customers"));
@@ -81,7 +81,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.getByRole("button", { name: scenario === "forms-catalog-read" ? label("Ver pregunta Cliente", "View question Customer") : label("Editar Cliente", "Edit Customer"), exact: true }).click();
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    await enter("forms-catalog-read"); const catalog = page.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true });
+    await enter("forms-catalog-read"); const catalog = page.getByRole("button", { name: new RegExp("^" + label("Catálogo", "Catalog")) });
     await expect(catalog).toBeDisabled(); await expect(page.getByRole("button", { name: label("Guardar borrador", "Save draft"), exact: true })).toHaveCount(0);
     await catalog.scrollIntoViewIfNeeded(); await geometry(); await page.screenshot({ path: info.outputPath("catalog-read.png"), fullPage: true });
     await enter("forms-catalog-no-read");

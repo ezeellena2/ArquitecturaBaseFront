@@ -20,7 +20,7 @@ const bandOf = async (title: string) => (await screen.findByRole("region", { nam
 it("keeps a catalog reference readonly without reading catalogs when the author lacks permission", async () => {
   const onCatalogChange = vi.fn();
   await act(async () => { renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.manage"] }} source={{ catalog: "01990000-0000-7000-8000-000000000091" }} readOnly={false} error="Revisá el catálogo." onCatalogChange={onCatalogChange} /></MemoryRouter>); });
-  expect(screen.getByRole("combobox", { name: "Catálogo" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: /^Catálogo/ })).toBeDisabled();
   expect(screen.getByText("Revisá el catálogo.")).toBeInTheDocument();
   expect(onCatalogChange).not.toHaveBeenCalled();
 });
@@ -114,14 +114,14 @@ it("drops the recipient chosen for a Manual catalog when the question moves to a
   const requests = serveRecipientPreview(), onPreviewChange = vi.fn();
   const view = renderWithProviders(settings(manualId, onPreviewChange));
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   await waitFor(() => expect(input).toBeEnabled());
-  await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
+  await userEvent.click(await within(await openList(/^Como si lo recibiera/)).findByRole("option", { name: "Juan" }));
   expect(await screen.findByText("1 opción")).toBeInTheDocument();
   expect(onPreviewChange).toHaveBeenLastCalledWith("q", expect.objectContaining({ options: [{ id: itemId, title: "Equipo A", description: null }] }));
   view.rerender(settings(filtersId, onPreviewChange));
   await waitFor(() => expect(screen.queryByText("Cargando…")).not.toBeInTheDocument());
-  expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Como si lo recibiera/ })).not.toBeInTheDocument();
   expect(requests.previews).toEqual([manualId]);
   expect(onPreviewChange).toHaveBeenLastCalledWith("q", null);
 });
@@ -130,7 +130,7 @@ it("explains why a person cannot be tried before saving only on hover or focus",
   serveRecipientPreview();
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: manualId }} questionId="q" readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   const reason = "Guardá el formulario para probar con una persona.";
   expect(input).toBeDisabled();
   // No hint under the field: the reason is its description and its tooltip, on hover or on keyboard focus.
@@ -201,9 +201,9 @@ it("offers Retry after a failed recipient preview and keeps it disabled during a
   server.use(http.post("/api/forms/definitions/:id/recipient-previews", () => { requests.previews.push(manualId); return requests.previews.length === 1 ? HttpResponse.json({ title: "Error", status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ code: "RateLimit.Exceeded", retryAfter: 5 }, { status: 429 }); }));
   renderWithProviders(settings(manualId));
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   await waitFor(() => expect(input).toBeEnabled());
-  await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
+  await userEvent.click(await within(await openList(/^Como si lo recibiera/)).findByRole("option", { name: "Juan" }));
   const failed = await screen.findByRole("alert");
   expect(failed).toHaveTextContent("No se pudo preparar la vista previa.");
   await userEvent.click(within(failed).getByRole("button", { name: "Reintentar" }));
@@ -284,9 +284,9 @@ it("reads the data of the person tried in two columns", async () => {
     http.post("/api/forms/definitions/:id/recipient-previews", () => HttpResponse.json({ recipient: { id: juan, name: "Juan", values: [{ attributeId: attribute, name: "Zona", text: "Norte" }] }, state: "Ready", optionCount: 1, limit: 200, exceedsLimit: false, options: [{ id: itemId, title: "Equipo A", description: null }] })));
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, personAttributeId: attribute }] }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()} onPreviewChange={vi.fn()}/></MemoryRouter>);
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   await waitFor(() => expect(input).toBeEnabled());
-  await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Juan" }));
+  await userEvent.click(await within(await openList(/^Como si lo recibiera/)).findByRole("option", { name: "Juan" }));
   expect(await screen.findByText("1 opción")).toBeInTheDocument();
   expect(screen.getByText("Norte").closest("dd")?.previousElementSibling).toHaveTextContent(/^Zona$/);
   expect(screen.queryByText("Zona: Norte")).not.toBeInTheDocument();
@@ -320,12 +320,12 @@ it("explains that the filters must be complete to try with a person", async () =
   const question = (match: NonNullable<DraftQuestionSource["match"]>) => <MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match }} questionId="q" definitionId={formId} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>;
   const view = renderWithProviders(question([{ fieldId: category, value: null }]));
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   expect(input).toBeDisabled();
   expect(input).toHaveAccessibleDescription("Completá los filtros para probar con una persona.");
   view.rerender(question([{ fieldId: category, value: "Frío" }]));
-  await waitFor(() => expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled());
-  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).not.toHaveAccessibleDescription();
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Como si lo recibiera/ })).toBeEnabled());
+  expect(screen.getByRole("button", { name: /^Como si lo recibiera/ })).not.toHaveAccessibleDescription();
 });
 
 it("tells the maximum per person and that everyone sees the same options with only fixed filters", async () => {
@@ -382,7 +382,7 @@ it("says it is searching while the people to try with load again after Retry", a
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
-it("says it is searching in the open list while people load, and that there are none", async () => {
+it("says it is searching in the open list while people load, and that none matches", async () => {
   const requests = serveRecipientPreview();
   const gates: (() => void)[] = [];
   server.use(http.get("/api/forms/recipient-samples", async ({ request }) => {
@@ -393,14 +393,14 @@ it("says it is searching in the open list while people load, and that there are 
   }));
   renderWithProviders(settings(manualId));
   await expand(filtersTitle);
-  const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
+  const input = await screen.findByRole("button", { name: /^Como si lo recibiera/ });
   await waitFor(() => expect(input).toBeEnabled());
-  await userEvent.type(input, "zzz");
-  const list = await screen.findByRole("listbox", { name: "Como si lo recibiera" });
-  await waitFor(() => expect(list).toHaveTextContent("Buscando…"));
+  await openList(/^Como si lo recibiera/);
+  await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Como si lo recibiera" }), "zzz");
+  await waitFor(() => expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument());
   await waitFor(() => expect(gates).toHaveLength(1));
   await act(async () => { gates[0]!(); });
-  await waitFor(() => expect(screen.getByRole("listbox", { name: "Como si lo recibiera" })).toHaveTextContent("No hay personas para mostrar."));
+  expect(await screen.findByText("Ninguna opción coincide con «zzz».")).toBeInTheDocument();
 });
 
 it("says the option lengths of an own presentation are being checked", async () => {
@@ -426,10 +426,10 @@ it("gives no reason that is not true yet while the person data load", async () =
   expect(person).toBeDisabled();
   expect(person).not.toHaveAccessibleDescription();
   // The saved person filter does not say its data is unavailable before the data arrive.
-  expect(within(section).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("…");
+  expect(within(section).getByRole("button", { name: /^Dato de la persona/ })).toHaveAccessibleName("Dato de la persona …");
   await act(async () => { release(); });
   await waitFor(() => expect(within(section).getByRole("button", { name: "Agregar filtro según quien lo recibe" })).toHaveAccessibleDescription("Ningún dato de las personas usa el catálogo de estos campos."));
-  expect(within(section).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("Campo no disponible");
+  expect(within(section).getByRole("button", { name: /^Dato de la persona/ })).toHaveAccessibleName("Dato de la persona Campo no disponible");
 });
 
 it("offers Retry when the maximum per person cannot be read", async () => {
@@ -575,17 +575,19 @@ it("adds a filter by another answer and lets choose only an earlier single choic
   await expand(filtersTitle);
   const condition = await screen.findByRole("group", { name: "Condición 1" });
   expect(within(condition).getByText("Según otra respuesta")).toBeInTheDocument();
-  await userEvent.click(within(condition).getByRole("combobox", { name: "Respuesta de" }));
-  const zoneOption = await screen.findByRole("option", { name: /Zona \(pregunta 1\)/ });
-  await waitFor(() => expect(zoneOption).toHaveTextContent("Elige de Zonas"));
+  // What each question chooses from goes in grey under its name; one that cannot give the answer is off, with why.
+  const list = await openList(within(condition).getByRole("button", { name: /^Respuesta de/ }));
+  const zoneOption = await within(list).findByRole("option", { name: "Zona (pregunta 1)" });
+  await waitFor(() => expect(zoneOption).toHaveAccessibleDescription("Elige de Zonas"));
   expect(zoneOption).not.toHaveAttribute("aria-disabled");
-  expect(screen.getByRole("option", { name: /Semilla \(pregunta 2\)/ })).toHaveAttribute("aria-disabled", "true");
-  expect(screen.getByRole("option", { name: /Semilla \(pregunta 2\)/ })).toHaveTextContent("Elige de Proveedores: otro catálogo");
-  expect(screen.getByRole("option", { name: /Producto \(pregunta 4\)/ })).toHaveTextContent("Va después de Proveedor");
+  const seed = within(list).getByRole("option", { name: "Semilla (pregunta 2)" });
+  expect(seed).toHaveAttribute("aria-disabled", "true");
+  await waitFor(() => expect(seed).toHaveAccessibleDescription("Elige de Proveedores: otro catálogo"));
+  expect(within(list).getByRole("option", { name: "Producto (pregunta 4)" })).toHaveAccessibleDescription("Va después de Proveedor");
   await userEvent.click(zoneOption);
   expect(chosen).toHaveBeenLastCalledWith({ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: "q-zone" }] });
   // It is tried by loading the form: the test with a person is off with that reason, and no maximum is read.
-  expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toHaveAccessibleDescription("Depende de otra respuesta: se prueba cargando el formulario.");
+  expect(screen.getByRole("button", { name: /^Como si lo recibiera/ })).toHaveAccessibleDescription("Depende de otra respuesta: se prueba cargando el formulario.");
 });
 
 // LD3-A (2026-11-07): in a question of the block «Respuesta de» says whether the answer is the one of its own item or the one
@@ -602,12 +604,12 @@ it("says where the answer comes from in the block and turns off a question of th
   renderWithProviders(<MemoryRouter><CatalogQuestionSettings scope={previewScope} source={{ catalog: maximumCatalog, match: [{ fieldId: zone, questionId: null }] }} questionId="q" definitionId="definition" answers={answers} readOnly={false} onCatalogChange={vi.fn()} onSourceChange={vi.fn()}/></MemoryRouter>);
   await expand(filtersTitle);
   const condition = await screen.findByRole("group", { name: "Condición 1" });
-  await userEvent.click(within(condition).getByRole("combobox", { name: "Respuesta de" }));
+  const list = await openList(within(condition).getByRole("button", { name: /^Respuesta de/ }));
 
-  await waitFor(() => expect(screen.getByRole("option", { name: /Zona \(pregunta 1\)/ })).toHaveTextContent("Elige de Zonas · para todos los ítems"));
-  expect(screen.getByRole("option", { name: /Área \(pregunta 2\.1\)/ })).toHaveTextContent("Elige de Zonas · del mismo ítem");
-  const depot = screen.getByRole("option", { name: /Depósito \(pregunta 2\.2\)/ });
-  expect(depot).toHaveTextContent("Está en el bloque");
+  await waitFor(() => expect(within(list).getByRole("option", { name: "Zona (pregunta 1)" })).toHaveAccessibleDescription("Elige de Zonas · para todos los ítems"));
+  expect(within(list).getByRole("option", { name: "Área (pregunta 2.1)" })).toHaveAccessibleDescription("Elige de Zonas · del mismo ítem");
+  const depot = within(list).getByRole("option", { name: "Depósito (pregunta 2.2)" });
+  expect(depot).toHaveAccessibleDescription("Está en el bloque");
   expect(depot).toHaveAttribute("aria-disabled", "true");
 });
 
@@ -709,8 +711,8 @@ it("keeps a field that no longer serves and shows the server error under it", as
 });
 
 // The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
-async function openList(name: string | RegExp) {
-  const trigger = screen.getByRole("button", { name });
+async function openList(name: string | RegExp | HTMLElement) {
+  const trigger = name instanceof HTMLElement ? name : screen.getByRole("button", { name });
   await act(async () => { trigger.focus(); });
   await userEvent.keyboard("{Enter}");
   return screen.findByRole("listbox");

@@ -26,19 +26,22 @@ async function open(page: Page, language: Language, width: number, scenario = "f
   await page.getByRole("button", { name: text(language, "Editar Proveedores a consultar", "Edit Suppliers to contact"), exact: true }).click();
   const editor = page.locator("[data-question-local-id]").last();
   await expandZones(editor, language);
-  await expect(editor.getByRole("combobox", { name: text(language, "Dato de la persona", "Person’s data"), exact: true })).toHaveValue(catalogQuestionFixtureIds.attribute);
+  await expect(editor.getByRole("button", { name: new RegExp("^" + text(language, "Dato de la persona", "Person’s data")) })).not.toHaveAccessibleName(new RegExp(text(language, "Elegí una opción", "Choose an option") + "$"));
   return editor;
 }
 async function recipient(page: Page, editor: Locator, language: Language, name: string) {
-  const sample = editor.getByRole("combobox", { name: text(language, "Como si lo recibiera", "As if received by"), exact: true });
-  await sample.fill(name);
+  // DS1-A: the people to try with are the only piece to choose; its search goes inside the list.
+  await editor.getByRole("button", { name: new RegExp("^" + text(language, "Como si lo recibiera", "As if received by")) }).click();
+  await page.getByRole("combobox", { name: text(language, "Buscar en Como si lo recibiera", "Search in As if received by"), exact: true }).fill(name);
   const options = page.getByRole("listbox", { name: text(language, "Como si lo recibiera", "As if received by"), exact: true }).getByRole("option");
   await expect(options).toHaveCount(1);
   await expect(options).toHaveText(new RegExp(name));
-  await sample.press("ArrowDown");
-  await sample.press("Enter");
+  // The arrows walk the list from its search and Enter chooses; the focus goes back to the button, which says the person.
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  const sample = editor.getByRole("button", { name: new RegExp("^" + text(language, "Como si lo recibiera", "As if received by")) });
   await expect(sample).toBeFocused();
-  await expect(sample).toHaveValue(new RegExp(name));
+  await expect(sample).toHaveAccessibleName(new RegExp(name));
 }
 async function contained(page: Page, editor: Locator, width: number) {
   const bounds = (await editor.boundingBox())!;
@@ -79,7 +82,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(inherit).toHaveAccessibleDescription(label("Texto · CUIT · Zona", "Text · CUIT · Zone"));
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
-    await fillsColumn(editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }));
+    await fillsColumn(editor.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }));
     await expect(editor.getByText(label("14 opciones", "14 options"), { exact: true })).toBeVisible();
     await expect(editor.getByText(label("Como mucho 14 por persona (Centro, la más grande): entra en una pregunta de varias (20).", "At most 14 per person (Center, the largest): fits in a multiple-choice question (20)."), { exact: true })).toBeVisible();
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
@@ -125,11 +128,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const editor = page.locator("[data-question-local-id]").last();
     await editor.getByRole("button", { name: new RegExp("^" + label("Tipo de respuesta", "Answer type") + " ") }).click(); await page.getByRole("option", { name: label("Elegir de un catálogo", "Choose from a catalog"), exact: true }).click();
     // The catalog is a dropdown (2026-10-31): touching it shows the first catalogs.
-    await editor.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true }).click();
+    await editor.getByRole("button", { name: new RegExp("^" + label("Catálogo", "Catalog")) }).click();
     await page.getByRole("listbox", { name: label("Catálogo", "Catalog"), exact: true }).getByRole("option", { name: new RegExp("^" + label("Proveedores", "Suppliers")) }).click();
     await expandZones(editor, language, [label("Qué opciones ve cada persona", "Which options each person sees")]);
     // Unsaved, the field stays in its place, disabled with its reason as a tooltip, and as wide as when the form is saved.
-    const sample = editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    const sample = editor.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
     await expect(sample).toBeDisabled();
     await expect(sample).toHaveAccessibleDescription(label("Guardá el formulario para probar con una persona.", "Save the form to try it with a person."));
     await fillsColumn(sample);
@@ -145,7 +148,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const preview = page.getByRole("region", { name: label("Vista previa", "Preview"), exact: true });
     await expect(preview.getByText(message, { exact: true })).toBeVisible();
     await expect(preview.getByRole("checkbox")).toHaveCount(0);
-    const sample = editor.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    const sample = editor.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
     await sample.focus();
     await sample.press("ArrowDown");
     await sample.press("Escape");

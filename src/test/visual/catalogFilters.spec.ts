@@ -18,7 +18,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.evaluate(() => document.fonts.ready);
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
+    const sample = async () => { await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click(); await page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos");
     await expect(page.getByRole("button", { name: label("Todos (1)", "All (1)"), exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: label("De la base (1)", "From the database (1)"), exact: true })).toBeVisible();
@@ -45,15 +45,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.evaluate(() => document.fonts.ready);
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
+    const sample = async () => { await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click(); await page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos/" + visualCatalogId);
     await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toBeDisabled();
-    await page.getByRole("button", { name: label("Página siguiente", "Next page"), exact: true }).click();
-    await expect(page.getByText(label("Página 2 de 2", "Page 2 of 2"), { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: label("Página anterior", "Previous page"), exact: true }).click();
-    const sampleInput = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
-    await sampleInput.fill("Persona de muestra 22"); await expect(page.getByRole("option", { name: "Persona de muestra 22", exact: true })).toBeVisible();
-    await sampleInput.fill(""); await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
+    // DS1-A: the sample people are the only piece to choose: «Mostrar N más» reads the next ones inside the list, and its search
+    // asks the server.
+    await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click();
+    const people = page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    await page.getByRole("button", { name: new RegExp("^" + label("Mostrar", "Show") + " \\d+ " + label("más", "more") + "$") }).click();
+    await page.getByRole("combobox", { name: label("Buscar en Como si lo recibiera", "Search in As if received by"), exact: true }).fill("Persona de muestra 22");
+    await expect(people.getByRole("option", { name: "Persona de muestra 22", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape"); await sample(); await page.getByRole("button", { name: label("Probar", "Test"), exact: true }).click();
     await expect(page.getByText(seedPreview.items[0]!.text, { exact: true })).toBeVisible();
     await geometry(); await page.screenshot({ path: info.outputPath("filters-preview.png"), fullPage: true });
     await page.getByRole("button", { name: new RegExp("^" + label("Detalle", "Detail") + " ") }).click(); await page.getByRole("option", { name: label("Activo", "Active"), exact: true }).click();
@@ -76,7 +78,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.evaluate(() => document.fonts.ready);
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
+    const sample = async () => { await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click(); await page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos/" + visualCatalogId, "catalogs-filters-conflict"); await sample();
     await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill("Mi borrador");
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
@@ -93,7 +95,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // Save does not wait for the sample person: trying it without one marks the person and sends nothing.
     await page.getByRole("textbox", { name: label("Nombre", "Name"), exact: true }).fill(label("Personas con límite", "People with a limit"));
     await page.getByRole("button", { name: label("Guardar", "Save"), exact: true }).click();
-    const person = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
+    const person = page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) });
     await expect(person).toBeFocused(); await expect(person).toHaveAttribute("aria-invalid", "true");
     // The focus does not open the list of people: the error under the field stays in view, not covered.
     const required = page.getByText(label("Elegí una persona de ejemplo para guardar.", "Choose a sample person to save."), { exact: true });
@@ -116,10 +118,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await page.evaluate(() => document.fonts.ready);
     };
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-    const sample = async () => { await page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).click(); await page.getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
+    const sample = async () => { await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click(); await page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos/" + visualCatalogId, "catalogs-filters-read");
     await expect(page.getByRole("button", { name: new RegExp("^" + label("Texto de cada opción", "Option text") + " ") })).toBeDisabled(); await expect(page.getByRole("button", { name: label("Guardar", "Save"), exact: true })).toHaveCount(0);
-    await expect(page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) })).toHaveCount(0);
     await geometry(); await page.screenshot({ path: info.outputPath("filters-read.png"), fullPage: true });
     await enter("/catalogos/" + visualCatalogId, "catalogs-filters-missing-role");
     const savedRole = page.getByRole("button", { name: label("Valor de la condición 1 Valor no disponible", "Value for condition 1 Unavailable value"), exact: true });
@@ -136,7 +138,7 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await page.setViewportSize({width,height:900});
     const es=language==="es";
     await page.goto("/src/test/visual/index.html?"+new URLSearchParams({screen:"/catalogos/"+visualCatalogId,lang:language,scenario:"catalogs-filters-long"}));
-    await page.getByRole("combobox",{name:es?"Como si lo recibiera":"As if received by",exact:true}).click();
+    await page.getByRole("button",{name:new RegExp("^"+(es?"Como si lo recibiera":"As if received by"))}).click();
     await page.getByRole("option",{name:seedOptions.sampleUsers.items.find(person=>person.id===seedPreviewRequest.sampleUserId)!.name,exact:true}).click();
     await page.getByRole("button",{name:es?"Probar":"Test",exact:true}).click();
     await expect(page.getByText("Long display name that exceeds WhatsApp limits",{exact:true})).toBeVisible();

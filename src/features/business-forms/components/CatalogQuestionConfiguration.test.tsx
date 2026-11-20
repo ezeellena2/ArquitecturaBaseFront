@@ -1,6 +1,6 @@
 import { MemoryRouter } from "react-router";
 import { useState } from "react";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -17,15 +17,17 @@ vi.mock("../hooks/useRecipientPreview", () => ({ useRecipientPreview: () => ({ p
 beforeEach(() => { options.page = []; options.presentation = { title: ["text"], description: ["detail"] }; names.field = { es: "Sucursal" }; names.attribute = { es: "Sucursal de la persona" }; });
 function Harness({ changed, initial = { catalog: ids.catalog }, readOnly = false }: { changed: (source: DraftQuestionSource) => void; initial?: DraftQuestionSource; readOnly?: boolean }) { const [source, setSource] = useState<DraftQuestionSource>(initial); return <MemoryRouter><CatalogQuestionSettings scope={{ actorId: "author", culture: "es", permissions: ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"] }} source={source} type="multiChoice" questionId="q" definitionId="form" readOnly={readOnly} onCatalogChange={vi.fn()} onSourceChange={value => { changed(value); setSource(value); }} /></MemoryRouter>; }
 // The zones start folded (ZP1-A, 2026-11-02): each test expands the ones it works in, as a person would.
+// The Picker opens with the keyboard, like the other Radix lists in the tests.
+async function pickIn(trigger: HTMLElement, option: string) { await act(async () => { trigger.focus(); }); await userEvent.keyboard("{Enter}"); await userEvent.click(within(await screen.findByRole("listbox")).getByRole("option", { name: option })); }
 const expand = (...titles: string[]) => { for (const title of titles) fireEvent.click(screen.getByRole("button", { name: "Expandir «" + title + "»" })); };
-it("filters only eligible extra fields and matches person data from the same source", async () => { const changed = vi.fn(); renderWithProviders(<Harness changed={changed}/>); expand("Qué opciones ve cada persona"); await userEvent.click(screen.getByRole("button", { name: "Agregar filtro según quien lo recibe" })); const row = screen.getByRole("group", { name: "Condición 1" }); expect(within(row).queryByRole("option", { name: "Precio" })).not.toBeInTheDocument(); expect(within(row).queryByRole("option", { name: "Otra fuente" })).not.toBeInTheDocument(); fireEvent.change(within(row).getByRole("combobox", { name: "Dato de la persona" }), { target: { value: ids.attribute } }); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, match: [{ fieldId: ids.field, personAttributeId: ids.attribute }] }); });
+it("filters only eligible extra fields and matches person data from the same source", async () => { const changed = vi.fn(); renderWithProviders(<Harness changed={changed}/>); expand("Qué opciones ve cada persona"); await userEvent.click(screen.getByRole("button", { name: "Agregar filtro según quien lo recibe" })); const row = screen.getByRole("group", { name: "Condición 1" }); expect(within(row).queryByRole("option", { name: "Precio" })).not.toBeInTheDocument(); expect(within(row).queryByRole("option", { name: "Otra fuente" })).not.toBeInTheDocument(); await pickIn(within(row).getByRole("button", { name: /^Dato de la persona/ }), "Sucursal de la persona"); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, match: [{ fieldId: ids.field, personAttributeId: ids.attribute }] }); });
 it("names a filter field and the person data written only in the other language", () => {
   names.field = { en: "Branch" }; names.attribute = { en: "Customer branch" };
   renderWithProviders(<Harness changed={vi.fn()} initial={{ catalog: ids.catalog, match: [{ fieldId: ids.field, personAttributeId: ids.attribute }] }}/>);
   expand("Qué opciones ve cada persona");
   const row = screen.getByRole("group", { name: "Condición 1" });
-  expect(within(row).getByRole("combobox", { name: "Campo" })).toHaveDisplayValue("Branch");
-  expect(within(row).getByRole("combobox", { name: "Dato de la persona" })).toHaveDisplayValue("Customer branch");
+  expect(within(row).getByRole("button", { name: /^Campo / })).toHaveAccessibleName("Campo Branch");
+  expect(within(row).getByRole("button", { name: /^Dato de la persona/ })).toHaveAccessibleName("Dato de la persona Customer branch");
 });
 it("keeps inherited presentation absent until the author explicitly chooses their own", async () => { const changed = vi.fn(); renderWithProviders(<Harness changed={changed}/>); expand("En WhatsApp"); expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toBeChecked(); expect(changed).not.toHaveBeenCalled(); await userEvent.click(screen.getByRole("radio", { name: /Propio de esta pregunta/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, presentation: { title: ["text"], description: ["detail"] } }); await userEvent.click(screen.getByRole("radio", { name: /Como en el catálogo/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog }); });
 // The parts are data; that they follow the catalog, and what «Propio de esta pregunta» means, are not notes (2026-10-31).
@@ -45,7 +47,7 @@ it("shows a fixed catalog value outside the first twenty options, also read-only
   // Folded, the band names the option too.
   expect(screen.getByText("Sucursal: Sur")).toBeVisible();
   expand("Qué opciones ve cada persona");
-  expect(screen.getByRole("combobox", { name: "Valor fijo" })).toHaveValue("Sur");
+  expect(screen.getByRole("button", { name: /^Valor fijo/ })).toHaveAccessibleName("Valor fijo Sur");
   editable.unmount();
   renderWithProviders(<Harness changed={vi.fn()} initial={initial} readOnly/>);
   expand("Qué opciones ve cada persona");

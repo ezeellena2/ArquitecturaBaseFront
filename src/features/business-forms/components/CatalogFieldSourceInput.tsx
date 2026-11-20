@@ -1,35 +1,36 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { readErrorMessage } from "@/shared/api/errorFeedback";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
+import { Picker } from "@/shared/ui/Picker";
 import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 import { useCatalogDetail, useCatalogPage } from "../hooks/useCatalogQueries";
+import { usePickerPages } from "../hooks/usePickerPages";
 import { administrativeName } from "../editorModel";
 
-// The catalog of a field, a person attribute or a question that picks from a catalog: a dropdown that opens on the first
-// catalogs and filters them while typing, like an option's value (2026-10-31). A field or a person attribute picks among the
-// active catalogs written by hand; a question (`anyKind`) also among the Filters ones, and sees the inactive and unavailable
-// ones off, with why. While the list loads, a search reads (instead of the previous catalogs), it fails (touching it reads
-// again) or it matches nothing, the open dropdown says so. An owner that already reads the chosen catalog passes its name
-// (`selectedName`, null while it reads it), so it is not read twice; while the name is read, the field shows «…». Inside a
-// FormField it takes the field's id and messages.
-export function CatalogFieldSourceInput({ scope, value, label, readOnly, anyKind = false, selectedName, onChange, ...aria }: { scope: CatalogReadScope; value: string | null; label: string; readOnly: boolean; anyKind?: boolean; selectedName?: string | null; onChange: (id: string | null) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string; "data-question-control"?: string }) {
+type CatalogRow = NonNullable<ReturnType<typeof useCatalogPage>["data"]>["items"][number];
+
+// The catalog of a field, a person attribute or a question that picks from a catalog, with the only piece to choose (DS1-A): the
+// list searches the catalogs in the server, twenty at a time with «Mostrar N más», each one with its active options in grey under
+// its name. A field or a person attribute picks among the active catalogs written by hand; a question (`anyKind`) also among the
+// Filters ones, and sees the inactive and unavailable ones off, with why (MA1-A). The wait, the failure with «Reintentar» and a
+// search that matches nothing are said inside the list. The chosen one may not be in the page: an owner that already reads it
+// passes its name (`selectedName`, null while it reads it), so it is not read twice; while the name is read, the field says «…».
+// Inside a FormField it takes the field's id and messages; the editor finds it by `data-question-control`.
+export function CatalogFieldSourceInput({ scope, value, label, readOnly, anyKind = false, selectedName, onChange, ...field }: { scope: CatalogReadScope; value: string | null; label: string; readOnly: boolean; anyKind?: boolean; selectedName?: string | null; onChange: (id: string) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string; "data-question-control"?: string }) {
   const { t } = useTranslation("forms");
-  const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState("");
-  useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
-  const list = useCatalogPage(scope, { page: 1, pageSize: 20, sort: "name", search: settled, ...(anyKind ? {} : { kind: "Manual" as const, state: "Active" as const }) }, "global");
-  const rows = list.data?.items ?? [];
-  const current = rows.find(row => row.id === value);
+  const pages = usePickerPages<CatalogRow>();
+  const query = useCatalogPage(scope, { page: pages.page, pageSize: 20, sort: "name", search: pages.settled, ...(anyKind ? {} : { kind: "Manual" as const, state: "Active" as const }) }, "global");
+  const list = pages.list(query);
+  // The last one chosen keeps its name while another search shows other catalogs.
+  const [picked, setPicked] = useState<{ id: string; name: string } | null>(null);
+  const current = [...list.options, ...query.data?.items ?? []].find(row => row.id === value)?.name ?? (picked?.id === value ? picked.name : undefined);
   // Only once the first catalogs arrived is the chosen one known to be outside them.
-  const detail = useCatalogDetail(scope, value && list.data && !current && selectedName === undefined ? value : "", "global");
-  const currentName = !value ? "" : current?.name ?? selectedName ?? administrativeName(detail.data?.name, scope.culture);
-  const naming = !!value && !currentName && (list.isLoading || detail.isLoading || selectedName === null);
-  const searching = !!list.data && ((search ?? "") !== settled || list.isPlaceholderData);
-  const unusable = (row: (typeof rows)[number]) => row.state === "Active" ? null : row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : t("catalogs.state." + row.state);
-  const options = searching ? [] : rows.map(row => ({ id: row.id, disabled: row.state !== "Active",
-    label: [row.optionsCount === null ? row.name : t("catalogs.fields.detail.source", { name: row.name, count: row.optionsCount }), unusable(row)].filter(Boolean).join(" · ") }));
-  const status = list.isError ? readErrorMessage(list.error, t) : !list.data ? t("common:states.loading") : searching ? t("searching") : t(settled.trim() ? "catalogQuestion.noResults" : "catalogQuestion.empty");
-  return <Autocomplete {...aria} aria-label={label} dropdown disabled={readOnly} value={search ?? currentName} placeholder={naming && search === null ? "…" : undefined} options={options} status={status}
-    onClick={() => { if (list.isError) void list.refetch(); }}
-    onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => setSearch(null)} onSelect={id => { setSearch(null); onChange(id); }} />;
+  const detail = useCatalogDetail(scope, value && query.data && current === undefined && selectedName === undefined ? value : "", "global");
+  const currentName = !value ? "" : current ?? selectedName ?? administrativeName(detail.data?.name, scope.culture);
+  const unusable = (row: CatalogRow) => row.state === "Active" ? null : row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : t("catalogs.state." + row.state);
+  return <Picker {...field} label={label} disabled={readOnly} value={value} placeholder={t("catalogQuestion.chooseCatalog")}
+    options={list.options.map(row => ({ id: row.id, label: row.name, description: row.optionsCount === null ? null : t("catalogs.fields.sourceOptions", { count: row.optionsCount }), disabledReason: unusable(row) }))}
+    selectedOptions={value ? [{ id: value, label: currentName || "…" }] : undefined}
+    search={pages.search} onSearchChange={pages.onSearchChange} total={list.total} loading={list.loading} failed={list.failed} onRetry={() => void query.refetch()}
+    onLoadMore={list.onLoadMore} loadingMore={list.loadingMore} pageSize={list.pageSize}
+    onChange={id => { const row = list.options.find(item => item.id === id); if (row) setPicked({ id, name: row.name }); onChange(id); }} />;
 }

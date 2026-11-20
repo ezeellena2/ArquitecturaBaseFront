@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -11,10 +11,17 @@ it("shows extra columns by identity and lets the reader hide one without changin
   await act(async () => { renderWithProviders(<CatalogManualItemsEditor items={[{ localId: "row", itemId: "saved-row", code: "N", label: { es: "Norte" }, detail: {}, value: null, fields: { [field.id]: "30-71234567-8" }, isActive: true, position: 1 }]} fields={[field]} culture="es" original="es" valueType="Text" canManage={false} onEdit={vi.fn()} onChange={change} onAdd={vi.fn()} />); });
   expect(screen.getByRole("columnheader", { name: "CUIT" })).toBeInTheDocument();
   expect(screen.getByText("30-71234567-8")).toBeInTheDocument();
-  screen.getByRole("button", { name: "Columnas" }).focus();
+  // «Columnas» is the only piece to choose several (DS1-A), with the button of the bar: each mark applies at once.
+  await act(async () => { screen.getByRole("button", { name: "Columnas" }).focus(); });
   await userEvent.keyboard("{Enter}");
-  await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "CUIT" }));
-  expect(screen.queryByRole("columnheader", { name: "CUIT" })).not.toBeInTheDocument();
+  const list = await screen.findByRole("listbox", { name: "Columnas" });
+  expect(list).toHaveAttribute("aria-multiselectable", "true");
+  expect(within(list).getByRole("option", { name: "CUIT" })).toHaveAttribute("aria-selected", "true");
+  await userEvent.click(within(list).getByRole("option", { name: "CUIT" }));
+  expect(within(list).getByRole("option", { name: "CUIT" })).toHaveAttribute("aria-selected", "false");
+  expect(screen.queryByRole("columnheader", { name: "CUIT", hidden: true })).not.toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Columnas" })).toHaveFocus());
   expect(change).not.toHaveBeenCalled();
 });
 

@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
@@ -51,10 +51,18 @@ it("shows no option text once the source value is cleared", async () => {
     http.get("/api/forms/catalogs/" + sourceId + "/items", () => HttpResponse.json({ items: [{ value: null, id: centro, code: "C", text: { es: "Centro", en: null }, detail: { es: null, en: null }, position: 1, isActive: true, fields: {}, fieldTexts: {} }], page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false })));
   const field = { ...newCatalogField("saved", 1), id: "01990000-0000-7000-8000-000000000001", type: "catalog" as const, sourceCatalogId: sourceId };
   await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={field} scope={{ actorId: "author", culture: "es", permissions: ["formcatalogs.read", "formcatalogs.manage"] }} label="Fila 1 · Zona" value={null} texts={{ es: "Centro" }} culture="es" readOnly={false} onChange={vi.fn()} />); });
-  const input = screen.getByRole("combobox", { name: "Fila 1 · Zona" });
-  await waitFor(() => expect(input).toBeEnabled());
-  expect(input).toHaveValue("");
+  // An optional field says «Sin valor» in grey, not the text the caller still holds.
+  const button = await screen.findByRole("button", { name: "Fila 1 · Zona Sin valor" });
+  await waitFor(() => expect(button).toBeEnabled());
+  expect(button).not.toHaveTextContent("Centro");
 });
+// The list of a field that picks from a catalog opens with the keyboard, like the other Radix lists in the tests.
+async function openList(name: RegExp) {
+  const trigger = screen.getByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Fila 1 · Zona" });
+}
 // A field that picks from another catalog: its source and options arrive, and each search reads them again.
 const zones = "01990000-0000-7000-8000-000000000040";
 const zonesDetail = { valueType: "Text", proposal: null, id: zones, key: zones.replaceAll("-", ""), name: { es: "Zonas", en: "Zones" }, description: { es: "Zonas", en: "Zones" }, kind: "Manual", revision: 1, isActive: true, itemsCount: 2, usageCount: null, originalCulture: "es", unavailableReasonCode: null, filters: null, fields: [], presentation: null, presentationCheck: { cultures: [{ culture: "es", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }, { culture: "en", titleTooLongCount: 0, titleExamples: [], descriptionTooLongCount: 0, descriptionExamples: [] }] } };
@@ -75,25 +83,50 @@ it("says in its open list that the options load and then that a search reads the
       return zoneItemsPage(search);
     }));
   await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={zoneField} scope={zoneScope} label="Fila 1 · Zona" value={null} culture="es" readOnly={false} onChange={vi.fn()} />); });
-  const input = screen.getByRole("combobox", { name: "Fila 1 · Zona" }), user = userEvent.setup();
-  await user.click(input);
-  expect(await screen.findByRole("listbox", { name: "Fila 1 · Zona" })).toHaveTextContent("Cargando…");
+  const list = await openList(/^Fila 1 · Zona/), user = userEvent.setup();
+  expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument();
   await waitFor(() => expect(releaseDetail).toBeDefined());
   await act(async () => { releaseDetail!(); });
-  expect(await screen.findByRole("option", { name: "Centro" })).toBeInTheDocument();
-  await user.type(input, "Nor");
-  expect(await screen.findByRole("listbox", { name: "Fila 1 · Zona" })).toHaveTextContent("Buscando…");
-  expect(screen.queryByRole("option", { name: "Centro" })).not.toBeInTheDocument();
+  expect(await within(list).findByRole("option", { name: "Centro" })).toBeInTheDocument();
+  expect(within(list).getAllByRole("option")[0]).toHaveAccessibleName("Sin valor");
+  const search = screen.getByRole("combobox", { name: "Buscar en Fila 1 · Zona" });
+  await user.type(search, "Nor");
+  expect(await screen.findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
+  expect(within(list).queryByRole("option", { name: "Centro" })).not.toBeInTheDocument();
   await waitFor(() => expect(releaseSearch).toBeDefined());
   await act(async () => { releaseSearch!(); });
-  expect(await screen.findByRole("option", { name: "Norte" })).toBeInTheDocument();
-  expect(screen.queryByText("Buscando…")).not.toBeInTheDocument();
+  expect(await within(list).findByRole("option", { name: "Norte" })).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Buscando…" })).not.toBeInTheDocument();
   // Its list searches options: no foot that offers to search a catalog.
   expect(screen.queryByText("Buscar catálogo")).not.toBeInTheDocument();
-  await user.clear(input); await user.type(input, "Sur");
-  await waitFor(() => expect(screen.getByRole("listbox", { name: "Fila 1 · Zona" })).toHaveTextContent("No hay opciones que coincidan."));
+  await user.clear(search); await user.type(search, "Sur");
+  expect(await screen.findByText("Ninguna opción coincide con «Sur».")).toBeInTheDocument();
 });
-it("keeps Retry in place, working, while the source is read again", async () => {
+it("chooses an option of its source with its texts and clears an optional one with «Sin valor»", async () => {
+  server.use(http.get("/api/forms/catalogs/" + zones, () => HttpResponse.json(zonesDetail)),
+    http.get("/api/forms/catalogs/" + zones + "/items", ({ request }) => zoneItemsPage(new URL(request.url).searchParams.get("search") ?? "")));
+  const change = vi.fn();
+  await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={zoneField} scope={zoneScope} label="Fila 1 · Zona" value="01990000-0000-7000-8000-000000000041" texts={{ es: "Centro" }} culture="es" readOnly={false} onChange={change} />); });
+  const user = userEvent.setup();
+  await user.click(await within(await openList(/^Fila 1 · Zona Centro$/)).findByRole("option", { name: "Norte" }));
+  expect(change).toHaveBeenLastCalledWith("01990000-0000-7000-8000-000000000042", { es: "Norte" });
+  await user.click(within(await openList(/^Fila 1 · Zona Centro$/)).getByRole("option", { name: "Sin valor" }));
+  expect(change).toHaveBeenLastCalledWith(null);
+});
+it("counts as touched when the focus leaves it with its list closed, not when its list opens", async () => {
+  server.use(http.get("/api/forms/catalogs/" + zones, () => HttpResponse.json(zonesDetail)),
+    http.get("/api/forms/catalogs/" + zones + "/items", ({ request }) => zoneItemsPage(new URL(request.url).searchParams.get("search") ?? "")));
+  const blur = vi.fn();
+  await act(async () => { renderWithProviders(<><CatalogExtraFieldInput field={{ ...zoneField, required: true }} scope={zoneScope} label="Fila 1 · Zona" value={null} culture="es" readOnly={false} onChange={vi.fn()} onBlur={blur} /><button type="button">Después</button></>); });
+  await openList(/^Fila 1 · Zona Elegí una opción$/);
+  expect(blur).not.toHaveBeenCalled();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+  expect(blur).not.toHaveBeenCalled();
+  await userEvent.tab();
+  expect(blur).toHaveBeenCalledTimes(1);
+});
+it("says in its open list that the source failed, and reads it again with «Reintentar»", async () => {
   let fail = true, release: (() => void) | undefined;
   server.use(http.get("/api/forms/catalogs/" + zones, async () => {
     if (fail) return HttpResponse.json({ code: "General.Unexpected", status: 503 }, { status: 503 });
@@ -101,16 +134,18 @@ it("keeps Retry in place, working, while the source is read again", async () => 
     return HttpResponse.json(zonesDetail);
   }), http.get("/api/forms/catalogs/" + zones + "/items", ({ request }) => zoneItemsPage(new URL(request.url).searchParams.get("search") ?? "")));
   await act(async () => { renderWithProviders(<CatalogExtraFieldInput field={zoneField} scope={zoneScope} label="Fila 1 · Zona" value={null} culture="es" readOnly={false} onChange={vi.fn()} />); });
-  const retry = await screen.findByRole("button", { name: "Reintentar" }), user = userEvent.setup();
-  expect(screen.getByRole("combobox", { name: "Fila 1 · Zona" })).toBeDisabled();
+  const user = userEvent.setup();
+  // A failure does not turn it off: its list says so and offers «Reintentar».
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Fila 1 · Zona/ })).toBeEnabled());
+  const list = await openList(/^Fila 1 · Zona/);
+  expect(await screen.findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
   fail = false;
-  await user.click(retry);
-  const retrying = screen.getByRole("button", { name: "Reintentando…" });
-  expect(retrying).toHaveAttribute("aria-busy", "true");
+  await user.click(screen.getByRole("button", { name: "Reintentar" }));
+  expect(await screen.findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
   await waitFor(() => expect(release).toBeDefined());
   await act(async () => { release!(); });
-  await waitFor(() => expect(screen.queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
-  await waitFor(() => expect(screen.getByRole("combobox", { name: "Fila 1 · Zona" })).toBeEnabled());
+  expect(await within(list).findByRole("option", { name: "Centro" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
 it.each([["boolean", "Con GPS"], ["date", "30 días"]] as const)("shows a saved value the %s control cannot hold as it is until it is cleared", async (type, saved) => {
   const change = vi.fn();

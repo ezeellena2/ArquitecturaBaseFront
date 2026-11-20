@@ -504,7 +504,7 @@ it("says nothing under the type when the type of a field with values changes", a
   expect(within(dialog).queryByText(/Al guardar se revisan todos los valores/)).not.toBeInTheDocument();
 });
 
-it("chooses the source catalog in a dropdown that opens on the first catalogs and filters them while typing", async () => {
+it("chooses the source catalog in a list that opens on the first catalogs, with their options in grey, and searches them", async () => {
   const row = (id: string, name: string, optionsCount: number) => ({ valueType: "Text", id, name, description: null, origin: "Manual", optionsCount, usageCount: null, state: "Active", stateReason: null, canEdit: true });
   const catalogs = [row("01990000-0000-7000-8000-000000000010", "Tipos de producto", 5), row("01990000-0000-7000-8000-000000000009", "Zonas", 6)];
   server.use(http.get("/api/forms/catalogs", ({ request }) => {
@@ -515,18 +515,18 @@ it("chooses the source catalog in a dropdown that opens on the first catalogs an
   await mount({ initial: [field] });
   const dialog = await openFields();
   await choose(/^Tipo /, "Elegir de un catálogo");
-  const source = within(dialog).getByRole("combobox", { name: "Catálogo" });
+  const source = within(dialog).getByRole("button", { name: "Catálogo Elegí un catálogo" });
   // Opening it shows the first catalogs, before typing anything.
-  await userEvent.click(source);
-  expect(await screen.findByRole("option", { name: "Tipos de producto · 5 opciones" })).toBeInTheDocument();
-  expect(screen.getByRole("option", { name: "Zonas · 6 opciones" })).toBeInTheDocument();
-  await userEvent.type(source, "Zon");
+  const list = await openList("Catálogo Elegí un catálogo");
+  expect(await within(list).findByRole("option", { name: "Tipos de producto" })).toHaveAccessibleDescription("5 opciones");
+  expect(within(list).getByRole("option", { name: "Zonas" })).toHaveAccessibleDescription("6 opciones");
+  await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Catálogo" }), "Zon");
   // While it searches, the open list says so instead of the previous catalogs (2026-10-31).
-  expect(screen.getByRole("listbox", { name: "Catálogo" })).toHaveTextContent("Buscando…");
-  expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument();
-  await userEvent.click(await screen.findByRole("option", { name: "Zonas · 6 opciones" }));
-  expect(screen.queryByRole("option", { name: "Tipos de producto · 5 opciones" })).not.toBeInTheDocument();
-  expect(source).toHaveValue("Zonas");
+  expect(screen.getByRole("status", { name: "Buscando…" })).toBeInTheDocument();
+  expect(within(list).queryByRole("option", { name: "Tipos de producto" })).not.toBeInTheDocument();
+  await userEvent.click(await within(list).findByRole("option", { name: "Zonas" }));
+  expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  expect(source).toHaveAccessibleName("Catálogo Zonas");
 });
 
 it("shows «…» for a chosen source catalog while its name is read, in the field and in its text", async () => {
@@ -537,12 +537,11 @@ it("shows «…» for a chosen source catalog while its name is read, in the fie
     http.get("/api/forms/catalogs/" + zones + "/items", () => HttpResponse.json({ items: [], page: 1, pageSize: 1, totalCount: 3, totalPages: 3, hasPrevious: false, hasNext: true })));
   await mount({ initial: [catalogField] });
   const dialog = await openFields();
-  const source = within(dialog).getByRole("combobox", { name: "Catálogo" });
+  const source = within(dialog).getByRole("button", { name: /^Catálogo/ });
   await waitFor(() => expect(release).toBeDefined());
-  expect(source).toHaveValue(""); expect(source).toHaveAttribute("placeholder", "…");
+  expect(source).toHaveAccessibleName("Catálogo …");
   await act(async () => { release!(); });
-  await waitFor(() => expect(source).toHaveValue("Zonas"));
-  expect(source).not.toHaveAttribute("placeholder");
+  await waitFor(() => expect(source).toHaveAccessibleName("Catálogo Zonas"));
   cleanup(); release = undefined;
   await mount({ initial: [catalogField], readOnly: true });
   const text = await openFields();

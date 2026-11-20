@@ -31,7 +31,8 @@ async function mount(permissions = ["formcatalogs.read", "formcatalogs.manage"],
  await act(async () => { render(<AppProviders><RouterProvider router={router} /></AppProviders>); });
  return router;
 }
-async function chooseSample() { const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" }); await userEvent.click(input); await userEvent.click(await screen.findByRole("option", { name: "Ana Pérez" })); }
+// The sample people are the only piece to choose (DS1-A): its list opens with the keyboard.
+async function chooseSample(name = /^Como si lo recibiera/, person = "Ana Pérez") { const trigger = await screen.findByRole("button", { name }); await act(async () => { trigger.focus(); }); await userEvent.keyboard("{Enter}"); await userEvent.click(await within(await screen.findByRole("listbox")).findByRole("option", { name: person })); }
 async function rename(value: string) { const input = await screen.findByRole("textbox", { name: "Nombre" }); await userEvent.clear(input); await userEvent.click(input); await userEvent.paste(value); }
 beforeEach(async () => { queryClient.clear(); vi.mocked(notify).mockReset(); current = proposalCatalog(); writes = []; discarded = []; await i18n.changeLanguage("es"); });
 afterEach(() => { cleanup(); queryClient.clear(); });
@@ -58,7 +59,7 @@ it("reviews a proposal in the menu language with its original as reference", asy
  expect(screen.getByText("Name", { selector: "label" })).toHaveTextContent(/^Name$/);
  expect(description).toHaveValue(""); expect(description).toHaveAccessibleDescription("Original (Spanish): Supervisores disponibles");
  await userEvent.click(name); await userEvent.paste("Active supervisors");
- await userEvent.click(await screen.findByRole("combobox", { name: "As if received by" })); await userEvent.click(await screen.findByRole("option", { name: "Ana Pérez" }));
+ await chooseSample(/^As if received by/);
  await userEvent.click(screen.getByRole("button", { name: "Approve and activate" }));
  await waitFor(() => expect(writes).toHaveLength(1));
  expect(writes[0]).toEqual({ expectedRevision: 1, name: { es: "Supervisores activos", en: "Active supervisors" }, description: { es: "Supervisores disponibles" }, filters: current.filters, sampleUserId: actor });
@@ -71,7 +72,7 @@ it("approves edited original-language metadata and filters with one revision com
  const approve = await screen.findByRole("button", { name: "Aprobar y activar" });
  expect(approve).toBeEnabled();
  await rename("Supervisores revisados"); await userEvent.click(approve);
- const sample = screen.getByRole("combobox", { name: "Como si lo recibiera" });
+ const sample = screen.getByRole("button", { name: /^Como si lo recibiera/ });
  await waitFor(() => expect(sample).toHaveFocus()); expect(sample).toHaveAttribute("aria-invalid", "true"); expect(writes).toEqual([]);
  await chooseSample();
  await userEvent.click(screen.getByRole("button", { name: "Aprobar y activar" }));
@@ -179,7 +180,7 @@ it("shows authorized proposal history without write actions or sample identities
  await screen.findByText(/La pidió Ana Pérez/);
  expect(screen.queryByRole("button", { name: "Aprobar y activar" })).not.toBeInTheDocument();
  expect(screen.queryByRole("button", { name: "Descartar propuesta" })).not.toBeInTheDocument();
- expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument();
+ expect(screen.queryByRole("button", { name: /^Como si lo recibiera/ })).not.toBeInTheDocument();
 });
 it("retires approval controls when Manage is revoked and drops a late confirmed result", async () => {
  await mount(); let resolve!: (value: Response) => void;

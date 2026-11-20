@@ -729,11 +729,10 @@ it("creates a catalog question, reports its missing selection, then saves the se
   await pick(/^Tipo de respuesta /,"Elegir de un catálogo");
   await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
   expect(await screen.findByText("Elegí un catálogo.")).toBeInTheDocument();
-  const catalog = screen.getByRole("combobox",{name:"Catálogo"});
+  const catalog = screen.getByRole("button",{name:/^Catálogo/});
   expect(catalog).toHaveAttribute("aria-invalid","true");
-  // The catalog is a dropdown (2026-10-31): it shows the first catalogs when touched.
-  await userEvent.click(catalog);
-  await userEvent.click(await screen.findByRole("option",{name:/^Clientes ·/}));
+  // The catalog is the only piece to choose (DS1-A): its list shows the first catalogs when it opens.
+  await userEvent.click(await within(await openList(catalog)).findByRole("option",{name:"Clientes"}));
   await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
   await waitFor(()=>expect(router.state.location.pathname).toMatch(/^\/formularios\/0199/));
   expect(sent).toHaveLength(2);

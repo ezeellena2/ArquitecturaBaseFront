@@ -374,7 +374,7 @@
       "empty": "Todavía no hay campos extra.",
       "keyHint": "La usan la plantilla, la importación y lo guardado. No cambia después de guardar.",
       "optionalFirst": "Un campo nuevo nace opcional: para hacerlo obligatorio, todas las opciones activas necesitan un valor.",
-      "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores", "saveToEnterValues": "Guardá el catálogo para cargar los valores de los campos nuevos.", "limit_one": "Un catálogo admite hasta {{count}} campo.", "limit_other": "Un catálogo admite hasta {{count}} campos.",
+      "unique": "Único", "requiredLabel": "Obligatorio", "min": "Mínimo", "max": "Máximo", "savedFirst": "Guardá para cargar valores", "noValue": "Sin valor", "sourceOptions_one": "{{count}} opción", "sourceOptions_other": "{{count}} opciones", "saveToEnterValues": "Guardá el catálogo para cargar los valores de los campos nuevos.", "limit_one": "Un catálogo admite hasta {{count}} campo.", "limit_other": "Un catálogo admite hasta {{count}} campos.",
       "removeTitle": "Quitar «{{name}}»", "remove": "Quitar el campo", "removeHint": "Se quita de la tabla, de la plantilla y del Excel. Las respuestas que ya lo guardaron lo conservan.",
       "confirmRemoval_one": "Sí, quitar el campo y su valor", "confirmRemoval_other": "Sí, quitar el campo y sus {{count}} valores", "detail": { "between": "De {{min}} a {{max}}", "from": "Desde {{min}}", "to": "Hasta {{max}}", "length_one": "{{count}} carácter", "length_other": "{{count}} caracteres", "source_one": "{{name}} · 1 opción", "source_other": "{{name}} · {{count}} opciones" }, "inUse": "El campo está en uso. Sacá esos usos para poder quitarlo.",
       "usage": {
@@ -579,7 +579,7 @@
         "has": "Tiene el rol"
       },
       "previewTitle": "Vista previa",
-      "sample": "Como si lo recibiera",
+      "sample": "Como si lo recibiera", "samplePlaceholder": "Elegí una persona",
       "sampleRequired": "Elegí una persona de ejemplo para guardar.",
       "test": "Probar",
       "chooseSample": "Elegí una persona para probar antes de guardar.",
@@ -785,12 +785,11 @@
   },
   "catalogQuestion": {
     "catalog": "Catálogo",
+    "chooseCatalog": "Elegí un catálogo",
     "requiresRead": "Necesitás permiso para leer catálogos y elegir uno.",
-    "empty": "Todavía no hay catálogos disponibles.",
     "changeTitle": "¿Cambiar el catálogo?",
     "changeDescription": "La pregunta guardada se reemplaza por una nueva. Las versiones anteriores conservan su catálogo.",
     "changeAction": "Cambiar catálogo",
-    "noResults": "No hay catálogos que coincidan con la búsqueda.",
     "groupBy": {
       "label": "Elegir primero por un campo",
       "help": "Quien completa elige primero un valor del campo y la lista trae sólo las opciones con ese valor. Se guarda sólo la opción.",
@@ -830,7 +829,6 @@
       "answerMultiple": "Elige varias",
       "answerLater": "Va después de {{question}}",
       "noAnswerQuestion": "Ninguna pregunta anterior de elegir una elige del catálogo de estos campos.",
-      "noAnswerMatches": "Ninguna pregunta coincide.",
       "questionUnavailable": "Pregunta no disponible"
     },
     "presentation": {
