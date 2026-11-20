@@ -22,8 +22,8 @@ const created = httpCohort("forms").json("published/created.json") as { definiti
 const sales = "0196f2a0-0000-7000-8000-0000000000f1";
 const north = "0196f2a0-0000-7000-8000-0000000000f2";
 const folders = [
-  { id: sales, parentId: null, name: "Ventas", revision: 1, menuPlacement: "None", menuIcon: null },
-  { id: north, parentId: sales, name: "Norte", revision: 1, menuPlacement: "None", menuIcon: null },
+  { id: sales, parentId: null, name: "Ventas", revision: 1, icon: "folder" },
+  { id: north, parentId: sales, name: "Norte", revision: 1, icon: null },
 ];
 
 function setup(permissions: string[], standards: unknown[] = [invoice, delivery]) {

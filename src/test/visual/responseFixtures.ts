@@ -22,7 +22,7 @@ export function createResponseVisualFixtures(
   // CW6-A: the newest response was loaded in the app.
   if (scenario === "responses-app") sheet.records.items[0].channel = "app";
   if(scenario === "responses-approval"){sheet.hasApproval=true;for(const row of sheet.records.items)row.state="PendingApproval";}
-  sheet.name = scenario === "responses-assisted" ? en ? "Invoice" : "Factura" : en ? "Delivery report" : "Informe de entregas";
+  sheet.name = scenario === "responses-assisted" ? en ? "Invoice" : "Factura" : scenario === "responses-folders" ? en ? "Load check" : "Control de carga" : en ? "Delivery report" : "Informe de entregas";
   const labels = en
     ? ["Amount", "Notes", "Confirmed", "Optional detail", "Method"]
     : [

@@ -42,6 +42,8 @@ interface ActionsMenuProps {
   onOpenChange?: (open: boolean) => void;
   /// Para que el foco no vuelva a ⋮ cuando un ítem abre un diálogo que lo maneja.
   onCloseAutoFocus?: (event: Event) => void;
+  /// El de 1,5 rem (`icon-xs`) va en un renglón del menú lateral, el de las carpetas (CM4).
+  size?: "icon" | "icon-xs";
 }
 
 const isSeparator = (entry: ActionsMenuEntry): entry is { separator: true } => "separator" in entry && entry.separator === true;
@@ -61,11 +63,11 @@ function withLineBeforeDestructive(items: readonly ActionsMenuEntry[]): ActionsM
 /// ⋮ con lo demás que se hace con el objeto (AC1-A, 2026-11-11): corregir, anular, dar de baja, reactivar, eliminar,
 /// descargar la plantilla, ordenar. A la vista queda la tarea de la pantalla y lo que lleva a otro lado. Lo destructivo va
 /// al final, en rojo y después de una línea, y un ítem apagado dice su motivo adentro. Al cerrarse, el foco vuelve a ⋮.
-export function ActionsMenu({ label, items, note, triggerRef, pending, disabled, open, onOpenChange, onCloseAutoFocus }: ActionsMenuProps): ReactNode {
+export function ActionsMenu({ label, items, note, triggerRef, pending, disabled, open, onOpenChange, onCloseAutoFocus, size = "icon" }: ActionsMenuProps): ReactNode {
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
-        <IconButton ref={triggerRef} label={label} pending={pending} disabled={disabled}>
+        <IconButton ref={triggerRef} label={label} pending={pending} disabled={disabled} size={size}>
           <MoreVerticalIcon className="size-4" aria-hidden="true" />
         </IconButton>
       </DropdownMenuTrigger>

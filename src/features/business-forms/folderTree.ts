@@ -1,3 +1,4 @@
+import { menuIconNames, type MenuIconName } from "@/shared/ui/menuIcons";
 import { folderMaxDepth, type FormFolder } from "./api/folders";
 
 /// What the listings show (CP1-A): everything, what has no folder, or a folder with its subfolders.
@@ -57,34 +58,19 @@ export function folderPath(folders: readonly FormFolder[], id: string): string[]
 
 const depthOf = (folders: readonly FormFolder[], id: string) => ancestorIds(folders, id).length + 1;
 
-function subtree(folders: readonly FormFolder[], id: string): Set<string> {
-  const children = childrenOf(folders);
-  const found = new Set([id]);
-  const pending = [id];
-  for (let current = pending.pop(); current !== undefined; current = pending.pop()) {
-    for (const child of children.get(current) ?? []) if (!found.has(child.id)) { found.add(child.id); pending.push(child.id); }
-  }
-  return found;
-}
-
-// The levels a folder carries with its subfolders: 1 for a folder without them.
-function heightOf(folders: readonly FormFolder[], id: string): number {
-  const inside = subtree(folders, id);
-  const base = depthOf(folders, id);
-  return Math.max(...[...inside].map(member => depthOf(folders, member) - base + 1));
-}
-
-/// «Agregar subcarpeta» goes up to the fifth level (CP4).
+/// «Nueva subcarpeta» only in a folder of the first level: there are two levels (CM4).
 export function canAddSubfolder(folders: readonly FormFolder[], id: string): boolean {
   return depthOf(folders, id) < folderMaxDepth;
 }
 
-/// Where «Mover a…» can take a folder: «Arriba de todo» (null) and every folder that is not itself or below it and keeps the
-/// moved folder within five levels, in the order of the tree.
-export function moveTargets(folders: readonly FormFolder[], id: string): { id: string | null; depth: number }[] {
-  const inside = subtree(folders, id);
-  const height = heightOf(folders, id);
-  return [{ id: null, depth: 0 }, ...treeOrder(folders)
-    .filter(entry => !inside.has(entry.folder.id) && entry.depth + height <= folderMaxDepth)
-    .map(entry => ({ id: entry.folder.id, depth: entry.depth }))];
+/// A folder with subfolders cannot go into another: it would make a third level (CM4).
+export function hasSubfolders(folders: readonly FormFolder[], id: string): boolean {
+  return folders.some(folder => folder.parentId === id);
+}
+
+/// The icon a new folder of the first level starts with: the first of the twelve that no folder of the first level uses, or the
+/// folder once all of them are taken.
+export function firstFreeIcon(folders: readonly FormFolder[]): MenuIconName {
+  const taken = new Set(folders.flatMap(folder => folder.parentId === null && folder.icon !== null ? [folder.icon] : []));
+  return menuIconNames.find(name => !taken.has(name)) ?? "folder";
 }

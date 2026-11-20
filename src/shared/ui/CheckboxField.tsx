@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
+import { Badge } from "./badge";
 import { Checkbox } from "./checkbox";
 import { DisabledReason } from "./DisabledReason";
 import { InfoTip } from "./InfoTip";
@@ -14,6 +15,9 @@ interface CheckboxFieldProps {
   description?: string;
   /// La explicación de la casilla: en la (i) al final de su texto, con su tooltip (tablero LC3). Tocarla no la marca.
   help?: string;
+  /// Un estado de lo que se marca, en una etiqueta junto a su texto y sin nada debajo: «Borrador» en un formulario que todavía
+  /// no se publicó (CM2). Es parte de la descripción accesible de la casilla.
+  tag?: string;
   /// Va debajo de la ayuda, sin reemplazarla: el error dice qué falta y la ayuda, por qué hace falta ("Sin esto,
   /// WhatsApp no permite escribirle primero"). Es lo que distingue a una casilla de un `FormField`.
   error?: string;
@@ -38,6 +42,7 @@ export function CheckboxField({
   onCheckedChange,
   description,
   help,
+  tag,
   error,
   disabled,
   disabledReason,
@@ -46,8 +51,9 @@ export function CheckboxField({
   const id = useId();
   const descriptionId = `${id}-description`;
   const helpId = `${id}-help`;
+  const tagId = `${id}-tag`;
   const errorId = `${id}-error`;
-  const describedBy = [help ? helpId : undefined, description ? descriptionId : undefined, error ? errorId : undefined].filter(Boolean).join(" ");
+  const describedBy = [help ? helpId : undefined, tag ? tagId : undefined, description ? descriptionId : undefined, error ? errorId : undefined].filter(Boolean).join(" ");
   const labelNode = (
     <Label
       htmlFor={id}
@@ -84,11 +90,12 @@ export function CheckboxField({
         />
       </DisabledReason>
       <div className="flex flex-col gap-0.5">
-        {help ? (
+        {help || tag ? (
           <span className="flex items-center gap-1">
             {labelNode}
+            {tag ? <Badge id={tagId} variant="outline">{tag}</Badge> : null}
             {/* Encima del área de la etiqueta que se estira sobre la fila: tocar la (i) abre su ayuda y no marca la casilla. */}
-            <span className="-my-1 inline-flex"><InfoTip id={helpId} text={help} label={t("actions.moreInfo", { label })} /></span>
+            {help ? <span className="-my-1 inline-flex"><InfoTip id={helpId} text={help} label={t("actions.moreInfo", { label })} /></span> : null}
           </span>
         ) : labelNode}
         {description ? (

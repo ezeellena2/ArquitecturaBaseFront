@@ -261,13 +261,21 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   (2026-11-05; antes medían 40 y el menú se corría al llegar los permisos); el aviso de error va en un recuadro de 40,
   separador corto en lugar del rótulo y control de plegar de 20 px sobre el borde. Sin submenús: los hijos suben como
   íconos sueltos; Administración sigue siendo un botón que abre el panel.
-- **Carpetas en el menú** ([CP5-A, 2026-11-04](carpetas.md#el-menú-lateral-cp5-a)): una carpeta puede ir en un menú
-  propio, debajo de Inicio y con los demás en orden alfabético, que abre su panel como Administración (sus formularios y
-  un grupo por subcarpeta, nunca más de dos niveles), o ser un grupo más al final de «Gestión de formularios» o de
-  Administración. Lleva sólo los formularios activos que la persona puede abrir y lo vacío no aparece. En el cajón, un
-  menú propio es un grupo con sus subcarpetas adentro; contraída, su ícono con tooltip abre el panel. Mientras se lee no
-  ocupa lugar (un bloque que desapareciera sin menús propios haría subir al resto); si falla, el aviso del menú con
-  «Reintentar».
+- **Cada carpeta del primer nivel es un menú** ([CM1 a CM6, 2026-11-20](carpetas.md#cm1-a-cm6-las-carpetas-son-menús-aprobado-y-programado-el-2026-11-20)):
+  van después de WhatsApp y antes de Administración, en su sección con la línea de siempre, en orden alfabético y cada una con
+  su ícono, y después de ellas, «Nueva carpeta» para quien administra formularios. Cada carpeta abre su panel como
+  Administración: en la banda de 3 rem, el ícono, el nombre y su ⋮ de 1,5 rem sin recuadro; arriba, sus formularios activos;
+  debajo, un grupo plegable por subcarpeta (nunca más de dos niveles), abierto sólo el del formulario abierto, con su ⋮ al
+  pasar el mouse o con el foco y siempre en una pantalla táctil; al final, «Agregar formularios». Lo vacío lo ve sólo quien
+  administra, en gris y en `text-xs`. Un formulario abierto desde el menú queda marcado, con su panel abierto, y las migas
+  nombran la carpeta («Repartos / Control de carga»).
+- **«Nueva carpeta» y «Agregar formularios» son renglones del menú con su +.** Es una diferencia aceptada con el resto del
+  menú, que sólo lleva a otro lado: el menú es el único lugar de las carpetas, y lo escondido en un «…» fue lo que el usuario
+  no encontró. Quien sólo carga ve las carpetas con algo que puede abrir, sin esos renglones ni los ⋮.
+- **En el cajón** cada carpeta es un grupo, con sus subcarpetas adentro y el ⋮ en su renglón, y se abre una a la vez; **con la
+  barra contraída**, su ícono con el nombre en el tooltip abre el panel, y «Nueva carpeta» es su +. **Mientras se lee** la
+  sección no ocupa lugar, ni su línea: un bloque que desapareciera sin carpetas haría subir al resto. Si falla, el aviso del
+  menú con «Reintentar».
 
 ## Íconos y acciones
 

@@ -9,7 +9,7 @@ pregunta con la recomendada primero. El Sistema visual es de otra cuenta y el li
 sesiones de las etapas 3 a 6, así que, como en renglones, carpetas, la IA y «Formularios sólo en la app», este documento
 congela lo elegido. Las reglas y el backend están en [formularios](../../../ArquitecturaBase/docs/features/formularios.md#cálculos--ca1-a-2026-11-09),
 de «Cálculos» a «Biblioteca de estándares»; las carpetas siguen su propio
-[diseño](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md) (CP1-A a CP5-A).
+[diseño](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md) (CP2-A y CM1 a CM6).
 
 ## Los tableros
 

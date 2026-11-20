@@ -22,11 +22,13 @@ export function folderWriteFailure(error: unknown, { t, id, fields, reread }: { 
   return null;
 }
 
-/// What deleting loses, as the board says it (CP3-A): its subfolders go along, and its forms and catalogs stay in their other
-/// folders or without one. No form or catalog is ever deleted.
-export function deletionSentences(counts: FormFolderDeletion, t: Translate): string[] {
+/// What deleting loses, as the board says it (CM4): a folder of the first level leaves the menu and a subfolder leaves its folder
+/// (`parentName`); its subfolders go along, and its forms and catalogs stay in their other folders or without one. No form or
+/// catalog is ever deleted.
+export function deletionSentences(counts: FormFolderDeletion, parentName: string | null, t: Translate): string[] {
+  const leaves = parentName === null ? t("deleteDialog.leavesMenu") : t("deleteDialog.leavesParent", { name: parentName });
   const items = counts.formCount > 0 && counts.catalogCount > 0 ? t("deleteDialog.items", { count: counts.formCount + counts.catalogCount })
     : counts.formCount > 0 ? t("deleteDialog.forms", { count: counts.formCount })
     : counts.catalogCount > 0 ? t("deleteDialog.catalogs", { count: counts.catalogCount }) : t("deleteDialog.empty");
-  return [...counts.subfolderCount > 0 ? [t("deleteDialog.subfolders", { count: counts.subfolderCount })] : [], items];
+  return [leaves, ...counts.subfolderCount > 0 ? [t("deleteDialog.subfolders", { count: counts.subfolderCount })] : [], items];
 }

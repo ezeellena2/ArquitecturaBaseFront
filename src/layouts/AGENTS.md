@@ -4,7 +4,7 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 
 ## Al modificar
 
-- WhatsApp, Formularios y Administración comparten el trigger y geometría del panel. El detalle del Sidebar, las migas y el menú de usuario está en [components](components/AGENTS.md). Solo uno se abre a la vez; la ruta abre su sección y los permisos filtran sus destinos. En móvil se despliegan dentro del cajón.
+- WhatsApp, Formularios, cada carpeta y Administración comparten el trigger y geometría del panel. El detalle del Sidebar, las migas y el menú de usuario está en [components](components/AGENTS.md). Solo uno se abre a la vez; la ruta abre su sección y los permisos filtran sus destinos. En móvil se despliegan dentro del cajón.
 - Inicio muestra su HomeIcon también expandido y en móvil. WhatsApp lleva encima la misma línea de Administración; se dibuja sólo junto a su sección visible, también contraída.
 
 - Ruta y menú mantienen los mismos permisos mediante `PermissionRequirement` y `usePermissions.has`, incluidas las alternativas OR. Las rutas hijas usan la sección padre; la pantalla aporta la hoja de sus migas.
@@ -22,7 +22,7 @@ Define layouts de acceso, inicio y aplicación autenticada, además de barra, me
 
 Gestión de formularios compone la entrada fija «Formularios» de MF1 y las tareas de diseño/catálogos/faltantes. La tabla exige RecordsRead OR ApprovalsDecide OR RecordsCreate; su conteo de menú sólo se muestra con Decide. `formsOverviewNavigation` es neutral: layouts informa si el panel está abierto y app aporta conteo y recuperación. No se dibujan formularios individuales ni una bandeja global.
 
-«Documentos recibidos» (DOC5-A) va después de las páginas fijas del panel de los formularios y del cajón, y antes de sus carpetas (`NavBranch` la recibe en `trailing` y las carpetas en `after`): su renglón no mueve ninguna página al llegar los permisos y las carpetas, que llegan después, se suman debajo; con `formdocuments.read`, y dice cuántos documentos esperan a alguien del equipo (`documents` del contexto neutral), con su bloque de carga en el mismo renglón y «Reintentar» si no se pudo leer, como «Formularios» (`ReceivedDocumentsLink`); sólo ese permiso ya muestra el panel. En `navigation` va antes de «Diseñar formularios», así un documento abierto (`/formularios/documentos/{id}`) cuelga de él en las migas y no de `/formularios`.
+«Documentos recibidos» (DOC5-A) va después de las páginas fijas del panel de los formularios y del cajón (`NavBranch` la recibe en `trailing`): su renglón no mueve ninguna página al llegar los permisos; con `formdocuments.read`, y dice cuántos documentos esperan a alguien del equipo (`documents` del contexto neutral), con su bloque de carga en el mismo renglón y «Reintentar» si no se pudo leer, como «Formularios» (`ReceivedDocumentsLink`); sólo ese permiso ya muestra el panel. En `navigation` va antes de «Diseñar formularios», así un documento abierto (`/formularios/documentos/{id}`) cuelga de él en las migas y no de `/formularios`.
 
 Las migas de respuesta leen número y nombre del padre aportados por el detalle mediante el hook neutral; el listado paginado de navegación no es fuente del nombre confirmado.
 
@@ -32,4 +32,4 @@ Las migas del diseño PDF usan el nombre confirmado que aporta su pantalla: Inic
 
 Datos de las personas es una entrada plana de Administración, con formpersondata.manage. La lectura de personas exige además users.read dentro de la pantalla; ese requisito no oculta la administración de definiciones.
 
-Carpetas en el menú (CP5-A): `folderMenuNavigation` es el contrato neutral; `app` lo llena y el menú dibuja cada menú propio como un panel debajo de Inicio y cada carpeta puesta en un panel como un grupo al final de «Gestión de formularios» o de Administración. Un formulario abierto desde el menú (`entry`) deja su panel abierto y marcado, y las migas dicen «Menú / Formulario», mientras se siga en sus pantallas.
+Carpetas en el menú (CM1 a CM6): `folderMenuNavigation` es el contrato neutral; `app` lo llena y el menú dibuja cada carpeta del primer nivel como un panel propio, después de WhatsApp y antes de Administración, con sus formularios y un grupo por subcarpeta. A quien administra formularios el contrato le suma `act`: el menú pide crear, editar, mover, borrar o agregar formularios, con adónde vuelve el foco (lo que lo pidió o, si su carpeta dejó el menú, «Nueva carpeta»), y `app` dibuja el diálogo sin que `layouts` importe la feature; `created` le dice qué carpeta acaba de crearse, para abrirla. Un formulario abierto desde el menú (`entry`) deja su panel abierto y marcado, con su grupo abierto, y las migas dicen «Carpeta / Formulario», mientras se siga en sus pantallas.

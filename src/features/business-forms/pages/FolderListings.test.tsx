@@ -11,26 +11,70 @@ import { fixtureLifecycle } from "@/test/visual/formFixtures";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 
-// Synthetic DTOs for the listings' behavior with folders (CP1-A, CP2-A, CP4); the HTTP contract tests consume the backend
+// Synthetic DTOs for the listings' behavior with folders (CM3, CP2-A, CP4); the HTTP contract tests consume the backend
 // captures separately.
-const north = "0199a0c0-0000-7000-8000-0000000000f3";
+const billing = "0199a0c0-0000-7000-8000-0000000000f1";
 const delivery = "0199a0c0-0000-7000-8000-0000000000f2";
-const folder = (id: string, parentId: string | null, name: string) => ({ id, parentId, name, revision: 1, menuPlacement: "None", menuIcon: null });
-const tree = (canManage: boolean) => ({ folders: [folder(delivery, null, "Repartos"), folder(north, delivery, "Norte")], canManage });
+const north = "0199a0c0-0000-7000-8000-0000000000f3";
+const gone = "0199a0c0-0000-7000-8000-0000000000f9";
+const folder = (id: string, parentId: string | null, name: string) => ({ id, parentId, name, revision: 1, icon: parentId === null ? "folder" : null });
+const tree = (canManage: boolean) => ({ folders: [folder(billing, null, "Facturación"), folder(delivery, null, "Repartos"), folder(north, delivery, "Norte")], canManage });
 const emptyPage = { items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false };
 const catalogRow = { valueType: "Text", id: "01990000-0000-7000-8000-000000000030", name: "Artículos", description: null, origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: true };
 const formRow = { id: "01990000-0000-7000-8000-000000000001", name: { es: "Hoja de ruta" }, prefix: "HDR", questionCount: 4, activeVersionNumber: 1, displayState: "Published", lastChangedAtUtc: "2026-11-10T12:00:00Z", lastChangedBy: null, canEdit: true, lifecycle: fixtureLifecycle() };
+const catalogPage = (items: unknown[] = []) => ({ ...emptyPage, items, totalCount: items.length, totalPages: items.length ? 1 : 0, filterCounts: { byKind: { all: items.length, manual: items.length, filters: 0 } } });
 
-function asUser(permissions: string[], canManage = permissions.some(permission => permission.endsWith(".manage"))) {
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/folders", () => HttpResponse.json(tree(canManage))));
+// The tree says `canManage` only to whoever administers forms (CM1 a CM6).
+function asUser(permissions: string[]) {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })),
+    http.get("/api/forms/folders", () => HttpResponse.json(tree(permissions.includes("formtemplates.manage")))));
 }
+function catalogRequests(items: unknown[] = []) {
+  const requests: URLSearchParams[] = [];
+  server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(catalogPage(items)); }));
+  return requests;
+}
+// Radix opens its menus by keyboard in jsdom.
+async function openFolderFilter(name: string | RegExp = /^Carpeta:/) {
+  const trigger = await screen.findByRole("button", { name });
+  act(() => trigger.focus());
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("menu");
+}
+const search = (router: ReturnType<typeof renderRouteWithProviders>["router"]) => new URLSearchParams(router.state.location.search);
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
 
-describe("Catálogos with folders", () => {
-  it("filters by the folder of the address and says it is empty with the folder's name", async () => {
+describe("Catálogos with the «Carpeta» filter", () => {
+  it("offers «Todas» apart, «Sin carpeta» and the folders with their subfolders, and puts the chosen one in the address on page 1", async () => {
     asUser(["formcatalogs.read"]);
-    const requests: URLSearchParams[] = [];
-    server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ ...emptyPage, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } }); }));
+    const requests = catalogRequests();
+    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+    await act(async () => { router = renderRouteWithProviders("/catalogos?page=3&pageSize=20&search=urea&state=Inactive").router; });
+    // The listing goes the whole width: no panel of folders beside it.
+    expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
+    const menu = await openFolderFilter("Carpeta: Todas");
+    expect(await within(menu).findByRole("menuitemradio", { name: "Norte" })).toBeInTheDocument();
+    expect(within(menu).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Todas", "Sin carpeta", "Facturación", "Repartos", "Norte"]);
+    expect(within(menu).getByRole("menuitemradio", { name: "Todas" })).toHaveAttribute("aria-checked", "true");
+    expect(within(menu).getAllByRole("separator")).toHaveLength(1);
+    await userEvent.click(within(menu).getByRole("menuitemradio", { name: "Norte" }));
+    await waitFor(() => expect(search(router).get("carpeta")).toBe(north));
+    expect(search(router).get("page")).toBeNull();
+    expect(search(router).get("search")).toBe("urea");
+    expect(search(router).get("state")).toBe("Inactive");
+    await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
+    expect(await screen.findByRole("button", { name: "Carpeta: Norte" })).toBeInTheDocument();
+    const again = await openFolderFilter("Carpeta: Norte");
+    expect(within(again).getByRole("menuitemradio", { name: "Norte" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(within(again).getByRole("menuitemradio", { name: "Sin carpeta" }));
+    await waitFor(() => expect(search(router).get("carpeta")).toBe("sin-carpeta"));
+    await waitFor(() => expect(requests.at(-1)?.get("withoutFolder")).toBe("true"));
+    expect(requests.at(-1)?.get("folderId")).toBeNull();
+  });
+
+  it("says that a folder is empty with the folder's name", async () => {
+    asUser(["formcatalogs.read"]);
+    const requests = catalogRequests();
     await act(async () => { renderRouteWithProviders(`/catalogos?pageSize=20&carpeta=${north}`); });
     expect(await screen.findByText("No hay catálogos en «Norte»")).toBeInTheDocument();
     expect(requests.at(-1)?.get("folderId")).toBe(north);
@@ -39,40 +83,69 @@ describe("Catálogos with folders", () => {
 
   it("offers «Buscar en todas» when the search finds nothing in the folder, keeping what was written", async () => {
     asUser(["formcatalogs.read"]);
-    const requests: URLSearchParams[] = [];
-    server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ ...emptyPage, filterCounts: { byKind: { all: 0, manual: 0, filters: 0 } } }); }));
+    const requests = catalogRequests();
     let router!: ReturnType<typeof renderRouteWithProviders>["router"];
-    await act(async () => { router = renderRouteWithProviders(`/catalogos?pageSize=20&search=urea&carpeta=sin-carpeta`).router; });
+    await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20&search=urea&carpeta=sin-carpeta").router; });
     expect(await screen.findByText("No hay coincidencias en «Sin carpeta»")).toBeInTheDocument();
     expect(requests.at(-1)?.get("withoutFolder")).toBe("true");
     await userEvent.click(screen.getByRole("button", { name: "Buscar en todas" }));
-    await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("carpeta")).toBeNull());
-    expect(new URLSearchParams(router.state.location.search).get("search")).toBe("urea");
+    await waitFor(() => expect(search(router).get("carpeta")).toBeNull());
+    expect(search(router).get("search")).toBe("urea");
   });
 
-  it("puts «Carpetas…» in the row menu only for whoever manages catalogs, and opens its dialog", async () => {
+  it("goes back to «Todas» with a notice when the folder of the address no longer exists", async () => {
+    asUser(["formcatalogs.read"]);
+    const requests = catalogRequests();
+    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+    await act(async () => { router = renderRouteWithProviders(`/catalogos?pageSize=20&carpeta=${gone}`).router; });
+    expect(await screen.findByText("La carpeta de la dirección ya no existe. Te mostramos todos.")).toBeInTheDocument();
+    await waitFor(() => expect(search(router).get("carpeta")).toBeNull());
+    expect(await screen.findByRole("button", { name: "Carpeta: Todas" })).toBeInTheDocument();
+    await waitFor(() => expect(requests.at(-1)?.has("folderId")).toBe(false));
+  });
+
+  it("keeps the listing with «Todas» and offers Reintentar in the filter when the folders cannot be read", async () => {
+    let fail = true;
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formcatalogs.read"] })),
+      http.get("/api/forms/folders", () => fail ? HttpResponse.json({ code: "Boom", detail: "No pudimos." }, { status: 500 }) : HttpResponse.json(tree(false))));
+    const requests = catalogRequests([catalogRow]);
+    await act(async () => { renderRouteWithProviders(`/catalogos?pageSize=20&carpeta=${north}`); });
+    expect(await screen.findByRole("link", { name: "Artículos" })).toBeInTheDocument();
+    // While the tree is read the address' folder counts; once it fails, the listing goes on with «Todas».
+    await waitFor(() => expect(requests.at(-1)?.has("folderId")).toBe(false));
+    const menu = await openFolderFilter("Carpeta: Todas");
+    expect(await within(menu).findByText("No pudimos cargar las carpetas.")).toBeInTheDocument();
+    expect(within(menu).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Todas"]);
+    fail = false;
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Reintentar" }));
+    // The folder of the address is back once the tree is read.
+    expect(await within(menu).findByRole("menuitemradio", { name: "Norte" })).toHaveAttribute("aria-checked", "true");
+    await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
+  });
+
+  it("puts «Carpetas…» in the row menu only for whoever manages catalogs, without «Nueva carpeta» unless they administer forms", async () => {
     asUser(["formcatalogs.read", "formcatalogs.manage"]);
-    server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ ...emptyPage, items: [catalogRow], totalCount: 1, totalPages: 1, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })),
-      http.get(`/api/forms/catalogs/${catalogRow.id}/folders`, () => HttpResponse.json({ folderIds: [north] })));
+    catalogRequests([catalogRow]);
+    server.use(http.get(`/api/forms/catalogs/${catalogRow.id}/folders`, () => HttpResponse.json({ folderIds: [north] })));
     await act(async () => { renderRouteWithProviders("/catalogos?pageSize=20"); });
     await userEvent.click(await screen.findByRole("button", { name: "Carpetas de «Artículos»" }));
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
     expect(await within(dialog).findByRole("checkbox", { name: "Norte" })).toBeChecked();
+    expect(within(dialog).queryByRole("button", { name: "Nueva carpeta" })).not.toBeInTheDocument();
   });
 
-  it("shows the tree without the + nor «Carpetas…» to whoever only reads", async () => {
+  it("leaves «Carpetas…» out of the row for whoever only reads", async () => {
     asUser(["formcatalogs.read"]);
-    server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ ...emptyPage, items: [catalogRow], totalCount: 1, totalPages: 1, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } })));
+    catalogRequests([catalogRow]);
     await act(async () => { renderRouteWithProviders("/catalogos?pageSize=20"); });
-    const panel = await screen.findByRole("region", { name: "Carpetas" });
-    expect(await within(panel).findByRole("button", { name: "Repartos" })).toBeInTheDocument();
-    expect(within(panel).queryByRole("button", { name: "Agregar carpeta" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Artículos" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Carpeta: Todas" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Carpetas de «Artículos»" })).not.toBeInTheDocument();
   });
 });
 
-describe("Diseñar formularios and Formularios with folders", () => {
-  it("counts and lists the forms of the folder, and puts «Carpetas…» in the row menu", async () => {
+describe("Diseñar formularios with the «Carpeta» filter", () => {
+  it("lists and counts the forms of the chosen folder, and «Carpetas…» offers «Nueva carpeta» to whoever administers forms", async () => {
     asUser(["formtemplates.read", "formtemplates.manage"]);
     const lists: URLSearchParams[] = [];
     const facets: URLSearchParams[] = [];
@@ -81,36 +154,56 @@ describe("Diseñar formularios and Formularios with folders", () => {
       http.get("/api/forms/definitions", ({ request }) => { lists.push(new URL(request.url).searchParams); return HttpResponse.json({ ...emptyPage, items: [formRow], totalCount: 1, totalPages: 1 }); }),
       http.get(`/api/forms/definitions/${formRow.id}/folders`, () => HttpResponse.json({ folderIds: [] })),
     );
-    await act(async () => { renderRouteWithProviders(`/formularios?pageSize=20&carpeta=${delivery}`); });
+    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+    await act(async () => { router = renderRouteWithProviders("/formularios?page=2&pageSize=20&publicationFilter=Published").router; });
+    expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
+    const menu = await openFolderFilter("Carpeta: Todas");
+    await userEvent.click(await within(menu).findByRole("menuitemradio", { name: "Repartos" }));
+    await waitFor(() => expect(search(router).get("carpeta")).toBe(delivery));
+    expect(search(router).get("page")).toBeNull();
+    expect(search(router).get("publicationFilter")).toBe("Published");
+    await waitFor(() => expect(lists.at(-1)?.get("folderId")).toBe(delivery));
+    await waitFor(() => expect(facets.at(-1)?.get("folderId")).toBe(delivery));
     await userEvent.click(await screen.findByRole("button", { name: "Carpetas de «Hoja de ruta»" }));
-    expect(lists.at(-1)?.get("folderId")).toBe(delivery);
-    expect(facets.at(-1)?.get("folderId")).toBe(delivery);
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Hoja de ruta»" });
     expect(await within(dialog).findByRole("checkbox", { name: "Repartos" })).not.toBeChecked();
+    expect(within(dialog).getByRole("button", { name: "Nueva carpeta" })).toBeInTheDocument();
   });
 
-  it("filters «Formularios» by the folder for whoever only loads", async () => {
-    asUser(["formrecords.create"], false);
+  it("says that a folder is empty with its name, and offers «Buscar en todas» with a search", async () => {
+    asUser(["formtemplates.read"]);
+    server.use(
+      http.get("/api/forms/definitions/facets", () => HttpResponse.json({ active: 0, published: 0, drafts: 0, deactivated: 0 })),
+      http.get("/api/forms/definitions", () => HttpResponse.json(emptyPage)),
+    );
+    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+    await act(async () => { router = renderRouteWithProviders(`/formularios?pageSize=20&carpeta=${north}`).router; });
+    expect(await screen.findByText("No hay formularios en «Norte»")).toBeInTheDocument();
+    await act(async () => { await router.navigate(`/formularios?pageSize=20&search=ruta&carpeta=${north}`); });
+    expect(await screen.findByText("No hay coincidencias en «Norte»")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Buscar en todas" }));
+    await waitFor(() => expect(search(router).get("carpeta")).toBeNull());
+    expect(search(router).get("search")).toBe("ruta");
+  });
+});
+
+describe("Formularios without folders", () => {
+  it("has neither the panel nor the filter, and ignores an old link with a folder", async () => {
+    const trees = vi.fn();
+    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.create"] })),
+      http.get("/api/forms/folders", () => { trees(); return HttpResponse.json(tree(false)); }));
     const requests: URLSearchParams[] = [];
     server.use(http.get("/api/forms/overview", ({ request }) => {
       requests.push(new URL(request.url).searchParams);
       return HttpResponse.json({ forms: { ...emptyPage }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } });
     }));
     await act(async () => { renderRouteWithProviders(`/formularios/respuestas?pageSize=20&carpeta=${north}`); });
-    expect(await screen.findByText("No hay formularios en «Norte»")).toBeInTheDocument();
-    expect(requests.at(-1)?.get("folderId")).toBe(north);
-  });
-
-  // CP4: with a search or a filter, an empty folder offers «Buscar en todas» and «Limpiar filtros», as in the other listings.
-  it("offers «Limpiar filtros» in an empty folder of «Formularios» with a search, keeping the folder", async () => {
-    asUser(["formrecords.create"], false);
-    server.use(http.get("/api/forms/overview", () => HttpResponse.json({ forms: { ...emptyPage }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } })));
-    let router!: ReturnType<typeof renderRouteWithProviders>["router"];
-    await act(async () => { router = renderRouteWithProviders(`/formularios/respuestas?pageSize=20&search=urea&carpeta=${north}`).router; });
-    expect(await screen.findByText("No hay coincidencias en «Norte»")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Buscar en todas" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
-    await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("search")).toBeNull());
-    expect(new URLSearchParams(router.state.location.search).get("carpeta")).toBe(north);
+    await waitFor(() => expect(requests).not.toHaveLength(0));
+    expect(requests.every(request => !request.has("folderId") && !request.has("withoutFolder"))).toBe(true);
+    expect(await screen.findByRole("searchbox")).toBeInTheDocument();
+    expect(screen.queryByText(/«Norte»/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Carpeta:/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
+    expect(trees).not.toHaveBeenCalled();
   });
 });

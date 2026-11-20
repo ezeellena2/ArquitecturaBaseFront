@@ -22,7 +22,7 @@ it("refreshes confirmed lifecycle and overview even when its private draft canno
    filterCounts:{active:active?1:0,deactivated:exists&&inactive?1:0,deactivatedPending:null}};
  } });
  stopOverview=observer.subscribe(()=>{});
- // The side menu lists the active forms of its folders (CP5-A): a change of state reads it again, as the folders' trees.
+ // The side menu lists the active forms of its folders (CM6): a change of state reads it again, as the folders' trees.
  const menu=vi.fn();const menuObserver=new QueryObserver(queryClient,{queryKey:["form-folders","actor","menu-probe"],gcTime:0,queryFn:async()=>{menu();return {};}});
  stopMenu=menuObserver.subscribe(()=>{});
  // The first render pays the lazy editor: with the machine loaded it takes more than a second.

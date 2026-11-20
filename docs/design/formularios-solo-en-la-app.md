@@ -63,7 +63,7 @@ El 2026-11-09 el usuario eligió las siete recomendadas («Sí, las recomendadas
 - «Formularios», la pantalla con «Cargar», no cambia: un formulario de la app aparece como los demás.
 - La carga desde la app, la planilla, el detalle, el Excel, las reglas, las aprobaciones y el PDF trabajan sobre la versión
   activa, venga de donde venga.
-- Las carpetas en el menú lateral (CP5-A) muestran los formularios activos sin mirar dónde se completan.
+- Las carpetas del menú lateral (CM1) muestran los formularios activos sin mirar dónde se completan.
 - «Publicar» apagado sigue diciendo su motivo sobre el mismo control ([MA1-A](visual-baseline.md#el-motivo-de-lo-apagado--2026-11-09)).
 
 ## Piezas de `src/shared/ui`

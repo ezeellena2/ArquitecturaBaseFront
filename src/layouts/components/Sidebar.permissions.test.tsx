@@ -55,12 +55,13 @@ it("puts «Documentos recibidos» after the pages of the panel", async () => {
   expect(links.map(link => link.textContent)).toContain("Diseñar formularios");
 });
 
-// DOC5-A: the folders arrive after the profile (FormMenuShell) and go below «Documentos recibidos», which keeps its place.
-it("keeps «Documentos recibidos» in its place when the folders arrive, below it", async () => {
+// DOC5-A: the folders arrive after the profile (FormMenuShell). Each one is a menu of its own (CM1), so «Documentos recibidos»
+// keeps its place in «Gestión de formularios».
+it("keeps «Documentos recibidos» in its place when the folders arrive", async () => {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formdocuments.read"] })));
   const form = "0199a0c0-0000-7000-8000-0000000000a1";
-  const folders: FolderMenuContent = { sections: [], formsGroups: [{ id: "sowing", label: "Siembra", links: [{ id: form, label: "Hoja de ruta", to: `/formularios/${form}/respuestas` }] }],
-    administrationGroups: [] };
+  const folders: FolderMenuContent = { canManage: true, menus: [{ id: "sowing", label: "Siembra", icon: "leaf", revision: 1, catalogCount: 0,
+    links: [{ id: form, label: "Hoja de ruta", to: `/formularios/${form}/respuestas` }], groups: [] }] };
   const shell = (content?: FolderMenuContent) => <MemoryRouter>
     <FolderMenuNavigationContext.Provider value={{ content, pending: !content, failed: false, retry: () => undefined, entry: null, enter: vi.fn() }}>
       <Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()} />
@@ -74,8 +75,8 @@ it("keeps «Documentos recibidos» in its place when the folders arrive, below i
   const entry = await within(panel).findByRole("link", { name: /^Documentos recibidos/ });
   const above = within(panel).getAllByRole("link").slice(0, within(panel).getAllByRole("link").indexOf(entry)).map(link => link.textContent);
   view.rerender(shell(folders));
-  const folder = await within(panel).findByRole("button", { name: "Siembra" });
-  // Nothing was added above it: the folder goes after it.
+  await within(sidebar).findByRole("button", { name: "Siembra" });
+  // Nothing was added above it, and the folder is a menu, not a group of this panel.
   expect(within(panel).getAllByRole("link").slice(0, within(panel).getAllByRole("link").indexOf(entry)).map(link => link.textContent)).toEqual(above);
-  expect(entry.compareDocumentPosition(folder) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(within(panel).queryByRole("link", { name: "Hoja de ruta" })).not.toBeInTheDocument();
 });

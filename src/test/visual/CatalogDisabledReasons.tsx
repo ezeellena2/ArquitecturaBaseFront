@@ -13,25 +13,25 @@ import { Surface } from "@/shared/ui/Surface";
 
 // MA1-A (2026-11-09): what is off says why on the same control, with the mouse, the focus, a click or a touch, and
 // nothing goes next to it. The pieces of the board: a box off in a block, a button off while a publication runs, an
-// icon button at the first place, a field and an (i), with the texts of the app; and the option of «Mover a…» that cannot
-// be chosen, whose whole row answers like the box (2026-11-11).
+// icon button at the first place, a field and an (i), with the texts of the app; and an option of «Mover a…» that cannot
+// be chosen, whose whole row answers like the box (2026-11-11), with the texts of moving a folder of the menu (CM4).
 export function CatalogDisabledReasons() {
   const { t, i18n } = useTranslation();
-  const [place, setPlace] = useState("top");
+  const [place, setPlace] = useState("menu");
   const text = i18n.language === "en"
     ? {
       title: "Reason for what is off", multiple: "Allow choosing several", multipleReason: "A block picks a single option.",
       publish: "Publish on WhatsApp", publishReason: "A publication is in progress.", up: "Move Quantity up",
       upReason: "Quantity: position 1 of 3", maximum: "Maximum", maximumHelp: "WhatsApp loads up to 10 items.",
       sample: "As if received by", sampleReason: "Save the form to try it with a person.",
-      place: "Where it goes", top: "At the top", other: "Purchases", self: "Sales", selfReason: "It cannot go inside itself or its subfolders.",
+      place: "Where it goes", menu: "To the menu, as a folder of its own", other: "Inside “Purchases”", self: "Inside “Sales”", selfReason: "It has subfolders: it cannot go inside another.",
     }
     : {
       title: "Motivo de lo apagado", multiple: "Permitir elegir varias", multipleReason: "En un bloque se elige una sola opción.",
       publish: "Publicar en WhatsApp", publishReason: "Hay una publicación en curso.", up: "Subir Cantidad",
       upReason: "Cantidad: posición 1 de 3", maximum: "Máximo", maximumHelp: "En WhatsApp se cargan hasta 10 ítems.",
       sample: "Como si lo recibiera", sampleReason: "Guardá el formulario para probar con una persona.",
-      place: "Dónde va", top: "Arriba de todo", other: "Compras", self: "Ventas", selfReason: "No puede ir adentro de sí misma ni de sus subcarpetas.",
+      place: "Dónde va", menu: "Al menú, como carpeta propia", other: "Adentro de «Compras»", self: "Adentro de «Ventas»", selfReason: "Tiene subcarpetas: no puede ir adentro de otra.",
     };
   return (
     <Surface title={text.title} padded>
@@ -49,7 +49,7 @@ export function CatalogDisabledReasons() {
           <DisabledReason reason={text.sampleReason} className="grid w-full"><Input disabled /></DisabledReason>
         </FormField>
         <RadioGroupField label={text.place} value={place} onValueChange={setPlace} options={[
-          { value: "top", label: text.top },
+          { value: "menu", label: text.menu },
           { value: "other", label: text.other },
           { value: "self", label: text.self, disabled: true, disabledReason: text.selfReason },
         ]} />

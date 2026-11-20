@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { useContext, useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useMatch } from "react-router";
 import {
@@ -17,8 +17,8 @@ import {
   type NavigationPanel,
 } from "../navigation";
 import { FormsOverviewNavigationContext } from "../formsOverviewNavigation";
-import { FolderMenuNavigationContext, isEntryPath, type FolderMenuContent, type FolderMenuEntry, type FolderMenuGroup, type FolderMenuLink } from "../folderMenuNavigation";
-import { FolderIcon, FormIcon } from "@/shared/ui/icons";
+import { FolderMenuNavigationContext, isEntryPath, type FolderMenuAction, type FolderMenuContent, type FolderMenuEntry, type FolderMenuGroup, type FolderMenuLink, type FolderMenuSection } from "../folderMenuNavigation";
+import { FolderIcon, FormIcon, PlusIcon, PublicTrackingIcon } from "@/shared/ui/icons";
 import { menuIcons } from "@/shared/ui/menuIcons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -31,6 +31,7 @@ import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, RefreshIcon } from 
 import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
+import { ActionsMenu } from "@/shared/ui/ActionsMenu";
 
 const sidebarEdgeToggleClassName =
   "absolute top-15.5 -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
@@ -106,7 +107,7 @@ function NavBranch({
   showIcon = true,
   leading,
   trailing,
-  after,
+  actions,
   controls,
   translate,
   onNavigate,
@@ -116,32 +117,44 @@ function NavBranch({
   items: NavigationItem[];
   showIcon?: boolean;
   leading?: ReactNode;
-  /** A row after the items, as «Documentos recibidos» after the pages of the forms (DOC5-A), and the items that go below it. */
+  /** Rows after the items: «Documentos recibidos» after the pages of the forms (DOC5-A), or what a folder has in the drawer (CM5). */
   trailing?: ReactNode;
-  after?: NavigationItem[];
+  /** The ⋮ of a folder or a subfolder (CM4), after the row: it shows on hover or with the focus inside, and always on a touch screen. */
+  actions?: ReactNode;
   controls: BranchControls;
   translate: (key: string) => string;
   onNavigate?: () => void;
 }) {
   const listId = useId();
   const open = controls.isOpen(labelKey);
+  const toggle = (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={open ? listId : undefined}
+      onClick={() => controls.toggle(labelKey)}
+      className={cn(
+        "flex min-h-7.5 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
+        actions ? "min-w-0 flex-1" : "w-full",
+      )}
+    >
+      {showIcon ? <Icon className="size-4 shrink-0" /> : null}
+      <span className="min-w-0 flex-1 break-words text-left leading-4">{translate(labelKey)}</span>
+      <ChevronDownIcon
+        aria-hidden="true"
+        className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
+      />
+    </button>
+  );
 
   return (
     <>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={open ? listId : undefined}
-        onClick={() => controls.toggle(labelKey)}
-        className="flex min-h-7.5 w-full items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]"
-      >
-        {showIcon ? <Icon className="size-4 shrink-0" /> : null}
-        <span className="min-w-0 flex-1 break-words text-left leading-4">{translate(labelKey)}</span>
-        <ChevronDownIcon
-          aria-hidden="true"
-          className={cn("size-4 shrink-0 transition-transform", open ? "" : "-rotate-90")}
-        />
-      </button>
+      {actions ? (
+        <div className="group/branch flex items-center gap-1">
+          {toggle}
+          <span className="flex shrink-0 opacity-0 group-focus-within/branch:opacity-100 group-hover/branch:opacity-100 has-[[data-state=open]]:opacity-100 [@media(hover:none)]:opacity-100">{actions}</span>
+        </div>
+      ) : toggle}
       {open && leading ? leading : null}
       {open ? (
         // La guía arranca bajo el centro del ícono del padre; cuando no se muestra, arranca bajo su texto.
@@ -154,7 +167,6 @@ function NavBranch({
         >
           <NavItems items={items} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} />
           {trailing}
-          {after?.length ? <NavItems items={after} controls={controls} translate={translate} onNavigate={onNavigate} showIcons={showIcon} /> : null}
         </ul>
       ) : null}
     </>
@@ -294,10 +306,20 @@ function dependsOnPermissions(item: NavigationItem): boolean {
     : Boolean(item.permission);
 }
 
-/// The folders of the side menu (CP5-A, 2026-11-04) as items of the same model: a menu of its own is a panel, with its forms
-/// and a group per subfolder, and a folder put in «Gestión de formularios» or «Administración» is a group at the end of it.
-/// Their names come from the server, so they go in `labels` instead of a translation key; choosing a form records where it was
-/// opened from, which marks it and keeps its panel open while its screens are.
+const folderPanelPrefix = "folder-menu:";
+
+/// A folder of the first level as a panel of the same model (CM1): its forms and a group per subfolder, with the folders they
+/// come from for their actions.
+interface FolderPanel extends NavigationPanel {
+  readonly folder: FolderMenuSection;
+  readonly links: NavigationLink[];
+  readonly groups: readonly { readonly branch: NavigationBranch; readonly group: FolderMenuGroup }[];
+}
+
+/// The folders of the side menu (CM1, 2026-11-20) as items of the same model: each folder of the first level is a panel, with its
+/// forms and a group per subfolder. Their names come from the server, so they go in `labels` instead of a translation key;
+/// choosing a form records where it was opened from, which marks it, keeps its panel open while its screens are and, for a
+/// form of a subfolder, opens its group (`activeGroup`).
 function folderMenuModel(content: FolderMenuContent | undefined, entry: FolderMenuEntry | null, enter: ((entry: FolderMenuEntry) => void) | undefined) {
   const labels = new Map<string, string>();
   const link = (panel: string, menuLabel: string, scope: string, form: FolderMenuLink): NavigationLink => {
@@ -306,17 +328,113 @@ function folderMenuModel(content: FolderMenuContent | undefined, entry: FolderMe
     return { labelKey: key, to: form.to, icon: FormIcon, current: entry?.key === key,
       onSelect: () => enter?.({ key, formId: form.id, panel, menuLabel, formLabel: form.label }) };
   };
-  const group = (panel: string, menuLabel: string | null, source: FolderMenuGroup): NavigationBranch => {
+  const group = (panel: string, menuLabel: string, source: FolderMenuGroup): NavigationBranch => {
     const key = `folder-group:${panel}:${source.id}`;
     labels.set(key, source.label);
-    return { labelKey: key, icon: FolderIcon, children: source.links.map(form => link(panel, menuLabel ?? source.label, `${panel}:${source.id}`, form)) };
+    return { labelKey: key, icon: FolderIcon, children: source.links.map(form => link(panel, menuLabel, `${panel}:${source.id}`, form)) };
   };
-  const own = (content?.sections ?? []).map((section): NavigationPanel => {
-    const key = `folder-menu:${section.id}`;
+  const own = (content?.menus ?? []).map((section): FolderPanel => {
+    const key = folderPanelPrefix + section.id;
     labels.set(key, section.label);
-    return { labelKey: key, icon: menuIcons[section.icon], items: [...section.links.map(form => link(key, section.label, key, form)), ...section.groups.map(source => group(key, section.label, source))] };
+    const links = section.links.map(form => link(key, section.label, key, form));
+    const groups = section.groups.map(source => ({ branch: group(key, section.label, source), group: source }));
+    return { labelKey: key, icon: menuIcons[section.icon], items: [...links, ...groups.map(({ branch }) => branch)], folder: section, links, groups };
   });
-  return { labels, own, forms: (content?.formsGroups ?? []).map(source => group("forms", null, source)), administration: (content?.administrationGroups ?? []).map(source => group("admin", null, source)) };
+  const activeGroup = own.flatMap(panel => panel.groups).find(({ branch }) => branch.children.some(child => child.current))?.branch.labelKey;
+  return { labels, own, activeGroup };
+}
+
+/// What a control of the menu asks for a folder (CM2, CM4), with the control itself, which the focus goes back to.
+type FolderMenuActor = (action: FolderMenuAction, from: HTMLElement | null) => void;
+interface FolderMenuItem { readonly label: string; readonly action: FolderMenuAction; readonly reason?: string | null; readonly destructive?: boolean }
+
+/// The ⋮ of a folder or a subfolder (CM4), for whoever administers forms: each item asks `app` for its dialog, and the dialog gives
+/// the focus back to ⋮ when it closes.
+function FolderActions({ name, items, act }: { name: string; items: readonly FolderMenuItem[]; act: FolderMenuActor }) {
+  const { t } = useTranslation();
+  const trigger = useRef<HTMLButtonElement>(null);
+  return (
+    <ActionsMenu size="icon-xs" label={t("layout.sidebar.folderActions", { name })} triggerRef={trigger}
+      items={items.map(item => ({ label: item.label, reason: item.reason, destructive: item.destructive, onSelect: () => act(item.action, trigger.current) }))} />
+  );
+}
+
+/// «Editar…» (name and icon), «Nueva subcarpeta…», «Mover a…» and «Borrar». A folder with subfolders cannot go into another one.
+function folderItems(folder: FolderMenuSection, t: (key: string) => string): FolderMenuItem[] {
+  return [
+    { label: t("layout.sidebar.folder.edit"), action: { kind: "edit", folderId: folder.id } },
+    { label: t("layout.sidebar.folder.newSubfolder"), action: { kind: "createSubfolder", parentId: folder.id } },
+    { label: t("layout.sidebar.folder.move"), action: { kind: "move", folderId: folder.id }, reason: folder.groups.length > 0 ? t("layout.sidebar.folder.moveReason") : null },
+    { label: t("layout.sidebar.folder.delete"), action: { kind: "delete", folderId: folder.id }, destructive: true },
+  ];
+}
+
+/// «Editar…» (only the name), «Agregar formularios…», «Mover a…» and «Borrar».
+function subfolderItems(group: FolderMenuGroup, t: (key: string) => string): FolderMenuItem[] {
+  return [
+    { label: t("layout.sidebar.folder.edit"), action: { kind: "edit", folderId: group.id } },
+    { label: t("layout.sidebar.folder.addForms"), action: { kind: "addForms", folderId: group.id } },
+    { label: t("layout.sidebar.folder.move"), action: { kind: "move", folderId: group.id } },
+    { label: t("layout.sidebar.folder.delete"), action: { kind: "delete", folderId: group.id }, destructive: true },
+  ];
+}
+
+/// A row of the menu that does something instead of leading somewhere: «Nueva carpeta» and «Agregar formularios» (CM1), with their
+/// +. They are rows because the menu is the only place of the folders, and what hid in a «…» was not found. Collapsed, the + with
+/// its tooltip, like any item.
+function MenuActionRow({ label, collapsed = false, onClick, ref }: { label: string; collapsed?: boolean; onClick: (target: HTMLElement) => void; ref?: Ref<HTMLButtonElement> }) {
+  const row = (
+    <button
+      ref={ref}
+      type="button"
+      onClick={event => onClick(event.currentTarget)}
+      className={cn(
+        "flex min-h-7.5 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm text-[var(--color-content-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
+        collapsed ? "size-7.5 justify-center px-0" : "w-full",
+      )}
+    >
+      <PlusIcon className="size-4 shrink-0" />
+      {collapsed ? <span className="sr-only">{label}</span> : <span className="min-w-0 break-words text-left leading-4">{label}</span>}
+    </button>
+  );
+  return collapsed ? <ActionTooltip label={label} side="right">{row}</ActionTooltip> : row;
+}
+
+/// What a folder has (CM1, CM6), in its panel or inside its group of the drawer: its forms, a group per subfolder (open only the
+/// one of the open form) and, for whoever administers, the ⋮ of each group and «Agregar formularios» at the end. Only whoever
+/// administers gets what is empty: a folder without forms or subfolders says so; one without any form but with catalogs leads to
+/// them instead; and an empty subfolder has its own «Agregar formularios».
+function FolderContents({ panel, act, controls, translate, onNavigate }: {
+  panel: FolderPanel;
+  act: FolderMenuActor | undefined;
+  controls: BranchControls;
+  translate: (key: string) => string;
+  onNavigate?: () => void;
+}) {
+  const { t } = useTranslation();
+  const { folder } = panel;
+  const withoutForms = folder.links.length === 0 && folder.groups.every(group => group.links.length === 0);
+  return (
+    <>
+      <NavItems items={panel.links} controls={controls} translate={translate} onNavigate={onNavigate} />
+      {withoutForms && folder.catalogCount > 0 ? (
+        <li>
+          <NavItem item={{ labelKey: "layout.sidebar.folderCatalogs", to: `/catalogos?carpeta=${folder.id}`, icon: PublicTrackingIcon, current: false }}
+            label={t("layout.sidebar.folderCatalogs", { count: folder.catalogCount })} collapsed={false} onNavigate={onNavigate} />
+        </li>
+      ) : folder.links.length === 0 && folder.groups.length === 0 ? (
+        <li><p className="px-2 py-1 text-xs text-[var(--color-content-muted)]">{t("layout.sidebar.emptyFolder", { name: folder.label })}</p></li>
+      ) : null}
+      {panel.groups.map(({ branch, group }) => (
+        <li key={branch.labelKey}>
+          <NavBranch labelKey={branch.labelKey} icon={branch.icon} items={branch.children} controls={controls} translate={translate} onNavigate={onNavigate}
+            actions={act ? <FolderActions name={group.label} items={subfolderItems(group, t)} act={act} /> : undefined}
+            trailing={act && group.links.length === 0 ? <li><MenuActionRow label={t("layout.sidebar.addForms")} onClick={target => act({ kind: "addForms", folderId: group.id }, target)} /></li> : undefined} />
+        </li>
+      ))}
+      {act ? <li><MenuActionRow label={t("layout.sidebar.addForms")} onClick={target => act({ kind: "addForms", folderId: folder.id }, target)} /></li> : null}
+    </>
+  );
 }
 
 /// The notice of a menu that could not be read, with Reintentar: instead of a shorter menu nobody would notice.
@@ -353,10 +471,24 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const { data: user, isPending } = useCurrentUser();
   const location = useLocation();
   const panelId = useId();
+  const folderMenu = useContext(FolderMenuNavigationContext);
+  const entry = folderMenu?.entry ?? null;
+  const activeEntry = isEntryPath(location.pathname, entry) ? entry : null;
+  const folderModel = folderMenuModel(folderMenu?.content, activeEntry, folderMenu?.enter);
+  const translate = (key: string) => folderModel.labels.get(key) ?? t(key);
+  // The folders' actions only for whoever administers forms (CM4); the server decides. When the dialog closes, the focus goes back
+  // to what asked for it or, if that left the document with its folder (deleted, or moved into another one), to «Nueva carpeta»,
+  // which whoever administers always has, on the desktop and in the drawer (CM6).
+  const newFolderRow = useRef<HTMLButtonElement>(null);
+  const manage = folderMenu?.content?.canManage ? folderMenu.act : undefined;
+  const act: FolderMenuActor | undefined = manage
+    ? (action, from) => manage(action, { get current() { return from?.isConnected ? from : newFolderRow.current; } })
+    : undefined;
 
   // El grupo de la pantalla en la que estás parado. Los grupos arrancan plegados: el menú muestra a dónde se
-  // puede ir sin desplegar todo, y el que importa —el de la ruta activa— se abre solo.
-  const activeBranchKey = branchOf(location.pathname)?.labelKey;
+  // puede ir sin desplegar todo, y el que importa —el de la ruta activa— se abre solo. Para un formulario abierto
+  // desde una subcarpeta, es el grupo de esa subcarpeta (CM1).
+  const activeBranchKey = folderModel.activeGroup ?? branchOf(location.pathname)?.labelKey;
   const [openBranchKeys, setOpenBranchKeys] = useState<string[]>(() => (activeBranchKey ? [activeBranchKey] : []));
   const [lastActiveBranchKey, setLastActiveBranchKey] = useState(activeBranchKey);
 
@@ -374,18 +506,23 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   // El panel sigue a la sección, no a los clics: entrar a una ruta de administración lo abre y salir lo
   // cierra, también recargando o llegando desde un favorito. Mientras estás adentro se puede cerrar y abrir
   // a mano cuantas veces quieras; lo que lo vuelve a decidir es cambiar de sección.
-  const folderMenu = useContext(FolderMenuNavigationContext);
-  const entry = folderMenu?.entry ?? null;
-  const activeEntry = isEntryPath(location.pathname, entry) ? entry : null;
-  const folderModel = folderMenuModel(folderMenu?.content, activeEntry, folderMenu?.enter);
-  const translate = (key: string) => folderModel.labels.get(key) ?? t(key);
-  // A form opened from the menu keeps the panel it was opened from (CP5-A).
+  // A form opened from the menu keeps the panel of its folder open (CM1).
   const routePanel = activeEntry ? activeEntry.panel : isAdministrationPath(location.pathname) ? "admin" : isWhatsAppPath(location.pathname) ? "whatsapp" : isFormsPath(location.pathname) ? "forms" : undefined;
   const [openPanel, setOpenPanel] = useState<string | undefined>(routePanel);
   const [lastRoutePanel, setLastRoutePanel] = useState(routePanel);
   if (routePanel !== lastRoutePanel) {
     setLastRoutePanel(routePanel);
     setOpenPanel(routePanel);
+  }
+  // The folder just created opens as soon as the menu brings it (CM2); a folder that leaves the menu (deleted, or moved into
+  // another one) closes its panel (CM6). Both are decided in the render, like the panel of the route.
+  const created = folderMenu?.created ?? null;
+  const [openedCreated, setOpenedCreated] = useState<string | null>(null);
+  if (created !== null && created !== openedCreated && folderModel.own.some(panel => panel.folder.id === created)) {
+    setOpenedCreated(created);
+    setOpenPanel(folderPanelPrefix + created);
+  } else if (openPanel?.startsWith(folderPanelPrefix) && folderMenu?.content && !folderModel.own.some(panel => panel.labelKey === openPanel)) {
+    setOpenPanel(undefined);
   }
   const panelOpen = openPanel === "admin";
   const setPanelOpen = (next: boolean | ((previous: boolean) => boolean)) => {
@@ -399,12 +536,14 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
     );
   }
 
-  // En el teléfono Administración es un grupo más del cajón, así que su apertura tiene que contestar por el
-  // mismo camino que la de cualquier grupo, aunque el estado que la guarda sea el del panel.
+  // En el teléfono cada panel (Administración, WhatsApp, Formularios y cada carpeta) es un grupo más del cajón, así
+  // que su apertura tiene que contestar por el mismo camino que la de cualquier grupo, aunque el estado que la
+  // guarda sea el del panel: también ahí se abre uno a la vez.
+  const panelOf = (labelKey: string) => labelKey === forms.labelKey ? "forms" : labelKey === administration.labelKey ? "admin"
+    : labelKey === whatsapp.labelKey ? "whatsapp" : labelKey.startsWith(folderPanelPrefix) ? labelKey : undefined;
   const controls: BranchControls = {
-    isOpen: (labelKey) => labelKey === forms.labelKey ? openPanel === "forms" : labelKey === administration.labelKey ? panelOpen : labelKey === whatsapp.labelKey ? openPanel === "whatsapp" : openBranchKeys.includes(labelKey),
-    toggle: (labelKey) =>
-      labelKey === forms.labelKey ? setOpenPanel(openPanel === "forms" ? undefined : "forms") : labelKey === administration.labelKey ? setPanelOpen((previous) => !previous) : labelKey === whatsapp.labelKey ? setOpenPanel(openPanel === "whatsapp" ? undefined : "whatsapp") : toggleBranch(labelKey),
+    isOpen: (labelKey) => { const panel = panelOf(labelKey); return panel === undefined ? openBranchKeys.includes(labelKey) : openPanel === panel; },
+    toggle: (labelKey) => { const panel = panelOf(labelKey); if (panel === undefined) toggleBranch(labelKey); else setOpenPanel(openPanel === panel ? undefined : panel); },
   };
 
   useEffect(() => {
@@ -412,8 +551,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
       return;
     }
 
+    // An Escape that a menu, a list or a dialog over the drawer already took (Radix marks it) closes only that one.
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !event.defaultPrevented) {
         onCloseMobile();
       }
     }
@@ -434,7 +574,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
   // El panel no se aplana nunca: se ve expandido aunque la barra esté contraída, que es justamente lo que lo
   // hace mejor que un desplegable de 40px.
-  const adminItems = [...visibleItems(administration.items, canSee, false), ...folderModel.administration];
+  const adminItems = visibleItems(administration.items, canSee, false);
   const adminPending = isPending && administration.items.every(dependsOnPermissions);
   const showAdministration = adminItems.length > 0;
   const whatsappItems = visibleItems(whatsapp.items, canSee, false);
@@ -442,16 +582,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const activateResponses = responses?.setActive;
   useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
   // «Formularios» and «Documentos recibidos» are drawn with their counters (FormsOverviewLink, ReceivedDocumentsLink). The second goes
-  // after the fixed pages and before the folders: its row appearing or leaving when the permissions arrive moves none of the pages, and
-  // the folders, which arrive later, go below it.
+  // after the fixed pages: its row appearing or leaving when the permissions arrive moves none of the pages.
   const formsPages = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview" && item.labelKey !== "navigation.receivedDocuments"), canSee, false);
-  const formsItems = [...formsPages, ...folderModel.forms];
   const formsCounted = has(["formrecords.read", "formapprovals.decide", "formrecords.create", "formdocuments.read"]);
   const ownPanel = folderModel.own.find(panel => panel.labelKey === openPanel);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : ownPanel ?? administration;
-  const selectedItems = openPanel === "forms" ? formsItems : openPanel === "whatsapp" ? whatsappItems : ownPanel ? ownPanel.items : openPanel === "admin" ? adminItems : [];
+  const selectedItems = openPanel === "forms" ? formsPages : openPanel === "whatsapp" ? whatsappItems : ownPanel ? ownPanel.items : openPanel === "admin" ? adminItems : [];
   const PanelIcon = selectedPanel.icon;
-  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && formsCounted) && openPanel !== undefined && !isMobile;
+  // A folder's panel shows also empty: only whoever administers gets an empty folder, with what to do in it.
+  const panelVisible = (selectedItems.length > 0 || openPanel === "forms" && formsCounted || ownPanel !== undefined) && openPanel !== undefined && !isMobile;
 
   return (
     <>
@@ -579,27 +718,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             );
           })}
 
-          {/* The menus of their own (CP5-A) go below Inicio, alphabetically as the server sends them. While the menu is read
-              nothing takes their place: a block would leave when there are none, the usual case, and lift what is below it. */}
-          {!folderMenu?.pending && folderModel.own.length > 0 ? (
-            <ul className={cn("mt-1 flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
-              {folderModel.own.map(panel => (
-                <li key={panel.labelKey}>
-                  {isMobile ? (
-                    <NavBranch labelKey={panel.labelKey} icon={panel.icon} items={panel.items} controls={controls} translate={translate} onNavigate={onNavigate} />
-                  ) : (
-                    <PanelTrigger icon={panel.icon} label={translate(panel.labelKey)} open={openPanel === panel.labelKey} collapsed={iconsOnly} panelId={panelId}
-                      onToggle={() => setOpenPanel(openPanel === panel.labelKey ? undefined : panel.labelKey)} />
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {formsItems.length > 0 || formsCounted ? (
+          {formsPages.length > 0 || formsCounted ? (
             <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
               {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsPages} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} trailing={<ReceivedDocumentsLink onNavigate={onNavigate}/>} after={folderModel.forms} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsPages} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} trailing={<ReceivedDocumentsLink onNavigate={onNavigate}/>} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -615,6 +737,29 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 <PanelTrigger icon={whatsapp.icon} label={t(whatsapp.labelKey)} open={openPanel === "whatsapp"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "whatsapp" ? undefined : "whatsapp")} />
               )}
+            </div>
+          ) : null}
+
+          {/* The folders (CM1): after WhatsApp and before Administración, in the order of the server, with «Nueva carpeta» at
+              the end for whoever administers forms. While the menu is read nothing takes their place: a block would leave
+              when there are none and lift what is below it. With nothing to show, neither the section nor its line. */}
+          {!folderMenu?.pending && (folderModel.own.length > 0 || act) ? (
+            <div className="mt-2 border-t border-[var(--color-border)] pt-2">
+              <ul className={cn("flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
+                {folderModel.own.map(panel => (
+                  <li key={panel.labelKey}>
+                    {isMobile ? (
+                      <NavBranch labelKey={panel.labelKey} icon={panel.icon} items={[]} controls={controls} translate={translate} onNavigate={onNavigate}
+                        actions={act ? <FolderActions name={panel.folder.label} items={folderItems(panel.folder, t)} act={act} /> : undefined}
+                        trailing={<FolderContents panel={panel} act={act} controls={controls} translate={translate} onNavigate={onNavigate} />} />
+                    ) : (
+                      <PanelTrigger icon={panel.icon} label={panel.folder.label} open={openPanel === panel.labelKey} collapsed={iconsOnly} panelId={panelId}
+                        onToggle={() => setOpenPanel(openPanel === panel.labelKey ? undefined : panel.labelKey)} />
+                    )}
+                  </li>
+                ))}
+                {act ? <li><MenuActionRow ref={newFolderRow} label={t("layout.sidebar.newFolder")} collapsed={iconsOnly} onClick={target => act({ kind: "create" }, target)} /></li> : null}
+              </ul>
             </div>
           ) : null}
 
@@ -720,7 +865,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
               línea que cruza la pantalla. */}
           <div className="flex h-12 items-center gap-2 border-b border-[var(--color-border)] px-3">
             <PanelIcon className="size-4 shrink-0 text-[var(--color-content-muted)]" />
-            <p className="truncate text-sm font-medium text-[var(--color-content)]">{translate(selectedPanel.labelKey)}</p>
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-content)]">{translate(selectedPanel.labelKey)}</p>
+            {ownPanel && act ? <FolderActions name={ownPanel.folder.label} items={folderItems(ownPanel.folder, t)} act={act} /> : null}
           </div>
 
           <IconButton
@@ -734,11 +880,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
             {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/> : null}
             <ul className="flex flex-col gap-1">
-              <NavItems items={openPanel === "forms" ? formsPages : selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
-              {openPanel === "forms" ? <>
-                <ReceivedDocumentsLink onNavigate={onNavigate}/>
-                <NavItems items={folderModel.forms} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />
-              </> : null}
+              {ownPanel ? <FolderContents panel={ownPanel} act={act} controls={controls} translate={translate} onNavigate={onNavigate} />
+                : <NavItems items={openPanel === "forms" ? formsPages : selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />}
+              {openPanel === "forms" ? <ReceivedDocumentsLink onNavigate={onNavigate}/> : null}
             </ul>
           </div>
         </nav>

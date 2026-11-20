@@ -150,7 +150,21 @@
       "retryLoad": "Retry loading the menu",
       "closeAdministration": "Close Administration",
       "closeWhatsApp": "Close WhatsApp",
-      "closeMenu": "Close {{name}}"
+      "closeMenu": "Close {{name}}",
+      "newFolder": "New folder",
+      "addForms": "Add forms",
+      "folderActions": "Actions of “{{name}}”",
+      "emptyFolder": "There are no forms in “{{name}}” yet",
+      "folderCatalogs_one": "See its catalog",
+      "folderCatalogs_other": "See its {{count}} catalogs",
+      "folder": {
+        "edit": "Edit…",
+        "newSubfolder": "New subfolder…",
+        "addForms": "Add forms…",
+        "move": "Move to…",
+        "moveReason": "It has subfolders: it can't go inside another one.",
+        "delete": "Delete"
+      }
     },
     "topbar": {
       "toggle": "Navigation menu"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
@@ -6,32 +6,37 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { notify } from "@/shared/ui/notifications";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import type { FormFolder } from "../api/folders";
-import { ancestorIds, folderPath, moveTargets, treeOrder } from "../folderTree";
+import { hasSubfolders } from "../folderTree";
 import { useFolderWrites, type FolderScope } from "../hooks/useFormFolders";
 import { folderWriteFailure } from "./folderFeedback";
 
-const top = "top";
+const toMenu = "menu";
 
-/// «Mover a…» (CP3-A): the tree with a radio per folder and «Arriba de todo». The folder itself, its subfolders and the folders
-/// where it would go past five levels cannot be chosen, and each says why (MA1-A). Under each name, where that folder lives.
-export function FolderMoveDialog({ scope, folders, folder, onClose }: { scope: FolderScope; folders: readonly FormFolder[]; folder: FormFolder; onClose: () => void }) {
+/// «Mover a…» (CM4): «Al menú, como carpeta propia» or «Adentro de «Compras»» for each other folder of the first level, starting
+/// where the folder is. A folder with subfolders cannot go into another, so those options stay off with the reason (MA1-A). The
+/// folder that goes into another loses its icon and the one that comes up to the menu takes the first free one: it goes without
+/// an icon and the server decides.
+export function FolderMoveDialog({ scope, folders, folder, onClose, focusFallback }: {
+  scope: FolderScope;
+  folders: readonly FormFolder[];
+  folder: FormFolder;
+  onClose: () => void;
+  focusFallback?: RefObject<HTMLElement | null>;
+}) {
   const { t } = useTranslation("formFolders");
-  const restoreFocus = useRestoreFocusOnClose();
+  const restoreFocus = useRestoreFocusOnClose(true, focusFallback);
   const writes = useFolderWrites(scope);
-  const initial = folder.parentId ?? top;
+  const initial = folder.parentId ?? toMenu;
   const [target, setTarget] = useState(initial);
   const [error, setError] = useState<string>();
-  const allowed = new Set(moveTargets(folders, folder.id).map(entry => entry.id ?? top));
-  const inside = (id: string) => id === folder.id || ancestorIds(folders, id).includes(folder.id);
-  const options = [{ value: top, label: t("moveDialog.top") }, ...treeOrder(folders).map(({ folder: option, depth }) => ({
-    value: option.id, label: option.name,
-    description: depth > 1 && option.parentId ? t("moveDialog.inside", { path: folderPath(folders, option.parentId).join(" / ") }) : undefined,
-    disabled: !allowed.has(option.id),
-    disabledReason: allowed.has(option.id) ? null : inside(option.id) ? t("moveDialog.self") : t("tooDeep"),
+  const nested = hasSubfolders(folders, folder.id);
+  const options = [{ value: toMenu, label: t("moveDialog.toMenu") }, ...folders.filter(option => option.parentId === null && option.id !== folder.id).map(option => ({
+    value: option.id, label: t("moveDialog.into", { name: option.name }), disabled: nested, disabledReason: nested ? t("hasSubfolders") : null,
   }))];
+  const pending = writes.update.pending;
   const save = async () => {
     try {
-      await writes.update.run(folder.id, folder.revision, folder.name, target === top ? null : target);
+      await writes.update.run(folder.id, folder.revision, folder.name, target === toMenu ? null : target, null);
       notify({ id: "form-folders:write", kind: "success", message: t("moveDialog.done", { name: folder.name }) });
       onClose();
     } catch (failure) {
@@ -40,20 +45,19 @@ export function FolderMoveDialog({ scope, folders, folder, onClose }: { scope: F
     }
   };
   return (
-    <Dialog open onOpenChange={open => { if (!open && !writes.update.pending) onClose(); }}>
-      <DialogContent mobileFullscreen aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={writes.update.pending ? t("moveDialog.saving") : undefined}>
+    <Dialog open onOpenChange={open => { if (!open && !pending) onClose(); }}>
+      <DialogContent mobileFullscreen aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("moveDialog.saving") : undefined}>
         <DialogHeader><DialogTitle>{t("moveDialog.title", { name: folder.name })}</DialogTitle></DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <RadioGroupField label={t("moveDialog.label")} options={options} value={target} error={error} onValueChange={value => { setTarget(value); setError(undefined); }} />
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={writes.update.pending} onClick={onClose}>{t("common:actions.cancel")}</Button>
-          <Button type="button" disabled={target === initial} pending={writes.update.pending} onClick={() => { void save(); }}>
-            {writes.update.pending ? t("moveDialog.saving") : t("moveDialog.save")}
+          <Button type="button" variant="outline" disabled={pending} onClick={onClose}>{t("common:actions.cancel")}</Button>
+          <Button type="button" disabled={target === initial} pending={pending} onClick={() => { void save(); }}>
+            {pending ? t("moveDialog.saving") : t("moveDialog.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-

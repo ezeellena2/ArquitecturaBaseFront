@@ -1,39 +1,43 @@
 import { describe, expect, it } from "vitest";
 import type { FormFolder } from "./api/folders";
-import { ancestorIds, canAddSubfolder, folderListQuery, folderPath, moveTargets, parseFolderParam, folderParamOf, treeOrder, withoutFolderParam } from "./folderTree";
+import { menuIconNames } from "@/shared/ui/menuIcons";
+import { ancestorIds, canAddSubfolder, firstFreeIcon, folderListQuery, folderPath, hasSubfolders, parseFolderParam, folderParamOf, treeOrder, withoutFolderParam } from "./folderTree";
 
-const folder = (id: string, parentId: string | null, name = id): FormFolder => ({ id, parentId, name, revision: 1, menuPlacement: "None", menuIcon: null });
-// Facturación; Repartos > Norte > Rosario > Centro > Plaza (five levels); Siembra.
-const folders = [folder("billing", null, "Facturación"), folder("delivery", null, "Repartos"), folder("north", "delivery", "Norte"), folder("rosario", "north", "Rosario"),
-  folder("center", "rosario", "Centro"), folder("square", "center", "Plaza"), folder("sowing", null, "Siembra")];
+const folder = (id: string, parentId: string | null, name = id, icon: FormFolder["icon"] = parentId === null ? "folder" : null): FormFolder => ({ id, parentId, name, revision: 1, icon });
+// Facturación; Repartos > Norte, Sur; Siembra: two levels (CM1 a CM6).
+const folders = [folder("billing", null, "Facturación", "receipt"), folder("delivery", null, "Repartos", "truck"), folder("north", "delivery", "Norte"), folder("south", "delivery", "Sur"),
+  folder("sowing", null, "Siembra")];
 
 describe("the folder tree", () => {
   it("keeps the server's alphabetical order and puts each folder under its parent", () => {
-    expect(treeOrder(folders).map(entry => [entry.folder.id, entry.depth])).toEqual([
-      ["billing", 1], ["delivery", 1], ["north", 2], ["rosario", 3], ["center", 4], ["square", 5], ["sowing", 1]]);
+    expect(treeOrder(folders).map(entry => [entry.folder.id, entry.depth])).toEqual([["billing", 1], ["delivery", 1], ["north", 2], ["south", 2], ["sowing", 1]]);
     expect(treeOrder(folders).find(entry => entry.folder.id === "delivery")?.hasChildren).toBe(true);
     expect(treeOrder(folders).find(entry => entry.folder.id === "billing")?.hasChildren).toBe(false);
   });
 
   it("names a folder with the path from the top and knows its ancestors", () => {
-    expect(folderPath(folders, "rosario")).toEqual(["Repartos", "Norte", "Rosario"]);
+    expect(folderPath(folders, "north")).toEqual(["Repartos", "Norte"]);
     expect(folderPath(folders, "missing")).toEqual([]);
-    expect(ancestorIds(folders, "center")).toEqual(["delivery", "north", "rosario"]);
+    expect(ancestorIds(folders, "south")).toEqual(["delivery"]);
     expect(ancestorIds(folders, "billing")).toEqual([]);
   });
 
-  it("turns off adding a subfolder on the fifth level", () => {
-    expect(canAddSubfolder(folders, "center")).toBe(true);
-    expect(canAddSubfolder(folders, "square")).toBe(false);
+  it("has two levels: a subfolder only in a folder of the first level, and one with subfolders cannot go into another", () => {
+    expect(canAddSubfolder(folders, "delivery")).toBe(true);
     expect(canAddSubfolder(folders, "billing")).toBe(true);
+    expect(canAddSubfolder(folders, "north")).toBe(false);
+    expect(hasSubfolders(folders, "delivery")).toBe(true);
+    expect(hasSubfolders(folders, "billing")).toBe(false);
   });
 
-  it("moves anywhere but into itself, into its subfolders or past five levels", () => {
-    // Norte carries four levels (Norte, Rosario, Centro, Plaza): it fits at the top or under a top folder.
-    expect(moveTargets(folders, "north").map(target => target.id)).toEqual([null, "billing", "delivery", "sowing"]);
-    // A leaf goes under anything of four levels or less.
-    expect(moveTargets(folders, "billing").map(target => target.id)).toEqual([null, "delivery", "north", "rosario", "center", "sowing"]);
-    expect(moveTargets(folders, "square").find(target => target.id === "square")).toBeUndefined();
+  it("starts a new folder in the first icon that no folder of the first level uses, or the folder once all are taken", () => {
+    // Repartos takes the truck and Facturación the receipt; Siembra the folder. A subfolder takes none.
+    expect(firstFreeIcon(folders)).toBe("package");
+    expect(firstFreeIcon([])).toBe("folder");
+    expect(firstFreeIcon([folder("one", null, "Uno", "truck")])).toBe("folder");
+    const all = menuIconNames.map((icon, index) => folder(`f${index}`, null, `Carpeta ${index}`, icon));
+    expect(firstFreeIcon(all)).toBe("folder");
+    expect(firstFreeIcon(all.filter(entry => entry.icon !== "leaf"))).toBe("leaf");
   });
 
   it("reads the folder of the address and turns it into the listing filter", () => {

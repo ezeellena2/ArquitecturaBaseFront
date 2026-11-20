@@ -29,9 +29,6 @@ export interface FormOverviewQuery {
   search?: string;
   state: "Active" | "Deactivated";
   pendingOnly?: boolean;
-  /// CP1-A: a folder with its subfolders, or the forms without one; never both.
-  folderId?: string;
-  withoutFolder?: true;
 }
 export function readFormOverview(body: unknown): FormOverview {
   const result = formOverviewSchema.safeParse(body);
@@ -42,7 +39,5 @@ export async function fetchFormOverview(query: FormOverviewQuery, signal: AbortS
   const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize), state: query.state });
   if (query.search) params.set("search", query.search);
   if (query.pendingOnly) params.set("pendingOnly", "true");
-  if (query.folderId) params.set("folderId", query.folderId);
-  if (query.withoutFolder) params.set("withoutFolder", "true");
   return readFormOverview(await api.get<unknown>("/api/forms/overview?" + params, { signal, cache: "no-store" }));
 }

@@ -6,19 +6,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { notify } from "@/shared/ui/notifications";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { FormFolder } from "../api/folders";
-import { ancestorIds, type FolderSelection } from "../folderTree";
 import { useFolderDeletion, useFolderWrites, type FolderScope } from "../hooks/useFormFolders";
 import { deletionSentences, folderWriteFailure } from "./folderFeedback";
 
-/// «Borrar» (CP3-A): reads what the folder has before asking, and deletes with the revision it read. A folder that changed in
-/// between asks to read again, without deleting.
-export function FolderDeleteDialog({ scope, folders, folder, selection, onDeleted, onClose, focusFallback }: {
+/// «Borrar» (CM4): reads what the folder has before asking, says where it leaves (the menu, or its folder) and what is lost, and
+/// deletes with the revision it read. A folder that changed in between asks to read again, without deleting.
+export function FolderDeleteDialog({ scope, folders, folder, onClose, focusFallback }: {
   scope: FolderScope;
   folders: readonly FormFolder[];
   folder: FormFolder;
-  selection: FolderSelection;
-  /// With true when the listing showed the folder or one below it, which no longer exist.
-  onDeleted: (shownInside: boolean) => void;
   onClose: () => void;
   focusFallback?: RefObject<HTMLElement | null>;
 }) {
@@ -28,11 +24,11 @@ export function FolderDeleteDialog({ scope, folders, folder, selection, onDelete
   const counts = useFolderDeletion(scope, folder.id);
   const writes = useFolderWrites(scope);
   const pending = writes.remove.pending;
+  const parentName = folder.parentId === null ? null : folders.find(parent => parent.id === folder.parentId)?.name ?? "";
   const confirm = async () => {
     if (!counts.data) return;
     try {
-      const shownInside = selection.kind === "folder" && (selection.id === folder.id || ancestorIds(folders, selection.id).includes(folder.id));
-      await writes.remove.run(folder.id, counts.data.revision, () => onDeleted(shownInside));
+      await writes.remove.run(folder.id, counts.data.revision);
       notify({ id: "form-folders:write", kind: "success", message: t("deleteDialog.done", { name: folder.name }) });
       onClose();
     } catch (error) {
@@ -44,7 +40,7 @@ export function FolderDeleteDialog({ scope, folders, folder, selection, onDelete
       <DialogContent aria-describedby={descriptionId} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("deleteDialog.pending") : undefined}>
         <DialogHeader><DialogTitle>{t("deleteDialog.title", { name: folder.name })}</DialogTitle></DialogHeader>
         <div id={descriptionId} className="flex flex-col gap-1 text-sm">
-          {counts.data ? deletionSentences(counts.data, t).map(sentence => <p key={sentence}>{sentence}</p>)
+          {counts.data ? <p>{deletionSentences(counts.data, parentName, t).join(" ")}</p>
             : counts.isError ? (
               <div className="flex flex-col items-start gap-2">
                 <p className="text-[var(--color-content-muted)]">{t("deleteDialog.loadFailed")}</p>

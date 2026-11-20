@@ -150,7 +150,21 @@
       "retryLoad": "Reintentar cargar el menú",
       "closeAdministration": "Cerrar Administración",
       "closeWhatsApp": "Cerrar WhatsApp",
-      "closeMenu": "Cerrar {{name}}"
+      "closeMenu": "Cerrar {{name}}",
+      "newFolder": "Nueva carpeta",
+      "addForms": "Agregar formularios",
+      "folderActions": "Acciones de «{{name}}»",
+      "emptyFolder": "Todavía no hay formularios en «{{name}}»",
+      "folderCatalogs_one": "Ver su catálogo",
+      "folderCatalogs_other": "Ver sus {{count}} catálogos",
+      "folder": {
+        "edit": "Editar…",
+        "newSubfolder": "Nueva subcarpeta…",
+        "addForms": "Agregar formularios…",
+        "move": "Mover a…",
+        "moveReason": "Tiene subcarpetas: no puede ir adentro de otra.",
+        "delete": "Borrar"
+      }
     },
     "topbar": {
       "toggle": "Menú de navegación"

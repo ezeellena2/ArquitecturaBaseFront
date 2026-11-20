@@ -15,7 +15,7 @@ export interface NavigationLink extends NavigationEntry {
   permission?: PermissionRequirement;
   /// Sólo con ese módulo instalado (`installedFeatures`), además del permiso: «Biblioteca» con `form-library`.
   feature?: string;
-  /// Un enlace que se arma al leer el menú (una carpeta, CP5-A) dice él mismo si es el abierto, y avisa al elegirlo: el
+  /// Un enlace que se arma al leer el menú (una carpeta, CM1) dice él mismo si es el abierto, y avisa al elegirlo: el
   /// mismo formulario puede estar en dos carpetas y sólo se marca aquel por el que se entró.
   current?: boolean;
   onSelect?: () => void;

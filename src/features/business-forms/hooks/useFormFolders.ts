@@ -1,27 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { notify } from "@/shared/ui/notifications";
-import { createFolder, deleteFolder, fetchFolderDeletion, fetchFolderTree, fetchFormMenu, fetchItemFolders, saveItemFolders, setFolderMenu, updateFolder,
-  type FolderItemKind, type FolderListing, type FormFolderTree, type MenuPlacement } from "../api/folders";
+import type { MenuIconName } from "@/shared/ui/menuIcons";
+import { createFolder, deleteFolder, fetchFolderDeletion, fetchFolderForms, fetchFolderTree, fetchFormMenu, fetchItemFolders, saveFolderForms, saveItemFolders, updateFolder,
+  type FolderItemKind, type FolderListing, type FormFolderTree } from "../api/folders";
+import { fetchFormDefinitions } from "../api/forms";
 import { folderParamOf, parseFolderParam, type FolderSelection } from "../folderTree";
 import { shapeFormMenu } from "../formMenu";
 import type { FormCulture } from "../model";
 import { catalogActorKey } from "./useCatalogQueries";
-import { formActorKey } from "./useFormQueries";
+import { formActorKey, formScopeKey } from "./useFormQueries";
 
-/// Folders only order (CP1-A): whoever reads a listing reads its tree, and administering them asks to manage forms or catalogs.
+/// Folders only order: whoever reads a listing reads its tree, and administering them asks to manage forms (CM1 a CM6).
 export interface FolderScope { readonly actorId: string | null; readonly culture: FormCulture; readonly permissions: readonly string[] }
 export const folderActorKey = (actorId: string | null) => ["form-folders", actorId] as const;
 export const folderScopeKey = (scope: FolderScope) => [...folderActorKey(scope.actorId), [...new Set(scope.permissions)].sort().join(","), scope.culture] as const;
 const openForms = ["formrecords.read", "formapprovals.decide", "formrecords.create"] as const;
-const listingPermissions: Readonly<Record<FolderListing, readonly string[]>> = { forms: openForms, designs: ["formtemplates.read"], catalogs: ["formcatalogs.read"] };
+const manageForms = "formtemplates.manage";
+const listingPermissions: Readonly<Record<FolderListing, readonly string[]>> = { designs: ["formtemplates.read"], catalogs: ["formcatalogs.read"] };
 export const canReadFolders = (scope: FolderScope, listing: FolderListing) => scope.actorId !== null && listingPermissions[listing].some(permission => scope.permissions.includes(permission));
 /// For the experience only: the tree says `canManage` and the server decides.
-export const mayManageFolders = (scope: FolderScope) => scope.permissions.includes("formtemplates.manage") || scope.permissions.includes("formcatalogs.manage");
+export const mayManageFolders = (scope: FolderScope) => scope.permissions.includes(manageForms);
 
 export function useFolderScope(): FolderScope {
   const { data: user } = useCurrentUser();
@@ -33,7 +36,7 @@ export function useFolderTree(scope: FolderScope, listing: FolderListing) {
   return useQuery({ queryKey: [...folderScopeKey(scope), "tree", listing], queryFn: ({ signal }) => fetchFolderTree(listing, signal), enabled: canReadFolders(scope, listing) });
 }
 
-/// The folder of the address (`?carpeta=`). A folder that is no longer in the tree goes back to «Todos» with a notice (CP4);
+/// The folder of the address (`?carpeta=`). A folder that is no longer in the tree goes back to «Todas» with a notice (CP4);
 /// choosing one goes back to page 1 and keeps the search and the other filters.
 export function useFolderSelection(tree: FormFolderTree | undefined) {
   const { t } = useTranslation("formFolders");
@@ -51,7 +54,8 @@ export function useFolderSelection(tree: FormFolderTree | undefined) {
   return { selection, select };
 }
 
-/// The tree of a listing and the folder it shows (CP1-A). While the tree cannot be read the listing goes on with «Todos» (CP4).
+/// The tree of a listing and the folder its «Carpeta» filter shows (CM3). While the tree cannot be read the listing goes on with
+/// «Todas» (CP4).
 export function useListingFolders(listing: FolderListing) {
   const { t } = useTranslation("formFolders");
   const scope = useFolderScope();
@@ -66,7 +70,7 @@ export function useListingFolders(listing: FolderListing) {
 export type ListingFolders = ReturnType<typeof useListingFolders>;
 
 /// The empty listing inside a folder (CP4): «No hay catálogos en «Siembra y cosecha»», or, with a search or a filter, «No hay
-/// coincidencias en «Facturación»» with «Buscar en todas», which keeps what was written. Null in «Todos».
+/// coincidencias en «Facturación»» with «Buscar en todas», which keeps what was written. Null in «Todas».
 export function useFolderEmpty(folders: ListingFolders, items: "forms" | "catalogs", hasFilters: boolean) {
   const { t } = useTranslation("formFolders");
   const name = folders.label;
@@ -87,7 +91,8 @@ function useWrite<TArgs extends unknown[], TResult>(write: (...args: TArgs) => P
   return { pending, run };
 }
 
-/// What changes after a write: the trees and the menu always; the listings when the items under a folder may change.
+/// What changes after a write: the trees and the menu, and the listings with the «Carpeta» filter (Diseñar formularios and
+/// Catálogos), whose items may change with it. Formularios has no folders (CM3).
 export function useFolderRefresh(scope: FolderScope) {
   const client = useQueryClient();
   const actorId = scope.actorId;
@@ -95,36 +100,29 @@ export function useFolderRefresh(scope: FolderScope) {
   const listings = useCallback(() => Promise.all([
     client.invalidateQueries({ queryKey: formActorKey(actorId), predicate: query => query.queryKey[4] === "list" }),
     client.invalidateQueries({ queryKey: catalogActorKey(actorId), predicate: query => query.queryKey[4] === "list" }),
-    client.invalidateQueries({ queryKey: ["form-overview"] }),
   ]), [client, actorId]);
-  return { folders, listings };
+  const all = useCallback(() => Promise.all([folders(), listings()]), [folders, listings]);
+  return { folders, listings, all };
 }
 
+/// Creating, editing, moving and deleting a folder (CM2, CM4). A folder of the first level carries its icon; a subfolder, none.
 export function useFolderWrites(scope: FolderScope) {
-  const { folders, listings } = useFolderRefresh(scope);
-  const create = useWrite(useCallback(async (parentId: string | null, name: string) => {
-    const folder = await createFolder({ parentId, name });
-    await folders();
+  const { folders, all } = useFolderRefresh(scope);
+  const create = useWrite(useCallback(async (parentId: string | null, name: string, icon: MenuIconName | null = null) => {
+    const folder = await createFolder({ parentId, name, icon });
+    await all();
     return folder;
-  }, [folders]));
-  // Moving changes what is under the folder that was above it, so the listings read again too.
-  const update = useWrite(useCallback(async (id: string, expectedRevision: number, name: string, parentId: string | null) => {
-    const folder = await updateFolder(id, { expectedRevision, name, parentId });
-    await Promise.all([folders(), listings()]);
+  }, [all]));
+  const update = useWrite(useCallback(async (id: string, expectedRevision: number, name: string, parentId: string | null, icon: MenuIconName | null) => {
+    const folder = await updateFolder(id, { expectedRevision, name, parentId, icon });
+    await all();
     return folder;
-  }, [folders, listings]));
-  // `deleted` runs before reading again, so a listing that showed the folder leaves it before the tree says it is gone.
-  const remove = useWrite(useCallback(async (id: string, expectedRevision: number, deleted?: () => void) => {
+  }, [all]));
+  const remove = useWrite(useCallback(async (id: string, expectedRevision: number) => {
     await deleteFolder(id, expectedRevision);
-    deleted?.();
-    await Promise.all([folders(), listings()]);
-  }, [folders, listings]));
-  const menu = useWrite(useCallback(async (id: string, expectedRevision: number, placement: MenuPlacement, icon: string | null) => {
-    const folder = await setFolderMenu(id, { expectedRevision, placement, icon });
-    await folders();
-    return folder;
-  }, [folders]));
-  return { create, update, remove, menu, reread: folders };
+    await all();
+  }, [all]));
+  return { create, update, remove, reread: folders };
 }
 
 export function useFolderDeletion(scope: FolderScope, id: string) {
@@ -134,7 +132,7 @@ export function useFolderDeletion(scope: FolderScope, id: string) {
 
 /// The folders of one form or catalog (CP2-A): read with the item's read permission, saved whole with the set that was read.
 export function useItemFolders(scope: FolderScope, kind: FolderItemKind, id: string) {
-  const { folders, listings } = useFolderRefresh(scope);
+  const { all } = useFolderRefresh(scope);
   const client = useQueryClient();
   // A serialized key keeps the save callback stable across renders of the same owner and item.
   const stamp = JSON.stringify([...folderScopeKey(scope), "item", kind, id]);
@@ -144,16 +142,51 @@ export function useItemFolders(scope: FolderScope, kind: FolderItemKind, id: str
   const save = useWrite(useCallback(async (expectedFolderIds: readonly string[], folderIds: readonly string[]) => {
     const saved = await saveItemFolders(kind, id, { expectedFolderIds, folderIds });
     client.setQueryData(key, saved);
-    await Promise.all([folders(), listings()]);
+    await all();
     return saved;
-  }, [kind, id, client, key, folders, listings]));
+  }, [kind, id, client, key, all]));
   return { query, save };
 }
 
-/// The folders of the side menu (CP5-A), for whoever can open forms; everyone else gets nothing without asking.
+/// The forms right in one folder (CM2), for whoever administers forms: saved whole with the set that was read, so a set that
+/// someone changed in between is a 409 and nothing is lost.
+export function useFolderForms(scope: FolderScope, id: string) {
+  const { all } = useFolderRefresh(scope);
+  const client = useQueryClient();
+  const stamp = JSON.stringify([...folderScopeKey(scope), "forms", id]);
+  const key = useMemo(() => JSON.parse(stamp) as readonly unknown[], [stamp]);
+  const query = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchFolderForms(id, signal), enabled: scope.actorId !== null && mayManageFolders(scope) && id !== "", staleTime: 0, gcTime: 0 });
+  const save = useWrite(useCallback(async (expectedFormIds: readonly string[], formIds: readonly string[]) => {
+    const saved = await saveFolderForms(id, { expectedFormIds, formIds });
+    client.setQueryData(key, saved);
+    await all();
+    return saved;
+  }, [id, client, key, all]));
+  return { query, save };
+}
+
+/// The forms that «Formularios de «Compras»» offers (CM2): the listing of «Diseñar formularios» without the deactivated ones,
+/// alphabetical, a page at a time. It is a listing of forms, so a change of forms reads it again.
+export const folderFormChoicesPageSize = 50;
+export function useFolderFormChoices(scope: FolderScope, search: string) {
+  return useInfiniteQuery({
+    queryKey: [...formScopeKey(scope), "list", "folder-choices", search],
+    queryFn: ({ pageParam, signal }) => fetchFormDefinitions({ page: pageParam, pageSize: folderFormChoicesPageSize, search: search || undefined, sort: "name", publicationFilter: "Active" }, signal),
+    initialPageParam: 1,
+    getNextPageParam: last => last.hasNext ? last.page + 1 : undefined,
+    enabled: scope.actorId !== null && scope.permissions.includes("formtemplates.read") && mayManageFolders(scope),
+    gcTime: 0,
+    meta: { errorOwner: "local" },
+  });
+}
+
+/// Whether the side menu has folders to read (CM1): for whoever can open forms or administers them.
+export const canReadFormMenu = (permissions: readonly string[]) => [...openForms, manageForms].some(permission => permissions.includes(permission));
+
+/// The folders of the side menu (CM1), each form with where it leads; everyone else gets nothing without asking.
 export function useFormMenu() {
   const scope = useFolderScope();
-  const enabled = scope.actorId !== null && openForms.some(permission => scope.permissions.includes(permission));
+  const enabled = scope.actorId !== null && canReadFormMenu(scope.permissions);
   const query = useQuery({ queryKey: [...folderScopeKey(scope), "menu"], queryFn: ({ signal }) => fetchFormMenu(signal), enabled, meta: { errorOwner: "local" } });
   const links = useMemo(() => query.data ? shapeFormMenu(query.data, scope.permissions) : undefined, [query.data, scope.permissions]);
   return { query, links, enabled };

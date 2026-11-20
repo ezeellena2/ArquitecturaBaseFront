@@ -40,7 +40,7 @@ export function Breadcrumbs() {
   const leaf = useCurrentBreadcrumbLeaf();
   const parent = useCurrentBreadcrumbParent();
   const menuEntry = useContext(FolderMenuNavigationContext)?.entry ?? null;
-  // A form opened from a folder of the menu is named by that menu (CP5-A): «Repartos / Hoja de ruta».
+  // A form opened from a folder of the menu is named by that folder (CM1): «Repartos / Hoja de ruta».
   if (isEntryScreen(pathname, menuEntry)) return <MenuEntryBreadcrumbs entry={menuEntry} />;
   const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;

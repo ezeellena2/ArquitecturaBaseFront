@@ -380,7 +380,7 @@ export function ListIcon(props: IconProps) { return <Icon {...props}><path d="M9
 export { EllipsisVertical as MoreVerticalIcon } from "lucide-react";
 export { MapPin as MapPinIcon } from "lucide-react";
 
-/// The generic icons a folder's own menu can take (CP5-A, 2026-11-04), with the stroke of the set; «users» is `UsersIcon`.
+/// The generic icons of a folder of the side menu (CM1, 2026-11-20), with the stroke of the set; «users» is `UsersIcon`.
 export function FolderIcon({ className }: IconProps) { return <Folder className={className} strokeWidth={1.75} aria-hidden="true" />; }
 export function TruckIcon({ className }: IconProps) { return <Truck className={className} strokeWidth={1.75} aria-hidden="true" />; }
 export function PackageIcon({ className }: IconProps) { return <Package className={className} strokeWidth={1.75} aria-hidden="true" />; }

@@ -9,14 +9,14 @@ const copy = {
     publish: "Publicar en WhatsApp", publishReason: "Hay una publicación en curso.", up: "Subir Cantidad",
     upReason: "Cantidad: posición 1 de 3", info: "Más información sobre Máximo", infoText: "En WhatsApp se cargan hasta 10 ítems.",
     sample: "Como si lo recibiera", sampleReason: "Guardá el formulario para probar con una persona.",
-    place: "Dónde va", other: "Compras", self: "Ventas", selfReason: "No puede ir adentro de sí misma ni de sus subcarpetas.",
+    place: "Dónde va", other: "Adentro de «Compras»", self: "Adentro de «Ventas»", selfReason: "Tiene subcarpetas: no puede ir adentro de otra.",
   },
   en: {
     title: "Reason for what is off", multiple: "Allow choosing several", multipleReason: "A block picks a single option.",
     publish: "Publish on WhatsApp", publishReason: "A publication is in progress.", up: "Move Quantity up",
     upReason: "Quantity: position 1 of 3", info: "More about Maximum", infoText: "WhatsApp loads up to 10 items.",
     sample: "As if received by", sampleReason: "Save the form to try it with a person.",
-    place: "Where it goes", other: "Purchases", self: "Sales", selfReason: "It cannot go inside itself or its subfolders.",
+    place: "Where it goes", other: "Inside “Purchases”", self: "Inside “Sales”", selfReason: "It has subfolders: it cannot go inside another.",
   },
 } as const;
 type Lang = keyof typeof copy;
