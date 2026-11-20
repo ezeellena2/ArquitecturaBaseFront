@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
 import { fetchPersonAttributes, fetchPersonData, fetchPersonDataPage, fetchPersonAttributeOptions, savePersonData, type PersonData, type PersonDataPageQuery } from "../api/personData";
 import type { FormCulture } from "../model";
@@ -19,10 +19,11 @@ export function usePersonDataPage(scope: PersonDataScope, query: PersonDataPageQ
  useUnobservedQueryCleanup(key);
  return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersonDataPage(query, signal), enabled: enabled && !!scope.actorId && scope.permissions.includes("formpersondata.manage") && scope.permissions.includes("users.read"), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
 }
+/** The options of a catalog datum, fifty at a time and searched in the server; its field asks for them only while its list is open. */
 export function usePersonAttributeOptions(scope: PersonDataScope, id: string, search: string, enabled = true) {
  const key = [...personDataScopeKey(scope), "options", id, search] as const;
  useUnobservedQueryCleanup(key);
- return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersonAttributeOptions(id, { page: 1, pageSize: 20, search }, signal), enabled: attributeAccess(scope) && !!id && enabled, staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
+ return useInfiniteQuery({ queryKey: key, queryFn: ({ pageParam, signal }) => fetchPersonAttributeOptions(id, { page: pageParam, pageSize: 50, search }, signal), initialPageParam: 1, getNextPageParam: last => last.hasNext ? last.page + 1 : undefined, enabled: attributeAccess(scope) && !!id && enabled, staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
 }
 interface State { readonly owner: string; readonly baseline: PersonData | null; readonly values: Readonly<Record<string, string | null>> | null; readonly error: unknown; readonly busy: boolean; readonly conflict: boolean }
 const fresh = (owner: string): State => ({ owner, baseline: null, values: null, error: null, busy: false, conflict: false });

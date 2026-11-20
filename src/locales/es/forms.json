@@ -355,7 +355,7 @@
     "catalog": "Catálogo",
     "usage": "Lo usan",
     "actions": "Acciones",
-    "searchMore": "Escribí para buscar más opciones.",
+    "none": "Sin {{label}}",
     "saveFailed": "No se pudieron guardar los datos. Probá de nuevo.",
     "userSaved": "El resto del usuario ya se guardó.",
     "conflict": "Los datos cambiaron. Volvé a cargarlos para revisar.",

@@ -4,27 +4,36 @@ import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { readErrorMessage } from "@/shared/api/errorFeedback";
 import type { UserDataSectionProps } from "@/shared/hooks/userDataSectionContext";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
+import { Picker } from "@/shared/ui/Picker";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
 import type { PersonAttribute } from "../api/personData";
 import { administrativeName } from "../editorModel";
 import { usePersonAttributeOptions, usePersonData, type PersonDataScope } from "../hooks/usePersonData";
 
+/** A catalog datum with the only piece to choose (DS1-A): «Sin <dato>» first, which is no value, and the options of the server,
+ * fifty at a time, asked for only while the list is open. The name of the chosen one may not be in the page: it is the saved text
+ * or the last one chosen. Its wait, its failure and its retry are said inside the list. */
 function PersonCatalogValue({ attribute, scope, value, text, disabled, onChange, ...aria }: { attribute: PersonAttribute; scope: PersonDataScope; value: string | null; text: string; disabled: boolean; onChange: (id: string | null) => void; id?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }) {
  const { t } = useTranslation("forms");
- const [search, setSearch] = useState<string | null>(null), [settled, setSettled] = useState(""), [selected, setSelected] = useState<{ id: string; text: string } | null>(null);
- useEffect(() => { const timer = setTimeout(() => setSettled(search ?? ""), 300); return () => clearTimeout(timer); }, [search]);
- const options = usePersonAttributeOptions(scope, attribute.id, settled, !disabled);
- const current = options.data?.items.find(option => option.id === value)?.text ?? (selected?.id === value ? selected.text : text);
- // While it searches the open list says so, and with no match it says that; a retry says so in its own line until it answers.
- const [retrying, setRetrying] = useState(false);
- const status = options.isFetching || search !== null && search !== settled ? t("searching") : options.data?.items.length === 0 ? t("noMatches") : undefined;
- return <div><Autocomplete {...aria} aria-label={administrativeName(attribute.name, scope.culture)} value={search ?? current} disabled={disabled || options.isError} options={(options.data?.items ?? []).map(option => ({ id: option.id, label: option.text }))} status={status} onValueChange={next => { setSearch(next); if (!next) onChange(null); }} onBlur={() => setSearch(null)} onSelect={id => { const option = options.data?.items.find(option => option.id === id); if (option) { setSelected(option); onChange(id); setSearch(null); } }} footer={options.data?.hasNext ? t("personData.searchMore") : undefined} />{retrying ? <div role="status" className="mt-1 flex items-center gap-2"><Spinner decorative /><p className="text-sm">{t("searching")}</p></div> : options.error ? <div className="space-y-1"><p className="text-sm text-[var(--color-danger)]">{readErrorMessage(options.error, t)}</p><Button type="button" variant="link" onClick={() => { setRetrying(true); void options.refetch().finally(() => setRetrying(false)); }}>{t("common:actions.retry")}</Button></div> : null}</div>;
+ const label = administrativeName(attribute.name, scope.culture);
+ const [open, setOpen] = useState(false), [search, setSearch] = useState(""), [settled, setSettled] = useState(""), [selected, setSelected] = useState<{ id: string; text: string } | null>(null);
+ useEffect(() => { const timer = setTimeout(() => setSettled(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
+ const options = usePersonAttributeOptions(scope, attribute.id, settled, open && !disabled);
+ const items = options.data?.pages.flatMap(page => page.items) ?? [];
+ // While what is typed waits its 300 ms, the list says it searches instead of showing the options of the search before.
+ const typing = search.trim() !== settled;
+ const current = items.find(option => option.id === value)?.text ?? (selected?.id === value ? selected.text : text);
+ return <Picker {...aria} label={label} value={value ?? ""} disabled={disabled} onOpenChange={setOpen}
+  first={{ id: "", label: t("personData.none", { label: label.charAt(0).toLocaleLowerCase(scope.culture) + label.slice(1) }) }}
+  options={typing ? [] : items.map(option => ({ id: option.id, label: option.text }))} selectedOptions={value ? [{ id: value, label: current }] : undefined}
+  search={search} onSearchChange={setSearch} total={options.data?.pages[0]?.totalCount} loading={typing || options.isLoading}
+  failed={options.isError} onRetry={() => void options.refetch()} onLoadMore={options.hasNextPage ? () => void options.fetchNextPage() : undefined} loadingMore={options.isFetchingNextPage}
+  onChange={id => { const option = items.find(item => item.id === id); if (option) setSelected(option); onChange(id || null); }}/>;
 }
 
 export function PersonDataSection({ userId, disabled, userSaved, onState }: UserDataSectionProps) {

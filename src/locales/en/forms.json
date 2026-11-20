@@ -355,7 +355,7 @@
     "catalog": "Catalog",
     "usage": "Used by",
     "actions": "Actions",
-    "searchMore": "Type to find more options.",
+    "none": "No {{label}}",
     "saveFailed": "The data could not be saved. Try again.",
     "userSaved": "The rest of the account has already been saved.",
     "conflict": "The data changed. Reload it to review.",
