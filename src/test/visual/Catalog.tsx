@@ -34,6 +34,7 @@ import { CatalogDisabledReasons } from "./CatalogDisabledReasons";
 import { CatalogItemTable } from "./CatalogItemTable";
 import { CatalogAssistantAttachment } from "./CatalogAssistantAttachment";
 import { CatalogCharts } from "./CatalogCharts";
+import { CatalogPickers } from "./CatalogPickers";
 
 // Referencia local con componentes reales, no una segunda implementación visual.
 export function Catalog() {
@@ -45,6 +46,7 @@ export function Catalog() {
   const reasonPieces = new URLSearchParams(location.search).get("scenario") === "disabled-reasons";
   const attachmentPieces = new URLSearchParams(location.search).get("scenario") === "assistant-attachment";
   const chartPieces = new URLSearchParams(location.search).get("scenario") === "charts";
+  const pickerPieces = new URLSearchParams(location.search).get("scenario") === "pickers";
   const [confirm, setConfirm] = useState(false);
   const [recording] = useState(() => new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], { type: "audio/webm" }));
   const [formOpen, setFormOpen] = useState(false);
@@ -167,6 +169,8 @@ export function Catalog() {
       {attachmentPieces ? <CatalogAssistantAttachment /> : null}
       {/* DOC7-A: the pieces of a chart, the number with its change, the bars by period and the bars of a distribution. */}
       {chartPieces ? <CatalogCharts /> : null}
+      {/* DS1-A and DS2-A (2026-11-19): the only piece to choose one or several options from a list. */}
+      {pickerPieces ? <CatalogPickers /> : null}
       <Surface title={pieces.dialogs} padded actions={<>
         <Button variant="outline" onClick={() => setFormOpen(true)}>{pieces.modal}</Button>
         <DisabledReason reason={pieces.reason}><Button variant="outline" disabled>{pieces.export}</Button></DisabledReason>
