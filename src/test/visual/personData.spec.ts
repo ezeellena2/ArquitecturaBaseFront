@@ -71,16 +71,17 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const edit = page.getByRole("button", { name: es ? "Editar a Juan Gómez" : "Edit Juan Gómez", exact: true });
     await edit.click();
     const dialog = page.getByRole("dialog", { name: es ? "Editar usuario" : "Edit user", exact: true });
-    const zone = dialog.getByRole("combobox", { name: es ? "Zona" : "Zone", exact: true });
-    await expect(zone).toHaveValue(es ? "Centro" : "Central");
+    // DS1-A: the datum is the Picker, named by the datum and what it says; its list is asked for once it opens.
+    const zone = dialog.getByRole("button", { name: es ? "Zona Centro" : "Zone Central", exact: true });
     await zone.click();
     await page.getByRole("option", { name: es ? "Norte" : "North", exact: true }).click();
-    await expect(zone).toHaveValue(es ? "Norte" : "North");
+    const north = dialog.getByRole("button", { name: es ? "Zona Norte" : "Zone North", exact: true });
+    await expect(north).toBeVisible();
     await dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true }).click();
     const alert = dialog.getByRole("alert");
     await expect(alert).toContainText(es ? "El resto del usuario ya se guardó." : "The rest of the account has already been saved.");
     await expect(dialog).toBeVisible();
-    await expect(zone).toHaveValue(es ? "Norte" : "North");
+    await expect(north).toBeVisible();
     const reload = dialog.getByRole("button", { name: es ? "Volver a cargar los datos" : "Reload data", exact: true });
     await reload.focus();
     await expect(reload).toBeFocused();
