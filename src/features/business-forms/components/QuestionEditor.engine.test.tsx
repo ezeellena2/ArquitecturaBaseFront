@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -19,10 +19,9 @@ async function mount(question: DraftQuestion, props: Partial<Parameters<typeof Q
 
 describe("calculations, conditions and bound questions in the editor of a question", () => {
   it("offers «Cálculo» and switches a saved number to it without a new identity nor asking, never required", async () => {
-    const user = userEvent.setup();
     const onChange = await mount(net);
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Tipo de respuesta" }), "calculation");
+    await pick(/^Tipo de respuesta /, "Cálculo");
 
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(onChange).toHaveBeenCalledWith({ ...net, required: false, calculation: { operation: "multiply", operands: [null, null] } });
@@ -102,3 +101,14 @@ describe("calculations, conditions and bound questions in the editor of a questi
     expect(screen.getByRole("alert")).toHaveTextContent("Esta pregunta la necesita el estándar del que viene el formulario.");
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

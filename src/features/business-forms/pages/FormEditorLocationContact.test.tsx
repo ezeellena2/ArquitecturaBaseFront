@@ -48,12 +48,12 @@ it("goes after «Preguntas» and «Lectura de documentos» and is saved with the
   expect(reading.compareDocumentPosition(contact) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled();
 
-  await userEvent.selectOptions(within(contact).getByRole("combobox", { name: "Ubicación" }), ids.notes);
+  await pick(within(contact).getByRole("button", { name: /^Ubicación / }), "Observaciones (pregunta 5)");
   await save();
   expect(sent()).toEqual([[ids.receiver, "contactName"], [ids.phone, "contactPhone"], [ids.notes, "location"]]);
   // Saved, the zone shows what the server kept and there is nothing left to save.
   await waitFor(() => expect(screen.getByRole("button", { name: "Guardar borrador" })).toBeDisabled());
-  expect(within(contact).getByRole("combobox", { name: "Ubicación" })).toHaveDisplayValue("Observaciones (pregunta 5)");
+  expect(within(contact).getByRole("button", { name: "Ubicación Observaciones (pregunta 5)" })).toBeInTheDocument();
 });
 
 it("keeps its three lists while a save is in flight, off until it answers: it is not read only", { timeout: 20_000 }, async () => {
@@ -61,15 +61,15 @@ it("keeps its three lists while a save is in flight, off until it answers: it is
   server.use(http.put("/api/forms/definitions/:id/draft", async ({ request }) => { await new Promise<void>(resolve => { release = resolve; }); return store.handle(request); }));
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const contact = await zone();
-  await userEvent.selectOptions(within(contact).getByRole("combobox", { name: "Ubicación" }), ids.notes);
+  await pick(within(contact).getByRole("button", { name: /^Ubicación / }), "Observaciones (pregunta 5)");
   await save();
-  const lists = within(contact).getAllByRole("combobox");
+  const lists = within(contact).getAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / });
   expect(lists).toHaveLength(3);
   for (const list of lists) expect(list).toBeDisabled();
   expect(within(contact).queryAllByRole("term")).toHaveLength(0);
   await act(async () => { release(); });
-  await waitFor(() => expect(within(contact).getByRole("combobox", { name: "Ubicación" })).toBeEnabled());
-  expect(within(contact).getByRole("combobox", { name: "Ubicación" })).toHaveDisplayValue("Observaciones (pregunta 5)");
+  await waitFor(() => expect(within(contact).getByRole("button", { name: /^Ubicación / })).toBeEnabled());
+  expect(within(contact).getByRole("button", { name: "Ubicación Observaciones (pregunta 5)" })).toBeInTheDocument();
 });
 
 it("gives a datum to a new question, still unsaved, by its local identity, and keeps it once the server names it", { timeout: 30_000 }, async () => {
@@ -78,8 +78,8 @@ it("gives a datum to a new question, still unsaved, by its local identity, and k
   await userEvent.click(screen.getByRole("button", { name: "Agregar pregunta" }));
   const added = [...document.querySelectorAll<HTMLElement>("[data-question-local-id]")].at(-1)!;
   await userEvent.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Referencia");
-  const phone = within(contact).getByRole("combobox", { name: "Teléfono del contacto" });
-  await userEvent.selectOptions(phone, within(phone).getByRole("option", { name: "Referencia (pregunta 6)" }));
+  const phone = within(contact).getByRole("button", { name: /^Teléfono del contacto / });
+  await pick(phone, "Referencia (pregunta 6)");
   await save();
   const localId = added.dataset.questionLocalId!;
   expect(sent()).toEqual([[ids.address, "location"], [ids.receiver, "contactName"], [localId, "contactPhone"]]);
@@ -88,7 +88,7 @@ it("gives a datum to a new question, still unsaved, by its local identity, and k
   const fieldId = store.definitions.get(fixtureFormId)!.draft.fields.find(question => question.label.es === "Referencia")!.fieldId;
   expect(fieldId).not.toBe(localId);
   expect(stored()).toEqual([[ids.address, "location"], [ids.receiver, "contactName"], [fieldId, "contactPhone"]]);
-  expect(within(contact).getByRole("combobox", { name: "Teléfono del contacto" })).toHaveDisplayValue("Referencia (pregunta 6)");
+  expect(within(contact).getByRole("button", { name: "Teléfono del contacto Referencia (pregunta 6)" })).toBeInTheDocument();
 });
 
 it("takes the choice away with the question removed or whose type changes, and keeps it when it is renamed", { timeout: 30_000 }, async () => {
@@ -96,19 +96,19 @@ it("takes the choice away with the question removed or whose type changes, and k
   const contact = await zone();
   await userEvent.click(screen.getByRole("button", { name: "Quitar Recibió" }));
   await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Quitar pregunta" }));
-  expect(within(contact).getByRole("combobox", { name: "Nombre del contacto" })).toHaveDisplayValue("Ninguna");
+  expect(within(contact).getByRole("button", { name: "Nombre del contacto Ninguna" })).toBeInTheDocument();
 
   // A long text is another question for the server: its row goes back to «Ninguna».
   await userEvent.click(screen.getByRole("button", { name: "Editar Teléfono de quien recibe" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Tipo de respuesta" }), "longText");
+  await pick(/^Tipo de respuesta /, "Texto largo");
   await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cambiar tipo" }));
-  await waitFor(() => expect(within(contact).getByRole("combobox", { name: "Teléfono del contacto" })).toHaveDisplayValue("Ninguna"));
+  await waitFor(() => expect(within(contact).getByRole("button", { name: "Teléfono del contacto Ninguna" })).toBeInTheDocument());
 
   await userEvent.click(screen.getByRole("button", { name: "Editar Dirección de entrega" }));
   const label = screen.getByRole("textbox", { name: "Pregunta" });
   await userEvent.clear(label);
   await userEvent.type(label, "Domicilio de entrega");
-  expect(within(contact).getByRole("combobox", { name: "Ubicación" })).toHaveDisplayValue("Domicilio de entrega (pregunta 1)");
+  expect(within(contact).getByRole("button", { name: "Ubicación Domicilio de entrega (pregunta 1)" })).toBeInTheDocument();
   await save();
   expect(sent()).toEqual([[ids.address, "location"]]);
 });
@@ -121,18 +121,20 @@ it("takes the choice away from a question that gets a condition, which WhatsApp 
   store.definitions.set(fixtureFormId, { ...saved, draft: { ...saved.draft, fields: [delivered, ...saved.draft.fields] } });
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const contact = await zone();
-  const name = within(contact).getByRole("combobox", { name: "Nombre del contacto" });
-  expect(name).toHaveDisplayValue("Recibió (pregunta 3)");
+  const name = within(contact).getByRole("button", { name: /^Nombre del contacto / });
+  expect(name).toHaveAccessibleName("Nombre del contacto Recibió (pregunta 3)");
   await userEvent.click(screen.getByRole("button", { name: "Editar Recibió" }));
   const shows = screen.getByRole("group", { name: "Se muestra" });
   await userEvent.click(within(shows).getByRole("button", { name: "Según otra respuesta" }));
-  await waitFor(() => expect(name).toHaveDisplayValue("Ninguna"));
-  expect(within(name).queryByRole("option", { name: /^Recibió/ })).not.toBeInTheDocument();
+  await waitFor(() => expect(name).toHaveAccessibleName("Nombre del contacto Ninguna"));
+  expect(within(await openList(name)).queryByRole("option", { name: /^Recibió/ })).not.toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
 
   // Shown always again, it can be chosen, but the choice went with the condition.
   await userEvent.click(within(shows).getByRole("button", { name: "Siempre" }));
-  expect(within(name).getByRole("option", { name: "Recibió (pregunta 3)" })).toBeEnabled();
-  expect(name).toHaveDisplayValue("Ninguna");
+  expect(within(await openList(name)).getByRole("option", { name: "Recibió (pregunta 3)" })).not.toHaveAttribute("aria-disabled");
+  await userEvent.keyboard("{Escape}");
+  expect(name).toHaveAccessibleName("Nombre del contacto Ninguna");
   await save();
   expect(sent()).toEqual([[ids.address, "location"], [ids.phone, "contactPhone"]]);
 });
@@ -142,11 +144,11 @@ it("with a question «Ubicación», leaves the location row off with its reason 
   const contact = await zone();
   // «Observaciones» becomes the question «Ubicación»: the location goes there, by W1-A.
   await userEvent.click(screen.getByRole("button", { name: "Editar Observaciones" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Tipo de respuesta" }), "location");
+  await pick(/^Tipo de respuesta /, "Ubicación");
   await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cambiar tipo" }));
-  const location = await within(contact).findByRole("combobox", { name: "Ubicación" });
+  const location = await within(contact).findByRole("button", { name: /^Ubicación / });
   await waitFor(() => expect(location).toBeDisabled());
-  expect(location).toHaveDisplayValue("Observaciones (pregunta 5)");
+  expect(location).toHaveAccessibleName("Ubicación Observaciones (pregunta 5)");
   expect(location).toHaveAccessibleDescription("La ubicación va a la pregunta «Observaciones», que se pide antes de mandar el formulario.");
   await save();
   expect(sent()).toEqual([[ids.receiver, "contactName"], [ids.phone, "contactPhone"]]);
@@ -176,7 +178,7 @@ it("is read without «Diseñar formularios»: each row says its question, withou
   server.use(me(["formtemplates.read"]));
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const contact = await zone();
-  expect(within(contact).queryAllByRole("combobox")).toHaveLength(0);
+  expect(within(contact).queryAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / })).toHaveLength(0);
   expect(within(contact).getAllByRole("definition").map(value => value.textContent)).toEqual(["Dirección de entrega (pregunta 1)", "Recibió (pregunta 2)", "Teléfono de quien recibe (pregunta 3)"]);
 });
 
@@ -192,12 +194,12 @@ it("keeps the questions chosen here after a conflict with «Conservar mis cambio
   }));
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   const contact = await zone();
-  await userEvent.selectOptions(within(contact).getByRole("combobox", { name: "Teléfono del contacto" }), "");
+  await pick(within(contact).getByRole("button", { name: /^Teléfono del contacto / }), "Ninguna");
   await save();
   // While the review is pending, the lists stay where they were, off.
   const revise = await screen.findByRole("button", { name: "Revisar" });
-  expect(within(contact).getAllByRole("combobox")).toHaveLength(3);
-  for (const list of within(contact).getAllByRole("combobox")) expect(list).toBeDisabled();
+  expect(within(contact).getAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / })).toHaveLength(3);
+  for (const list of within(contact).getAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / })) expect(list).toBeDisabled();
   await userEvent.click(revise);
   const review = await screen.findByRole("dialog", { name: "Revisión del borrador" });
   // One change, with what differs: the phone, which goes to no question here; each question named as in the zone.
@@ -209,3 +211,14 @@ it("keeps the questions chosen here after a conflict with «Conservar mis cambio
   await waitFor(() => expect(store.definitions.get(fixtureFormId)?.revision).toBe(3));
   expect(stored()).toEqual([[ids.address, "location"], [ids.receiver, "contactName"]]);
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

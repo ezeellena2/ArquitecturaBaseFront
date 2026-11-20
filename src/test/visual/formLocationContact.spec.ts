@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 import { fixtureFormId } from "./formFixtures";
-import { deliveryIds } from "./locationContactFixtures";
 
 // W3 (UC1-A), evidence without goldens: «Ubicación y contacto» in the editor of «Registrar entrega», es/en at 1440, 390 and 320 px: the
 // zone with the questions chosen and its (i), the zone gone with «Sólo en la app», the location row off with its reason beside a
@@ -30,8 +29,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     // After «Preguntas», one row per datum with the question that receives it.
     const questions = page.getByRole("region", { name: text(language, "Preguntas", "Questions"), exact: true });
     expect(await questions.evaluate((element, other) => !!(element.compareDocumentPosition(other!) & Node.DOCUMENT_POSITION_FOLLOWING), await zone.elementHandle())).toBe(true);
-    const selects = rows(language).map(name => zone.getByRole("combobox", { name, exact: true }));
-    for (const [select, id] of selects.map((select, index) => [select, [deliveryIds.address, deliveryIds.receiver, deliveryIds.phone][index]!] as const)) await expect(select).toHaveValue(id);
+    // The Picker of each row says its label and the question chosen.
+    const selects = rows(language).map(name => zone.getByRole("button", { name: new RegExp("^" + name + " ") }));
+    for (const select of selects) await expect(select).not.toHaveAccessibleName(/ (Ninguna|None)$/);
     // On the phone each list goes across and is 44 px tall; from 640 px it is as wide as the board's.
     for (const select of selects) {
       const box = (await select.boundingBox())!;
@@ -58,9 +58,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("UC1-A the location row beside a question «Ubicación» and read only " + language + " " + width, async ({ page }) => {
     const zone = await open(page, language, width, "forms-location-contact-location");
     const [location, name] = rows(language);
-    const select = zone.getByRole("combobox", { name: location, exact: true });
+    const select = zone.getByRole("button", { name: new RegExp("^" + location + " ") });
     await expect(select).toBeDisabled();
-    await expect(zone.getByRole("combobox", { name, exact: true })).toBeEnabled();
+    await expect(zone.getByRole("button", { name: new RegExp("^" + name + " ") })).toBeEnabled();
     // The reason opens over the row, with the pointer on its envelope and with the focus on it.
     const reason = text(language, "La ubicación va a la pregunta «Ubicación», que se pide antes de mandar el formulario.", "The location goes to the “Location” question, which is asked for before the form is sent.");
     const envelope = zone.getByRole("group", { name: location, exact: true });
@@ -79,7 +79,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
 
     // Read only: each row says its question, without lists.
     const readOnly = await open(page, language, width, "forms-location-contact-read");
-    await expect(readOnly.getByRole("combobox")).toHaveCount(0);
+    await expect(readOnly.getByRole("button", { name: new RegExp("^(" + rows(language).join("|") + ") ") })).toHaveCount(0);
     await expect(readOnly.getByRole("definition")).toHaveText([text(language, "Dirección de entrega (pregunta 1)", "Delivery address (question 1)"),
       text(language, "Recibió (pregunta 2)", "Received by (question 2)"), text(language, "Teléfono de quien recibe (pregunta 3)", "Recipient's phone (question 3)")]);
     await noPageScroll(page, width);

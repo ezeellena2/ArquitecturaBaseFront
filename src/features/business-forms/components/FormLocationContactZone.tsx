@@ -3,7 +3,7 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 import { localizedValue } from "../editorModel";
 import { assignReceives, canReceive, locationContactKinds, questionName, receivesOf } from "../locationContact";
@@ -48,15 +48,13 @@ export function FormLocationContactZone({ value, onChange, readOnly, disabled = 
   return <Surface {...zone}><div className="flex flex-col divide-y divide-[var(--color-border)]">{locationContactKinds.map(kind => <div key={kind} className="p-4">
     <FormField label={rowLabel(kind)}>{kind === "location" && located
       ? <DisabledReason reason={locatedReason} className="grid w-full sm:w-80">
-        <NativeSelect size={size} className="sm:w-80" disabled value={located.localId}><option value={located.localId}>{name(located)}</option></NativeSelect>
+        <Picker label={rowLabel(kind)} size={size} className="sm:w-80" disabled value={located.localId} options={[{ id: located.localId, label: name(located) }]} onChange={() => undefined} />
       </DisabledReason>
-      : <NativeSelect size={size} className="sm:w-80" disabled={disabled} value={owner(kind)?.localId ?? ""} onChange={event => onChange(assignReceives(value, kind, event.target.value || null))}>
-        <option value="">{t("locationContact.none")}</option>
-        {candidates.map(question => {
+      : <Picker label={rowLabel(kind)} size={size} className="sm:w-80" disabled={disabled} value={owner(kind)?.localId ?? ""} first={{ id: "", label: t("locationContact.none") }}
+        onChange={localId => onChange(assignReceives(value, kind, localId || null))} options={candidates.map(question => {
           // Taken by another row: off, saying what it receives.
           const other = receivesOf(question), taken = other !== null && other !== kind;
-          return <option key={question.localId} value={question.localId} disabled={taken}>{taken ? t("locationContact.taken." + other, { option: name(question) }) : name(question)}</option>;
-        })}
-      </NativeSelect>}</FormField>
+          return { id: question.localId, label: name(question), disabledReason: taken ? t("locationContact.taken." + other) : null };
+        })} />}</FormField>
   </div>)}</div></Surface>;
 }

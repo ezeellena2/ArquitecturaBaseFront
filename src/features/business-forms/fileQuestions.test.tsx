@@ -1,5 +1,6 @@
 import { formScreens } from "./fileQuestions";
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { FormPreview } from "./components/FormPreview";
@@ -33,8 +34,9 @@ it("reads a saved document with photoSource null and rejects one without it, whi
 
 it("shows disabled photo and document choices when storage is unavailable", async () => {
   await act(async () => { renderWithProviders(<QuestionEditor question={newQuestion("shortText", "es", "a")} position={1} total={1} culture="es" original="es" expanded readOnly={false} issues={[]} onChange={() => {}} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />); });
-  expect(screen.getByRole("option", { name: /Foto/ })).toBeDisabled();
-  expect(screen.getByRole("option", { name: /Documento/ })).toBeDisabled();
+  const types = await openList(/^Tipo de respuesta /);
+  expect(within(types).getByRole("option", { name: "Foto" })).toHaveAttribute("aria-disabled", "true");
+  expect(within(types).getByRole("option", { name: "Documento" })).toHaveAttribute("aria-disabled", "true");
 });
 
 it("previews one new screen for each file question and keeps following scalar questions with it", async () => {
@@ -58,8 +60,17 @@ it.each(["photo", "document"] as const)("enables %s when form-files is available
   const onChange = vi.fn();
   await act(async () => { renderWithProviders(<QuestionEditor question={newQuestion("shortText", "es", "a")} position={1} total={1}
     culture="es" original="es" expanded readOnly={false} issues={[]} onChange={onChange} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} filesAvailable />); });
-  expect(screen.getByRole("option", { name: "Foto" })).toBeEnabled();
-  expect(screen.getByRole("option", { name: "Documento" })).toBeEnabled();
-  fireEvent.change(screen.getByRole("combobox", { name: "Tipo de respuesta" }), { target: { value: type } });
+  const types = await openList(/^Tipo de respuesta /);
+  expect(within(types).getByRole("option", { name: "Foto" })).not.toHaveAttribute("aria-disabled");
+  expect(within(types).getByRole("option", { name: "Documento" })).not.toHaveAttribute("aria-disabled");
+  await userEvent.click(within(types).getByRole("option", { name: type === "photo" ? "Foto" : "Documento" }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ type, files: expect.objectContaining({ minFiles: 0, maxFiles: 1 }) }));
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}

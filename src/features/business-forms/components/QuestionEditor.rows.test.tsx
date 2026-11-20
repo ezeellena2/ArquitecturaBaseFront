@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
@@ -20,12 +20,11 @@ async function mount(question: DraftQuestion, props: Partial<Parameters<typeof Q
     issues={[]} filesAvailable onChange={onChange} onExpand={() => {}} onMove={() => {}} onRemove={() => {}} {...props} />); });
   return onChange;
 }
-const option = (name: string) => screen.getByRole("option", { name });
 
 describe("the block of rows in the editor of a question", () => {
   it("no longer offers the block in «Tipo de respuesta»: it has its own button (RG10-D)", async () => {
     await mount(contact);
-    const types = screen.getAllByRole("option").map(item => item.textContent ?? "");
+    const types = within(await openList(/^Tipo de respuesta /)).getAllByRole("option").map(item => item.textContent ?? "");
 
     expect(types.at(-1)).toBe("Ubicación");
     expect(types.filter(type => /Bloque|Renglones/.test(type))).toEqual([]);
@@ -33,9 +32,13 @@ describe("the block of rows in the editor of a question", () => {
   it("turns off, in a question of the block, what an item does not hold, each with its reason", async () => {
     await mount(unit, { onRepeatedChange: () => {} });
 
-    expect(option("Foto · No se carga varias veces")).toBeDisabled();
-    expect(option("Documento · No se carga varias veces")).toBeDisabled();
-    expect(option("Ubicación · No se carga varias veces")).toBeDisabled();
+    // Off, each with its reason as its description (MA1-A).
+    const types = await openList(/^Tipo de respuesta /);
+    for (const name of ["Foto", "Documento", "Ubicación"]) {
+      expect(within(types).getByRole("option", { name })).toHaveAttribute("aria-disabled", "true");
+      expect(within(types).getByRole("option", { name })).toHaveAccessibleDescription("No se carga varias veces");
+    }
+    await userEvent.keyboard("{Escape}");
     expect(screen.getByRole("checkbox", { name: "Permitir elegir varias" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("checkbox", { name: "Permitir elegir varias" })).toHaveAccessibleDescription("En un bloque se elige una sola opción.");
     expect(screen.getByRole("checkbox", { name: "Se carga varias veces" })).toBeChecked();
@@ -56,7 +59,7 @@ describe("the block of rows in the editor of a question", () => {
     expect(screen.getByText("Bloque · de 1 a 20 ítems · 3 preguntas")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Artículos");
     expect(screen.getByRole("textbox", { name: "Ayuda para el empleado (opcional)" })).toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Tipo de respuesta" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Tipo de respuesta / })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Obligatoria" })).not.toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Se carga varias veces" })).not.toBeInTheDocument();
     expect(screen.getByText("Ítems")).toBeInTheDocument();
@@ -93,3 +96,11 @@ describe("the block of rows in the editor of a question", () => {
     } finally { await act(async () => { await i18n.changeLanguage("es"); }); }
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}

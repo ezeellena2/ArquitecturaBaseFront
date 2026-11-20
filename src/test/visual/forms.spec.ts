@@ -19,7 +19,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: es ? "Agregar pregunta" : "Add question", exact: true }).click();
     const label = page.getByRole("textbox", { name: es ? "Pregunta" : "Question", exact: true }).first();
     await label.fill(es ? "Observaciones" : "Notes");
-    await page.getByRole("combobox", { name: es ? "Tipo de respuesta" : "Answer type", exact: true }).selectOption("longText");
+    await page.getByRole("button", { name: es ? /^Tipo de respuesta / : /^Answer type / }).click(); await page.getByRole("option", { name: es ? "Texto largo" : "Long text", exact: true }).click();
     await expect(page.getByRole("spinbutton", { name: es ? "Máximo de caracteres" : "Maximum characters", exact: true })).toHaveValue("600");
     await page.getByRole("button", { name: es ? "Guardar borrador" : "Save draft", exact: true }).click();
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);

@@ -90,7 +90,8 @@ async function mountCatalogQuestion(onChange = vi.fn(), permissions = catalogSco
 it("offers the catalog question type and shows invalid catalogs without allowing selection", async () => {
   server.use(http.get("/api/forms/catalogs", ({ request }) => { expect(new URL(request.url).searchParams.has("state")).toBe(false); return HttpResponse.json(catalogPage()); }));
   await mountCatalogQuestion();
-  expect(screen.getByRole("option", { name: "Elegir de un catálogo" })).toBeInTheDocument();
+  expect(within(await openList(/^Tipo de respuesta /)).getByRole("option", { name: "Elegir de un catálogo" })).toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
   await userEvent.click(screen.getByRole("combobox", { name: "Catálogo" }));
   expect(await screen.findByRole("option", { name: "Responsables · El catálogo tiene una configuración no válida." })).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByRole("option", { name: "Archivados · 2 opciones · Dado de baja" })).toHaveAttribute("aria-disabled", "true");
@@ -285,7 +286,7 @@ it("keeps the question controls without notes: optional in the label and the min
     culture="es" original="es" expanded readOnly={false} issues={[]} onChange={vi.fn()}
     onExpand={() => {}} onMove={() => {}} onRemove={() => {}} />);
   expect(screen.queryByText("Fecha sin hora.")).not.toBeInTheDocument();
-  expect(screen.getByRole("combobox", { name: "Tipo de respuesta" })).not.toHaveAccessibleDescription();
+  expect(screen.getByRole("button", { name: /^Tipo de respuesta / })).not.toHaveAccessibleDescription();
   const help = screen.getByRole("textbox", { name: "Ayuda para el empleado (opcional)" });
   expect(help).not.toHaveAccessibleDescription();
   expect(screen.queryByText("Opcional", { exact: true })).not.toBeInTheDocument();
@@ -300,3 +301,11 @@ it("keeps the question controls without notes: optional in the label and the min
   await userEvent.hover(screen.getByRole("button", { name: "Más información sobre Mínimo" }));
   expect(await screen.findByRole("tooltip")).toHaveTextContent(hint);
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}

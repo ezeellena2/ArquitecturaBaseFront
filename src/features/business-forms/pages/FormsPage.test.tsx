@@ -414,7 +414,7 @@ describe("Forms routes", () => {
     renderRouteWithProviders("/formularios/nuevo");
     await pasteText(await screen.findByLabelText("Nombre"), "Registrar entrega");
     await userEvent.click(screen.getByRole("button", { name: "Agregar pregunta" }));
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Tipo de respuesta" }), "Elegir de una lista");
+    await pick(/^Tipo de respuesta /, "Elegir de una lista");
     await userEvent.click(screen.getByRole("checkbox", { name: "Permitir elegir varias" }));
     await userEvent.click(screen.getByRole("button", { name: "Quitar Opción 1" }));
     expect(screen.queryByRole("textbox", { name: "Opción 1" })).not.toBeInTheDocument();
@@ -726,7 +726,7 @@ it("creates a catalog question, reports its missing selection, then saves the se
   await pasteText(await screen.findByLabelText("Nombre"),"Visita catálogo");
   await userEvent.click(screen.getByRole("button",{name:"Agregar pregunta"}));
   await pasteText(screen.getAllByRole("textbox",{name:"Pregunta"})[0]!,"Cliente");
-  await userEvent.selectOptions(screen.getByLabelText("Tipo de respuesta"),"catalogChoice");
+  await pick(/^Tipo de respuesta /,"Elegir de un catálogo");
   await userEvent.click(screen.getByRole("button",{name:"Guardar borrador"}));
   expect(await screen.findByText("Elegí un catálogo.")).toBeInTheDocument();
   const catalog = screen.getByRole("combobox",{name:"Catálogo"});
@@ -937,3 +937,14 @@ it("keeps the unconfirmed save in sight with its own sign while it checks the sa
   expect(screen.queryByRole("button", { name: "Repitiendo el intento…" })).not.toBeInTheDocument();
   await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([notice]) => notice.kind === "success")).toBe(true));
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

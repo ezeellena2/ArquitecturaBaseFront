@@ -1796,9 +1796,9 @@
     "option": "{{label}} (pregunta {{number}})",
     "unnamed": "Pregunta {{number}}",
     "taken": {
-      "location": "{{option}} · Recibe la ubicación",
-      "contactName": "{{option}} · Recibe el nombre del contacto",
-      "contactPhone": "{{option}} · Recibe el teléfono del contacto"
+      "location": "Recibe la ubicación",
+      "contactName": "Recibe el nombre del contacto",
+      "contactPhone": "Recibe el teléfono del contacto"
     },
     "locationQuestion": "La ubicación va a la pregunta «{{question}}», que se pide antes de mandar el formulario.",
     "locationQuestionNumber": "La ubicación va a la pregunta {{number}}, que se pide antes de mandar el formulario."

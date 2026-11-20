@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -168,8 +168,8 @@ it("waits while adding with the reason on the ×, and takes out of the list a fo
 
   await userEvent.click(await screen.findByRole("button", { name: "Agregar «Remito»" }));
   const dialog = await screen.findByRole("dialog", { name: "Agregar «Remito»" });
-  const folder = await within(dialog).findByRole("combobox", { name: /^Carpeta/ });
-  await userEvent.selectOptions(folder, north);
+  const folder = await within(dialog).findByRole("button", { name: /^Carpeta / });
+  await pick(folder, /Norte$/);
   await userEvent.click(within(dialog).getByRole("button", { name: "Agregar como borrador" }));
   const close = await within(dialog).findByRole("button", { name: "Cerrar" });
   expect(close).toHaveAttribute("aria-disabled", "true");
@@ -177,8 +177,10 @@ it("waits while adding with the reason on the ×, and takes out of the list a fo
   release();
 
   expect(await within(dialog).findByText("La carpeta elegida ya no existe. Elegí otra.")).toBeInTheDocument();
-  await waitFor(() => expect(within(folder).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas"]));
-  expect(folder).toHaveValue("");
+  expect(folder).toHaveAccessibleName("Carpeta La del estándar");
+  const listed = await openList(folder);
+  await waitFor(() => expect(within(listed).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas"]));
+  await userEvent.keyboard("{Escape}");
 });
 
 it("adds the copy to the folder chosen, the standard's when none is", async () => {
@@ -189,11 +191,12 @@ it("adds the copy to the folder chosen, the standard's when none is", async () =
 
   await userEvent.click(await screen.findByRole("button", { name: "Agregar «Remito»" }));
   const dialog = await screen.findByRole("dialog", { name: "Agregar «Remito»" });
-  const folder = await within(dialog).findByRole("combobox", { name: /^Carpeta/ });
-  expect(folder).toHaveValue("");
+  const folder = await within(dialog).findByRole("button", { name: /^Carpeta / });
+  expect(folder).toHaveAccessibleName("Carpeta La del estándar");
   // Each folder says where it lives (premise 5.3): two folders with the same name read differently.
-  expect(within(folder).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas", "Ventas / Norte"]);
-  await userEvent.selectOptions(folder, north);
+  const listed = await openList(folder);
+  expect(within(listed).getAllByRole("option").map(option => option.textContent?.trim())).toEqual(["La del estándar", "Ventas", "Ventas / Norte"]);
+  await userEvent.click(within(listed).getByRole("option", { name: "Ventas / Norte" }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Agregar como borrador" }));
 
   await waitFor(() => expect(bodies).toHaveLength(1));
@@ -258,3 +261,14 @@ describe("the library with the reading of documents (DOC1)", () => {
     expect(screen.getByRole("button", { name: "Disponibles (1)" })).toHaveAttribute("aria-pressed", "true");
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { addFormStandard, type FormStandard } from "../api/library";
 import { useFolderRefresh, useFolderScope } from "../hooks/useFormFolders";
@@ -104,10 +104,8 @@ export function FormStandardAddDialog({ standard, folders, onOpenChange }: {
           <Input value={prefix} maxLength={12} autoComplete="off" className="uppercase" onChange={event => setPrefix(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} disabled={busy} />
         </FormField>
         {folders && folders.length > 0 ? <FormField label={t("library.folder")} help={t("library.folderHelp")} error={errors.folder}>
-          <NativeSelect value={folderId} onChange={event => setFolderId(event.target.value)} disabled={busy}>
-            <option value="">{t("library.standardFolder")}</option>
-            {folders.map(folder => <option key={folder.id} value={folder.id}>{folder.path}</option>)}
-          </NativeSelect>
+          <Picker label={t("library.folder")} value={folderId} first={{ id: "", label: t("library.standardFolder") }} onChange={setFolderId} disabled={busy}
+            options={folders.map(folder => ({ id: folder.id, label: folder.path }))} />
         </FormField> : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>{t("common:actions.cancel")}</Button>

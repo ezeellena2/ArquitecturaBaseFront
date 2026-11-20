@@ -7,7 +7,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { FormField } from "@/shared/ui/FormField";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { PencilIcon, ChevronDownIcon, LockIcon, TrashIcon } from "@/shared/ui/icons";
@@ -158,7 +158,8 @@ export function QuestionEditor({ question, position, number, total, culture, ori
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label={t(question.type === "group" ? "rows.name" : "question")} hint={reference(question.label)} error={fieldError("label")}><Input data-question-control="label" ref={inputRef} readOnly={readOnly} placeholder={culture !== original ? t("missingText") : undefined} value={question.label[culture] ?? ""} onChange={e => onChange({ ...question, label: { ...question.label, [culture]: e.target.value } })} /></FormField>
         {/* RG10-D: the block has no type of answer; its editor is the name, the help and its items. */}
-        {question.type !== "group" ? <FormField label={t("type")} error={fieldError("type")}><DisabledReason reason={locked}><NativeSelect disabled={readOnly || bound} value={questionEditorType(question)} onChange={e => changeType(e.target.value as QuestionEditorType)}>{types.map(type => { const reason = typeReason(type); return <option key={type} value={type} disabled={reason !== null || type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read")}>{t(`types.${type}`)}{reason ? " · " + reason : ""}</option>; })}</NativeSelect></DisabledReason></FormField> : null}
+        {question.type !== "group" ? <FormField label={t("type")} error={fieldError("type")}><DisabledReason reason={locked}><Picker label={t("type")} disabled={readOnly || bound} value={questionEditorType(question)} onChange={type => changeType(type as QuestionEditorType)} options={types.map(type => ({ id: type, label: t(`types.${type}`),
+          disabledReason: typeReason(type) ?? (type === "catalogChoice" && !catalogScope?.permissions.includes("formcatalogs.read") ? t("catalogQuestion.requiresRead") : null) }))} /></DisabledReason></FormField> : null}
         <FormField label={t("helpOptional")} hint={reference(question.help)} error={fieldError("help")}><Textarea data-question-control="help" readOnly={readOnly} placeholder={culture !== original && question.help?.[original]?.trim() ? t("missingText") : undefined} value={question.help?.[culture] ?? ""} onChange={e => onChange({ ...question, help: { ...question.help, [culture]: e.target.value || null } })} /></FormField>
         <div className="flex flex-col gap-4">
           {question.type === "group" ? <div data-question-control="rows" className="flex flex-col gap-2"><p className="text-sm font-medium">{t("rows.title")}</p><SelectionRangeFields value={{ minimum: question.rows.minRows, maximum: question.rows.maxRows }} limit={100} minimumLabel={t("rows.minimum")} maximumLabel={t("rows.maximum")} maximumHelp={appOnly ? undefined : t("rows.maximumHint")} readOnly={readOnly} disabledReason={locked} error={rowsError} onChange={range => onChange({ ...question, rows: { minRows: range.minimum, maxRows: range.maximum }, required: range.minimum === null ? question.required : range.minimum > 0 })} /></div> : null}

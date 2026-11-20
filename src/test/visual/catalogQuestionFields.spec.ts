@@ -123,7 +123,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await enter(page, language, width, "/formularios/nuevo", label("Nuevo formulario", "New form"));
     await page.getByRole("button", { name: label("Agregar pregunta", "Add question"), exact: true }).click();
     const editor = page.locator("[data-question-local-id]").last();
-    await editor.getByRole("combobox", { name: label("Tipo de respuesta", "Answer type"), exact: true }).selectOption("catalogChoice");
+    await editor.getByRole("button", { name: new RegExp("^" + label("Tipo de respuesta", "Answer type") + " ") }).click(); await page.getByRole("option", { name: label("Elegir de un catálogo", "Choose from a catalog"), exact: true }).click();
     // The catalog is a dropdown (2026-10-31): touching it shows the first catalogs.
     await editor.getByRole("combobox", { name: label("Catálogo", "Catalog"), exact: true }).click();
     await page.getByRole("listbox", { name: label("Catálogo", "Catalog"), exact: true }).getByRole("option", { name: new RegExp("^" + label("Proveedores", "Suppliers")) }).click();

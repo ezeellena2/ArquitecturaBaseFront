@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -26,7 +26,17 @@ const withCondition = (definition: FormDefinitionSnapshot): FormDefinitionSnapsh
   ...definition.draft.fields.filter(question => question.fieldId !== ids.notes),
   { fieldId: guid(992), key: key(guid(992)), type: "boolean", label: { es: "¿Llegó completo?" }, help: null, required: true },
   { ...definition.draft.fields.find(question => question.fieldId === ids.notes)!, showWhen: { questionId: guid(992), values: ["false"] } }] as CanonicalQuestion[] } });
-const options = (select: HTMLElement) => within(select).getAllByRole<HTMLOptionElement>("option").map(option => [option.textContent, option.disabled]);
+// The options of a Picker as they read, with the reason after the name, and whether they are off; it opens the list and closes it.
+const options = async (trigger: HTMLElement) => {
+  const list = await openList(trigger);
+  const text = (ids: string | null) => (ids ?? "").split(" ").filter(Boolean).map(id => document.getElementById(id)?.textContent ?? "").join(" ");
+  const read = within(list).getAllByRole("option").map(option => {
+    const reason = text(option.getAttribute("aria-describedby"));
+    return [text(option.getAttribute("aria-labelledby")) + (reason ? " · " + reason : ""), option.getAttribute("aria-disabled") === "true"] as [string, boolean];
+  });
+  await userEvent.keyboard("{Escape}");
+  return read;
+};
 const received = (value: DraftEditorValue | undefined) => value?.draft.fields.flatMap(question => "receives" in question && question.receives ? [[question.localId, question.receives]] : []);
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -34,79 +44,77 @@ describe("the zone «Ubicación y contacto»", () => {
   it("shows one row per datum with «Ninguna» and the text questions outside the block, the ones another row took off with what they receive", async () => {
     renderWithProviders(<Harness definition={withBlock(deliveryDefinition("es"))} />);
     const zone = screen.getByRole("region", { name: "Ubicación y contacto" });
-    const location = within(zone).getByRole("combobox", { name: "Ubicación" });
-    expect(location).toHaveDisplayValue("Dirección de entrega (pregunta 1)");
-    expect(within(zone).getByRole("combobox", { name: "Nombre del contacto" })).toHaveDisplayValue("Recibió (pregunta 2)");
-    expect(within(zone).getByRole("combobox", { name: "Teléfono del contacto" })).toHaveDisplayValue("Teléfono de quien recibe (pregunta 3)");
+    const location = within(zone).getByRole("button", { name: "Ubicación Dirección de entrega (pregunta 1)" });
+    expect(within(zone).getByRole("button", { name: "Nombre del contacto Recibió (pregunta 2)" })).toBeInTheDocument();
+    expect(within(zone).getByRole("button", { name: "Teléfono del contacto Teléfono de quien recibe (pregunta 3)" })).toBeInTheDocument();
     // Neither the photo nor the question of the block is offered.
-    expect(options(location)).toEqual([["Ninguna", false], ["Dirección de entrega (pregunta 1)", false], ["Recibió (pregunta 2) · Recibe el nombre del contacto", true],
+    expect(await options(location)).toEqual([["Ninguna", false], ["Dirección de entrega (pregunta 1)", false], ["Recibió (pregunta 2) · Recibe el nombre del contacto", true],
       ["Teléfono de quien recibe (pregunta 3) · Recibe el teléfono del contacto", true], ["Observaciones (pregunta 5)", false]]);
-    expect(options(within(zone).getByRole("combobox", { name: "Teléfono del contacto" })).map(([text]) => text)).toEqual(["Ninguna",
+    expect((await options(within(zone).getByRole("button", { name: /^Teléfono del contacto / }))).map(([text]) => text)).toEqual(["Ninguna",
       "Dirección de entrega (pregunta 1) · Recibe la ubicación", "Recibió (pregunta 2) · Recibe el nombre del contacto", "Teléfono de quien recibe (pregunta 3)", "Observaciones (pregunta 5)"]);
     // How it works goes in the (i) of the title, never as a legend.
     await userEvent.hover(within(zone).getByRole("button", { name: "Más información sobre Ubicación y contacto" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent("La ubicación o el contacto que la persona comparte en el chat completan estas preguntas del formulario que tiene abierto");
   });
 
-  it("does not offer a text question that shows by a condition, which WhatsApp does not prefill", () => {
+  it("does not offer a text question that shows by a condition, which WhatsApp does not prefill", async () => {
     renderWithProviders(<Harness definition={withCondition(deliveryDefinition("es"))} />);
-    expect(options(screen.getByRole("combobox", { name: "Ubicación" })).map(([text]) => text)).toEqual(["Ninguna", "Dirección de entrega (pregunta 1)",
+    expect((await options(screen.getByRole("button", { name: /^Ubicación / }))).map(([text]) => text)).toEqual(["Ninguna", "Dirección de entrega (pregunta 1)",
       "Recibió (pregunta 2) · Recibe el nombre del contacto", "Teléfono de quien recibe (pregunta 3) · Recibe el teléfono del contacto"]);
   });
 
-  it("does not offer a text question with the fixed validation of a library standard", () => {
+  it("does not offer a text question with the fixed validation of a library standard", async () => {
     const definition = deliveryDefinition("es");
     const taxId = { fieldId: guid(994), key: key(guid(994)), type: "shortText", label: { es: "CUIT de quien recibe" }, help: null, required: false, maxLength: 13, validation: "taxId" } as CanonicalQuestion;
     renderWithProviders(<Harness definition={{ ...definition, draft: { ...definition.draft, fields: [...definition.draft.fields, taxId] } }} />);
-    expect(options(screen.getByRole("combobox", { name: "Teléfono del contacto" })).map(([text]) => text)).not.toContain("CUIT de quien recibe (pregunta 6)");
-    expect(options(screen.getByRole("combobox", { name: "Teléfono del contacto" }))).toHaveLength(5);
+    const phones = await options(screen.getByRole("button", { name: /^Teléfono del contacto / }));
+    expect(phones.map(([text]) => text)).not.toContain("CUIT de quien recibe (pregunta 6)");
+    expect(phones).toHaveLength(5);
   });
 
   it("gives the datum to the question chosen, frees the one that had it, and «Ninguna» leaves it on none", async () => {
     const onValue = vi.fn();
     renderWithProviders(<Harness definition={deliveryDefinition("es")} onValue={onValue} />);
-    const location = screen.getByRole("combobox", { name: "Ubicación" });
-    await userEvent.selectOptions(location, ids.notes);
-    expect(location).toHaveDisplayValue("Observaciones (pregunta 5)");
+    const location = screen.getByRole("button", { name: /^Ubicación / });
+    await pick(location, "Observaciones (pregunta 5)");
+    expect(location).toHaveAccessibleName("Ubicación Observaciones (pregunta 5)");
     expect(received(onValue.mock.lastCall?.[0])).toEqual([[ids.receiver, "contactName"], [ids.phone, "contactPhone"], [ids.notes, "location"]]);
     // The other rows now offer the address, and the notes say what they receive.
-    const name = screen.getByRole("combobox", { name: "Nombre del contacto" });
-    expect(options(name)).toContainEqual(["Dirección de entrega (pregunta 1)", false]);
-    expect(options(name)).toContainEqual(["Observaciones (pregunta 5) · Recibe la ubicación", true]);
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Teléfono del contacto" }), "");
-    expect(screen.getByRole("combobox", { name: "Teléfono del contacto" })).toHaveDisplayValue("Ninguna");
+    const names = await options(screen.getByRole("button", { name: /^Nombre del contacto / }));
+    expect(names).toContainEqual(["Dirección de entrega (pregunta 1)", false]);
+    expect(names).toContainEqual(["Observaciones (pregunta 5) · Recibe la ubicación", true]);
+    await pick(/^Teléfono del contacto /, "Ninguna");
+    expect(screen.getByRole("button", { name: "Teléfono del contacto Ninguna" })).toBeInTheDocument();
     expect(received(onValue.mock.lastCall?.[0])).toEqual([[ids.receiver, "contactName"], [ids.notes, "location"]]);
   });
 
-  it("names a question still without a text by its number", () => {
+  it("names a question still without a text by its number", async () => {
     const definition = deliveryDefinition("es");
     const blank = { fieldId: guid(993), key: key(guid(993)), type: "shortText", label: { es: "" }, help: null, required: false, maxLength: 80 } as CanonicalQuestion;
     renderWithProviders(<Harness definition={{ ...definition, draft: { ...definition.draft, fields: [...definition.draft.fields, blank] } }} />);
-    expect(options(screen.getByRole("combobox", { name: "Ubicación" })).at(-1)).toEqual(["Pregunta 6", false]);
+    expect((await options(screen.getByRole("button", { name: /^Ubicación / }))).at(-1)).toEqual(["Pregunta 6", false]);
   });
 
   it("with a question «Ubicación» still without a text, names it by its number, also in the reason", () => {
     const definition = deliveryDefinition("es", { location: true });
     const fields = definition.draft.fields.map(question => question.type === "location" ? { ...question, label: { es: "" } } : question);
     renderWithProviders(<Harness definition={{ ...definition, draft: { ...definition.draft, fields } }} />);
-    const location = screen.getByRole("combobox", { name: "Ubicación" });
-    expect(location).toHaveDisplayValue("Pregunta 6");
+    const location = screen.getByRole("button", { name: "Ubicación Pregunta 6" });
     expect(location).toHaveAccessibleDescription("La ubicación va a la pregunta 6, que se pide antes de mandar el formulario.");
   });
 
   it("with a question «Ubicación», leaves the location row off with its reason above it, and the contact still chooses", async () => {
     renderWithProviders(<Harness definition={deliveryDefinition("es", { location: true })} />);
-    const location = screen.getByRole("combobox", { name: "Ubicación" });
+    const location = screen.getByRole("button", { name: "Ubicación Ubicación (pregunta 6)" });
     expect(location).toBeDisabled();
-    expect(location).toHaveDisplayValue("Ubicación (pregunta 6)");
     // The row keeps its place and its shape: the reason opens over it, from its envelope, which the keyboard reaches.
     await userEvent.hover(screen.getByRole("group", { name: "Ubicación" }));
     expect(await screen.findByRole("tooltip")).toHaveTextContent("La ubicación va a la pregunta «Ubicación», que se pide antes de mandar el formulario.");
     expect(location).toHaveAccessibleDescription("La ubicación va a la pregunta «Ubicación», que se pide antes de mandar el formulario.");
-    const name = screen.getByRole("combobox", { name: "Nombre del contacto" });
+    const name = screen.getByRole("button", { name: /^Nombre del contacto / });
     expect(name).toBeEnabled();
     // The question «Ubicación» receives nothing else.
-    expect(options(name).map(([text]) => text)).toEqual(["Ninguna", "Dirección de entrega (pregunta 1)", "Recibió (pregunta 2)",
+    expect((await options(name)).map(([text]) => text)).toEqual(["Ninguna", "Dirección de entrega (pregunta 1)", "Recibió (pregunta 2)",
       "Teléfono de quien recibe (pregunta 3) · Recibe el teléfono del contacto", "Observaciones (pregunta 5)"]);
   });
 
@@ -116,7 +124,7 @@ describe("the zone «Ubicación y contacto»", () => {
       ? (({ receives: _phone, ...rest }) => rest)(question as typeof question & { receives?: string }) as CanonicalQuestion : question) } };
     renderWithProviders(<Harness definition={withoutPhone} readOnly />);
     const zone = screen.getByRole("region", { name: "Ubicación y contacto" });
-    expect(within(zone).queryAllByRole("combobox")).toHaveLength(0);
+    expect(within(zone).queryAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / })).toHaveLength(0);
     expect(within(zone).getAllByRole("term").map(term => term.textContent)).toEqual(["Ubicación", "Nombre del contacto", "Teléfono del contacto"]);
     expect(within(zone).getAllByRole("definition").map(value => value.textContent)).toEqual(["Dirección de entrega (pregunta 1)", "Recibió (pregunta 2)", "Ninguna"]);
   });
@@ -130,6 +138,17 @@ describe("the zone «Ubicación y contacto»", () => {
     vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(max-width: 639px)", media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
     renderWithProviders(<Harness definition={deliveryDefinition("es", { location: true })} />);
-    for (const select of screen.getAllByRole("combobox")) expect(select).toHaveClass("h-11");
+    for (const button of screen.getAllByRole("button", { name: /^(Ubicación|Nombre del contacto|Teléfono del contacto) / })) expect(button).toHaveClass("h-11");
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

@@ -1796,9 +1796,9 @@
     "option": "{{label}} (question {{number}})",
     "unnamed": "Question {{number}}",
     "taken": {
-      "location": "{{option}} · Gets the location",
-      "contactName": "{{option}} · Gets the contact name",
-      "contactPhone": "{{option}} · Gets the contact phone"
+      "location": "Gets the location",
+      "contactName": "Gets the contact name",
+      "contactPhone": "Gets the contact phone"
     },
     "locationQuestion": "The location goes to the “{{question}}” question, which is asked for before the form is sent.",
     "locationQuestionNumber": "The location goes to question {{number}}, which is asked for before the form is sent."
