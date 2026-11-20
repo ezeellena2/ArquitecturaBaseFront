@@ -69,9 +69,11 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
 2. **Una tarea, zonas que se entienden solas:** ¿resuelve una tarea? ¿Cada zona es una cosa, en el orden en que se usa,
    sin partirla por tipo de control ni sumar superficies de adorno?
    ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
-3. **El control según el dato:** ¿una colección va en una tabla; un valor de un catálogo, en un selector; pocas
-   alternativas, en radios o un segmentado; varias, en casillas; un filtro de opciones, en un desplegable simple?
-   ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla), [filtros](#listados-y-filtros))
+3. **El control según el dato:** ¿una colección va en una tabla; una o varias opciones de una lista, en la pieza para
+   elegir; dos a cuatro opciones fijas de un formulario, en radios o un segmentado (en casillas si se eligen varias),
+   también el idioma y «Filas por página»? Los filtros no entran en esa regla: ¿un filtro de opciones sigue siendo la
+   pieza aunque tenga pocas? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+   [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido?
    ([lecturas](#lecturas))
@@ -123,12 +125,12 @@ de `src/shared/ui` y `src/layouts`, con los mismos nombres, medidas y tokens, qu
   `bundle.css`, `index.d.ts` y `tokens.json` al lienzo, en `project/ds/ab/`. Pasos: `components/src/COMO-SE-ARMA.txt`.
 
 Composiciones que siguen en sus consumidores: “Más filtros” y selección por catálogo (`FilterSelect`/`MoreFilters` en el
-Artifact) en `UsersFilterBar.tsx`, con `FilterMenuTrigger` y `FilterChip`; punto de estado (`StatusDot`) en `identityCell`
+Artifact) en `UsersFilterBar.tsx`, con `Picker` y `FilterChip`; punto de estado (`StatusDot`) en `identityCell`
 de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.tsx`, con `initialOf`. `Surface` y
 `FilterChip` ya están en `shared/ui`. `FormError` general no se promueve: es un desvío a migrar al aviso común.
 
 **Deuda de sincronización** (está en `shared/ui` y no en la biblioteca; abrir el Artifact requiere autorización
-explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `NativeSelect`, `Surface`, `FilterChip`, `FilterMenuTrigger`,
+explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `Picker` (DS1-A y DS2-A), `Surface`, `FilterChip`, `FilterMenuTrigger`,
 `TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
 `appearance="public"`, `wrap="always"` de AS4), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
@@ -313,15 +315,12 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   (`FilterPanel`), con su contador de aplicados, que aplica cada cambio enseguida, como «Columnas» (PL1-A, 2026-11-02).
   Búsqueda y filtros rápidos también aplican sin botón.
 - **Un filtro de opciones es un desplegable simple**, en toda la app ([PL2-A y FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)):
-  cerrado dice «Todas» (o «Cualquier …») o la elegida; abierto, una opción por renglón, sin la cantidad ni texto debajo,
-  con la elegida tildada y ninguna apagada por no traer nada. Si son muchas o vienen del servidor (las opciones de un
-  catálogo, las personas), es el combo común (`Autocomplete` con su flecha) y se busca escribiendo, como adentro de
-  «Filtros» de la planilla; si son pocas y fijas, el desplegable del filtro (`FilterMenuTrigger` con opciones de radio),
-  como Rol en Usuarios. Se elige una. Un segmentado de pocas opciones fijas conserva la cantidad de cada conjunto
-  («Activos (8) · Dados de baja (2)»). Decidido el 2026-11-19 y sin programar: con la
-  [pieza única para elegir](../plans/2026-11-19-una-sola-pieza-para-elegir.md) (DS1-A), el filtro abre la misma lista
-  que el resto de la app y, si son muchas, se busca en el buscador de adentro de la lista, no escribiendo en el campo;
-  hasta que se programe vale lo de arriba.
+  la [pieza para elegir](#elegir-de-una-lista), con su botón en la barra y con el campo adentro de «Filtros». Cerrado
+  dice «Todas» (o «Cualquier …») o la elegida; abierto, «Todas» primero, una opción por renglón, sin la cantidad ni texto
+  debajo, con la elegida tildada y ninguna apagada por no traer nada. Se elige una. Si son muchas o vienen del servidor
+  (las opciones de un catálogo, las personas), se escribe en el buscador de adentro de la lista, no en el campo: es el
+  punto de PL2-A y FO1-A que cambió DS1-A (2026-11-19). Un segmentado de pocas opciones fijas conserva la cantidad de
+  cada conjunto («Activos (8) · Dados de baja (2)»).
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
@@ -368,6 +367,53 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-sel
   - los errores se marcan en sus campos.
 - **Las acciones de una superficie van al borde derecho de su encabezado,** a la altura del título.
 - Breve y contextual: diálogo. Largo, seccionado o compartible: ruta propia. Un único valor puede editarse en línea.
+
+## Elegir de una lista
+
+Una sola pieza para elegir una o varias opciones de una lista, en toda la app (DS1-A y DS2-A, 2026-11-19). En la prueba
+integral, en «Editar usuario», Roles y «Campo asignado» se veían y se manejaban distinto: había seis formas de elegir de
+una lista, cada una puesta cuando apareció su caso. En el lienzo aparte
+[Desplegables: una sola pieza](https://claude.ai/artifact/87Bkvms9FrDK76HWdFskKE) (el Sistema visual no se abre desde
+Claude Code; «DS · Hoy» tiene las capturas de antes) el usuario eligió la **DS1-A**, un botón que abre la lista, con el
+buscador adentro cuando son muchas; descartó DS1-B (el campo que se escribe, con chips) y DS1-C (elegir en un diálogo).
+Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (chips debajo del campo) y DS2-C («3 de 8»). El
+[plan](../plans/2026-11-19-una-sola-pieza-para-elegir.md) tiene las etapas y dónde se usaba cada pieza.
+
+- **Cerrada, un campo con su flecha fina** que dice lo elegido, igual para una y para varias; sin nada elegido, lo dice
+  en gris («Sin zona», «Elegí una opción»). En la barra de un listado el filtro conserva su botón («Cualquier rol»,
+  «Columnas», «Más filtros») y abre la misma lista.
+- **La lista** lleva el borde, la sombra y el renglón de 24 px de los menús, con la barra de desplazamiento fina, y mide
+  el ancho del campo; la de un botón de barra, el de sus nombres, con un tope. Cada opción lleva su descripción en gris
+  debajo del nombre, y una apagada, su motivo después del nombre («· motivo», [MA1-A](#el-motivo-de-lo-apagado--2026-11-09)).
+- **El buscador va adentro**, arriba de la lista y con el foco puesto, cuando hay más de diez opciones o vienen del
+  servidor, con la cantidad debajo («38 opciones»). Sin buscador, escribir una letra lleva a la primera opción que
+  empieza así.
+- **«Todas» o «Sin …» va primero**, con el color del texto y separada de las demás por una línea.
+- **La elegida lleva su tilde a la izquierda** ([OE1-A](#opción-elegida--2026-11-03)); en varias, una casilla, y marcar
+  no cierra. Con un tope, la lista dice «Hasta 5» y, al llegar, «Elegiste 5 de 5», y las demás se apagan.
+- **Del servidor**, como la pregunta de catálogo: la espera, «Ninguna opción coincide…», «Mostrar 50 más» y el error con
+  «Reintentar». Con varias, las elegidas que no están en la página van primero ([LR3-A](#lecturas)).
+- **En el celular** (menos de 640 px) la lista ocupa la pantalla, con el nombre del campo, la ×, el buscador si son más
+  de diez, la cantidad y renglones de 56 px; en varias, se aplica con «Listo (N)».
+- **Varias, por su nombre** (DS2-A): el campo dice las elegidas separadas por coma, en el orden de la lista; si no entran
+  en su ancho, las que entran y «y N más» («Soja 1ª y 2 más»). Nunca crece. El nombre accesible las lleva a todas.
+- **Con el teclado**, las flechas recorren la lista, Enter elige (en varias marca sin cerrar), Escape cierra y devuelve
+  el foco al campo, y Tab cierra y sigue.
+- **La zona horaria**: la ciudad y, en gris, la hora de su país y el desfase («Montevideo · hora de Uruguay · GMT−3»),
+  en una sola lista para Mi perfil, Configuración y el horario del negocio. Lo que se guarda sigue siendo el
+  identificador de IANA, y el buscador encuentra por ciudad, por país o por el identificador.
+- Lo que llega en mayúsculas de un catálogo se muestra como llega.
+- **Dos a cuatro opciones fijas de un formulario van en radios o un segmentado**, no en la lista, como pide la
+  [lista de chequeo](#lista-de-chequeo-de-diseño): también el idioma y «Filas por página». Los filtros no entran en esta
+  regla y siguen siendo la pieza ([FO1-A](#listados-y-filtros)).
+
+Quedan fuera la vista previa de un formulario (`FormPreview`), que imita WhatsApp y conserva su select, como conserva sus
+radios, y el idioma del menú de la cuenta y «Contar» de una tarjeta del tablero, que son menús de acciones. El buscador de
+lugares de Información del negocio (`Autocomplete`) es un buscador con sugerencias, no una lista conocida.
+
+En el código: `Picker` y la lista única de zonas (`timeZoneOptions`, en `shared/lib/timeZones`). La escena
+`?scenario=pickers` del catálogo muestra los estados de los tableros (`pickers.spec.ts`, en es/en a 1440, 390 y 320 px).
+Falta pasar los tableros al lienzo del sistema visual.
 
 ## Lecturas
 
@@ -461,7 +507,9 @@ crecen todos a 44 px en móvil.
 
 - `/configuracion`: tres `Surface` con título y margen (Preferencias regionales, Listados, Registro de cuentas) y una
   `Page` con Guardar/Descartar, sin estado del borrador. Las cuatro URLs anteriores redirigen.
-- Selectores nativos para idioma, zona y tamaño; `RadioGroupField` para el registro, con confirmación de su efecto.
+- El idioma y el tamaño («Filas por página») en un segmentado y la zona horaria en la
+  [pieza para elegir](#elegir-de-una-lista) (DS1-A, 2026-11-20); `RadioGroupField` para el registro, con confirmación
+  de su efecto.
 - Un conflicto muestra una tabla de los cuatro ajustes (actual y borrador), con scroll contenido en móvil. Conservar
   cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte:
   hasta elegir, Descartar y Guardar se apagan con «Primero revisá los valores actuales y elegí qué conservar.» como motivo
@@ -495,8 +543,9 @@ revisión pendiente como motivo. Recorridos:
   «Revisión del guardado» lleva consultar, reintentar y elegir en su encabezado, y su resumen de la configuración actual
   no muestra el número de revisión.
 - Modelo con `autocomplete="off"` y clave nueva con `autocomplete="new-password"`, con nombres técnicos propios; sin
-  configurar, ambos vacíos. Modelos de OpenAI y Anthropic en `NativeSelect`, con Cargar/Actualizar y entrada manual; la
-  lista no elige por defecto ni cambia un modelo guardado fuera del catálogo. Probar conexión verifica el ID elegido.
+  configurar, ambos vacíos. Modelos de OpenAI y Anthropic en la [pieza para elegir](#elegir-de-una-lista), con
+  Cargar/Actualizar y entrada manual; la lista no elige por defecto ni cambia un modelo guardado fuera del catálogo.
+  Probar conexión verifica el ID elegido.
 - Alcance: una instalación por negocio (plantilla clonable), con IA compartida entre sus operadores y configurada por su
   administrador; sin conexiones personales, multitenancy ni Embedded Signup.
 - Pendientes: el gestor de contraseñas real y el acceso real de las cuentas a los modelos.
@@ -512,8 +561,8 @@ revisión pendiente como motivo. Recorridos:
   semanal se marca al guardar, en su campo.
 - «Agregar franja» va siempre debajo de las franjas del día (y de la fecha especial), como botón de texto; con cuatro se
   apaga con «Podés agregar hasta 4 franjas.» como motivo. La papelera aparece en cada franja sólo con más de una.
-- El estado de cada día y los selects de hora no tienen ancho fijo: miden lo que su opción más larga en cada idioma y no
-  cortan «Sin definir» ni «Elegir» (2026-11-01).
+- El estado de cada día y de una fecha especial va en un segmentado, y cada hora y la zona del horario, en la
+  [pieza para elegir](#elegir-de-una-lista), con «Elegir» mientras no tiene una (DS1-A, 2026-11-20).
 - Ubicación: `Autocomplete` sobre `Input` (nombre/ciudad → sugerencia → enlace a la ficha), sin modal pequeño de
   coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. La espera de un
   429 es el motivo del buscador apagado; su línea de estado dice sólo el resultado. Atribución de
@@ -644,7 +693,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md); faltan sus escenas de `test:visual`, los lectores del contrato y la prueba manual |
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
 | Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
-| Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19; sin programar: se programa cuando el usuario lo diga, después de la prueba integral |
+| Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -682,6 +731,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Alta y edición de un rol | **Pantalla propia** |
 | Permisos de un rol | **Áreas plegables**, un permiso por fila, como el multitenant (RO3-D, 2026-11-19). Reemplaza a la matriz Área · Ver · Administrar · Otros permisos (RO1-A, 2026-11-11), sobre la matriz con «Administrar incluye Ver» (RO3-A) y un nivel por área (RO3-B) |
 | Chat de Inicio | **assistant-ui** |
+| Elegir de una lista | **Una sola pieza** (DS1-A y DS2-A, 2026-11-19): un botón que abre la lista, con el buscador adentro si son muchas, y varias por su nombre con «y N más». Reemplaza a los selects, los combos y los menús propios ([regla](#elegir-de-una-lista)) |
 
 
 ## Pendiente de compilación CSS — 2026-10-12
@@ -905,7 +955,8 @@ botones sueltos que se rellenan para hacer de segmentado.
 | --- | --- | --- |
 | Botones agrupados: el Sí o no de la carga; los filtros de Formularios, su panel, Formularios que faltan, Catálogos, Usuarios, Roles y el chat; papel, estado, origen y vista previa de catálogos | Rellena con el tono de los enlaces y su texto blanco o negro, el de más contraste (8:1 en Campo); las otras, blancas y con su texto entero. El foco es un anillo de 2 px por fuera, separado 2 px. En el celular, cada opción mide 44 × 44 px | `SegmentedControl` |
 | Tarjetas: catálogo nuevo, presentación de una pregunta, fuente de las fotos, enviar un formulario, sugerencias | Un borde de 2 px, sin moverse, y el tinte de la marca, además del punto | `RadioGroupField variant="cards"` |
-| Desplegable de un filtro (Usuarios: Rol y Creados; Catálogos: Estado) y el idioma del menú de la cuenta | La tilde a la izquierda, como en «Columnas» | `DropdownMenuRadioGroup` y `DropdownMenuRadioItem` |
+| La pieza para elegir, en un campo y en el botón de la barra de un listado ([DS1-A](#elegir-de-una-lista), 2026-11-19) | La tilde a la izquierda; en varias, la casilla rellena | `Picker` |
+| Una elección dentro de un menú de acciones: el idioma del menú de la cuenta y «Contar» de una tarjeta del tablero | La tilde a la izquierda | `DropdownMenuRadioGroup` y `DropdownMenuRadioItem` (`ActionsMenu choice`) |
 | La fila abierta de una tabla: la respuesta de la vista rápida, lo que espera una decisión | El tinte de la marca y una barra de 3 px al inicio, como las listas con detalle | `DataTable selectedRowKey`, `TableRow` e `index.css` |
 | La conversación abierta en el chat de WhatsApp | El tinte de la marca y una barra de 3 px al inicio | `WhatsAppChatPage` |
 
@@ -978,6 +1029,9 @@ deshabilitada».
 No son filtros de un listado y no entran en la regla: «Columnas» (qué columnas se ven) y las condiciones de una regla o
 una sugerencia, que pueden elegir varias opciones. «Elegidos · N», el filtro del selector de permisos de un rol, se fue con
 la matriz (RO1-A, 2026-11-11) y no volvió con las áreas plegables (RO3-D, 2026-11-19).
+
+Desde DS1-A (2026-11-19) los desplegables y el combo de esta tabla son la [pieza para elegir](#elegir-de-una-lista), y con
+muchas opciones se busca en el buscador de adentro de la lista, no en el campo; los segmentados quedan como están.
 
 ## Comparaciones lado a lado — 2026-11-03
 
@@ -1059,8 +1113,9 @@ La regla, para toda pantalla:
   vinculado y hasta cuándo llegan los avisos va aparte, con la acción que lo arregla.
 - **Quitar va en rojo antes de confirmar** también en los medios de ingreso (`destructive-outline`), y las altas dicen
   «Agregar …» («Agregar número», como en «Editar usuario»).
-- **Una zona horaria se lee con espacios** («America/Argentina/Buenos Aires») en Mi perfil y en Configuración; lo que se
-  guarda sigue siendo el identificador de IANA.
+- **Una zona horaria se lee por su ciudad**, con la hora de su país y el desfase en gris («Montevideo · hora de Uruguay ·
+  GMT−3»), en la lista única de [elegir de una lista](#elegir-de-una-lista) (DS1-A, 2026-11-19; antes se leía el
+  identificador con espacios); lo que se guarda sigue siendo el identificador de IANA.
 
 | Dónde | Cómo queda | En el código |
 | --- | --- | --- |
