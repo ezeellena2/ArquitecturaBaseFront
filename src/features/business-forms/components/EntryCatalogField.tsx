@@ -1,14 +1,9 @@
-import { useEffect, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
-import { Autocomplete } from "@/shared/ui/Autocomplete";
-import { Button } from "@/shared/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/shared/ui/dialog";
-import { FilterChip } from "@/shared/ui/FilterChip";
 import { IconButton } from "@/shared/ui/IconButton";
-import { Input } from "@/shared/ui/input";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { CloseIcon } from "@/shared/ui/icons";
+import { Picker, type PickerOption } from "@/shared/ui/Picker";
 import type { FormEntry, FormEntryGroup, FormEntryOption, FormEntryQuestion } from "../api/entries";
 import { useEntryOptions, type useEntryGroups } from "../hooks/useFormEntry";
 
@@ -33,14 +28,8 @@ interface Props {
   group?: FormEntryGroup;
 }
 
-/**
- * A catalog question (CW3): the list is searched in the server, fifty options at a time, with the fixed and person
- * filters of whoever loads. The page is only asked for when the list opens; a chosen option keeps the title it showed.
- */
-export function EntryCatalogField(props: Props) {
-  const mobile = useMediaQuery("(width < 640px)");
-  return mobile ? <MobileCatalogField {...props}/> : <DesktopCatalogField {...props}/>;
-}
+/** The phone, where the controls of the load are 44 px (the list itself takes the screen there). */
+const phoneQuery = "(width < 640px)";
 
 function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled: boolean, answers?: Readonly<Record<string, string>>, group?: FormEntryGroup) {
   const [search, setSearch] = useState("");
@@ -54,150 +43,60 @@ function useOptionsSearch(entry: FormEntry, question: FormEntryQuestion, enabled
 const groupKey = (group: FormEntryGroup) => group.id === null ? "none" : "value:" + group.id;
 
 /**
- * LD1-A: the first list of a question that chooses first by a field, named by that field («Rubro»). It holds the values its options
- * have after the filters, in their order and with the options without one last («Sin rubro»); typing narrows them.
+ * LD1-A: the first list of a question that chooses first by a field, named by that field («Rubro»), with the only piece to choose (DS1-A).
+ * It holds the values its options have after the filters, in their order and with the options without one last («Sin rubro»); with more
+ * than ten, the list brings its search.
  */
-export function EntryGroupField({ groups, value, onChange, id, label, invalid, describedBy, disabled, waitingFor, culture }: {
+export function EntryGroupField({ groups, value, onChange, id, label, invalid, describedBy, disabled, waitingFor }: {
   groups: ReturnType<typeof useEntryGroups>; value?: FormEntryGroup; onChange: (group: FormEntryGroup) => void; id: string; label: string;
-  invalid?: boolean; describedBy?: string; disabled?: boolean; waitingFor?: string; culture: string;
+  invalid?: boolean; describedBy?: string; disabled?: boolean; waitingFor?: string;
 }) {
   const { t } = useTranslation("formEntries");
-  const [search, setSearch] = useState<string | null>(null);
+  const phone = useMediaQuery(phoneQuery);
   const items = groups.data ?? [];
-  const typed = search?.trim() ?? "";
-  const shown = typed ? items.filter(group => group.text.toLocaleLowerCase(culture).includes(typed.toLocaleLowerCase(culture))) : items;
-  const state = <ListState loading={groups.isPending && !disabled} failed={groups.isError} empty={groups.isSuccess && shown.length === 0} search={typed}
-    onRetry={() => void groups.refetch()}/>;
-  return <Autocomplete id={id} aria-label={label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled} dropdown
-    placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : value ? undefined : t("page.choose")}
-    value={search ?? value?.text ?? ""} onValueChange={setSearch} onBlur={() => setSearch(null)}
-    status={shown.length === 0 ? state ?? undefined : undefined}
-    options={shown.map(group => ({ id: groupKey(group), label: group.text, selected: !!value && group.id === value.id }))}
-    onSelect={key => { const group = items.find(item => groupKey(item) === key); setSearch(null); if (group) onChange(group); }}/>;
+  return <Picker id={id} label={label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled} size={phone ? "touch" : "default"}
+    placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : t("page.choose")}
+    options={items.map(group => ({ id: groupKey(group), label: group.text }))} value={value ? groupKey(value) : null}
+    loading={groups.isPending} failed={groups.isError} onRetry={() => void groups.refetch()}
+    onChange={key => { const group = items.find(item => groupKey(item) === key); if (group) onChange(group); }}/>;
 }
 
-// Inside the desktop list a button keeps the focus in the field: otherwise the field's blur closes the list before the click.
-const keepFocus = { onPointerDown: (event: PointerEvent) => event.preventDefault(), onMouseDown: (event: MouseEvent) => event.preventDefault() };
-
-function ListState({ loading, failed, empty, search, onRetry }: { loading: boolean; failed: boolean; empty: boolean; search: string; onRetry: () => void }): ReactNode {
+/**
+ * A catalog question (CW3) with the only piece to choose (DS1-A), on the computer and on the phone, where its list takes the screen.
+ * The list is searched in the server, fifty options at a time, with the fixed and person filters of whoever loads, and only while it
+ * is open. Choosing several, the field says their names and «y N más» (DS2-A) and the list says up to how many; a single choice keeps
+ * its × to take it away. A chosen option keeps the title it showed. A list that waits for another answer stays off and says which.
+ */
+export function EntryCatalogField({ entry, question, chosen, onChange, id, label, invalid, describedBy, disabled, answers, waitingFor, answerTitle, group }: Props) {
   const { t } = useTranslation("formEntries");
-  if (loading) return <span role="status" aria-label={t("catalog.loading")} className="flex flex-col gap-2 py-1"><Skeleton className="h-4 w-3/4"/><Skeleton className="h-4 w-1/2"/><Skeleton className="h-4 w-2/3"/></span>;
-  if (failed) return <span className="flex flex-wrap items-center gap-2">{t("catalog.failed")}<Button type="button" variant="outline" size="sm" {...keepFocus} onClick={onRetry}>{t("common:actions.retry")}</Button></span>;
-  if (empty) return search ? t("catalog.noMatches", { search }) : t("catalog.empty");
-  return null;
-}
-
-function DesktopCatalogField({ entry, question, chosen, onChange, id, label, invalid, describedBy, disabled, answers, waitingFor, answerTitle, group }: Props) {
-  const { t } = useTranslation("formEntries");
+  const phone = useMediaQuery(phoneQuery);
   const multiple = question.type === "multiChoice";
-  const max = question.selection?.maxSelected ?? 1;
-  const [opened, setOpened] = useState(false);
-  const [typing, setTyping] = useState(false);
-  const list = useOptionsSearch(entry, question, opened && !disabled, answers, group);
-  // The count of the list names the answer it depends on (CW7): «4 opciones de El Ombú».
-  const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
-  const single = multiple ? undefined : chosen[0];
-  const full = multiple && chosen.length >= max;
-  const state = <ListState loading={list.options.isPending && opened} failed={list.options.isError} empty={list.options.isSuccess && list.items.length === 0}
-    search={list.debounced} onRetry={() => void list.options.refetch()}/>;
-  const field = <div className="flex min-w-0 items-center gap-2">
-    <div className="min-w-0 flex-1">
-      <Autocomplete id={id} aria-label={label ?? question.label} aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
-        placeholder={waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : multiple || !single ? t("catalog.search", { label: question.label }) : undefined}
-        value={typing || multiple ? list.search : single?.title ?? ""} multiple={multiple}
-        onFocus={() => setOpened(true)} onClick={() => setOpened(true)}
-        onBlur={() => { setTyping(false); list.setSearch(""); }}
-        onValueChange={value => { setOpened(true); setTyping(true); list.setSearch(value); }}
-        header={list.total !== undefined && list.items.length > 0 ? count(list.total) : undefined}
-        status={list.items.length === 0 && opened ? state ?? undefined : undefined}
-        footer={list.options.hasNextPage ? <Button type="button" variant="link" size="inline" pending={list.options.isFetchingNextPage} {...keepFocus} onClick={() => void list.options.fetchNextPage()}>{t(list.options.isFetchingNextPage ? "catalog.loadingMore" : "catalog.more")}</Button> : undefined}
-        options={list.items.map(option => ({ id: option.id, label: option.title, description: option.description,
-          selected: multiple ? chosen.some(item => item.id === option.id) : undefined,
-          disabled: full && !chosen.some(item => item.id === option.id) }))}
-        onSelect={optionId => {
-          const option = list.items.find(item => item.id === optionId);
-          if (!option) return;
-          if (!multiple) { setTyping(false); list.setSearch(""); onChange([option]); return; }
-          onChange(chosen.some(item => item.id === optionId) ? chosen.filter(item => item.id !== optionId) : [...chosen, option]);
-        }}/>
-    </div>
-    {single && !disabled ? <IconButton variant="ghost" label={t("catalog.clear", { label: single.title })} onClick={() => onChange([])}><CloseIcon className="size-4"/></IconButton> : null}
-  </div>;
-  if (!multiple) return field;
-  return <div className="flex flex-col gap-2">
-    {chosen.length ? <div className="flex flex-wrap gap-2">{chosen.map(option => <FilterChip key={option.id} removeLabel={t("catalog.clear", { label: option.title })}
-      onRemove={() => onChange(chosen.filter(item => item.id !== option.id))}>{option.title}</FilterChip>)}</div> : null}
-    {field}
-    {/* The limit is in the label; reached, the count says so («Elegiste 2 de 2.»). */}
-    {full ? <p className="text-xs text-[var(--color-content-muted)]">{t("catalog.chosenOf", { count: chosen.length, max })}</p> : null}
-  </div>;
-}
-
-/** In the phone the list opens full screen, with the search on top, rows of 56 and, choosing several, «Listo» at the foot. */
-function MobileCatalogField({ entry, question, chosen, onChange, id, invalid, describedBy, disabled, answers, waitingFor, answerTitle, group }: Props) {
-  const { t } = useTranslation("formEntries");
-  const multiple = question.type === "multiChoice";
-  const max = question.selection?.maxSelected ?? 1;
   const [open, setOpen] = useState(false);
-  const [picked, setPicked] = useState<FormEntryOption[]>([]);
-  const list = useOptionsSearch(entry, question, open, answers, group);
-  const count = (total: number) => answerTitle ? t("catalog.countOf", { count: total, answer: answerTitle }) : t("catalog.count", { count: total });
-  const full = multiple && picked.length >= max;
-  const close = () => { setOpen(false); list.setSearch(""); };
-  const state = <ListState loading={list.options.isPending} failed={list.options.isError} empty={list.options.isSuccess && list.items.length === 0}
-    search={list.debounced} onRetry={() => void list.options.refetch()}/>;
-  return <>
-    <div className="flex min-w-0 flex-col gap-2">
-      {multiple && chosen.length ? <div className="flex flex-wrap gap-2">{chosen.map(option => <FilterChip key={option.id} removeLabel={t("catalog.clear", { label: option.title })}
-        onRemove={() => onChange(chosen.filter(item => item.id !== option.id))}>{option.title}</FilterChip>)}</div> : null}
-      <div className="flex min-w-0 items-center gap-2">
-        <Button type="button" variant="outline" size="touch" id={id} aria-haspopup="dialog" aria-invalid={invalid || undefined} aria-describedby={describedBy} disabled={disabled}
-          className="min-w-0 flex-1 justify-start" onClick={() => { setPicked([...chosen]); setOpen(true); }}>
-          <span className={"truncate font-normal " + (!multiple && chosen[0] ? "" : "text-[var(--color-content-muted)]")}>{!multiple && chosen[0] ? chosen[0].title
-            : waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : t("catalog.search", { label: question.label })}</span>
-        </Button>
-        {!multiple && chosen[0] && !disabled ? <Button type="button" variant="ghost" size="touch" aria-label={t("catalog.clear", { label: chosen[0].title })} onClick={() => onChange([])}><CloseIcon className="size-4"/></Button> : null}
-      </div>
-    </div>
-    <Dialog open={open} onOpenChange={next => { if (!next) close(); }}>
-      <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
-        <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
-          <DialogTitle className="min-w-0 flex-1 truncate">{question.label}</DialogTitle>
-          <IconButton variant="ghost" label={t("catalog.close")} onClick={close}><CloseIcon className="size-5"/></IconButton>
-        </header>
-        <div className="border-b border-[var(--color-border)] p-3">
-          <Input autoFocus aria-label={t("catalog.search", { label: question.label })} placeholder={t("catalog.search", { label: question.label })}
-            value={list.search} onChange={event => list.setSearch(event.target.value)}/>
-          {/* The limit goes out of the title (DL, 2026-11-11): one fixed row under the search holds both counts, the options on one
-              side and, choosing several, the limit on the other, which says «Elegiste N de N.» once it is reached. It keeps its
-              height while the options arrive, so the list does not move. */}
-          <div className="mt-2 flex min-h-4 items-center justify-between gap-3 text-xs text-[var(--color-content-muted)]">
-            <span>{list.total !== undefined && list.items.length > 0 ? count(list.total) : null}</span>
-            {multiple ? <span className="shrink-0">{full ? t("catalog.chosenOf", { count: picked.length, max }) : t("upTo", { count: max })}</span> : null}
-          </div>
-        </div>
-        <ul role="listbox" aria-label={question.label} aria-multiselectable={multiple || undefined} className="min-h-0 flex-1 overflow-y-auto">
-          {list.items.map(option => {
-            const selected = (multiple ? picked : chosen).some(item => item.id === option.id);
-            const blocked = full && !selected;
-            return <li key={option.id} role="presentation" className="border-b border-[var(--color-border)]">
-              <Button type="button" variant="ghost" size="touch" role="option" aria-selected={selected} aria-disabled={blocked || undefined}
-                className="w-full justify-start gap-3 whitespace-normal aria-disabled:opacity-50"
-                onClick={() => {
-                  if (!multiple) { onChange([option]); close(); return; }
-                  if (blocked) return;
-                  setPicked(current => selected ? current.filter(item => item.id !== option.id) : [...current, option]);
-                }}>
-                {multiple ? <span aria-hidden="true" className={"inline-flex size-6 shrink-0 items-center justify-center rounded border border-input " + (selected ? "border-[var(--color-brand-700)] bg-[var(--color-brand-700)] text-white" : "")}>{selected ? "✓" : null}</span> : null}
-                <span className="flex min-h-10 min-w-0 flex-col justify-center text-left"><span className="block font-normal">{option.title}</span>{option.description ? <span className="block text-sm font-normal text-[var(--color-content-muted)]">{option.description}</span> : null}</span>
-              </Button>
-            </li>;
-          })}
-          {list.items.length === 0 ? <li role="presentation" className="p-4 text-sm text-[var(--color-content-muted)]">{state}</li> : null}
-          {list.options.hasNextPage ? <li role="presentation" className="p-3 text-center"><Button type="button" variant="outline" size="touch" pending={list.options.isFetchingNextPage} onClick={() => void list.options.fetchNextPage()}>{t(list.options.isFetchingNextPage ? "catalog.loadingMore" : "catalog.more")}</Button></li> : null}
-        </ul>
-        {multiple ? <footer className="border-t border-[var(--color-border)] p-3"><Button type="button" size="touch" className="w-full" onClick={() => { onChange(picked); close(); }}>{t("catalog.done", { count: picked.length })}</Button></footer> : null}
-      </DialogContent>
-    </Dialog>
-  </>;
+  const list = useOptionsSearch(entry, question, open && !disabled, answers, group);
+  // The options seen in the list: one marked on the phone keeps its title after another search, until «Listo» applies it.
+  const [seen, setSeen] = useState<{ data?: unknown; options: ReadonlyMap<string, FormEntryOption> }>({ options: new Map() });
+  if (list.options.data !== seen.data) setSeen({ data: list.options.data, options: new Map([...seen.options, ...list.items.map(option => [option.id, option] as const)]) });
+  const find = (optionId: string) => chosen.find(option => option.id === optionId) ?? seen.options.get(optionId);
+  const toOption = (option: FormEntryOption): PickerOption => ({ id: option.id, label: option.title, description: option.description });
+  // While what is typed waits its 300 ms, the list says it searches instead of showing the options of the search before.
+  const typing = list.search.trim() !== list.debounced;
+  const field = {
+    id, label: label ?? question.label, "aria-invalid": invalid || undefined, "aria-describedby": describedBy, disabled, size: phone ? "touch" as const : "default" as const,
+    placeholder: waitingFor ? t("catalog.dependsOn", { label: waitingFor }) : t("page.choose"),
+    options: typing ? [] : list.items.map(toOption), selectedOptions: chosen.map(toOption), onOpenChange: setOpen,
+    search: list.search, onSearchChange: list.setSearch, total: list.total,
+    // The count names the answer the list depends on (CW7): «4 opciones de El Ombú».
+    countText: answerTitle && list.total !== undefined ? t("catalog.countOf", { count: list.total, answer: answerTitle }) : undefined,
+    loading: typing || list.options.isPending, failed: list.options.isError, onRetry: () => void list.options.refetch(),
+    onLoadMore: list.options.hasNextPage ? () => void list.options.fetchNextPage() : undefined, loadingMore: list.options.isFetchingNextPage,
+  };
+  if (multiple) return <Picker {...field} multiple max={question.selection?.maxSelected ?? 1} value={chosen.map(option => option.id)}
+    onChange={ids => onChange(ids.map(find).filter(option => option !== undefined))}/>;
+  const single = chosen[0];
+  return <div className="flex min-w-0 items-center gap-2">
+    <Picker {...field} className="min-w-0 flex-1" value={single?.id ?? null} onChange={optionId => { const option = find(optionId); if (option) onChange([option]); }}/>
+    {single && !disabled ? <IconButton label={t("catalog.clear", { label: single.title })} size={phone ? "touch" : "icon"} onClick={() => onChange([])}>
+      <CloseIcon className="size-4"/>
+    </IconButton> : null}
+  </div>;
 }

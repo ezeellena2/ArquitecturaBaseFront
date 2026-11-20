@@ -30,7 +30,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       // On the computer the block is a table across «Datos»: a row per item, the line between columns and the numbers to the right.
       const table = page.getByRole("region", { name: text(language, "Artículos", "Articles"), exact: true });
       await expect(table.getByRole("row")).toHaveCount(3);
-      await expect(page.getByRole("combobox", { name: text(language, "Ítem 2 · Artículo", "Item 2 · Article"), exact: true })).toBeFocused();
+      await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Ítem 2 · Artículo", "Item 2 · Article") + " ") })).toBeFocused();
       await expectColumnLines(table.locator("table"));
       await expectRightAligned(table.getByRole("columnheader", { name: text(language, "Cantidad", "Quantity"), exact: true }));
       await page.screenshot({ path: "test-results/rg2-entry-table-" + language + "-" + width + ".png", fullPage: true });

@@ -60,26 +60,14 @@
     "rowsAtMost_other": "Hasta {{count}} ítems."
   },
   "catalog": {
-    "search": "Buscar en {{label}}",
-    "count_one": "{{count}} opción",
-    "count_other": "{{count}} opciones",
     "countOf_one": "{{count}} opción de {{answer}}",
     "countOf_other": "{{count}} opciones de {{answer}}",
     "dependsOn": "Elegí primero «{{label}}»",
-    "more": "Mostrar 50 más",
-    "loadingMore": "Cargando…",
-    "loading": "Cargando las opciones",
-    "noMatches": "Ninguna opción coincide con «{{search}}».",
-    "empty": "No hay opciones para vos.",
-    "failed": "No se pudieron traer las opciones.",
     "clear": "Quitar {{label}}",
     "unavailable": "«{{title}}» ya no está disponible. Elegí otro.",
     "missingData": "No podés enviar {{form}}: te falta el dato «{{datum}}».",
     "missingDataReason": "Te falta el dato «{{datum}}».",
-    "blocked": "Esta lista no está disponible ahora.",
-    "chosenOf": "Elegiste {{count}} de {{max}}.",
-    "done": "Listo · {{count}} elegidos",
-    "close": "Cerrar la lista"
+    "blocked": "Esta lista no está disponible ahora."
   },
   "files": {
     "dropPhotos": "Arrastrá las fotos acá o",

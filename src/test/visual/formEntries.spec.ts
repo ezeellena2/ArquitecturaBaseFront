@@ -61,14 +61,12 @@ async function shownCrumbs(page: Page, language: string) {
   });
 }
 
-async function choose(page: Page, label: string, option: string, phone: boolean) {
-  if (phone) {
-    await page.getByRole("button", { name: label, exact: true }).click();
-    await page.getByRole("dialog", { name: label }).getByRole("option").filter({ hasText: option }).first().click();
-  } else {
-    await page.getByRole("combobox", { name: label, exact: true }).click();
-    await page.getByRole("listbox", { name: label }).getByRole("option").filter({ hasText: option }).first().click();
-  }
+/** A catalog question is the only piece to choose (DS1-A): a button named by its label and what it says, on the computer and the phone. */
+const catalogField = (page: Page, label: string) => page.getByRole("button", { name: new RegExp("^" + label + " ") });
+
+async function choose(page: Page, label: string, option: string) {
+  await catalogField(page, label).click();
+  await page.getByRole("listbox", { name: label }).getByRole("option").filter({ hasText: option }).first().click();
 }
 
 for (const language of ["es", "en"] as const) for (const width of [1440, 390, 320]) {
@@ -97,28 +95,20 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const send = page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true });
     await send.click();
     await expect(page.getByText(es ? "Elegí una opción." : "Choose an option.").first()).toBeVisible();
-    await expect(phone ? page.getByRole("button", { name: lot, exact: true }) : page.getByRole("combobox", { name: lot, exact: true })).toBeFocused();
+    await expect(catalogField(page, lot)).toBeFocused();
     await page.screenshot({ path: "test-results/form-entry-errors-" + language + "-" + width + ".png", fullPage: true });
 
     // CW3: the list is searched in the server, fifty at a time; on the phone it opens full screen.
-    if (phone) {
-      await page.getByRole("button", { name: lot, exact: true }).click();
-      const list = page.getByRole("dialog", { name: lot });
-      await expect(list.getByText(es ? "58 opciones" : "58 options")).toBeVisible();
-      await expect(list.getByRole("button", { name: es ? "Mostrar 50 más" : "Show 50 more" })).toBeVisible();
-      await page.screenshot({ path: "test-results/form-entry-catalog-" + language + "-" + width + ".png" });
-      await list.getByRole("option").filter({ hasText: es ? "Lote 2" : "Lot 2" }).first().click();
-      await expect(list).toHaveCount(0);
-    } else {
-      await page.getByRole("combobox", { name: lot, exact: true }).click();
-      const list = page.getByRole("listbox", { name: lot });
-      await expect(list.getByText(es ? "58 opciones" : "58 options")).toBeVisible();
-      await expect(list.getByRole("button", { name: es ? "Mostrar 50 más" : "Show 50 more" })).toBeVisible();
-      await page.screenshot({ path: "test-results/form-entry-catalog-" + language + "-" + width + ".png" });
-      await list.getByRole("option").filter({ hasText: es ? "Lote 2" : "Lot 2" }).first().click();
-    }
+    // The list is the piece's popover on the computer and a dialog on the full screen of the phone.
+    await catalogField(page, lot).click();
+    const list = page.getByRole("dialog");
+    await expect(list.getByText(es ? "58 opciones" : "58 options")).toBeVisible();
+    await expect(list.getByRole("button", { name: es ? "Mostrar 50 más" : "Show 50 more" })).toBeVisible();
+    await page.screenshot({ path: "test-results/form-entry-catalog-" + language + "-" + width + ".png" });
+    await list.getByRole("option").filter({ hasText: es ? "Lote 2" : "Lot 2" }).first().click();
+    await expect(list).toHaveCount(0);
     await page.getByRole("radio", { name: es ? "Soja 1ª" : "1st soybean" }).click();
-    await choose(page, es ? "Semilla" : "Seed", "DM 46i20", phone);
+    await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
     await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
     await page.getByLabel(es ? "Fecha de siembra" : "Sowing date").fill("2026-10-29");
@@ -192,7 +182,6 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
 for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
   test("AR2-A keeps the answers for the next one on the page " + language + " " + width, async ({ page }) => {
     const es = language === "es";
-    const phone = width < 640;
     const lot = es ? "Lote" : "Lot";
     const keepLabel = es ? "Mantener las respuestas para la siguiente" : "Keep the answers for the next one";
     await page.setViewportSize({ width, height: 900 });
@@ -202,9 +191,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     const send = page.getByRole("button", { name: es ? "Enviar" : "Send", exact: true });
     await expect(keep).toBeVisible();
     expect(await keep.evaluate((box, button) => !!(box.compareDocumentPosition(button!) & Node.DOCUMENT_POSITION_FOLLOWING), await send.elementHandle())).toBe(true);
-    await choose(page, lot, es ? "Lote 2" : "Lot 2", phone);
+    await choose(page, lot, es ? "Lote 2" : "Lot 2");
     await page.getByRole("radio", { name: es ? "Soja 1ª" : "1st soybean" }).click();
-    await choose(page, es ? "Semilla" : "Seed", "DM 46i20", phone);
+    await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
     await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
     await page.getByLabel(es ? "Fecha de siembra" : "Sowing date").fill("2026-10-29");
@@ -219,7 +208,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await expect(page.getByText(es ? "Se guardó SIE-000014" : "SIE-000014 was saved")).toBeVisible();
     await expect(page.getByRole("heading", { name: es ? "Nueva respuesta" : "New response", level: 1 })).toBeVisible();
     await expect(page.getByLabel(es ? "Densidad" : "Density")).toHaveValue("72,5");
-    await expect(phone ? page.getByRole("button", { name: lot, exact: true }) : page.getByRole("combobox", { name: lot, exact: true })).toBeFocused();
+    await expect(catalogField(page, lot)).toBeFocused();
     await expect(keep).toBeChecked();
     expect(sends).toHaveLength(1);
     await page.screenshot({ path: "test-results/form-entry-keep-saved-" + language + "-" + width + ".png" });

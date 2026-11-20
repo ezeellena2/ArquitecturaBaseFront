@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,22 +52,22 @@ describe("choosing first by a field while loading (LD1-A)", () => {
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Ítem", "Rubro *", "Artículo *", "Cantidad *", "Acciones"]);
-    const first = screen.getByRole("combobox", { name: "Ítem 1 · Artículo" }), second = screen.getByRole("combobox", { name: "Ítem 2 · Artículo" });
+    const first = screen.getByRole("button", { name: /^Ítem 1 · Artículo / }), second = screen.getByRole("button", { name: /^Ítem 2 · Artículo / });
     expect(first).toBeDisabled();
-    await user.click(screen.getByRole("combobox", { name: "Ítem 1 · Rubro" }));
-    await user.click(await screen.findByRole("option", { name: "Herbicidas" }));
+    const trigger = screen.getByRole("button", { name: "Ítem 1 · Rubro Elegí una opción" });
+    await act(async () => { trigger.focus(); });
+    await user.keyboard("{Enter}");
+    await user.click(await within(await screen.findByRole("listbox", { name: "Ítem 1 · Rubro" })).findByRole("option", { name: "Herbicidas" }));
     await waitFor(() => expect(first).toBeEnabled());
     expect(second).toBeDisabled();
-    expect(second).toHaveAttribute("placeholder", "Elegí primero «Rubro»");
+    expect(second).toHaveAccessibleName("Ítem 2 · Artículo Elegí primero «Rubro»");
   });
 
   it("starts a correction with the value of the saved option", async () => {
     setup(loose, { entry: loose, recordId, number: "PED-000003", files: [], answers: [
       { fieldId: fields.article, value: herbicides[1].id, choiceIds: null, options: [herbicides[1]], group: { id: "Herbicidas", text: "Herbicidas" } }] });
     renderRouteWithProviders(`/formularios/${formId}/respuestas/${recordId}/corregir`);
-    expect(await screen.findByRole("combobox", { name: "Rubro" })).toHaveValue("Herbicidas");
-    const chosen = screen.getByRole("combobox", { name: "Artículo" });
-    expect(chosen).toHaveValue("Glifosato 66,2 %");
-    expect(chosen).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "Rubro Herbicidas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Artículo Glifosato 66,2 %" })).toBeEnabled();
   });
 });

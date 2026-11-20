@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -56,6 +56,9 @@ interface PickerBase {
   onSearchChange?: (search: string) => void;
   /** How many options the server has for that search. */
   total?: number;
+  /** What the count says instead of «38 opciones», in the owner's words: the answer the list depends on («4 opciones de El
+   * Ombú», CW7) or that the list was cut. */
+  countText?: string;
   loading?: boolean;
   failed?: boolean;
   onRetry?: () => void;
@@ -79,6 +82,8 @@ interface Row { option: PickerOption; selected: boolean; disabled: boolean; sepa
 /** With more options than these, the list brings its search. */
 const SEARCH_FROM = 10;
 const TABBABLE = "a[href], button, input, select, textarea, [tabindex]";
+/** A button inside the list leaves the focus in the search or the list: what is typed next still searches. */
+const keepFocus = { onMouseDown: (event: MouseEvent) => event.preventDefault() };
 
 const fold = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase();
 
@@ -290,9 +295,10 @@ export function Picker(props: PickerProps) {
       {arrow}
     </button>;
 
-  const countText = server
-    ? props.total !== undefined && rows.length > 0 && !props.loading ? t("picker.count", { count: props.total }) : null
-    : searchable ? searching ? t("picker.countOf", { count: shown.length, total: props.options.length }) : t("picker.count", { count: props.options.length }) : null;
+  const counted = server ? rows.length > 0 && !props.loading : searchable;
+  const countText = !counted ? null : props.countText ?? (server
+    ? props.total !== undefined ? t("picker.count", { count: props.total }) : null
+    : searching ? t("picker.countOf", { count: shown.length, total: props.options.length }) : t("picker.count", { count: props.options.length }));
   const limitText = multiple && props.max !== undefined
     ? full ? t("picker.chosenOf", { count: chosen.size, max: props.max }) : t("picker.upTo", { count: props.max }) : null;
   const countRow = countText !== null || limitText !== null
@@ -325,7 +331,7 @@ export function Picker(props: PickerProps) {
       <Skeleton className="h-3 w-3/4"/><Skeleton className="h-3 w-1/2"/><Skeleton className="h-3 w-2/3"/>
     </div>
       : props.failed ? <div className={cn("flex flex-wrap items-center gap-2 text-sm text-[var(--color-content-muted)]", phone ? "p-4" : "px-2.5 py-2")}>
-        {t("picker.failed")}<Button type="button" variant="outline" size="sm" onClick={props.onRetry}>{t("actions.retry")}</Button>
+        {t("picker.failed")}<Button type="button" variant="outline" size="sm" {...keepFocus} onClick={props.onRetry}>{t("actions.retry")}</Button>
       </div>
         : <p role="status" className={cn("text-sm text-[var(--color-content-muted)]", phone ? "p-4" : "px-2.5 py-2")}>
           {searching ? t("picker.noMatches", { search: search.trim() }) : t("picker.empty")}
@@ -351,7 +357,7 @@ export function Picker(props: PickerProps) {
         {options}
         {state}
         {props.onLoadMore ? <div className="p-3 text-center">
-          <Button type="button" variant="outline" size="touch" pending={props.loadingMore} onClick={props.onLoadMore}>{moreLabel}</Button>
+          <Button type="button" variant="outline" size="touch" pending={props.loadingMore} {...keepFocus} onClick={props.onLoadMore}>{moreLabel}</Button>
         </div> : null}
         {multiple ? <footer className="border-t border-[var(--color-border)] p-3">
           <Button type="button" size="touch" className="w-full" onClick={done}>{t("picker.done", { count: picked.length })}</Button>
@@ -376,7 +382,7 @@ export function Picker(props: PickerProps) {
         {options}
         {state}
         {props.onLoadMore ? <div className="border-t border-[var(--color-border)] px-2.5 py-1.5 text-right">
-          <Button type="button" variant="link" size="inline" pending={props.loadingMore} onClick={props.onLoadMore}>{moreLabel}</Button>
+          <Button type="button" variant="link" size="inline" pending={props.loadingMore} {...keepFocus} onClick={props.onLoadMore}>{moreLabel}</Button>
         </div> : null}
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>

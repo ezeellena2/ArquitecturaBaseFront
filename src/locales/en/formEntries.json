@@ -60,26 +60,14 @@
     "rowsAtMost_other": "Up to {{count}} items."
   },
   "catalog": {
-    "search": "Search in {{label}}",
-    "count_one": "{{count}} option",
-    "count_other": "{{count}} options",
     "countOf_one": "{{count}} option for {{answer}}",
     "countOf_other": "{{count}} options for {{answer}}",
     "dependsOn": "Choose «{{label}}» first",
-    "more": "Show 50 more",
-    "loadingMore": "Loading…",
-    "loading": "Loading the options",
-    "noMatches": "No option matches «{{search}}».",
-    "empty": "There are no options for you.",
-    "failed": "The options could not be loaded.",
     "clear": "Remove {{label}}",
     "unavailable": "«{{title}}» is no longer available. Choose another one.",
     "missingData": "You cannot send {{form}}: your «{{datum}}» is missing.",
     "missingDataReason": "Your «{{datum}}» is missing.",
-    "blocked": "This list is not available right now.",
-    "chosenOf": "You chose {{count}} of {{max}}.",
-    "done": "Done · {{count}} chosen",
-    "close": "Close the list"
+    "blocked": "This list is not available right now."
   },
   "files": {
     "dropPhotos": "Drag the photos here or",

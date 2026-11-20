@@ -229,6 +229,20 @@ describe("Picker", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "Mostrar 50 más" }));
     expect(onLoadMore).toHaveBeenCalledTimes(2);
+    // The click leaves the focus in the search, so what is typed next still searches.
+    expect(screen.getByRole("combobox", { name: "Buscar en Persona" })).toHaveFocus();
+  });
+
+  it("says the count in the words of its owner, which name the answer the list depends on", async () => {
+    const view = renderWithProviders(<FormField label="Lote"><Picker label="Lote" options={places.slice(0, 2)} total={2} countText="2 opciones de El Ombú" value={null}
+      onChange={vi.fn()} search="" onSearchChange={vi.fn()}/></FormField>);
+    await openList(/^Lote/);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/^2 opciones de El Ombú$/);
+
+    view.rerender(<FormField label="Lote"><Picker label="Lote" options={[]} total={2} countText="2 opciones de El Ombú" value={null} onChange={vi.fn()} search=""
+      onSearchChange={vi.fn()} loading/></FormField>);
+    expect(screen.queryByText("2 opciones de El Ombú")).not.toBeInTheDocument();
   });
 
   it("says it is searching or that it failed under the first option and the chosen one from another page", async () => {

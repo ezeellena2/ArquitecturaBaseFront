@@ -195,7 +195,7 @@ function EntryGroupedCatalog({ entry, question, draft, onChange, item, id, inval
   const choose = (next: FormEntryGroup) => { if (!group || next.id !== group.id) onChange(chooseEntryGroup(entry, draft, question.fieldId, next, item?.key)); };
   const groupField = <EntryGroupField groups={groups} value={group} onChange={choose} id={groupId} label={cell && part === "group" ? cell.label : groupBy.name}
     invalid={cell && part === "group" ? cell.invalid : undefined} describedBy={cell && part === "group" ? cell.describedBy : undefined} disabled={disabled}
-    waitingFor={waitingFor} culture={entry.culture}/>;
+    waitingFor={waitingFor}/>;
   const optionsField = <EntryCatalogField entry={entry} question={question} chosen={chosen} id={id} label={cell?.label} invalid={invalid} describedBy={describedBy}
     disabled={disabled || !group} answers={answers} group={group} waitingFor={waitingFor ?? (group ? undefined : groupBy.name)}
     answerTitle={[answerTitle, group?.text].filter(Boolean).join(" · ") || undefined} onChange={onChoose}/>;

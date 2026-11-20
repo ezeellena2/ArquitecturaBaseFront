@@ -48,9 +48,18 @@ function setup({ permissions = ["formrecords.create"], form = entry() as FormEnt
   return { sends, reads: () => reads, replace: (next: FormEntry) => { current = next; } };
 }
 
+/** The list of a catalog question opens with the keyboard, like the other Radix lists in the tests, and a click chooses. */
+async function pick(user: ReturnType<typeof userEvent.setup>, field: string | RegExp, option: string | RegExp) {
+  const trigger = await screen.findByRole("button", { name: field });
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  await user.click(await within(await screen.findByRole("listbox")).findByRole("option", { name: option }));
+}
+/** The catalog question «Lote», named by its label and what it says. */
+const lotField = () => screen.getByRole("button", { name: /^Lote / });
+
 async function fill(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("combobox", { name: "Lote" }));
-  await user.click(await screen.findByRole("option", { name: /^Lote 4/ }));
+  await pick(user, /^Lote /, /^Lote 4/);
   await user.type(screen.getByLabelText(/^Milímetros/), "12,5");
   fireEvent.change(screen.getByLabelText(/^Fecha/), { target: { value: "2026-10-29" } });
 }
@@ -94,7 +103,7 @@ describe("loading a response from the app", () => {
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByText("Elegí una opción.")).toBeVisible();
     expect(screen.getAllByText("Completá esta respuesta.")).toHaveLength(2);
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Lote" })).toHaveFocus());
+    await waitFor(() => expect(lotField()).toHaveFocus());
     expect(sends).toHaveLength(0);
   });
 
@@ -153,8 +162,7 @@ describe("loading a response from the app", () => {
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByText("«Lote 4» ya no está disponible. Elegí otro.")).toBeVisible();
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: "No se guardó", description: "Revisá «Lote»." }));
-    await user.click(screen.getByRole("combobox", { name: "Lote" }));
-    await user.click(await screen.findByRole("option", { name: /^Lote 7/ }));
+    await pick(user, /^Lote /, /^Lote 7/);
     expect(screen.queryByText("«Lote 4» ya no está disponible. Elegí otro.")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByRole("heading", { name: "LLU-000322", level: 1 })).toBeVisible();
@@ -173,7 +181,7 @@ describe("loading a response from the app", () => {
     await user.click(screen.getByRole("button", { name: "Pasar a la versión nueva" }));
     await waitFor(() => expect(screen.queryByText(/tiene una versión nueva/)).not.toBeInTheDocument());
     expect(screen.getByLabelText(/^Milímetros/)).toHaveValue("12,5");
-    expect(screen.getByRole("combobox", { name: "Lote" })).toHaveValue("Lote 4");
+    expect(lotField()).toHaveAccessibleName("Lote Lote 4");
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByRole("heading", { name: "LLU-000322", level: 1 })).toBeVisible();
     expect(setupResult.sends[1].get("versionId")).toBe(id(304));
@@ -187,7 +195,7 @@ describe("loading a response from the app", () => {
     // Only the state that blocks the send: who to ask is not explained (decision of 2026-10-31).
     expect(await screen.findByText("No podés enviar Registro de lluvia: te falta el dato «Zona».")).toBeVisible();
     expect(screen.queryByText(/Pedíselo/)).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Lote" })).toBeDisabled();
+    expect(lotField()).toBeDisabled();
     expect(screen.getByRole("button", { name: "Enviar" })).toHaveAttribute("aria-disabled", "true");
     expect(sends).toHaveLength(0);
   });
@@ -251,7 +259,7 @@ describe("loading a response from the app", () => {
     expect(screen.getByText("1 de 4 respondidas")).toBeVisible();
     expect(screen.getByLabelText(/^Milímetros/)).not.toBeVisible();
     await user.click(screen.getByRole("button", { name: "Enviar" }));
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Lote" })).toHaveFocus());
+    await waitFor(() => expect(lotField()).toHaveFocus());
     expect(screen.getByRole("button", { name: "Plegar Datos" })).toHaveAttribute("aria-expanded", "true");
     expect(sends).toHaveLength(0);
   });
@@ -294,9 +302,9 @@ describe("loading a response from the app", () => {
     expect(screen.getByRole("heading", { name: "Nueva respuesta", level: 1 })).toBeVisible();
     expect(screen.queryByText("Enviada")).not.toBeInTheDocument();
     expect(screen.getByLabelText(/^Milímetros/)).toHaveValue("12,5");
-    expect(screen.getByRole("combobox", { name: "Lote" })).toHaveValue("Lote 4");
+    expect(lotField()).toHaveAccessibleName("Lote Lote 4");
     expect(screen.getByRole("checkbox", { name: "Mantener las respuestas para la siguiente" })).toBeChecked();
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Lote" })).toHaveFocus());
+    await waitFor(() => expect(lotField()).toHaveFocus());
     // Each send is a new request, so the next one never takes the number of the previous one.
     await user.click(screen.getByRole("button", { name: "Enviar" }));
     await waitFor(() => expect(sends).toHaveLength(2));
@@ -319,7 +327,7 @@ describe("loading a response from the app", () => {
     form.questions[0] = { ...form.questions[0], catalog: { onlyOption: lots[1], issue: null, missingData: null } };
     setup({ form });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    expect(await screen.findByRole("combobox", { name: "Lote" })).toHaveValue("Lote 7");
+    expect(await screen.findByRole("button", { name: "Lote Lote 7" })).toBeInTheDocument();
   });
 
   it("does not let a deactivated form be loaded", async () => {
@@ -377,10 +385,10 @@ describe("loading a response from the app", () => {
     await user.upload(camera, new File(["rain"], "camara.jpg", { type: "image/jpeg" }));
     expect(await screen.findByRole("img", { name: "camara.jpg" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Quitar" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Lote" }));
+    await user.click(screen.getByRole("button", { name: "Lote Elegí una opción" }));
     const list = await screen.findByRole("dialog", { name: "Lote" });
     await user.click(await within(list).findByRole("option", { name: /^Lote 4/ }));
-    expect(screen.queryByRole("dialog", { name: "Lote" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lote" })).toHaveTextContent("Lote 4");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Lote" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Lote Lote 4" })).toHaveTextContent("Lote 4");
   });
 });

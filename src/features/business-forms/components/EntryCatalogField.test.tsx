@@ -44,6 +44,14 @@ function setup(multiple = false) {
 beforeEach(() => queryClient.clear());
 afterEach(() => vi.restoreAllMocks());
 
+/** The list of a catalog question opens with the keyboard, like the other Radix lists in the tests. */
+async function openList(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const trigger = await screen.findByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+
 /** The width of a phone, where the list opens full screen. */
 const phone = () => vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
   addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn() }));
@@ -53,81 +61,88 @@ describe("a catalog question while loading", () => {
     const { requests } = setup();
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    const field = await screen.findByRole("combobox", { name: "Lotes" });
+    expect(await screen.findByRole("button", { name: "Lotes Elegí una opción" })).toBeInTheDocument();
     expect(requests).toHaveLength(0);
-    await user.click(field);
-    const list = await screen.findByRole("listbox", { name: "Lotes" });
-    expect(within(list).getByText("4 opciones")).toBeVisible();
+    const list = await openList(user, "Lotes Elegí una opción");
+    expect(list).toHaveAccessibleName("Lotes");
+    expect(await screen.findByText("4 opciones")).toBeVisible();
     expect(within(list).getAllByRole("option")).toHaveLength(2);
+    expect(within(list).getByRole("option", { name: "Lote 1" })).toHaveAccessibleDescription("Campo Norte");
     expect(requests[0].get("pageSize")).toBe("50");
-    await user.click(within(list).getByRole("button", { name: "Mostrar 50 más" }));
+    await user.click(screen.getByRole("button", { name: "Mostrar 50 más" }));
     await waitFor(() => expect(within(list).getAllByRole("option")).toHaveLength(4));
-    expect(within(list).queryByRole("button", { name: "Mostrar 50 más" })).not.toBeInTheDocument();
-    await user.type(field, "zzz");
-    expect(await within(await screen.findByRole("listbox")).findByText("Ninguna opción coincide con «zzz».")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Mostrar 50 más" })).not.toBeInTheDocument();
+    const search = screen.getByRole("combobox", { name: "Buscar en Lotes" });
+    expect(search).toHaveFocus();
+    await user.type(search, "zzz");
+    expect(await screen.findByText("Ninguna opción coincide con «zzz».")).toBeVisible();
     expect(requests.at(-1)?.get("search")).toBe("zzz");
-    await user.clear(field);
-    await user.type(field, "3");
-    await user.click(await screen.findByRole("option", { name: "Lote 3" }));
-    expect(field).toHaveValue("Lote 3");
+    await user.clear(search);
+    await user.type(search, "3");
+    await user.click(await within(list).findByRole("option", { name: "Lote 3" }));
+    expect(await screen.findByRole("button", { name: "Lotes Lote 3" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Quitar Lote 3" }));
-    expect(field).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Lotes Elegí una opción" })).toBeInTheDocument();
   });
 
-  // The limit is in the label (decision of 2026-10-31); «Elegiste N de N.» stays as the count once it is reached.
-  it("chooses up to the maximum of a multiple choice and shows each choice as a chip", async () => {
+  // The limit is in the label (decision of 2026-10-31) and the list says it too (DS1-A): «Hasta 2» and, once reached, «Elegiste 2 de 2».
+  it("chooses up to the maximum of a multiple choice and says the chosen ones by their names", async () => {
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
     expect(await screen.findByText("hasta 2")).toBeVisible();
-    expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("combobox", { name: "Lotes" }));
-    await user.click(await screen.findByRole("option", { name: /^Lote 1/ }));
-    await user.click(screen.getByRole("option", { name: "Lote 2" }));
-    expect(screen.getByText("Elegiste 2 de 2.")).toBeVisible();
-    expect(screen.getByRole("option", { name: /^Lote 1/ })).toHaveAttribute("aria-selected", "true");
+    const list = await openList(user, "Lotes Elegí una opción");
+    expect(list).toHaveAttribute("aria-multiselectable", "true");
+    expect(screen.getByText("Hasta 2")).toBeVisible();
+    await user.click(await within(list).findByRole("option", { name: "Lote 1" }));
+    await user.click(within(list).getByRole("option", { name: "Lote 2" }));
+    expect(screen.getByText("Elegiste 2 de 2")).toBeVisible();
+    expect(within(list).getByRole("option", { name: "Lote 1" })).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByRole("button", { name: "Mostrar 50 más" }));
-    expect(await screen.findByRole("option", { name: "Lote 3" })).toHaveAttribute("aria-disabled", "true");
-    await user.click(screen.getByRole("button", { name: "Quitar Lote 1" }));
-    expect(screen.queryByText("Elegiste 2 de 2.")).not.toBeInTheDocument();
-    expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
+    expect(await within(list).findByRole("option", { name: "Lote 3" })).toHaveAttribute("aria-disabled", "true");
+    await user.click(within(list).getByRole("option", { name: "Lote 1" }));
+    expect(screen.queryByText("Elegiste 2 de 2")).not.toBeInTheDocument();
+    expect(within(list).getByRole("option", { name: "Lote 3" })).not.toHaveAttribute("aria-disabled");
+    await user.keyboard("{Escape}");
+    // DS2-A: no chips; the field says the chosen ones, and its name says all of them.
+    expect(await screen.findByRole("button", { name: "Lotes Lote 2" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Quitar/ })).not.toBeInTheDocument();
   });
 
-  it("opens the list full screen on the phone and applies several choices with «Listo»", async () => {
+  it("opens the list full screen on the phone and applies several choices with «Listo», also after another search", async () => {
     phone();
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    await user.click(await screen.findByRole("button", { name: "Lotes hasta 2" }));
+    await user.click(await screen.findByRole("button", { name: "Lotes Elegí una opción" }));
     const dialog = await screen.findByRole("dialog", { name: "Lotes" });
-    expect(within(dialog).queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
-    expect(within(dialog).getByRole("textbox", { name: "Buscar en Lotes" })).toHaveFocus();
-    await user.click(await within(dialog).findByRole("option", { name: /^Lote 1/ }));
-    await user.click(within(dialog).getByRole("option", { name: "Lote 2" }));
-    await user.click(within(dialog).getByRole("button", { name: "Listo · 2 elegidos" }));
-    expect(screen.queryByRole("dialog", { name: "Lotes" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Quitar Lote 1" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Quitar Lote 2" })).toBeVisible();
+    expect(within(dialog).getByRole("combobox", { name: "Buscar en Lotes" })).toHaveFocus();
+    await user.click(await within(dialog).findByRole("option", { name: "Lote 1" }));
+    // One marked in another search keeps its title until «Listo» applies both.
+    await user.type(within(dialog).getByRole("combobox", { name: "Buscar en Lotes" }), "3");
+    await user.click(await within(dialog).findByRole("option", { name: "Lote 3" }));
+    await user.click(within(dialog).getByRole("button", { name: "Listo (2)" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Lotes" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Lotes Lote 1, Lote 3" })).toBeVisible();
   });
 
   // DL (2026-11-11): the title is the question alone. Under the search, one fixed row reads both counts: the options on one side
-  // and, on the other, the limit, which says «Elegiste N de N.» once it is reached.
+  // and, on the other, the limit, which says «Elegiste N de N» once it is reached.
   it("keeps the limit out of the title on the phone and reads both counts in one row", async () => {
     phone();
     setup(true);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    await user.click(await screen.findByRole("button", { name: "Lotes hasta 2" }));
+    await user.click(await screen.findByRole("button", { name: "Lotes Elegí una opción" }));
     const dialog = await screen.findByRole("dialog", { name: "Lotes" });
     expect(within(dialog).getByRole("heading", { name: "Lotes" })).toHaveTextContent(/^Lotes$/);
     const row = (await within(dialog).findByText("4 opciones")).parentElement!;
-    expect(within(row).getByText("hasta 2")).toBeVisible();
-    await user.click(within(dialog).getByRole("option", { name: /^Lote 1/ }));
+    expect(within(row).getByText("Hasta 2")).toBeVisible();
+    await user.click(within(dialog).getByRole("option", { name: "Lote 1" }));
     await user.click(within(dialog).getByRole("option", { name: "Lote 2" }));
     expect(within(row).getByText("4 opciones")).toBeVisible();
-    expect(within(row).getByText("Elegiste 2 de 2.")).toBeVisible();
-    expect(within(dialog).getAllByText(/^(4 opciones|Elegiste 2 de 2\.)$/).map(text => text.parentElement)).toEqual([row, row]);
-    expect(within(dialog).queryByText("hasta 2")).not.toBeInTheDocument();
+    expect(within(row).getByText("Elegiste 2 de 2")).toBeVisible();
+    expect(within(dialog).queryByText("Hasta 2")).not.toBeInTheDocument();
   });
 
   it("says Cargando… on «Mostrar 50 más» while the next options arrive", async () => {
@@ -142,12 +157,28 @@ describe("a catalog question while loading", () => {
     }));
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    await user.click(await screen.findByRole("combobox", { name: "Lotes" }));
-    const list = await screen.findByRole("listbox", { name: "Lotes" });
-    await user.click(within(list).getByRole("button", { name: "Mostrar 50 más" }));
-    expect(within(list).getByRole("button", { name: "Cargando…" })).toHaveAttribute("aria-busy", "true");
+    const list = await openList(user, "Lotes Elegí una opción");
+    await user.click(await screen.findByRole("button", { name: "Mostrar 50 más" }));
+    expect(screen.getByRole("button", { name: "Cargando…" })).toHaveAttribute("aria-busy", "true");
     await act(async () => release());
     await waitFor(() => expect(within(list).getAllByRole("option")).toHaveLength(4));
+  });
+
+  it("says inside the list that the options failed and asks for them again with «Reintentar»", async () => {
+    setup();
+    let calls = 0;
+    server.use(http.get("/api/forms/entries/:formId/versions/:versionId/questions/:fieldId/options", () => {
+      calls++;
+      return calls === 1 ? HttpResponse.json({ code: "Unexpected.Error" }, { status: 500 })
+        : HttpResponse.json({ items: lots.slice(0, 2), page: 1, pageSize: 50, totalCount: 2, totalPages: 1, hasPrevious: false, hasNext: false });
+    }));
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const list = await openList(user, "Lotes Elegí una opción");
+    expect(await screen.findByText("No se pudieron traer las opciones.")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await within(list).findByRole("option", { name: "Lote 2" })).toBeVisible();
+    expect(screen.queryByText("No se pudieron traer las opciones.")).not.toBeInTheDocument();
   });
 });
 
@@ -171,25 +202,19 @@ describe("a list that depends on another answer (CW7)", () => {
     );
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    const lot = await screen.findByRole("combobox", { name: "Lote" });
+    const lot = await screen.findByRole("button", { name: "Lote Elegí primero «Campo»" });
     expect(lot).toBeDisabled();
-    expect(lot).toHaveAttribute("placeholder", "Elegí primero «Campo»");
-    const campo = screen.getByRole("combobox", { name: "Campo" });
-    await user.click(campo);
-    await user.click(await screen.findByRole("option", { name: "El Ombú" }));
+    await user.click(await within(await openList(user, "Campo Elegí una opción")).findByRole("option", { name: "El Ombú" }));
     await waitFor(() => expect(lot).toBeEnabled());
-    await user.click(lot);
-    const list = await screen.findByRole("listbox", { name: "Lote" });
-    expect(within(list).getByText("2 opciones de El Ombú")).toBeVisible();
+    const list = await openList(user, "Lote Elegí una opción");
+    expect(await screen.findByText("2 opciones de El Ombú")).toBeVisible();
     await user.click(within(list).getByRole("option", { name: "Lote 2" }));
-    expect(lot).toHaveValue("Lote 2");
+    expect(await screen.findByRole("button", { name: "Lote Lote 2" })).toBe(lot);
     expect(requests.at(-1)?.get(`answers[${field}]`)).toBe(ombu);
     // Another field clears the lot chosen for the first one.
-    await user.click(campo);
-    await user.click(await screen.findByRole("option", { name: "La Esperanza" }));
-    expect(lot).toHaveValue("");
-    await user.click(lot);
-    expect(await within(await screen.findByRole("listbox", { name: "Lote" })).findByRole("option", { name: "Lote 3" })).toBeVisible();
+    await user.click(await within(await openList(user, "Campo El Ombú")).findByRole("option", { name: "La Esperanza" }));
+    expect(await screen.findByRole("button", { name: "Lote Elegí una opción" })).toBe(lot);
+    expect(await within(await openList(user, "Lote Elegí una opción")).findByRole("option", { name: "Lote 3" })).toBeVisible();
     expect(requests.at(-1)?.get(`answers[${field}]`)).toBe(esperanza);
   });
 });
@@ -222,36 +247,41 @@ describe("choosing first by a field (LD1-A)", () => {
     const requests = serve([{ id: "Herbicidas", text: "Herbicidas" }, { id: null, text: "Sin rubro" }]);
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    const value = await screen.findByRole("combobox", { name: "Rubro" });
-    const option = screen.getByRole("combobox", { name: "Artículo" });
+    const option = await screen.findByRole("button", { name: "Artículo Elegí primero «Rubro»" });
     expect(option).toBeDisabled();
-    expect(option).toHaveAttribute("placeholder", "Elegí primero «Rubro»");
-    await user.click(value);
-    const values = await screen.findByRole("listbox", { name: "Rubro" });
+    const values = await openList(user, "Rubro Elegí una opción");
+    expect(values).toHaveAccessibleName("Rubro");
     await waitFor(() => expect(within(values).getAllByRole("option").map(item => item.textContent)).toEqual(["Herbicidas", "Sin rubro"]));
+    // Two values: no search in their list.
+    expect(screen.queryByRole("combobox", { name: "Buscar en Rubro" })).not.toBeInTheDocument();
     await user.click(within(values).getByRole("option", { name: "Herbicidas" }));
     await waitFor(() => expect(option).toBeEnabled());
-    await user.click(option);
-    const list = await screen.findByRole("listbox", { name: "Artículo" });
-    expect(await within(list).findByText("2 opciones de Herbicidas")).toBeVisible();
+    const list = await openList(user, "Artículo Elegí una opción");
+    expect(await screen.findByText("2 opciones de Herbicidas")).toBeVisible();
     await user.click(within(list).getByRole("option", { name: "Glifosato 66,2 %" }));
-    expect(option).toHaveValue("Glifosato 66,2 %");
+    expect(await screen.findByRole("button", { name: "Artículo Glifosato 66,2 %" })).toBe(option);
     expect(requests.at(-1)?.get("group")).toBe("Herbicidas");
     // Another value clears the option chosen for the first one; the options without a value are asked as such.
-    await user.click(value);
-    await user.click(await screen.findByRole("option", { name: "Sin rubro" }));
-    expect(option).toHaveValue("");
-    await user.click(option);
-    expect(await within(await screen.findByRole("listbox", { name: "Artículo" })).findByRole("option", { name: "Sin clasificar" })).toBeVisible();
+    await user.click(await within(await openList(user, "Rubro Herbicidas")).findByRole("option", { name: "Sin rubro" }));
+    expect(await screen.findByRole("button", { name: "Artículo Elegí una opción" })).toBe(option);
+    expect(await within(await openList(user, "Artículo Elegí una opción")).findByRole("option", { name: "Sin clasificar" })).toBeVisible();
     expect(requests.at(-1)?.get("withoutGroup")).toBe("true");
     expect(requests.at(-1)?.has("group")).toBe(false);
+  });
+
+  it("brings the search of its list with more than ten values", async () => {
+    serve(Array.from({ length: 11 }, (_, index) => ({ id: `Rubro ${index + 1}`, text: `Rubro ${index + 1}` })));
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders("/formularios/" + formId + "/cargar");
+    const values = await openList(user, "Rubro Elegí una opción");
+    await user.type(await screen.findByRole("combobox", { name: "Buscar en Rubro" }), "11");
+    expect(within(values).getAllByRole("option").map(item => item.textContent)).toEqual(["Rubro 11"]);
   });
 
   it("comes with the only value already chosen", async () => {
     serve([{ id: "Herbicidas", text: "Herbicidas" }]);
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    const value = await screen.findByRole("combobox", { name: "Rubro" });
-    await waitFor(() => expect(value).toHaveValue("Herbicidas"));
-    expect(screen.getByRole("combobox", { name: "Artículo" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "Rubro Herbicidas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Artículo Elegí una opción" })).toBeEnabled();
   });
 });

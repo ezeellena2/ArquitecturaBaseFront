@@ -45,35 +45,34 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   });
 
   test("CW7 a dependent list in the app " + language + " " + width, async ({ page }) => {
-    const phone = width < 640;
     await open(page, language, width, "/formularios/" + formEntryFixtureIds.sowing + "/cargar", "entries-dependent");
     await expect(page.getByRole("heading", { name: text(language, "Nueva respuesta", "New response"), level: 1 })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     const field = text(language, "Campo", "Field"), lot = text(language, "Lote", "Lot");
     const waiting = text(language, "Elegí primero «Campo»", "Choose «Field» first");
-    const control = (label: string) => phone ? page.getByRole("button", { name: label, exact: true }) : page.getByRole("combobox", { name: label, exact: true });
+    // The only piece to choose (DS1-A): a button named by its label and what it says, on the computer and the phone.
+    const control = (label: string) => page.getByRole("button", { name: new RegExp("^" + label + " ") });
     // Until the field is chosen, the lot is off and says so in its field.
     await expect(control(lot)).toBeDisabled();
-    if (phone) await expect(control(lot)).toHaveText(waiting); else await expect(control(lot)).toHaveAttribute("placeholder", waiting);
+    await expect(control(lot)).toHaveAccessibleName(lot + " " + waiting);
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/cw7-entry-waiting-" + language + "-" + width + ".png", fullPage: true });
     const choose = async (label: string, title: string) => {
       await control(label).click();
-      if (phone) await page.getByRole("dialog").getByRole("option", { name: new RegExp("^" + title) }).click();
-      else await page.getByRole("listbox", { name: label, exact: true }).getByRole("option", { name: new RegExp("^" + title) }).click();
+      await page.getByRole("listbox", { name: label, exact: true }).getByRole("option", { name: new RegExp("^" + title) }).click();
     };
     await choose(field, "El Ombú");
     await expect(control(lot)).toBeEnabled();
     await control(lot).click();
-    const list = phone ? page.getByRole("dialog") : page.getByRole("listbox", { name: lot, exact: true });
+    const list = page.getByRole("dialog");
     // The count names the field the lots are of.
     await expect(list.getByText(text(language, "15 opciones de El Ombú", "15 options for El Ombú"), { exact: true })).toBeVisible();
     await page.screenshot({ path: "test-results/cw7-entry-list-" + language + "-" + width + ".png", fullPage: true });
     await list.getByRole("option", { name: new RegExp("^" + lot + " 2(?![0-9])") }).click();
-    if (phone) await expect(control(lot)).toHaveText(lot + " 2"); else await expect(control(lot)).toHaveValue(lot + " 2");
+    await expect(control(lot)).toHaveAccessibleName(lot + " " + lot + " 2");
     // Another field clears the lot, which was of the other one.
     await choose(field, "La Esperanza");
-    if (phone) await expect(control(lot)).toHaveText(text(language, "Buscar en Lote", "Search in Lot")); else await expect(control(lot)).toHaveValue("");
+    await expect(control(lot)).toHaveAccessibleName(lot + " " + text(language, "Elegí una opción", "Choose an option"));
     await page.screenshot({ path: "test-results/cw7-entry-cleared-" + language + "-" + width + ".png", fullPage: true });
   });
 

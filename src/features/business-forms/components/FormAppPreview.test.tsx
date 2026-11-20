@@ -30,7 +30,7 @@ it("shows the draft as the app loads it, with a box per item and the final butto
 
 it("leaves a catalog question waiting for its options, without asking the server for them, and says why over it", async () => {
   await act(async () => { renderWithProviders(<FormAppPreview culture="es" value={value([question("client", "Cliente", { type: "choice", source: { catalog: "01990000-0000-7000-8000-000000000001" } } as Partial<DraftQuestion>)])} />); });
-  expect(screen.getByRole("combobox", { name: "Cliente" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Cliente Elegí una opción" })).toBeDisabled();
   // MA1-A: the reason goes over the control, which takes the focus in its place.
   expect(screen.getByRole("group", { name: "Cliente" })).toHaveAccessibleDescription("Las opciones del catálogo se ven al cargar.");
 });

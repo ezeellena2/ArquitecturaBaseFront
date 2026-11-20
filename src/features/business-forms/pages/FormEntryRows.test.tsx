@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -61,9 +61,18 @@ const answers = (body: FormData) => JSON.parse(String(body.get("answers"))) as u
 const table = () => screen.getByRole("region", { name: "Artículos" });
 const rows = () => within(table()).getAllByRole("row").slice(1);
 
+/** The list of a catalog question opens with the keyboard, like the other Radix lists in the tests, and a click chooses. */
+async function pick(user: ReturnType<typeof userEvent.setup>, field: string | RegExp, option: string | RegExp) {
+  const trigger = await screen.findByRole("button", { name: field });
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  await user.click(await within(await screen.findByRole("listbox")).findByRole("option", { name: option }));
+}
+/** The catalog question of an item, named by its cell and what it says. */
+const article = (item: number) => screen.getByRole("button", { name: new RegExp(`^Ítem ${item} · Artículo `) });
+
 async function choose(user: ReturnType<typeof userEvent.setup>, item: number, title: string) {
-  await user.click(screen.getByRole("combobox", { name: `Ítem ${item} · Artículo` }));
-  await user.click(await screen.findByRole("option", { name: new RegExp("^" + title) }));
+  await pick(user, new RegExp(`^Ítem ${item} · Artículo `), new RegExp("^" + title));
 }
 
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
@@ -81,7 +90,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     expect(within(table()).getAllByRole("columnheader").map(header => header.textContent))
       .toEqual(["Ítem", "Artículo *", "Cantidad *", "Unidad", "¿Llegó en buen estado?", "Acciones"]);
     await user.click(screen.getByRole("button", { name: "Agregar ítem" }));
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Ítem 2 · Artículo" })).toHaveFocus());
+    await waitFor(() => expect(article(2)).toHaveFocus());
     await user.click(screen.getByRole("button", { name: "Agregar ítem" }));
     expect(rows()).toHaveLength(3);
     expect(screen.getByRole("button", { name: "Agregar ítem" })).toHaveAccessibleDescription("Hasta 3 ítems.");
@@ -111,7 +120,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
 
     expect(within(rows()[1]!).getAllByRole("alert").map(line => line.textContent)).toEqual(["Artículo: elegí una opción.", "Cantidad: completá esta respuesta."]);
     expect(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" })).toHaveAccessibleDescription("Cantidad: completá esta respuesta.");
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Ítem 1 · Artículo" })).toHaveFocus());
+    await waitFor(() => expect(article(1)).toHaveFocus());
     expect(sends).toHaveLength(0);
   });
 
@@ -161,7 +170,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
 
     expect(await within(table()).findByText("Artículo: «ATRAZINA 50%» ya no está disponible. Elegí otro.")).toBeVisible();
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: "No se guardó", description: "Revisá «Artículos · Ítem 2 · Artículo»." }));
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Ítem 2 · Artículo" })).toHaveFocus());
+    await waitFor(() => expect(article(2)).toHaveFocus());
     // Another option in that cell is a new send: its error no longer applies.
     await choose(user, 2, "GLIFOSATO");
     expect(within(table()).queryByText(/ya no está disponible/)).not.toBeInTheDocument();
@@ -179,7 +188,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "Se guardó INS-000005" })));
 
     expect(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" })).toHaveValue("200");
-    expect(screen.getByRole("combobox", { name: "Ítem 1 · Artículo" })).toHaveValue("GLIFOSATO 64%");
+    expect(article(1)).toHaveAccessibleName("Ítem 1 · Artículo GLIFOSATO 64%");
     expect(sends).toHaveLength(1);
   });
 
@@ -216,7 +225,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders(`/formularios/${formId}/respuestas/${recordId}/corregir`);
 
-    expect(await screen.findByRole("combobox", { name: "Ítem 1 · Artículo" })).toHaveValue("ATRAZINA 50%");
+    expect(await screen.findByRole("button", { name: "Ítem 1 · Artículo ATRAZINA 50%" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Ítem 2 · Cantidad" })).toHaveValue("200,5");
     expect(screen.getByRole("combobox", { name: "Ítem 2 · Unidad" })).toHaveValue(liters);
     await user.clear(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" }));
