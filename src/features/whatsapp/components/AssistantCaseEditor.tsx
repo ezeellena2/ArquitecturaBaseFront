@@ -11,8 +11,9 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { CloseIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { agentActionKinds, type AgentActionKind, type AgentButtonDestination, type AgentCulture, type AgentForm, type AgentInputType } from "../api/assistantAgent";
@@ -69,7 +70,8 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
     onClose();
   };
   const formName = (id: string | null) => forms.find(form => form.definitionId === id)?.name;
-  const formOptions = (current: string | null) => [...forms.map(form => ({ id: form.definitionId, name: form.name })), ...current && !formName(current) ? [{ id: current, name: t("cases.formUnavailable") }] : []];
+  // A form that is no longer offered stays first, named as not available, so the field still says what it keeps (DS1-A).
+  const formOptions = (current: string | null) => [...current && !formName(current) ? [{ id: current, name: t("cases.formUnavailable") }] : [], ...forms.map(form => ({ id: form.definitionId, name: form.name }))];
 
   const whenField = fallback ? <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-1">
@@ -85,10 +87,8 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
   const configuration = () => {
     switch (kind) {
       case "SendForm": return <FormField label={t("editor.form")} help={t("editor.formHelp")} required error={error("action.formDefinitionId")}>
-        <NativeSelect id={ids + "form"} value={action.formDefinitionId ?? ""} onChange={event => changeAction({ formDefinitionId: event.target.value || null }, "formDefinitionId")}>
-          <option value="">{t("editor.chooseForm")}</option>
-          {formOptions(action.formDefinitionId).map(form => <option key={form.id} value={form.id}>{form.name}</option>)}
-        </NativeSelect>
+        <Picker id={ids + "form"} label={t("editor.form")} placeholder={t("editor.chooseForm")} value={action.formDefinitionId}
+          options={formOptions(action.formDefinitionId).map(form => ({ id: form.id, label: form.name }))} onChange={formDefinitionId => changeAction({ formDefinitionId }, "formDefinitionId")} />
       </FormField>;
       case "ExactText": return <AssistantTextField id={ids + "text"} label={t("editor.text")} help={t("editor.textHelp")} value={action.text} onChange={text => changeAction({ text }, "text")}
         culture={culture} original={original} error={error("action.text")} maxLength={agentLimits.text} placeholder={t("editor.textPlaceholder")} multiline />;
@@ -127,11 +127,11 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
       <div className="min-h-0 flex-1 overflow-y-auto p-4"><div className="flex flex-col gap-4">
         {unmatched.length ? <p role="alert" className="text-sm text-[var(--color-danger)]">{unmatched.join(" ")}</p> : null}
         {whenField}
-        {fallback ? null : <FormField label={t("editor.inputType")} help={t("editor.inputTypeHelp")}>
-          <NativeSelect id={ids + "input"} className="sm:w-64" value={value.inputType} onChange={event => change({ inputType: event.target.value as AgentInputType }, "inputType")}>
-            {inputTypes.map(type => <option key={type} value={type}>{t("inputTypes." + type)}</option>)}
-          </NativeSelect>
-        </FormField>}
+        {/* Three fixed input types, in sight and one click away (DS1-A); choosing the one it has changes nothing. */}
+        {fallback ? null : <div className="w-full sm:w-72"><FormField label={t("editor.inputType")} help={t("editor.inputTypeHelp")}>
+          <SegmentedControl fullWidth aria-label={t("editor.inputType")} options={inputTypes.map(type => ({ key: type, label: t("inputTypes." + type), pressed: value.inputType === type,
+            onSelect: () => { if (type !== value.inputType) change({ inputType: type }, "inputType"); } }))} />
+        </FormField></div>}
         <RadioGroupField label={t("editor.kind")} showLabel variant="cards" value={kind} error={error("action.kind")}
           options={agentActionKinds.filter(option => allowed.includes(option)).map(option => ({ value: option, label: t("actions." + option), help: t("actionHelp." + option) }))}
           onValueChange={next => changeAction({ kind: next as AgentActionKind }, "kind")} />
@@ -174,14 +174,12 @@ function ButtonRow({ button, index, count, forms, allowed, culture, original, er
         maxLength={agentLimits.buttonTitle} placeholder={culture !== original ? t("untranslated") : undefined} value={button.title[culture]}
         onChange={event => onChange({ ...button, title: { ...button.title, [culture]: event.target.value } })} />
       <span aria-hidden="true" className="text-sm text-[var(--color-content-muted)]">→</span>
-      <NativeSelect className="min-w-0 flex-1" aria-label={t("editor.buttonDestination", { number })} aria-invalid={destinationError ? true : undefined}
-        aria-describedby={destinationError ? ids + "destination-error" : undefined} value={selected} onChange={event => choose(event.target.value)}>
-        {selected === "" ? <option value="">{t("editor.chooseDestination")}</option> : null}
-        {allowed.includes("SendForm") ? formOptions(button.destination === "SendForm" ? button.formDefinitionId : null).map(form => <option key={form.id} value={"form:" + form.id}>
-          {forms.some(item => item.definitionId === form.id) ? t("cases.sendNamed", { form: form.name }) : form.name}</option>) : null}
-        {allowed.includes("ExactText") ? <option value="ExactText">{t("actions.ExactText")}</option> : null}
-        {allowed.includes("Handoff") ? <option value="Handoff">{t("actions.Handoff")}</option> : null}
-      </NativeSelect>
+      <Picker className="min-w-0 flex-1" label={t("editor.buttonDestination", { number })} placeholder={t("editor.chooseDestination")} value={selected || null}
+        aria-invalid={destinationError ? true : undefined} aria-describedby={destinationError ? ids + "destination-error" : undefined} onChange={choose}
+        options={[...allowed.includes("SendForm") ? formOptions(button.destination === "SendForm" ? button.formDefinitionId : null).map(form => ({ id: "form:" + form.id,
+          label: forms.some(item => item.definitionId === form.id) ? t("cases.sendNamed", { form: form.name }) : form.name })) : [],
+          ...allowed.includes("ExactText") ? [{ id: "ExactText", label: t("actions.ExactText") }] : [],
+          ...allowed.includes("Handoff") ? [{ id: "Handoff", label: t("actions.Handoff") }] : []]} />
       <IconButton size="icon-sm" variant="ghost" label={t("editor.removeButton", { number })} disabled={count <= 1} disabledLabel={t("editor.minButtons")} onClick={onRemove}><CloseIcon className="size-4" /></IconButton>
     </div>
     {titleError ? <p id={ids + "title-error"} role="alert" className="text-sm text-[var(--color-danger)]">{titleError}</p>

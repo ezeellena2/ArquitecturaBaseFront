@@ -286,6 +286,49 @@ describe("the screen «Asistente»", () => {
     expect(writes[0]!.cases[2]!.action).toEqual({ ...none, kind: "ExactText", text: { es: "Gracias por escribir.", en: null } });
   });
 
+  // DS1-A: the input type (three fixed) is a segmented control; the form and where a button leads, the only piece to choose.
+  it("chooses the input type in a segmented control and where each button leads in the only piece to choose", { timeout: 15000 }, async () => {
+    await open();
+    await userEvent.click(within(ownCases()[2]!).getByRole("button", { name: "Editar el caso 3" }));
+    const editor = await screen.findByRole("dialog", { name: "Caso 3" });
+    const input = within(editor).getByRole("group", { name: "Tipo de entrada" });
+    expect(within(input).getAllByRole("button").map(button => button.textContent)).toEqual(["Cualquier entrada", "Texto", "Audio"]);
+    expect(within(input).getByRole("button", { name: "Texto" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(input).getByRole("button", { name: "Audio" }));
+    expect(within(input).getByRole("button", { name: "Audio" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(editor).getByRole("button", { name: "A dónde lleva el botón 1 Mandar Registrar visita" })).toBeInTheDocument();
+    const second = within(editor).getByRole("button", { name: "A dónde lleva el botón 2 Derivar a una persona" });
+    await act(async () => { second.focus(); });
+    await userEvent.keyboard("{Enter}");
+    const list = await screen.findByRole("listbox", { name: "A dónde lleva el botón 2" });
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Mandar Registrar visita", "Mandar Pedir repuesto", "Responder con un texto exacto", "Derivar a una persona"]);
+    expect(within(list).getByRole("option", { name: "Derivar a una persona" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(list).getByRole("option", { name: "Mandar Pedir repuesto" }));
+    expect(within(editor).getByRole("button", { name: "A dónde lleva el botón 2 Mandar Pedir repuesto" })).toBeInTheDocument();
+    await userEvent.click(within(editor).getByRole("button", { name: "Listo" }));
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]!.cases[2]).toMatchObject({ inputType: "Audio", action: { kind: "AskButtons", buttons: [{ destination: "SendForm", formDefinitionId: visit }, { destination: "SendForm", formDefinitionId: part }] } });
+  });
+
+  it("puts first the form a case sends that is no longer offered, named as not available", async () => {
+    current.cases = [{ id: ids[0]!, when: "Pide un formulario.", inputType: "Any", isActive: true, action: { ...none, kind: "SendForm", formDefinitionId: "0199a0c0-0000-7000-8000-0000000000f9" } }];
+    await open();
+    await userEvent.click(within(ownCases()[0]!).getByRole("button", { name: "Editar el caso 1" }));
+    const editor = await screen.findByRole("dialog", { name: "Caso 1" });
+    const form = within(editor).getByRole("button", { name: "Formulario Formulario no disponible" });
+    await act(async () => { form.focus(); });
+    await userEvent.keyboard("{Enter}");
+    const list = await screen.findByRole("listbox", { name: "Formulario" });
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Formulario no disponible", "Registrar visita", "Pedir repuesto"]);
+    await userEvent.click(within(list).getByRole("option", { name: "Pedir repuesto" }));
+    expect(within(editor).getByRole("button", { name: "Formulario Pedir repuesto" })).toBeInTheDocument();
+    await userEvent.click(within(editor).getByRole("button", { name: "Listo" }));
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]!.cases[0]!.action).toEqual({ ...none, kind: "SendForm", formDefinitionId: part });
+  });
+
   it("edits «Cualquier otra cosa» with its «Cuándo» fixed and without pausing or removing it", async () => {
     await open();
     await userEvent.click(screen.getByRole("button", { name: "Editar «Cualquier otra cosa»" }));
