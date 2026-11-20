@@ -191,7 +191,11 @@ it("propagates the static state filter to the settled sheet and to the counts of
   const counts: { filter?: { state?: string } }[] = [];
   server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", async ({ request }) => { counts.push(await request.json() as typeof counts[number]); return HttpResponse.json({ items: [], page: 1, pageSize: 20, totalCount: 0, totalPages: 0, hasPrevious: false, hasNext: false }); }));
   renderRouteWithProviders(path); await screen.findByRole("table");
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Estado" }), "Approved");
+  // «Estado» is the only piece to choose with the button of the bar (DS1-A): its list opens with the keyboard.
+  const state = screen.getByRole("button", { name: "Estado Todos los estados" });
+  await act(async () => { state.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Estado" })).getByRole("option", { name: "Aprobada" }));
   await waitFor(() => expect(reads.searches.at(-1)).toMatchObject({ state: "Approved" }));
   await userEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
   await userEvent.click(within(await screen.findByRole("dialog", { name: "Filtros" })).getByRole("button", { name: "Cargó" }));

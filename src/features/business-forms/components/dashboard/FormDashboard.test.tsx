@@ -56,6 +56,16 @@ async function openMenu(name: string | RegExp) {
   await userEvent.keyboard("{Enter}");
   return screen.findByRole("menu");
 }
+/** «Estado» of the bar is the only piece to choose with the button of the bar (DS1-A): its list opens with the keyboard, like the
+ * other Radix lists, with «Todos los estados» first, and the state is chosen in it. */
+async function chooseState(state: string) {
+  const trigger = screen.getByRole("button", { name: "Estado Todos los estados" });
+  act(() => trigger.focus());
+  await userEvent.keyboard("{Enter}");
+  const states = within(await screen.findByRole("listbox", { name: "Estado" }));
+  expect(states.getAllByRole("option")[0]).toHaveAccessibleName("Todos los estados");
+  await userEvent.click(states.getByRole("option", { name: state }));
+}
 
 describe("the tab «Tablero»", () => {
   it("goes next to «Respuestas (N)» for whoever reads responses and opens the numbers and the cards of the form", async () => {
@@ -162,7 +172,7 @@ describe("the adjustments in the address", () => {
     await userEvent.keyboard("{Escape}");
     expect(search(router).get("cards")).toBe(token);
 
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Estado" }), "Voided");
+    await chooseState("Anulada");
     expect(await screen.findByRole("heading", { name: "Total de Monto (Euros), por Banco (catálogo Bancos y billeteras)" })).toBeInTheDocument();
     expect(search(router).get("cards")).toBe(token);
   }, 20_000);
@@ -224,12 +234,19 @@ describe("the adjustments in the address", () => {
     const { asked } = serve(["formrecords.read"]);
     const { router } = renderRouteWithProviders(path + "?view=dashboard");
     await screen.findByRole("heading", { name: "Cuántas llegaron, por día" }, { timeout: 10_000 });
-    expect(screen.queryByRole("combobox", { name: "Canal" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Canal/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Estado/ })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Filtros" }));
     const filters = await screen.findByRole("dialog", { name: "Filtros" });
     await userEvent.click(within(filters).getByRole("button", { name: "Estado" }));
-    await userEvent.selectOptions(within(filters).getByRole("combobox", { name: "Estado" }), "Voided");
+    // Inside «Filtros» it is the field of the only piece to choose (DS1-A), whose list takes the screen on the phone.
+    await userEvent.click(within(filters).getByRole("button", { name: "Estado Todos los estados" }));
+    const states = await screen.findByRole("dialog", { name: "Estado" });
+    expect(within(states).getAllByRole("option")[0]).toHaveAccessibleName("Todos los estados");
+    await userEvent.click(within(states).getByRole("option", { name: "Anulada" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Estado" })).not.toBeInTheDocument());
+    expect(within(filters).getByRole("button", { name: "Estado Anulada" })).toBeInTheDocument();
 
     await waitFor(() => expect(asked.at(-1)?.filter).toMatchObject({ state: "Voided" }));
     await userEvent.click(within(filters).getByRole("button", { name: "Listo" }));
@@ -282,7 +299,7 @@ describe("what the dashboard cannot show", () => {
     renderRouteWithProviders(path + "?view=dashboard");
     expect(await screen.findByText("Todavía no hay respuestas", undefined, { timeout: 10_000 })).toBeInTheDocument();
 
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Estado" }), "Voided");
+    await chooseState("Anulada");
     expect(await screen.findByText("Ninguna respuesta coincide")).toBeInTheDocument();
     await userEvent.click(screen.getAllByRole("button", { name: "Limpiar todo" }).at(-1)!);
     expect(await screen.findByText("Todavía no hay respuestas")).toBeInTheDocument();

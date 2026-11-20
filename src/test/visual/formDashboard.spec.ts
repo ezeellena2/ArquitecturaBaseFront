@@ -50,7 +50,8 @@ for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) 
     await page.evaluate(() => document.fonts.ready);
 
     // On the phone the quick filters go behind «Filtros»; on a computer they stay in sight, as in «Respuestas».
-    await expect(page.getByRole("combobox", { name: es ? "Canal" : "Channel", exact: true })).toHaveCount(phone ? 0 : 1);
+    // «Canal» is the button of the bar of the only piece to choose (DS1-A).
+    await expect(page.getByRole("button", { name: es ? "Canal Todos los canales" : "Channel All channels", exact: true })).toHaveCount(phone ? 0 : 1);
     await receivedInOctober(page, es, phone);
     const numbers = page.getByRole("region", { name: es ? "Números" : "Numbers", exact: true });
     await expect(numbers.getByText(es ? /^\+18\s?% que 01\/09\/2026 – 30\/09\/2026$/ : /^\+18% vs 09\/01\/2026 – 09\/30\/2026$/)).toBeVisible();

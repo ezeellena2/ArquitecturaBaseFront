@@ -4,7 +4,7 @@ import { calendarDateInZone } from "@/shared/lib/dateTime";
 import { FilterPanel, type FilterPanelSection } from "@/shared/ui/FilterPanel";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { normalizeResponseQuery, receivedDateBoundary, replaceResponseCondition, type ResponseColumn, type ResponseFilter, type ResponseQuery } from "../responses";
 import { useResponseFeedback, useResponseScope } from "../hooks/useResponseQueries";
 import { ResponseFacetControl } from "./ResponseFacetControl";
@@ -103,22 +103,20 @@ export function ResponseFiltersMenu({ formId, query, columns, zone, names = {}, 
     return <TypedFilter label={t("responses.contains")} maxLength={600} value={value("contains")} onCommit={text => set("contains", text.trim() ? [text] : [])}/>;
   };
   const actor = query.actorIds?.[0] ?? null, version = query.versionIds?.[0] ?? null;
+  const channel = query.enteredInApp == null ? "" : String(query.enteredInApp), state = query.state ?? "";
   // The quick filters of the bar, here when they cannot stay in sight (the dashboard on the phone).
   const quickSections: FilterPanelSection[] = quick ? [
     ...(quick.search ? [{ key: "search", label: t("responses.search"), applied: !!query.search, onClear: () => apply({ search: undefined }),
       content: <TypedFilter label={t("responses.contains")} maxLength={100} value={query.search ?? ""} onCommit={text => apply({ search: text.trim() ? text : undefined })}/> }] : []),
+    // The same lists as in the bar, with the field of the only piece to choose (DS1-A): «Todos…» first and apart takes the filter out.
     { key: "channel", label: t("formEntries:sheet.channel"), applied: query.enteredInApp != null, onClear: () => apply({ enteredInApp: undefined }),
-      content: <NativeSelect aria-label={t("formEntries:sheet.channel")} value={query.enteredInApp == null ? "" : String(query.enteredInApp)}
-        onChange={event => apply({ enteredInApp: event.target.value === "" ? undefined : event.target.value === "true" })}>
-        <option value="">{t("formEntries:sheet.allChannels")}</option>
-        <option value="true">{t("formEntries:sheet.channels.app")}</option>
-        <option value="false">{t("responses.whatsapp")}</option>
-      </NativeSelect> },
+      content: <Picker label={t("formEntries:sheet.channel")} first={{ id: "", label: t("formEntries:sheet.allChannels") }}
+        options={[{ id: "true", label: t("formEntries:sheet.channels.app") }, { id: "false", label: t("responses.whatsapp") }]}
+        value={channel} onChange={id => { if (id !== channel) apply({ enteredInApp: id === "" ? undefined : id === "true" }); }}/> },
     { key: "state", label: t("approvals.state"), applied: !!query.state, onClear: () => apply({ state: undefined }),
-      content: <NativeSelect aria-label={t("approvals.state")} value={query.state ?? ""} onChange={event => apply({ state: (event.target.value || undefined) as ResponseQuery["state"] })}>
-        <option value="">{t("approvals.allStates")}</option>
-        {([...quick.hasApproval ? ["Received", "PendingApproval", "Approved", "Rejected"] as const : [], "Voided"] as const).map(state => <option key={state} value={state}>{t("approvals.states." + state)}</option>)}
-      </NativeSelect> },
+      content: <Picker label={t("approvals.state")} first={{ id: "", label: t("approvals.allStates") }}
+        options={([...quick.hasApproval ? ["Received", "PendingApproval", "Approved", "Rejected"] as const : [], "Voided"] as const).map(item => ({ id: item, label: t("approvals.states." + item) }))}
+        value={state} onChange={id => { if (id !== state) apply({ state: (id || undefined) as ResponseQuery["state"] }); }}/> },
   ] : [];
   const sections: FilterPanelSection[] = [
     ...quickSections,

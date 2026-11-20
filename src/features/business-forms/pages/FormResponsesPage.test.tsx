@@ -1429,12 +1429,20 @@ it("shows who loaded and the channel, and filters by the app channel without put
   expect(within(table).getByRole("columnheader", { name: "Canal" })).toBeVisible();
   expect(within(within(table).getByRole("link", { name: "TEST-000002" }).closest("tr")!).getByText("App")).toBeVisible();
   expect(within(within(table).getByRole("link", { name: "TEST-000001" }).closest("tr")!).getByText("WhatsApp")).toBeVisible();
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Canal" }), "App");
+  // «Canal» is the only piece to choose with the button of the bar (DS1-A): «Todos los canales» first, then App and WhatsApp.
+  const channel = screen.getByRole("button", { name: "Canal Todos los canales" });
+  await act(async () => { channel.focus(); });
+  await userEvent.keyboard("{Enter}");
+  const channels = within(await screen.findByRole("listbox", { name: "Canal" }));
+  expect(channels.getAllByRole("option").map(option => option.textContent)).toEqual(["Todos los canales", "App", "WhatsApp"]);
+  await userEvent.click(channels.getByRole("option", { name: "App" }));
   await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBe(true));
   await waitFor(() => expect(within(table).queryByRole("link", { name: "TEST-000001" })).not.toBeInTheDocument());
+  expect(screen.getByRole("button", { name: "Canal App" })).toBeInTheDocument();
   expect(router.state.location.search).not.toContain("App");
   await userEvent.click(screen.getByRole("button", { name: "Quitar filtro: Canal: App" }));
   await waitFor(() => expect(bodies.at(-1)?.enteredInApp).toBeUndefined());
+  expect(screen.getByRole("button", { name: "Canal Todos los canales" })).toBeInTheDocument();
 });
 
 // Whoever only completes forms sees the same sheet with only what they loaded (CW6-C): the server narrows it, and the sheet

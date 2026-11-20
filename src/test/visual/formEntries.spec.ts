@@ -298,7 +298,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);
     await page.screenshot({ path: "test-results/form-entry-sheet-" + language + "-" + width + ".png", fullPage: true });
-    await page.getByRole("combobox", { name: channel, exact: true }).selectOption({ label: "App" });
+    // DS1-A: «Canal» is the button of the bar of the only piece to choose, which opens its list (on the phone, on the whole screen).
+    await page.getByRole("button", { name: channel + " " + (es ? "Todos los canales" : "All channels"), exact: true }).click();
+    await page.getByRole("listbox", { name: channel, exact: true }).getByRole("option", { name: "App", exact: true }).click();
     await expect(page.getByRole("button", { name: (es ? "Quitar filtro: " : "Remove filter: ") + channel + ": App", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "TEST-000001", exact: true })).toHaveCount(0);
     await assertNoPageScroll(page, width);

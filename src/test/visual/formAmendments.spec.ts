@@ -121,7 +121,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.keyboard.press("Escape");
     await expect(excel).toHaveCount(0);
     // With «Estado: Anulada» it shows again, with who, when and why in its detail.
-    await page.getByRole("combobox", { name: text(language, "Estado", "State"), exact: true }).selectOption({ label: text(language, "Anulada", "Voided") });
+    // DS1-A: «Estado» is the button of the bar of the only piece to choose, which opens its list (on the phone, on the whole screen).
+    await page.getByRole("button", { name: text(language, "Estado Todos los estados", "State All states"), exact: true }).click();
+    await page.getByRole("listbox", { name: text(language, "Estado", "State"), exact: true }).getByRole("option", { name: text(language, "Anulada", "Voided"), exact: true }).click();
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: text(language, "Anulada", "Voided"), level: 3 })).toBeVisible();
