@@ -70,7 +70,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const label = (es: string, en: string) => text(language, es, en);
     const editor = await open(page, language, width);
     const inherit = editor.getByRole("radio", { name: new RegExp("^" + label("Como en el catálogo", "As in the catalog")) });
-    const description = editor.getByRole("combobox", { name: label("Descripción · hasta 300", "Description · up to 300"), exact: true });
+    const description = editor.getByRole("button", { name: label("Descripción · hasta 300 Agregar campo", "Description · up to 300 Add field"), exact: true });
     await expect(inherit).toBeChecked();
     // The filter additions (by who receives it, fixed and by another answer) act on the whole section: they go in the band of
     // «Qué opciones ve cada persona», expanded. The band holds the title with its (i) and the actions.
@@ -97,8 +97,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(description).toBeEnabled();
     await editor.getByRole("button", { name: label("Quitar CUIT de Descripción · hasta 300", "Remove CUIT from Description · up to 300"), exact: true }).click();
     await editor.getByRole("button", { name: label("Quitar Zona de Descripción · hasta 300", "Remove Zone from Description · up to 300"), exact: true }).click();
-    await description.selectOption(catalogQuestionFixtureIds.category);
-    await description.selectOption(catalogQuestionFixtureIds.paymentDays);
+    await description.click(); await page.getByRole("option", { name: label("Rubro", "Category"), exact: true }).click();
+    await description.click(); await page.getByRole("option", { name: label("Plazo de pago (días)", "Payment term (days)"), exact: true }).click();
     await expect(suppliers.getByText("Frío · 30", { exact: true }).first()).toBeVisible();
     await description.scrollIntoViewIfNeeded();
     await contained(page, editor, width);

@@ -15,7 +15,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("menuitem", { name: english ? "Sort by…" : "Ordenar por…" }).click();
     const dialog = page.getByRole("dialog", { name: english ? "Sort the options" : "Ordenar las opciones" });
     await expect(dialog.getByRole("radio", { name: english ? "A to Z" : "De la A a la Z" })).toBeChecked();
-    await dialog.getByRole("combobox", { name: english ? "Column" : "Columna" }).selectOption("code");
+    await dialog.getByRole("button", { name: english ? "Column Text" : "Columna Texto", exact: true }).click();
+    await page.getByRole("option", { name: english ? "Code" : "Código", exact: true }).click();
     await dialog.getByRole("radio", { name: english ? "Z to A" : "De la Z a la A" }).click();
     await page.screenshot({ path: info.outputPath("manual-sort-dialog.png") });
     await dialog.getByRole("button", { name: english ? "Sort" : "Ordenar", exact: true }).click();

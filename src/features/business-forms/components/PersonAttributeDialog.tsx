@@ -12,7 +12,7 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { createPersonAttribute, updatePersonAttribute, type PersonAttribute } from "../api/personData";
 import { catalogFieldKeyFromName } from "../catalogFields";
 import { contentReference, contentRequired, ownTexts } from "../editorModel";
@@ -106,7 +106,8 @@ export function PersonAttributeDialog({ scope, attribute, takenKeys, onClose, on
    <Input id={keyId} value={key} readOnly={!!attribute} disabled={busy} maxLength={40} aria-invalid={keyError ? true : undefined} aria-describedby={keyError ? keyId + "-message" : undefined} onChange={event => { setKey(event.target.value); setKeyEdited(true); }} />
    {keyError ? <p id={keyId + "-message"} role="alert" className="text-sm text-[var(--color-danger)]">{keyError}</p> : null}
   </div>
-  <FormField label={t("personData.type")} required error={message("type")}><DisabledReason reason={inUseReason} className="grid w-full"><NativeSelect value={type} disabled={busy || inUse} onChange={event => changeType(event.target.value as PersonAttribute["type"])}><option value="Catalog">{t("catalogs.fields.types.catalog")}</option><option value="Text">{t("catalogs.fields.types.text")}</option></NativeSelect></DisabledReason></FormField>
+  <RadioGroupField label={t("personData.type")} showLabel layout="row" error={message("type")} value={type} onValueChange={next => changeType(next as PersonAttribute["type"])}
+   options={(["Catalog", "Text"] as const).map(option => ({ value: option, label: t(option === "Catalog" ? "catalogs.fields.types.catalog" : "catalogs.fields.types.text"), disabled: busy || inUse, disabledReason: inUseReason }))} />
   {type === "Catalog" ? <FormField label={t("catalogQuestion.catalog")} required error={message("sourceCatalogId") ?? required("sourceCatalogId")}>
    {canReadCatalogs ? <DisabledReason reason={inUseReason} className="grid w-full"><CatalogFieldSourceInput scope={scope} value={sourceCatalogId} label={t("catalogQuestion.catalog")} readOnly={busy || inUse} onChange={changeSource} /></DisabledReason>
     : <DisabledReason reason={t("catalogQuestion.requiresRead")} className="grid w-full"><Input disabled value={attribute?.sourceCatalogName ?? ""} /></DisabledReason>}

@@ -13,7 +13,7 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { AlertTriangleIcon, ChevronDownIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { notify } from "@/shared/ui/notifications";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
@@ -236,7 +236,7 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, f
     </Row>
     <div className="flex flex-col gap-3">
       <Row label={<Label htmlFor={id + "type"}>{t("catalogs.fields.type")}<span aria-hidden="true"> *</span></Label>}>
-        <NativeSelect id={id + "type"} aria-required value={field.type} aria-invalid={typeError ? true : undefined} aria-describedby={typeError ? id + "type-message" : undefined} onChange={event => changeType(event.target.value as CatalogFieldType)}>{catalogFieldTypes.map(type => <option key={type} value={type}>{t("catalogs.fields.types." + type)}</option>)}</NativeSelect>
+        <Picker id={id + "type"} label={t("catalogs.fields.type")} value={field.type} aria-invalid={typeError ? true : undefined} aria-describedby={typeError ? id + "type-message" : undefined} onChange={type => changeType(type as CatalogFieldType)} options={catalogFieldTypes.map(type => ({ id: type, label: t("catalogs.fields.types." + type) }))} />
         {typeError ? <Message id={id + "type-message"} error>{typeError}</Message> : null}
       </Row>
       {detailKind ? <Row label={<Label id={id + "detail"}>{t("catalogs.fields.detailLabel." + detailKind)}</Label>}>

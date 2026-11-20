@@ -39,25 +39,25 @@ describe("«Ordenar por…» (OR1-A)", () => {
   it("offers the text, the code and the saved active fields, and opens in Texto from A to Z", async () => {
     const { dialog } = await mount();
     expect(within(dialog).getByRole("heading", { name: "Ordenar las opciones" })).toBeInTheDocument();
-    const column = within(dialog).getByRole("combobox", { name: "Columna" });
-    expect(within(column).getAllByRole("option").map(option => option.textContent)).toEqual(["Texto", "Código", "Rubro", "Stock mínimo", "Alta", "Importado"]);
-    expect(column).toHaveValue("text");
+    const list = await openList("Columna Texto");
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Texto", "Código", "Rubro", "Stock mínimo", "Alta", "Importado"]);
+    expect(within(list).getByRole("option", { name: "Texto" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Escape}");
     expect(within(dialog).getByRole("radio", { name: "De la A a la Z" })).toBeChecked();
     expect(within(dialog).getByRole("radio", { name: "De la Z a la A" })).not.toBeChecked();
   });
 
   it("names the direction by the column's data", async () => {
-    const { user, dialog } = await mount();
-    const column = within(dialog).getByRole("combobox", { name: "Columna" });
+    const { dialog } = await mount();
     const directions = () => within(dialog).getAllByRole("radio").map(radio => radio.closest("label")?.textContent ?? radio.getAttribute("aria-label") ?? "");
-    await user.selectOptions(column, rubro.id!);
+    await choose(/^Columna /, "Rubro");
     expect(within(dialog).getByRole("radio", { name: "De la A a la Z" })).toBeInTheDocument();
-    await user.selectOptions(column, stock.id!);
+    await choose(/^Columna /, "Stock mínimo");
     expect(within(dialog).getByRole("radio", { name: "De menor a mayor" })).toBeChecked();
     expect(within(dialog).getByRole("radio", { name: "De mayor a menor" })).toBeInTheDocument();
-    await user.selectOptions(column, alta.id!);
+    await choose(/^Columna /, "Alta");
     expect(within(dialog).getByRole("radio", { name: "De la más antigua a la más reciente" })).toBeInTheDocument();
-    await user.selectOptions(column, importado.id!);
+    await choose(/^Columna /, "Importado");
     expect(within(dialog).getByRole("radio", { name: "Primero «No»" })).toBeInTheDocument();
     expect(within(dialog).getByRole("radio", { name: "Primero «Sí»" })).toBeInTheDocument();
     expect(directions()).toHaveLength(2);
@@ -71,7 +71,7 @@ describe("«Ordenar por…» (OR1-A)", () => {
 
   it("returns the chosen column and direction only with «Ordenar», and gives the focus back to ⋮", async () => {
     const { user, onApply, dialog } = await mount();
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Columna" }), stock.id!);
+    await choose("Columna Texto", "Stock mínimo");
     await user.click(within(dialog).getByRole("radio", { name: "De mayor a menor" }));
     expect(onApply).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "Ordenar" }));
@@ -82,7 +82,7 @@ describe("«Ordenar por…» (OR1-A)", () => {
 
   it("opens with the pending order and «Cancelar» keeps it as it was", async () => {
     const { user, onApply, dialog } = await mount({ column: "code", descending: true });
-    expect(within(dialog).getByRole("combobox", { name: "Columna" })).toHaveValue("code");
+    expect(within(dialog).getByRole("button", { name: "Columna Código" })).toBeInTheDocument();
     expect(within(dialog).getByRole("radio", { name: "De la Z a la A" })).toBeChecked();
     await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     expect(onApply).not.toHaveBeenCalled();
@@ -92,8 +92,21 @@ describe("«Ordenar por…» (OR1-A)", () => {
   it("speaks English with the English field names", async () => {
     const { dialog } = await mount({ column: stock.id!, descending: false }, "en");
     expect(within(dialog).getByRole("heading", { name: "Sort the options" })).toBeInTheDocument();
-    expect(within(within(dialog).getByRole("combobox", { name: "Column" })).getAllByRole("option").map(option => option.textContent)).toEqual(["Text", "Code", "Rubro EN", "Stock mínimo EN", "Alta EN", "Importado EN"]);
+    const list = await openList("Column Stock mínimo EN");
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Text", "Code", "Rubro EN", "Stock mínimo EN", "Alta EN", "Importado EN"]);
+    await userEvent.keyboard("{Escape}");
     expect(within(dialog).getByRole("radio", { name: "Smallest to largest" })).toBeChecked();
     expect(within(dialog).getByRole("button", { name: "Sort" })).toBeInTheDocument();
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(name: string | RegExp) {
+  const trigger = screen.getByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function choose(name: string | RegExp, option: string) {
+  await userEvent.click(within(await openList(name)).getByRole("option", { name: option }));
+}

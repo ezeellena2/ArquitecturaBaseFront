@@ -41,7 +41,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.setViewportSize({ width, height: 900 });
     const label = (es: string, en: string) => language === "es" ? es : en;
     await page.goto("/src/test/visual/index.html?" + new URLSearchParams({ screen: "/catalogos/" + visualCatalogId, lang: language, scenario: "catalogs-filters" }));
-    const text = page.getByRole("combobox", { name: label("Texto de cada opción", "Option text"), exact: true });
+    const text = page.getByRole("button", { name: new RegExp("^" + label("Texto de cada opción", "Option text") + " ") });
     await text.waitFor();
     const sample = page.getByRole("combobox", { name: label("Como si lo recibiera", "As if received by"), exact: true });
     await sample.fill("Persona");

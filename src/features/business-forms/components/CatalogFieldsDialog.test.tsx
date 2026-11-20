@@ -267,7 +267,7 @@ it("puts the type's detail beside the type and changes it with the type", async 
   await mount({ initial: [{ ...field, maxLength: 13 }] });
   const dialog = await openFields();
   expect(within(dialog).getByRole("spinbutton", { name: "Máximo de caracteres" })).toHaveValue(13);
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "integer");
+  await choose(/^Tipo /, "Entero");
   expect(within(dialog).queryByRole("spinbutton", { name: "Máximo de caracteres" })).not.toBeInTheDocument();
   await userEvent.type(within(dialog).getByRole("textbox", { name: "Mínimo" }), "0");
   await userEvent.type(within(dialog).getByRole("textbox", { name: "Máximo" }), "180");
@@ -280,7 +280,7 @@ it("puts the type's detail beside the type and changes it with the type", async 
   expect(within(dialog).getByRole("button", { name: "Filtro" })).toHaveAttribute("aria-pressed", "true");
   // The role is explained only by its tooltip, without a text under it.
   expect(within(dialog).queryByText("Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.")).not.toBeInTheDocument();
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "boolean");
+  await choose(/^Tipo /, "Sí o no");
   expect(within(dialog).queryByRole("textbox", { name: "Mínimo" })).not.toBeInTheDocument();
 });
 
@@ -499,8 +499,8 @@ it("says a server error above the table, and «Revisar» opens the field with th
 it("says nothing under the type when the type of a field with values changes", async () => {
   await mount({ initial: [field, { ...newCatalogField("new", 2), key: "zone" }] });
   const dialog = await openFields();
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "integer");
-  expect(within(dialog).getByRole("combobox", { name: "Tipo" })).not.toHaveAccessibleDescription();
+  await choose(/^Tipo /, "Entero");
+  expect(within(dialog).getByRole("button", { name: "Tipo Entero" })).not.toHaveAccessibleDescription();
   expect(within(dialog).queryByText(/Al guardar se revisan todos los valores/)).not.toBeInTheDocument();
 });
 
@@ -514,7 +514,7 @@ it("chooses the source catalog in a dropdown that opens on the first catalogs an
   }));
   await mount({ initial: [field] });
   const dialog = await openFields();
-  await userEvent.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo" }), "catalog");
+  await choose(/^Tipo /, "Elegir de un catálogo");
   const source = within(dialog).getByRole("combobox", { name: "Catálogo" });
   // Opening it shows the first catalogs, before typing anything.
   await userEvent.click(source);
@@ -637,3 +637,14 @@ it("shows the list first on the phone and opens the field with «Volver a la lis
   await userEvent.click(within(screen.getByRole("alert")).getByRole("button", { name: "Revisar" }));
   expect(within(screen.getByRole("dialog")).getByRole("textbox", { name: "Clave" })).toHaveFocus();
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(name: string | RegExp) {
+  const trigger = screen.getByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function choose(name: string | RegExp, option: string) {
+  await userEvent.click(within(await openList(name)).getByRole("option", { name: option }));
+}

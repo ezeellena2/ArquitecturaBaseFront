@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from "@testing-library/react";
+import { act, cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { render } from "@testing-library/react";
@@ -41,13 +41,21 @@ it("renders unchanged real K4 detail/options and the result of the captured prev
   server.use(http.get("/api/forms/catalogs/" + detail.id, () => json(capturedDetailRaw)), http.get("/api/forms/catalog-filter-options", () => json(capturedOptionsRaw)), http.post("/api/forms/catalog-previews", async ({ request }) => { received.push(await request.json()); return json(capturedPreviewRaw); }));
   await mount("/catalogos/" + detail.id); const user = userEvent.setup();
   expect(await screen.findByRole("textbox", { name: "Nombre" })).toHaveValue(detail.name.es);
-  await user.selectOptions(await screen.findByRole("combobox", { name: "Texto de cada opción" }), capturedPreviewRequest.filters.textColumn);
-  await user.selectOptions(screen.getByRole("combobox", { name: "Detalle" }), capturedPreviewRequest.filters.detailColumn ?? "");
+  // The Picker opens with the keyboard and chooses by the option's name: the page names the columns and the comparisons, and the
+  // choices are the server's (909 roles: the name is found by its text, without the accessible name of every option).
+  const pick = async (name: string, option: string) => {
+    const trigger = screen.getByRole("button", { name: new RegExp("^" + name + " ") }); await act(async () => { trigger.focus(); }); await user.keyboard("{Enter}");
+    await user.click(within(await screen.findByRole("listbox")).getByText(option, { exact: true }));
+  };
+  const column = (key: string) => i18n.t("forms:catalogs.filters.columnLabels." + key);
+  await screen.findByRole("button", { name: /^Texto de cada opción / });
+  await pick("Texto de cada opción", column(capturedPreviewRequest.filters.textColumn));
+  await pick("Detalle", capturedPreviewRequest.filters.detailColumn ? column(capturedPreviewRequest.filters.detailColumn) : i18n.t("forms:catalogs.filters.noDetail"));
   for (const [index, condition] of capturedPreviewRequest.filters.conditions.entries()) {
-    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición " + (index + 1) }), condition.column);
-    await user.selectOptions(screen.getByRole("combobox", { name: "Comparación de la condición " + (index + 1) }), condition.operator);
-    const label = "Valor de la condición " + (index + 1); const choice = screen.queryByRole("combobox", { name: label });
-    if (choice) await user.selectOptions(choice, condition.value); else await pasteText(user, screen.getByRole("textbox", { name: label }), condition.value);
+    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await pick("Columna de la condición " + (index + 1), column(condition.column));
+    await pick("Comparación de la condición " + (index + 1), i18n.t("forms:catalogs.filters.operatorLabels." + condition.operator));
+    const label = "Valor de la condición " + (index + 1); const choice = options.columns.find(item => item.key === condition.column)?.choices?.find(item => item.key === condition.value);
+    if (choice) await pick(label, choice.label); else await pasteText(user, screen.getByRole("textbox", { name: label }), condition.value);
   }
   await user.click(screen.getByRole("combobox", { name: "Como si lo recibiera" })); await user.click(screen.getByRole("option", { name: person.name }));
   await user.click(screen.getByRole("button", { name: "Probar" }));

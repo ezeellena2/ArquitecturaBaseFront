@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import type { CatalogField } from "../api/catalogResponse";
 import { groupByFields } from "../catalogQuestionSource";
 import { administrativeName } from "../editorModel";
@@ -28,10 +28,9 @@ export function CatalogGroupBySetting({ source, fields, type, culture, readOnly,
     <CheckboxField label={t("catalogQuestion.groupBy.label")} help={t("catalogQuestion.groupBy.help")} checked={selected !== null} disabled={readOnly || multiple}
       disabledReason={multiple ? t("catalogQuestion.groupBy.notWithMultiple") : null} onCheckedChange={checked => onChange({ ...source, groupBy: checked ? eligible[0]?.id ?? null : null })}/>
     {selected !== null ? <div className="grid pl-6 sm:grid-cols-2"><FormField label={t("catalogQuestion.groupBy.field")} error={error}>
-      <NativeSelect value={selected} disabled={readOnly} onChange={event => onChange({ ...source, groupBy: event.target.value })}>
-        {kept ? <option value={selected}>{current ? administrativeName(current.name, culture) : t("catalogQuestion.filter.unavailable")}</option> : null}
-        {eligible.map(field => <option key={field.id} value={field.id}>{administrativeName(field.name, culture)}</option>)}
-      </NativeSelect></FormField></div> : null}
+      <Picker label={t("catalogQuestion.groupBy.field")} value={selected} disabled={readOnly} onChange={groupBy => onChange({ ...source, groupBy })} options={[
+        ...kept ? [{ id: selected, label: current ? administrativeName(current.name, culture) : t("catalogQuestion.filter.unavailable") }] : [],
+        ...eligible.map(field => ({ id: field.id, label: administrativeName(field.name, culture) }))]} /></FormField></div> : null}
   </div>;
 }
 

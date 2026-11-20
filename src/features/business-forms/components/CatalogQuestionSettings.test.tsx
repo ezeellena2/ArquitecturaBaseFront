@@ -630,17 +630,17 @@ it("chooses first by an active text or catalog field of the catalog, below the m
   const toggle = await screen.findByRole("checkbox", { name: "Elegir primero por un campo" });
   expect(screen.getByText("Permitir elegir varias").compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(toggle).not.toBeChecked();
-  expect(screen.queryByRole("combobox", { name: "Campo" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Campo / })).not.toBeInTheDocument();
   // Checking it chooses the first field that serves; the field is changed afterwards.
   await userEvent.click(screen.getByText("Elegir primero por un campo", { exact: true }));
   expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, groupBy: zone });
 
   view.rerender(groupQuestion({ catalog: maximumCatalog, groupBy: category }, onSourceChange));
   expect(screen.getByRole("checkbox", { name: "Elegir primero por un campo" })).toBeChecked();
-  const select = screen.getByRole("combobox", { name: "Campo" });
-  expect(select).toHaveValue(category);
-  expect(within(select).getAllByRole("option").map(option => option.textContent)).toEqual(["Zona", "Rubro"]);
-  await userEvent.selectOptions(select, zone);
+  const list = await openList("Campo Rubro");
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Zona", "Rubro"]);
+  expect(within(list).getByRole("option", { name: "Rubro" })).toHaveAttribute("aria-selected", "true");
+  await userEvent.click(within(list).getByRole("option", { name: "Zona" }));
   expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog, groupBy: zone });
   await userEvent.click(screen.getByText("Elegir primero por un campo", { exact: true }));
   expect(onSourceChange).toHaveBeenLastCalledWith({ catalog: maximumCatalog });
@@ -698,12 +698,20 @@ it("keeps a field that no longer serves and shows the server error under it", as
   serveGroupCatalog();
   const message = "El campo para elegir primero ya no está en el catálogo, está dado de baja o no es de texto ni una opción de un catálogo.";
   const view = renderWithProviders(groupQuestion({ catalog: maximumCatalog, groupBy: retired }, vi.fn(), { errors: { groupBy: [message] } }));
-  const select = await screen.findByRole("combobox", { name: "Campo" });
-  expect(select).toHaveValue(retired);
-  expect(within(select).getAllByRole("option").map(option => option.textContent)).toEqual(["Rubro anterior", "Zona", "Rubro"]);
+  const select = await screen.findByRole("button", { name: "Campo Rubro anterior" });
   expect(select).toHaveAccessibleDescription(message);
+  expect(within(await openList("Campo Rubro anterior")).getAllByRole("option").map(option => option.textContent)).toEqual(["Rubro anterior", "Zona", "Rubro"]);
+  await userEvent.keyboard("{Escape}");
   // A field the catalog no longer has is never shown by its id.
   const missing = "01990000-0000-7000-8000-0000000000a8";
   view.rerender(groupQuestion({ catalog: maximumCatalog, groupBy: missing }));
-  expect(within(screen.getByRole("combobox", { name: "Campo" })).getAllByRole("option")[0]).toHaveTextContent("Campo no disponible");
+  expect(screen.getByRole("button", { name: "Campo Campo no disponible" })).toBeInTheDocument();
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(name: string | RegExp) {
+  const trigger = screen.getByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}

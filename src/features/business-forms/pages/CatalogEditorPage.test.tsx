@@ -424,7 +424,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const term = savedField({ key: "term", name: "Plazo", type: "text" });
     const bodies = fieldSetup(term, { [fieldId]: "30 días" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...term, type: "integer" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await pick(within(await editField(user, "Plazo")).getByRole("button", { name: /^Tipo / }), "Entero");
     await applyFields(user);
     await renameOption(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
@@ -452,7 +452,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     const amount = savedField({ key: "amount", name: "Cantidad", type: "integer" });
     const bodies = fieldSetup(amount, { [fieldId]: "1500" }, () => HttpResponse.json({ catalog: { ...initial, revision: 2, fields: [{ ...amount, type: "text" }] }, itemIdentityMap: {}, fieldIdentityMap: {} }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(within(await editField(user, "Cantidad")).getByRole("combobox", { name: "Tipo" }), "text");
+    await pick(within(await editField(user, "Cantidad")).getByRole("button", { name: /^Tipo / }), "Texto");
     await applyFields(user);
     await renameOption(user, false);
     expect(screen.getByRole("textbox", { name: "Cantidad" })).toHaveValue("1.500");
@@ -465,7 +465,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows a saved value that is not an option yet while a change to a catalog field is pending", async () => {
     fieldSetup(savedField({ key: "zone", name: "Zona", type: "text" }), { [fieldId]: "Sur" }, () => HttpResponse.json({}, { status: 500 }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(within(await editField(user, "Zona")).getByRole("combobox", { name: "Tipo" }), "catalog");
+    await pick(within(await editField(user, "Zona")).getByRole("button", { name: /^Tipo / }), "Elegir de un catálogo");
     await applyFields(user);
     expect(within(await screen.findByRole("table")).getByText("Sur", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
@@ -487,7 +487,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows the text of a saved option while a change to another type is pending, read-only with Clear", async () => {
     viewport(true); savedTypeSetup(savedField({ key: "zone", name: "Zona", type: "catalog", sourceCatalogId: sourceId }), southId, { [fieldId]: { es: "Sur", en: "South" } });
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(within(await editField(user, "Zona")).getByRole("combobox", { name: "Tipo" }), "text");
+    await pick(within(await editField(user, "Zona")).getByRole("button", { name: /^Tipo / }), "Texto");
     await applyFields(user);
     const cell = screen.getByRole("textbox", { name: "Fila 1 · Zona" });
     expect(cell).toHaveValue("Sur");
@@ -504,7 +504,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("shows Sí or No for a saved yes/no while a change to another type is pending, in the row and in the option editor", async () => {
     viewport(false); savedTypeSetup(savedField({ key: "gps", name: "Con GPS", type: "boolean" }), "true");
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(within(await editField(user, "Con GPS")).getByRole("combobox", { name: "Tipo" }), "text");
+    await pick(within(await editField(user, "Con GPS")).getByRole("button", { name: /^Tipo / }), "Texto");
     await applyFields(user);
     expect(within(screen.getByRole("row", { name: /Pérez/ })).getByText("Sí", { exact: true })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
@@ -550,7 +550,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   }
   async function saveTypeChange(user: ReturnType<typeof userEvent.setup>) {
     await mount("/catalogos/" + id);
-    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await pick(within(await editField(user, "Plazo")).getByRole("button", { name: /^Tipo / }), "Entero");
     await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -615,7 +615,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("drops the marks and the filter when the field goes back to its saved type", async () => {
     viewport(true); const requests = conversionSetup(); const user = userEvent.setup();
     await showErrorRows(user);
-    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "text");
+    await pick(within(await editField(user, "Plazo")).getByRole("button", { name: /^Tipo / }), "Texto");
     await applyFields(user);
     expect(await screen.findByRole("textbox", { name: "Texto de la opción 2" })).toBeInTheDocument();
     expect(screen.queryByText("Con error · 1 fila")).not.toBeInTheDocument();
@@ -647,7 +647,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("keeps the focus where the person types after a type change marks an option already changed in the draft", async () => {
     viewport(true); conversionSetup(); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await pick(within(await editField(user, "Plazo")).getByRole("button", { name: /^Tipo / }), "Entero");
     await applyFields(user);
     const text = await screen.findByRole("textbox", { name: "Texto de la opción 1" });
     await user.clear(text); await pasteText(user, text, "Pérez Norte");
@@ -734,7 +734,7 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
   it("does not offer to show in the table the rows of a type change on a field removed in the same save", async () => {
     viewport(true); conversionSetup(); const user = userEvent.setup();
     await mount("/catalogos/" + id);
-    await user.selectOptions(within(await editField(user, "Plazo")).getByRole("combobox", { name: "Tipo" }), "integer");
+    await pick(within(await editField(user, "Plazo")).getByRole("button", { name: /^Tipo / }), "Entero");
     await removePlazo(user);
     await applyFields(user);
     await screen.findByRole("button", { name: "Editar Gómez" });
@@ -1036,8 +1036,8 @@ describe("Filters editor connected to current DTOs", () => {
     filterSetup(); const previews: unknown[] = []; const writes: unknown[] = [];
     server.use(http.post("/api/forms/catalog-previews", async ({ request }) => { previews.push(await request.json()); return HttpResponse.json({ items: [{ id, text: "Beatriz", detail: "Operario", canSend:true }], totalCount: 1, exceedsLimit: false }); }), http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { const body = await request.json() as { filters: typeof filtersDetail.filters }; writes.push(body); return HttpResponse.json({ catalog: { ...filtersDetail, filters: body.filters, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
-    expect(screen.getByRole("combobox", { name: "Comparación de la condición 1" })).toHaveValue("has"); expect(writes).toHaveLength(0);
+    await user.click(await screen.findByRole("button", { name: "Agregar condición" })); await pick(screen.getByRole("button", { name: /^Columna de la condición 1 / }), "Rol");
+    expect(screen.getByRole("button", { name: "Comparación de la condición 1 Tiene el rol" })).toBeInTheDocument(); expect(writes).toHaveLength(0);
     await selectSample(); await user.click(screen.getByRole("button", { name: "Probar" })); await screen.findByText("Beatriz");
     await user.click(screen.getByRole("button", { name: "Guardar" })); await waitFor(() => expect(writes).toHaveLength(1));
     expect(previews).toHaveLength(2); expect(writes[0]).toMatchObject({ expectedRevision: 1, filters: { conditions: [{ column: "role", operator: "has", value: "01990000-0000-7000-8000-000000000601" }] } });
@@ -1058,13 +1058,13 @@ describe("Filters editor connected to current DTOs", () => {
       http.put("/api/forms/catalogs/" + id + "/filters", async ({ request }) => { writes.push(await request.json()); return HttpResponse.json({ catalog: { ...filtersDetail, revision: 2 }, itemIdentityMap: {}, fieldIdentityMap: {} }); }));
     await mount("/catalogos/" + id); const user = userEvent.setup();
     await pasteText(user, await screen.findByRole("textbox", { name: "Nombre" }), " editado");
-    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await user.selectOptions(screen.getByRole("combobox", { name: "Columna de la condición 1" }), "role");
+    await user.click(screen.getByRole("button", { name: "Agregar condición" })); await pick(screen.getByRole("button", { name: /^Columna de la condición 1 / }), "Rol");
     expect(hasUnsavedChanges()).toBe(false);
     await act(() => i18n.changeLanguage("en"));
     const name = await screen.findByRole("textbox", { name: "Name" });
     expect(name).toHaveValue("Customers");
     expect(name).toHaveAccessibleDescription("Original (Spanish): Clientes editado");
-    expect(await screen.findByRole("combobox", { name: "Column for condition 1" })).toHaveValue("role");
+    expect(await screen.findByRole("button", { name: "Column for condition 1 Role" })).toBeInTheDocument();
     await user.click(await screen.findByRole("combobox", { name: "As if received by" })); await user.click(await screen.findByRole("option", { name: "Ana" }));
     await user.click(screen.getByRole("button", { name: "Save" })); await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]).toMatchObject({ name: { es: "Clientes editado", en: "Customers" }, filters: { conditions: [{ column: "role", operator: "has" }] } });
@@ -1082,7 +1082,7 @@ describe("Filters editor connected to current DTOs", () => {
   });
   it("renders permitted configuration read-only without sample identities or preview writes", async () => {
     filterSetup(["formcatalogs.read"]); await mount("/catalogos/" + id);
-    expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
+    expect(await screen.findByRole("button", { name: /^Texto de cada opción / })).toBeDisabled(); expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveAttribute("readonly");
     expect(screen.queryByRole("combobox", { name: "Como si lo recibiera" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Probar" })).not.toBeInTheDocument();
     // Without Manage there is nothing to test: no preview, and no text saying so (2026-10-31).
     expect(screen.queryByRole("region", { name: "Vista previa" })).not.toBeInTheDocument();
@@ -1165,7 +1165,7 @@ describe("Filters editor connected to current DTOs", () => {
     server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [], totalCount: 0, exceedsLimit: false })),
       http.put("/api/forms/catalogs/" + id + "/filters", () => HttpResponse.json({ code: "Forms.Catalog.RevisionConflict" }, { status: 409 })));
     await mount("/catalogos/" + id); const user = userEvent.setup();
-    await user.selectOptions(await screen.findByRole("combobox", { name: "Detalle" }), "active");
+    await pick(await screen.findByRole("button", { name: /^Detalle / }), "Activo");
     await selectSample();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
     const reviewButton = await screen.findByRole("button", { name: "Revisar" });
@@ -1192,14 +1192,14 @@ it("edits fixed Users filters without source availability flags", async () => {
   filterSetup();
   server.use(http.post("/api/forms/catalog-previews", () => HttpResponse.json({ items: [{ id: itemId, text: "Beatriz", detail: null, canSend:true }], totalCount: 1, exceedsLimit: false })));
   await mount("/catalogos/" + id);
-  expect(await screen.findByRole("combobox", { name: "Texto de cada opción" })).toBeEnabled();
+  expect(await screen.findByRole("button", { name: /^Texto de cada opción / })).toBeEnabled();
   expect(screen.getByRole("combobox", { name: "Como si lo recibiera" })).toBeEnabled();
   await selectSample();
   expect(screen.getByRole("button", { name: "Probar" })).toBeEnabled();
   await userEvent.setup().click(screen.getByRole("button", { name: "Probar" }));
   expect(await screen.findByText("Beatriz", { exact: true })).toBeInTheDocument();
   // Save follows the changes, not the availability of the source.
-  await userEvent.setup().selectOptions(screen.getByRole("combobox", { name: "Detalle" }), "active");
+  await pick(screen.getByRole("button", { name: /^Detalle / }), "Activo");
   expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
 });
 
@@ -1214,7 +1214,7 @@ it("keeps sample search focused and enabled while its next page is loading", asy
   await mount("/catalogos/" + id); const user = userEvent.setup(); const input = await screen.findByRole("combobox", { name: "Como si lo recibiera" });
   await waitFor(() => expect(input).toBeEnabled());
   try {
-    await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBeInTheDocument(); expect(searches).toBe(1);
+    await user.type(input, "Persona"); await waitFor(() => expect(searches).toBeGreaterThan(0)); expect(input).toBeEnabled(); expect(input).toHaveFocus(); expect(screen.getByRole("button", { name: /^Texto de cada opción / })).toBeInTheDocument(); expect(searches).toBe(1);
     // While it searches, the open list says so instead of showing the previous people.
     expect(screen.getByRole("listbox")).toHaveTextContent("Buscando…");
     expect(within(screen.getByRole("listbox")).queryByRole("option")).not.toBeInTheDocument();
@@ -1248,16 +1248,16 @@ it("keeps Retry of the sample people in place, working, while they are read agai
   server.use(http.get("/api/forms/catalog-filter-options", ({ request }) => new URL(request.url).searchParams.get("search")
     ? HttpResponse.json({}, { status: 503 }) : HttpResponse.json(readCatalogFilterOptions(JSON.parse(capturedOptionsRaw)))));
   await mount("/catalogos/" + id); const user = userEvent.setup();
-  const text = await screen.findByRole("combobox", { name: "Texto de cada opción" });
-  const detail = screen.getByRole("combobox", { name: "Detalle" });
-  await user.selectOptions(detail, "active");
+  const text = await screen.findByRole("button", { name: /^Texto de cada opción / });
+  const detail = screen.getByRole("button", { name: /^Detalle / });
+  await pick(detail, "Activo");
   const input = screen.getByRole("combobox", { name: "Como si lo recibiera" });
   await user.type(input, "Sin respuesta");
   await waitFor(() => expect(vi.mocked(notify).mock.calls.some(([message]) => message.kind === "error")).toBe(true));
-  expect(screen.getByRole("combobox", { name: "Texto de cada opción" })).toBe(text);
-  expect(text).toHaveValue("name");
-  expect(screen.getByRole("combobox", { name: "Detalle" })).toBe(detail);
-  expect(detail).toHaveValue("active");
+  expect(screen.getByRole("button", { name: /^Texto de cada opción / })).toBe(text);
+  expect(text).toHaveAccessibleName("Texto de cada opción Nombre");
+  expect(screen.getByRole("button", { name: /^Detalle / })).toBe(detail);
+  expect(detail).toHaveAccessibleName("Detalle Activo");
   expect(input).toHaveFocus();
  });
 
@@ -1550,7 +1550,7 @@ it("saves the order chosen in «Ordenar por…» as a single command and no move
  setup();twoOptions();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});}));
  await mount("/catalogos/"+id);const user=userEvent.setup();expect(await screen.findByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
  const {more,dialog}=await sortBy(user);
- await user.selectOptions(within(dialog).getByRole("combobox",{name:"Columna"}),"code");await user.click(within(dialog).getByRole("radio",{name:"De la Z a la A"}));
+ await pick(within(dialog).getByRole("button",{name:"Columna Texto"}),"Código");await user.click(within(dialog).getByRole("radio",{name:"De la Z a la A"}));
  await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));await waitFor(()=>expect(more).toHaveFocus());
  expect(screen.getByRole("status")).toHaveTextContent("Se ordenará por «Código», de la Z a la A, al guardar.");expect(bodies).toEqual([]);
  expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeDisabled();
@@ -1561,11 +1561,11 @@ it("names a pending order by a field in its words, opens again with it and cance
  const stock={id:"01990000-0000-7000-8000-000000000061",key:"stock",name:{es:"Stock mínimo",en:"Minimum stock"},type:"integer",sourceCatalogId:null,required:false,unique:false,min:null,max:null,maxLength:null,role:"data",position:1,isActive:true,valuesCount:1,usedBy:[]};
  setup();twoOptions({fields:[stock]});await mount("/catalogos/"+id);const user=userEvent.setup();await screen.findByRole("button",{name:"Bajar Pérez"});
  const {dialog}=await sortBy(user);
- await user.selectOptions(within(dialog).getByRole("combobox",{name:"Columna"}),stock.id);
+ await pick(within(dialog).getByRole("button",{name:"Columna Texto"}),"Stock mínimo");
  await user.click(within(dialog).getByRole("radio",{name:"De mayor a menor"}));await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));
  expect(await screen.findByRole("status")).toHaveTextContent("Se ordenará por «Stock mínimo», de mayor a menor, al guardar.");
  const {dialog:again}=await sortBy(user);
- expect(within(again).getByRole("combobox",{name:"Columna"})).toHaveValue(stock.id);expect(within(again).getByRole("radio",{name:"De mayor a menor"})).toBeChecked();
+ expect(within(again).getByRole("button",{name:"Columna Stock mínimo"})).toBeInTheDocument();expect(within(again).getByRole("radio",{name:"De mayor a menor"})).toBeChecked();
  await user.click(within(again).getByRole("button",{name:"Cancelar"}));await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  await user.click(screen.getByRole("button",{name:"Cancelar orden"}));
  expect(screen.queryByText(/Se ordenará por/)).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
@@ -1732,3 +1732,10 @@ describe("the import of a proposal's spreadsheet", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function pick(trigger: HTMLElement, option: string) {
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox")).getByRole("option", { name: option }));
+}

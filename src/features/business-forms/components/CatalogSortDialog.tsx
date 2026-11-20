@@ -4,7 +4,7 @@ import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import type { CatalogItemSort } from "../api/catalogs";
 import type { CatalogFieldDraft } from "../catalogFields";
@@ -37,7 +37,7 @@ export function CatalogSortDialog({ fields, culture, value, focusFallback, onApp
         <DialogTitle>{t("catalogs.sort.title")}</DialogTitle>
       </DialogHeader>
       <FormField label={t("catalogs.sort.column")}>
-        <NativeSelect value={column} onChange={event => setColumn(event.target.value)}>{columns.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</NativeSelect>
+        <Picker label={t("catalogs.sort.column")} value={column} onChange={setColumn} options={columns.map(option => ({ id: option.value, label: option.label }))} />
       </FormField>
       <RadioGroupField label={t("catalogs.sort.order")} showLabel help={t("catalogs.sort.orderHelp")} value={descending ? "desc" : "asc"} onValueChange={next => setDescending(next === "desc")}
         options={[{ value: "asc", label: t("catalogs.sort." + kind + ".asc") }, { value: "desc", label: t("catalogs.sort." + kind + ".desc") }]} />

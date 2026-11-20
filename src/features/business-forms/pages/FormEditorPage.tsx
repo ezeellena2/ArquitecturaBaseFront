@@ -384,7 +384,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
       const optionInput = option ? [...(container?.querySelectorAll<HTMLInputElement>("[data-choice-local-id]") ?? [])].find(element => element.dataset.choiceLocalId === option.localId) : undefined;
       const selectionInput = issue.path.includes(".selection") ? container?.querySelectorAll<HTMLInputElement>('[data-question-control="selection"] input')[issue.path.endsWith(".maxSelected") ? 1 : 0] : undefined;
       // LD1-A: a field to choose first that no longer serves is fixed in its own control, not in the catalog.
-      const groupByInput = issue.path.endsWith(".source.groupBy") ? container?.querySelector<HTMLElement>('[data-question-control="groupBy"] select') : undefined;
+      const groupByInput = issue.path.endsWith(".source.groupBy") ? container?.querySelector<HTMLElement>('[data-question-control="groupBy"] button[aria-haspopup]') : undefined;
       // CA1-A and CO1-A: a calculation or a condition to fix takes the focus to its first control.
       const engineZone = /\.(calculation|showWhen)$/.exec(issue.path)?.[1];
       const engineInput = engineZone ? engineControl(container, engineZone) : undefined;

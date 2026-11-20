@@ -14,10 +14,12 @@ function Harness() {
 }
 it("adds selected data to the description and keeps unsaved fields unavailable", async () => {
   await act(async () => { renderWithProviders(<Harness />); });
-  const description = screen.getByRole("combobox", { name: "Descripción · hasta 300" });
-  // A native option has no tooltip: its reason goes after its name, and here no value is loaded (2026-10-31).
-  expect(within(description).getByRole("option", { name: "Teléfono · Guardá el campo primero" })).toBeDisabled();
-  await userEvent.selectOptions(description, field.id);
+  const list = await openList("Descripción · hasta 300 Agregar campo");
+  // A field still unsaved is off and says why after its name; here no value is loaded (2026-10-31).
+  const unsaved = within(list).getByRole("option", { name: "Teléfono" });
+  expect(unsaved).toHaveAttribute("aria-disabled", "true");
+  expect(unsaved).toHaveAccessibleDescription("Guardá el campo primero");
+  await userEvent.click(within(list).getByRole("option", { name: "CUIT" }));
   expect(screen.getByText("Disponible · 30-71234567-8")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Quitar Texto de Título · hasta 30 caracteres" })).toBeDisabled();
 });
@@ -59,3 +61,11 @@ it("counts long titles and descriptions of the loaded options in each catalog la
   expect(screen.queryByText(/^En español/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Podés guardar/)).not.toBeInTheDocument();
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(name: string | RegExp) {
+  const trigger = screen.getByRole("button", { name });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}

@@ -1,11 +1,14 @@
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { FormField } from "@/shared/ui/FormField";
+import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/IconButton";
 import { PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker, type PickerOption } from "@/shared/ui/Picker";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 
 interface LabeledChoice { readonly key: string; readonly label: string }
@@ -41,25 +44,30 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
   const textColumns = displayColumns.filter(column => column.key === "name");
   const filterColumns = columns.filter(column => column.canFilter !== false && column.operators.length > 0);
   const sortColumns = columns.filter(column => column.canSort !== false);
+  const directionId = useId();
+  // A chosen key that is no longer offered stays first, named as unavailable, so the field still says what it keeps.
+  const choices = (items: readonly LabeledChoice[], current: string | null, unavailable: string): PickerOption[] => [
+    ...current === null || items.some(item => item.key === current) ? [] : [{ id: current, label: t(unavailable) }],
+    ...items.map(item => ({ id: item.key, label: item.label }))];
   const changeCondition = (localId: string, changes: Partial<CatalogFiltersEditorValue["conditions"][number]>) => onChange({ ...value, conditions: value.conditions.map(condition => condition.localId === localId ? { ...condition, ...changes } : condition) });
   return <Surface title={t("catalogs.filters.title")} padded>
     <div className="grid gap-4 sm:grid-cols-3">
       <FormField label={t("catalogs.filters.view")} hint={t("catalogs.filters.columns", { names: displayColumns.map(column => column.label).join(", ") })}>
-        <NativeSelect value={view.key} disabled><option value={view.key}>{view.label}</option></NativeSelect>
+        <Picker label={t("catalogs.filters.view")} disabled value={view.key} options={[{ id: view.key, label: view.label }]} onChange={() => undefined} />
       </FormField>
-      <FormField label={t("catalogs.filters.textColumn")} error={errors["filters.textColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.textColumn} onChange={event => onChange({ ...value, textColumn: event.target.value })}>{!textColumns.some(column => column.key === value.textColumn) ? <option value={value.textColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{textColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
-      <FormField label={t("catalogs.items.detail")} error={errors["filters.detailColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.detailColumn ?? ""} onChange={event => onChange({ ...value, detailColumn: event.target.value || null })}><option value="">{t("catalogs.filters.noDetail")}</option>{value.detailColumn !== null && !displayColumns.some(column => column.key === value.detailColumn) ? <option value={value.detailColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{displayColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
+      <FormField label={t("catalogs.filters.textColumn")} error={errors["filters.textColumn"]?.join(" ")}><Picker label={t("catalogs.filters.textColumn")} disabled={disabled} value={value.textColumn} onChange={textColumn => onChange({ ...value, textColumn })} options={choices(textColumns, value.textColumn, "catalogs.filters.unavailableColumn")} /></FormField>
+      <FormField label={t("catalogs.items.detail")} error={errors["filters.detailColumn"]?.join(" ")}><Picker label={t("catalogs.items.detail")} disabled={disabled} value={value.detailColumn ?? ""} first={{ id: "", label: t("catalogs.filters.noDetail") }} onChange={detailColumn => onChange({ ...value, detailColumn: detailColumn || null })} options={choices(displayColumns, value.detailColumn, "catalogs.filters.unavailableColumn")} /></FormField>
     </div>
     <div className="flex flex-col gap-3"><p className="text-sm font-medium">{t("catalogs.filters.conditions")}</p>
       {value.conditions.map((condition, index) => {
         const column = filterColumns.find(candidate => candidate.key === condition.column);
         return <div key={condition.localId} className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <FormField label={t(index === 0 ? "catalogs.filters.if" : "catalogs.filters.and")}><NativeSelect aria-label={t("catalogs.filters.conditionColumn", { number: index + 1 })} disabled={disabled} value={condition.column} onChange={event => {
-            const next = filterColumns.find(candidate => candidate.key === event.target.value);
+          <FormField label={t(index === 0 ? "catalogs.filters.if" : "catalogs.filters.and")}><Picker label={t("catalogs.filters.conditionColumn", { number: index + 1 })} disabled={disabled} value={condition.column} onChange={key => {
+            const next = filterColumns.find(candidate => candidate.key === key);
             if (next?.operators[0]) changeCondition(condition.localId, { column: next.key, operator: next.operators[0].key, value: next.choices?.[0]?.key ?? "" });
-          }}>{!column ? <option value={condition.column}>{t("catalogs.filters.unavailableColumn")}</option> : null}{filterColumns.map(candidate => <option key={candidate.key} value={candidate.key}>{candidate.label}</option>)}</NativeSelect></FormField>
-          <FormField label={t("catalogs.filters.comparison")}><NativeSelect aria-label={t("catalogs.filters.conditionComparison", { number: index + 1 })} disabled={disabled || !column} value={condition.operator} onChange={event => changeCondition(condition.localId, { operator: event.target.value })}>{!column?.operators.some(operator => operator.key === condition.operator) ? <option value={condition.operator}>{t("catalogs.filters.unavailableOperator")}</option> : null}{column?.operators.map(operator => <option key={operator.key} value={operator.key}>{operator.label}</option>)}</NativeSelect></FormField>
-          <FormField label={t("catalogs.filters.value")} error={errors[`filters.conditions[${index}]`]?.join(" ")}>{column?.choices ? <NativeSelect aria-label={t("catalogs.filters.conditionValue", { number: index + 1 })} disabled={disabled} value={condition.value} onChange={event => changeCondition(condition.localId, { value: event.target.value })}>{!column.choices.some(choice => choice.key === condition.value) ? <option value={condition.value}>{t("catalogs.filters.unavailableValue")}</option> : null}{column.choices.map(choice => <option key={choice.key} value={choice.key}>{choice.label}</option>)}</NativeSelect>
+          }} options={choices(filterColumns, condition.column, "catalogs.filters.unavailableColumn")} /></FormField>
+          <FormField label={t("catalogs.filters.comparison")}><Picker label={t("catalogs.filters.conditionComparison", { number: index + 1 })} disabled={disabled || !column} value={condition.operator} onChange={operator => changeCondition(condition.localId, { operator })} options={choices(column?.operators ?? [], condition.operator, "catalogs.filters.unavailableOperator")} /></FormField>
+          <FormField label={t("catalogs.filters.value")} error={errors[`filters.conditions[${index}]`]?.join(" ")}>{column?.choices ? <Picker label={t("catalogs.filters.conditionValue", { number: index + 1 })} disabled={disabled} value={condition.value} onChange={choice => changeCondition(condition.localId, { value: choice })} options={choices(column.choices, condition.value, "catalogs.filters.unavailableValue")} />
             : <Input aria-label={t("catalogs.filters.conditionValue", { number: index + 1 })} readOnly={disabled || !column} value={condition.value} onChange={event => changeCondition(condition.localId, { value: event.target.value })} />}</FormField>
           {canManage ? <IconButton label={t("catalogs.filters.remove", { number: index + 1 })} disabled={busy} onClick={() => onChange({ ...value, conditions: value.conditions.filter(current => current.localId !== condition.localId) })}><TrashIcon className="size-4" /></IconButton> : null}
         </div>;
@@ -72,8 +80,11 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
     <div className="grid gap-4 sm:grid-cols-2">
       <CheckboxField label={t("catalogs.filters.excludeRecipient")} disabled={disabled} checked={value.excludeRecipient} onCheckedChange={excludeRecipient => onChange({ ...value, excludeRecipient })} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <FormField label={t("catalogs.filters.order")} error={errors["filters.sortColumn"]?.join(" ")}><NativeSelect disabled={disabled} value={value.sortColumn} onChange={event => onChange({ ...value, sortColumn: event.target.value })}>{!sortColumns.some(column => column.key === value.sortColumn) ? <option value={value.sortColumn}>{t("catalogs.filters.unavailableColumn")}</option> : null}{sortColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</NativeSelect></FormField>
-        <FormField label={t("catalogs.filters.direction")}><NativeSelect disabled={disabled} value={value.sortDescending ? "desc" : "asc"} onChange={event => onChange({ ...value, sortDescending: event.target.value === "desc" })}><option value="asc">{t("catalogs.filters.ascending")}</option><option value="desc">{t("catalogs.filters.descending")}</option></NativeSelect></FormField>
+        <FormField label={t("catalogs.filters.order")} error={errors["filters.sortColumn"]?.join(" ")}><Picker label={t("catalogs.filters.order")} disabled={disabled} value={value.sortColumn} onChange={sortColumn => onChange({ ...value, sortColumn })} options={choices(sortColumns, value.sortColumn, "catalogs.filters.unavailableColumn")} /></FormField>
+        {/* Two fixed options, in sight and one click away: «A → Z» and «Z → A». */}
+        <div className="flex flex-col gap-1.5"><GroupLabel id={directionId}>{t("catalogs.filters.direction")}</GroupLabel>
+          <SegmentedControl aria-label={t("catalogs.filters.direction")} disabled={disabled} options={([false, true] as const).map(descending => ({ key: descending ? "desc" : "asc",
+            label: t(descending ? "catalogs.filters.descending" : "catalogs.filters.ascending"), pressed: value.sortDescending === descending, onSelect: () => onChange({ ...value, sortDescending: descending }) }))} /></div>
       </div>
     </div>
   </Surface>;
