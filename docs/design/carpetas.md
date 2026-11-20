@@ -10,6 +10,36 @@ para documentos, este documento congela lo elegido. Alcance, permisos y contrato
 [plan de carpetas](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md) y
 [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#carpetas--cp1-a-a-cp5-a-2026-11-09).
 
+## CM1 a CM6: las carpetas son menús (aprobado el 2026-11-20, sin programar)
+
+El usuario lo pidió y aprobó los tableros el 2026-11-20. Reemplaza:
+- CP1-A en los listados, y CP3-A y CP5-A;
+- el límite de cinco niveles;
+- lo que dicen de eso las secciones de más abajo, que siguen describiendo el código de hoy hasta que se programe.
+
+Origen: el lienzo [Carpetas en el menú lateral](https://claude.ai/artifact/Ae5jKLH9BkQbgG2X7P8GLe), revisado contra las
+capturas reales y la lista de chequeo. Alcance, contratos y pruebas: el
+[plan](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md#las-carpetas-son-menús-cm1-a-cm6-2026-11-20).
+
+| Tablero | Qué define |
+| --- | --- |
+| **CM1 · El menú** | Cada carpeta del primer nivel es un menú, después de WhatsApp y antes de Administración, en orden alfabético y con su ícono, con «Nueva carpeta» al final para quien administra formularios. Abre su panel como Administración: en la banda, el ícono, el nombre y el ⋮; arriba, sus formularios activos; debajo, un grupo plegable por subcarpeta, abierto sólo el del formulario abierto; al final, «Agregar formularios». El formulario abre la planilla, la carga o el diseño, según lo que puede la persona, y las migas dicen «Repartos / Control de carga». |
+| **CM2 · Crear y poner formularios** | «Nueva carpeta» abre un diálogo con el nombre y el ícono; el ícono arranca en el primero libre. La carpeta aparece abierta, con «Todavía no hay formularios en «Compras»» y «Agregar formularios». Ese botón abre «Formularios de «Compras»»: un buscador y una casilla por formulario no dado de baja, con los que ya están primero y la etiqueta «Borrador» en los borradores. Guarda los formularios de esa carpeta con la lista leída; si otro la cambió, conserva lo marcado y avisa con «Volver a leer». |
+| **CM3 · Los listados y «Carpetas…»** | Los tres listados, sin panel y sin el desplegable «Carpeta: Todos». Diseñar formularios y Catálogos suman el filtro «Carpeta», como Estado: «Todas» separada, «Sin carpeta» y las carpetas con sus subcarpetas debajo, con la tilde a la izquierda y `?carpeta=`. «Carpetas…» muestra dos niveles; su «Nueva carpeta» abre el diálogo de CM2 y deja tildada la carpeta creada, y sólo la ve quien administra formularios. |
+| **CM4 · Ordenar** | El ⋮ de la carpeta ofrece «Editar…», «Nueva subcarpeta…», «Mover a…» y «Borrar». Con subcarpetas, «Mover a…» queda apagado con «Tiene subcarpetas: no puede ir adentro de otra.». El ⋮ de la subcarpeta ofrece «Editar…», «Agregar formularios…», «Mover a…» y «Borrar». Mover elige entre «Al menú, como carpeta propia» y «Adentro de «X»». Borrar cuenta lo que se pierde y nunca borra un formulario ni un catálogo. |
+| **CM5 · Personas y pantallas** | Quien sólo carga no ve «Nueva carpeta», ni los ⋮, ni «Agregar formularios», y no le aparece nada vacío. En el celular, las carpetas son grupos del cajón, con el ⋮ en la carpeta y en cada subcarpeta. Con el menú contraído, cada carpeta es su ícono con tooltip y abre su panel. |
+| **CM6 · Estados** | Sin carpetas, error con «Reintentar», nombre repetido, 409 con «Volver a leer», subcarpeta vacía con su propio «Agregar formularios», y carpeta con sólo catálogos con «Ver sus N catálogos». Mientras se lee, no ocupan lugar. El menú se relee solo al publicar, dar de baja, reactivar o eliminar un formulario. |
+
+**Piezas y medidas**, las de la app a 1440 px con la raíz al 75 %:
+- **El panel de una carpeta:** `PanelTrigger` y el panel de 14 rem con banda de 3 rem, como Administración. Su ⋮ es un
+  `ActionsMenu` de 1,5 rem, sin recuadro.
+- **Los grupos:** `NavBranch`. Su ⋮ aparece al pasar el mouse o con el foco, y siempre con `@media (hover: none)`.
+- **«Nueva carpeta» y «Agregar formularios»:** son renglones del menú, con su +. Es una diferencia aceptada con «Navegación»,
+  porque el menú es el único lugar de las carpetas y lo escondido en un «…» fue lo que el usuario no encontró.
+- **Los diálogos:** de 32 rem. El ícono se elige con el `Select` de hoy, con el dibujo y el nombre. Los formularios, con un
+  buscador y `CheckboxField`.
+- **El filtro «Carpeta»:** un `FilterMenuTrigger` con un `DropdownMenuRadioGroup`.
+
 ## Los tableros
 
 | Tablero | Qué define |
