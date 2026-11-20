@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -47,6 +47,30 @@ function profileHandlers(saved: ProfileBody[], account: { profile: CurrentUser }
   ];
 }
 
+// The language is a segmented control and the time zone is the Picker, with its search inside the list (DS1-A).
+async function chooseLanguage(group: string, language: string) {
+  await userEvent.click(within(await screen.findByRole("group", { name: group })).getByRole("button", { name: language }));
+}
+
+async function openZones() {
+  const trigger = await screen.findByRole("button", { name: /^Zona horaria/ });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Zona horaria" });
+}
+
+/// The option the list opened on, found by the search's active one: naming each of some 420 options is slow.
+function activeZone() {
+  const search = screen.getByRole("combobox", { name: "Buscar en Zona horaria" });
+  return document.getElementById(search.getAttribute("aria-activedescendant") ?? "");
+}
+
+async function pickZone(city: string) {
+  const list = await openZones();
+  await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Zona horaria" }), city);
+  await userEvent.click(within(list).getByRole("option", { name: city }));
+}
+
 describe("ProfilePage", () => {
   beforeEach(() => {
     queryClient.clear();
@@ -70,7 +94,7 @@ describe("ProfilePage", () => {
 
     await userEvent.clear(name);
     await userEvent.type(name, "Ana María");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Zona horaria" }), "America/Montevideo");
+    await pickZone("Montevideo");
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     // Los tres campos viajan siempre, aunque se haya tocado uno: el PUT reemplaza el perfil.
@@ -147,10 +171,11 @@ describe("ProfilePage", () => {
     renderRouteWithProviders("/perfil");
 
     // El navegador canoniza esa zona como "America/Buenos_Aires". Si la lista fueran solo las suyas, el
-    // desplegable arrancaría sin nada elegido y guardar le cambiaría la zona horaria a la persona sin avisar.
-    expect(await screen.findByRole("combobox", { name: "Zona horaria" })).toHaveValue(
-      "America/Argentina/Buenos_Aires",
-    );
+    // campo arrancaría sin nada elegido y guardar le cambiaría la zona horaria a la persona sin avisar.
+    expect(await screen.findByRole("button", { name: "Zona horaria Buenos Aires" })).toBeInTheDocument();
+    await openZones();
+    expect(activeZone()).toHaveAccessibleName("Buenos Aires");
+    expect(activeZone()).toHaveAttribute("aria-selected", "true");
   });
 
   it("switches the interface to the language it just saved", async () => {
@@ -158,7 +183,7 @@ describe("ProfilePage", () => {
 
     renderRouteWithProviders("/perfil");
 
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Idioma" }), "en");
+    await chooseLanguage("Idioma", "Inglés");
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     // Sin recargar nada: el perfil guardado vuelve a la caché y de ahí lo toma `useProfileLanguageSync`.
@@ -191,14 +216,14 @@ describe("ProfilePage", () => {
 
     renderRouteWithProviders("/perfil");
 
-    const zone = await screen.findByRole("combobox", { name: "Zona horaria" });
-    await userEvent.selectOptions(zone, "America/Montevideo");
+    await pickZone("Montevideo");
+    const zone = screen.getByRole("button", { name: /^Zona horaria/ });
     // Un administrador le cambió el nombre mientras tanto.
     account.profile = { ...account.profile, displayName: "Ana Paz", revision: 2 };
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
 
     expect(await screen.findByText(conflictText)).toBeInTheDocument();
-    expect(zone).toHaveValue("America/Montevideo");
+    expect(zone).toHaveAccessibleName("Zona horaria Montevideo");
     const main = within(screen.getByRole("main"));
     expect(main.getByRole("button", { name: "Guardar" })).toHaveAttribute("aria-disabled", "true");
 
@@ -208,11 +233,14 @@ describe("ProfilePage", () => {
     await waitFor(() => expect(within(comparison).getByRole("heading", { name: "Revisar cambios" })).toHaveFocus());
     // «Mi borrador» es lo que quedaría al conservar: el nombre que cambió el otro y no toqué no se pisa, así que no está.
     expect(within(comparison).getAllByRole("rowheader").map((header) => header.textContent)).toEqual(["Zona horaria"]);
+    // La zona se nombra como en su lista, por su ciudad.
+    expect(within(comparison).getByRole("cell", { name: "Buenos Aires" })).toBeInTheDocument();
+    expect(within(comparison).getByRole("cell", { name: "Montevideo" })).toBeInTheDocument();
 
     await userEvent.click(within(comparison).getByRole("button", { name: "Conservar mis cambios" }));
 
     expect(screen.getByRole("textbox", { name: "Nombre" })).toHaveValue("Ana Paz");
-    expect(zone).toHaveValue("America/Montevideo");
+    expect(zone).toHaveAccessibleName("Zona horaria Montevideo");
     await userEvent.click(main.getByRole("button", { name: "Guardar" }));
 
     await waitFor(() => expect(saved).toEqual([{ displayName: "Ana Paz", culture: "es", timeZoneId: "America/Montevideo" }]));
@@ -225,7 +253,7 @@ describe("ProfilePage", () => {
 
     renderRouteWithProviders("/perfil");
 
-    await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Zona horaria" }), "America/Montevideo");
+    await pickZone("Montevideo");
     // Un administrador le desactivó y volvió a activar la cuenta: avanza la revisión sin tocar lo que el PUT reemplaza.
     account.profile = { ...account.profile, revision: 2 };
     await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
@@ -250,10 +278,10 @@ describe("ProfilePage", () => {
     await userEvent.keyboard("{Enter}");
     await userEvent.click(await screen.findByRole("menuitemradio", { name: /inglés/i }));
 
-    // El desplegable de la pantalla tiene que acompañar: antes seguía diciendo "Spanish" con la interfaz ya
+    // El idioma de la pantalla tiene que acompañar: antes seguía diciendo "Spanish" con la interfaz ya
     // en inglés, y el primer Guardar mandaba culture: "es" y devolvía la cuenta a español.
-    const language = await screen.findByRole("combobox", { name: "Language" });
-    await waitFor(() => expect(language).toHaveValue("en"));
+    const language = await screen.findByRole("group", { name: "Language" });
+    await waitFor(() => expect(within(language).getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true"));
     await waitFor(() => expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: currentUser.timeZoneId }]));
     // El idioma no avanza la revisión: la pantalla lo sigue aparte, y Guardar no queda prendido por él.
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -339,8 +367,8 @@ describe("ProfilePage", () => {
 
     // Sin leyendas debajo de los campos.
     expect(details.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
-    expect(details.getByRole("combobox", { name: "Idioma" })).not.toHaveAccessibleDescription();
-    expect(details.getByRole("combobox", { name: "Zona horaria" })).not.toHaveAccessibleDescription();
+    expect(details.getByRole("group", { name: "Idioma" })).not.toHaveAccessibleDescription();
+    expect(details.getByRole("button", { name: "Zona horaria Buenos Aires" })).not.toHaveAccessibleDescription();
   });
 
   it("keeps Save off until something changes, and off again when it goes back to what is saved", async () => {
@@ -357,14 +385,23 @@ describe("ProfilePage", () => {
     expect(save).toBeDisabled();
   });
 
-  /// Como en Configuración: la zona se lee con espacios, y lo que se guarda sigue siendo el identificador de IANA.
-  it("reads the time zone with spaces instead of underscores", async () => {
+  /// La lista única de zonas, como en Configuración (DS1-A): la ciudad y, en gris, la hora de su país y el desfase; lo
+  /// que se guarda sigue siendo el identificador de IANA.
+  it("names the time zone by its city, with the time of its country in grey, and saves its identifier", async () => {
+    const saved: ProfileBody[] = [];
+    server.use(...profileHandlers(saved));
     renderRouteWithProviders("/perfil");
 
-    const zone = await screen.findByRole("combobox", { name: "Zona horaria" });
+    expect(await screen.findByRole("button", { name: "Zona horaria Buenos Aires" })).toHaveTextContent("Buenos Aires");
+    const list = await openZones();
+    expect(activeZone()).toHaveAccessibleDescription(/Argentina · GMT-3$/);
 
-    expect(zone).toHaveDisplayValue("America/Argentina/Buenos Aires");
-    expect(zone).toHaveValue("America/Argentina/Buenos_Aires");
+    // The search finds a zone by its country too.
+    await userEvent.type(screen.getByRole("combobox", { name: "Buscar en Zona horaria" }), "Urug");
+    await userEvent.click(within(list).getByRole("option", { name: "Montevideo" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(saved).toEqual([{ displayName: "Ana", culture: "es", timeZoneId: "America/Montevideo" }]));
   });
 
   it("opens for an account created with WhatsApp, without an empty email", async () => {

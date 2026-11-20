@@ -17,9 +17,11 @@ import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
 import { Page } from "@/shared/ui/Page";
+import { Picker } from "@/shared/ui/Picker";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { timeZoneCity, timeZoneOptions } from "@/shared/lib/timeZones";
 
 interface Draft {
   displayName: string;
@@ -31,22 +33,6 @@ interface Draft {
 /// ingreso y el chat de WhatsApp.
 const zonesClassName = "flex flex-col gap-4";
 
-/// Los desplegables son `<select>` nativos y no el `Select` de shadcn: la lista de zonas horarias pasa las
-/// cuatrocientas opciones, y el nativo trae gratis la búsqueda por teclado del sistema operativo y el
-/// selector de rueda del teléfono, que es lo que hace usable una lista así. `NativeSelect` comparte los
-/// tokens de los otros controles del sistema visual.
-
-/// Las zonas que conoce el navegador (ya vienen ordenadas), más la que tiene guardada el perfil si no está
-/// entre ellas. `Intl.supportedValuesOf` devuelve los nombres canónicos de IANA y el backend puede tener
-/// guardado un alias: el seed usa `America/Argentina/Buenos_Aires`, que el navegador llama
-/// `America/Buenos_Aires`. Sin este agregado, el desplegable arrancaría sin ninguna opción elegida y guardar
-/// le cambiaría la zona horaria a la persona sin que lo haya pedido.
-function timeZoneOptions(current: string | undefined): string[] {
-  const zones = Intl.supportedValuesOf("timeZone");
-
-  return current && !zones.includes(current) ? [current, ...zones].sort() : zones;
-}
-
 /// Lo que el PUT reemplaza tal como estaba guardado cuando se sembró el borrador, con su revisión (N2). Guardar manda esa
 /// revisión, y lo que el borrador cambió se mide contra esto.
 interface Baseline {
@@ -56,7 +42,7 @@ interface Baseline {
   revision: number;
 }
 
-/// Si la cuenta tuviera un idioma que el front no sabe hablar, el desplegable no lo podría mostrar.
+/// An account in a language the front cannot speak: the language control could not show it.
 function cultureOf(culture: string): SupportedLanguage {
   return isSupportedLanguage(culture) ? culture : "es";
 }
@@ -110,7 +96,8 @@ function ProfileReview({ current, kept, disabled, titleRef, onAccept }: {
     ...(saved.culture === kept.culture ? [] : [{ key: "culture", identity: [t("form.language")],
       lines: [{ key: "value", before: text(t(`common:language.${saved.culture}`)), after: text(t(`common:language.${kept.culture}`)) }] }]),
     ...(saved.timeZoneId === kept.timeZoneId ? [] : [{ key: "timeZoneId", identity: [t("form.timeZone")],
-      lines: [{ key: "value", before: text(saved.timeZoneId.replaceAll("_", " ")), after: text(kept.timeZoneId.replaceAll("_", " ")) }] }]),
+      // The zone is named as in its list, by its city (DS1-A).
+      lines: [{ key: "value", before: text(timeZoneCity(saved.timeZoneId)), after: text(timeZoneCity(kept.timeZoneId)) }] }]),
   ];
 
   return (
@@ -130,7 +117,7 @@ function ProfileReview({ current, kept, disabled, titleRef, onAccept }: {
 /// perfil» es este formulario; «Medios de ingreso» (`LoginMethodsCard`) dice con qué entra la cuenta y su último ingreso;
 /// «Chat de WhatsApp» (`WhatsAppChatCard`), si el chat del número está vinculado y si llegan los avisos.
 export function ProfilePage() {
-  const { t } = useTranslation("profile");
+  const { t, i18n } = useTranslation("profile");
   const { data: user, isPending } = useCurrentUser();
   const queryClient = useQueryClient();
   const formId = useId();
@@ -207,7 +194,7 @@ export function ProfilePage() {
     setDraft(draftOf(user));
   } else if (user && draft && baseline) {
     // El idioma de la cuenta cambió desde afuera de esta pantalla (el menú del usuario, que lo guarda de una). El
-    // desplegable tiene que seguirlo: si no, queda contradiciendo a la interfaz y el primer Guardar manda el idioma viejo,
+    // segmentado tiene que seguirlo: si no, queda contradiciendo a la interfaz y el primer Guardar manda el idioma viejo,
     // que el PUT reemplaza, y devuelve la cuenta al idioma anterior. Se toca solo `culture`, para no pisar el nombre a
     // medio escribir. Va aparte de la revisión, porque el idioma no la avanza.
     const followsCulture = user.culture !== baseline.culture;
@@ -260,9 +247,10 @@ export function ProfilePage() {
     dismissNotification(reviewNoticeId);
   }
 
-  // La lista no cambia mientras la pantalla está abierta: sin el memo se volvería a armar en cada tecla que
-  // se escribe en el nombre.
-  const timeZones = useMemo(() => timeZoneOptions(user?.timeZoneId), [user?.timeZoneId]);
+  // The only list of time zones (DS1-A), keeping the saved one even if the browser spells it another way (the seed's
+  // `America/Argentina/Buenos_Aires`): without it the field would start empty and saving would change the person's zone.
+  // The memo keeps it from being built again on every key typed in the name.
+  const timeZones = useMemo(() => timeZoneOptions(i18n.language, [user?.timeZoneId]), [i18n.language, user?.timeZoneId]);
 
   if (!user || !draft || !baseline) {
     return (
@@ -334,41 +322,33 @@ export function ProfilePage() {
             </div>
 
             <div className="w-full sm:w-72">
+              {/* Two fixed options, in sight and one click away (DS1-A). */}
               <FormField label={t("form.language")} error={fieldErrors?.culture?.[0]}>
-                <NativeSelect
-                  value={draft.culture}
-                  onChange={(event) => {
-                    const value = event.target.value;
-
-                    if (isSupportedLanguage(value)) {
-                      setDraft({ ...draft, culture: value });
-                    }
-                  }}
-                >
-                  {supportedLanguages.map((language) => (
-                    <option key={language} value={language}>
-                      {t(`common:language.${language}`)}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <SegmentedControl
+                  fullWidth
+                  aria-label={t("form.language")}
+                  options={supportedLanguages.map((language) => ({
+                    key: language,
+                    label: t(`common:language.${language}`),
+                    pressed: draft.culture === language,
+                    onSelect: () => {
+                      if (language !== draft.culture) setDraft({ ...draft, culture: language });
+                    },
+                  }))}
+                />
               </FormField>
             </div>
 
-            {/* Los nombres de las zonas no se traducen: son identificadores de IANA, los mismos que guarda el backend, y
-                son la forma en que la gente las busca ("Montevideo", "Madrid"). Se leen con espacios en vez de guiones
-                bajos, como en Configuración; el valor que viaja no cambia. */}
+            {/* The city and, in grey, the time of its country and its offset, with the search inside the list (on the
+                phone, the list takes the screen). What travels is still the IANA identifier. */}
             <div className="w-full sm:w-96">
               <FormField label={t("form.timeZone")} error={fieldErrors?.timeZoneId?.[0]}>
-                <NativeSelect
+                <Picker
+                  label={t("form.timeZone")}
+                  options={timeZones}
                   value={draft.timeZoneId}
-                  onChange={(event) => setDraft({ ...draft, timeZoneId: event.target.value })}
-                >
-                  {timeZones.map((zone) => (
-                    <option key={zone} value={zone}>
-                      {zone.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </NativeSelect>
+                  onChange={(timeZoneId) => setDraft({ ...draft, timeZoneId })}
+                />
               </FormField>
             </div>
           </form>
