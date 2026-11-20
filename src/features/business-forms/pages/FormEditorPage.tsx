@@ -75,6 +75,7 @@ const FormRulesSection = lazy(() => import("../components/FormRulesSection").the
 function engineControl(container: HTMLElement | undefined, zone: string): HTMLElement | null {
   const root = container?.querySelector<HTMLElement>(`[data-question-control="${zone}"]`);
   return [...root?.querySelectorAll<HTMLSelectElement>("select:not(:disabled)") ?? []].find(select => select.value === "")
+    ?? root?.querySelector<HTMLElement>("[data-engine-unset] button[aria-haspopup]:not(:disabled)")
     ?? root?.querySelector<HTMLElement>('[data-chips-add]:not([aria-disabled="true"]):not(:disabled)')
     ?? root?.querySelector<HTMLElement>('button[aria-pressed]:not([aria-disabled="true"])') ?? null;
 }

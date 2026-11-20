@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -26,10 +26,11 @@ describe("«Qué calcula» of a calculation (CA1-A)", () => {
     renderWithProviders(<Harness initial={number("amount", "Importe", { repeated: true, calculation: { operation: "multiply", operands: [null, null] } })} others={[freight, block, quantity, price]} />);
 
     expect(screen.getByRole("button", { name: "Multiplicar" })).toHaveAttribute("aria-pressed", "true");
-    const first = screen.getByRole("combobox", { name: "Multiplica" });
-    expect(within(first).getAllByRole("option").map(option => option.textContent)).toEqual(["Elegí una pregunta", "Cantidad (pregunta 2.1)", "Precio unitario (pregunta 2.2)"]);
-    await user.selectOptions(first, "quantity");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Por" }), "price");
+    // Nothing chosen yet: the field says «Elegí una pregunta» and its list has only the questions.
+    const first = await openList("Multiplica Elegí una pregunta");
+    expect(within(first).getAllByRole("option").map(option => option.textContent)).toEqual(["Cantidad (pregunta 2.1)", "Precio unitario (pregunta 2.2)"]);
+    await user.click(within(first).getByRole("option", { name: "Cantidad (pregunta 2.1)" }));
+    await pick("Por Elegí una pregunta", "Precio unitario (pregunta 2.2)");
     expect(screen.getByTestId("formula")).toHaveTextContent("Cantidad por Precio unitario");
     // In the block a sum is not offered: it goes outside.
     expect(screen.getByRole("button", { name: "Sumar" })).toHaveAttribute("aria-disabled", "true");
@@ -63,3 +64,14 @@ describe("«Qué calcula» of a calculation (CA1-A)", () => {
     expect(within(sum).getByRole("button", { name: "+ Agregar" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

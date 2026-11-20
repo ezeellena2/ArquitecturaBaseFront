@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { GroupLabel } from "@/shared/ui/GroupLabel";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { calculationCandidates, calculationFormula, changeCalculationOperation, draftFormulaOperands, maxSumOperands, type CalculationCandidate } from "../calculations";
 import { useCalculationWords } from "../hooks/useCalculationWords";
@@ -43,12 +43,10 @@ export function CalculationSettings({ question, questions, culture, original, re
   const operand = (place: number, label: string) => {
     const value = calculation.operands[place] ?? null;
     const list = candidates(place);
-    return <FormField label={label}><DisabledReason reason={lockedReason}><NativeSelect disabled={readOnly || !!lockedReason} value={value ?? ""}
-      onChange={event => change({ ...calculation, operands: calculation.operands.map((current, index) => index === place ? event.target.value || null : current) })}>
-      <option value="">{t("calculation.choose")}</option>
-      {value !== null && !list.some(candidate => candidate.id === value) ? <option value={value}>{t("calculation.unavailable")}</option> : null}
-      {list.map(candidate => <option key={candidate.id} value={candidate.id}>{name(candidate)}</option>)}
-    </NativeSelect></DisabledReason></FormField>;
+    return <div data-engine-unset={value === null ? "" : undefined}><FormField label={label}><DisabledReason reason={lockedReason}><Picker label={label} disabled={readOnly || !!lockedReason} value={value}
+      placeholder={t("calculation.choose")} onChange={id => change({ ...calculation, operands: calculation.operands.map((current, index) => index === place ? id : current) })}
+      options={[...value !== null && !list.some(candidate => candidate.id === value) ? [{ id: value, label: t("calculation.unavailable") }] : [], ...list.map(candidate => ({ id: candidate.id, label: name(candidate) }))]} />
+    </DisabledReason></FormField></div>;
   };
   const sumCandidates = calculation.operation === "sum" ? candidates(0) : [];
   const chosen = calculation.operands.filter((item): item is string => item !== null);

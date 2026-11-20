@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -17,22 +17,22 @@ function Harness() {
 }
 it("offers anyOf only for multiple choice and keeps another condition when values change", async () => {
   renderWithProviders(<Harness/>);
-  const operator = screen.getByRole("combobox", { name: "Condición" });
-  expect(within(operator).getByRole("option", { name: "Eligió alguna de" })).toHaveValue("anyOf");
+  const operator = await openList("Condición Tiene respuesta");
   expect(within(operator).queryByRole("option", { name: "Es una de" })).not.toBeInTheDocument();
-  await userEvent.selectOptions(operator, "anyOf");
-  const values = screen.getByRole("button", { name: "Valor" });
-  values.focus(); await userEvent.keyboard("{Enter}");
-  await userEvent.click(screen.getByRole("menuitemcheckbox", { name: "Frío" }));
+  await userEvent.click(within(operator).getByRole("option", { name: "Eligió alguna de" }));
+  // The values of several: the list stays open while it marks.
+  const values = await openList("Valor Elegí los valores");
+  expect(values).toHaveAttribute("aria-multiselectable", "true");
+  await userEvent.click(within(values).getByRole("option", { name: "Frío" }));
   await userEvent.keyboard("{Escape}");
   expect(screen.getByLabelText("Condiciones confirmadas")).toHaveTextContent('"operator":"anyOf"');
   expect(screen.getByLabelText("Condiciones confirmadas")).toHaveTextContent('"values":["cold"]');
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
-  const questions = screen.getAllByRole("combobox", { name: "Pregunta" });
-  await userEvent.selectOptions(questions[1]!, "branch");
-  const operators = screen.getAllByRole("combobox", { name: "Condición" });
-  expect(within(operators[1]!).getByRole("option", { name: "Es una de" })).toHaveValue("in");
-  expect(within(operators[1]!).queryByRole("option", { name: "Eligió alguna de" })).not.toBeInTheDocument();
+  await pick(screen.getAllByRole("button", { name: /^Pregunta / })[1]!, "Sucursal");
+  const operators = await openList(screen.getAllByRole("button", { name: /^Condición / })[1]!);
+  expect(within(operators).getByRole("option", { name: "Es una de" })).toBeInTheDocument();
+  expect(within(operators).queryByRole("option", { name: "Eligió alguna de" })).not.toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
   expect(screen.getByLabelText("Condiciones confirmadas")).toHaveTextContent('"operator":"anyOf"');
 });
 
@@ -50,23 +50,25 @@ function BlockHarness({ columns = blockColumns, initial }: { columns?: ResponseC
     <output aria-label="Condiciones confirmadas">{JSON.stringify(conditions)}</output></>;
 }
 const confirmed = () => JSON.parse(screen.getByLabelText("Condiciones confirmadas").textContent!) as ResponseCondition[];
-it("offers each question of the block after its name and never the block itself", () => {
+it("offers each question of the block after its name and never the block itself", async () => {
   renderWithProviders(<BlockHarness initial={[{ fieldId: "remito", operator: "answered", values: [] }]}/>);
-  expect(within(screen.getByRole("combobox", { name: "Pregunta" })).getAllByRole("option").map(option => option.textContent))
+  expect(within(await openList("Pregunta Remito")).getAllByRole("option").map(option => option.textContent))
     .toEqual(["Remito", "Artículos › ¿Llegó en buen estado?", "Artículos › Cantidad"]);
   expect(screen.queryByText("Algún ítem con")).not.toBeInTheDocument();
 });
 it("starts a condition on a question of the block with «Algún ítem con», its first operator and only the operators with a value", async () => {
   renderWithProviders(<BlockHarness initial={[{ fieldId: "remito", operator: "answered", values: [] }]}/>);
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "quantity");
+  await pick("Pregunta Remito", "Artículos › Cantidad");
   expect(screen.getByText("Algún ítem con")).toBeVisible();
-  expect(within(screen.getByRole("combobox", { name: "Condición" })).getAllByRole("option").map(option => option.textContent))
+  expect(within(await openList("Condición Es igual a")).getAllByRole("option").map(option => option.textContent))
     .toEqual(["Es igual a", "Es mayor o igual a", "Es menor o igual a"]);
+  await userEvent.keyboard("{Escape}");
   expect(confirmed()).toEqual([{ fieldId: "quantity", operator: "equals", values: [""] }]);
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "good");
-  expect(screen.getByRole("combobox", { name: "Valor" })).toHaveValue("true");
+  await pick("Pregunta Artículos › Cantidad", "Artículos › ¿Llegó en buen estado?");
+  // Sí or No in a segmented control, with Sí pressed.
+  expect(within(screen.getByRole("group", { name: "Valor" })).getByRole("button", { name: "Sí" })).toHaveAttribute("aria-pressed", "true");
   expect(confirmed()).toEqual([{ fieldId: "good", operator: "in", values: ["true"] }]);
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), "remito");
+  await pick("Pregunta Artículos › ¿Llegó en buen estado?", "Remito");
   expect(confirmed()).toEqual([{ fieldId: "remito", operator: "answered", values: [] }]);
   expect(screen.queryByText("Algún ítem con")).not.toBeInTheDocument();
 });
@@ -81,3 +83,14 @@ it("keeps the rows aligned: with a condition of the block, every other row reser
   expect(prefixes).toHaveLength(2);
   expect(prefixes.map(prefix => prefix.getAttribute("aria-hidden"))).toEqual([null, "true"]);
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

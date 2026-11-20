@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
+import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { IconButton } from "@/shared/ui/IconButton";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
-import { MultiSelect } from "@/shared/ui/MultiSelect";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { responseQuestionColumns, type ResponseColumn, type ResponseCondition } from "../responses";
 
 const presenceOperators = ["answered", "unanswered", "notAsked"];
@@ -41,7 +42,7 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
   const pendingFocus = useRef<number | null>(null);
   useLayoutEffect(() => {
     if (pendingFocus.current === null) return;
-    host.current?.querySelector<HTMLElement>(pendingFocus.current < 0 ? "[data-add-condition]" : '[data-condition-position="' + pendingFocus.current + '"]')?.focus();
+    host.current?.querySelector<HTMLElement>(pendingFocus.current < 0 ? "[data-add-condition]" : '[data-condition-position="' + pendingFocus.current + '"] button[aria-haspopup]')?.focus();
     pendingFocus.current = null;
   }, [conditions]);
   const questions = responseQuestionColumns(columns);
@@ -68,27 +69,30 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
       return <div key={index} className={"grid items-start gap-2 " + (anyInBlock ? "sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" : "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]")}>
         {inBlock.has(condition.fieldId) ? <span className={someItemClass}>{t("rules.someItem")}</span>
           : anyInBlock ? <span aria-hidden="true" className={"invisible hidden " + someItemClass}>{t("rules.someItem")}</span> : null}
-        <FormField label={t("rules.question")} error={fieldPath && index === 0 ? error : undefined}>
-          <NativeSelect data-suggestion-field={index === 0 ? fieldPath : undefined} data-condition-position={index} disabled={blocked} value={condition.fieldId} onChange={event => {
-            const next = questions.find(column => column.fieldId === event.target.value);
-            update(next ? start(next) : { fieldId: event.target.value, operator: "answered", values: [] });
-          }}>
-            {condition.fieldId && !field && missingQuestionLabel ? <option value={condition.fieldId}>{missingQuestionLabel}</option> : null}
-            {columns.flatMap(column => column.type === "group"
-              ? (column.questions ?? []).map(question => <option key={question.fieldId} value={question.fieldId}>{t("rules.blockQuestion", { block: column.label, question: question.label })}</option>)
-              : [<option key={column.fieldId} value={column.fieldId}>{column.label}</option>])}
-          </NativeSelect>
-        </FormField>
+        {/* The marks of the first question (its owner's error) and of the position (the focus after removing a row) go around
+            the field: the Picker takes only its own props. */}
+        <div data-suggestion-field={index === 0 ? fieldPath : undefined} data-condition-position={index}><FormField label={t("rules.question")} error={fieldPath && index === 0 ? error : undefined}>
+          <Picker label={t("rules.question")} disabled={blocked} value={condition.fieldId} onChange={fieldId => {
+            const next = questions.find(column => column.fieldId === fieldId);
+            update(next ? start(next) : { fieldId, operator: "answered", values: [] });
+          }} options={[
+            ...condition.fieldId && !field && missingQuestionLabel ? [{ id: condition.fieldId, label: missingQuestionLabel }] : [],
+            ...columns.flatMap(column => column.type === "group"
+              ? (column.questions ?? []).map(question => ({ id: question.fieldId, label: t("rules.blockQuestion", { block: column.label, question: question.label }) }))
+              : [{ id: column.fieldId, label: column.label }])]} />
+        </FormField></div>
         <FormField label={t("rules.operator")}>
-          <NativeSelect disabled={blocked} value={condition.operator} onChange={event => update({ ...condition, operator: event.target.value, values: firstValues(event.target.value, field) })}>
-            {operatorsOf(field).map(operator => <option key={operator} value={operator}>{t("rules.operators." + operator)}</option>)}
-          </NativeSelect>
+          <Picker label={t("rules.operator")} disabled={blocked} value={condition.operator} onChange={operator => update({ ...condition, operator, values: firstValues(operator, field) })}
+            options={operatorsOf(field).map(operator => ({ id: operator, label: t("rules.operators." + operator) }))} />
         </FormField>
-        {!presence ? <FormField label={t("rules.value")}>
-          {field?.type === "boolean" ? <NativeSelect disabled={blocked} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}><option value="true">{t("responses.yes")}</option><option value="false">{t("responses.no")}</option></NativeSelect>
-            : field?.type === "choice" || field?.type === "multiChoice" ? <MultiSelect disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ value: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
-            : <Input disabled={blocked} type={field?.type === "date" ? "date" : "text"} inputMode={field?.type === "decimal" ? "decimal" : undefined} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}/>}
-        </FormField> : <span/>}
+        {/* Sí or No, two fixed options, in a segmented control; the options of a question, several, in the Picker. */}
+        {presence ? <span/> : field?.type === "boolean" ? <div className="flex flex-col gap-1.5"><GroupLabel id={`${errorId}-value-${index}`}>{t("rules.value")}</GroupLabel>
+          <SegmentedControl aria-label={t("rules.value")} disabled={blocked} options={(["true", "false"] as const).map(choice => ({ key: choice, label: t(choice === "true" ? "responses.yes" : "responses.no"),
+            pressed: condition.values?.[0] === choice, onSelect: () => update({ ...condition, values: [choice] }) }))}/></div>
+          : <FormField label={t("rules.value")}>
+            {field?.type === "choice" || field?.type === "multiChoice" ? <Picker label={t("rules.value")} multiple disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ id: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
+              : <Input disabled={blocked} type={field?.type === "date" ? "date" : "text"} inputMode={field?.type === "decimal" ? "decimal" : undefined} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}/>}
+          </FormField>}
         <IconButton className="sm:mt-6" label={t("rules.removeCondition", { number: index + 1 })} disabled={blocked} onClick={() => { pendingFocus.current = Math.min(index, conditions.length - 2); onChange(conditions.filter((_, position) => position !== index)); }}><TrashIcon className="size-4"/></IconButton>
       </div>;
     })}

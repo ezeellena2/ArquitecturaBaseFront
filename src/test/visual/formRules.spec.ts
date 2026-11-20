@@ -62,7 +62,7 @@ for (const language of ["es", "en"] as const)
       await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-rules&lang=" + language);
       await expect(page.getByRole("heading", { name: en ? "Register visit" : "Registrar visita", exact: true })).toBeVisible();
       await page.getByRole("button", { name: en ? "Add rule" : "Agregar regla", exact: true }).click();
-      await page.getByRole("combobox", { name: en ? "When" : "Cuándo", exact: true }).selectOption("Approved");
+      await page.getByRole("radio", { name: en ? "A response is approved" : "Se aprueba una respuesta", exact: true }).click();
       await page.getByRole("button", { name: en ? "Add action" : "Agregar acción", exact: true }).click();
       await page.getByRole("textbox", { name: en ? "Message" : "Mensaje", exact: true }).fill(en ? "We approved it." : "La aprobamos.");
       const attach = page.getByRole("checkbox", { name: en ? "Attach PDF" : "Adjuntar el PDF", exact: true });
@@ -76,7 +76,7 @@ for (const language of ["es", "en"] as const)
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await page.screenshot({ path: "test-results/rules-pdf-attachment-" + language + "-" + width + ".png", fullPage: true });
       await fix.click();
-      await expect(page.getByRole("combobox", { name: en ? "Action 1" : "Acción 1", exact: true })).toHaveValue("GeneratePdf");
+      await expect(page.getByRole("button", { name: en ? "Action 1 Generate PDF" : "Acción 1 Armar el PDF", exact: true })).toBeVisible();
       await expect(attach).toBeChecked();
       await expect(attach).toBeFocused();
       await expect(page.getByRole("alert").filter({ hasText: reason })).toHaveCount(0);

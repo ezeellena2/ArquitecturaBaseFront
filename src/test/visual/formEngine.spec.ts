@@ -36,7 +36,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
 
     // CA1-A: «Qué calcula» of the amount, in the block, with its two lists and «Sumar» off with its reason.
     await page.getByRole("button", { name: text(language, "Editar Importe", "Edit Amount"), exact: true }).click();
-    await expect(page.getByRole("combobox", { name: text(language, "Multiplica", "Multiplies"), exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Multiplica", "Multiplies") + " ") })).toBeVisible();
     await expect(page.getByRole("button", { name: text(language, "Sumar", "Add"), exact: true })).toHaveAttribute("aria-disabled", "true");
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/engine-calculation-" + language + "-" + width + ".png", fullPage: true });

@@ -60,5 +60,5 @@ it("stops Guardar at a calculation still to complete, says what is missing and t
 
   expect(store.writes).toHaveLength(writes);
   expect(within(total).getByText("Elegí las preguntas que usa el cálculo.")).toBeVisible();
-  await waitFor(() => expect(within(total).getByRole("combobox", { name: "Multiplica" })).toHaveFocus());
+  await waitFor(() => expect(within(total).getByRole("button", { name: /^Multiplica / })).toHaveFocus());
 }, 30000);

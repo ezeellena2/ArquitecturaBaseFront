@@ -47,7 +47,7 @@ it("saves rules independently using only the original language and records the n
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={dirty} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "NotifyAuthor");
+  await pick(/^Acción 1 /, "Mandarle un mensaje a quien la cargó");
   await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Recibimos ");
   await userEvent.click(screen.getByRole("button", { name: "Agregar dato" }));
   await userEvent.click(screen.getByRole("option", { name: "Número" }));
@@ -72,9 +72,9 @@ it("offers the copy by email only on a form with an issuer and saves it after th
   renderWithProviders(<FormRulesSection prefix="FAC" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "IssueDocument:arca.invoice");
+  await pick(/^Acción 1 /, "Emitir comprobante en ARCA");
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 2" }), "Mandar copia por correo");
+  await pick(/^Acción 2 /, "Mandar copia por correo");
   await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Te mando la factura.");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ actions: [
@@ -86,9 +86,10 @@ it("does not offer the copy by email on a form without an issuer", async () => {
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  const kind = screen.getByRole("combobox", { name: "Acción 1" });
+  const kind = await openList(/^Acción 1 /);
   expect(within(kind).getByRole("option", { name: "Avisar a las personas con un rol" })).toBeInTheDocument();
   expect(within(kind).queryByRole("option", { name: "Mandar copia por correo" })).not.toBeInTheDocument();
+  await userEvent.keyboard("{Escape}");
 });
 it("retains edits on a revision conflict and adopts the reread revision only explicitly", async () => {
   setup();
@@ -96,7 +97,7 @@ it("retains edits on a revision conflict and adopts the reread revision only exp
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "NotifyAuthor");
+  await pick(/^Acción 1 /, "Mandarle un mensaje a quien la cargó");
   await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), "Mi borrador");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   await screen.findByRole("button", { name: "Releer reglas" });
@@ -127,15 +128,13 @@ it("edits catalog choice conditions from rule metadata without catalog or respon
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()} />);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "in");
-  const picker = screen.getByRole("button", { name: "Valor" });
-  picker.focus();
-  await userEvent.keyboard("{Enter}");
-  const choice = await screen.findByRole("menuitemcheckbox", { name: "Cliente elegido" });
+  await pick(/^Condición /, "Es una de");
+  // The values of several: marking keeps the list open, and the field says the chosen ones.
+  const choice = await within(await openList("Valor Elegí los valores")).findByRole("option", { name: "Cliente elegido" });
   await userEvent.click(choice);
-  expect(choice).toHaveAttribute("aria-checked", "true");
+  expect(choice).toHaveAttribute("aria-selected", "true");
   await userEvent.keyboard("{Escape}");
-  expect(picker).toHaveTextContent("Cliente elegido");
+  expect(screen.getByRole("button", { name: "Valor Cliente elegido" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", {name:"Agregar acción"}));
   await writeAtEnd(screen.getByRole("textbox", {name:"Mensaje"}), "Aviso");
   await userEvent.click(screen.getByRole("button", {name:"Guardar reglas"}));
@@ -199,7 +198,7 @@ it("refreshes saved question options while preserving unsaved rules after the dr
   expect(messageText(screen.getByRole("textbox", { name: "Mensaje" }))).toBe("Reglas todavía sin guardar");
   expect(dirty).toHaveBeenLastCalledWith(true);
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
-  expect(screen.getByRole("option", { name: "Pregunta guardada" })).toBeInTheDocument();
+  expect(within(await openList(/^Pregunta /)).getByRole("option", { name: "Pregunta guardada" })).toBeInTheDocument();
 });
 
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn(), dismissNotification: vi.fn() }));
@@ -280,7 +279,7 @@ it("binds the unchanged exported role validation to its rule and focuses the mar
   await writeAtEnd(screen.getByRole("textbox", { name: "Mensaje" }), " propio");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
   const first = within(screen.getByRole("region", { name: "Regla 1" }));
-  const role = await first.findByRole("combobox", { name: "Rol" });
+  const role = await first.findByRole("button", { name: /^Rol / });
   expect(role).toHaveAttribute("aria-invalid", "true");
   expect(first.getByRole("alert")).toHaveTextContent("El rol elegido ya no está disponible.");
   expect(role).toHaveAccessibleDescription("El rol elegido ya no está disponible.");
@@ -373,10 +372,10 @@ it("focuses the first question of conditions to review after trying to save", as
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar condición" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "gte");
+  await pick(/^Condición /, "Es mayor o igual a");
   expect(screen.queryByText("Revisá los valores de las condiciones.")).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
-  const question = screen.getByRole("combobox", { name: "Pregunta" });
+  const question = screen.getByRole("button", { name: /^Pregunta / });
   expect(question).toHaveAccessibleDescription("Revisá los valores de las condiciones.");
   await waitFor(() => expect(question).toHaveFocus());
 });
@@ -458,7 +457,7 @@ it("keeps an attached PDF when the event changes, tells why under it and turns o
   const writes = vi.fn(); server.use(http.post("/api/forms/definitions/:id/rules", async ({request}) => { const body = await request.json() as {rules:FormRule[]}; writes(body); return HttpResponse.json({...initial(),id:actor,revision:2,rules:body.rules,createdAtUtc:"2026-10-17T12:00:00Z"}); }));
   renderWithProviders(<MemoryRouter><FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Rejected");
+  await userEvent.click(screen.getByRole("radio",{name:"Se rechaza una respuesta"}));
   const attach = screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
   // The choice stays and the reason is next to it right away, without trying to save; no button can fix the event.
   expect(attach).toBeChecked(); expect(attach).toBeEnabled();
@@ -479,7 +478,7 @@ it("returns focus from action removal to a neighbor and then to Add action", asy
   setup();const first=storedRule();const rule={...first,actions:[...first.actions,{...newRuleAction("NotifyAuthor"),text:{es:"Segundo aviso"}}]};serveRules([rule]);
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  const next=screen.getByRole("combobox",{name:"Acción 2"});
+  const next=screen.getByRole("button",{name:/^Acción 2 /});
   await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
   await waitFor(()=>expect(next).toHaveFocus());
   await userEvent.click(screen.getByRole("button",{name:"Quitar acción 1"}));
@@ -492,7 +491,7 @@ it("focuses the next remaining condition and then Add condition after removing t
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
   await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
-  const remaining=screen.getByRole("combobox",{name:"Pregunta"});expect(remaining).toHaveValue(second);
+  const remaining=screen.getByRole("button",{name:"Pregunta Segunda pregunta"});
   await waitFor(()=>expect(remaining).toHaveFocus());
   await userEvent.click(screen.getByRole("button",{name:"Quitar condición 1"}));
   await waitFor(()=>expect(screen.getByRole("button",{name:"Agregar condición"})).toHaveFocus());
@@ -505,8 +504,8 @@ it.each([["remove","Quitar acción 1","Agregar «Armar el PDF» antes"],["move",
   expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
   expect(screen.getByRole("alert")).toHaveTextContent(pdfFirst);
   await userEvent.click(screen.getByRole("button",{name:fix}));
-  expect(screen.getByRole("combobox",{name:"Acción 1"})).toHaveValue("GeneratePdf");
-  expect(screen.getByRole("combobox",{name:"Acción 2"})).toHaveValue("NotifyAuthor");
+  expect(screen.getByRole("button",{name:"Acción 1 Armar el PDF"})).toBeInTheDocument();
+  expect(screen.getByRole("button",{name:"Acción 2 Mandarle un mensaje a quien la cargó"})).toBeInTheDocument();
   const attach=screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
   expect(attach).toBeChecked(); expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   await waitFor(()=>expect(attach).toHaveFocus());
@@ -515,12 +514,12 @@ it("tells right away why a checked attachment needs a PDF before it, without try
   setup();
   renderWithProviders(<MemoryRouter><FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Agregar regla"}));
-  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Cuándo"}),"Approved");
+  await userEvent.click(screen.getByRole("radio",{name:"Se aprueba una respuesta"}));
   await userEvent.click(screen.getByRole("button",{name:"Agregar acción"}));
   await userEvent.click(screen.getByRole("checkbox",{name:"Adjuntar el PDF"}));
   expect(screen.getByRole("alert")).toHaveTextContent(pdfFirst);
   await userEvent.click(screen.getByRole("button",{name:"Agregar «Armar el PDF» antes"}));
-  expect(screen.getByRole("combobox",{name:"Acción 1"})).toHaveValue("GeneratePdf");
+  expect(screen.getByRole("button",{name:"Acción 1 Armar el PDF"})).toBeInTheDocument();
   expect(screen.getByRole("checkbox",{name:"Adjuntar el PDF"})).toBeChecked();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
@@ -528,15 +527,15 @@ it("keeps the written message and the chosen role when an action changes kind", 
   setup();const rule:FormRule={...storedRule("Aviso escrito")};serveRules([rule]);
   renderWithProviders(<MemoryRouter><FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  const kind=screen.getByRole("combobox",{name:"Acción 1"});
-  await userEvent.selectOptions(kind,"NotifyRole");
+  const kind=screen.getByRole("button",{name:/^Acción 1 /});
+  await pick(kind,"Avisar a las personas con un rol");
   expect(messageText(screen.getByRole("textbox",{name:"Mensaje"}))).toBe("Aviso escrito");
-  await userEvent.selectOptions(screen.getByRole("combobox",{name:"Rol"}),actor);
-  await userEvent.selectOptions(kind,"GeneratePdf");
+  await pick(/^Rol /,"Supervisor");
+  await pick(kind,"Armar el PDF");
   expect(screen.queryByRole("textbox",{name:"Mensaje"})).not.toBeInTheDocument();
-  await userEvent.selectOptions(kind,"RequestApproval");
-  expect(screen.getByRole("combobox",{name:"Rol"})).toHaveValue(actor);
-  await userEvent.selectOptions(kind,"NotifyAuthor");
+  await pick(kind,"Pedir aprobación a una persona con un rol");
+  expect(screen.getByRole("button",{name:"Rol Supervisor"})).toBeInTheDocument();
+  await pick(kind,"Mandarle un mensaje a quien la cargó");
   expect(messageText(screen.getByRole("textbox",{name:"Mensaje"}))).toBe("Aviso escrito");
 });
 it("requires a new reread after a second conflict instead of reusing the previous current revision", async () => {
@@ -598,10 +597,10 @@ it("clears the previous condition values when changing its question and saves on
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Editar regla 1" }));
   expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("12");
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Pregunta" }), textId);
-  expect(screen.getByRole("combobox", { name: "Condición" })).toHaveValue("answered");
+  await pick(/^Pregunta /, "Notas");
+  expect(screen.getByRole("button", { name: "Condición Tiene respuesta" })).toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "Valor" })).not.toBeInTheDocument();
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Condición" }), "contains");
+  await pick(/^Condición /, "Contiene");
   expect(screen.getByRole("textbox", { name: "Valor" })).toHaveValue("");
   await userEvent.type(screen.getByRole("textbox", { name: "Valor" }), "nueva nota");
   await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
@@ -645,7 +644,7 @@ it("explains why no action can follow an approval request", async () => {
   renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
   await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
   await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
-  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Acción 1" }), "RequestApproval");
+  await pick(/^Acción 1 /, "Pedir aprobación a una persona con un rol");
   const addAction = screen.getByRole("button", { name: "Agregar acción" });
   const reason = "Pedir aprobación tiene que ser la última acción. Lo que sigue va en «Se aprueba» o «Se rechaza».";
   expect(addAction).toHaveAttribute("aria-disabled", "true");
@@ -857,3 +856,14 @@ it("reads the conditions of the block together in one line, in the place of the 
   await userEvent.click(within(panel).getByRole("button", { name: "Revisión 1" }));
   expect((await within(panel).findByText("Artículos")).closest("li")).toHaveTextContent(/^Si algún ítem de Artículos con ¿Llegó en buen estado\? es No y Cantidad desde 100$/);
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp | HTMLElement) {
+  const button = trigger instanceof HTMLElement ? trigger : screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}
