@@ -10,7 +10,7 @@ import { useReceivedDocumentOptions, useReceivedDocumentReadWait } from "../../h
  * (DS1-A): its options are searched in the server, inside the list and while it is open, as a catalog question of the app's load page;
  * each one says its group under it (LD1-A), and when the server sends only the first fifty the list says so. The wait, the failure and
  * «Reintentar» (off while a 429 waits) go inside the list. The chosen one keeps the text it showed, and «Quitar» leaves it empty. Its
- * field and problems come from its `FormField`.
+ * field and problems come from its `FormField`, whose label names its button with the mark of the datum («Revisá»).
  */
 export function ReceivedDocumentOptionSearch({ documentId, fieldId, label, value, text, disabled, onChange, onConflict, ...field }: {
   documentId: string;
@@ -43,7 +43,7 @@ export function ReceivedDocumentOptionSearch({ documentId, fieldId, label, value
   const searching = search.trim() !== settled || options.isPlaceholderData && options.isFetching;
   const failed = options.isError && !options.data;
   return <div className="flex min-w-0 items-center gap-2">
-    <Picker {...field} className="min-w-0 flex-1" label={label} disabled={disabled} placeholder={t("data.choose")} value={value || null}
+    <Picker {...field} labelledBy={field.id ? field.id + "-label" : undefined} className="min-w-0 flex-1" label={label} disabled={disabled} placeholder={t("data.choose")} value={value || null}
       options={searching || options.isPending || failed ? [] : items.map(option => ({ id: option.id, label: option.text, description: option.group }))}
       selectedOptions={value ? [{ id: value, label: shown }] : undefined} onOpenChange={setOpened} search={search} onSearchChange={setSearch}
       countText={options.data?.truncated && !searching && items.length ? t("options.truncated") : undefined}

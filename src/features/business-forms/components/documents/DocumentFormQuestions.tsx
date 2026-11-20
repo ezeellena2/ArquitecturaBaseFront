@@ -11,7 +11,7 @@ import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 import { documentFormLimits, documentFormQuestionProblems, isChoiceType, newQuestionKey, proposalQuestionTypes, proposalTypeKey, type DocumentFormQuestion,
   type ProposalQuestionType } from "../../documentFormProposal";
@@ -124,9 +124,9 @@ function QuestionDialog({ question, catalogScope, onCancel, onDone }: { question
           <Input data-question-control="label" maxLength={documentFormLimits.text} value={draft.label} onChange={event => setDraft({ ...draft, label: event.target.value })} />
         </FormField>
         <FormField label={t("forms:type")}>
-          <NativeSelect value={draft.type} onChange={event => setDraft({ ...draft, type: event.target.value as ProposalQuestionType })}>
-            {proposalQuestionTypes.map(type => <option key={type} value={type} disabled={type === "catalog" && !canReadCatalogs && draft.type !== "catalog"}>{t("forms:" + proposalTypeKey(type))}</option>)}
-          </NativeSelect>
+          <Picker label={t("forms:type")} value={draft.type} onChange={type => setDraft({ ...draft, type: type as ProposalQuestionType })}
+            options={proposalQuestionTypes.map(type => ({ id: type, label: t("forms:" + proposalTypeKey(type)),
+              disabledReason: type === "catalog" && !canReadCatalogs && draft.type !== "catalog" ? t("forms:catalogQuestion.requiresRead") : null }))} />
         </FormField>
         <CheckboxField label={t("forms:required")} checked={draft.required} onCheckedChange={checked => setDraft({ ...draft, required: checked === true })} />
         {isChoiceType(draft.type) ? <fieldset className="flex min-w-0 flex-col gap-2" aria-describedby={problems.options ? optionsId : undefined}>

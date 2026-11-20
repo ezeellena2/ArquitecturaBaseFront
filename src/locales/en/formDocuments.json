@@ -89,6 +89,7 @@
     "more_other": "See the {{count}} more data",
     "less": "See fewer data",
     "choose": "Choose an option",
+    "none": "No answer",
     "missingData": "There are no options for {{person}}: “{{datum}}” is missing. Complete it in People data."
   },
   "options": {

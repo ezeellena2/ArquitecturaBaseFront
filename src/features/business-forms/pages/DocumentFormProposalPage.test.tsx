@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { RouterProvider, createMemoryRouter } from "react-router";
@@ -70,6 +70,15 @@ const questionsTable = () => within(screen.getByRole("region", { name: "Pregunta
 // The cell under a header of the row that has a text (one datum per column).
 const cell = (table: HTMLElement, text: string, header: string) =>
   cellUnder(table, within(table).getAllByRole("row").find(row => within(row).queryByText(text, { exact: true }))!, header);
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(user: ReturnType<typeof userEvent.setup>, trigger: HTMLElement) {
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(user: ReturnType<typeof userEvent.setup>, trigger: HTMLElement, option: string) {
+  await user.click(within(await openList(user, trigger)).getByRole("option", { name: option }));
+}
 
 // The whole app in a route, like `renderRouteWithProviders`, inside StrictMode, whose double mount must not ask twice.
 function renderStrictRoute(initial: string) {
@@ -312,7 +321,7 @@ describe("the questions", () => {
     await user.click(screen.getByRole("button", { name: "Agregar pregunta" }));
     dialog = await screen.findByRole("dialog", { name: "Nueva pregunta" });
     await user.type(within(dialog).getByRole("textbox", { name: /^Pregunta/ }), "Medio de pago");
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo de respuesta" }), "choice");
+    await pick(user, within(dialog).getByRole("button", { name: "Tipo de respuesta Texto corto" }), "Elegir de una lista");
     await user.click(within(dialog).getByRole("button", { name: "Listo" }));
     expect(await within(dialog).findByText("Agregá al menos una opción.")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Agregar opción" }));
@@ -343,9 +352,23 @@ describe("the questions", () => {
     await user.click(screen.getByRole("button", { name: "Agregar pregunta" }));
     const dialog = await screen.findByRole("dialog", { name: "Nueva pregunta" });
     expect(within(dialog).getByRole("textbox", { name: /^Pregunta/ })).toHaveAttribute("maxlength", "160");
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Tipo de respuesta" }), "choice");
+    await pick(user, within(dialog).getByRole("button", { name: /^Tipo de respuesta / }), "Elegir de una lista");
     await user.click(within(dialog).getByRole("button", { name: "Agregar opción" }));
     expect(within(dialog).getByRole("textbox", { name: "Opción 1" })).toHaveAttribute("maxlength", "160");
+  }, 20_000);
+
+  it("leaves the catalog type off with its reason without permission to read catalogs", async () => {
+    setup({ permissions: designer.filter(permission => permission !== "formcatalogs.read") });
+    const user = userEvent.setup();
+    renderRouteWithProviders(path);
+    await screen.findByRole("textbox", { name: /^Nombre/ }, { timeout: 10_000 });
+    await user.click(screen.getByRole("button", { name: "Agregar pregunta" }));
+    const dialog = await screen.findByRole("dialog", { name: "Nueva pregunta" });
+    const list = await openList(user, within(dialog).getByRole("button", { name: /^Tipo de respuesta / }));
+    const catalog = within(list).getByRole("option", { name: "Elegir de un catálogo" });
+    expect(catalog).toHaveAttribute("aria-disabled", "true");
+    expect(catalog).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y elegir uno.");
+    expect(within(list).getByRole("option", { name: "Elegir de una lista" })).not.toHaveAttribute("aria-disabled");
   }, 20_000);
 });
 

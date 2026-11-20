@@ -6,7 +6,7 @@ import { DataList } from "@/shared/ui/DataList";
 import { FormField } from "@/shared/ui/FormField";
 import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Input } from "@/shared/ui/input";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { ReceivedDocumentValue } from "../../api/receivedDocuments";
@@ -25,9 +25,11 @@ function Mark({ value }: { value: ReceivedDocumentValue }) {
 /**
  * The data read for the document's form, in the form's order (DOC5-A): editable, a control per type, while the document waits for the
  * team; read, in two columns (`DataList`), otherwise. Each datum carries its mark, and what does not pass a fixed validation says so
- * under it until it is changed, as the server's problem when passing it does. A choice is chosen among its options (its own, or the
- * ones of the catalog its sender sees), also when it was not read; the options of a catalog question that chooses first by a field go
- * under their group, so two alike («San Martín» of two provinces) can be told apart. A catalog choice the server does not list is
+ * under it until it is changed, as the server's problem when passing it does. A choice is chosen with the only piece to choose (DS1-A)
+ * among its options (its own, or the ones of the catalog its sender sees), also when it was not read, and «Sin respuesta» first leaves
+ * it empty; the options of a catalog question that chooses first by a field go together after a line, each with its group in grey
+ * under its name, so two alike («San Martín» of two provinces) can be told apart. Its button says the mark of its label («Revisá»),
+ * as the label of its `FormField` names it (`labelledBy`). A catalog choice the server does not list is
  * searched (too many options for its sender, `ReceivedDocumentOptionSearch`), or says why it has none (its sender lacks the datum its
  * catalog filters by), which stops passing it only when it is required. After eight data the rest fold under «Ver los N datos más», except
  * the ones that need a look, which stay in sight; «Ver menos datos» folds them again.
@@ -70,7 +72,8 @@ export function ReceivedDocumentData({ documentId, person, values, draft, proble
         const unchanged = value.type === "decimal" ? typed.replace(",", ".") === original : typed === original;
         const problem = problems[value.fieldId];
         const error = server[value.fieldId] || (problem ? t("problems." + problem) : value.mark === "invalid" && unchanged ? t(receivedDocumentErrorKey(value.errorCode)) : undefined);
-        const label = <span className="inline-flex flex-wrap items-center gap-1.5">{value.label}<Mark value={value} /></span>;
+        // The space keeps the name and the mark apart where the label names a control («Moneda No se leyó»); the gap draws it.
+        const label = <span className="inline-flex flex-wrap items-center gap-1.5">{value.label} <Mark value={value} /></span>;
         if (value.type === "boolean") return <div key={value.fieldId} id={id} tabIndex={-1} className="flex flex-col gap-1.5 outline-none">
           <GroupLabel id={id + "-label"}>{value.label}</GroupLabel>
           <div className="flex flex-wrap items-center gap-2">
@@ -97,16 +100,14 @@ export function ReceivedDocumentData({ documentId, person, values, draft, proble
         const options = value.options ?? [];
         const listed = typed && !options.some(option => option.id === typed) ? [{ id: typed, text: value.text ?? typed, group: null }, ...options] : options;
         const groups = [...new Set(listed.flatMap(option => option.group === null ? [] : [option.group]))];
-        const choices = (group: string | null) => listed.filter(option => option.group === group).map(option => <option key={option.id} value={option.id}>{option.text}</option>);
+        const choices = [null, ...groups].flatMap(group => listed.filter(option => option.group === group)
+          .map((option, index) => ({ id: option.id, label: option.text, description: option.group, separated: group !== null && index === 0 })));
         const control = unavailable?.reason === "tooMany"
           ? <ReceivedDocumentOptionSearch id={id} documentId={documentId} fieldId={value.fieldId} label={value.label} value={typed}
             text={typed === original ? value.text : null} disabled={disabled} onChange={next => onChange(value.fieldId, next)} onConflict={onConflict} />
           : value.type === "choice"
-          ? <NativeSelect id={id} value={typed} disabled={disabled} onChange={event => onChange(value.fieldId, event.target.value)}>
-            <option value="">{t("data.choose")}</option>
-            {choices(null)}
-            {groups.map(group => <optgroup key={group} label={group}>{choices(group)}</optgroup>)}
-          </NativeSelect>
+          ? <Picker id={id} label={value.label} labelledBy={id + "-label"} value={typed} disabled={disabled} placeholder={t("data.choose")}
+            first={{ id: "", label: t("data.none") }} onChange={next => onChange(value.fieldId, next)} options={choices} />
           : value.type === "longText"
             ? <Textarea id={id} rows={3} value={typed} disabled={disabled} onChange={event => onChange(value.fieldId, event.target.value)} />
             : <Input id={id} value={typed} disabled={disabled} type={value.type === "date" ? "date" : "text"} inputMode={value.type === "decimal" ? "decimal" : undefined}

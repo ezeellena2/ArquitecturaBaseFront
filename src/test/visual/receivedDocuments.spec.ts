@@ -37,7 +37,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const panel = panelOf(page, language, width);
     const photo = panel.getByRole("img", { name: "comprobante.jpg" });
     await expect(photo).toBeVisible();
-    await expect(panel.getByRole("combobox", { name: text(language, "Formulario", "Form"), exact: true })).toBeVisible();
+    // The form is the only piece to choose (DS1-A): a button named by its label and the form chosen.
+    await expect(panel.getByRole("button", { name: text(language, "Formulario Pagos de clientes", "Form Customer payments"), exact: true })).toBeVisible();
     await expect(panel.getByRole("button", { name: text(language, "Pasar al formulario", "Pass to the form"), exact: true })).toBeVisible();
     await noPageScroll(page, width);
     await page.screenshot({ path: shot("document-photo", language, width) });
@@ -89,7 +90,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const panel = panelOf(page, language, width);
     await expect(panel.getByRole("img", { name: "comprobante.jpg" })).toBeVisible();
     await expect(panel.getByRole("button", { name: text(language, "Pasar al formulario", "Pass to the form"), exact: true })).toHaveCount(0);
-    await expect(panel.getByRole("combobox")).toHaveCount(0);
+    // Read only, nothing is chosen: neither the form nor a choice is a list.
+    await expect(panel.getByRole("button", { name: new RegExp("^(" + text(language, "Formulario|Cliente|Moneda|Banco o billetera de origen",
+      "Form|Customer|Currency|Bank or wallet of origin") + ") ") })).toHaveCount(0);
     await page.screenshot({ path: shot("document-read-only", language, width) });
 
     await open(page, language, width, "documents-empty");

@@ -83,6 +83,9 @@ async function openPicker(user: ReturnType<typeof userEvent.setup>, trigger: HTM
   await user.keyboard("{Enter}");
   return screen.findByRole("listbox");
 }
+async function pickOption(user: ReturnType<typeof userEvent.setup>, trigger: HTMLElement, option: string | RegExp) {
+  await user.click(within(await openPicker(user, trigger)).getByRole("option", { name: option }));
+}
 
 describe("the list", () => {
   it("shows one document per row with each datum read in its column, the states with their counts and its menu entry with its number", async () => {
@@ -249,21 +252,20 @@ describe("the panel", () => {
     expect(within(frame).getByRole("toolbar", { name: "Ver comprobante.jpg" })).toBeInTheDocument();
     expect(await within(frame).findByRole("button", { name: "Acercar" })).toBeEnabled();
     expect(within(frame).getByText("Venció sin que Pablo Sosa lo confirmara en WhatsApp.")).toBeInTheDocument();
-    // The forms the server can read it for.
-    const form = within(frame).getByRole("combobox", { name: "Formulario" });
-    expect(form).toHaveValue(receivedDocumentForms.payments);
-    expect(within(form).getAllByRole("option").map(option => option.textContent)).toEqual(["Pagos de clientes", "Gastos"]);
+    // The forms the server can read it for, in the only piece to choose.
+    const form = within(frame).getByRole("button", { name: "Formulario Pagos de clientes" });
+    expect(within(await openPicker(user, form)).getAllByRole("option").map(option => option.textContent)).toEqual(["Pagos de clientes", "Gastos"]);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(form).toHaveFocus());
     expect(within(frame).getByText("Seguro")).toBeInTheDocument();
     expect(within(frame).getByRole("textbox", { name: /^Monto/ })).toHaveValue("68500,00");
     expect(within(frame).getByRole("textbox", { name: /^Número de operación/ })).toHaveAccessibleName(/Revisá/);
-    // A choice is chosen among its options; the one the server completed says so.
-    const client = within(frame).getByRole("combobox", { name: /^Cliente/ });
-    expect(client).toHaveValue(receivedDocumentOptions.bakery);
-    expect(client).toHaveAccessibleName(/Del catálogo/);
+    // A choice is chosen among its options: its button says its label, the mark of the one the server completed and the chosen one.
+    expect(within(frame).getByRole("button", { name: /^Cliente/ })).toHaveAccessibleName("Cliente Del catálogo Panadería Don Ángel");
     // Eight data and the rest folded, unfolded and folded again.
     await user.click(within(frame).getByRole("button", { name: "Ver los 7 datos más" }));
     expect(within(frame).getByRole("textbox", { name: /^Cuenta de destino/ })).toHaveValue("");
-    expect(within(frame).getByRole("combobox", { name: /^Banco o billetera de destino/ })).toHaveValue("");
+    expect(within(frame).getByRole("button", { name: /^Banco o billetera de destino/ })).toHaveAccessibleName("Banco o billetera de destino No se leyó Elegí una opción");
     expect(within(frame).getAllByText("No se leyó")).toHaveLength(2);
     await user.click(within(frame).getByRole("button", { name: "Ver menos datos" }));
     expect(within(frame).queryByRole("textbox", { name: /^Cuenta de destino/ })).not.toBeInTheDocument();
@@ -288,7 +290,7 @@ describe("the panel", () => {
     await user.clear(operation);
     await user.click(operation);
     await user.paste("6120093745");
-    await user.selectOptions(within(frame).getByRole("combobox", { name: /^Moneda/ }), "Dólares");
+    await pickOption(user, within(frame).getByRole("button", { name: /^Moneda/ }), "Dólares");
     const reads = requests.details.length;
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "warning",
@@ -317,7 +319,7 @@ describe("the panel", () => {
     await user.clear(operation);
     await user.click(operation);
     await user.paste("6120093745");
-    await user.selectOptions(within(frame).getByRole("combobox", { name: /^Moneda/ }), "Dólares");
+    await pickOption(user, within(frame).getByRole("button", { name: /^Moneda/ }), "Dólares");
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "warning",
       message: "Ya hay una respuesta con los mismos datos de este documento: REC-000007.", action: expect.objectContaining({ label: "Pasarlo igual" }) })));
@@ -339,14 +341,20 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    const currency = await within(frame).findByRole("combobox", { name: /^Moneda/ });
-    expect(currency).toHaveValue("");
-    expect(within(currency).getAllByRole("option").map(option => option.textContent)).toEqual(["Elegí una opción", "Pesos", "Dólares"]);
+    // Not read, it invites to choose, with its mark; its list brings «Sin respuesta» first and then its options.
+    const currency = await within(frame).findByRole("button", { name: /^Moneda/ });
+    expect(currency).toHaveAccessibleName("Moneda No se leyó Elegí una opción");
+    expect(within(await openPicker(user, currency)).getAllByRole("option").map(option => option.textContent)).toEqual(["Sin respuesta", "Pesos", "Dólares"]);
+    await user.click(screen.getByRole("option", { name: "Dólares" }));
+    expect(currency).toHaveAccessibleName("Moneda No se leyó Dólares");
+    // «Sin respuesta» leaves it empty again, so passing it still asks for it.
+    await pickOption(user, currency, "Sin respuesta");
+    expect(currency).toHaveAccessibleName("Moneda No se leyó Elegí una opción");
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     expect(await within(frame).findByText("Completá este dato.")).toBeInTheDocument();
     await waitFor(() => expect(currency).toHaveFocus());
     expect(requests.writes).toHaveLength(0);
-    await user.selectOptions(currency, "Pesos");
+    await pickOption(user, currency, "Pesos");
     await user.click(within(frame).getByRole("button", { name: "Pasar al formulario" }));
     await waitFor(() => expect(requests.writes).toHaveLength(1));
     expect((requests.writes[0]!.body as { answers: unknown[] }).answers).toContainEqual({ fieldId: receivedDocumentFields.currency, value: receivedDocumentOptions.pesos });
@@ -358,12 +366,21 @@ describe("the panel", () => {
     const towns = [{ id: "0199b0c0-0000-7000-8000-000000000711", text: "San Martín", group: "Buenos Aires" }, { id: "0199b0c0-0000-7000-8000-000000000712", text: "San Martín", group: "Mendoza" }];
     const values = candidate.values.map(value => value.fieldId === receivedDocumentFields.client ? { ...value, label: "Localidad", value: towns[1]!.id, text: "San Martín", options: towns } : value);
     setup({ details: { [receivedDocumentIds.forReview]: { ...base, proposal: { ...base.proposal!, candidates: [{ ...candidate, values }] } } } });
+    const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    const town = await within(frame).findByRole("combobox", { name: /^Localidad/ });
-    expect(town).toHaveValue(towns[1]!.id);
-    expect(within(town).getAllByRole("group").map(group => group.getAttribute("label"))).toEqual(["Buenos Aires", "Mendoza"]);
-    expect(within(within(town).getByRole("group", { name: "Mendoza" })).getByRole("option", { name: "San Martín" })).toHaveProperty("selected", true);
+    const town = await within(frame).findByRole("button", { name: /^Localidad/ });
+    expect(town).toHaveAccessibleName("Localidad Del catálogo San Martín");
+    // «Sin respuesta» first; the options of each group go together after a line, each with its group in grey under its name.
+    const [none, buenosAires, mendoza, ...rest] = within(await openPicker(user, town)).getAllByRole("option");
+    expect(rest).toEqual([]);
+    expect(none).toHaveAccessibleName("Sin respuesta");
+    expect(buenosAires).toHaveAccessibleName("San Martín");
+    expect(buenosAires).toHaveAccessibleDescription("Buenos Aires");
+    expect(mendoza).toHaveAccessibleName("San Martín");
+    expect(mendoza).toHaveAccessibleDescription("Mendoza");
+    expect(mendoza).toHaveAttribute("aria-selected", "true");
+    expect([buenosAires, mendoza].map(option => option!.previousElementSibling?.getAttribute("role"))).toEqual(["presentation", "presentation"]);
   }, 20_000);
 
   it("searches the options of a choice the server does not list, and passes the one chosen", async () => {
@@ -381,6 +398,8 @@ describe("the panel", () => {
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
     const client = await within(frame).findByRole("button", { name: /^Cliente/ });
+    // Its button says the mark of its label, as the other data.
+    expect(client).toHaveAccessibleName("Cliente No se leyó Elegí una opción");
     await openPicker(user, client);
     // The search is inside the list, with the focus on it.
     await user.paste("fer");
@@ -433,7 +452,7 @@ describe("the panel", () => {
     expect(requests.writes).toHaveLength(0);
   }, 20_000);
 
-  it("reads it again for its own form from the panel, which its select cannot offer", async () => {
+  it("reads it again for its own form from the panel, which choosing it again in its list does not do", async () => {
     const base = receivedDocumentDetailFixture(receivedDocumentIds.other);
     const own = { definitionId: receivedDocumentForms.payments, name: "Pagos de clientes" };
     const { requests, write } = setup({ details: { [receivedDocumentIds.other]: { ...base, document: { ...base.document, form: own } } } });
@@ -442,7 +461,8 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.other}`);
     const frame = await panel();
-    expect(await within(frame).findByRole("combobox", { name: "Formulario" })).toHaveValue(receivedDocumentForms.payments);
+    await pickOption(user, await within(frame).findByRole("button", { name: "Formulario Pagos de clientes" }), "Pagos de clientes");
+    expect(within(frame).queryByText("Leyendo los datos para «Pagos de clientes»…")).not.toBeInTheDocument();
     await user.click(within(frame).getByRole("button", { name: "Volver a leer para «Pagos de clientes»" }));
     await waitFor(() => expect(requests.writes).toHaveLength(1));
     expect(requests.writes[0]!.body).toEqual(expect.objectContaining({ definitionId: receivedDocumentForms.payments, expectedRevision: 1 }));
@@ -556,12 +576,12 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    const form = await within(frame).findByRole("combobox", { name: "Formulario" });
+    const form = await within(frame).findByRole("button", { name: "Formulario Pagos de clientes" });
     expect(within(frame).getByText("Con dudas")).toBeInTheDocument();
-    await user.selectOptions(form, "Gastos");
+    await pickOption(user, form, "Gastos");
     expect(await within(frame).findByText("Leyendo los datos para «Gastos»…")).toBeInTheDocument();
     expect(requests.writes[0]!.body).toEqual(expect.objectContaining({ definitionId: receivedDocumentForms.expenses, expectedRevision: 1 }));
-    await waitFor(() => expect(within(frame).getByRole("combobox", { name: "Formulario" })).toHaveValue(receivedDocumentForms.expenses), { timeout: 8000 });
+    await waitFor(() => expect(within(frame).getByRole("button", { name: "Formulario Gastos" })).toBeInTheDocument(), { timeout: 8000 });
     expect(within(frame).queryByText("Leyendo los datos para «Gastos»…")).not.toBeInTheDocument();
     await pause(2600);
     expect(requests.extraction).toBe(1);
@@ -607,7 +627,7 @@ describe("the panel", () => {
     expect(notices("error")).toEqual([]);
     failing = false;
     await user.click(within(frame).getByRole("button", { name: "Reintentar" }));
-    await waitFor(() => expect(within(frame).getByRole("combobox", { name: "Formulario" })).toHaveValue(receivedDocumentForms.expenses), { timeout: 8000 });
+    await waitFor(() => expect(within(frame).getByRole("button", { name: "Formulario Gastos" })).toBeInTheDocument(), { timeout: 8000 });
     expect(requests.extraction).toBe(2);
     expect(within(frame).queryByText(/No pudimos saber/)).not.toBeInTheDocument();
   }, 20_000);
@@ -641,7 +661,7 @@ describe("the panel", () => {
     const user = userEvent.setup();
     renderRouteWithProviders(`/formularios/documentos/${receivedDocumentIds.forReview}`);
     const frame = await panel();
-    await user.selectOptions(await within(frame).findByRole("combobox", { name: "Formulario" }), "Gastos");
+    await pickOption(user, await within(frame).findByRole("button", { name: "Formulario Pagos de clientes" }), "Gastos");
     await waitFor(() => expect(vi.mocked(notify)).toHaveBeenCalledWith(expect.objectContaining({ kind: "error", message: "Se terminó el cupo de la IA por hoy.",
       description: "Esperá 120 segundos para volver a intentar." })));
   }, 20_000);
@@ -735,7 +755,7 @@ describe("the panel", () => {
     expect(await within(frame).findByText("Confirmado")).toBeInTheDocument();
     expect(within(frame).queryByRole("button", { name: "Pasar al formulario" })).not.toBeInTheDocument();
     expect(within(frame).queryByRole("button", { name: "Descartar" })).not.toBeInTheDocument();
-    expect(within(frame).queryByRole("combobox", { name: "Formulario" })).not.toBeInTheDocument();
+    expect(within(frame).queryByRole("button", { name: /^Formulario / })).not.toBeInTheDocument();
     // Without «Ver respuestas» the response is its number, without a link.
     expect(within(frame).getByText("REC-000124")).toBeInTheDocument();
     expect(within(frame).queryByRole("link", { name: "REC-000124" })).not.toBeInTheDocument();

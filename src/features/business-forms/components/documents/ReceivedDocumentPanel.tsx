@@ -13,7 +13,7 @@ import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { DocumentViewer } from "@/shared/ui/DocumentViewer";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
-import { NativeSelect } from "@/shared/ui/NativeSelect";
+import { Picker } from "@/shared/ui/Picker";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { receivedDocumentForbidden, useReceivedDocumentDetail, useReceivedDocumentFile, useReceivedDocumentReadWait, useReceivedDocumentReview,
@@ -149,14 +149,15 @@ export function ReceivedDocumentPanel({ documentId, navigation, onDenied }: { do
         {actions.changeForm && forms.length > 0 ? <div className="flex flex-col gap-1.5">
           <FormField label={t("form.label")} help={t(row ? "form.rowHelp" : "form.help")} beside={certainty}>
             <DisabledReason reason={busy ? null : waiting ?? wait}>
-              <NativeSelect value={selectedForm} disabled={busy || !!waiting || !!wait} className="sm:w-72"
-                onChange={event => { const form = forms.find(item => item.definitionId === event.target.value); if (form) void review.changeForm(form.definitionId, form.name); }}>
-                {selectedForm ? null : <option value="">{t("form.choose")}</option>}
-                {forms.map(form => <option key={form.definitionId} value={form.definitionId}>{form.name}</option>)}
-              </NativeSelect>
+              <Picker label={t("form.label")} value={selectedForm || null} disabled={busy || !!waiting || !!wait} className="sm:w-72" placeholder={t("form.choose")}
+                onChange={definitionId => {
+                  const form = forms.find(item => item.definitionId === definitionId);
+                  if (form && form.definitionId !== selectedForm) void review.changeForm(form.definitionId, form.name);
+                }}
+                options={forms.map(form => ({ id: form.definitionId, label: form.name }))} />
             </DisabledReason>
           </FormField>
-          {/* A select never chooses the option it shows: reading its data again for its own form goes here. */}
+          {/* Choosing the form it shows again does not read it: reading its data again for its own form goes here. */}
           {document.form ? <div><DisabledReason reason={busy ? null : waiting ?? wait}>
             <Button type="button" variant="link" size="inline" disabled={busy || !!waiting || !!wait}
               onClick={() => { if (document.form) void review.changeForm(document.form.definitionId, document.form.name); }}>
