@@ -7,6 +7,8 @@
   "loadFailed": "No pudimos cargar las carpetas.",
   "missing": "La carpeta de la dirección ya no existe. Te mostramos todos.",
   "selector": "Carpeta: {{name}}",
+  "filter": "Carpeta",
+  "allFolders": "Todas las carpetas",
   "reread": "Volver a leer",
   "retrying": "Reintentando…",
   "name": {

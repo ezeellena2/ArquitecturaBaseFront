@@ -398,6 +398,15 @@ describe("Picker", () => {
     expect(screen.getByText("Creado")).toBeInTheDocument();
   });
 
+  it("indents an option under the one it belongs to, such as a subfolder under its folder", async () => {
+    renderWithProviders(<FormField label="Carpeta"><Picker label="Carpeta" options={[{ id: "delivery", label: "Repartos" }, { id: "north", label: "Norte", depth: 1 }]}
+      value={null} onChange={vi.fn()}/></FormField>);
+    const { list } = await openList(/^Carpeta/);
+
+    expect(within(list).getByRole("option", { name: "Repartos" }).style.paddingLeft).toBe("");
+    expect(within(list).getByRole("option", { name: "Norte" }).style.paddingLeft).toBe("2rem");
+  });
+
   it("does not repeat on top of the list what the button of a bar already says", async () => {
     renderWithProviders(<Picker label="Columnas" trigger="button" triggerLabel="Columnas" multiple options={[{ id: "lote", label: "Lote" }]} value={[]}
       onChange={vi.fn()}/>);

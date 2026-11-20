@@ -34,12 +34,12 @@ function catalogRequests(items: unknown[] = []) {
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(catalogPage(items)); }));
   return requests;
 }
-// Radix opens its menus by keyboard in jsdom.
-async function openFolderFilter(name: string | RegExp = /^Carpeta:/) {
+// Radix opens the list of the only piece to choose by keyboard in jsdom.
+async function openFolderFilter(name: string | RegExp = /^Carpeta /) {
   const trigger = await screen.findByRole("button", { name });
   act(() => trigger.focus());
   await userEvent.keyboard("{Enter}");
-  return screen.findByRole("menu");
+  return screen.findByRole("listbox", { name: "Carpeta" });
 }
 const search = (router: ReturnType<typeof renderRouteWithProviders>["router"]) => new URLSearchParams(router.state.location.search);
 beforeEach(async () => { queryClient.clear(); await i18n.changeLanguage("es"); });
@@ -52,21 +52,23 @@ describe("Catálogos with the «Carpeta» filter", () => {
     await act(async () => { router = renderRouteWithProviders("/catalogos?page=3&pageSize=20&search=urea&state=Inactive").router; });
     // The listing goes the whole width: no panel of folders beside it.
     expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
-    const menu = await openFolderFilter("Carpeta: Todas");
-    expect(await within(menu).findByRole("menuitemradio", { name: "Norte" })).toBeInTheDocument();
-    expect(within(menu).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Todas", "Sin carpeta", "Facturación", "Repartos", "Norte"]);
-    expect(within(menu).getByRole("menuitemradio", { name: "Todas" })).toHaveAttribute("aria-checked", "true");
-    expect(within(menu).getAllByRole("separator")).toHaveLength(1);
-    await userEvent.click(within(menu).getByRole("menuitemradio", { name: "Norte" }));
+    const list = await openFolderFilter("Carpeta Todas las carpetas");
+    expect(await within(list).findByRole("option", { name: "Norte" })).toBeInTheDocument();
+    expect(within(list).getAllByRole("option").map(item => item.textContent)).toEqual(["Todas las carpetas", "Sin carpeta", "Facturación", "Repartos", "Norte"]);
+    expect(within(list).getByRole("option", { name: "Todas las carpetas" })).toHaveAttribute("aria-selected", "true");
+    // «Todas las carpetas» goes apart, behind the only line, and the subfolder goes indented under its folder.
+    expect(list.querySelectorAll("li[role=presentation]")).toHaveLength(1);
+    expect(within(list).getByRole("option", { name: "Norte" }).style.paddingLeft).not.toBe("");
+    await userEvent.click(within(list).getByRole("option", { name: "Norte" }));
     await waitFor(() => expect(search(router).get("carpeta")).toBe(north));
     expect(search(router).get("page")).toBeNull();
     expect(search(router).get("search")).toBe("urea");
     expect(search(router).get("state")).toBe("Inactive");
     await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
-    expect(await screen.findByRole("button", { name: "Carpeta: Norte" })).toBeInTheDocument();
-    const again = await openFolderFilter("Carpeta: Norte");
-    expect(within(again).getByRole("menuitemradio", { name: "Norte" })).toHaveAttribute("aria-checked", "true");
-    await userEvent.click(within(again).getByRole("menuitemradio", { name: "Sin carpeta" }));
+    expect(await screen.findByRole("button", { name: "Carpeta Norte" })).toBeInTheDocument();
+    const again = await openFolderFilter("Carpeta Norte");
+    expect(within(again).getByRole("option", { name: "Norte" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(again).getByRole("option", { name: "Sin carpeta" }));
     await waitFor(() => expect(search(router).get("carpeta")).toBe("sin-carpeta"));
     await waitFor(() => expect(requests.at(-1)?.get("withoutFolder")).toBe("true"));
     expect(requests.at(-1)?.get("folderId")).toBeNull();
@@ -100,7 +102,7 @@ describe("Catálogos with the «Carpeta» filter", () => {
     await act(async () => { router = renderRouteWithProviders(`/catalogos?pageSize=20&carpeta=${gone}`).router; });
     expect(await screen.findByText("La carpeta de la dirección ya no existe. Te mostramos todos.")).toBeInTheDocument();
     await waitFor(() => expect(search(router).get("carpeta")).toBeNull());
-    expect(await screen.findByRole("button", { name: "Carpeta: Todas" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Carpeta Todas las carpetas" })).toBeInTheDocument();
     await waitFor(() => expect(requests.at(-1)?.has("folderId")).toBe(false));
   });
 
@@ -113,13 +115,13 @@ describe("Catálogos with the «Carpeta» filter", () => {
     expect(await screen.findByRole("link", { name: "Artículos" })).toBeInTheDocument();
     // While the tree is read the address' folder counts; once it fails, the listing goes on with «Todas».
     await waitFor(() => expect(requests.at(-1)?.has("folderId")).toBe(false));
-    const menu = await openFolderFilter("Carpeta: Todas");
-    expect(await within(menu).findByText("No pudimos cargar las carpetas.")).toBeInTheDocument();
-    expect(within(menu).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Todas"]);
+    const list = await openFolderFilter("Carpeta Todas las carpetas");
+    expect(await screen.findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
+    expect(within(list).getAllByRole("option").map(item => item.textContent)).toEqual(["Todas las carpetas"]);
     fail = false;
-    await userEvent.click(within(menu).getByRole("menuitem", { name: "Reintentar" }));
-    // The folder of the address is back once the tree is read.
-    expect(await within(menu).findByRole("menuitemradio", { name: "Norte" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    // The folder of the address is back once the tree is read, with the list still open.
+    expect(await within(list).findByRole("option", { name: "Norte" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
   });
 
@@ -139,7 +141,7 @@ describe("Catálogos with the «Carpeta» filter", () => {
     catalogRequests([catalogRow]);
     await act(async () => { renderRouteWithProviders("/catalogos?pageSize=20"); });
     expect(await screen.findByRole("link", { name: "Artículos" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Carpeta: Todas" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Carpeta Todas las carpetas" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Carpetas de «Artículos»" })).not.toBeInTheDocument();
   });
 });
@@ -157,8 +159,8 @@ describe("Diseñar formularios with the «Carpeta» filter", () => {
     let router!: ReturnType<typeof renderRouteWithProviders>["router"];
     await act(async () => { router = renderRouteWithProviders("/formularios?page=2&pageSize=20&publicationFilter=Published").router; });
     expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
-    const menu = await openFolderFilter("Carpeta: Todas");
-    await userEvent.click(await within(menu).findByRole("menuitemradio", { name: "Repartos" }));
+    const list = await openFolderFilter("Carpeta Todas las carpetas");
+    await userEvent.click(await within(list).findByRole("option", { name: "Repartos" }));
     await waitFor(() => expect(search(router).get("carpeta")).toBe(delivery));
     expect(search(router).get("page")).toBeNull();
     expect(search(router).get("publicationFilter")).toBe("Published");
@@ -202,7 +204,7 @@ describe("Formularios without folders", () => {
     expect(requests.every(request => !request.has("folderId") && !request.has("withoutFolder"))).toBe(true);
     expect(await screen.findByRole("searchbox")).toBeInTheDocument();
     expect(screen.queryByText(/«Norte»/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Carpeta:/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Carpeta / })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
     expect(trees).not.toHaveBeenCalled();
   });

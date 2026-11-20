@@ -7,6 +7,8 @@
   "loadFailed": "We couldn't load the folders.",
   "missing": "The folder in the address no longer exists. Showing everything.",
   "selector": "Folder: {{name}}",
+  "filter": "Folder",
+  "allFolders": "All folders",
   "reread": "Read again",
   "retrying": "Retrying…",
   "name": {

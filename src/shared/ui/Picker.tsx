@@ -28,6 +28,8 @@ export interface PickerOption {
   icon?: ReactNode;
   /** What the closed field says when it is the chosen one, shorter than the name («AR +54»); the reader hears the name. */
   short?: string;
+  /** How far it goes under the option it belongs to, such as a subfolder under its folder: it is indented that many steps. */
+  depth?: number;
 }
 
 interface PickerBase {
@@ -418,10 +420,12 @@ function OptionRow({ row, id, active, multiple, touch, position, onHover, onChoo
   row: Row; id: string; active: boolean; multiple: boolean; touch: boolean; position?: { index: number; size: number };
   onHover: () => void; onChoose: () => void;
 }) {
-  const { label, description, disabledReason, icon } = row.option;
+  const { label, description, disabledReason, icon, depth } = row.option;
   const describedBy = [description ? `${id}-description` : null, disabledReason ? `${id}-reason` : null].filter(Boolean).join(" ");
   const markSize = touch ? "size-6" : "mt-0.5 size-4";
-  return <li role="option" id={id} aria-labelledby={`${id}-label`} aria-describedby={describedBy || undefined} aria-selected={row.selected}
+  // Each step under its owner moves it the width of the tick and its gap, so its tick goes under the name of its owner.
+  const indent = depth ? { paddingLeft: `${(touch ? 1 : 0.5) + depth * 1.5}rem` } : undefined;
+  return <li role="option" id={id} aria-labelledby={`${id}-label`} aria-describedby={describedBy || undefined} aria-selected={row.selected} style={indent}
     aria-disabled={row.disabled || undefined} aria-posinset={position?.index} aria-setsize={position?.size} data-active={active || undefined}
     // The focus stays in the search or the list: a click only chooses.
     onMouseDown={event => event.preventDefault()} onMouseMove={onHover} onClick={onChoose}

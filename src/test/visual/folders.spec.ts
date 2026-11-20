@@ -12,7 +12,7 @@ const texts = {
     empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", draft: "Borrador",
     actions: (name: string) => `Acciones de «${name}»`, move: /^Mover a…/, moveReason: "Tiene subcarpetas: no puede ir adentro de otra.", addFormsItem: "Agregar formularios…",
     moveTitle: "Mover «Norte» a…", into: (name: string) => `Adentro de «${name}»`, delete: "Borrar", deleteTitle: "¿Borrar «Repartos»?", deleteConfirm: "Borrar carpeta",
-    filter: "Carpeta: Todas", withoutFolder: "Sin carpeta", rowFolders: /^Carpetas de «/, catalogsLink: "Ver sus 2 catálogos", loadError: "No pudimos cargar tu menú.", retry: "Reintentar",
+    filter: "Carpeta Todas las carpetas", withoutFolder: "Sin carpeta", rowFolders: /^Carpetas de «/, catalogsLink: "Ver sus 2 catálogos", loadError: "No pudimos cargar tu menú.", retry: "Reintentar",
   },
   en: {
     forms: "Design forms", catalogs: "Catalogs", crumbs: "Breadcrumb", mainMenu: "Main navigation", drawer: "Navigation menu", collapse: "Collapse menu",
@@ -21,7 +21,7 @@ const texts = {
     empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", draft: "Draft",
     actions: (name: string) => `Actions of “${name}”`, move: /^Move to…/, moveReason: "It has subfolders: it can't go inside another one.", addFormsItem: "Add forms…",
     moveTitle: "Move “North” to…", into: (name: string) => `Inside “${name}”`, delete: "Delete", deleteTitle: "Delete “Deliveries”?", deleteConfirm: "Delete folder",
-    filter: "Folder: All", withoutFolder: "No folder", rowFolders: /^Folders of “/, catalogsLink: "See its 2 catalogs", loadError: "We couldn't load your menu.", retry: "Retry",
+    filter: "Folder All folders", withoutFolder: "No folder", rowFolders: /^Folders of “/, catalogsLink: "See its 2 catalogs", loadError: "We couldn't load your menu.", retry: "Retry",
   },
 } as const;
 type Texts = (typeof texts)[keyof typeof texts];
@@ -109,10 +109,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await menu.getByRole("button", { name: text.newFolder, exact: true }).click();
     const dialog = page.getByRole("dialog", { name: text.newFolder, exact: true });
     await dialog.getByRole("textbox", { name: text.name, exact: true }).fill(text.purchases);
-    await expect(dialog.getByRole("combobox", { name: text.icon, exact: true })).toBeVisible();
+    // The icon is the only piece to choose: its button says the label and the chosen icon.
+    const icon = dialog.getByRole("button", { name: new RegExp(`^${text.icon} `) });
+    await expect(icon).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "new");
-    await dialog.getByRole("combobox", { name: text.icon, exact: true }).click();
+    await icon.click();
     await expect(page.getByRole("option").first()).toBeVisible();
     await shot(page, "new-icons");
     await page.keyboard.press("Escape");
@@ -134,8 +136,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CM3 · Diseñar formularios has no panel, with the «Carpeta» filter and «Carpetas…» of two levels", async ({ page }) => {
     await open(page, "/formularios", "forms-folders", language, current => current.getByRole("heading", { name: text.forms, exact: true }));
     await page.getByRole("button", { name: text.filter, exact: true }).click();
-    await expect(page.getByRole("menuitemradio", { name: text.withoutFolder, exact: true })).toBeVisible();
-    await expect(page.getByRole("menuitemradio", { name: text.north, exact: true })).toBeVisible();
+    await expect(page.getByRole("option", { name: text.withoutFolder, exact: true })).toBeVisible();
+    await expect(page.getByRole("option", { name: text.north, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "forms-filter");
     await page.keyboard.press("Escape");
@@ -150,7 +152,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CM3 · Catálogos has no panel, with the «Carpeta» filter", async ({ page }) => {
     await open(page, "/catalogos", "catalogs-folders", language, current => current.getByRole("heading", { name: text.catalogs, exact: true }));
     await page.getByRole("button", { name: text.filter, exact: true }).click();
-    await expect(page.getByRole("menuitemradio", { name: text.south, exact: true })).toBeVisible();
+    await expect(page.getByRole("option", { name: text.south, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "catalogs-filter");
   });
