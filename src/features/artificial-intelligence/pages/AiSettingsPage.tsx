@@ -80,10 +80,11 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
         </DisabledReason> : undefined}>
         <div className="divide-y divide-[var(--color-border)] px-4">
           <div className="py-3">
-            {/* Two fixed providers, in sight and one click away (DS1-A), as wide as their dropdown was. With a key, changing it asks
-                first, so the chosen one stays until it is confirmed; choosing the one it has changes nothing. */}
+            {/* Two fixed providers, in sight and one click away (DS1-A); on the phone they go apart, because «Anthropic / Claude»
+                does not fit in half the width. With a key, changing it asks first, so the chosen one stays until it is confirmed;
+                choosing the one it has changes nothing. */}
             <div className="w-full sm:w-72"><FormField label={t("provider")} error={error("provider")}>
-              <SegmentedControl fullWidth aria-label={t("provider")} disabled={locked} options={baseline.providers.map(item => ({
+              <SegmentedControl wrap aria-label={t("provider")} disabled={locked} options={baseline.providers.map(item => ({
                 key: item, label: item === "Anthropic" ? "Anthropic / Claude" : item, pressed: draft.provider === item,
                 onSelect: () => { if (item === draft.provider) return; if (savedCredential || draft.apiKey) setNextProvider(item); else provider(item); },
               }))} />

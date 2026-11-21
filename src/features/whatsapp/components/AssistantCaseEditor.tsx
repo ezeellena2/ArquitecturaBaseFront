@@ -127,9 +127,10 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
       <div className="min-h-0 flex-1 overflow-y-auto p-4"><div className="flex flex-col gap-4">
         {unmatched.length ? <p role="alert" className="text-sm text-[var(--color-danger)]">{unmatched.join(" ")}</p> : null}
         {whenField}
-        {/* Three fixed input types, in sight and one click away (DS1-A); choosing the one it has changes nothing. */}
+        {/* Three fixed input types, in sight and one click away (DS1-A); choosing the one it has changes nothing. On the phone they go
+            apart, because «Cualquier entrada» does not fit in a third of the width. */}
         {fallback ? null : <div className="w-full sm:w-72"><FormField label={t("editor.inputType")} help={t("editor.inputTypeHelp")}>
-          <SegmentedControl fullWidth aria-label={t("editor.inputType")} options={inputTypes.map(type => ({ key: type, label: t("inputTypes." + type), pressed: value.inputType === type,
+          <SegmentedControl wrap aria-label={t("editor.inputType")} options={inputTypes.map(type => ({ key: type, label: t("inputTypes." + type), pressed: value.inputType === type,
             onSelect: () => { if (type !== value.inputType) change({ inputType: type }, "inputType"); } }))} />
         </FormField></div>}
         <RadioGroupField label={t("editor.kind")} showLabel variant="cards" value={kind} error={error("action.kind")}
