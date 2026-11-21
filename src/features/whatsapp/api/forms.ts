@@ -24,7 +24,9 @@ const outgoingSchema = z.object({ id: guid, requestId: guid, operatorUserId: z.s
   // H9: a send that failed may say why, by its stable code.
   failureCode: z.string().min(1).optional() }).strict();
 
-const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0).max(200)});
+// The options the person receives. With «elegir primero» the 200 limit is per value and for the list of values, not for the total
+// (LD2-A), so the total has no cap here: a catalog too large comes as an issue, not as an offer.
+const catalogOfferSchema = z.strictObject({fieldId:guid,label:z.string().min(1),count:z.number().int().min(0)});
 // missingData names the person's datum that is missing, and only for that block.
 const preparationIssueSchema = z.strictObject({fieldId:guid,label:z.string(),code:z.string().min(1),catalogName:z.string().nullable(),invalidOptionCount:z.number().int().nonnegative().nullable(),missingData:z.string().min(1).nullable()})
   .refine(issue=>(issue.code==="Forms.Record.RecipientDataMissing")===(issue.missingData!==null));

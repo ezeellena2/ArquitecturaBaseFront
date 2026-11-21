@@ -34,6 +34,12 @@ describe("Chat forms DTO contract", () => {
       expect(() => parseChatFormPreparation(prepared(invalid))).toThrow("Unsupported chat form response.");
     }
   });
+  it("accepts more than 200 options in total for a question that picks first by a field (LD2-A, O31)", () => {
+    // With «elegir primero» the 200 limit applies to each value and to the list of values, not to the total, so the server can
+    // offer more and still say it can send.
+    const prepared = { culture: "es", recipientContextRevision: "context", preparation: { catalogs: [{ fieldId: definitionId, label: "Producto", count: 331 }], issues: [], canSend: true } };
+    expect(parseChatFormPreparation(prepared).preparation.catalogs[0]!.count).toBe(331);
+  });
   it("preserves the complete sealed text maps and recipient language", () => {
     expect(parseChatForms(forms)).toEqual(forms);
   });
