@@ -11,13 +11,20 @@ contratos ni servidor. La regla está en el [fundamento visual](../design/visual
   página» del paginado en un segmentado.
 - **Etapa 3, hecha.** Los combos y los selects de formularios, catálogos y documentos, la pregunta de catálogo de la carga
   en la compu y en el celular, y Canal, Estado y «Columnas» de la planilla.
-- **Etapa 4, casi entera.** Configuración, Mi perfil y el horario del negocio, con la lista única de zonas. Falta la
-  tarea 13: retirar `MultiSelect` y `select.tsx`, dejar `NativeSelect` sólo en `FormPreview` (su excepción) y
-  `Autocomplete` sólo en `BusinessPlaceSearch`, con la regla de arquitectura que lo impide en otro lugar.
+- **Etapa 4, hecha.** Configuración, Mi perfil y el horario del negocio, con la lista única de zonas; el ícono de una
+  carpeta y el filtro «Carpeta», que llegaron con las carpetas del menú. `MultiSelect`, `select.tsx` y
+  `FilterMenuTrigger` se retiraron; `NativeSelect` queda sólo en `FormPreview` y `Autocomplete` sólo en
+  `BusinessPlaceSearch`, con la regla de arquitectura que lo impide en otro lugar.
 - **Etapa 5.** La tarea 14 está escrita: la pieza en [`shared/ui`](../../src/shared/ui/AGENTS.md), el fundamento visual
   y su lista de chequeo, las [premisas](../guides/premisas-de-desarrollo.md#formularios-y-selección) y el
-  [estándar](../guides/estandar-visual.md); el índice de premisas del backend ya enlaza esas fuentes. Faltan la corrida
-  completa y la prueba guiada (tarea 15), y pasar los tableros al lienzo y lo hecho al traspaso (tarea 16).
+  [estándar](../guides/estandar-visual.md); el índice de premisas del backend ya enlaza esas fuentes.
+  - La corrida en una copia del front dio oxlint, build y vitest en verde. La visual dejó tres arreglos:
+    - en el teléfono, cerrar la lista devuelve el foco al botón;
+    - una confirmación que abre una elección («¿Cambiar el catálogo?») también se lo devuelve al cancelarse;
+    - el proveedor de IA y el tipo de entrada usan el segmentado `wrap`, porque cortaban su texto a 320 y 390.
+  - Las capturas se rehicieron comparándolas con el front sin la pieza.
+  - Faltan la corrida completa en el front y la prueba guiada (tarea 15), y pasar los tableros al lienzo y lo hecho al
+    traspaso (tarea 16).
 
 ## Por qué
 
