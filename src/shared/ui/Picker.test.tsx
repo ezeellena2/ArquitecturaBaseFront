@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { FormField } from "./FormField";
 import { Picker, type PickerOption } from "./Picker";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
@@ -33,6 +34,29 @@ function Place({ initial = null, options = places, first }: { initial?: string |
     <FormField label="Campo asignado"><Picker label="Campo asignado" options={options} value={value} onChange={setValue} placeholder="Sin campo asignado" first={first}/></FormField>
     <button type="button">Después</button>
   </>;
+}
+
+// A choice that its owner asks to confirm before applying it, as the catalog of a question does.
+function AskedPlace() {
+  const [value, setValue] = useState<string | null>("el tala");
+  const [asked, setAsked] = useState<string | null>(null);
+  return <>
+    <FormField label="Campo asignado"><Picker label="Campo asignado" options={places} value={value} onChange={setAsked}/></FormField>
+    <ConfirmDialog open={asked !== null} onOpenChange={open => { if (!open) setAsked(null); }} title="¿Cambiar el campo?" confirmLabel="Cambiar"
+      onConfirm={() => { setValue(asked); setAsked(null); }}/>
+  </>;
+}
+
+async function cancelsTheConfirmation() {
+  renderWithProviders(<AskedPlace/>);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Campo asignado EL TALA" }));
+  await user.click(await screen.findByRole("option", { name: "EL OMBÚ" }));
+  await screen.findByRole("dialog", { name: "¿Cambiar el campo?" });
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "¿Cambiar el campo?" })).not.toBeInTheDocument());
+  // The list was closed and the focus back on its button before the owner asked: the confirmation gives it back there.
+  await waitFor(() => expect(screen.getByRole("button", { name: "Campo asignado EL TALA" })).toHaveFocus());
 }
 
 async function openList(name: RegExp) {
@@ -417,6 +441,8 @@ describe("Picker", () => {
     expect(screen.getAllByText("Columnas")).toHaveLength(1);
   });
 
+  it("gives the focus back to its button when a confirmation that its choice opens is cancelled", cancelsTheConfirmation);
+
   describe("on the phone", () => {
     let media: MockInstance;
     beforeEach(() => {
@@ -465,5 +491,7 @@ describe("Picker", () => {
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       await waitFor(() => expect(screen.getByRole("button", { name: "Campo asignado EL OMBÚ" })).toHaveFocus());
     });
+
+    it("gives the focus back to its button when a confirmation that its choice opens is cancelled", cancelsTheConfirmation);
   });
 });

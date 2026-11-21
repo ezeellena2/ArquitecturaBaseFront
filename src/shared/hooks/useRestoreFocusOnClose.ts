@@ -15,12 +15,18 @@ import { useLayoutEffect, useRef, type RefObject } from "react";
 /// ya no ofrece "Agregar correo". Un elemento que ya no está en la página, o que está apagado, no vuelve a tomar el foco:
 /// con `fallback`, va ahí. Sin `fallback`, un control deshabilitado deja caer el foco en `<body>`, igual que sin este hook,
 /// y uno apagado con su motivo (`aria-disabled`, MA1-A) lo toma, porque sigue en el Tab.
+///
+/// Un diálogo que abre una elección de la pieza para elegir («¿Cambiar el catálogo?») se abre mientras la lista se cierra,
+/// con el foco todavía adentro de ella, en un elemento que desaparece enseguida. La lista dice con `data-return-focus-to` cuál
+/// es su botón (DS1-A, 2026-11-20), y el diálogo guarda ese botón en lugar del elemento de la lista.
 export function useRestoreFocusOnClose(open = true, fallback?: RefObject<HTMLElement | null>): (event: Event) => void {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
     if (open) {
-      previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      const opener = active?.closest("[data-return-focus-to]")?.getAttribute("data-return-focus-to");
+      previouslyFocusedRef.current = (opener ? document.getElementById(opener) : null) ?? active;
     }
   }, [open]);
 

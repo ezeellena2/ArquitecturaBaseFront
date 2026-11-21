@@ -277,13 +277,13 @@ export function Picker(props: PickerProps) {
     hide();
   }
 
-  const nameId = `${uid}-name`, valueId = `${uid}-value`, listboxId = `${uid}-listbox`;
+  const nameId = `${uid}-name`, valueId = `${uid}-value`, listboxId = `${uid}-listbox`, triggerId = props.id ?? `${uid}-trigger`;
   const single = !multiple && !empty ? picks[0] : undefined;
   const marks = Object.fromEntries(Object.entries(props).filter(([key]) => key.startsWith("data-")));
   const triggerProps = {
     ...marks,
     ref: triggerRef,
-    id: props.id,
+    id: triggerId,
     type: "button" as const,
     disabled: props.disabled,
     "aria-haspopup": phone ? "dialog" as const : "listbox" as const,
@@ -372,7 +372,7 @@ export function Picker(props: PickerProps) {
     <Dialog open={open} onOpenChange={next => { if (!next) hide(); }}>
       {/* The button is not the dialog's own trigger, so Radix would leave the focus nowhere when the screen closes: it goes
           back to the button, as on a computer. */}
-      <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} onOpenAutoFocus={focusList}
+      <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} onOpenAutoFocus={focusList} data-return-focus-to={triggerId}
         onCloseAutoFocus={event => { event.preventDefault(); triggerRef.current?.focus(); }}
         className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
@@ -395,7 +395,9 @@ export function Picker(props: PickerProps) {
   return <PopoverPrimitive.Root modal open={open} onOpenChange={next => { if (next) show(); else hide(); }}>
     <PopoverPrimitive.Trigger asChild>{trigger}</PopoverPrimitive.Trigger>
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content align="start" sideOffset={4} collisionPadding={8} onKeyDown={leaveWithTab} onOpenAutoFocus={focusList}
+      {/* `data-return-focus-to`: a confirmation that a choice opens («¿Cambiar el catálogo?») opens while the list is still
+          closing, with the focus inside it; the attribute tells it to give the focus back to the button (useRestoreFocusOnClose). */}
+      <PopoverPrimitive.Content align="start" sideOffset={4} collisionPadding={8} onKeyDown={leaveWithTab} onOpenAutoFocus={focusList} data-return-focus-to={triggerId}
         onCloseAutoFocus={event => {
           const direction = leaving.current;
           leaving.current = null;
