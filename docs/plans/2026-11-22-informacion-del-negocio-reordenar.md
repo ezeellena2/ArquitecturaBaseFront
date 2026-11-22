@@ -36,8 +36,8 @@ Tableros: lienzo aparte [Información del negocio: reordenar](https://claude.ai/
   - **La atención (Sin definir, Abierto, Cerrado, 24 horas) va en un desplegable, con la pieza única, y no en el
     segmentado.** Lo pidió el usuario el 22/11 y, preguntado si valía sólo para el horario o para toda la app, contestó
     «En toda la app». Reemplaza la regla de DS1-A que ponía de dos a cuatro opciones fijas en radios o un segmentado:
-    elegir de opciones fijas también va en la pieza única. Si la carga de formularios (Sí o No y hasta cinco opciones en
-    fila, AR1-A) entra en la regla quedó preguntado al usuario.
+    elegir de opciones fijas también va en la pieza única. También en la carga de formularios: preguntado por el Sí o No y
+    las hasta cinco opciones en fila de AR1-A, contestó «Sí, también».
   - Los botones: «Agregar fecha» al crear una fecha especial; «Listo» al editar un día o una fecha.
   - Un problema se marca al tocar «Listo» y el diálogo no se cierra. Lo que cruza de un día al otro se revisa al guardar,
     debajo de la semana, como hoy.
