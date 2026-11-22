@@ -21,6 +21,7 @@ import { Picker } from "@/shared/ui/Picker";
 import { BanIcon, FolderIcon, PencilIcon, PlusIcon, RefreshIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { formActorKey, formScopeKey, useFormDefinitions, type FormReadScope } from "../hooks/useFormQueries";
@@ -35,10 +36,11 @@ import { FolderFilter } from "../components/FolderFilter";
 import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
 import { folderListQuery } from "../folderTree";
 import { folderActorKey, useFolderEmpty, useListingFolders } from "../hooks/useFormFolders";
-import type { FormListQuery } from "../api/forms";
+import type { FormListQuery, FormSortField } from "../api/forms";
 import type { readFormPage } from "../api/response";
 
-const sortFields = ["name", "-name", "questionCount", "-questionCount", "lastChangedAtUtc", "-lastChangedAtUtc"] as const;
+// Without an order chosen the server orders by name: it is a column, so its arrow shows and the first touch inverts it (OT1-C).
+const usualSort = "name";
 // Each state of the filter and its word; «Activos», without one in the address, is the published and the drafts. «Con algo por
 // aprobar» (FU4) only for whoever decides approvals, and it mixes active and deactivated forms.
 const publicationFilters = [["Active", "active"], ["Published", "published"], ["Drafts", "drafts"], ["Pending", "overview.pendingOnly"], ["Deactivated", "deactivated"]] as const;
@@ -47,7 +49,7 @@ export function FormsPage() {
   const { t, i18n } = useTranslation(["forms", "formFolders", "formEntries"]);
   const { data: user } = useCurrentUser();
   const presentation = useSystemPresentation();
-  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const pagination = usePagination(presentation.data?.defaultPageSize, true, usualSort);
   // CM3: the «Carpeta» filter of the address filters the listing and its counts, with its subfolders, before paging.
   const folders = useListingFolders("designs");
   const [foldersOf, setFoldersOf] = useState<{ id: string; name: string } | null>(null);
@@ -65,9 +67,19 @@ export function FormsPage() {
   const canDecide = !!user?.permissions.includes("formapprovals.decide");
   const publicationFilter = filter === "Published" || filter === "Drafts" || filter === "Deactivated" || filter === "Pending" && canDecide ? filter : "Active";
   const scope: FormReadScope = { actorId: pagination.ready ? user?.id ?? null : null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
+  // SA3-A and SA5: where each form is completed, only with a form channel installed; without one, every form is of the app.
+  const channels = presentation.data?.installedFeatures ? presentation.data.installedFeatures.includes("form-channels") : true;
+  // Every column with a datum orders in the server (OT1-C), with the backend's field as its id. Two show nothing to order by and
+  // the server keeps the usual order for them: «Respuestas» without «Ver respuestas», where every row says «—», and «Estado»
+  // among the deactivated, where it is the withdrawal from the channel. An order this view does not offer is left out.
+  const sortsByResponses = scope.permissions.includes("formrecords.read");
+  const sortsByState = publicationFilter !== "Deactivated";
+  const sortFields: FormSortField[] = ["name", "questionCount", ...(sortsByState ? ["displayState" as const] : []), ...(channels ? ["completedIn" as const] : []),
+    "activeVersion", ...(sortsByResponses ? ["responseCount" as const] : []), "lastChangedAtUtc", "lastChangedBy"];
+  const sort = sortFields.flatMap(field => [field, `-${field}` as const]).find(value => value === pagination.sort);
   const query: FormListQuery = { page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
     pageSize: Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : presentation.data?.defaultPageSize ?? 20,
-    search: pagination.search, sort: sortFields.find(field => field === pagination.sort), publicationFilter, ...folderListQuery(folders.selection) };
+    search: pagination.search, sort, publicationFilter, ...folderListQuery(folders.selection) };
   const { list } = useFormDefinitions(scope, query);
   const actionOwner = JSON.stringify(formScopeKey(scope));
   if (action && action.owner !== actionOwner) setAction(null);
@@ -77,8 +89,6 @@ export function FormsPage() {
   const warnsDeactivated = canDecide && publicationFilter === "Active";
   const { query: deactivatedPending } = useFormOverview({ page: 1, pageSize: 1, search: query.search, state: "Active" }, warnsDeactivated && pagination.ready);
   const deactivatedPendingCount = warnsDeactivated ? deactivatedPending.data?.filterCounts.deactivatedPending ?? 0 : 0;
-  // SA3-A and SA5: where each form is completed, only with a form channel installed; without one, every form is of the app.
-  const channels = presentation.data?.installedFeatures ? presentation.data.installedFeatures.includes("form-channels") : true;
   const hasFilters = !!query.search || publicationFilter !== "Active";
   const folderEmpty = useFolderEmpty(folders, "forms", hasFilters);
   // «Con algo por aprobar» with nothing says so, as in «Formularios», without inviting to clear anything.
@@ -100,38 +110,40 @@ export function FormsPage() {
     { id: "name", header: t("formColumn"), sortable: true, sortKind: "text", cell: row => <Link to={`/formularios/${row.id}`} className="font-medium text-[var(--color-brand-700)] underline-offset-2 hover:underline">{administrativeName(row.name, scope.culture)}</Link> },
     { id: "questionCount", header: t("countColumn"), sortable: true, sortKind: "number", numeric: true, cell: row => row.questionCount },
     // One piece of data per column (UD2): the state goes alone, the version that stays active and who changed it go apart.
-    { sortable: false, id: "displayState", header: t("stateColumn"), cell: row => {
+    { id: "displayState", header: t("stateColumn"), ...(sortsByState ? { sortable: true as const, sortKind: "state" as const } : { sortable: false as const }), cell: row => {
       if (!row.lifecycle.deactivatedAtUtc) return t(publicationLabelKey(row.displayState, true));
       const key = deprecationStateKey(row.lifecycle);
       return key ? t(key) : "—";
     } },
     // SA3-A: where the active version is completed and, without one, where the draft will be; one piece of data per column (UD).
-    ...(channels ? [{ sortable: false as const, id: "completedIn", header: t("completedIn.label"), cell: (row: Row) => t(row.appOnly ? "completedIn.app" : "completedIn.channels") }] : []),
+    ...(channels ? [{ id: "completedIn", header: t("completedIn.label"), sortable: true as const, sortKind: "state" as const, cell: (row: Row) => t(row.appOnly ? "completedIn.app" : "completedIn.channels") }] : []),
     // «Dado de baja» is what the filter already says: here, how the withdrawal goes in WhatsApp and its date.
     ...(publicationFilter === "Deactivated" ? [{ sortable: false as const, id: "deprecation", header: t("lifecycle.deprecationColumn"), cell: (row: Row) => {
       const at = deprecationDateUtc(row.lifecycle);
       return at ? <time dateTime={at}>{formatDateTimeInZone(at, i18n.language, user?.timeZoneId)}</time> : "—";
     } }] : []),
-    { sortable: false, id: "activeVersion", header: t("activeVersionColumn"), numeric: true, cell: row => row.activeVersionNumber ?? "—" },
+    { id: "activeVersion", header: t("activeVersionColumn"), sortable: true, sortKind: "number", numeric: true, cell: row => row.activeVersionNumber ?? "—" },
     // FU2-A: what awaits the decision of whoever looks, as the number of the menu; it opens the sheet, which starts on «Por aprobar».
     ...(canDecide ? [{ sortable: false as const, id: "pendingDecisionCount", header: t("overview.pendingColumn"), numeric: true, cell: (row: Row) => row.pendingDecisionCount
       ? <Link to={`/formularios/${row.id}/respuestas`} aria-label={t("overview.pendingFor", { name: administrativeName(row.name, scope.culture), count: row.pendingDecisionCount })} className="font-medium text-[var(--color-brand-700)] underline">{row.pendingDecisionCount}</Link> : "—" }] : []),
     // The number of responses opens the sheet of the form (FU2-A); a form never published has none to open.
-    { sortable: false, id: "responseCount", header: t("responseCountColumn"), numeric: true, cell: row => row.lifecycle.responseCount !== null && row.activeVersionNumber !== null
+    { id: "responseCount", header: t("responseCountColumn"), ...(sortsByResponses ? { sortable: true as const, sortKind: "number" as const } : { sortable: false as const }), numeric: true, cell: row => row.lifecycle.responseCount !== null && row.activeVersionNumber !== null
       ? <Link to={`/formularios/${row.id}/respuestas`} aria-label={t("overview.responsesOf", { name: administrativeName(row.name, scope.culture) })} className="font-medium text-[var(--color-brand-700)] underline">{row.lifecycle.responseCount}</Link>
       : row.lifecycle.responseCount ?? "—" },
     { id: "lastChangedAtUtc", header: t("changedColumn"), sortable: true, sortKind: "date", cell: row => formatDateInZone(row.lastChangedAtUtc, i18n.language, user?.timeZoneId) },
-    { sortable: false, id: "lastChangedBy", header: t("changedByColumn"), cell: row => row.lastChangedBy?.displayName ?? "—" },
+    { id: "lastChangedBy", header: t("changedByColumn"), sortable: true, sortKind: "text", cell: row => row.lastChangedBy?.displayName ?? "—" },
     { sortable: false, id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{ hidden: !canLoad || row.activeVersionNumber === null || !!row.lifecycle.deactivatedAtUtc, label: t("formEntries:load"), accessibleName: t("formEntries:loadForm", { name: administrativeName(row.name, scope.culture) }), icon: PlusIcon, to: `/formularios/${row.id}/cargar`, state: { from: "list", list: "/formularios" + location.search } }, { hidden: !canManage || !row.canEdit, label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }, { hidden: !canManage, label: t("formFolders:item.action"), accessibleName: t("formFolders:item.actionFor", { name: administrativeName(row.name, scope.culture) }), icon: FolderIcon, onSelect: () => setFoldersOf({ id: row.id, name: administrativeName(row.name, scope.culture) }) }, { hidden: !canPublish || !row.lifecycle.canDeactivate, label: t("lifecycle.deactivate"), accessibleName: t("lifecycle.deactivate") + " " + administrativeName(row.name, scope.culture), icon: BanIcon, onSelect: () => chooseAction(row, "deactivate") }, { hidden: !canPublish || !row.lifecycle.canReactivate, label: t("lifecycle.reactivate"), accessibleName: t("lifecycle.reactivate") + " " + administrativeName(row.name, scope.culture), icon: RefreshIcon, onSelect: () => { void navigate("/formularios/" + row.id, { state: { reactivateFormId: row.id } }); } }, { hidden: !canManage || !row.lifecycle.canDelete || row.lifecycle.deletionUnavailableReason === "HasResponses" || row.lifecycle.responseCount !== null && row.lifecycle.responseCount > 0, label: t("lifecycle.delete"), accessibleName: t("lifecycle.delete") + " " + administrativeName(row.name, scope.culture), icon: TrashIcon, destructive: true, onSelect: () => chooseAction(row, "delete") }]} /> },
   ];
   return <div ref={host}><Page title={t("title")} actions={canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.form"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button></> : undefined}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("search")} /></div>{/* The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without
       counts (FO1-A); choosing the one it has changes nothing (it would go back to page 1). */}
     <Picker trigger="button" label={t("filter")} options={publicationFilters.filter(([id]) => id !== "Pending" || canDecide).map(([id, label]) => ({ id, label: t(label) }))} value={publicationFilter}
-      onChange={id => { if (id !== publicationFilter) update({ publicationFilter: id === "Active" ? undefined : id, page: undefined }); }} /><FolderFilter folders={folders} /></div></FilterBar>
+      onChange={id => { if (id !== publicationFilter) update({ publicationFilter: id === "Active" ? undefined : id, page: undefined }); }} /><FolderFilter folders={folders} />
+    {/* Last in the bar, apart from the filters: it takes no rows out, and «Limpiar filtros» keeps it (OT1-C). */}
+    <SortMenu columns={columns} sort={sort ?? usualSort} onSortChange={pagination.setSort} /></div></FilterBar>
     {deactivatedPendingCount > 0 ? <div className="mb-4"><Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ publicationFilter: "Deactivated", page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: deactivatedPendingCount })}</Banner></div> : null}
     {/* Searching, filtering, sorting or paging keeps the previous rows in sight: the table says it reads again until they arrive. */}
-    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); }} sort={query.sort} onSortChange={pagination.toggleSort}
+    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); }} sort={sort ?? usualSort} onSortChange={pagination.toggleSort}
       emptyTitle={folderEmpty?.title ?? t(pendingEmpty ? "overview.noPending" : hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters && !folderEmpty && !pendingEmpty ? t("noMatchesDescription") : undefined}
       emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button></div>
         : folderEmpty || pendingEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />

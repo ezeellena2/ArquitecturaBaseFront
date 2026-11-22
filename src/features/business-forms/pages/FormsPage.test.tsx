@@ -967,3 +967,88 @@ async function openList(trigger: string | RegExp | HTMLElement) {
 async function pick(trigger: string | RegExp | HTMLElement, option: string | RegExp) {
   await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
 }
+
+// OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort`.
+describe("Forms order", () => {
+  const withResponses = ["formtemplates.read", "formtemplates.manage", "formrecords.read"];
+  function sortRequests(permissions = withResponses) {
+    setup("", permissions); const requests: URLSearchParams[] = [];
+    server.use(http.get("/api/forms/definitions", ({ request }) => { requests.push(new URL(request.url).searchParams); return Response.json(realPublishedList); }));
+    return requests;
+  }
+  const header = (name: string) => within(screen.getByRole("table")).getByRole("columnheader", { name });
+
+  it("orders by a header in its useful direction, back on the first page, keeping the search and the filter", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/formularios?page=2&pageSize=20&search=contract&publicationFilter=Published");
+    await screen.findByRole("table");
+    // Without an order chosen, the server's usual one is the name: its arrow shows, and the first touch inverts it.
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(header("Formulario")).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Formulario, de la A a la Z" })).toBeVisible();
+
+    await userEvent.click(within(header("Estado")).getByRole("button", { name: "Estado" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("displayState"));
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("displayState");
+    expect(params.has("page")).toBe(false);
+    expect(params.get("search")).toBe("contract");
+    expect(params.get("publicationFilter")).toBe("Published");
+    expect(requests.at(-1)?.get("page")).toBe("1");
+    expect(header("Estado")).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Estado, según el circuito" })).toBeVisible();
+
+    await userEvent.click(within(header("Respuestas")).getByRole("button", { name: "Respuestas" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-responseCount"));
+  });
+
+  it.each([
+    ["Formulario", "-name"], ["Preguntas", "-questionCount"], ["Estado", "displayState"], ["Dónde se completa", "completedIn"],
+    ["Versión activa", "-activeVersion"], ["Respuestas", "-responseCount"], ["Último cambio", "-lastChangedAtUtc"], ["Cambió", "lastChangedBy"],
+  ])("orders «%s» by the server field %s", async (name, sort) => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/formularios");
+    await screen.findByRole("table");
+    await userEvent.click(within(header(name)).getByRole("button", { name }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe(sort));
+  });
+
+  it("does not order «Respuestas» without «Ver respuestas», where every row says «—», and leaves that order out", async () => {
+    const requests = sortRequests(["formtemplates.read", "formtemplates.manage"]);
+    renderRouteWithProviders("/formularios?sort=-responseCount");
+    await screen.findByRole("table");
+    expect(within(header("Respuestas")).queryByRole("button")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(header("Formulario")).toHaveAttribute("aria-sort", "ascending");
+  });
+
+  it("does not order «Estado» nor «Deprecación» among the deactivated, and leaves the order by state out", async () => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/formularios?publicationFilter=Deactivated&sort=displayState");
+    await screen.findByRole("table");
+    expect(within(header("Estado")).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(header("Deprecación")).queryByRole("button")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(screen.getByRole("button", { name: "Ordenar por: Formulario, de la A a la Z" })).toBeVisible();
+  });
+
+  it("changes the order from «Ordenar por», last in the bar, and the actions do not order", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/formularios?sort=lastChangedBy&publicationFilter=Published");
+    await screen.findByRole("table");
+    expect(requests.at(-1)?.get("sort")).toBe("lastChangedBy");
+    expect(within(header("Acciones")).queryByRole("button")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Cambió, de la A a la Z" });
+    expect(screen.getByRole("button", { name: "Estado Publicados" }).compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitemradio", { name: "Versión activa" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-activeVersion"));
+    expect(new URLSearchParams(router.state.location.search).get("publicationFilter")).toBe("Published");
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De menor a mayor" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("activeVersion"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(header("Versión activa")).toHaveAttribute("aria-sort", "ascending");
+  });
+});

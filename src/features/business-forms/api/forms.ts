@@ -2,11 +2,13 @@ import { api } from "@/shared/api/httpClient";
 import type { DraftEditorValue, DraftWriteBody, FormDraft, FormPublicationWriteBody } from "../model";
 import { formId, readFormDeactivation, readFormDeactivationPreview, readFormPreview, publicationPath, readFormPublicationReceipt, readFormPublicationStatus, readFormPublicationCheck, readFormCommit, readFormDetail, readFormFacets, readFormPage, readFormRecovery, recoveryPath } from "./response";
 
+/// The fields the server orders the list by (OT1-C), each the id of its column.
+export type FormSortField = "name" | "questionCount" | "displayState" | "completedIn" | "activeVersion" | "responseCount" | "lastChangedAtUtc" | "lastChangedBy";
 export interface FormListQuery {
   readonly page: number;
   readonly pageSize: number;
   readonly search?: string;
-  readonly sort?: "name" | "-name" | "questionCount" | "-questionCount" | "lastChangedAtUtc" | "-lastChangedAtUtc";
+  readonly sort?: FormSortField | `-${FormSortField}`;
   readonly publicationFilter: "Active" | "Published" | "Drafts" | "Pending" | "Deactivated";
   /// CP1-A: a folder with its subfolders, or the forms without one; never both.
   readonly folderId?: string;
