@@ -90,8 +90,9 @@ function rolesCell(roles: readonly string[]) {
   );
 }
 
-/// Las columnas ordenables (email, displayName, createdAtUtc) coinciden con la lista blanca del backend
-/// (`GetUsersQuery.SortableFields`): el nombre es el que viaja en `sort`. La columna "Usuario" ordena por correo.
+/// Toda columna con un dato ordena (OT1-C, 2026-11-22) y su `id` es el campo de la lista blanca del backend
+/// (`GetUsersQuery.SortableFields`) que viaja en `sort`. «WhatsApp» ordena por el número guardado y «Verificado» como un sí o
+/// no; una cuenta sin número no tiene ninguno de los dos («—») y va al final. «Roles» son varios valores: no ordena.
 export function createUserColumns(
   t: Translate,
   language: string,
@@ -101,8 +102,8 @@ export function createUserColumns(
   const columns: Column<UserListItem>[] = [
     { id: "email", header: t("columns.email"), cell: (row) => emailCell(row, t), sortable: true, sortKind: "text" },
     // El número formateado que manda el backend, nunca el E.164; no se parte en renglones.
-    { sortable: false, id: "whatsapp", header: t("columns.whatsapp"), cell: (row) => row.formattedPhoneNumber === null ? "—" : <span className="whitespace-nowrap">{row.formattedPhoneNumber}</span> },
-    { sortable: false, id: "verified", header: t("columns.verified"), cell: (row) => verifiedCell(row, t) },
+    { id: "whatsapp", header: t("columns.whatsapp"), cell: (row) => row.formattedPhoneNumber === null ? "—" : <span className="whitespace-nowrap">{row.formattedPhoneNumber}</span>, sortable: true, sortKind: "text" },
+    { id: "verified", header: t("columns.verified"), cell: (row) => verifiedCell(row, t), sortable: true, sortKind: "yesNo" },
     { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true, sortKind: "text" },
     { sortable: false, id: "roles", header: t("columns.roles"), cell: (row) => rolesCell(row.roles) },
     {

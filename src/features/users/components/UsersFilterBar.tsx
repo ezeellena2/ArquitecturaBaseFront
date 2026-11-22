@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { fetchUserFilterCounts, userFilterCountsQueryKey, type UserFilterKey } from "../api/users";
+import { fetchUserFilterCounts, userFilterCountsQueryKey, type UserFilterKey, type UserListItem } from "../api/users";
 import type { Filters } from "@/shared/hooks/useFilters";
 import { Button } from "@/shared/ui/button";
+import type { Column } from "@/shared/ui/DataTable";
 import { SlidersIcon } from "@/shared/ui/icons";
 import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { FilterBar } from "@/shared/ui/FilterBar";
 
@@ -13,6 +15,11 @@ interface UsersFilterBarProps {
   filters: Filters<UserFilterKey>;
   search: string;
   onSearchChange: (value: string) => void;
+  /** The columns of the table, for «Ordenar por» (OT1-C). */
+  columns: readonly Column<UserListItem>[];
+  /** The order in sight: the chosen one or, without one, the server's usual one. */
+  sort: string;
+  onSortChange: (sort: string) => void;
 }
 
 /// La barra de filtros del listado (fundamento visual, "Listados y filtros"): buscador, estado, rol y el
@@ -21,7 +28,7 @@ interface UsersFilterBarProps {
 /// Los roles y los plazos de "Creado" salen de `/api/users/filter-counts`, que trae también cuántos traería cada
 /// opción; esas cantidades no se muestran (FO1-A, 2026-11-03), así que se pide una vez, sin la búsqueda ni los
 /// filtros, y no en cada búsqueda (N30).
-export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterBarProps) {
+export function UsersFilterBar({ filters, search, onSearchChange, columns, sort, onSortChange }: UsersFilterBarProps) {
   const { t } = useTranslation("users");
   const { values, active, setFilter, clear } = filters;
 
@@ -110,6 +117,8 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
           onChange={(days) => choose("createdWithinDays", days)}
         />
 
+        {/* Last in the bar, apart from the filters: it takes no rows out, and «Limpiar todo» keeps it (OT1-C). */}
+        <SortMenu columns={columns} sort={sort} onSortChange={onSortChange} />
       </div>
 
       {active.length > 0 ? (

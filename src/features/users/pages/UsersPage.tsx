@@ -34,6 +34,10 @@ import { userFilterKeys } from "../api/users";
 import { UsersFilterBar } from "../components/UsersFilterBar";
 import { useFilters } from "@/shared/hooks/useFilters";
 
+/// Sin un orden elegido, el backend lista primero las cuentas más nuevas: es una columna, así que su flecha se ve y el primer
+/// toque en «Creado» la invierte (OT1-C).
+const usualSort = "-createdAtUtc";
+
 /// Las acciones de acceso y borrado pasan primero por el diálogo de confirmación.
 interface PendingConfirmation {
   kind: "activate" | "deactivate" | "delete";
@@ -48,7 +52,7 @@ export function UsersPage() {
   const { has } = usePermissions();
   const queryClient = useQueryClient();
   const presentation = useSystemPresentation();
-  const { page, pageSize, sort, search, ready, setPage, setPageSize, setSearch, toggleSort } = usePagination(presentation.data?.defaultPageSize, true);
+  const { page, pageSize, sort, search, ready, setPage, setPageSize, setSearch, toggleSort, setSort } = usePagination(presentation.data?.defaultPageSize, true, usualSort);
   const filters = useFilters(userFilterKeys);
 
   const [isCreating, setIsCreating] = useState(false);
@@ -139,6 +143,9 @@ export function UsersPage() {
         filters={filters}
         search={search ?? ""}
         onSearchChange={setSearch}
+        columns={columns}
+        sort={sort ?? usualSort}
+        onSortChange={setSort}
       />
 
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
@@ -154,7 +161,7 @@ export function UsersPage() {
           refreshing={isPlaceholderData}
           error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
-          sort={sort}
+          sort={sort ?? usualSort}
           onSortChange={toggleSort}
           emptyTitle={hasFilters ? t("empty.filteredTitle") : t("empty.title")}
           emptyDescription={

@@ -431,6 +431,82 @@ describe("UsersPage", () => {
     await waitFor(() => expect(requests.at(-1)).toContain("isActive=false"));
   });
 
+  // OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort`.
+  function sortRequests() {
+    const requests: URLSearchParams[] = [];
+    server.use(
+      http.get("/api/users", ({ request }) => {
+        requests.push(new URL(request.url).searchParams);
+        return HttpResponse.json(page);
+      }),
+      http.get("/api/users/filter-counts", () => HttpResponse.json(counts)),
+    );
+    return requests;
+  }
+
+  const header = (name: string) => within(screen.getByRole("table")).getByRole("columnheader", { name });
+
+  it("orders by a header in its useful direction, back on the first page, and keeps the order in the URL", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/usuarios?page=2&pageSize=20&search=ana&isActive=true");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    // Without an order chosen, the server's usual one is a column: the newest first, with its arrow and its words.
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(header("Creado")).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Creado, más reciente primero" })).toBeVisible();
+
+    await userEvent.click(within(header("Verificado")).getByRole("button", { name: "Verificado" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-verified"));
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("-verified");
+    expect(params.has("page")).toBe(false);
+    expect(params.get("search")).toBe("ana");
+    expect(params.get("isActive")).toBe("true");
+    expect(requests.at(-1)?.get("page")).toBe("1");
+    expect(header("Verificado")).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Verificado, «Sí» primero" })).toBeVisible();
+
+    await userEvent.click(within(header("Verificado")).getByRole("button", { name: "Verificado" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("verified"));
+  });
+
+  it.each([
+    ["Correo", "email"], ["WhatsApp", "whatsapp"], ["Verificado", "-verified"], ["Nombre", "displayName"], ["Creado", "createdAtUtc"],
+  ])("orders «%s» by the server field %s", async (name, sort) => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/usuarios");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    await userEvent.click(within(header(name)).getByRole("button", { name }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe(sort));
+  });
+
+  it("does not order by the roles, which are several values, nor by the actions", async () => {
+    server.use(...adminHandlers());
+    renderRouteWithProviders("/usuarios");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    expect(within(header("Roles")).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(header("Acciones")).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("changes the order from «Ordenar por», last in the bar, without touching the filters", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/usuarios?sort=email&role=Admin");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    expect(requests.at(-1)?.get("sort")).toBe("email");
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Correo, de la A a la Z" });
+    expect(screen.getByRole("button", { name: /Más filtros/ }).compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitemradio", { name: "WhatsApp" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("whatsapp"));
+    expect(new URLSearchParams(router.state.location.search).get("role")).toBe("Admin");
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la Z a la A" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-whatsapp"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(header("WhatsApp")).toHaveAttribute("aria-sort", "descending");
+  });
+
   it("asks for the filter options once, without the search or the filters, because it does not show their counts (N30)", async () => {
     const listRequests: string[] = [];
     const countRequests: string[] = [];
