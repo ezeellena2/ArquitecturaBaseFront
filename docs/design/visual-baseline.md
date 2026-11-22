@@ -75,8 +75,9 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    opciones sigue siendo la pieza aunque tenga pocas, salvo los segmentados con cantidades de los listados? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
    [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
-   en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido?
-   ([lecturas](#lecturas))
+   en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido? ¿Nada va debajo de
+   otro dato: los datos de una opción en su campo o su columna («Artículo · Rubro»), y una respuesta con la forma de su
+   formulario? ([lecturas](#lecturas), [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22))
 5. **Un dato por columna:** ¿cada columna de una tabla o de una lista con columnas muestra un solo dato?
    ([un dato por columna](#un-dato-por-columna--2026-11-09))
 6. **Sin leyendas:** ¿ningún texto debajo o al costado de un control, una sección o un título explica cómo funciona algo?
@@ -150,6 +151,8 @@ de cuatro niveles; íconos `Mail`, `Smartphone`, `Check`, `Info`, `AlertCircle`,
 - **Lo elegido se distingue sin dudas** ([OE1-A, 2026-11-03](#opción-elegida--2026-11-03)): un relleno, una tilde, un
   punto, un subrayado o una barra, nunca sólo un tinte; da 3:1 contra lo no elegido y su texto, 4,5:1, en cualquier
   paleta de Apariencia.
+- **Nada debajo de otro dato** ([VF1-A, 2026-11-22](#nada-debajo-de-otro-dato--2026-11-22)): cada dato va en su campo,
+  su columna o su renglón. Los datos de una opción van en un campo o una columna propios, «Pregunta · Dato», o no van.
 - **Cinco niveles tipográficos:** título de pantalla, de sección, cuerpo/dato, secundario y rótulo. Un sexto requiere
   ampliar el sistema. Título de pantalla con peso 600.
 - **Seis pasos de espacio:** 4, 8, 12, 16, 24 y 40 px (8 entre controles, 16 dentro de superficies, 24 entre secciones).
@@ -442,9 +445,13 @@ filtros, a quién o a qué archivo van en `DataList`, como los datos de un regis
   «es», «desde») van en gris y los datos (la pregunta, el valor), en negrita; un dato aparte de una acción (el rol, «con
   el PDF») va en una etiqueta y un texto escrito por el autor (el mensaje), entero en su recuadro.
 - **Los datos de un registro, en dos columnas** (`DataList`). El dato en gris y del mismo tamaño que el valor, en su
-  columna; el valor en el color del texto; una línea entre renglones. Es la forma del detalle de una respuesta (TL1-A).
-  Los datos que dependen de un valor (los campos de la opción elegida) van alineados debajo de él, en la tabla chica con
-  la línea a la izquierda de TL1-A.
+  columna; el valor en el color del texto; una línea entre renglones. Los datos que dependen de un valor (los de la
+  opción elegida) van en su propio renglón, «Pregunta · Dato», nunca debajo de él
+  ([nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22)).
+- **Una respuesta, con la forma de su formulario** (VF1-A, 2026-11-22). La vista rápida y la pantalla completa la leen con
+  las zonas, el orden y los anchos de la carga: cada pregunta en su control, con lo respondido y sin poder tocarlo
+  (`ResponseForm`), y el bloque en la tabla o los recuadros de la carga, sin acciones. Corregir destraba los mismos controles en
+  la misma pantalla ([diseño](respuesta-como-formulario.md)).
 - **Dos versiones, lado a lado** (`ComparisonTable`, [LR2-A](#comparaciones-lado-a-lado--2026-11-03)). Una comparación
   (la revisión antes de guardar sobre lo que guardó otra persona, los cambios de una importación) dice qué cambió y
   nombra cada dato una sola vez, en gris y en su columna, con las dos versiones en las suyas, frente a frente; sólo entra
@@ -705,6 +712,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md); faltan sus escenas de `test:visual`, los lectores del contrato y la prueba manual |
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
 | Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
+| La respuesta como el formulario · VF1-A y VF2-A, en el lienzo aparte «Respuesta como formulario» | La vista rápida y la pantalla completa de una respuesta, corregir en el lugar y la actividad | [En programación](respuesta-como-formulario.md) desde el 2026-11-22, con la regla [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22) |
 | Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
@@ -1414,3 +1422,28 @@ Esta regla no estaba escrita: el formateador común usaba `dateStyle: "medium"` 
 «3 nov 2026». El 2026-11-10, viendo «Último cambio» en «Diseñar formularios», el usuario pidió que fuera `dd/mm/aaaa` y
 nada más. Cambió el formateador común, así que cambiaron todas las pantallas a la vez, y los tests y las escenas
 visuales que escribían el formato viejo a mano pasaron al nuevo.
+
+## Nada debajo de otro dato — 2026-11-22
+
+Cada dato va en su lugar: su campo, su columna o su renglón. Los datos de una opción, como el rubro de un artículo o el
+tipo de un producto, son un campo o una columna propios, nombrados «Pregunta · Dato» como la columna «Artículo · Rubro»
+de la planilla, y en gris porque salen del catálogo. Si no aportan, no van. Nunca se apilan debajo del valor.
+
+- No se repite el dato que ya es otra respuesta: el que filtra una lista dependiente (CW7, «Tipo» del artículo es «Tipo de
+  artículo») ni el que se elige primero (LD1-A, «Rubro» ya tiene su control o su columna).
+- Siguen debajo, porque no son datos: «Antes: …» al corregir (CW10-A), el error de un campo y la línea gris de quién y
+  cuándo en los momentos.
+- La excepción del texto secundario en gris de [un dato por columna](#un-dato-por-columna--2026-11-09) no vale para los
+  datos de una opción.
+
+Lo pidió el usuario, mirando el detalle de un pedido con el tipo y el rubro apilados debajo del artículo:
+
+> NO COLOCAR NADA ABAJO DE OTRO DATO […] o se agregan columnas nuevas a la tabla o no se colocan. o se agregan inputs con
+> los desplegables correspondientes
+
+Con la regla entraron dos tableros del lienzo aparte «Respuesta como formulario» ([diseño](respuesta-como-formulario.md)):
+
+- **VF1-A:** la respuesta se lee con la forma de su formulario de carga y se corrige en el lugar.
+- **VF2-A:** la actividad es una tabla, con un renglón por cada cosa que pasó y un dato por columna.
+
+Reemplazan la lectura en dos columnas del detalle (TL1-A), con los datos de la opción debajo, y la actividad de TL3-A.

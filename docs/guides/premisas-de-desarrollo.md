@@ -130,6 +130,10 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   estado de usuarios, que no se copia a otros listados; y las listas que no son tablas, que siguen la
   regla de lecturas. Otra excepción requiere una elección explícita del usuario
   ([detalle](../design/visual-baseline.md#un-dato-por-columna--2026-11-09)).
+- **Nada debajo de otro dato** (decisión del usuario, 2026-11-22, VF1-A): los datos de una opción, como el rubro de un
+  artículo, van en una columna propia nombrada «Pregunta · Dato» o no van. Nunca se apilan debajo de su valor. La
+  excepción del texto secundario en gris no vale para ellos. Siguen debajo sólo «Antes: …» al corregir, el error de un
+  campo y la línea gris de quién y cuándo en los momentos ([detalle](../design/visual-baseline.md#nada-debajo-de-otro-dato--2026-11-22)).
 - Declarar `rowKey` con la identidad estable de la fila. Las columnas ordenables usan los campos
   aceptados por el backend; conservar `aria-sort` y ordenar/paginar con el servidor.
 - La tabla contiene su scroll horizontal en móvil; no desborda el documento. Las medidas de los
