@@ -72,7 +72,7 @@ function ReceivedDocuments() {
   const [params] = useSearchParams();
   const mobile = useMediaQuery("(width < 640px)");
   const presentation = useSystemPresentation();
-  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const pagination = usePagination(presentation.data?.defaultPageSize, true, "-receivedAtUtc");
   const matched = useMatch(receivedDocumentsPath + "/:documentId")?.params.documentId;
   const documentId = isReceivedDocumentId(matched) ? matched : undefined;
   // The private filters live here, never in the address: the page, its size, the order and the open document do.
@@ -140,7 +140,7 @@ function ReceivedDocuments() {
   const columns: Column<ReceivedDocument>[] = [
     // The document: its kind and its name, which opens it. A row of a spreadsheet (VC1-A) is its spreadsheet with its «Fila 5» in grey
     // below it, the exception A of one datum per column.
-    { id: "document", header: t("columns.document"), cell: item => {
+    { sortable: false, id: "document", header: t("columns.document"), cell: item => {
       const kind = receivedDocumentKind(item.file.mediaType);
       const Icon = kind === "photo" ? ImageIcon : kind === "file" ? FileIcon : DocumentIcon;
       const row = item.row ? receivedDocumentRowLabel(item.row) : null;
@@ -151,16 +151,16 @@ function ReceivedDocuments() {
           {row ? <p id={label} className="break-words text-[var(--color-content-muted)]">{t(row.key, row.values)}</p> : null}</div>
       </div>;
     } },
-    { id: "receivedAtUtc", header: t("columns.received"), sortable: true, cell: item => <time dateTime={item.receivedAtUtc}>{date(item.receivedAtUtc)}</time> },
-    { id: "sender", header: t("columns.sender"), cell: item => item.sender.displayName ?? t("unknownPerson") },
-    { id: "form", header: t("columns.form"), cell: item => item.form?.name ?? "—" },
+    { id: "receivedAtUtc", header: t("columns.received"), sortable: true, sortKind: "date", cell: item => <time dateTime={item.receivedAtUtc}>{date(item.receivedAtUtc)}</time> },
+    { sortable: false, id: "sender", header: t("columns.sender"), cell: item => item.sender.displayName ?? t("unknownPerson") },
+    { sortable: false, id: "form", header: t("columns.form"), cell: item => item.form?.name ?? "—" },
     // One datum read per column (UD): each question the page's documents bring, by its name.
-    ...dataColumns.map(label => ({ id: "datum:" + label, header: label, cell: (item: ReceivedDocument) => receivedDocumentDatum(item, label) ?? "—" })),
-    { id: "state", header: t("columns.state"), cell: item => { const label = receivedDocumentStateLabel(item); return <Badge variant={receivedDocumentStateVariant(label)}>{t("states." + label)}</Badge>; } },
+    ...dataColumns.map(label => ({ sortable: false as const, id: "datum:" + label, header: label, cell: (item: ReceivedDocument) => receivedDocumentDatum(item, label) ?? "—" })),
+    { sortable: false, id: "state", header: t("columns.state"), cell: item => { const label = receivedDocumentStateLabel(item); return <Badge variant={receivedDocumentStateVariant(label)}>{t("states." + label)}</Badge>; } },
     // When a discarded or unclassified one is deleted, in its own column and only when the page has one.
-    ...items.some(item => item.deleteAfterUtc) ? [{ id: "deleteAfterUtc", header: t("columns.deletes"),
+    ...items.some(item => item.deleteAfterUtc) ? [{ sortable: false as const, id: "deleteAfterUtc", header: t("columns.deletes"),
       cell: (item: ReceivedDocument) => item.deleteAfterUtc ? <time dateTime={item.deleteAfterUtc}>{formatDateInZone(item.deleteAfterUtc, i18n.language, zone)}</time> : "—" }] : [],
-    { id: "record", header: t("columns.record"), cell: item => item.record
+    { sortable: false, id: "record", header: t("columns.record"), cell: item => item.record
       ? scope.readsResponses && item.form ? <Link to={`/formularios/${item.form.definitionId}/respuestas/${item.record.recordId}`} className="font-medium text-[var(--color-brand-700)] underline">{item.record.number}</Link> : item.record.number
       : "—" },
   ];

@@ -34,7 +34,7 @@ import { formDashboardKeyRoot } from "../hooks/formDashboardKey";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
-import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseHasFilters, responseResultColumnId, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
+import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseHasFilters, responseResultColumnId, responseSortKind, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
 import { responseResultColumnLabel, responseResultText } from "../responseResults";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
@@ -169,6 +169,7 @@ export function FormResponsesPage() {
       id: "number",
       header: t("responses.number"),
       sortable: true,
+      sortKind: "number",
       cell: (row) => (
         <><Link
           data-response-id={row.id}
@@ -181,11 +182,12 @@ export function FormResponsesPage() {
       ),
     },
     // A correction says so in its own column, only when the page has one (UD4, instead of next to its number as in CW10-A).
-    ...(data?.records.items.some(row => row.corrected) ? [{ id: "corrected", header: t("detail.corrected"), cell: (row: ResponseRow) => row.corrected ? t("responses.yes") : "—" }] : []),
+    ...(data?.records.items.some(row => row.corrected) ? [{ sortable: false as const, id: "corrected", header: t("detail.corrected"), cell: (row: ResponseRow) => row.corrected ? t("responses.yes") : "—" }] : []),
     {
       id: "submittedAtUtc",
       header: t("responses.received"),
       sortable: true,
+      sortKind: "date",
       cell: (row) =>
         formatDateTimeInZone(
           row.submittedAtUtc,
@@ -197,24 +199,27 @@ export function FormResponsesPage() {
     ...(scope.ownOnly ? [] : [{
       id: "actor",
       header: t("responses.actor"),
-      sortable: true,
+      sortable: true as const,
+      sortKind: "text" as const,
       cell: (row: ResponseRow) => row.actor.displayName ?? t("responses.unknownPerson"),
     }]),
     {
+      sortable: false,
       id: "channel",
       header: t("formEntries:sheet.channel"),
       cell: (row) => <span className="inline-flex items-center gap-1.5">{row.channel === "phone" ? <PublicWhatsAppIcon aria-hidden="true" className="size-4 shrink-0" /> : null}
         {row.channel === "app" ? t("formEntries:sheet.channels.app") : row.channel === "phone" ? t("responses.whatsapp") : "—"}</span>,
     },
-    ...(data?.hasApproval || route.query.state === "Voided" ? [{ id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
+    ...(data?.hasApproval || route.query.state === "Voided" ? [{ sortable: false as const, id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     // F2: a response with actions to resolve says so in its own column after «Estado», only when the page has one or in its tab.
-    ...(view === "unresolved" || data?.records.items.some(row => row.hasUnresolvedActions === true) ? [{ id: "rules", header: t("responses.rules"), cell: (row: ResponseRow) => row.hasUnresolvedActions === true ? <Badge variant="warning">{t("responses.unresolved")}</Badge> : "—" }] : []),
-    ...(data?.records.items.some(row => row.hasPdf) ? [{ id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
+    ...(view === "unresolved" || data?.records.items.some(row => row.hasUnresolvedActions === true) ? [{ sortable: false as const, id: "rules", header: t("responses.rules"), cell: (row: ResponseRow) => row.hasUnresolvedActions === true ? <Badge variant="warning">{t("responses.unresolved")}</Badge> : "—" }] : []),
+    ...(data?.records.items.some(row => row.hasPdf) ? [{ sortable: false as const, id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
       // A header names one thing (UD4): since which version a question is asked is said in «Columnas».
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label,
-      sortable: !catalogField && column.type !== "multiChoice" && column.type !== "group" && column.type !== "location",
+      ...(!catalogField && column.type !== "multiChoice" && column.type !== "group" && column.type !== "location"
+        ? { sortable: true as const, sortKind: responseSortKind(column.type) } : { sortable: false as const }),
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
@@ -224,6 +229,7 @@ export function FormResponsesPage() {
         />,
     })),
     ...resultColumns.map(column => ({
+      sortable: false as const,
       id: responseResultColumnId(column.id),
       header: responseResultColumnLabel(column, data?.resultColumns ?? []),
       numeric: column.kind === "number" || column.kind === "amount",

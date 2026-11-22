@@ -40,7 +40,7 @@ export function CatalogSortDialog({ fields, culture, value, focusFallback, onApp
       </FormField>
       <FormField label={t("catalogs.sort.order")} help={t("catalogs.sort.orderHelp")}>
         <Picker label={t("catalogs.sort.order")} value={descending ? "desc" : "asc"} onChange={next => setDescending(next === "desc")}
-          options={[{ id: "asc", label: t("catalogs.sort." + kind + ".asc") }, { id: "desc", label: t("catalogs.sort." + kind + ".desc") }]} />
+          options={[{ id: "asc", label: t("common:sort." + kind + ".asc") }, { id: "desc", label: t("common:sort." + kind + ".desc") }]} />
       </FormField>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button>

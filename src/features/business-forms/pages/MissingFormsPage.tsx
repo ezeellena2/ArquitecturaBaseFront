@@ -99,15 +99,15 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
  const columns:Column<MissingTopic>[]=[
   // The description stays in grey under the topic (exception A); who discarded it and when go in their columns (UD5).
-  {id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}{row.state==="Pending"&&row.reviewedAtUtc===null?<Badge variant="warning" className="ml-2 align-middle">{t("missing.unreviewed")}</Badge>:null}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
-  ...(state==="Discarded"?[{id:"discardedBy",header:t("missing.discardedByColumn"),cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
-   {id:"discardedAtUtc",header:t("missing.discardedAtColumn"),cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
-  {id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
-  {id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
-  {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,cell:row=>date(row.lastRequestedAtUtc)},
+  {sortable:false,id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}{row.state==="Pending"&&row.reviewedAtUtc===null?<Badge variant="warning" className="ml-2 align-middle">{t("missing.unreviewed")}</Badge>:null}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
+  ...(state==="Discarded"?[{sortable:false as const,id:"discardedBy",header:t("missing.discardedByColumn"),cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
+   {sortable:false as const,id:"discardedAtUtc",header:t("missing.discardedAtColumn"),cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
+  {sortable:false,id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
+  {sortable:false,id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
+  {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,sortKind:"date",cell:row=>date(row.lastRequestedAtUtc)},
   // A table row carries no text buttons: each action is an icon with its name in the tooltip, in one group; going elsewhere
   // (the assistant, a new form) stays a link, and «Marcar como revisado» swaps its drawing for the ring while it saves (LC1-A).
-  {id:"actions",header:t("actionsColumn"),align:"right",cell:row=>{const off=busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData;return <RowActions actions={[
+  {sortable:false,id:"actions",header:t("actionsColumn"),align:"right",cell:row=>{const off=busy||cooldown.isRunning||needsRefresh||list.isPlaceholderData;return <RowActions actions={[
    {hidden:!canCreate||!askAssistant,label:t("assistantProposals.entries.label"),accessibleName:t("assistantProposals.entries.labelFor",{name:row.name}),icon:SparklesIcon,to:"/",state:assistantDraftState(t("assistantProposals.entries.missing",{topic:row.name.charAt(0).toLocaleLowerCase(culture)+row.name.slice(1)}))},
    {hidden:!canCreate,label:t("missing.create"),accessibleName:t("missing.createFor",{name:row.name}),icon:PlusIcon,to:"/formularios/nuevo",state:{formSeed:{ownerActorId:actorId,name:row.name}}},
    {hidden:row.state!=="Pending"||row.reviewedAtUtc!==null,label:t("missing.review"),accessibleName:t("missing.reviewFor",{name:row.name}),icon:CheckIcon,disabled:off,pending:reviewing===row.id,onSelect:()=>void review(row)},

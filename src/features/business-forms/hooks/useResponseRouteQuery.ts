@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
+import { parseSort, sortValue, toggledSort, type SortKind } from "@/shared/lib/sort";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { useResponseWorkspace } from "./useResponseWorkspace";
 import { responseColumnSelection } from "../responses";
@@ -73,20 +74,13 @@ export function useResponseRouteQuery(formId: string) {
     update({
       columns: responseColumnSelection(columns, ids, resultColumns) ?? undefined,
     });
-  const toggleSort = (field: string) => {
+  // The same rule as every table (OT1-C): the first touch in the useful direction of the datum, the second inverts it. A
+  // question travels as `field` with its identity in `sortFieldId`.
+  const toggleSort = (field: string, kind: SortKind) => {
     const dynamic = guid.test(field);
-    const current = dynamic
-      ? query.sortFieldId === field
-        ? query.sort
-        : undefined
-      : query.sort;
+    const next = parseSort(toggledSort((query.sort ?? "-number").replace("field", query.sortFieldId ?? "field"), field, kind))!;
     update({
-      sort:
-        current === (dynamic ? "field" : field)
-          ? `-${dynamic ? "field" : field}`
-          : dynamic
-            ? "field"
-            : field,
+      sort: sortValue(dynamic ? "field" : field, next.descending),
       sortFieldId: dynamic ? field : undefined,
       page: undefined,
     });

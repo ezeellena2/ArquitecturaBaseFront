@@ -46,9 +46,9 @@ export function BarList({ label, items, asTable = false, labelHeader, valueHeade
   const noteLine = note ? <p className="px-4 pb-3 text-xs text-[var(--color-content-muted)]">{note}</p> : null;
   if (asTable) return <>
     <DataTable rows={items} rowKey={item => item.key} emptyTitle={empty} columns={[
-      { id: "label", header: labelHeader, cell: item => item.label },
-      { id: "value", header: valueHeader, numeric: true, cell: item => item.valueLabel },
-      ...items.some(item => item.share) ? [{ id: "share", header: shareHeader, numeric: true, cell: (item: BarListItem) => item.share ?? "—" }] : [],
+      { sortable: false, id: "label", header: labelHeader, cell: item => item.label },
+      { sortable: false, id: "value", header: valueHeader, numeric: true, cell: item => item.valueLabel },
+      ...items.some(item => item.share) ? [{ sortable: false as const, id: "share", header: shareHeader, numeric: true, cell: (item: BarListItem) => item.share ?? "—" }] : [],
     ]} />
     {noteLine}
   </>;

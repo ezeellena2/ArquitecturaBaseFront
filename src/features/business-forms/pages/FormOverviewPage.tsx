@@ -61,24 +61,24 @@ export function FormOverviewPage() {
   const received = (row: FormOverviewRow) => row.lastResponse
     ? <time dateTime={row.lastResponse.submittedAtUtc}>{formatDateTimeInZone(row.lastResponse.submittedAtUtc, i18n.language, scope.user?.timeZoneId)}</time> : "—";
   const columns: Column<FormOverviewRow>[] = [
-    { id: "name", header: t("formColumn"), cell: row => canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span> },
-    ...(mixed ? [{ id: "formState", header: t("overview.formState"), cell: (row: FormOverviewRow) => t(row.deactivatedAtUtc ? "overview.formStates.Deactivated" : "overview.formStates.Active") }] : []),
-    ...(scope.canDecide ? [{ id: "pending", header: t("overview.pendingColumn"), numeric: true, cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{formatNumber(row.pendingApprovalCount, i18n.language)}</Badge></Link> : "—" }] : []),
+    { sortable: false as const, id: "name", header: t("formColumn"), cell: row => canOpen ? <Link to={formPath(row.id)} className="font-medium text-[var(--color-brand-700)] underline">{row.name}</Link> : <span className="font-medium">{row.name}</span> },
+    ...(mixed ? [{ sortable: false as const, id: "formState", header: t("overview.formState"), cell: (row: FormOverviewRow) => t(row.deactivatedAtUtc ? "overview.formStates.Deactivated" : "overview.formStates.Active") }] : []),
+    ...(scope.canDecide ? [{ sortable: false as const, id: "pending", header: t("overview.pendingColumn"), numeric: true, cell: (row: FormOverviewRow) => row.pendingApprovalCount ? <Link to={formPath(row.id)} aria-label={t("overview.pendingFor", { name: row.name, count: row.pendingApprovalCount })}><Badge variant="warning">{formatNumber(row.pendingApprovalCount, i18n.language)}</Badge></Link> : "—" }] : []),
     ...(scope.canRead ? [
-      { id: "responses", header: t("overview.responses"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
-      { id: "lastResponse", header: t("overview.lastResponse"), cell: lastNumber },
-      { id: "received", header: t("responses.received"), cell: received },
-      { id: "state", header: t("approvals.state"), cell: (row: FormOverviewRow) => row.lastResponse
+      { sortable: false as const, id: "responses", header: t("overview.responses"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount ?? "—" },
+      { sortable: false as const, id: "lastResponse", header: t("overview.lastResponse"), cell: lastNumber },
+      { sortable: false as const, id: "received", header: t("responses.received"), cell: received },
+      { sortable: false as const, id: "state", header: t("approvals.state"), cell: (row: FormOverviewRow) => row.lastResponse
         ? <Badge variant={approvalStateVariant(row.lastResponse.state)}>{t("approvals.states." + row.lastResponse.state)}</Badge> : "—" },
     ] : []),
     // Whoever only loads counts their own responses and sees their last one, without its state (CW9).
     ...(own ? [
-      { id: "myEntries", header: t("overview.myEntries"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount || "—" },
-      { id: "myLastEntry", header: t("overview.myLastEntry"), cell: lastNumber },
-      { id: "received", header: t("responses.received"), cell: received },
+      { sortable: false as const, id: "myEntries", header: t("overview.myEntries"), numeric: true, cell: (row: FormOverviewRow) => row.responseCount || "—" },
+      { sortable: false as const, id: "myLastEntry", header: t("overview.myLastEntry"), cell: lastNumber },
+      { sortable: false as const, id: "received", header: t("responses.received"), cell: received },
     ] : []),
     // A table row carries no text buttons: loading is an icon with its name in the tooltip, and a link, since it goes elsewhere.
-    ...(scope.canCreate ? [{ id: "load", header: t("actionsColumn"), align: "right" as const, cell: (row: FormOverviewRow) => <RowActions actions={[{
+    ...(scope.canCreate ? [{ sortable: false as const, id: "load", header: t("actionsColumn"), align: "right" as const, cell: (row: FormOverviewRow) => <RowActions actions={[{
       hidden: !!row.deactivatedAtUtc, label: t("formEntries:load"), accessibleName: t("formEntries:loadForm", { name: row.name }), icon: PlusIcon,
       to: "/formularios/" + row.id + "/cargar", state: { from: "overview", list: "/formularios" + location.search } }]}/> }] : []),
   ];

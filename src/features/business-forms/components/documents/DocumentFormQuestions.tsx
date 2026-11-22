@@ -48,7 +48,7 @@ export function DocumentFormQuestions({ questions, problems, readOnly, catalogSc
   const detail = (question: DocumentFormQuestion) => isChoiceType(question.type) ? question.options.filter(option => option.trim()).join(", ")
     : question.type === "catalog" ? question.catalog?.name ?? "" : "";
   const columns: Column<DocumentFormQuestion>[] = [
-    { id: "question", header: t("forms:question"), cell: question => {
+    { sortable: false, id: "question", header: t("forms:question"), cell: question => {
       const problem = problems.byQuestion[questions.indexOf(question)];
       return <div className="min-w-40 max-w-80 whitespace-normal">
         <span className="break-words font-medium [overflow-wrap:anywhere]">{question.label}</span>
@@ -56,15 +56,15 @@ export function DocumentFormQuestions({ questions, problems, readOnly, catalogSc
       </div>;
     } },
     // The type, with its options or its catalog in grey below (UD, exception A).
-    { id: "type", header: t("formProposal.columns.type"), cell: question => <div className="min-w-36 max-w-72 whitespace-normal">
+    { sortable: false, id: "type", header: t("formProposal.columns.type"), cell: question => <div className="min-w-36 max-w-72 whitespace-normal">
       <span>{t("forms:" + proposalTypeKey(question.type))}</span>
       {detail(question) ? <span className="block break-words text-[length:var(--text-caption)] text-[var(--color-content-muted)] [overflow-wrap:anywhere]">{detail(question)}</span> : null}
     </div> },
     // What it read in the first document, only when the proposal says so for some question.
-    ...questions.some(question => question.sample) ? [{ id: "sample", header: t("formProposal.columns.sample"),
+    ...questions.some(question => question.sample) ? [{ sortable: false as const, id: "sample", header: t("formProposal.columns.sample"),
       cell: (question: DocumentFormQuestion) => <div className="min-w-36 max-w-72 whitespace-normal break-words [overflow-wrap:anywhere]">{question.sample ?? <span className="text-[var(--color-content-muted)]">—</span>}</div> }] : [],
-    { id: "required", header: t("forms:required"), cell: question => t(question.required ? "yes" : "no") },
-    ...readOnly ? [] : [{ id: "actions", header: t("formProposal.columns.actions"), align: "right" as const, cell: (question: DocumentFormQuestion) => {
+    { sortable: false, id: "required", header: t("forms:required"), cell: question => t(question.required ? "yes" : "no") },
+    ...readOnly ? [] : [{ sortable: false as const, id: "actions", header: t("formProposal.columns.actions"), align: "right" as const, cell: (question: DocumentFormQuestion) => {
       const index = questions.indexOf(question);
       return <div className="flex justify-end gap-1">
         <IconButton size="icon-sm" data-question-edit={question.key} label={`${t("forms:edit")} ${question.label}`} onClick={() => setEditing({ index })}><PencilIcon className="size-4" /></IconButton>

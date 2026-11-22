@@ -154,9 +154,9 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
       </Surface>
       <AppearancePreview appearance={draft} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser") }} />
       {review ? <Surface title={t("review.title")} titleRef={reviewTitle} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>
-        <DataTable columns={[{ id: "setting", header: t("review.setting"), cell: row => row.label },
-          { id: "current", header: t("review.current"), cell: row => row.current },
-          { id: "mine", header: t("review.mine"), cell: row => row.mine }]} rows={reviewRows} rowKey={row => row.key} />
+        <DataTable columns={[{ sortable: false, id: "setting", header: t("review.setting"), cell: row => row.label },
+          { sortable: false, id: "current", header: t("review.current"), cell: row => row.current },
+          { sortable: false, id: "mine", header: t("review.mine"), cell: row => row.mine }]} rows={reviewRows} rowKey={row => row.key} />
       </Surface> : null}
     </div>
     <ConfirmDialog open={guard.isBlocked} onOpenChange={open => { if (!open) guard.stay(); }} title={t("common:unsavedChanges.title")} description={t("common:unsavedChanges.description")} confirmLabel={t("common:unsavedChanges.confirm")} cancelLabel={t("common:unsavedChanges.cancel")} onConfirm={guard.leave} />

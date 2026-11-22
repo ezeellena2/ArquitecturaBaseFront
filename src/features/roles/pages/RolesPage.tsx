@@ -55,13 +55,15 @@ export function RolesPage() {
 
   const columns: Column<RoleListItem>[] = [
     {
+      sortable: false,
       id: "name",
       header: t("columns.name"),
       cell: (row) => row.name,
     },
-    { id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—" },
-    { id: "userCount", header: t("columns.userCount"), numeric: true, cell: (row) => formatNumber(row.userCount, i18n.language) },
+    { sortable: false, id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—" },
+    { sortable: false, id: "userCount", header: t("columns.userCount"), numeric: true, cell: (row) => formatNumber(row.userCount, i18n.language) },
     {
+      sortable: false,
       id: "permissions",
       header: t("columns.permissions"),
       cell: (row) => t("permissionsCount", { count: row.permissions.length }),
@@ -73,6 +75,7 @@ export function RolesPage() {
     // porque su pantalla es de solo lectura; User, para editarlo, porque la descripción y los permisos sí se
     // cambian. Ninguno de los dos se elimina: la acción ni se dibuja, como una sin permiso.
     columns.push({
+      sortable: false,
       id: "actions",
       header: t("columns.actions"),
       align: "right",

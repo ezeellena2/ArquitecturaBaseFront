@@ -662,7 +662,7 @@ describe("response sheet", () => {
     expect(screen.getByRole("searchbox", { name: "Buscar en textos largos" })).toHaveValue("");
     expect(requested).toHaveBeenLastCalledWith(expect.not.objectContaining({ search: "private visit" }));
   });
-  it("orders a question in both directions using only its identity in the URL", async () => {
+  it("orders a question in both directions using only its identity in the URL, a number from the largest first (OT1-C)", async () => {
     setup();
     const requested = vi.fn();
     server.use(http.post("/api/forms/definitions/:id/records/search", async ({ request }) => { requested(await request.json()); return HttpResponse.json(responseSheetFixture()); }));
@@ -670,12 +670,12 @@ describe("response sheet", () => {
     await screen.findByRole("table");
     const header = within(screen.getByRole("table")).getByRole("columnheader", { name: /Importe/ });
     await userEvent.click(within(header).getByRole("button"));
-    await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "field", sortFieldId: responseSheetFixture().columns[0].fieldId })));
-    expect(header).toHaveAttribute("aria-sort", "ascending");
-    expect(router.state.location.search).not.toContain("Importe");
-    await userEvent.click(within(header).getByRole("button"));
     await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "-field", sortFieldId: responseSheetFixture().columns[0].fieldId })));
     expect(header).toHaveAttribute("aria-sort", "descending");
+    expect(router.state.location.search).not.toContain("Importe");
+    await userEvent.click(within(header).getByRole("button"));
+    await waitFor(() => expect(requested).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "field", sortFieldId: responseSheetFixture().columns[0].fieldId })));
+    expect(header).toHaveAttribute("aria-sort", "ascending");
   });
   it("keeps response detail readable without offering conversation access when whatsapp.read is absent", async () => {
     setup(["formrecords.read"]);

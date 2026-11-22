@@ -379,7 +379,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
   // OR1-A: the pending order names its column as the table's header does and its direction in the words of the column's data.
   const sortNotice = draft.sort ? t("catalogs.actions.sortPending", { column: catalogSortColumnName(draft.sort, draft.fields, culture, { text: t("catalogs.items.text"), code: t("catalogs.items.code") }),
-    order: t("catalogs.sort." + catalogSortKind(draft.sort.column, draft.fields) + (draft.sort.descending ? ".descPhrase" : ".ascPhrase")) }) : null;
+    order: t("common:sort." + catalogSortKind(draft.sort.column, draft.fields) + (draft.sort.descending ? ".descPhrase" : ".ascPhrase")) }) : null;
   return <Page title={currentName} backTo={{ to: "/catalogos", label: t("catalogs.title") }} status={<span className="text-xs text-[var(--color-content-muted)]">{initial?.usageCount !== null && initial?.usageCount !== undefined ? <>{t("catalogs.usageHeader", { count: initial.usageCount })} · </> : null}{pendingProposal ? <Badge variant="outline" className="border-[var(--color-warning)] text-[var(--color-warning-700)]">{t("catalogs.proposal.title")}</Badge>
       : feedUpdate ? <>{t(feedUpdate.recent ? "catalogs.feed.updatedAgo" : "catalogs.feed.updatedOn", { when: feedUpdate.recent ? formatRelativeTime(feedUpdate.at, scope.culture) : formatDateInZone(feedUpdate.at, scope.culture, timeZoneId) })}<InfoTip label={t("catalogs.feed.help")} text={t("catalogs.feed.helpText")} /></>
       : t(draft.isActive ? "catalogs.state.Active" : "catalogs.state.Inactive")}</span>}

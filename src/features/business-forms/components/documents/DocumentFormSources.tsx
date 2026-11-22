@@ -25,7 +25,7 @@ export function DocumentFormSources({ documents, zone, onDenied }: { documents: 
   const denied = receivedDocumentForbidden(file.error);
   useEffect(() => { if (denied) onDenied(); }, [denied, onDenied]);
   const columns: Column<ReceivedDocument>[] = [
-    { id: "document", header: t("columns.document"), cell: document => {
+    { sortable: false, id: "document", header: t("columns.document"), cell: document => {
       const kind = receivedDocumentKind(document.file.mediaType);
       const Icon = kind === "photo" ? ImageIcon : kind === "file" ? FileIcon : DocumentIcon;
       return <div className="flex min-w-28 max-w-56 items-start gap-2">
@@ -34,8 +34,8 @@ export function DocumentFormSources({ documents, zone, onDenied }: { documents: 
           onClick={() => setChosen(document.id)}>{document.file.name}</Button>
       </div>;
     } },
-    { id: "sender", header: t("columns.sender"), cell: document => document.sender.displayName ?? t("unknownPerson") },
-    { id: "receivedAtUtc", header: t("columns.received"), cell: document => <time dateTime={document.receivedAtUtc}>{formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone)}</time> },
+    { sortable: false, id: "sender", header: t("columns.sender"), cell: document => document.sender.displayName ?? t("unknownPerson") },
+    { sortable: false, id: "receivedAtUtc", header: t("columns.received"), cell: document => <time dateTime={document.receivedAtUtc}>{formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone)}</time> },
   ];
   return <Surface title={t("formProposal.documents", { count: documents.length })} help={t("formProposal.documentsHelp")}>
     {shown?.file.stored ? <div className="border-b border-[var(--color-border)] p-4">

@@ -358,6 +358,10 @@ export function LockIcon(props: IconProps) {
 }
 
 export function ArrowDownIcon(props: IconProps) { return <Icon {...props}><path d="M12 5v14m-6-6 6 6 6-6"/></Icon>; }
+// Ordenar por columnas (OT1-C, 2026-11-22): ↕ en el encabezado de una columna que ordena y no es la elegida, y el ícono
+// de «Ordenar por».
+export function ChevronsUpDownIcon(props: IconProps) { return <Icon {...props}><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></Icon>; }
+export function SortIcon(props: IconProps) { return <Icon {...props}><path d="m3 16 4 4 4-4M7 20V4M11 4h10M11 8h7M11 12h4"/></Icon>; }
 export function CloseIcon(props: IconProps) { return <Icon {...props}><path d="m6 6 12 12M18 6 6 18"/></Icon>; }
 export function DocumentIcon(props: IconProps) { return <Icon {...props}><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></Icon>; }
 /// The header actions of a response next to its navigation (board TL3-A): full view, download and the conversation.

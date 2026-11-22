@@ -19,7 +19,7 @@ export function AppearancePreview({ appearance, labels }: { appearance: SystemAp
       <div className="max-w-sm"><FormField label={labels.name}><Input value="Ana Pérez" readOnly /></FormField></div>
       <div><Button>{labels.newUser}</Button></div>
       <FilterBar><SearchInput value="" onChange={() => {}} label={labels.search} /></FilterBar>
-      <Surface><DataTable columns={[{ id: "name", header: labels.name, cell: row => row.name }, { id: "role", header: labels.role, cell: row => row.role }]}
+      <Surface><DataTable columns={[{ sortable: false, id: "name", header: labels.name, cell: row => row.name }, { sortable: false, id: "role", header: labels.role, cell: row => row.role }]}
         rows={[{ id: "1", name: "Ana Pérez", role: "Admin" }, { id: "2", name: "Juan Gómez", role: "User" }, { id: "3", name: "Laura Ríos", role: "User" }, { id: "4", name: "Carla Paz", role: "User" }]} rowKey={row => row.id} /></Surface>
     </Surface>
   </div>;

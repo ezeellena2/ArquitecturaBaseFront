@@ -106,22 +106,23 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   // your forms came from it; whether it is available, only where both kinds are listed.
   const columns: Column<Row>[] = [
     {
+      sortable: false,
       id: "standard", header: t("library.standard"),
       cell: row => <div className="flex min-w-48 flex-col gap-0.5 whitespace-normal">
         <span className="font-medium">{row.name}</span>
         {row.description ? <span className="text-muted-foreground">{row.description}</span> : null}
       </div>,
     },
-    ...has(standard => standard.reads) ? [{ id: "reads", header: t("library.reads"),
+    ...has(standard => standard.reads) ? [{ sortable: false as const, id: "reads", header: t("library.reads"),
       cell: (row: Row) => <div className="min-w-56 whitespace-normal">{row.kind === "standard" ? reads(row.standard) ?? none : none}</div> }] : [],
-    ...has(standard => standard.validations) ? [{ id: "validations", header: t("library.validations"),
+    ...has(standard => standard.validations) ? [{ sortable: false as const, id: "validations", header: t("library.validations"),
       cell: (row: Row) => <div className="min-w-40 whitespace-normal">{row.kind === "standard" ? validations(row.standard) ?? none : none}</div> }] : [],
-    ...has(standard => standard.version) ? [{ id: "version", header: t("library.version"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.version : none }] : [],
-    ...has(standard => standard.source) ? [{ id: "source", header: t("library.source"), cell: (row: Row) => row.kind === "standard" ? row.standard.source ?? none : none }] : [],
-    ...has(standard => standard.copies) ? [{ id: "forms", header: t("library.forms"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.copies : none }] : [],
-    ...availability === "All" && coming ? [{ id: "state", header: t("library.state"),
+    ...has(standard => standard.version) ? [{ sortable: false as const, id: "version", header: t("library.version"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.version : none }] : [],
+    ...has(standard => standard.source) ? [{ sortable: false as const, id: "source", header: t("library.source"), cell: (row: Row) => row.kind === "standard" ? row.standard.source ?? none : none }] : [],
+    ...has(standard => standard.copies) ? [{ sortable: false as const, id: "forms", header: t("library.forms"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.copies : none }] : [],
+    ...availability === "All" && coming ? [{ sortable: false as const, id: "state", header: t("library.state"),
       cell: (row: Row) => <Badge variant="outline">{t(row.kind === "standard" ? "library.available" : "library.upcoming")}</Badge> }] : [],
-    ...canAdd && has(standard => standard.key) ? [{ id: "actions", header: t("actionsColumn"), align: "right" as const,
+    ...canAdd && has(standard => standard.key) ? [{ sortable: false as const, id: "actions", header: t("actionsColumn"), align: "right" as const,
       cell: (row: Row) => row.kind === "standard" ? <RowActions actions={[{ label: t("library.add"), accessibleName: t("library.addTitle", { name: row.standard.name }),
         icon: PlusIcon, onSelect: () => setAdding(row.standard) }]} /> : null }] : [],
   ];

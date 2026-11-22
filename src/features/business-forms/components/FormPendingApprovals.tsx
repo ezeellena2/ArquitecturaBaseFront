@@ -137,13 +137,13 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false, in
   return present(<><div className={inTab ? undefined : "mb-4"} ref={node => { table.current = node; }} tabIndex={-1}>
     <Surface title={inTab ? undefined : query.data ? t("overview.pendingTitle", { count: query.data.totalCount }) : t("overview.pendingColumn")}>
       <DataTable columns={[
-        { id: "number", header: t("responses.number"), cell: row => row.number },
-        { id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
-        { id: "received", header: t("responses.received"), cell: row => formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId) },
-        { id: "role", header: t("approvals.role"), cell: row => row.role.name },
+        { sortable: false, id: "number", header: t("responses.number"), cell: row => row.number },
+        { sortable: false, id: "author", header: t("responses.actor"), cell: row => row.author.displayName ?? t("responses.unknownPerson") },
+        { sortable: false, id: "received", header: t("responses.received"), cell: row => formatDateTimeInZone(row.requestedAtUtc, i18n.language, scope.user?.timeZoneId) },
+        { sortable: false, id: "role", header: t("approvals.role"), cell: row => row.role.name },
         // A table row carries no text buttons or links (2026-11-20): «Revisar» is an icon with its name in the tooltip. The
         // wrapper names the task, so closing the panel gives the focus back to its link.
-        { id: "review", header: t("actionsColumn"), align: "right", cell: row => <span data-pending-task={row.id} className="inline-flex"><RowActions actions={[{
+        { sortable: false, id: "review", header: t("actionsColumn"), align: "right", cell: row => <span data-pending-task={row.id} className="inline-flex"><RowActions actions={[{
           label: t("overview.review"), accessibleName: t("overview.review") + " " + row.number, icon: EyeIcon,
           to: full ? responseFullPath(formId, row.recordId, params.toString()) : "/formularios/" + formId + "/respuestas?" + pendingSearch(row.id),
           onSelect: event => { if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) { remember(row); if (full) workspace.prepareFull(row.recordId); if (row.id === taskId) setFocusRequest(value => value + 1); } } }]}/></span> },

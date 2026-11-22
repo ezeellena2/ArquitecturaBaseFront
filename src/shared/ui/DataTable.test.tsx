@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DataTable, type Column } from "./DataTable";
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from "./icons";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 
 vi.mock("@/auth/AuthProvider", () => ({ AppAuthProvider: ({ children }: { children: ReactNode }) => children }));
@@ -13,7 +14,7 @@ interface Row {
 }
 
 const columns: Column<Row>[] = [
-  { id: "email", header: "Email", cell: (row) => row.email, sortable: true },
+  { id: "email", header: "Email", cell: (row) => row.email, sortable: true, sortKind: "text" },
 ];
 
 const rows: Row[] = [
@@ -101,7 +102,7 @@ describe("DataTable", () => {
     ["editable content", <div key="editable content" contentEditable suppressContentEditableWarning><span>Record note</span></div>],
   ])("does not open the row when its %s cell control is clicked", async (_name, control) => {
     const opened = vi.fn();
-    const interactiveColumns: Column<Row>[] = [columns[0], { id: "control", header: "Control", cell: () => control }];
+    const interactiveColumns: Column<Row>[] = [columns[0], { sortable: false, id: "control", header: "Control", cell: () => control }];
     renderWithProviders(<DataTable columns={interactiveColumns} rows={rows.slice(0, 1)} rowKey={row => row.id} onRowClick={opened} />);
     const cell = within(screen.getByRole("row", { name: /ana@example.com/ })).getAllByRole("cell")[1];
     const element = cell.firstElementChild!;
@@ -114,7 +115,7 @@ describe("DataTable", () => {
     const user = userEvent.setup();
     const activated = vi.fn();
     const opened = vi.fn();
-    const interactiveColumns: Column<Row>[] = [{ id: "number", header: "Number", cell: () => control === "link" ? <a href="#record" onClick={activated}>Open record</a> : <button type="button" onClick={activated}>Open record</button> }];
+    const interactiveColumns: Column<Row>[] = [{ sortable: false, id: "number", header: "Number", cell: () => control === "link" ? <a href="#record" onClick={activated}>Open record</a> : <button type="button" onClick={activated}>Open record</button> }];
     renderWithProviders(<DataTable columns={interactiveColumns} rows={rows.slice(0, 1)} rowKey={row => row.id} onRowClick={opened} />);
 
     await user.tab();
@@ -159,7 +160,62 @@ describe("DataTable", () => {
     expect(header).toHaveAttribute("aria-sort", "ascending");
 
     await userEvent.click(screen.getByRole("button", { name: /email/i }));
-    expect(onSortChange).toHaveBeenCalledWith("email");
+    expect(onSortChange).toHaveBeenCalledWith("email", "text");
+  });
+
+  // OT1-C (2026-11-22): the arrow says which column orders and in which direction; the other columns that order show the
+  // double arrow only under the mouse or the keyboard focus, and one that does not order stays as it is.
+  const drawing = (Icon: typeof ArrowUpIcon) => render(<Icon />).container.querySelector("svg")!.innerHTML;
+  interface Counted extends Row { count: number; note: string }
+  const counted: Column<Counted>[] = [
+    { id: "email", header: "Email", sortable: true, sortKind: "text", cell: (row) => row.email },
+    { id: "count", header: "Count", sortable: true, sortKind: "number", numeric: true, cell: (row) => row.count },
+    { id: "note", header: "Note", sortable: false, cell: (row) => row.note },
+  ];
+  const countedRows: Counted[] = [{ ...rows[0]!, count: 3, note: "-" }];
+
+  it("marks the column that orders with its arrow after the title, in the brand color, and keeps aria-sort", () => {
+    renderWithProviders(<DataTable columns={counted} rows={countedRows} rowKey={(row) => row.id} sort="-email" onSortChange={vi.fn()} />);
+
+    const header = screen.getByRole("columnheader", { name: "Email" });
+    expect(header).toHaveAttribute("aria-sort", "descending");
+    const [title, arrow] = [...within(header).getByRole("button", { name: "Email" }).children];
+    expect(title).toHaveTextContent(/^Email$/);
+    expect(arrow!.innerHTML).toBe(drawing(ArrowDownIcon));
+    expect(arrow).toHaveClass("text-[var(--color-brand-600)]");
+  });
+
+  it("shows the double arrow only in the other columns that order, and nothing in one that does not", () => {
+    renderWithProviders(<DataTable columns={counted} rows={countedRows} rowKey={(row) => row.id} sort="email" onSortChange={vi.fn()} />);
+
+    expect(within(screen.getByRole("columnheader", { name: "Email" })).getByRole("button").lastElementChild!.innerHTML).toBe(drawing(ArrowUpIcon));
+    const hint = within(screen.getByRole("columnheader", { name: "Count" })).getByRole("button").firstElementChild!;
+    expect(hint.innerHTML).toBe(drawing(ChevronsUpDownIcon));
+    expect(hint).toHaveClass("opacity-0", "group-hover/sort:opacity-60", "group-focus-visible/sort:opacity-60");
+    expect(screen.getByRole("columnheader", { name: "Count" })).toHaveAttribute("aria-sort", "none");
+    const note = screen.getByRole("columnheader", { name: "Note" });
+    expect(within(note).queryByRole("button")).not.toBeInTheDocument();
+    expect(note.querySelector("svg")).toBeNull();
+    expect(note).not.toHaveAttribute("aria-sort");
+  });
+
+  it("puts the arrow before the title in a column of numbers, which stays aligned with its figures", async () => {
+    const onSortChange = vi.fn();
+    renderWithProviders(<DataTable columns={counted} rows={countedRows} rowKey={(row) => row.id} sort="-count" onSortChange={onSortChange} />);
+
+    const button = within(screen.getByRole("columnheader", { name: "Count" })).getByRole("button", { name: "Count" });
+    const [arrow, title] = [...button.children];
+    expect(arrow!.innerHTML).toBe(drawing(ArrowDownIcon));
+    expect(title).toHaveTextContent(/^Count$/);
+    expect(button).toHaveClass("justify-end");
+    await userEvent.click(button);
+    expect(onSortChange).toHaveBeenCalledWith("count", "number");
+  });
+
+  it("leaves the headers as plain text without someone to change the order", () => {
+    renderWithProviders(<DataTable columns={counted} rows={countedRows} rowKey={(row) => row.id} sort="email" />);
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("shows the loading state", () => {
@@ -209,7 +265,7 @@ describe("DataTable", () => {
   });
 
   it("aligns a column of numbers to the right, its sortable header included", () => {
-    const measured: Column<Row & { hectares: string }>[] = [...columns, { id: "hectares", header: "Hectáreas", numeric: true, sortable: true, cell: (row) => row.hectares }];
+    const measured: Column<Row & { hectares: string }>[] = [...columns, { id: "hectares", header: "Hectáreas", numeric: true, sortable: true, sortKind: "number", cell: (row) => row.hectares }];
     renderWithProviders(<DataTable columns={measured} rows={[{ ...rows[0]!, hectares: "12,5" }]} rowKey={(row) => row.id} onSortChange={vi.fn()} />);
     expect(screen.getByRole("columnheader", { name: "Hectáreas" })).toHaveClass("text-right");
     expect(screen.getByRole("cell", { name: "12,5" })).toHaveClass("text-right");

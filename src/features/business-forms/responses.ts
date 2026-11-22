@@ -1,6 +1,7 @@
 import type { CatalogFieldType } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
+import type { SortKind } from "@/shared/lib/sort";
 import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 import { formatCoordinates, toLocationPoint } from "./locationAnswer";
@@ -58,6 +59,10 @@ export interface ResponseColumn {
   questions?: readonly ResponseColumn[];
 }
 /** Every question that a condition can name: the columns and the questions of a block, which filter by any item. */
+/// How a question of the sheet orders from its header (OT1-C): a number, a date or a yes/no by its value; the rest as text.
+export function responseSortKind(type: ResponseType): SortKind {
+  return type === "decimal" ? "number" : type === "date" ? "date" : type === "boolean" ? "yesNo" : "text";
+}
 export function responseQuestionColumns(columns: readonly ResponseColumn[]): readonly ResponseColumn[] {
   return columns.flatMap(column => [column, ...(column.questions ?? [])]);
 }

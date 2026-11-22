@@ -773,11 +773,7 @@
       "column": "Column",
       "order": "Order",
       "orderHelp": "Options with the same value keep their current order, and those without a value go last.",
-      "apply": "Sort",
-      "text": { "asc": "A to Z", "desc": "Z to A", "ascPhrase": "A to Z", "descPhrase": "Z to A" },
-      "number": { "asc": "Smallest to largest", "desc": "Largest to smallest", "ascPhrase": "smallest to largest", "descPhrase": "largest to smallest" },
-      "date": { "asc": "Oldest to newest", "desc": "Newest to oldest", "ascPhrase": "oldest to newest", "descPhrase": "newest to oldest" },
-      "yesNo": { "asc": "“No” first", "desc": "“Yes” first", "ascPhrase": "“No” first", "descPhrase": "“Yes” first" }
+      "apply": "Sort"
     },
     "usageHeader_one": "Used in 1 form",
     "usageHeader_other": "Used in {{count}} forms"

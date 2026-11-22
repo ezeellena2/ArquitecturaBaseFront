@@ -58,7 +58,7 @@ function ticks(count: number): Map<number, number> {
 export function BarChart({ label, buckets, asTable = false, periodHeader, valueHeader, empty, note }: BarChartProps): ReactNode {
   const noteLine = note ? <p className="px-4 pb-3 text-xs text-[var(--color-content-muted)]">{note}</p> : null;
   if (asTable) return <>
-    <DataTable columns={[{ id: "period", header: periodHeader, cell: bucket => bucket.period }, { id: "value", header: valueHeader, numeric: true, cell: bucket => bucket.exact }]}
+    <DataTable columns={[{ sortable: false, id: "period", header: periodHeader, cell: bucket => bucket.period }, { sortable: false, id: "value", header: valueHeader, numeric: true, cell: bucket => bucket.exact }]}
       rows={buckets} rowKey={bucket => bucket.key} emptyTitle={empty} />
     {noteLine}
   </>;

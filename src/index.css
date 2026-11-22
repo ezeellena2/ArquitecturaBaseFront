@@ -244,6 +244,15 @@
   }
   [data-slot="table"] > [data-slot="table-header"] {
     --table-column-line: color-mix(in oklab, var(--color-surface-header-border) 50%, transparent);
+    /* Ordenar por columnas (OT1-C, 2026-11-22): el encabezado de una columna que ordena toma este tono, más oscuro que el
+       del encabezado y derivado de él (sigue a Apariencia), al pasar el mouse o con el foco. */
+    --color-surface-header-hover: color-mix(in srgb, var(--color-surface-header) 94%, var(--color-surface-header-foreground));
+  }
+  /* Con puntero táctil, el encabezado de una tabla que ordena mide 44 px, y la línea de «vuelve a leer» baja con él. */
+  @media (pointer: coarse) {
+    [data-slot="table-container"]:has([data-slot="table-sort"]) {
+      --height-table-header: 2.75rem;
+    }
   }
   [data-slot="table"] > * > tr > * {
     --table-line-start: 1px;

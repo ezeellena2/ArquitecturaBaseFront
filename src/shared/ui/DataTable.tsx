@@ -1,22 +1,29 @@
 import { DisabledReason } from "./DisabledReason";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { parseSort, type SortKind } from "@/shared/lib/sort";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "./button";
 import { EmptyState } from "./EmptyState";
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from "./icons";
 import { Spinner } from "./Spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 
-export interface Column<TRow> {
-  /// Coincide con el nombre del campo ordenable del backend.
+export type { SortKind } from "@/shared/lib/sort";
+
+interface ColumnBase<TRow> {
+  /// En una columna que ordena, el nombre del campo de orden del backend.
   id: string;
   header: string;
   cell: (row: TRow) => ReactNode;
-  sortable?: boolean;
   align?: "left" | "right";
   /// Una columna de números (cantidades, medidas, importes): va a la derecha, con su encabezado (A, 2026-11-02).
   numeric?: boolean;
 }
+
+/// Toda columna decide si ordena (OT1-C, 2026-11-22): con un dato, `sortable: true` y su `sortKind`, que nombra los dos
+/// sentidos y elige el del primer toque; Acciones, un ícono o varios valores, `false`.
+export type Column<TRow> = ColumnBase<TRow> & ({ sortable: true; sortKind: SortKind } | { sortable: false; sortKind?: never });
 
 interface DataTableProps<TRow> {
   columns: Column<TRow>[];
@@ -42,9 +49,10 @@ interface DataTableProps<TRow> {
   /// Lo que se puede hacer desde el vacío. Con filtros puestos, limpiarlos: un vacío que no ofrece salida
   /// deja a la persona buscando de dónde agarrarse.
   emptyAction?: ReactNode;
-  /// Orden actual, en el formato del backend: "campo" o "-campo".
+  /// Orden que se ve, en el formato del backend: "campo" o "-campo". Sin uno elegido, el de siempre si es una columna.
   sort?: string;
-  onSortChange?: (field: string) => void;
+  /// Tocar el encabezado de una columna que ordena: `usePagination.toggleSort` elige el sentido.
+  onSortChange?: (field: string, kind: SortKind) => void;
 }
 
 /// El nivel "rótulo" de la escala tipográfica: 11 px, semibold, mayúsculas con letter-spacing. Es el mismo
@@ -53,11 +61,16 @@ interface DataTableProps<TRow> {
 const headerText = "text-[length:var(--text-caption)] font-semibold tracking-[0.06em] uppercase text-[var(--color-surface-header-foreground)]";
 
 function ariaSort(columnId: string, sort: string | undefined): "ascending" | "descending" | "none" {
-  if (sort === columnId) {
-    return "ascending";
-  }
+  const parsed = parseSort(sort);
+  if (parsed?.field !== columnId) return "none";
+  return parsed.descending ? "descending" : "ascending";
+}
 
-  return sort === `-${columnId}` ? "descending" : "none";
+/// La flecha de la columna que ordena, del color de la marca; en las demás que ordenan, ↕ al pasar el mouse o con el foco.
+function SortMark({ direction }: { direction: "ascending" | "descending" | "none" }) {
+  if (direction === "ascending") return <ArrowUpIcon className="size-3 shrink-0 text-[var(--color-brand-600)]" />;
+  if (direction === "descending") return <ArrowDownIcon className="size-3 shrink-0 text-[var(--color-brand-600)]" />;
+  return <ChevronsUpDownIcon className="size-3 shrink-0 opacity-0 group-hover/sort:opacity-60 group-focus-visible/sort:opacity-60" />;
 }
 
 /// Listado con encabezados ordenables y estados de carga, error y vacío (sección 7.4).
@@ -105,25 +118,37 @@ export function DataTable<TRow>({
     <TableHeader>
       {/* TableHeader aporta el tono y neutraliza el hover de la banda para todos los listados. */}
       <TableRow>
-        {columns.map((column) => (
-          <TableHead
-            key={column.id}
-            scope="col"
-            aria-sort={ariaSort(column.id, sort)}
-            numeric={column.numeric}
-            className={column.align === "right" ? "text-right" : undefined}
-          >
-            {column.sortable && onSortChange ? (
-              // El botón hereda la tipografía del encabezado: si se queda con la suya, la columna
-              // ordenable se ve de otro tamaño que las demás.
-              <Button type="button" variant="ghost" size="sm" onClick={() => onSortChange(column.id)} className={cn(headerText, "-mx-2 px-2")}>
+        {columns.map((column) => {
+          // Una columna que no ordena no cambia al pasar el mouse ni lleva `aria-sort`.
+          if (!column.sortable || !onSortChange) {
+            return (
+              <TableHead key={column.id} scope="col" numeric={column.numeric} className={column.align === "right" ? "text-right" : undefined}>
                 {column.header}
-              </Button>
-            ) : (
-              column.header
-            )}
-          </TableHead>
-        ))}
+              </TableHead>
+            );
+          }
+          const direction = ariaSort(column.id, sort);
+          // En una columna de números la flecha va antes del título, que sigue alineado con las cifras.
+          const end = column.numeric || column.align === "right";
+          return (
+            <TableHead key={column.id} scope="col" aria-sort={direction} numeric={column.numeric}
+              className={cn("p-0 hover:bg-[var(--color-surface-header-hover)] has-[:focus-visible]:bg-[var(--color-surface-header-hover)]", column.align === "right" && "text-right")}>
+              {/* El botón ocupa la celda y hereda la tipografía del encabezado; su nombre es el título, sin tooltip. El tono
+                  va en la celda, debajo de la línea entre columnas. Con puntero táctil el encabezado mide 44 px
+                  (`index.css`, por `data-slot="table-sort"`). */}
+              <button
+                type="button"
+                data-slot="table-sort"
+                onClick={() => onSortChange(column.id, column.sortKind)}
+                className={cn(headerText, "group/sort flex h-[var(--height-table-header)] w-full items-center gap-1.5 px-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]", end && "justify-end text-right")}
+              >
+                {end ? <SortMark direction={direction} /> : null}
+                <span>{column.header}</span>
+                {end ? null : <SortMark direction={direction} />}
+              </button>
+            </TableHead>
+          );
+        })}
       </TableRow>
     </TableHeader>
   );

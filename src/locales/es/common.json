@@ -239,6 +239,18 @@
     "close": "Cerrar la lista",
     "andMore": "y {{count}} más"
   },
+  "sort": {
+    "label": "Ordenar por",
+    "column": "Columna",
+    "order": "Orden",
+    "button": "{{column}}, {{order}}",
+    "current": "Ordenar por: {{order}}",
+    "text": { "asc": "De la A a la Z", "desc": "De la Z a la A", "ascPhrase": "de la A a la Z", "descPhrase": "de la Z a la A", "ascShort": "de la A a la Z", "descShort": "de la Z a la A" },
+    "number": { "asc": "De menor a mayor", "desc": "De mayor a menor", "ascPhrase": "de menor a mayor", "descPhrase": "de mayor a menor", "ascShort": "de menor a mayor", "descShort": "de mayor a menor" },
+    "date": { "asc": "De la más antigua a la más reciente", "desc": "De la más reciente a la más antigua", "ascPhrase": "de la más antigua a la más reciente", "descPhrase": "de la más reciente a la más antigua", "ascShort": "más antigua primero", "descShort": "más reciente primero" },
+    "yesNo": { "asc": "Primero «No»", "desc": "Primero «Sí»", "ascPhrase": "primero «No»", "descPhrase": "primero «Sí»", "ascShort": "«No» primero", "descShort": "«Sí» primero" },
+    "state": { "asc": "En el orden del circuito", "desc": "Al revés del circuito", "ascPhrase": "en el orden del circuito", "descPhrase": "al revés del circuito", "ascShort": "según el circuito", "descShort": "circuito al revés" }
+  },
   "itemTable": {
     "number": "Ítem",
     "actions": "Acciones",

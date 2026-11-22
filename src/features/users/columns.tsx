@@ -99,12 +99,12 @@ export function createUserColumns(
   actions?: UserRowActions,
 ): Column<UserListItem>[] {
   const columns: Column<UserListItem>[] = [
-    { id: "email", header: t("columns.email"), cell: (row) => emailCell(row, t), sortable: true },
+    { id: "email", header: t("columns.email"), cell: (row) => emailCell(row, t), sortable: true, sortKind: "text" },
     // El número formateado que manda el backend, nunca el E.164; no se parte en renglones.
-    { id: "whatsapp", header: t("columns.whatsapp"), cell: (row) => row.formattedPhoneNumber === null ? "—" : <span className="whitespace-nowrap">{row.formattedPhoneNumber}</span> },
-    { id: "verified", header: t("columns.verified"), cell: (row) => verifiedCell(row, t) },
-    { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true },
-    { id: "roles", header: t("columns.roles"), cell: (row) => rolesCell(row.roles) },
+    { sortable: false, id: "whatsapp", header: t("columns.whatsapp"), cell: (row) => row.formattedPhoneNumber === null ? "—" : <span className="whitespace-nowrap">{row.formattedPhoneNumber}</span> },
+    { sortable: false, id: "verified", header: t("columns.verified"), cell: (row) => verifiedCell(row, t) },
+    { id: "displayName", header: t("columns.displayName"), cell: (row) => row.displayName ?? "—", sortable: true, sortKind: "text" },
+    { sortable: false, id: "roles", header: t("columns.roles"), cell: (row) => rolesCell(row.roles) },
     {
       id: "createdAtUtc",
       header: t("columns.createdAtUtc"),
@@ -114,6 +114,7 @@ export function createUserColumns(
         <span className="tabular-nums">{formatDateInZone(row.createdAtUtc, language, timeZone)}</span>
       ),
       sortable: true,
+      sortKind: "date",
     },
   ];
 
@@ -125,6 +126,7 @@ export function createUserColumns(
   // dan veinte botones llamados igual, y no hay forma de apretar el de una persona en concreto (ni con el teclado,
   // ni en un test). El orden y el rojo de la acción destructiva los decide `RowActions`, no esta lista.
   columns.push({
+    sortable: false,
     id: "actions",
     header: t("columns.actions"),
     align: "right",

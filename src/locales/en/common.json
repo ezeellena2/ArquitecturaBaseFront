@@ -239,6 +239,18 @@
     "close": "Close the list",
     "andMore": "and {{count}} more"
   },
+  "sort": {
+    "label": "Sort by",
+    "column": "Column",
+    "order": "Order",
+    "button": "{{column}}, {{order}}",
+    "current": "Sort by: {{order}}",
+    "text": { "asc": "A to Z", "desc": "Z to A", "ascPhrase": "A to Z", "descPhrase": "Z to A", "ascShort": "A to Z", "descShort": "Z to A" },
+    "number": { "asc": "Smallest to largest", "desc": "Largest to smallest", "ascPhrase": "smallest to largest", "descPhrase": "largest to smallest", "ascShort": "smallest first", "descShort": "largest first" },
+    "date": { "asc": "Oldest to newest", "desc": "Newest to oldest", "ascPhrase": "oldest to newest", "descPhrase": "newest to oldest", "ascShort": "oldest first", "descShort": "newest first" },
+    "yesNo": { "asc": "“No” first", "desc": "“Yes” first", "ascPhrase": "“No” first", "descPhrase": "“Yes” first", "ascShort": "“No” first", "descShort": "“Yes” first" },
+    "state": { "asc": "In workflow order", "desc": "Reverse workflow order", "ascPhrase": "in workflow order", "descPhrase": "in reverse workflow order", "ascShort": "workflow order", "descShort": "reverse workflow order" }
+  },
   "itemTable": {
     "number": "Item",
     "actions": "Actions",
