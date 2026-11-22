@@ -21,11 +21,11 @@ it("renders captured multi labels in order through the real private adapter, nev
   const presentation = toFormReplyPresentation(reply);
   if (!presentation || presentation.state !== "Completed" || !presentation.values) throw new Error("Expected a permitted captured reply.");
   const view = renderWithProviders(<FormReplyValues rows={presentation.values} actor="reader" recordId={id}/>);
-  // The answer, and inside it the captured detail aligned with its choice (rule LR1).
+  // The answer, and the captured detail in a row of its own (VF3, nada debajo de otro dato).
   const [answer, detail] = screen.getAllByRole("definition");
-  expect(answer).toHaveTextContent(/^Ruido, Frío/);
+  expect(answer).toHaveTextContent(/^Ruido, Frío$/);
   expect(detail).toHaveTextContent(/^Capturado primero$/);
-  expect(detail.previousElementSibling).toHaveTextContent(/^Ruido$/);
+  expect(detail.previousElementSibling).toHaveTextContent(/^Fallas · Detalle$/);
   expect(screen.queryByText(/9007199254740993|9\.007\.199/)).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Descargar|Ver foto/ })).not.toBeInTheDocument();
   expect(reads).toBe(0);

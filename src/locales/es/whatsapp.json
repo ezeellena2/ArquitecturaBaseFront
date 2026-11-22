@@ -195,6 +195,7 @@
     "waitingHint_other": "Esperá {{count}} segundos antes de volver a consultar o enviar.",
     "reply": {
       "answers": "Respuestas del formulario",
+      "detail": "Detalle",
       "missing": "Sin respuesta",
       "yes": "Sí",
       "no": "No",

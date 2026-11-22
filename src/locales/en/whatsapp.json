@@ -195,6 +195,7 @@
     "waitingHint_other": "Wait {{count}} seconds before checking or sending again.",
     "reply": {
       "answers": "Form answers",
+      "detail": "Detail",
       "missing": "No answer",
       "yes": "Yes",
       "no": "No",

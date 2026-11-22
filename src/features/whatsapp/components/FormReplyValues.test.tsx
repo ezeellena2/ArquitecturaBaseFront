@@ -67,7 +67,9 @@ describe("FormReplyValues presentation", () => {
 });
 
 afterEach(async () => { cleanup(); await i18n.changeLanguage("es"); });
-it.each(["es", "en"] as const)("shows a multi-choice catalog once and associates each captured detail with its choice in %s", async culture => {
+// The rule «nada debajo de otro dato» (VF3, 2026-11-22): the catalog is not repeated under the answer, the question names it, and the
+// details of the options go in a row of their own, «Fallas · Detalle», in the order of the options.
+it.each(["es", "en"] as const)("puts the details of the options chosen in a row of their own, without the catalog, in %s", async culture => {
   await i18n.changeLanguage(culture);
   const choices: readonly FormReplyDisplayRow[] = [{ id: "faults", label: "Fallas", answer: { type: "multiChoice", value: [
     { label: "Frío", catalogName: "Fallas de heladeras", detail: "No enfría" },
@@ -76,24 +78,36 @@ it.each(["es", "en"] as const)("shows a multi-choice catalog once and associates
   ] } }];
   let view!: ReturnType<typeof renderWithProviders>;
   await act(async () => { view = renderWithProviders(<FormReplyValues rows={choices}/>); });
-  expect(screen.getAllByText("Fallas de heladeras", { exact: false })).toHaveLength(1);
+  expect(screen.queryByText("Fallas de heladeras", { exact: false })).not.toBeInTheDocument();
   expect(screen.getByText("Frío, Ruido, Luz")).toBeInTheDocument();
-  // Board LR1: each detail is aligned with its choice, like the captured fields of a response (TL1-A), not «Frío: No enfría».
-  expect(screen.getByText("No enfría").closest("dd")?.previousElementSibling).toHaveTextContent(/^Frío$/);
-  expect(screen.getByText("Motor ruidoso").closest("dd")?.previousElementSibling).toHaveTextContent(/^Ruido$/);
+  const details = screen.getByText(culture === "es" ? "Fallas · Detalle" : "Fallas · Detail", { exact: true });
+  expect(details.tagName).toBe("DT");
+  expect(details.nextElementSibling).toHaveTextContent(/^No enfría, Motor ruidoso$/);
   view.rerender(<FormReplyValues rows={[]}/>);
   expect(screen.queryByText("Fallas de heladeras")).not.toBeInTheDocument();
   expect(screen.queryByText("No enfría")).not.toBeInTheDocument();
 });
 
-// W1-A: the point the send asked for before the Flow, with «Ver en el mapa»; WhatsApp gives no accuracy.
+it("puts the detail of the option chosen in a row of its own, without the catalog under the answer", async () => {
+  await act(async () => { renderWithProviders(<FormReplyValues rows={[
+    { id: "article", label: "Artículo", answer: { type: "choice", value: "2 4 D 100%", catalogName: "Productos", detail: "Bidón de 20 litros" } },
+  ]}/>); });
+
+  expect(screen.getByText("2 4 D 100%").closest("dd")).toHaveTextContent(/^2 4 D 100%$/);
+  expect(screen.queryByText("Productos")).not.toBeInTheDocument();
+  expect(screen.getByText("Artículo · Detalle", { exact: true }).nextElementSibling).toHaveTextContent(/^Bidón de 20 litros$/);
+});
+
+// W1-A: the point the send asked for before the Flow; WhatsApp gives no accuracy. The point itself is the link to the map, as in
+// the sheet (UB4-A), so nothing goes under it.
 it("shows a location as its point with the map link, and an unanswered one as unanswered", async () => {
   await act(async () => { renderWithProviders(<FormReplyValues rows={[
     { id: "place", label: "Dónde estás", answer: { type: "location", value: { latitude: -34.603722, longitude: -58.381592 } } },
     { id: "other", label: "Otro lugar", answer: { type: "location", value: null } },
   ]}/>); });
 
-  expect(screen.getByText("-34.603722, -58.381592")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Ver en el mapa" })).toHaveAttribute("href", "https://www.google.com/maps?q=-34.603722,-58.381592");
+  const link = screen.getByRole("link", { name: /^-34\.603722, -58\.381592/ });
+  expect(link).toHaveAttribute("href", "https://www.google.com/maps?q=-34.603722,-58.381592");
+  expect(link).toHaveAccessibleName("-34.603722, -58.381592 Ver en el mapa");
   expect(screen.getByText("Sin respuesta", { exact: true })).toBeInTheDocument();
 });

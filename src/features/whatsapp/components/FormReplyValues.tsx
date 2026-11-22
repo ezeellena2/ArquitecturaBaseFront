@@ -1,5 +1,5 @@
 import { FormReplyFiles } from "./FormReplyFiles";
-import { useId, useState, type RefObject } from "react";
+import { Fragment, useId, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { mapUrl } from "@/shared/lib/mapPoint";
@@ -28,20 +28,30 @@ export function FormReplyValues({ rows, preserveViewport, actor="", recordId, on
   }
   return <div role="group" aria-label={t("forms.reply.answers")}>
     <dl id={id} className="divide-y divide-[var(--color-border)]">
-      {shown.map(row => <div key={row.id} className={cn("grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:gap-3",row.answer.type==="photo"||row.answer.type==="document"?"sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]":"sm:grid-cols-2")}>
-        <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
-        <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.answer.type === "group" && row.answer.value.length
-          // A block of rows: an item per line, its answers in order and without the unanswered ones (RG4-A).
-          ? <ol aria-label={row.label}>{row.answer.value.map((item, index) => <li key={index}>{`${index + 1}. ${formatFormReplyItem(item, i18n.resolvedLanguage ?? "es", labels)}`}</li>)}</ol>
-          : row.text}{row.answer.type==="choice"&&row.answer.catalogName ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.catalogName}</p> : null}
-          {row.answer.type==="choice"&&row.answer.detail ? <p className="text-xs text-[var(--color-content-muted)]">{row.answer.detail}</p> : null}
-          {row.answer.type === "location" && row.answer.value ? <a href={mapUrl(row.answer.value)} target="_blank" rel="noopener noreferrer"
-            className="flex w-fit items-center gap-1 text-[var(--color-brand-700)] underline">{t("location.viewOnMap")}<ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden="true" /></a> : null}{row.answer.type === "multiChoice" ? <>
-            {[...new Set(row.answer.value?.flatMap(choice => choice.catalogName ? [choice.catalogName] : []) ?? [])].map(name => <p key={name} className="text-xs text-[var(--color-content-muted)]">{name}</p>)}
-            {/* Each detail aligned with its choice (rule LR1), like the captured fields of a response (TL1-A), not «Frío: No enfría». */}
-            {row.answer.value?.some(choice => choice.detail) ? <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 border-l-2 border-[var(--color-surface-header)] pl-2.5 text-xs whitespace-normal">{row.answer.value.map((choice, index) => choice.detail ? <div key={index} className="contents"><dt className="text-[var(--color-content-muted)]">{choice.label}</dt><dd className="min-w-0 break-words">{choice.detail}</dd></div> : null)}</dl> : null}
-          </> : null}</dd>
-      </div>)}
+      {shown.map(row => {
+        const columns = cn("grid min-w-0 grid-cols-1 gap-1 px-3 py-2 sm:gap-3", row.answer.type === "photo" || row.answer.type === "document" ? "sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : "sm:grid-cols-2");
+        // Nothing goes under the answer (VF3, 2026-11-22): the question already names the catalog, and the details of the options
+        // chosen go in a row of their own, «Fallas · Detalle», in the order of the options.
+        const details = row.answer.type === "choice" ? row.answer.detail ? [row.answer.detail] : []
+          : row.answer.type === "multiChoice" ? row.answer.value?.flatMap(choice => choice.detail ? [choice.detail] : []) ?? [] : [];
+        return <Fragment key={row.id}>
+          <div className={columns}>
+            <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label}</dt>
+            <dd className={cn("min-w-0 break-words whitespace-pre-wrap text-sm", !expanded && row.answer.type === "longText" && "line-clamp-3")}>{row.answer.type==="photo"||row.answer.type==="document" ? recordId ? <FormReplyFiles actor={actor} recordId={recordId} files={row.answer.value} photo={row.answer.type==="photo"} label={row.label} onForbidden={onForbidden} onError={onFileError} focusFallback={focusFallback} date={date}/> : t("forms.reply.valuesUnavailable") : row.answer.type === "group" && row.answer.value.length
+              // A block of rows: an item per line, its answers in order and without the unanswered ones (RG4-A).
+              ? <ol aria-label={row.label}>{row.answer.value.map((item, index) => <li key={index}>{`${index + 1}. ${formatFormReplyItem(item, i18n.resolvedLanguage ?? "es", labels)}`}</li>)}</ol>
+              // UB4-A: the point itself is the link to the map, as in the sheet, so nothing goes under it.
+              : row.answer.type === "location" && row.answer.value ? <a href={mapUrl(row.answer.value)} target="_blank" rel="noopener noreferrer"
+                className="inline-flex w-fit items-center gap-1 whitespace-nowrap tabular-nums text-[var(--color-brand-700)] underline">{row.text}{" "}<ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                <span className="sr-only">{t("location.viewOnMap")}</span></a>
+              : row.text}</dd>
+          </div>
+          {details.length ? <div className={columns}>
+            <dt className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{row.label + " · " + t("forms.reply.detail")}</dt>
+            <dd className="min-w-0 break-words text-sm text-[var(--color-content-muted)]">{details.join(", ")}</dd>
+          </div> : null}
+        </Fragment>;
+      })}
     </dl>
     {mayFold ? <div className="px-3 py-2"><Button type="button" variant="outline" size="sm" aria-expanded={expanded} aria-controls={id} onClick={toggle}>
       {expanded ? t("forms.reply.showLess") : t("forms.reply.showAll", { count: values.length })}
