@@ -388,7 +388,8 @@ it.each(["pdf", "row", "shared"] as const)("opens mobile activity only for the P
   }
 });
 // Decision 7 (VF2-A): in the activity each thing that happened is a row, titled with what happened.
-const activityRow = (heading: HTMLElement) => heading.closest<HTMLElement>("[data-activity-row]")!;
+// A row of the activity, a row of the table on the computer and a box on the phone (VF2-A), by what happened.
+const activityRow = (element: HTMLElement) => element.closest<HTMLElement>("[data-activity-row]")!;
 // Board VF2-A: each copy is a row of its own, «Se armó el PDF» with its file in «Detalle» (and its language in what happened only
 // when it is the other one) and «Ver PDF» and «Descargar» in Acciones, without a small preview: its bytes are read only when opened.
 it("opens each fixed PDF copy from its own row and reads it only when asked", async () => {
@@ -398,9 +399,9 @@ it("opens each fixed PDF copy from its own row and reads it only when asked", as
   await waitFor(() => expect(screen.getByRole("button", { name: "Expandir actividad" })).toBeEnabled());
   expect(screen.getByText("Recibida · Al aprobarla")).toBeVisible();
   await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
-  const first = activityRow(await screen.findByRole("heading", { name: "Se armó el PDF" }));
+  const first = activityRow(await screen.findByText("Se armó el PDF", { exact: true }));
   // NI1-A (2026-11-03): only the copy in the other language names it.
-  const second = activityRow(screen.getByRole("heading", { name: "Se armó el PDF en inglés" }));
+  const second = activityRow(screen.getByText("Se armó el PDF en inglés", { exact: true }));
   expect(within(first).getByText(documents[0].name)).toBeVisible();
   expect(within(second).getByText(documents[1].name)).toBeVisible();
   expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
@@ -447,7 +448,7 @@ it("withdraws the full response when its issued PDF read is forbidden", async ()
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
   await userEvent.click(screen.getByRole("button", { name: "Expandir actividad" }));
-  const action = activityRow(await screen.findByRole("heading", { name: "Se armó el PDF" }));
+  const action = activityRow(await screen.findByText("Se armó el PDF", { exact: true }));
   await userEvent.click(within(action).getByRole("button", { name: "Ver PDF" }));
   await waitFor(() => expect(screen.queryByRole("heading", { name: "TEST-000002", level: 1 })).not.toBeInTheDocument());
   expect(screen.queryByTitle("Vista previa del PDF")).not.toBeInTheDocument();
@@ -460,7 +461,7 @@ it("keeps the open PDF copy when anchoring changes only the return page", async 
     previousId: position === 1 ? null : priorRecordId, nextId: responseSecondId, position, totalCount: 43 })));
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
-  const action = activityRow(await screen.findByRole("heading", { name: "Se armó el PDF" }));
+  const action = activityRow(await screen.findByText("Se armó el PDF", { exact: true }));
   await userEvent.click(within(action).getByRole("button", { name: "Ver PDF" }));
   const dialog = await screen.findByRole("dialog");
   const src = (await within(dialog).findByTitle("Vista previa del PDF")).getAttribute("src");
@@ -489,7 +490,7 @@ it("says a response loaded in the app was loaded there and by whom, in their own
     return HttpResponse.json({ ...detail, channel: "app", origin: { ...detail.origin!, channelId: "app", conversationId: null, maskedAddress: null } });
   }));
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
-  const submitted = within(activityRow(await screen.findByRole("heading", { name: "Se respondió el formulario" })));
+  const submitted = within(activityRow(await screen.findByText("Se respondió el formulario", { exact: true })));
   expect(submitted.getByText("Ana")).toBeVisible();
   expect(submitted.getByText("App")).toBeVisible();
   expect(screen.queryByText("Se lo mandó Ana")).not.toBeInTheDocument();

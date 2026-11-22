@@ -125,7 +125,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
         <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError} layout="page"/></div>
       </CollapsibleSection>
       {detail.scope.ownOnly ? null : <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
-        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>
+        {/* VF2-A: the activity is a table on the full page, with «Ver PDF» and «Descargar» as icons in their row. */}
+        <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} layout="page" workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions compact owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>
       </CollapsibleSection>}
       {/* With a live issuance the void waits for its reversal (NC1-A): the page stays, reads the flow again and says «Anulándose». */}
       {voiding ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} issuance={issuance.issued ? "issued" : issuance.live ? "live" : undefined} onClose={() => setVoiding(false)}
