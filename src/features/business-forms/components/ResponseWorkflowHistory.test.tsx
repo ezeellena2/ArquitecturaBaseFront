@@ -8,6 +8,7 @@ import i18n from "@/shared/i18n";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import { responseDetailFixture, responseFormId, responseRecordId, responseWorkflowFixture } from "@/test/responseFixtures";
 import type { ReactNode } from "react";
 import type { ResponseAction, ResponseWorkflow } from "../api/workflow";
@@ -24,22 +25,36 @@ function action(overrides: Partial<ResponseAction> = {}): ResponseAction {
   return { id: id(1), ruleId: id(2), kind: "NotifyAuthor", event: "Received", order: 0, revision: 1, state: "Completed", reasonCode: null, reason: null, canConsult: false, canRetry: false, recipients: [], createdAtUtc: instant("00"), updatedAtUtc: instant("01"), completedAtUtc: instant("01"), ...overrides };
 }
 type IssuedDocument = ResponseWorkflow["documents"][number];
-function ActivityHarness({ documentActions }: { documentActions?: (document: IssuedDocument) => ReactNode }) {
+function ActivityHarness({ documentActions, record = responseDetailFixture(), layout }: { documentActions?: (document: IssuedDocument) => ReactNode; record?: ResponseDetail; layout?: "panel" | "page" }) {
   const workflow = useResponseWorkflow(responseFormId, responseRecordId);
-  return <ResponseWorkflowHistory record={responseDetailFixture()} workflow={workflow} timeZoneId="UTC" documentActions={documentActions} />;
+  return <ResponseWorkflowHistory record={record} workflow={workflow} timeZoneId="UTC" documentActions={documentActions} layout={layout} />;
 }
-function showActivity(workflow: ResponseWorkflow, documentActions?: (document: IssuedDocument) => ReactNode) {
+function showActivity(workflow: ResponseWorkflow, documentActions?: (document: IssuedDocument) => ReactNode, layout?: "panel" | "page") {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
     http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(workflow)));
-  return renderWithProviders(<ActivityHarness documentActions={documentActions} />);
+  return renderWithProviders(<ActivityHarness documentActions={documentActions} layout={layout} />);
+}
+function readActivity(record: ResponseDetail, workflow = responseWorkflowFixture()) {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
+    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(workflow)));
+  return renderWithProviders(<ActivityHarness record={record} />);
 }
 // The response is there before its workflow: the rows of its actions arrive with it, in the same band.
 async function receivedBand() {
   const band = await screen.findByRole("listitem", { name: "Al recibirla" });
-  await waitFor(() => expect(band.querySelector('li[tabindex="-1"]')).not.toBeNull());
+  await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
   return band;
 }
-const bandNames = () => screen.getAllByRole("listitem").map(item => item.getAttribute("aria-label")).filter(name => name !== null && !name.startsWith("Destinatario"));
+const bandNames = () => screen.getAllByRole("listitem").filter(item => item.hasAttribute("aria-labelledby"))
+  .map(item => document.getElementById(item.getAttribute("aria-labelledby")!)!.textContent);
+// In the quick view each row is a box: «Qué pasó» is its title and the other data go with their names.
+const boxes = (container: HTMLElement) => [...container.querySelectorAll<HTMLElement>("[data-activity-row]")];
+const fieldOf = (box: HTMLElement, name: string) => [...box.querySelectorAll("dt")].find(term => term.textContent === name)?.nextElementSibling?.textContent ?? null;
+function box(container: HTMLElement, what: string, who?: string) {
+  const found = boxes(container).filter(item => within(item).getByRole("heading").textContent === what && (who === undefined || fieldOf(item, "Quién") === who));
+  expect(found, what + " " + (who ?? "")).toHaveLength(1);
+  return within(found[0]);
+}
 
 it("groups request evidence once with its real task time and preserves receiving effects", async () => {
   const task: NonNullable<ResponseWorkflow["task"]> = { id: id(3), roleId: id(4), roleName: "Supervisión", requestedAtUtc: instant("03"), state: "Open", revision: 1, decidedAtUtc: null, decidedBy: null, reason: null };
@@ -47,63 +62,69 @@ it("groups request evidence once with its real task time and preserves receiving
     actions: [action(), action({ id: id(5), kind: "RequestApproval", order: 1 })] };
   showActivity(workflow);
   const received = await screen.findByRole("listitem", { name: "Al recibirla" });
-  expect(within(received).getByText("Se respondió el formulario")).toBeInTheDocument();
-  expect(await within(received).findByText("Mandarle un mensaje a quien la cargó")).toBeInTheDocument();
+  expect(within(received).getByRole("heading", { name: "Se respondió el formulario" })).toBeInTheDocument();
+  expect(await within(received).findByRole("heading", { name: "Mandarle un mensaje a quien la cargó" })).toBeInTheDocument();
   expect(bandNames()).toEqual(["Al recibirla", "Aprobación"]);
   const approval = screen.getByRole("listitem", { name: "Aprobación" });
   expect(approval.querySelector('time[datetime="' + instant("03") + '"]')).toBeInTheDocument();
-  expect(within(approval).getByText("Se pidió aprobación")).toBeInTheDocument();
-  expect(within(approval).getByText("Rol Supervisión")).toBeInTheDocument();
-  expect(within(approval).getByText("Por aprobar")).toBeInTheDocument();
+  const request = box(approval, "Se pidió aprobación");
+  expect(request.getByText("Rol Supervisión")).toBeInTheDocument();
+  expect(request.getByText("Por aprobar")).toBeInTheDocument();
   expect(screen.queryByText("Pedir aprobación a una persona con un rol")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Aprobar" })).not.toBeInTheDocument();
 });
 
 it("keeps a failed approval request visible inside the receiving moment without a pending task", async () => {
   showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "RequestApproval", state: "Failed", reasonCode: "Forms.Rule.RoleUnavailable", reason: "El rol ya no está disponible." })] });
-  const effects = await receivedBand();
-  expect(within(effects).getByText("Pedir aprobación a una persona con un rol")).toBeInTheDocument();
-  expect(within(effects).getByText("El rol ya no está disponible.")).toBeInTheDocument();
-  expect(within(effects).getByText("No se pudo")).toBeInTheDocument();
+  const failed = box(await receivedBand(), "Pedir aprobación a una persona con un rol");
+  expect(failed.getByText("El rol ya no está disponible.")).toBeInTheDocument();
+  expect(failed.getByText("No se pudo")).toBeInTheDocument();
   expect(screen.queryByRole("listitem", { name: "Aprobación" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
 
+// Decision 7: each person of a notice is a row with the state of their send (the receipts of WhatsApp are that state), and the human
+// review is a row of its own; Consultar stays on the action and Resolver envío on the person, as icons.
 it("preserves delivery, human review and recovery controls inside an effect moment", async () => {
   const user = userEvent.setup();
   showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true,
-    recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
+    recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
       deliveredAtUtc: instant("05"), readAtUtc: instant("06"), review: { wasSent: false, reviewedAtUtc: instant("04"), reviewedBy: { userId: id(9), displayName: "Luz" } } },
-      { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null },
-      { user: { userId: id(11), displayName: "Ciro" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("05"), readAtUtc: null, review: null }] })] });
+      { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null },
+      { user: { userId: id(11), displayName: "Ciro" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("05"), readAtUtc: null, review: null }] })] });
   const effects = await receivedBand();
-  expect(within(effects).getByText("3 personas")).toBeInTheDocument();
-  const ana = within(within(effects).getByRole("listitem", { name: "Destinatario: Ana" }));
-  expect(ana.getByText("Enviado")).toBeInTheDocument();
-  expect(ana.getByText("Leído")).toBeInTheDocument();
-  expect(ana.getByText("Luz indicó que no salió.")).toBeInTheDocument();
-  expect(within(within(effects).getByRole("listitem", { name: "Destinatario: Ciro" })).getByText("Entregado")).toBeInTheDocument();
-  const beto = within(within(effects).getByRole("listitem", { name: "Destinatario: Beto" }));
+  expect(box(effects, "Se avisó", "Ana").getByText("Leído")).toBeInTheDocument();
+  expect(fieldOf(boxes(effects).find(item => within(item).getByRole("heading").textContent === "Se indicó que no salió")!, "Quién")).toBe("Luz");
+  expect(box(effects, "Se avisó", "Ciro").getByText("Entregado")).toBeInTheDocument();
+  const beto = box(effects, "Se avisó", "Beto");
   expect(beto.getByText("Envío sin confirmar")).toBeInTheDocument();
   expect(beto.getByRole("button", { name: "Resolver envío" })).toBeEnabled();
-  expect(within(effects).getByRole("button", { name: "Consultar" })).toBeEnabled();
-  await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
+  expect(box(effects, "Avisar a las personas con un rol").getByRole("button", { name: "Consultar" })).toBeEnabled();
+  await user.click(beto.getByRole("button", { name: "Resolver envío" }));
   const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
   await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
   await waitFor(() => expect(within(effects).getByRole("button", { name: "Resolver envío" })).toHaveFocus());
 });
+
+/// «¿Salió el envío?» goes in the only piece to choose (DS1-A, 2026-11-22): opened by keyboard, like the other Radix menus in jsdom.
+async function chooseSent(dialog: HTMLElement, name: "Salió" | "No salió") {
+  const field = within(dialog).getByRole("button", { name: /^¿Salió el envío\?/ });
+  await act(async () => field.focus());
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "¿Salió el envío?" })).getByRole("option", { name }));
+}
 
 // The wait of a 429 is not written under the history nor in the dialog: it is the reason of each disabled action.
 it("explains the action wait as the reason of the recovery buttons and of the review confirmation", async () => {
   const user = userEvent.setup();
   const wait = /^Esperá [0-9]+ segundos para volver a intentar\.$/;
   showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true,
-    recipients: [{ user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
+    recipients: [{ user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Uncertain", reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null }] })] });
   server.use(http.post("/api/forms/records/:id/actions/:runId/review", () => HttpResponse.json({ code: "RateLimit.Exceeded", detail: "Esperá antes de resolver.", retryAfter: 30 }, { status: 429 })));
   const effects = await receivedBand();
   await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
   const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
-  await user.click(within(dialog).getByRole("radio", { name: /Salió/ }));
+  await chooseSent(dialog, "Salió");
   await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
   const confirm = within(dialog).getByRole("button", { name: "Confirmar que salió" });
   await waitFor(() => expect(confirm).toHaveAccessibleDescription(wait));
@@ -140,22 +161,15 @@ it("keeps the wait as the reason of Retry while a running action refetches the h
   expect(retry).toHaveAccessibleDescription(wait);
 });
 
-it("names the app and whoever loaded the response once, under the submission", async () => {
+it("names whoever loaded the response and the app in their own fields, not under what happened", async () => {
   const record = responseDetailFixture();
-  const loaded = { ...record, channel: "app" as const, origin: { ...record.origin!, channelId: "app", conversationId: null, maskedAddress: null } };
-  function AppHarness() {
-    const workflow = useResponseWorkflow(responseFormId, responseRecordId);
-    return <ResponseWorkflowHistory record={loaded} workflow={workflow} timeZoneId="UTC" />;
-  }
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
-    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
-  renderWithProviders(<AppHarness />);
-  const received = await screen.findByRole("listitem", { name: "Al recibirla" });
-  expect(within(received).getByText("En la app · " + record.actor.displayName)).toBeInTheDocument();
-  expect(within(received).queryByText(/Se lo mandó/)).not.toBeInTheDocument();
+  readActivity({ ...record, channel: "app" as const, origin: { ...record.origin!, channelId: "app", conversationId: null, maskedAddress: null } });
+  const submitted = boxes(await screen.findByRole("listitem", { name: "Al recibirla" })).find(item => within(item).getByRole("heading").textContent === "Se respondió el formulario")!;
+  expect([fieldOf(submitted, "Quién"), fieldOf(submitted, "Canal")]).toEqual([record.actor.displayName, "App"]);
+  expect(screen.queryByText(/En la app ·/)).not.toBeInTheDocument();
 });
 
-// Each recovery button says what it is doing while its POST works (board LC1-A); the others only turn off.
+// Each recovery icon says what it is doing while its POST works (board LC1-A); the others only turn off.
 it("says Consultando… only on the action being consulted", async () => {
   const user = userEvent.setup();
   let release!: () => void;
@@ -217,17 +231,18 @@ function roleNotice(overrides: Partial<ResponseAction> = {}): ResponseAction {
     { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Failed", reasonCode: "WhatsApp.FormAction.RecipientUnavailable", reason: "El destinatario no está disponible para recibir el aviso.",
       canReview: false, canRetry: true, deliveredAtUtc: null, readAtUtc: null, review: null }], ...overrides });
 }
-const betoRow = (effects: HTMLElement) => within(within(effects).getByRole("listitem", { name: "Destinatario: Beto" }));
+const betoRow = (effects: HTMLElement) => box(effects, "Se avisó", "Beto");
 
 it("offers Retry in the row of the person whose failure is confirmed, with what it does in the (i)", async () => {
   showActivity({ ...responseWorkflowFixture(), actions: [roleNotice()] });
   const effects = await receivedBand();
   const beto = betoRow(effects);
   expect(beto.getByText("No se pudo enviar")).toBeInTheDocument();
+  expect(beto.getByText("El destinatario no está disponible para recibir el aviso.")).toBeInTheDocument();
   expect(beto.getByRole("button", { name: "Reintentar" })).toBeEnabled();
   expect(beto.getByRole("button", { name: "Más información sobre Reintentar" })).toHaveAccessibleDescription(
     "Le manda el aviso sólo a esta persona; a las demás no se les repite. Antes, revisá que tenga el WhatsApp vinculado en su perfil y que haya escrito en las últimas 24 horas.");
-  expect(within(within(effects).getByRole("listitem", { name: "Destinatario: Ana" })).queryByRole("button")).not.toBeInTheDocument();
+  expect(box(effects, "Se avisó", "Ana").queryByRole("button")).not.toBeInTheDocument();
   expect(within(effects).getAllByRole("button", { name: "Reintentar" })).toHaveLength(1);
 });
 
@@ -272,28 +287,26 @@ it("reads the activity again after a conflict instead of retrying the person twi
 });
 
 it("has no person Retry without rule management", async () => {
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
-    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json({ ...responseWorkflowFixture(), actions: [roleNotice()] })));
-  renderWithProviders(<ActivityHarness />);
+  readActivity(responseDetailFixture(), { ...responseWorkflowFixture(), actions: [roleNotice()] });
   const effects = await receivedBand();
   expect(betoRow(effects).getByText("No se pudo enviar")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
 });
 
 it("tells that a human review does not confirm the delivery in the (i) next to it", async () => {
-  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
+  showActivity({ ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false,
     deliveredAtUtc: null, readAtUtc: null, review: { wasSent: true, reviewedAtUtc: instant("04"), reviewedBy: { userId: id(9), displayName: "Luz" } } }] })] });
   const effects = await receivedBand();
-  expect(within(effects).getByText("Luz indicó que salió.")).toBeVisible();
-  expect(within(effects).getByRole("button", { name: "Más información sobre Luz indicó que salió." })).toHaveAccessibleDescription("Revisión humana: no confirma la entrega de WhatsApp.");
+  const review = box(effects, "Se indicó que salió", "Luz");
+  expect(review.getByRole("button", { name: "Más información sobre Se indicó que salió" })).toHaveAccessibleDescription("Revisión humana: no confirma la entrega de WhatsApp.");
   for (const text of screen.getAllByText("Revisión humana: no confirma la entrega de WhatsApp.")) expect(text).not.toBeVisible();
 });
 
-it("resolves a send without a description, with each option's consequence in its (i), and waits with Confirmando…", async () => {
+it("resolves a send with each option's consequence as its grey line, and waits with Confirmando…", async () => {
   const user = userEvent.setup();
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
   const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true, recipients: [recipient] })] };
   showActivity(workflow);
   server.use(http.post("/api/forms/records/:id/actions/:runId/review", async () => { await gate;
@@ -302,22 +315,29 @@ it("resolves a send without a description, with each option's consequence in its
   await user.click(within(effects).getByRole("button", { name: "Resolver envío" }));
   const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
   expect(dialog).not.toHaveAccessibleDescription();
-  expect(within(dialog).getByRole("radio", { name: "Salió" })).toHaveAccessibleDescription("La regla continúa sin volver a mandar este aviso.");
-  expect(within(dialog).getByRole("radio", { name: "No salió" })).toHaveAccessibleDescription("El aviso queda para reintentar a esta persona.");
-  await user.click(within(dialog).getByRole("radio", { name: "Salió" }));
+  expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument();
+  const field = within(dialog).getByRole("button", { name: /^¿Salió el envío\?/ });
+  await act(async () => field.focus());
+  await userEvent.keyboard("{Enter}");
+  const list = await screen.findByRole("listbox", { name: "¿Salió el envío?" });
+  expect(within(list).getByRole("option", { name: "Salió" })).toHaveAccessibleDescription("La regla continúa sin volver a mandar este aviso.");
+  expect(within(list).getByRole("option", { name: "No salió" })).toHaveAccessibleDescription("El aviso queda para reintentar a esta persona.");
+  await user.click(within(list).getByRole("option", { name: "Salió" }));
   await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
   expect(within(dialog).getByRole("button", { name: "Confirmando…" })).toHaveAttribute("aria-busy", "true");
   expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
   expect(within(dialog).getByRole("button", { name: "Cerrar" })).toHaveAccessibleDescription("Confirmando…");
   await act(async () => release());
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  // Confirmed, «Resolver envío» goes away and the focus goes to the person's row.
+  await waitFor(() => expect(document.activeElement).toBe(boxes(effects).find(item => fieldOf(item, "Quién") === "Beto" && within(item).getByRole("heading").textContent === "Se avisó")));
 });
 
 // DL (2026-11-11): the recipient reads in its row of two columns, never «Destinatario: Beto»; and after a lost confirmation whose
-// reading also failed, why the options are off is their reason, not a grey sentence under them.
-it("reads the recipient in its row and gives why the options are off as their reason", async () => {
+// reading also failed, why the choice is off is its reason, not a grey sentence under it.
+it("reads the recipient in its row and gives why the choice is off as its reason", async () => {
   const user = userEvent.setup();
-  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "whatsapp", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
+  const recipient = { user: { userId: id(10), displayName: "Beto" }, channelId: "phone", state: "Uncertain" as const, reasonCode: null, reason: null, canReview: true, canRetry: false, deliveredAtUtc: null, readAtUtc: null, review: null };
   const workflow: ResponseWorkflow = { ...responseWorkflowFixture(), actions: [action({ kind: "NotifyRole", state: "Uncertain", completedAtUtc: null, canConsult: true, recipients: [recipient] })] };
   let reads = 0;
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrules.manage"] })),
@@ -329,16 +349,13 @@ it("reads the recipient in its row and gives why the options are off as their re
   const dialog = screen.getByRole("dialog", { name: "Resolver el envío" });
   expect(within(dialog).getByText("Destinatario", { selector: "dt" }).nextElementSibling).toHaveTextContent(/^Beto$/);
   expect(within(dialog).queryByText(/Destinatario:/)).not.toBeInTheDocument();
-  await user.click(within(dialog).getByRole("radio", { name: "Salió" }));
+  await chooseSent(dialog, "Salió");
   await user.click(within(dialog).getByRole("button", { name: "Confirmar que salió" }));
   expect(await within(dialog).findByRole("button", { name: "Consultar" })).toBeEnabled();
   const reason = "Consultá el estado antes de volver a confirmar la revisión.";
-  for (const [name, help] of [["Salió", "La regla continúa sin volver a mandar este aviso."], ["No salió", "El aviso queda para reintentar a esta persona."]]) {
-    const option = within(dialog).getByRole("radio", { name });
-    expect(option).toHaveAttribute("aria-disabled", "true");
-    expect(option).toHaveAccessibleDescription(help + " " + reason);
-  }
-  // Nothing written under the options: the reason is only on them.
+  expect(within(dialog).getByRole("group", { name: "¿Salió el envío?" })).toHaveAccessibleDescription(reason);
+  expect(within(dialog).getByRole("button", { name: /^¿Salió el envío\?/ })).toBeDisabled();
+  // Nothing written under the choice: the reason is only on it.
   for (const text of within(dialog).getAllByText(reason)) expect(text).not.toBeVisible();
   expect(within(dialog).queryByText(/quedó guardada/)).not.toBeInTheDocument();
 });
@@ -368,72 +385,78 @@ it("says Reintentando… while it reads again a history that failed after being 
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Reintent/ })).not.toBeInTheDocument());
 });
 
-// Board TL3-A: each thing in a fixed column (the time, what happened with who under it, the state and the actions), the
-// moments as bands, the day once and the state once.
-it("reads each row in fixed columns, by moment, with the day once and the state once", async () => {
+// Board VF2-A: in the full page, from 640 px, a table with a datum per column; the moments are rows that separate, each PDF and each
+// person of a notice is a row, and their actions are icons.
+it("reads the full page in a table, a datum per column, with the moments as rows that separate", async () => {
   const task: NonNullable<ResponseWorkflow["task"]> = { id: id(3), roleId: id(4), roleName: "Agrónomo", requestedAtUtc: instant("03"), state: "Approved", revision: 2, decidedAtUtc: instant("04"), decidedBy: { userId: id(9), displayName: "Marcos" }, reason: null };
   const pdf = action({ id: id(5), kind: "GeneratePdf", event: "Approved", completedAtUtc: instant("05") });
-  const notice = action({ id: id(6), event: "Approved", order: 1, completedAtUtc: instant("06"), recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "whatsapp", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("07"), readAtUtc: instant("08"), review: null }] });
+  const notice = action({ id: id(6), event: "Approved", order: 1, completedAtUtc: instant("06"), recipients: [{ user: { userId: id(8), displayName: "Ana" }, channelId: "phone", state: "Accepted", reasonCode: null, reason: null, canReview: false, canRetry: false, deliveredAtUtc: instant("07"), readAtUtc: instant("08"), review: null }] });
   showActivity({ ...responseWorkflowFixture(), recordState: "Approved", task, actions: [action({ id: id(7), kind: "RequestApproval" }), pdf, notice],
-    documents: [{ id: id(12), runId: pdf.id, culture: "es", name: "Visita-TEST.pdf", size: 10, createdAtUtc: instant("05") }] }, document => <button type="button">Abrir {document.name}</button>);
-  const approved = await screen.findByRole("listitem", { name: "Al aprobarla" });
-  expect(bandNames()).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
-  expect(screen.getByText("Qué pasó")).toBeInTheDocument();
-  const approval = within(screen.getByRole("listitem", { name: "Aprobación" }));
-  expect(approval.getByText("Marcos la aprobó")).toBeInTheDocument();
-  expect(approval.getAllByText(/Agrónomo/).map(role => role.textContent)).toEqual(["Rol Agrónomo"]);
-  expect(approval.getAllByText(/^(Aprobada|Por aprobar)$/).map(badge => badge.textContent)).toEqual(["Aprobada"]);
-  const file = within(approved.querySelector('[tabindex="-1"]') as HTMLElement);
-  expect(file.getByText("Armar el PDF")).toBeInTheDocument();
-  // NI1-A (2026-11-03): the copy names its language only when it is not the menu's.
-  expect(file.getByText("Visita-TEST.pdf")).toBeInTheDocument();
-  expect(file.getByText("Hecho")).toBeInTheDocument();
-  expect(file.getByRole("button", { name: "Abrir Visita-TEST.pdf" })).toBeInTheDocument();
-  // The message to whoever loaded it is one row: their name under the action and the receipts with their time.
-  const message = within(within(approved).getByText("Mandarle un mensaje a quien la cargó").closest("li")!);
-  expect(message.getByText("Ana")).toBeInTheDocument();
-  expect(message.getByText("Hecho")).toBeInTheDocument();
-  expect(message.getByText("Leído")).toBeInTheDocument();
-  expect(within(approved).queryByRole("listitem", { name: "Destinatario: Ana" })).not.toBeInTheDocument();
-  expect(screen.getAllByText("16/10/2026")).toHaveLength(1);
-  expect(screen.getAllByText("17/10/2026")).toHaveLength(1);
+    documents: [{ id: id(12), runId: pdf.id, culture: "es", name: "Visita-TEST.pdf", size: 10, createdAtUtc: instant("05") }] }, document => <button type="button">Abrir {document.name}</button>, "page");
+  const table = await screen.findByRole("table");
+  const approved = await within(table).findByRole("rowgroup", { name: "Al aprobarla" });
+  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Fecha", "Hora", "Qué pasó", "Quién", "Canal", "Detalle", "Estado", "Acciones"]);
+  expect(within(table).getAllByRole("rowgroup").slice(1).map(group => group.getAttribute("aria-labelledby") && document.getElementById(group.getAttribute("aria-labelledby")!)!.textContent))
+    .toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
+  const read = (row: HTMLElement) => ["Fecha", "Hora", "Qué pasó", "Quién", "Canal", "Detalle", "Estado"].map(header => cellUnder(table, row, header).textContent);
+  const rows = within(approved).getAllByRole("row").slice(1);
+  expect(rows.map(read)).toEqual([
+    ["17/10/2026", "12:00", "Se armó el PDF", "—", "—", "Visita-TEST.pdf", "Hecho"],
+    ["17/10/2026", "12:00", "Se le avisó a quien la cargó", "Ana", "WhatsApp", "—", "Leído"]]);
+  expect(within(cellUnder(table, rows[0], "Acciones")).getByRole("button", { name: "Abrir Visita-TEST.pdf" })).toBeInTheDocument();
+  const decision = within(within(table).getByRole("rowgroup", { name: "Aprobación" })).getAllByRole("row").slice(1);
+  expect(decision.map(read)).toEqual([
+    ["17/10/2026", "12:00", "Se pidió aprobación", "—", "—", "Rol Agrónomo", "—"],
+    ["17/10/2026", "12:00", "Se aprobó", "Marcos", "App", "—", "Aprobada"]]);
+  expect(screen.queryByRole("listitem", { name: "Al recibirla" })).not.toBeInTheDocument();
 });
 
-it("tells who rejected it and the reason in its box, without repeating the state", async () => {
+it("reads each row as a box in the quick view and on a phone, with what happened on top and the data that apply", async () => {
+  vi.spyOn(globalThis, "matchMedia").mockImplementation(query => ({ matches: query === "(width < 640px)", media: query, onchange: null,
+    addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {}, dispatchEvent: () => false }) as MediaQueryList);
+  try {
+    showActivity({ ...responseWorkflowFixture(), actions: [roleNotice()] }, undefined, "page");
+    const effects = await receivedBand();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const beto = boxes(effects).find(item => fieldOf(item, "Quién") === "Beto")!;
+    expect(within(beto).getByRole("heading", { level: 3 })).toHaveTextContent("Se avisó");
+    expect([...beto.querySelectorAll("dt")].map(term => term.textContent)).toEqual(["Fecha", "Hora", "Quién", "Canal", "Detalle", "Estado"]);
+    expect([fieldOf(beto, "Fecha"), fieldOf(beto, "Hora"), fieldOf(beto, "Canal"), fieldOf(beto, "Estado")]).toEqual(["17/10/2026", "12:00", "WhatsApp", "No se pudo enviar"]);
+    const saved = boxes(effects).find(item => within(item).getByRole("heading").textContent === "Se guardó la respuesta")!;
+    expect([...saved.querySelectorAll("dt")].map(term => term.textContent)).toEqual(["Fecha", "Hora"]);
+  } finally {
+    vi.restoreAllMocks();
+  }
+});
+
+it("tells who rejected it and the whole reason in «Detalle», without repeating the state", async () => {
   const task: NonNullable<ResponseWorkflow["task"]> = { id: id(3), roleId: id(4), roleName: "Agrónomo", requestedAtUtc: instant("03"), state: "Rejected", revision: 2, decidedAtUtc: instant("04"), decidedBy: { userId: id(9), displayName: "Luz" }, reason: "La dosis no coincide con la receta." };
   showActivity({ ...responseWorkflowFixture(), recordState: "Rejected", task, actions: [] });
-  const approval = within(await screen.findByRole("listitem", { name: "Aprobación" }));
-  expect(approval.getByText("Luz la rechazó")).toBeInTheDocument();
-  expect(approval.getByText("La dosis no coincide con la receta.")).toBeInTheDocument();
-  expect(approval.getAllByText("Rechazada")).toHaveLength(1);
+  const approval = await screen.findByRole("listitem", { name: "Aprobación" });
+  const rejected = boxes(approval).find(item => within(item).getByRole("heading").textContent === "Se rechazó")!;
+  expect([fieldOf(rejected, "Quién"), fieldOf(rejected, "Detalle"), fieldOf(rejected, "Estado")]).toEqual(["Luz", "La dosis no coincide con la receta.", "Rechazada"]);
+  expect(within(approval).getAllByText("Rechazada")).toHaveLength(1);
   expect(screen.queryByText(/→/)).not.toBeInTheDocument();
 });
 
 // W3: the location and the contact can each bring the form back at the same instant: two rows, each with its own key.
-function RecordActivity({ record }: { record: ResponseDetail }) {
-  const workflow = useResponseWorkflow(responseFormId, responseRecordId);
-  return <ResponseWorkflowHistory record={record} workflow={workflow} timeZoneId="UTC" />;
-}
 it("shows two forms sent again at the same instant as two rows without repeating a key", async () => {
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   try {
     const at = instant("05");
-    const record: ResponseDetail = { ...responseDetailFixture(), history: [{ kind: "Sent", atUtc: instant("00"), actor: null },
+    readActivity({ ...responseDetailFixture(), history: [{ kind: "Sent", atUtc: instant("00"), actor: null },
       { kind: "LocationReceived", atUtc: at, actor: null, questions: ["Dirección de entrega"] }, { kind: "ContactReceived", atUtc: at, actor: null, questions: ["Recibió"] },
-      { kind: "SentAgain", atUtc: at, actor: null }, { kind: "SentAgain", atUtc: at, actor: null }] };
-    server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
-      http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
-    renderWithProviders(<RecordActivity record={record} />);
+      { kind: "SentAgain", atUtc: at, actor: null }, { kind: "SentAgain", atUtc: at, actor: null }] });
     const received = within(await screen.findByRole("listitem", { name: "Al recibirla" }));
-    expect(received.getAllByText("Se volvió a mandar el formulario")).toHaveLength(2);
+    expect(received.getAllByRole("heading", { name: "Se volvió a mandar el formulario" })).toHaveLength(2);
     expect(errors.mock.calls.some(call => call.some(part => /same key/i.test(String(part))))).toBe(false);
   } finally {
     errors.mockRestore();
   }
 });
 
-// W3 (UC2, UC3 and UC6): what the person shared says under it, in grey, which questions it completed (the labels of the version,
-// joined like the rest of the texts), and the form that came back is a row of its own, without repeating who sent it.
+// W3 (UC2, UC3 and UC6): what the person shared says in «Detalle» which questions it completed (the labels of the version, joined like
+// the rest of the texts), and the form that came back is a row of its own, without repeating who sent it.
 const ana = { userId: id(30), displayName: "Ana Pérez" };
 const sharedHistory = (questions: { location: string; name: string; phone: string }): ResponseDetail["history"] => [
   { kind: "Sent", atUtc: instant("00"), actor: ana },
@@ -441,41 +464,33 @@ const sharedHistory = (questions: { location: string; name: string; phone: strin
   { kind: "ContactReceived", atUtc: instant("07"), actor: null, questions: [questions.name, questions.phone] }, { kind: "SentAgain", atUtc: instant("07"), actor: ana },
   { kind: "Submitted", atUtc: instant("09"), actor: ana }, { kind: "Saved", atUtc: instant("09"), actor: null }];
 async function receivedRows(record: ResponseDetail) {
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
-    http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(responseWorkflowFixture())));
-  renderWithProviders(<RecordActivity record={record} />);
+  readActivity(record);
   const band = await screen.findByRole("listitem", { name: /^(Al recibirla|On receipt)$/ });
-  return within(band).getAllByRole("listitem").map(row => [...row.querySelectorAll("p")].map(line => line.textContent));
+  return boxes(band).map(item => [within(item).getByRole("heading").textContent, fieldOf(item, "Detalle") ?? fieldOf(item, "Detail")]);
 }
-it("says under the shared location and contact the questions they completed, and the form sent again without its sender", async () => {
+it("tells in «Detalle» what the shared location and contact completed, and the form sent again without its sender", async () => {
   const rows = await receivedRows({ ...responseDetailFixture(), history: sharedHistory({ location: "Dirección de entrega", name: "Recibió", phone: "Teléfono de quien recibe" }) });
 
-  expect(rows).toEqual([["Se mandó el formulario", "Ana Pérez"], ["Llegó la ubicación", "Completó «Dirección de entrega»"], ["Se volvió a mandar el formulario"],
-    ["Llegó el contacto", "Completó «Recibió» y «Teléfono de quien recibe»"], ["Se volvió a mandar el formulario"],
-    ["Se respondió el formulario", "Por WhatsApp · Ana Pérez"], ["Se guardó la respuesta"]]);
-});
-it("names the only question a contact completed, and keeps the location of W1-A without questions", async () => {
-  const rows = await receivedRows({ ...responseDetailFixture(), history: [{ kind: "LocationRequested", atUtc: instant("00"), actor: null },
-    { kind: "LocationReceived", atUtc: instant("01"), actor: null }, { kind: "Sent", atUtc: instant("01"), actor: ana },
-    { kind: "ContactReceived", atUtc: instant("03"), actor: null, questions: ["Teléfono de quien recibe"] }, { kind: "SentAgain", atUtc: instant("03"), actor: null }] });
-
-  expect(rows).toEqual([["Se pidió la ubicación"], ["Llegó la ubicación"], ["Se mandó el formulario", "Ana Pérez"],
-    ["Llegó el contacto", "Completó «Teléfono de quien recibe»"], ["Se volvió a mandar el formulario"]]);
+  expect(rows).toEqual([["Se mandó el formulario", null], ["Llegó la ubicación", "Completó «Dirección de entrega»"], ["Se volvió a mandar el formulario", null],
+    ["Llegó el contacto", "Completó «Recibió» y «Teléfono de quien recibe»"], ["Se volvió a mandar el formulario", null],
+    ["Se respondió el formulario", null], ["Se guardó la respuesta", null]]);
+  const again = boxes(screen.getByRole("listitem", { name: "Al recibirla" })).filter(item => within(item).getByRole("heading").textContent === "Se volvió a mandar el formulario");
+  expect(again.map(item => fieldOf(item, "Quién"))).toEqual([null, null]);
 });
 it("says what the shared location and contact completed in English", async () => {
   await act(async () => { await i18n.changeLanguage("en"); });
   try {
     const rows = await receivedRows({ ...responseDetailFixture(), history: sharedHistory({ location: "Delivery address", name: "Received by", phone: "Recipient's phone" }) });
 
-    expect(rows.slice(1, 5)).toEqual([["Location received", "Filled in “Delivery address”"], ["Form sent again"],
-      ["Contact received", "Filled in “Received by” and “Recipient's phone”"], ["Form sent again"]]);
+    expect(rows.slice(1, 5)).toEqual([["Location received", "Filled in “Delivery address”"], ["Form sent again", null],
+      ["Contact received", "Filled in “Received by” and “Recipient's phone”"], ["Form sent again", null]]);
   } finally {
     await act(async () => { await i18n.changeLanguage("es"); });
   }
 });
 
 // VC1-A: a response that came from a row of a spreadsheet starts, in the activity, when its spreadsheet arrived, with the file and the row
-// under it; «Cómo empezó» names the spreadsheet and the row instead of «Salió de un documento».
+// in «Detalle»; «Cómo empezó» names the spreadsheet and the row instead of «Salió de un documento».
 const fromRow = (sheet: string | null): ResponseDetail => {
   const record = responseDetailFixture();
   return { ...record, origin: { ...record.origin!, document: { id: id(40), name: "cobranzas-semana.xlsx", row: { sheet, number: 5, receivedAtUtc: "2026-10-17T11:59:00Z" } } },
@@ -484,7 +499,7 @@ const fromRow = (sheet: string | null): ResponseDetail => {
 it("starts a response that came from a row of a spreadsheet when its spreadsheet arrived, with the file and the row", async () => {
   const rows = await receivedRows(fromRow(null));
   expect(rows[0]).toEqual(["Salió de una planilla", "cobranzas-semana.xlsx, fila 5"]);
-  expect(rows[1]).toEqual(["Se mandó el formulario", "Ana Pérez"]);
+  expect(rows[1]).toEqual(["Se mandó el formulario", null]);
 });
 it("names the spreadsheet, its sheet and its row in «Cómo empezó»", async () => {
   renderWithProviders(<MemoryRouter><ResponseAssistance record={fromRow("Ventas")} actor="me" busy={false} onForbidden={vi.fn()} onError={vi.fn()} /></MemoryRouter>);
@@ -503,9 +518,10 @@ it("tells a person whose notice does not apply as neutral, with the reason, and 
   expect(beto.queryByRole("button")).not.toBeInTheDocument();
 });
 
-it("says who asked last to consult or retry an action and when, with numbers only", async () => {
+it("tells who asked last to consult or retry an action in a row of its own, with its date and time in numbers", async () => {
   showActivity({ ...responseWorkflowFixture(), actions: [action({ lastRequest: { kind: "Consult", by: { userId: id(8), displayName: "Ana" }, atUtc: "2026-10-17T12:30:00Z" } })] });
   const effects = await receivedBand();
-  expect(within(effects).getByText(/Ana pidió consultar el estado\./)).toHaveTextContent("Ana pidió consultar el estado. 17/10/2026, 12:30");
-  expect(effects.querySelector('time[datetime="2026-10-17T12:30:00Z"]')).toBeInTheDocument();
+  const request = boxes(effects).find(item => within(item).getByRole("heading").textContent === "Se pidió consultar el estado")!;
+  expect(["Fecha", "Hora", "Quién"].map(name => fieldOf(request, name))).toEqual(["17/10/2026", "12:30", "Ana"]);
+  expect(request.querySelector('time[datetime="2026-10-17T12:30:00Z"]')).toBeInTheDocument();
 });

@@ -174,6 +174,15 @@ async function pickOption(trigger: HTMLElement, option: string | RegExp) {
 async function openResponseActivity() {
   return openResponseTab("Actividad");
 }
+/// «¿Salió el envío?» of «Resolver el envío» goes in the only piece to choose (DS1-A, 2026-11-22), opened by keyboard.
+const sentChoice = (dialog: ReturnType<typeof within>) => dialog.getByRole("button", { name: /^¿Salió el envío\?/ });
+async function chooseSent(dialog: ReturnType<typeof within>, name: "Salió" | "No salió") {
+  await act(async () => sentChoice(dialog).focus());
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "¿Salió el envío?" })).getByRole("option", { name }));
+}
+// Decision 7 (VF2-A): in the quick view each thing that happened is a box, titled with what happened.
+const activityRow = (heading: HTMLElement) => heading.closest<HTMLElement>("[data-activity-row]")!;
 
 beforeEach(() => {
   queryClient.clear();
@@ -261,7 +270,7 @@ describe("response sheet", () => {
     expect(consulted).toHaveBeenCalledTimes(1);
     expect(retried).not.toHaveBeenCalled();
     await userEvent.click(history.getByRole("button", { name: "Reintentar" }));
-    await history.findByText("Hecho");
+    await history.findByText("Enviado");
     expect(retried).toHaveBeenCalledTimes(1);
     expect(history.queryByRole("button", { name: "Consultar" })).not.toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
@@ -303,16 +312,16 @@ describe("response sheet", () => {
     const dialog = within(await screen.findByRole("dialog", { name: "Resolver el envío" }));
     expect(dialog.getByRole("button", { name: "Confirmar revisión" })).toBeDisabled();
     expect(requests).toEqual([]);
-    await userEvent.click(dialog.getByRole("radio", { name: wasSent ? "Salió" : "No salió" }));
+    await chooseSent(dialog, wasSent ? "Salió" : "No salió");
     await userEvent.click(dialog.getByRole("button", { name: wasSent ? "Confirmar que salió" : "Confirmar que no salió" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(requests).toEqual([{ recipientUserId, expectedRevision: 0, wasSent }]);
-    expect(await history.findByText(wasSent ? "Luz indicó que salió." : "Luz indicó que no salió.")).toBeInTheDocument();
+    expect(await history.findByRole("heading", { name: wasSent ? "Se indicó que salió" : "Se indicó que no salió" })).toBeInTheDocument();
     expect(history.getByText("Revisión humana: no confirma la entrega de WhatsApp.")).toBeInTheDocument();
     expect(history.queryByText("Entregado")).not.toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Resolver envío" })).not.toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Reintentar" }) !== null).toBe(!wasSent);
-    await waitFor(() => expect(history.getByText(wasSent ? "Luz indicó que salió." : "Luz indicó que no salió.").closest("li")).toHaveFocus());
+    await waitFor(() => expect(activityRow(history.getByRole("heading", { name: "Se le avisó a quien la cargó" }))).toHaveFocus());
   });
   it("cancels a human review without writing and restores focus to its action", async () => {
     setup(["formrecords.read", "formrules.manage"]);
@@ -324,13 +333,13 @@ describe("response sheet", () => {
     const resolve = await activity.findByRole("button", { name: "Resolver envío" });
     await userEvent.click(resolve);
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
+    await chooseSent(dialog, "No salió");
     await userEvent.click(dialog.getByRole("button", { name: "Cancelar" }));
     await waitFor(() => expect(resolve).toHaveFocus());
     expect(writes).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     await userEvent.click(resolve);
-    expect(within(screen.getByRole("dialog")).getByRole("radio", { name: "No salió" })).not.toBeChecked();
+    expect(sentChoice(within(screen.getByRole("dialog")))).toHaveAccessibleName("¿Salió el envío? Elegí una opción");
   });
   it("keeps the human choice after a network failure and never repeats the review automatically", async () => {
     setup(["formrecords.read", "formrules.manage"]);
@@ -342,10 +351,10 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
+    await chooseSent(dialog, "Salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
     await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
-    expect(dialog.getByRole("radio", { name: "Salió" })).toBeChecked();
+    expect(sentChoice(dialog)).toHaveAccessibleName("¿Salió el envío? Salió");
     expect(writes).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     await userEvent.click(dialog.getByRole("button", { name: "Cancelar" }));
@@ -361,7 +370,7 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
+    await chooseSent(dialog, "No salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
     await screen.findByText("Ya no tenés permiso para recuperar acciones.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -387,13 +396,13 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
+    await chooseSent(dialog, "Salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
     await waitFor(() => expect(requested).toBe(true));
     await act(async () => { await router.navigate("/formularios/" + responseFormId + "/respuestas/" + other.id); });
     await screen.findByRole("heading", { name: other.number });
     await act(async () => { release(); });
-    expect(screen.queryByText("Old response reviewer indicó que salió.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Old response reviewer")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
     await act(async () => { await router.navigate("/formularios/" + responseFormId + "/respuestas/" + responseRecordId); });
@@ -417,13 +426,13 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
+    await chooseSent(dialog, "Salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
     await waitFor(() => expect(reads).toBe(2));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(posts).toEqual([{ recipientUserId, expectedRevision: 3, wasSent: true }]);
-    const evidence = screen.getByText("Luz indicó que salió.");
-    await waitFor(() => expect(evidence.closest("li")).toHaveFocus());
+    expect(screen.getByRole("heading", { name: "Se indicó que salió" })).toBeInTheDocument();
+    await waitFor(() => expect(activityRow(screen.getByRole("heading", { name: "Se le avisó a quien la cargó" }))).toHaveFocus());
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     expect(notify).toHaveBeenCalledTimes(failure === "conflict" ? 1 : 0);
   });
@@ -439,16 +448,14 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
+    await chooseSent(dialog, "No salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
     await waitFor(() => expect(reads).toBe(2));
-    expect(dialog.getByRole("radio", { name: "No salió" })).toBeChecked();
+    expect(sentChoice(dialog)).toHaveAccessibleName("¿Salió el envío? No salió");
     const check = await dialog.findByRole("button", { name: "Consultar" });
-    // Off with their reason (DL, 2026-11-11): consulting first, on the options and not in a sentence under them.
-    for (const name of ["Salió", "No salió"]) {
-      expect(dialog.getByRole("radio", { name })).toHaveAttribute("aria-disabled", "true");
-      expect(dialog.getByRole("radio", { name })).toHaveAccessibleDescription(/Consultá el estado antes de volver a confirmar la revisión\.$/);
-    }
+    // Off with its reason (DL, 2026-11-11): consulting first, on the choice and not in a sentence under it.
+    expect(dialog.getByRole("group", { name: "¿Salió el envío?" })).toHaveAccessibleDescription(/Consultá el estado antes de volver a confirmar la revisión\.$/);
+    expect(sentChoice(dialog)).toBeDisabled();
     // The wait is the reason of the disabled check; when it ends the check is drawn again without its reason.
     if (failure === "rateLimit") { expect(check).toHaveAttribute("aria-disabled", "true"); expect(check).toHaveAccessibleDescription("Esperá 1 segundo para volver a intentar."); await waitFor(() => expect(dialog.getByRole("button", { name: "Consultar" })).toBeEnabled(), { timeout: 2000 }); }
     await userEvent.click(dialog.getByRole("button", { name: "Consultar" }));
@@ -477,7 +484,7 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
+    await chooseSent(dialog, "Salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
     await screen.findByRole("heading", { name: /permiso/i });
     expect(reads).toBe(2);
@@ -502,7 +509,7 @@ describe("response sheet", () => {
     const open = await activity.findByRole("button", { name: "Resolver envío" });
     await userEvent.click(open);
     let dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "Salió" }));
+    await chooseSent(dialog, "Salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que salió" }));
     await dialog.findByRole("button", { name: "Consultar" });
     await userEvent.click(dialog.getByRole("button", { name: "Cancelar" }));
@@ -512,7 +519,7 @@ describe("response sheet", () => {
     await dialog.findByRole("button", { name: "Confirmar revisión" });
     expect(reads).toBe(3);
     expect(writes).toBe(1);
-    expect(dialog.getByRole("radio", { name: "Salió" })).toBeEnabled();
+    expect(sentChoice(dialog)).toBeEnabled();
   });
 
   it("shows terminal role deliveries including an unavailable member without offering a partial retry", async () => {
@@ -543,7 +550,8 @@ describe("response sheet", () => {
     const history = activity;
     await history.findByText("No hay un canal disponible para avisarle.");
     expect(history.getByText("Juan")).toBeInTheDocument();
-    expect(history.getByText("Hecho")).toBeInTheDocument();
+    // The person tells the finished notice (VF2-A): no row of its own says «Hecho».
+    expect(history.getByRole("heading", { name: "Se avisó" })).toBeInTheDocument();
     expect(history.getByText("No se pudo enviar")).toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
     expect(history.queryByRole("button", { name: "Resolver envío" })).not.toBeInTheDocument();
@@ -567,13 +575,13 @@ describe("response sheet", () => {
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
     expect(dialog.getByText("Destinatario", { selector: "dt" }).nextElementSibling).toHaveTextContent(/^Pedro$/);
-    await userEvent.click(dialog.getByRole("radio", { name: wasSent ? "Salió" : "No salió" }));
+    await chooseSent(dialog, wasSent ? "Salió" : "No salió");
     await userEvent.click(dialog.getByRole("button", { name: wasSent ? "Confirmar que salió" : "Confirmar que no salió" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(posts).toEqual([{ recipientUserId: targetUserId, expectedRevision: 3, wasSent }]);
-    const evidence = await screen.findByText(wasSent ? "Luz indicó que salió." : "Luz indicó que no salió.");
-    await waitFor(() => expect(evidence.closest("li")).toHaveFocus());
-    expect(within(screen.getByText("Juan").closest("li")!).queryByText(/Luz indicó/)).not.toBeInTheDocument();
+    await screen.findByRole("heading", { name: wasSent ? "Se indicó que salió" : "Se indicó que no salió" });
+    await waitFor(() => expect(document.activeElement?.matches("[data-activity-row]") && document.activeElement.textContent?.includes("Pedro")).toBe(true));
+    expect(screen.getAllByRole("heading", { name: /^Se indicó que/ })).toHaveLength(1);
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
   });
   it("keeps the targeted recipient review open when recovery changed only another role member", async () => {
@@ -589,10 +597,10 @@ describe("response sheet", () => {
     const activity = await openResponseActivity();
     await userEvent.click(await activity.findByRole("button", { name: "Resolver envío" }));
     const dialog = within(await screen.findByRole("dialog"));
-    await userEvent.click(dialog.getByRole("radio", { name: "No salió" }));
+    await chooseSent(dialog, "No salió");
     await userEvent.click(dialog.getByRole("button", { name: "Confirmar que no salió" }));
     await waitFor(() => expect(reads).toBe(2));
-    expect(dialog.getByRole("radio", { name: "No salió" })).toBeChecked();
+    expect(sentChoice(dialog)).toHaveAccessibleName("¿Salió el envío? No salió");
     expect(posts).toEqual([{ recipientUserId: target.user.userId, expectedRevision: 3, wasSent: false }]);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
@@ -1299,7 +1307,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
     // The moments are bands (board TL3-A): the response and what was done on receipt share «Al recibirla», in the order
     // they happened.
     const moments = history.getAllByRole("list")[0];
-    expect(Array.from(moments.children).map(row => row.getAttribute("aria-label"))).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
+    expect(Array.from(moments.children).map(row => document.getElementById(row.getAttribute("aria-labelledby")!)?.textContent)).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
     const received = within(history.getByRole("listitem", { name: "Al recibirla" }));
     expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z"]);
     expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
@@ -1315,16 +1323,18 @@ it("keeps one workflow read notification in the detail without repeating its cau
     server.use(http.get("/api/forms/records/:id/workflow", () => HttpResponse.json(payload)));
     renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
     const activity = await openResponseActivity();
-    const provider = within(await activity.findByRole("listitem", { name: "Destinatario: Juan" }));
-    expect(provider.getByText("Entregado")).toBeInTheDocument();
+    // The receipts of WhatsApp are the state of each person's row (VF2-A): the last one, «Leído», once.
+    const [provider, human] = (await activity.findAllByRole("heading", { name: "Se avisó" })).map(heading => within(activityRow(heading)));
+    expect(provider.getByText("Juan")).toBeInTheDocument();
     expect(provider.getByText("Leído")).toBeInTheDocument();
-    expect(provider.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual([deliveredAtUtc, readAtUtc]);
-    const human = within(activity.getByRole("listitem", { name: "Destinatario: Ana" }));
-    expect(human.getByText("Luz indicó que salió.")).toBeInTheDocument();
-    expect(human.queryByText("Entregado")).not.toBeInTheDocument();
+    expect(provider.queryByText("Entregado")).not.toBeInTheDocument();
+    expect(human.getByText("Ana")).toBeInTheDocument();
+    expect(human.getByText("Enviado")).toBeInTheDocument();
     expect(human.queryByText("Leído")).not.toBeInTheDocument();
-    expect(human.getByText("Revisión humana: no confirma la entrega de WhatsApp.")).toBeInTheDocument();
-    expect(activity.getByText("Hecho")).toBeInTheDocument();
+    // The human review is a row of its own, with its (i): it does not confirm the delivery.
+    const review = within(activityRow(activity.getByRole("heading", { name: "Se indicó que salió" })));
+    expect(review.getByText("Luz")).toBeInTheDocument();
+    expect(review.getByText("Revisión humana: no confirma la entrega de WhatsApp.")).toBeInTheDocument();
   });
 
 });
