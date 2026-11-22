@@ -28,6 +28,18 @@ function listHandlers(body: ReturnType<typeof pageOf> = page) {
 }
 
 /// La fila de una persona, ya con la tabla cargada. Se busca por el nombre, que está en todas las filas de estos datos.
+// The status is chosen with the button of the bar of the only piece to choose (DS1-A, 2026-11-22), named by «Estado» and what
+// it says. With the keyboard, as the role, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openStatus() {
+  screen.getByRole("button", { name: /^Estado / }).focus();
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Estado" });
+}
+
+async function chooseStatus(name: string) {
+  await userEvent.click(within(await openStatus()).getByRole("option", { name }));
+}
+
 async function rowOf(user: UserListItem) {
   const table = await screen.findByRole("table");
   const cell = await within(table).findByText(user.displayName ?? "");
@@ -413,7 +425,7 @@ describe("UsersPage", () => {
     renderRouteWithProviders("/usuarios");
     await screen.findByRole("table");
 
-    await userEvent.click(screen.getByRole("button", { name: "Inactivos" }));
+    await chooseStatus("Inactivos");
 
 
     await waitFor(() => expect(requests.at(-1)).toContain("isActive=false"));
@@ -437,10 +449,33 @@ describe("UsersPage", () => {
     await screen.findByRole("table");
     await userEvent.type(screen.getByRole("searchbox"), "ana");
     await waitFor(() => expect(listRequests.at(-1)).toContain("search=ana"));
-    await userEvent.click(screen.getByRole("button", { name: "Inactivos" }));
+    await chooseStatus("Inactivos");
     await waitFor(() => expect(listRequests.at(-1)).toContain("isActive=false"));
 
     expect(countRequests).toEqual([""]);
+  });
+
+  it("filters the status with the bar's button, «Todos» first and apart, and choosing the one it has changes nothing", async () => {
+    server.use(...listHandlers());
+
+    const { router } = renderRouteWithProviders("/usuarios?isActive=true");
+    await screen.findByRole("table");
+    expect(screen.getByRole("button", { name: "Estado Activos" })).toBeInTheDocument();
+
+    const list = await openStatus();
+    const options = within(list).getAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["Todos", "Activos", "Inactivos"]);
+    expect(options[0]!.nextElementSibling).toHaveAttribute("role", "presentation");
+    expect(within(list).getByRole("option", { name: "Activos" })).toHaveAttribute("aria-selected", "true");
+    const before = router.state.location.search;
+    await userEvent.click(within(list).getByRole("option", { name: "Activos" }));
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Estado Activos" })).toHaveFocus();
+    expect(router.state.location.search).toBe(before);
+
+    await chooseStatus("Todos");
+    await waitFor(() => expect(router.state.location.search).not.toContain("isActive"));
+    expect(screen.getByRole("button", { name: "Estado Todos" })).toBeInTheDocument();
   });
 
   it("shows a chip per filter and takes it out one by one", async () => {

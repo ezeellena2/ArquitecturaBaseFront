@@ -14,6 +14,9 @@ import { server } from "@/test/mocks/server";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
 import { notify } from "@/shared/ui/notifications";
 
+// The editor cases pass the 5 s while other suites run at the same time.
+vi.setConfig({ testTimeout: 15_000 });
+
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
@@ -33,6 +36,17 @@ function setup(scenario = "", permissions = ["formtemplates.read", "formtemplate
   return store;
 }
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
+// The state of the forms is the button of the bar of the only piece to choose (2026-11-22): «Estado» and the chosen one, and its
+// list without counts. With the keyboard, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openStates(current = "Activos") {
+  const trigger = await screen.findByRole("button", { name: `Estado ${current}` });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Estado" });
+}
+async function chooseState(option: string, current?: string) {
+  await userEvent.click(within(await openStates(current)).getByRole("option", { name: option }));
+}
 afterEach(async () => { await act(() => i18n.changeLanguage("es")); });
 describe("Forms routes", () => {
   it("closes confirmation as acceptance starts and shows progress instead of a misleading Cancel action", async () => {
@@ -270,14 +284,14 @@ describe("Forms routes", () => {
     expect(store.calls.some(call => call.method === "GET" && call.path.includes("/definitions/0199"))).toBe(true);
     expect(screen.queryByRole("button", { name: "Publicar en WhatsApp" })).not.toBeInTheDocument();
   });
-  it("keeps server lifecycle facets and filters in the URL", async () => {
+  it("keeps the lifecycle filter in the URL", async () => {
     setup();
     const { router } = renderRouteWithProviders("/formularios");
     await screen.findByRole("table");
     expect(screen.getByRole("columnheader", { name: "Respuestas" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Publicados (0)" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Publicados (0)" }));
+    await chooseState("Publicados");
     await waitFor(() => expect(router.state.location.search).toContain("publicationFilter=Published"));
+    expect(screen.getByRole("button", { name: "Estado Publicados" })).toHaveFocus();
     expect(await screen.findByText("Sin coincidencias")).toBeInTheDocument();
     expect(screen.queryByText("Respuestas", { exact: true })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
@@ -824,12 +838,18 @@ it("edits a form whose original is English in Spanish as its optional translatio
   expect(screen.getByLabelText("Prefijo de numeración")).toHaveAttribute("readonly");
 });
 
- it("labels the default lifecycle scope as Active and offers the deactivated scope", async () => {
+ it("labels the default lifecycle scope as Active and offers the others without counts, and choosing the one it has changes nothing", async () => {
   setup();
-  renderRouteWithProviders("/formularios");
+  const { router } = renderRouteWithProviders("/formularios");
   await screen.findByRole("table");
-  expect(screen.getByRole("button", { name: "Activos (1)" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("button", { name: /^Dados de baja/ })).toBeInTheDocument();
+  const list = await openStates("Activos");
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Activos", "Publicados", "Borradores", "Dados de baja"]);
+  expect(within(list).getByRole("option", { name: "Activos" })).toHaveAttribute("aria-selected", "true");
+  const before = router.state.location.search;
+  await userEvent.click(within(list).getByRole("option", { name: "Activos" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+  expect(screen.getByRole("button", { name: "Estado Activos" })).toHaveFocus();
+  expect(router.state.location.search).toBe(before);
  });
 
 // The list keeps its rows while it reads again for a filter, a search, a sort or a page (2026-10-31): the table runs its line
@@ -843,7 +863,7 @@ it("shows that the list reads again while the filter changes", async () => {
   const container = () => screen.getByRole("table").closest('[data-slot="table-container"]');
   await screen.findByRole("table");
   expect(container()).not.toHaveAttribute("aria-busy");
-  await userEvent.click(screen.getByRole("button", { name: /^Publicados/ }));
+  await chooseState("Publicados");
   await waitFor(() => expect(reads).toBe(2));
   expect(container()).toHaveAttribute("aria-busy", "true");
   expect(within(screen.getByRole("table")).getAllByRole("rowgroup")[1]).toHaveAttribute("inert");

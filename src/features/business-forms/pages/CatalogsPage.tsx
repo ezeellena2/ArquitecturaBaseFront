@@ -7,7 +7,6 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { useFilters } from "@/shared/hooks/useFilters";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { Button } from "@/shared/ui/button";
 import { FilterBar } from "@/shared/ui/FilterBar";
@@ -30,7 +29,6 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 const filterKeys = ["kind", "state"] as const;
 const catalogStates = ["Active", "Inactive", "Unavailable"] as const;
 const catalogKinds = ["Manual", "Filters", "External"] as const;
-const kindCounts = { All: "all", Manual: "manual", Filters: "filters", External: "external" } as const;
 const sortFields = ["name", "-name", "kind", "-kind", "revision", "-revision", "optionsCount", "-optionsCount", "usageCount", "-usageCount"] as const;
 export function CatalogsPage() {
   const { t, i18n } = useTranslation("forms");
@@ -53,7 +51,7 @@ export function CatalogsPage() {
   const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : null })) } : undefined;
   const canManage = !!user?.permissions.includes("formcatalogs.manage");
   // The catalogs a module keeps (External) are a choice only when the server counts some, or when the address already chose them.
-  const kindOptions = ["All", "Manual", "Filters", ...(list.data?.filterCounts.byKind.external !== undefined || kind === "External" ? ["External"] as const : [])] as const;
+  const kindOptions = ["Manual", "Filters", ...(list.data?.filterCounts.byKind.external !== undefined || kind === "External" ? ["External"] as const : [])] as const;
   const feedbackId = `catalogs:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
   useEffect(() => {
@@ -65,10 +63,12 @@ export function CatalogsPage() {
   // «Armar con la IA» goes before «Nuevo catálogo» and opens Home with the request begun (IA4).
   const newAction = canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.catalog"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button></> : undefined;
   return <Page title={t("catalogs.title")} actions={newAction}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("catalogs.columns.origin")} options={kindOptions.map(key => ({ key,
-      label: `${t(key === "All" ? "all" : catalogOriginKey(key))} (${list.data?.filterCounts.byKind[kindCounts[key]] ?? "…"})`,
-      pressed: (kind ?? "All") === key, onSelect: () => filters.setFilter("kind", key === "All" ? undefined : key) }))} /></div>{/* The state is the only piece to choose with the button of the bar (DS1-A), as the role of Usuarios: «Todos los estados»
-      first and apart, which takes the filter out; choosing the one it has changes nothing (it would go back to page 1). */}
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("catalogs.search")} /></div>{/* The origin and the state are the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22),
+      as the role of Usuarios, without counts (FO1-A): «Todos» and «Todos los estados» first and apart, which take the filter out;
+      choosing the one it has changes nothing (it would go back to page 1). */}
+    <Picker trigger="button" label={t("catalogs.columns.origin")} first={{ id: "", label: t("all") }}
+      options={kindOptions.map(value => ({ id: value, label: t(catalogOriginKey(value)) }))}
+      value={kind ?? ""} onChange={id => { if (id !== (kind ?? "")) filters.setFilter("kind", id || undefined); }} />
     <Picker trigger="button" label={t("catalogs.columns.state")} first={{ id: "", label: t("catalogs.allStates") }}
       options={catalogStates.map(value => ({ id: value, label: t("catalogs.state." + value) }))}
       value={state ?? ""} onChange={id => { if (id !== (state ?? "")) filters.setFilter("state", id || undefined); }} /><FolderFilter folders={folders} /></div></FilterBar>

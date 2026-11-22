@@ -12,7 +12,9 @@ for(const language of ["es","en"] as const)for(const width of [1440,390,320]){
   const dialog=page.getByRole("dialog",{name:language==="es"?"Descartar pedido":"Discard request",exact:true});await expect(dialog).toBeVisible();
   await page.screenshot({path:"test-results/visual/forms-missing-discard-"+language+"-"+width+".png",fullPage:true});
   await dialog.getByRole("button",{name:language==="es"?"Cancelar":"Cancel",exact:true}).click();
-  await page.getByRole("button",{name:language==="es"?"Descartados (2)":"Discarded (2)",exact:true}).click();
+  // The state is the button of the bar of the piece to choose (2026-11-22), without counts.
+  await page.getByRole("button",{name:language==="es"?"Estado del pedido Pendientes":"Request state Pending",exact:true}).click();
+  await page.getByRole("listbox",{name:language==="es"?"Estado del pedido":"Request state",exact:true}).getByRole("option",{name:language==="es"?"Descartados":"Discarded",exact:true}).click();
   await expect(page.getByText(language==="es"?"Devoluciones":"Returns",{exact:true})).toBeVisible();
   await page.screenshot({path:"test-results/visual/forms-missing-history-"+language+"-"+width+".png",fullPage:true});
  });

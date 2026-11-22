@@ -16,10 +16,10 @@ import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
+import { Picker } from "@/shared/ui/Picker";
 import { LockIcon, PlusIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import type { FormLibrary as Library, FormStandard } from "../api/library";
 import { FormStandardAddDialog } from "../components/FormStandardAddDialog";
@@ -29,8 +29,8 @@ import { formLibraryKey, useFormLibrary } from "../hooks/useFormLibrary";
 
 // BI1-A: «Biblioteca», the standards the installed modules bring. «Diseñar formularios» reads it and «Administrar formularios» adds a
 // copy: an own draft that opens in the editor. DOC1: what each one reads and validates without AI, and the standards of the next
-// stages as «Próximamente», rows without an action. The search and «Todos · Disponibles · Próximamente» go in the address: they are
-// not private.
+// stages as «Próximamente», rows without an action. The search and the state («Todos», «Disponibles», «Próximamente») go in the
+// address: they are not private.
 export function FormLibraryPage() {
   const { data: user } = useCurrentUser();
   const { i18n } = useTranslation("forms");
@@ -127,14 +127,14 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   ];
   // The (i) says what the library is, how a standard that reads documents validates and, only to whoever can, invites to add one (premise 4.4).
   const help = [t("library.help"), ...library.data?.standards.some(standard => standard.reads) ? [t("library.helpReading")] : [], ...canAdd ? [t("library.helpAdd")] : []].join(" ");
-  const count = (value: number) => library.data ? value : "…";
   const filters = <FilterBar><div className="flex flex-wrap items-center gap-3">
     <div className="w-full sm:w-72"><SearchInput value={search} onChange={value => update({ search: value })} label={t("search")} /></div>
-    {/* On the phone the three options go apart and the one that does not fit goes to the next line, never out of sight. Without
-        upcoming standards every one is available: there is nothing to choose. */}
-    {coming ? <div className="max-w-full"><SegmentedControl wrap aria-label={t("library.state")} options={(["All", "Available", "Upcoming"] as const).map(key => ({ key,
-      label: `${t(key === "All" ? "all" : key === "Available" ? "library.availableFilter" : "library.upcoming")} (${count(key === "All" ? standards.length + upcoming.length : key === "Available" ? standards.length : upcoming.length)})`,
-      pressed: availability === key, onSelect: () => update({ availability: key === "All" ? undefined : key }) }))} /></div> : null}
+    {/* The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without counts
+        (FO1-A): «Todos» first and apart. Without upcoming standards every one is available: there is nothing to choose. */}
+    {coming ? <Picker trigger="button" label={t("library.state")} first={{ id: "", label: t("all") }}
+      options={[{ id: "Available", label: t("library.availableFilter") }, { id: "Upcoming", label: t("library.upcoming") }]}
+      value={availability === "All" ? "" : availability}
+      onChange={id => { if (id !== (availability === "All" ? "" : availability)) update({ availability: id || undefined }); }} /> : null}
   </div></FilterBar>;
   const dialog = adding ? <FormStandardAddDialog standard={adding} folders={folders} onOpenChange={open => { if (!open) setAdding(null); }} /> : null;
 

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -72,7 +72,11 @@ describe("the rows of a spreadsheet in the list", () => {
     const requests = setup();
     const user = userEvent.setup();
     renderRouteWithProviders("/formularios/documentos");
-    await user.click(await screen.findByRole("button", { name: "Propuestos (7)" }, { timeout: 10_000 }));
+    // The state is the button of the bar of the piece to choose (2026-11-22), opened with the keyboard as the other Radix lists.
+    const states = await screen.findByRole("button", { name: "Estado Todos" }, { timeout: 10_000 });
+    await act(async () => { states.focus(); });
+    await user.keyboard("{Enter}");
+    await user.click(within(await screen.findByRole("listbox", { name: "Estado" })).getByRole("option", { name: "Propuestos" }));
     await waitFor(() => expect(requests.list.at(-1)).toMatchObject({ state: "proposed" }));
   }, 20_000);
 });

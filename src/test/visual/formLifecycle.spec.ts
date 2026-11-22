@@ -27,11 +27,10 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   await page.setViewportSize({width,height:900});
   await page.goto("/src/test/visual/index.html?screen=/formularios&scenario=forms-lifecycle-table&lang="+language);
   const table=page.getByRole("table");await expect(table).toBeVisible();
-  await expect(page.getByRole("button",{name:es?"Activos (2)":"Active (2)",exact:true})).toHaveAttribute("aria-pressed","true");
+  // The state is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts.
+  const state=page.getByRole("button",{name:es?"Estado Activos":"Status Active",exact:true});await expect(state).toBeVisible();
   const area=page.locator('[data-slot="table-container"]');
   expect(await area.evaluate(node=>node.scrollWidth)).toBeGreaterThan(await area.evaluate(node=>node.clientWidth));
-  const segment=page.getByRole("group",{name:es?"Estado":"Status"});
-  await expect(segment.getByRole("button")).toHaveCount(4);
   await assertContained(page,width);
   await page.screenshot({path:"test-results/form-lifecycle-ba1-active-"+language+"-"+width+".png",fullPage:true});
   await area.evaluate(node=>{node.scrollLeft=node.scrollWidth;});
@@ -42,8 +41,9 @@ for(const language of ["es","en"] as const) for(const width of [390,320]) {
   await assertMobileDialog(draftDialog,width,900);await draftDialog.locator(".overflow-y-auto").first().evaluate(node=>{node.scrollTop=0;});
   await page.screenshot({path:"test-results/form-lifecycle-delete-draft-"+language+"-"+width+".png",fullPage:true});
   await draftDialog.press("Escape");await expect(draftDelete).toBeFocused();
-  const inactive=segment.getByRole("button",{name:es?"Dados de baja (1)":"Deactivated (1)",exact:true});
-  await inactive.scrollIntoViewIfNeeded();await inactive.click();
+  await state.scrollIntoViewIfNeeded();await state.click();
+  const states=page.getByRole("listbox",{name:es?"Estado":"Status",exact:true});await expect(states.getByRole("option")).toHaveCount(4);
+  await states.getByRole("option",{name:es?"Dados de baja":"Deactivated",exact:true}).click();
   await expect(table.getByRole("link",{name:es?"Control anterior":"Previous inspection",exact:true})).toBeVisible();
   // How the withdrawal goes in WhatsApp and its date, each in its own column (UD2).
   await expect(table.getByText(es?"Pendiente":"Pending",{exact:true})).toBeVisible();

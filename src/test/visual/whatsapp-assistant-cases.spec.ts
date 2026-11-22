@@ -4,12 +4,12 @@ import { expect, test, type Page } from "@playwright/test";
 // «Por qué respondió esto» under each answer; the lines of what the assistant decided without a message; and in Atención manual the
 // text for the composer. es/en at 1440, 390 and 320 px, with the clock fixed and every conversation whole in its history.
 const words = {
-  es: { menu: "Menú de Ana Pérez", title: "Chat de WhatsApp", show: "Mostrar", filters: ["Todos (4)", "Sin leer (1)", "Necesita una persona (1)"], mark: "Necesita una persona",
+  es: { menu: "Menú de Ana Pérez", title: "Chat de WhatsApp", show: "Mostrar", filters: ["Todos", "Sin leer", "Necesita una persona"], mark: "Necesita una persona",
     reason: "Pide hablar con una persona.", why: "Por qué respondió esto", handoffLine: "El asistente derivó la conversación", limit: "Llegó al tope de respuestas del día",
     noReply: "Sin respuesta del asistente", history: "Historial de mensajes", tapped: "«Visita»", first: "1 de 2", second: "2 de 2", take: "Tomar atención manual",
     reply: "Respuesta al cliente", suggestion: "Sugerencia de respuesta", useAsDraft: "Usar como borrador", fallback: "Cualquier otra cosa",
     text: "Sí: al interior enviamos por transporte, a cargo del cliente. En CABA y GBA entregamos nosotros." },
-  en: { menu: "Ana Pérez's menu", title: "WhatsApp chat", show: "Show", filters: ["All (4)", "Unread (1)", "Needs a person (1)"], mark: "Needs a person",
+  en: { menu: "Ana Pérez's menu", title: "WhatsApp chat", show: "Show", filters: ["All", "Unread", "Needs a person"], mark: "Needs a person",
     reason: "Asks to talk to a person.", why: "Why it replied this", handoffLine: "The assistant handed off the conversation", limit: "It reached the daily reply limit",
     noReply: "No reply from the assistant", history: "Message history", tapped: "«Visit»", first: "1 of 2", second: "2 of 2", take: "Take manual attention",
     reply: "Reply to customer", suggestion: "Reply suggestion", useAsDraft: "Use as draft", fallback: "Anything else",
@@ -53,15 +53,16 @@ for (const language of ["es", "en"] as const) {
       await expect(history.getByText(text.limit, { exact: true })).toBeVisible();
       await expect(history.getByText(text.fallback, { exact: true })).toHaveCount(2);
       if (width === 1440) {
-        const filters = page.getByRole("group", { name: text.show, exact: true });
-        await expect(filters.getByRole("button")).toHaveText([...text.filters]);
+        // «Mostrar» is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts.
+        await expect(page.getByRole("button", { name: text.show + " " + text.filters[0], exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Ana Martínez", exact: true }).locator("xpath=..").getByText(text.mark, { exact: true })).toBeVisible();
       }
       await settle(page, width);
       await expect(page).toHaveScreenshot(`whatsapp-assistant-handoff-${language}-${width}.png`, { fullPage: true });
       if (width === 1440) {
-        await page.getByRole("button", { name: text.filters[2], exact: true }).click();
-        await expect(page.getByRole("button", { name: text.filters[2], exact: true })).toHaveAttribute("aria-pressed", "true");
+        await page.getByRole("button", { name: text.show + " " + text.filters[0], exact: true }).click();
+        await page.getByRole("listbox", { name: text.show, exact: true }).getByRole("option", { name: text.filters[2], exact: true }).click();
+        await expect(page.getByRole("button", { name: text.show + " " + text.filters[2], exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Juan Gómez", exact: true })).toHaveCount(0);
         await expect(page.getByRole("button", { name: "Ana Martínez", exact: true })).toBeVisible();
       }
@@ -99,8 +100,7 @@ for (const language of ["es", "en"] as const) {
   for (const width of [390, 320]) {
     test(`the inbox with the mark and the filter in ${language} at ${width}px`, async ({ page }) => {
       await open(page, language, width);
-      const filters = page.getByRole("group", { name: text.show, exact: true });
-      await expect(filters.getByRole("button")).toHaveText([...text.filters]);
+      await expect(page.getByRole("button", { name: text.show + " " + text.filters[0], exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: "Ana Martínez", exact: true }).locator("xpath=..").getByText(text.mark, { exact: true })).toBeVisible();
       await settle(page, width);
       await expect(page).toHaveScreenshot(`whatsapp-assistant-list-${language}-${width}.png`, { fullPage: true });

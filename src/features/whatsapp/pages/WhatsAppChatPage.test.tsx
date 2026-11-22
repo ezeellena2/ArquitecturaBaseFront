@@ -167,18 +167,30 @@ it("shows that Actualizar reads the inbox again until it answers, keeping the co
   expect(await screen.findByRole("button", { name: "Actualizar" })).toBeEnabled();
 });
 
-it("chooses between all and unread conversations in a named group that says which one is pressed", async () => {
-  // OE1-A (2026-11-03): eran dos botones sueltos que no decían cuál estaba elegido; ahora es el segmentado común.
+// «Mostrar» is the button of the bar of the only piece to choose (2026-11-22): it says the chosen one, and its list has no counts.
+// With the keyboard, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openShow(current = "Todos") {
+  const trigger = screen.getByRole("button", { name: "Mostrar " + current });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Mostrar" });
+}
+async function chooseShow(option: string, current?: string) {
+  await userEvent.click(within(await openShow(current)).getByRole("option", { name: option }));
+}
+
+it("chooses between all and unread conversations in the bar's button, which says the chosen one", async () => {
+  // OE1-A (2026-11-03): eran dos botones sueltos que no decían cuál estaba elegido; desde el 2026-11-22, la pieza para elegir.
   renderRouteWithProviders("/whatsapp/chat");
   await screen.findByRole("button", { name: "Ana" });
-  const group = screen.getByRole("group", { name: "Mostrar" });
-  expect(within(group).getByRole("button", { name: "Todos (2)" })).toHaveAttribute("aria-pressed", "true");
-  expect(within(group).getByRole("button", { name: "Sin leer (1)" })).toHaveAttribute("aria-pressed", "false");
-  await userEvent.click(within(group).getByRole("button", { name: "Sin leer (1)" }));
-  expect(within(group).getByRole("button", { name: "Sin leer (1)" })).toHaveAttribute("aria-pressed", "true");
+  const list = await openShow();
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Sin leer", "Necesita una persona"]);
+  expect(within(list).getByRole("option", { name: "Todos" })).toHaveAttribute("aria-selected", "true");
+  await userEvent.click(within(list).getByRole("option", { name: "Sin leer" }));
+  expect(await screen.findByRole("button", { name: "Mostrar Sin leer" })).toHaveFocus();
 });
 
-it("keeps the conversations and their counts while a filter reads again, with a loading status", async () => {
+it("keeps the conversations while a filter reads again, with a loading status", async () => {
   renderRouteWithProviders("/whatsapp/chat");
   await screen.findByRole("button", { name: "Luis" });
   const wait = held();
@@ -188,11 +200,11 @@ it("keeps the conversations and their counts while a filter reads again, with a 
     return HttpResponse.json(inbox([contact]));
   }));
   try {
-    await userEvent.click(screen.getByRole("button", { name: "Sin leer (1)" }));
+    await chooseShow("Sin leer");
     const loading = await screen.findByText("Cargando conversaciones…");
     expect(loading.closest('[role="status"]')).not.toBeNull();
     expect(screen.getByRole("button", { name: "Luis" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Todos (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mostrar Sin leer" })).toBeInTheDocument();
   } finally { await wait.release(); }
   await waitFor(() => expect(screen.queryByRole("button", { name: "Luis" })).not.toBeInTheDocument());
   expect(screen.queryByText("Cargando conversaciones…")).not.toBeInTheDocument();

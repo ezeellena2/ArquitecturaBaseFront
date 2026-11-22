@@ -15,8 +15,8 @@
   "history": "Message history",
   "search": "Search by name or phone number",
   "show": "Show",
-  "all": "All ({{count}})",
-  "unread": "Unread ({{count}})",
+  "all": "All",
+  "unread": "Unread",
   "draft": "Unsent draft",
   "noResults": "No conversations match these filters.",
   "empty": "No messages have arrived at this WhatsApp yet.",
@@ -274,7 +274,6 @@
   },
   "needsPerson": {
     "label": "Needs a person",
-    "filter": "Needs a person ({{count}})",
     "help": "It goes away when someone replies."
   },
   "spreadsheetRows": {

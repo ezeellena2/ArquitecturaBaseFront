@@ -27,7 +27,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await open(page, language, width, "documents");
     const table = page.getByRole("table");
     await expect(table.getByRole("row")).toHaveCount(11);
-    await expect(page.getByRole("button", { name: text(language, "Todos (27)", "All (27)"), exact: true })).toHaveAttribute("aria-pressed", "true");
+    // The state is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts.
+    await expect(page.getByRole("button", { name: text(language, "Estado Todos", "State All"), exact: true })).toBeVisible();
     // The table scrolls inside its box: the page does not.
     await noPageScroll(page, width);
     await page.screenshot({ path: shot("documents", language, width), fullPage: true });

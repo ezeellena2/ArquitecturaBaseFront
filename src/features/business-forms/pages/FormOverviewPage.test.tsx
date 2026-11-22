@@ -31,6 +31,14 @@ function setup(permissions: string[], payload = overview()) {
   return { requests };
 }
 beforeEach(() => { queryClient.clear(); localStorage.clear(); });
+// The state of the forms is the button of the bar of the only piece to choose (2026-11-22): its name says the chosen one, and its
+// list has no counts. With the keyboard, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openStates(current: string) {
+  const trigger = screen.getByRole("button", { name: "Estado de los formularios " + current });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Estado de los formularios" });
+}
 
 const received = formatDateTimeInZone("2026-10-21T12:30:00Z", "es", currentUser.timeZoneId);
 
@@ -61,7 +69,7 @@ describe("MF1 form overview", () => {
     expect(screen.queryByText("Sin respuestas todavía")).not.toBeInTheDocument();
   });
 
-  it("uses authoritative facets and clears pendingOnly when opening inactive forms", async () => {
+  it("says the state in the bar's button and clears pendingOnly when opening inactive forms", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
     const { router } = renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
     await screen.findByRole("heading", { name: "Formularios", level: 1 });
@@ -69,13 +77,12 @@ describe("MF1 form overview", () => {
     expect(within(table).getByRole("columnheader", { name: "Por aprobar" })).toBeVisible();
     expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeVisible();
     expect(within(table).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Dados de baja (3)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Estado de los formularios Todos" })).toBeVisible();
     expect(requests.at(-1)?.searchParams.get("pendingOnly")).toBe("true");
     expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("checkbox", { name: "Con algo por aprobar" }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false));
-    expect(screen.getByRole("button", { name: "Activos (4)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Estado de los formularios Activos" })).toBeInTheDocument();
     const viewDeactivated = screen.getByRole("button", { name: "Ver dados de baja" });
     expect(viewDeactivated).toHaveTextContent(/^Ver$/);
     await userEvent.click(viewDeactivated);
@@ -84,8 +91,25 @@ describe("MF1 form overview", () => {
     expect(router.state.location.search).not.toContain("pendingOnly");
     expect(screen.getByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeChecked();
     // The segment and the columns already say what a deactivated form keeps: no banner explains it (2026-10-31).
-    await waitFor(() => expect(screen.getByRole("button", { name: "Dados de baja (3)" })).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Estado de los formularios Dados de baja" })).toBeInTheDocument());
     expect(screen.queryByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).not.toBeInTheDocument();
+  });
+
+  it("chooses the deactivated forms in the bar's button, back to page 1, and choosing the one it has changes nothing", async () => {
+    const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
+    const { router } = renderRouteWithProviders("/formularios/respuestas?state=Deactivated&page=2&pageSize=20");
+    await screen.findByRole("table");
+    let states = await openStates("Dados de baja");
+    expect(within(states).getByRole("option", { name: "Dados de baja" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(states).getByRole("option", { name: "Dados de baja" }));
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Estado de los formularios Dados de baja" })).toHaveFocus();
+    expect(new URLSearchParams(router.state.location.search).get("page")).toBe("2");
+    states = await openStates("Dados de baja");
+    await userEvent.click(within(states).getByRole("option", { name: "Activos" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("state")).toBe("Active"));
+    expect(new URLSearchParams(router.state.location.search).has("page")).toBe(false);
+    expect(new URLSearchParams(router.state.location.search).has("state")).toBe(false);
   });
 
   it("aligns what waits for a decision and how many responses there are to the right, as every column of numbers", async () => {
@@ -130,8 +154,11 @@ describe("MF1 form overview", () => {
     expect(cellUnder(table, row, "Formulario")).toHaveTextContent(/^Registrar visita$/);
     expect(cellUnder(table, row, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
     expect(cellUnder(table, screen.getByRole("link", { name: "Control vigente" }).closest("tr")!, "Estado del formulario")).toHaveTextContent(/^Activo$/);
-    const segment = screen.getByRole("group", { name: "Estado de los formularios" });
-    for (const option of within(segment).getAllByRole("button")) expect(option).toHaveAttribute("aria-pressed", "false");
+    const states = await openStates("Todos");
+    expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Activos", "Dados de baja"]);
+    for (const option of within(states).getAllByRole("option")) expect(option).toHaveAttribute("aria-selected", "false");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
     expect(screen.queryByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).not.toBeInTheDocument();
   });
@@ -289,7 +316,7 @@ it("shows whoever only completes forms their own entries, opens their sheet and 
   expect(cellUnder(table, none, "Formulario")).toHaveTextContent(/^Control anterior$/);
   expect(cellUnder(table, none, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
   expect(cellUnder(table, own, "Estado del formulario")).toHaveTextContent(/^Activo$/);
-  expect(screen.queryByRole("group", { name: "Estado de los formularios" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Estado de los formularios/ })).not.toBeInTheDocument();
   expect(within(table).queryByRole("link", { name: "Cargar Control anterior" })).not.toBeInTheDocument();
   // A table row carries no text buttons: loading is an icon with its name in the tooltip, and a link, since it goes elsewhere.
   const load = within(table).getByRole("link", { name: "Cargar Registrar visita" });

@@ -120,13 +120,22 @@ describe("the tab «Tablero»", () => {
   });
 });
 
+// The period is the button of the bar of the only piece to choose (2026-11-22): «Período» and the chosen one. With the keyboard,
+// for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function choosePeriod(name: string, current = "Día") {
+  const trigger = screen.getByRole("button", { name: "Período " + current });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Período" })).getByRole("option", { name }));
+}
+
 describe("the adjustments in the address", () => {
   it("groups every period card by the week chosen and asks the dashboard again", async () => {
     const { asked } = serve(["formrecords.read"]);
     const { router } = renderRouteWithProviders(path + "?view=dashboard");
     await screen.findByRole("heading", { name: "Cuántas llegaron, por día" }, { timeout: 10_000 });
 
-    await userEvent.click(screen.getByRole("button", { name: "Semana" }));
+    await choosePeriod("Semana");
 
     expect(await screen.findByRole("heading", { name: "Cuántas llegaron, por semana" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Por semana de Fecha de pago" })).toBeInTheDocument();
@@ -143,9 +152,9 @@ describe("the adjustments in the address", () => {
     renderRouteWithProviders(path + "?view=dashboard");
     await screen.findByRole("heading", { name: "Cuántas llegaron, por día" }, { timeout: 10_000 });
 
-    await userEvent.click(screen.getByRole("button", { name: "Semana" }));
+    await choosePeriod("Semana");
     // The week is asked; the days in sight keep their own words, titles and buckets, until it arrives.
-    await waitFor(() => expect(screen.getByRole("button", { name: "Semana" })).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Período Semana" })).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Cuántas llegaron, por día" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Por día de Fecha de pago" })).toBeInTheDocument();
     expect(within(screen.getByRole("list", { name: "Cuántas llegaron, por día" })).getAllByRole("listitem")[0]).toHaveTextContent("01/10/2026: 2");

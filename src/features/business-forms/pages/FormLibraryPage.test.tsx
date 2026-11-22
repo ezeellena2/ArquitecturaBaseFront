@@ -10,6 +10,9 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { cellUnder } from "@/test/utils/tableCells";
 import { transferReceiptStandard, upcomingStandards } from "@/test/visual/documentReadingFixtures";
 
+// Opening the editor passes the 5 s while other suites run at the same time.
+vi.setConfig({ testTimeout: 15_000 });
+
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
 
@@ -54,7 +57,7 @@ it("lists each standard with its version, module and copies, and offers «Agrega
   expect(cellUnder(table, first!, "En tus formularios")).toHaveTextContent(/^1$/);
   expect(cellUnder(table, second!, "Origen")).toHaveTextContent(/^—$/);
   expect(cellUnder(table, second!, "En tus formularios")).toHaveTextContent(/^0$/);
-  expect(screen.queryByRole("group", { name: "Estado" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Estado / })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Agregar/ })).not.toBeInTheDocument();
 });
 
@@ -205,7 +208,7 @@ it("adds the copy to the folder chosen, the standard's when none is", async () =
 });
 
 // DOC1: a standard that reads documents says what it reads and what it validates without AI; the standards of the next stages are rows
-// without an action. The search and «Todos · Disponibles · Próximamente» go in the address: they are not private.
+// without an action. The search and the state («Todos», «Disponibles», «Próximamente») go in the address: they are not private.
 describe("the library with the reading of documents (DOC1)", () => {
   const documents = () => { setup(["formtemplates.read", "formtemplates.manage"]); server.use(http.get("/api/forms/library", () => HttpResponse.json({ standards: [transferReceiptStandard("es"), invoice], upcoming: upcomingStandards("es") }))); };
 
@@ -230,22 +233,23 @@ describe("the library with the reading of documents (DOC1)", () => {
   it("searches by name without accents and filters what is available or coming soon, in the address", async () => {
     documents();
     const { router } = renderRouteWithProviders("/formularios/biblioteca");
-    const segments = await screen.findByRole("group", { name: "Estado" }, { timeout: 10_000 });
-    await waitFor(() => expect(within(segments).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (13)", "Disponibles (2)", "Próximamente (11)"]));
+    // The state is the button of the bar of the piece to choose (2026-11-22): «Todos» first and apart, without counts (FO1-A).
+    const states = await openList(await screen.findByRole("button", { name: "Estado Todos" }, { timeout: 10_000 }));
+    expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Disponibles", "Próximamente"]);
+    expect(within(states).getByRole("option", { name: "Todos" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Escape}");
     await userEvent.type(screen.getByRole("searchbox", { name: "Buscar por nombre" }), "credito");
     await waitFor(() => expect(router.state.location.search).toBe("?search=credito"));
-    // The counts follow the search, before the filter.
-    await waitFor(() => expect(within(segments).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (1)", "Disponibles (0)", "Próximamente (1)"]));
-    expect(screen.getAllByRole("row").slice(1).map(row => (row as HTMLTableRowElement).cells[0]?.textContent?.split("Lee")[0])).toEqual(["Nota de crédito o débito"]);
+    await waitFor(() => expect(screen.getAllByRole("row").slice(1).map(row => (row as HTMLTableRowElement).cells[0]?.textContent?.split("Lee")[0])).toEqual(["Nota de crédito o débito"]));
 
-    await userEvent.click(within(segments).getByRole("button", { name: "Disponibles (0)" }));
+    await pick("Estado Todos", "Disponibles");
     await waitFor(() => expect(router.state.location.search).toBe("?search=credito&availability=Available"));
     expect(screen.getByText("No hay estándares que coincidan.")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Limpiar filtros" }));
     await waitFor(() => expect(router.state.location.search).toBe(""));
 
     // Only the upcoming ones: their name and what they are, without columns of «—», without «Estado» and without «Acciones».
-    await userEvent.click(within(segments).getByRole("button", { name: "Próximamente (11)" }));
+    await pick("Estado Todos", "Próximamente");
     await waitFor(() => expect(router.state.location.search).toBe("?availability=Upcoming"));
     expect(within(screen.getByRole("table")).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Estándar"]);
     expect(screen.getAllByRole("row")).toHaveLength(12);
@@ -258,7 +262,7 @@ describe("the library with the reading of documents (DOC1)", () => {
     expect(await screen.findByText("Comprobante de transferencia", {}, { timeout: 10_000 })).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(2);
     expect(screen.getByRole("searchbox", { name: "Buscar por nombre" })).toHaveValue("comprobante");
-    expect(screen.getByRole("button", { name: "Disponibles (1)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Estado Disponibles" })).toBeInTheDocument();
   });
 });
 

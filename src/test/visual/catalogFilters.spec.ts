@@ -20,8 +20,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const geometry = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     const sample = async () => { await page.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }).click(); await page.getByRole("listbox", { name: label("Como si lo recibiera", "As if received by"), exact: true }).getByRole("option", { name: seedOptions.sampleUsers.items.find(person => person.id === seedPreviewRequest.sampleUserId)!.name, exact: true }).click(); };
     await enter("/catalogos");
-    await expect(page.getByRole("button", { name: label("Todos (1)", "All (1)"), exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: label("De la base (1)", "From the database (1)"), exact: true })).toBeVisible();
+    // The origin is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts.
+    await expect(page.getByRole("button", { name: label("De dónde salen Todos", "Where options come from All"), exact: true })).toBeVisible();
     await page.getByRole("button", { name: label("Nuevo catálogo", "New catalog"), exact: true }).click();
     await page.getByRole("button", { name: label("¿De dónde salen las opciones? Escribirlas a mano", "Where do the options come from? Write them manually"), exact: true }).click();
     await page.getByRole("option", { name: label("Tomarlas de la base, con filtros", "Use database options with filters"), exact: true }).click();

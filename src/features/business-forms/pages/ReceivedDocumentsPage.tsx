@@ -8,7 +8,6 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { calendarDateInZone, formatDateInZone, formatDateOnly, formatDateTimeInZone } from "@/shared/lib/dateTime";
-import { formatNumber } from "@/shared/lib/numberFormat";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
@@ -21,8 +20,8 @@ import { DocumentIcon, FileIcon, ImageIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
+import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { fetchReceivedDocuments, type ReceivedDocument, type ReceivedDocumentsQuery } from "../api/receivedDocuments";
@@ -165,9 +164,6 @@ function ReceivedDocuments() {
       ? scope.readsResponses && item.form ? <Link to={`/formularios/${item.form.definitionId}/respuestas/${item.record.recordId}`} className="font-medium text-[var(--color-brand-700)] underline">{item.record.number}</Link> : item.record.number
       : "—" },
   ];
-  const counts = data?.counts;
-  const all = counts ? counts.proposed + counts.unclassified + counts.confirmed + counts.discarded : undefined;
-  const segment = (label: string, count: number | undefined) => label + " (" + (count === undefined ? "…" : formatNumber(count, i18n.language)) + ")";
   const filtered = hasReceivedDocumentFilters(filter);
   const fromDay = filter.receivedFromUtc ? formatDateOnly(calendarDateInZone(filter.receivedFromUtc, zone), i18n.language) : null;
   const toDay = filter.receivedToUtc ? formatDateOnly(calendarDateInZone(new Date(Date.parse(filter.receivedToUtc) - 1).toISOString(), zone), i18n.language) : null;
@@ -189,10 +185,11 @@ function ReceivedDocuments() {
             <SearchInput maxLength={64} value={filter.search ?? ""} label={t("search")} onChange={text => apply({ ...filter, search: text || undefined })} />
             {searchValid ? null : <p role="alert" className="text-xs text-[var(--color-danger)]">{t("searchDigits")}</p>}
           </div>
-          <SegmentedControl wrap aria-label={t("segments.label")} options={[
-            { key: "all", label: segment(t("segments.all"), all), pressed: !filter.state, onSelect: () => apply({ ...filter, state: undefined }) },
-            ...receivedDocumentSegments.map(key => ({ key, label: segment(t("segments." + key), counts?.[key]), pressed: filter.state === key, onSelect: () => apply({ ...filter, state: key }) })),
-          ]} />
+          {/* The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without
+              counts (FO1-A): «Todos» first and apart; choosing the one it has changes nothing (it would go back to page 1). */}
+          <Picker trigger="button" label={t("segments.label")} first={{ id: "", label: t("segments.all") }}
+            options={receivedDocumentSegments.map(key => ({ id: key, label: t("segments." + key) }))} value={filter.state ?? ""}
+            onChange={id => { if (id !== (filter.state ?? "")) apply({ ...filter, state: receivedDocumentSegments.find(key => key === id) }); }} />
           {/* The form and the person, with the options the page brings, and when it arrived (DOC5-A). */}
           <FilterPanel label={t("filters")} sections={[
             { key: "form", label: t("columns.form"), applied: !!filter.form, onClear: () => apply({ ...filter, form: undefined }),

@@ -67,8 +67,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByText(text(language, "Comprobante de transferencia", "Transfer receipt"), { exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    const segments = page.getByRole("group", { name: text(language, "Estado", "Status"), exact: true });
-    await expect(segments.getByRole("button")).toHaveText(text(language, "Todos (13)|Disponibles (2)|Próximamente (11)", "All (13)|Available (2)|Coming soon (11)").split("|"));
+    // The state is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts.
+    const state = page.getByRole("button", { name: text(language, "Estado Todos", "Status All"), exact: true });
+    await expect(state).toBeVisible();
     if (width >= 640) for (const header of text(language, "Qué lee|Validaciones fijas|Versión|En tus formularios|Estado", "What it reads|Fixed validations|Version|In your forms|Status").split("|"))
       await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
     else await expect(page.getByText(text(language, "Versión 1 · En 2 de tus formularios", "Version 1 · In 2 of your forms"), { exact: true })).toBeVisible();
@@ -76,13 +77,14 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: "test-results/visual/document-library-" + language + "-" + width + ".png", fullPage: true });
 
     // «Próximamente»: rows without an action and without columns of «—»; the filter goes in the address.
-    await segments.getByRole("button", { name: text(language, "Próximamente (11)", "Coming soon (11)"), exact: true }).click();
+    await state.click();
+    await page.getByRole("listbox", { name: text(language, "Estado", "Status"), exact: true }).getByRole("option", { name: text(language, "Próximamente", "Coming soon"), exact: true }).click();
     await expect(page.getByText(text(language, "Nota de crédito o débito", "Credit or debit note"), { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: language === "es" ? /^Agregar «/ : /^Add “/ })).toHaveCount(0);
     if (width >= 640) await expect(page.getByRole("columnheader")).toHaveText([text(language, "Estándar", "Standard")]);
     await expect.poll(() => page.evaluate(() => (window as unknown as { visualRouterLocation?: { search: string } }).visualRouterLocation?.search)).toBe("?availability=Upcoming");
     await noPageScroll(page, width);
-    // Right after the click the segments still change colour: the capture ends their transition.
+    // Right after choosing, the list may still be leaving: the capture ends its transition.
     await page.screenshot({ path: "test-results/visual/document-library-upcoming-" + language + "-" + width + ".png", fullPage: true, animations: "disabled" });
   });
 }

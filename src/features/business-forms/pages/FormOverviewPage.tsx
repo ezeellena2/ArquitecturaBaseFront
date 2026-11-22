@@ -16,9 +16,9 @@ import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { PlusIcon } from "@/shared/ui/icons";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
+import { Picker } from "@/shared/ui/Picker";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import type { FormOverviewRow } from "../api/overview";
 import { approvalStateVariant } from "../approvals";
@@ -47,11 +47,11 @@ export function FormOverviewPage() {
     : !scope.canRead && !scope.canCreate || pendingOnly ? "overview.noPending"
     : state === "Deactivated" ? "overview.noDeactivated"
     : "responses.noForms";
-  // Whoever only completes forms opens the sheet of their own (CW6-C), without the segment of deactivated forms.
+  // Whoever only completes forms opens the sheet of their own (CW6-C), without the filter of deactivated forms.
   const canOpen = scope.canRead || scope.canDecide || scope.canCreate;
   const own = scope.canCreate && !scope.canRead;
   const formPath = (id: string) => "/formularios/" + id + "/respuestas";
-  // One piece of data per column (UD1). A segment shows one state at a time; the views without one in use (pendingOnly,
+  // One piece of data per column (UD1). The filter shows one state at a time; the views without one in use (pendingOnly,
   // or whoever only loads) mix active and deactivated forms, and then the state of each form goes in its own column.
   const mixed = (!(scope.canRead || scope.canDecide) || pendingOnly) && !!data?.forms.items.some(row => row.deactivatedAtUtc);
   const lastNumber = (row: FormOverviewRow) => row.lastResponse
@@ -81,11 +81,13 @@ export function FormOverviewPage() {
       to: "/formularios/" + row.id + "/cargar", state: { from: "overview" } }]}/> }] : []),
   ];
   return <Page title={t("overview.title")}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{scope.canRead || scope.canDecide ? <div className="max-w-full overflow-x-auto">
-      <SegmentedControl aria-label={t("overview.state")} options={[
-        { key: "Active", label: t("active") + " (" + (data?.filterCounts.active ?? "—") + ")", pressed: !pendingOnly && state === "Active", onSelect: () => update({ state: undefined, page: undefined }) },
-        { key: "Deactivated", label: t("deactivated") + " (" + (data?.filterCounts.deactivated ?? "—") + ")", pressed: !pendingOnly && state === "Deactivated", onSelect: () => update({ state: "Deactivated", page: undefined }) },
-      ]}/></div> : null}
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{scope.canRead || scope.canDecide
+      // The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without
+      // counts (FO1-A). «Con algo por aprobar» mixes both states: the button says «Todos» and none is ticked.
+      ? <Picker trigger="button" label={t("overview.state")} placeholder={t("all")} value={pendingOnly ? null : state}
+        options={[{ id: "Active", label: t("active") }, { id: "Deactivated", label: t("deactivated") }]}
+        // Choosing the one it has changes nothing: it would go back to page 1.
+        onChange={id => { if (pendingOnly || id !== state) update({ state: id === "Deactivated" ? id : undefined, page: undefined }); }}/> : null}
       {both ? <CheckboxField label={t("overview.pendingOnly")} checked={pendingOnly} onCheckedChange={checked => update({ pendingOnly: checked ? "true" : undefined, page: undefined })}/> : null}
     </div></FilterBar>
     <div className="flex flex-col gap-4">

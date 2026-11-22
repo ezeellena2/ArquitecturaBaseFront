@@ -6,7 +6,6 @@ import { Button } from "@/shared/ui/button";
 import { SlidersIcon } from "@/shared/ui/icons";
 import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { FilterBar } from "@/shared/ui/FilterBar";
 
@@ -17,7 +16,7 @@ interface UsersFilterBarProps {
 }
 
 /// La barra de filtros del listado (fundamento visual, "Listados y filtros"): buscador, estado, rol y el
-/// resto detrás de "Más filtros", con los chips de lo puesto debajo.
+/// resto detrás de "Más filtros", con los chips de lo puesto debajo. Los tres se eligen con la pieza única (DS1-A).
 ///
 /// Los roles y los plazos de "Creado" salen de `/api/users/filter-counts`, que trae también cuántos traería cada
 /// opción; esas cantidades no se muestran (FO1-A, 2026-11-03), así que se pide una vez, sin la búsqueda ni los
@@ -35,12 +34,10 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
   // While the options arrive, or if they failed, the open list says so: they are not missing.
   const optionsState = { loading: countsQuery.isPending, failed: countsQuery.isError, onRetry: () => void countsQuery.refetch() };
 
-  // En plural: el segmentado filtra un conjunto, no rotula una fila. El singular se queda para la celda.
-  const statusOptions = [
-    { value: undefined, label: t("filters.status.all") },
-    { value: "true", label: t("filters.status.active") },
-    { value: "false", label: t("filters.status.inactive") },
-  ];
+  // Choosing the one it has changes nothing: it would go back to page 1.
+  const choose = (key: UserFilterKey, value: string) => {
+    if (value !== (values[key] ?? "")) setFilter(key, value || undefined);
+  };
 
   // Sin conteos todavía no hay lista de roles que ofrecer: el catálogo lo trae la misma respuesta.
   const roleOptions = counts?.roles ?? [];
@@ -61,21 +58,21 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
           <SearchInput value={search} onChange={onSearchChange} label={t("searchLabel")} />
         </div>
 
-        {/* El estado va como segmentado y no como desplegable: son tres opciones fijas y se elige de un clic
-            en vez de dos. */}
-        <SegmentedControl
-          aria-label={t("filters.status.label")}
-          options={statusOptions.map((option) => ({
-            key: option.label,
-            label: option.label,
-            pressed: values.isActive === option.value,
-            onSelect: () => setFilter("isActive", option.value),
-          }))}
+        {/* Status, role and "Más filtros" are the only piece to choose with the button of the bar (DS1-A, also the filters
+            since 2026-11-22): one option per row, without its count, the chosen one ticked and none off (FO1-A). "Todos" and
+            "Cualquier…" go first, apart, and take the filter out. In plural: the filter picks a set, it does not label a row. */}
+        <Picker
+          trigger="button"
+          label={t("filters.status.label")}
+          first={{ id: "", label: t("filters.status.all") }}
+          options={[
+            { id: "true", label: t("filters.status.active") },
+            { id: "false", label: t("filters.status.inactive") },
+          ]}
+          value={values.isActive ?? ""}
+          onChange={(status) => choose("isActive", status)}
         />
 
-        {/* Role and "Más filtros" are the only piece to choose with the button of the bar (DS1-A): one option per row,
-            without its count, the chosen one ticked and none off (FO1-A). "Cualquier…" goes first, apart, and takes the
-            filter out. */}
         <Picker
           trigger="button"
           label={t("filters.role.label")}
@@ -85,7 +82,7 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
           // The role of the URL is named before its options arrive.
           selectedOptions={values.role ? [{ id: values.role, label: values.role }] : undefined}
           value={values.role ?? ""}
-          onChange={(role) => setFilter("role", role || undefined)}
+          onChange={(role) => choose("role", role)}
         />
 
         <Picker
@@ -110,7 +107,7 @@ export function UsersFilterBar({ filters, search, onSearchChange }: UsersFilterB
             label: t("filters.createdWithin.option", { count: option.days }),
           }))}
           value={values.createdWithinDays ?? ""}
-          onChange={(days) => setFilter("createdWithinDays", days || undefined)}
+          onChange={(days) => choose("createdWithinDays", days)}
         />
 
       </div>

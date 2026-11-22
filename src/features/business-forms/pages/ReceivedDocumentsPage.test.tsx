@@ -20,6 +20,17 @@ vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typ
 const reviewer = ["formdocuments.read", "formdocuments.review", "formrecords.read"];
 const requestId = "0199b0c0-0000-7000-8000-000000000901";
 type Body = Record<string, unknown> & { page: number; pageSize: number };
+// The state is the button of the bar of the only piece to choose (2026-11-22): «Estado» and the chosen one, and its list without
+// counts. With the keyboard, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openStates(current = "Todos") {
+  const trigger = await screen.findByRole("button", { name: `Estado ${current}` }, { timeout: 10_000 });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Estado" });
+}
+async function chooseState(option: string, current?: string) {
+  await userEvent.click(within(await openStates(current)).getByRole("option", { name: option }));
+}
 
 function setup({ permissions = reviewer, details = {}, list, counts }: { permissions?: string[]; details?: Record<string, ReceivedDocumentDetail>;
   list?: (body: Body) => Response; counts?: unknown } = {}) {
@@ -88,7 +99,7 @@ async function pickOption(user: ReturnType<typeof userEvent.setup>, trigger: HTM
 }
 
 describe("the list", () => {
-  it("shows one document per row with each datum read in its column, the states with their counts and its menu entry with its number", async () => {
+  it("shows one document per row with each datum read in its column, the states without counts and its menu entry with its number", async () => {
     setup();
     const { router } = renderRouteWithProviders("/formularios/documentos");
     const table = await screen.findByRole("table", {}, { timeout: 10_000 });
@@ -104,21 +115,20 @@ describe("the list", () => {
     expect(cellUnder(table, rows[2]!, "Se borra")).toHaveTextContent(/^20\/01\/2027$/);
     expect(cellUnder(table, rows[2]!, "Formulario")).toHaveTextContent(/^—$/);
     expect(within(cellUnder(table, rows[1]!, "Respuesta")).getByRole("link", { name: "REC-000124" })).toHaveAttribute("href", `/formularios/${receivedDocumentForms.payments}/respuestas/0199b0c0-0000-7000-8000-000000000601`);
-    const states = screen.getByRole("group", { name: "Estado" });
-    expect(within(states).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (27)", "Propuestos (3)", "Sin clasificar (5)", "Confirmados (15)", "Descartados (4)"]);
-    expect(within(states).getByRole("button", { name: "Todos (27)" })).toHaveAttribute("aria-pressed", "true");
+    const states = await openStates();
+    expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Propuestos", "Sin clasificar", "Confirmados", "Descartados"]);
+    expect(within(states).getByRole("option", { name: "Todos" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     // Under «Formularios», with the documents that wait for someone of the team.
     expect(await screen.findByRole("link", { name: "Documentos recibidos (7)" })).toHaveAttribute("aria-current", "page");
     expect(router.state.location.pathname).toBe("/formularios/documentos");
   }, 20_000);
 
-  it("writes the counts of the states and the menu with the region's grouping", async () => {
+  it("writes the count of the menu with the region's grouping", async () => {
     setup({ counts: { forReview: 1205, unclassified: 5, total: 1210 }, list: body => HttpResponse.json({ ...receivedDocumentsPageFixture(), page: body.page, pageSize: body.pageSize,
       totalCount: 1227, counts: { proposed: 1208, forReview: 1205, unclassified: 5, confirmed: 10, discarded: 4 } }) });
     renderRouteWithProviders("/formularios/documentos");
-    const states = await screen.findByRole("group", { name: "Estado" }, { timeout: 10_000 });
-    expect(await within(states).findByRole("button", { name: "Todos (1.227)" })).toBeInTheDocument();
-    expect(within(states).getByRole("button", { name: "Propuestos (1.208)" })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "Documentos recibidos (1.210)" })).toBeInTheDocument();
   }, 20_000);
 
@@ -136,7 +146,7 @@ describe("the list", () => {
     await waitFor(() => expect(lastList(requests).search).toBe("150.000"));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByText("Búsqueda: 150.000")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Propuestos (3)" }));
+    await chooseState("Propuestos");
     await waitFor(() => expect(lastList(requests).state).toBe("proposed"));
     expect(router.state.location.search).not.toMatch(/search|state|150/);
     await user.click(screen.getByRole("button", { name: "Limpiar todo" }));
@@ -201,7 +211,7 @@ describe("the list", () => {
     failing = false;
     await user.click(screen.getByRole("button", { name: "Reintentar" }));
     expect(await screen.findByText("Todavía no llegaron documentos")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirmados (0)" }));
+    await chooseState("Confirmados");
     expect(await screen.findByText("Ningún documento coincide")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Limpiar todo" }));
     expect(await screen.findByText("Todavía no llegaron documentos")).toBeInTheDocument();
@@ -226,7 +236,7 @@ describe("the list", () => {
     const groups = [{ topic: { id: topicId, name: "tickets de combustible" }, count: 5, documentIds: [receivedDocumentIds.unclassified] }];
     setup({ permissions: [...reviewer, "formtemplates.read"], list: body => HttpResponse.json({ ...receivedDocumentsPageFixture(), page: body.page, pageSize: body.pageSize, groups }) });
     renderRouteWithProviders("/formularios/documentos");
-    expect(await screen.findByRole("button", { name: "Todos (27)" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "REC-000124" }, { timeout: 10_000 })).toBeInTheDocument();
     expect(screen.queryByText(/documentos parecidos/)).not.toBeInTheDocument();
   }, 20_000);
 

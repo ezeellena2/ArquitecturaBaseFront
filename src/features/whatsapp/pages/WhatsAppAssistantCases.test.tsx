@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -40,27 +40,37 @@ it("marks the conversation that needs a person in its row, between the name and 
   expect(mark.compareDocumentPosition(within(row).getByText("Mensaje del asistente"))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   expect(within(await rowOf("Luis")).queryByText("Necesita una persona")).not.toBeInTheDocument();
 });
-it("filters the conversations that need a person with its count, next to the other two", async () => {
+// «Mostrar» is the button of the bar of the only piece to choose (2026-11-22): it says the chosen one, and its list has no counts.
+async function chooseShow(option: string, current = "Todos") {
+  const trigger = screen.getByRole("button", { name: "Mostrar " + current });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Mostrar" })).getByRole("option", { name: option }));
+}
+it("filters the conversations that need a person, next to the other two", async () => {
   renderRouteWithProviders("/whatsapp/chat");
-  const group = await screen.findByRole("group", { name: "Mostrar" });
-  const filter = await within(group).findByRole("button", { name: "Necesita una persona (1)" });
-  expect(within(group).getAllByRole("button").map(button => button.textContent)).toEqual(["Todos (2)", "Sin leer (1)", "Necesita una persona (1)"]);
-  expect(filter).toHaveAttribute("aria-pressed", "false");
-  await userEvent.click(filter);
-  expect(filter).toHaveAttribute("aria-pressed", "true");
-  expect(within(group).getByRole("button", { name: "Todos (2)" })).toHaveAttribute("aria-pressed", "false");
+  await screen.findByRole("button", { name: "Ana" });
+  const trigger = screen.getByRole("button", { name: "Mostrar Todos" });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  const list = await screen.findByRole("listbox", { name: "Mostrar" });
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Sin leer", "Necesita una persona"]);
+  expect(within(list).getByRole("option", { name: "Necesita una persona" })).toHaveAttribute("aria-selected", "false");
+  await userEvent.click(within(list).getByRole("option", { name: "Necesita una persona" }));
+  expect(await screen.findByRole("button", { name: "Mostrar Necesita una persona" })).toBeInTheDocument();
   await waitFor(() => expect(queries.at(-1)?.get("needsPerson")).toBe("true"));
   expect(queries.at(-1)?.get("unreadOnly")).toBe("false");
   await waitFor(() => expect(screen.queryByRole("button", { name: "Luis" })).not.toBeInTheDocument());
   expect(screen.getByRole("button", { name: "Ana" })).toBeInTheDocument();
-  await userEvent.click(within(group).getByRole("button", { name: "Sin leer (1)" }));
+  await chooseShow("Sin leer", "Necesita una persona");
   await waitFor(() => expect(queries.at(-1)?.get("unreadOnly")).toBe("true"));
   expect(queries.at(-1)?.has("needsPerson")).toBe(false);
 });
 it("says that no conversation needs a person with the empty state of a filter", async () => {
   ana = { ...ana, needsPerson: undefined };
   renderRouteWithProviders("/whatsapp/chat");
-  await userEvent.click(await screen.findByRole("button", { name: "Necesita una persona (0)" }));
+  await screen.findByRole("button", { name: "Ana" });
+  await chooseShow("Necesita una persona");
   expect(await screen.findByText("No hay conversaciones con esos filtros.")).toBeInTheDocument();
 });
 it("shows the mark in the header and why in a strip under it, without repeating the mark to the eye nor «Motivo:»", async () => {
@@ -105,5 +115,4 @@ it("takes the mark away when the server stops sending it, after a person answers
   await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
   await waitFor(() => expect(screen.queryByText("Pide hablar con una persona.")).not.toBeInTheDocument());
   expect(screen.queryByText("Necesita una persona")).not.toBeInTheDocument();
-  expect(await screen.findByRole("button", { name: "Necesita una persona (0)" })).toBeInTheDocument();
 });

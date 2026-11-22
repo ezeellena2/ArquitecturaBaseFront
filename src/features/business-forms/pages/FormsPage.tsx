@@ -16,10 +16,10 @@ import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
+import { Picker } from "@/shared/ui/Picker";
 import { BanIcon, FolderIcon, PencilIcon, RefreshIcon, TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { formActorKey, formScopeKey, useFormDefinitions, type FormReadScope } from "../hooks/useFormQueries";
@@ -38,6 +38,8 @@ import type { FormListQuery } from "../api/forms";
 import type { readFormPage } from "../api/response";
 
 const sortFields = ["name", "-name", "questionCount", "-questionCount", "lastChangedAtUtc", "-lastChangedAtUtc"] as const;
+// Each state of the filter and its word; «Activos», without one in the address, is the published and the drafts.
+const publicationFilters = [["Active", "active"], ["Published", "published"], ["Drafts", "drafts"], ["Deactivated", "deactivated"]] as const;
 type Row = ReturnType<typeof readFormPage>["items"][number];
 export function FormsPage() {
   const { t, i18n } = useTranslation(["forms", "formFolders"]);
@@ -62,7 +64,7 @@ export function FormsPage() {
   const query: FormListQuery = { page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
     pageSize: Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : presentation.data?.defaultPageSize ?? 20,
     search: pagination.search, sort: sortFields.find(field => field === pagination.sort), publicationFilter, ...folderListQuery(folders.selection) };
-  const { list, facets } = useFormDefinitions(scope, query);
+  const { list } = useFormDefinitions(scope, query);
   const actionOwner = JSON.stringify(formScopeKey(scope));
   if (action && action.owner !== actionOwner) setAction(null);
   const canManage = !!user?.permissions.includes("formtemplates.manage");
@@ -73,12 +75,12 @@ export function FormsPage() {
   const feedbackId = `forms:list:${scope.actorId}:${scope.culture}`;
   useEffect(() => () => { dismissNotification(feedbackId); }, [feedbackId]);
   useEffect(() => {
-    const error = list.error ?? facets.error;
+    const error = list.error;
     if (!error) { dismissNotification(feedbackId); return; }
     if (["cancelled", "session", "forbidden"].includes(errorFeedback(error).kind)) return;
     notify({ id: feedbackId, kind: "error", message: readErrorMessage(error, t) });
-  }, [list.error, facets.error, list.data, feedbackId, t]);
-  if (!user?.permissions.includes("formtemplates.read") || [list.error, facets.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
+  }, [list.error, list.data, feedbackId, t]);
+  if (!user?.permissions.includes("formtemplates.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage />;
   const clearFilters = () => update({ search: undefined, publicationFilter: undefined, page: undefined });
   const canPublish = scope.permissions.includes("formtemplates.publish");
   const chooseAction = (row: Row, kind: "deactivate" | "delete") => { focusFallback.current = host.current?.querySelector<HTMLInputElement>("input") ?? null; setAction({ row, kind, owner: JSON.stringify(formScopeKey(scope)) }); };
@@ -94,7 +96,7 @@ export function FormsPage() {
     } },
     // SA3-A: where the active version is completed and, without one, where the draft will be; one piece of data per column (UD).
     ...(channels ? [{ id: "completedIn", header: t("completedIn.label"), cell: (row: Row) => t(row.appOnly ? "completedIn.app" : "completedIn.channels") }] : []),
-    // «Dado de baja» is what the segment already says: here, how the withdrawal goes in WhatsApp and its date.
+    // «Dado de baja» is what the filter already says: here, how the withdrawal goes in WhatsApp and its date.
     ...(publicationFilter === "Deactivated" ? [{ id: "deprecation", header: t("lifecycle.deprecationColumn"), cell: (row: Row) => {
       const at = deprecationDateUtc(row.lifecycle);
       return at ? <time dateTime={at}>{formatDateTimeInZone(at, i18n.language, user?.timeZoneId)}</time> : "—";
@@ -106,9 +108,12 @@ export function FormsPage() {
     { id: "actions", header: t("actionsColumn"), align: "right", cell: row => <RowActions actions={[{ hidden: !canManage || !row.canEdit, label: t("edit"), accessibleName: `${t("edit")} ${administrativeName(row.name, scope.culture)}`, icon: PencilIcon, onSelect: () => { void navigate(`/formularios/${row.id}`); } }, { hidden: !canManage, label: t("formFolders:item.action"), accessibleName: t("formFolders:item.actionFor", { name: administrativeName(row.name, scope.culture) }), icon: FolderIcon, onSelect: () => setFoldersOf({ id: row.id, name: administrativeName(row.name, scope.culture) }) }, { hidden: !canPublish || !row.lifecycle.canDeactivate, label: t("lifecycle.deactivate"), accessibleName: t("lifecycle.deactivate") + " " + administrativeName(row.name, scope.culture), icon: BanIcon, onSelect: () => chooseAction(row, "deactivate") }, { hidden: !canPublish || !row.lifecycle.canReactivate, label: t("lifecycle.reactivate"), accessibleName: t("lifecycle.reactivate") + " " + administrativeName(row.name, scope.culture), icon: RefreshIcon, onSelect: () => { void navigate("/formularios/" + row.id, { state: { reactivateFormId: row.id } }); } }, { hidden: !canManage || !row.lifecycle.canDelete || row.lifecycle.deletionUnavailableReason === "HasResponses" || row.lifecycle.responseCount !== null && row.lifecycle.responseCount > 0, label: t("lifecycle.delete"), accessibleName: t("lifecycle.delete") + " " + administrativeName(row.name, scope.culture), icon: TrashIcon, destructive: true, onSelect: () => chooseAction(row, "delete") }]} /> },
   ];
   return <div ref={host}><Page title={t("title")} actions={canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.form"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button></> : undefined}>
-    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("search")} /></div><div className="max-w-full overflow-x-auto"><SegmentedControl aria-label={t("filter")} options={(["Active", "Published", "Drafts", "Deactivated"] as const).map(key => ({ key, label: `${t(key === "Active" ? "active" : key === "Published" ? "published" : key === "Drafts" ? "drafts" : "deactivated")} (${facets.data?.[key === "Active" ? "active" : key === "Published" ? "published" : key === "Drafts" ? "drafts" : "deactivated"] ?? "…"})`, pressed: publicationFilter === key, onSelect: () => update({ publicationFilter: key === "Active" ? undefined : key, page: undefined }) }))} /></div><FolderFilter folders={folders} /></div></FilterBar>
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput value={query.search ?? ""} onChange={pagination.setSearch} label={t("search")} /></div>{/* The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without
+      counts (FO1-A); choosing the one it has changes nothing (it would go back to page 1). */}
+    <Picker trigger="button" label={t("filter")} options={publicationFilters.map(([id, label]) => ({ id, label: t(label) }))} value={publicationFilter}
+      onChange={id => { if (id !== publicationFilter) update({ publicationFilter: id === "Active" ? undefined : id, page: undefined }); }} /><FolderFilter folders={folders} /></div></FilterBar>
     {/* Searching, filtering, sorting or paging keeps the previous rows in sight: the table says it reads again until they arrive. */}
-    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); void facets.refetch(); }} sort={query.sort} onSortChange={pagination.toggleSort}
+    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); }} sort={query.sort} onSortChange={pagination.toggleSort}
       emptyTitle={folderEmpty?.title ?? t(hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters && !folderEmpty ? t("noMatchesDescription") : undefined}
       emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button></div>
         : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />

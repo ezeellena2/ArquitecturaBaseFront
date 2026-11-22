@@ -11,6 +11,9 @@ import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import { cellUnder } from "@/test/utils/tableCells";
 import { createFormFixtureStore, fixtureFormId, fixtureLifecycle } from "@/test/visual/formFixtures";
+
+// Opening the editor passes the 5 s while other suites run at the same time.
+vi.setConfig({ testTimeout: 15_000 });
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
 // The first test of a file pays the editor's lazy route; loading it beforehand keeps that wait out of the tests under load.
@@ -193,7 +196,7 @@ for (const source of ["row", "editor"] as const) {
   await waitFor(()=>expect(navigation).toHaveBeenCalledTimes(2));
   const nav=queryClient.getQueryCache().getAll().find(query=>query.queryKey[0]==="form-overview");
   expect(nav?.state.data).toMatchObject({forms:{items:[],totalCount:0},filterCounts:{active:0,deactivated:1}});
-  if(source==="row") {expect(screen.queryByRole("link",{name:"Registrar visita"})).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Dados de baja (1)"})).toBeVisible();await waitFor(()=>expect(screen.getByRole("searchbox")).toHaveFocus());}
+  if(source==="row") {expect(screen.queryByRole("link",{name:"Registrar visita"})).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Estado Activos"})).toBeVisible();await waitFor(()=>expect(screen.getByRole("searchbox")).toHaveFocus());}
  });
 }
 

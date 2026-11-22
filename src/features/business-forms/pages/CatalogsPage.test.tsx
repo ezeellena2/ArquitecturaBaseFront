@@ -22,6 +22,16 @@ async function openStates(current: string) {
 async function chooseState(current: string, option: string) {
   await userEvent.click(within(await openStates(current)).getByRole("option", { name: option }));
 }
+// The origin too (2026-11-22): its button says «De dónde salen» and the chosen one, and its list has no counts (FO1-A).
+async function openOrigins(current = "Todos") {
+  const trigger = await screen.findByRole("button", { name: `De dónde salen ${current}` });
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "De dónde salen" });
+}
+async function chooseOrigin(option: string, current?: string) {
+  await userEvent.click(within(await openOrigins(current)).getByRole("option", { name: option }));
+}
 describe("Catalog routes and navigation", () => {
   it("chooses Manual without a write and navigates to the protected editor", async () => {
     setup(["formcatalogs.read", "formcatalogs.manage"]); let writes = 0;
@@ -50,17 +60,20 @@ describe("Catalog routes and navigation", () => {
   });
 });
 
-it("uses server origin counts for the whole query and resets the page when choosing an origin", async () => {
+it("asks the server for the chosen origin, without counts, and goes back to page 1", async () => {
   // Synthetic current DTO projection, deliberately one row but 100 matching catalogs.
   const page = { items: [{ valueType: "Text" as const, id: "01990000-0000-7000-8000-000000000030", name: "Supervisores", description: null, origin: "Filters", optionsCount: null, usageCount: null, state: "Unavailable", stateReason: "Forms.Catalog.ContentInvalid", canEdit: false }], page: 5, pageSize: 1, totalCount: 20, totalPages: 20, hasPrevious: true, hasNext: true, filterCounts: { byKind: { all: 100, manual: 80, filters: 20 } } };
   setup(["formcatalogs.read"]); const requests: URLSearchParams[] = [];
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(page); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];
   await act(async () => { router = renderRouteWithProviders("/catalogos?page=5&pageSize=1&sort=name").router; });
-  const user = userEvent.setup(); await user.click(await screen.findByRole("button", { name: "De la base (20)" }));
+  const origins = await openOrigins();
+  expect(within(origins).getAllByRole("option").map(option => option.textContent)).toEqual(["Todos", "Escritas a mano", "De la base"]);
+  expect(within(origins).getByRole("option", { name: "Todos" }).nextElementSibling).toHaveAttribute("role", "presentation");
+  await userEvent.click(within(origins).getByRole("option", { name: "De la base" }));
   await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("kind")).toBe("Filters"));
   expect(new URLSearchParams(router.state.location.search).get("page")).toBeNull(); expect(new URLSearchParams(router.state.location.search).get("sort")).toBe("name");
-  expect(screen.getByRole("button", { name: "Todos (100)" })).toBeInTheDocument(); expect(screen.getByRole("button", { name: "Escritas a mano (80)" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "De dónde salen De la base" })).toHaveFocus();
   await waitFor(() => expect(requests.some(request => request.get("kind") === "Filters" && request.get("page") === "1")).toBe(true));
   expect(screen.queryByText("Forms.Catalog.ContentInvalid", { exact: true })).not.toBeInTheDocument(); expect(screen.getByText("El catálogo tiene una configuración no válida.")).toBeInTheDocument();
 });
@@ -106,6 +119,22 @@ it("takes the state filter out with «Todos los estados», and choosing the one 
   expect(screen.getByRole("button", { name: "Estado Todos los estados" })).toBeInTheDocument();
 });
 
+it("keeps the page when choosing the origin it has, and takes the filter out with «Todos»", async () => {
+  setup(["formcatalogs.read"]);
+  server.use(http.get("/api/forms/catalogs", () => HttpResponse.json({ ...listRaw, page: 3, pageSize: 1, totalCount: 5, totalPages: 5, hasPrevious: true, hasNext: true })));
+  let router!: ReturnType<typeof renderRouteWithProviders>["router"];
+  await act(async () => { router = renderRouteWithProviders("/catalogos?page=3&pageSize=1&kind=Manual").router; });
+  const search = () => new URLSearchParams(router.state.location.search);
+  const origins = await openOrigins("Escritas a mano");
+  expect(within(origins).getByRole("option", { name: "Escritas a mano" })).toHaveAttribute("aria-selected", "true");
+  await userEvent.click(within(origins).getByRole("option", { name: "Escritas a mano" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+  expect(search().get("page")).toBe("3");
+  await chooseOrigin("Todos", "Escritas a mano");
+  await waitFor(() => expect(search().get("kind")).toBeNull());
+  expect(search().get("page")).toBeNull();
+});
+
 // Searching, filtering, sorting or paging keeps the rows in sight, dimmed and out of reach, with the line under the header (LC2-A).
 it("dims the listed catalogs while the next ones are read", async () => {
   const row = { valueType: "Text", id: "01990000-0000-7000-8000-000000000030", name: "Clientes", description: null, origin: "Manual", optionsCount: 3, usageCount: null, state: "Active", stateReason: null, canEdit: true };
@@ -118,7 +147,7 @@ it("dims the listed catalogs while the next ones are read", async () => {
   const table = () => screen.getByRole("table").closest('[data-slot="table-container"]');
   await screen.findByRole("link", { name: "Clientes" });
   expect(table()).not.toHaveAttribute("aria-busy");
-  await userEvent.setup().click(screen.getByRole("button", { name: "De la base (0)" }));
+  await chooseOrigin("De la base");
   await waitFor(() => expect(release).toBeDefined());
   expect(table()).toHaveAttribute("aria-busy", "true");
   await act(async () => { release!(); });
@@ -146,12 +175,12 @@ it("offers the catalogs a module keeps only when the server counts some, and ask
   server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json({ ...listRaw, items: [external], totalCount: 1, totalPages: 1, filterCounts: { byKind: { all: 6, manual: 1, filters: 0, external: 5 } } }); }));
   let router!: ReturnType<typeof renderRouteWithProviders>["router"];
   await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20").router; });
-  await userEvent.setup().click(await screen.findByRole("button", { name: "De otro sistema (5)" }));
+  await chooseOrigin("De otro sistema");
   await waitFor(() => expect(new URLSearchParams(router.state.location.search).get("kind")).toBe("External"));
   await waitFor(() => expect(requests.some(request => request.get("kind") === "External")).toBe(true));
   expect(screen.getByRole("cell", { name: "De otro sistema" })).toBeInTheDocument();
   server.use(http.get("/api/forms/catalogs", () => HttpResponse.json(listRaw)));
   await act(async () => { await router.navigate("/catalogos?pageSize=20&search=x"); });
-  await waitFor(() => expect(screen.getByRole("button", { name: "Todos (0)" })).toBeInTheDocument());
-  expect(screen.queryByRole("button", { name: /^De otro sistema/ })).not.toBeInTheDocument();
+  const origins = await openOrigins();
+  expect(within(origins).queryByRole("option", { name: "De otro sistema" })).not.toBeInTheDocument();
 });

@@ -83,7 +83,8 @@ for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) 
     await banks.screenshot({ path: `test-results/dashboard/form-dashboard-table-${lang}-${width}.png` });
 
     // One period for the whole dashboard.
-    await page.getByRole("button", { name: es ? "Semana" : "Week", exact: true }).click();
+    await page.getByRole("button", { name: es ? "Período Día" : "Period Day", exact: true }).click();
+    await page.getByRole("listbox", { name: es ? "Período" : "Period", exact: true }).getByRole("option", { name: es ? "Semana" : "Week", exact: true }).click();
     await expect(page.getByRole("heading", { name: es ? "Cuántas llegaron, por semana" : "How many arrived, by week", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: es ? "Por semana de Fecha de la transferencia" : "By week of Transfer date", exact: true })).toBeVisible();
     const weekly = page.getByRole("list", { name: es ? "Cuántas llegaron, por semana" : "How many arrived, by week", exact: true });

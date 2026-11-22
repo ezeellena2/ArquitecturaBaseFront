@@ -13,6 +13,10 @@ import {notify} from "@/shared/ui/notifications";
 vi.mock("react-oidc-context",async()=>({...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),useAuth:()=>({isAuthenticated:true,isLoading:false,user:{access_token:"test"}})}));
 vi.mock("@/shared/ui/notifications",async()=>({...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"),notify:vi.fn()}));
 const id="11111111-1111-4111-8111-111111111111";
+// The state of the requests is the button of the bar of the only piece to choose (2026-11-22): «Estado del pedido» and the chosen
+// one, and its list without counts. With the keyboard, for the known mismatch of userEvent with the `pointerdown` of Radix.
+async function openStates(current="Pendientes"){const trigger=await screen.findByRole("button",{name:"Estado del pedido "+current});await act(async()=>{trigger.focus();});await userEvent.keyboard("{Enter}");return screen.findByRole("listbox",{name:"Estado del pedido"});}
+async function chooseState(option:string,current?:string){await userEvent.click(within(await openStates(current)).getByRole("option",{name:option}));}
 const topic={id,revision:2,name:"Reclamos de clientes",description:"Dejar asentado qué pasó y qué pide.",originalCulture:"es",requestCount:5,personCount:3,lastRequestedAtUtc:"2026-10-17T12:00:00Z",state:"Pending",discardedBy:null,discardedAtUtc:null,reviewedBy:null,reviewedAtUtc:null};
 const page=(items:unknown[]=[topic],extra:Record<string,unknown>={})=>({items,page:1,pageSize:20,totalCount:items.length,totalRequests:5,stateCounts:{pending:1,discarded:0},totalPages:items.length?1:0,hasPrevious:false,hasNext:false,...extra});
 function setup(permissions=["formtemplates.manage"],culture: "es"|"en" = "es"){
@@ -76,10 +80,10 @@ it("opens a normal new form seeded by the actor-owned original topic name withou
  await userEvent.click(screen.getByRole("link",{name:"Crear formulario Reclamos de clientes"}));
  expect(await screen.findByLabelText("Nombre")).toHaveValue(topic.name);expect(router.state.location.pathname).toBe("/formularios/nuevo");expect(router.state.location.search).toBe("");expect(posts).toBe(0);
 });
-it("uses server discarded counts and history, without claiming that no one has ever asked for a form",async()=>{
+it("uses the discarded history, without claiming that no one has ever asked for a form",async()=>{
  setup();const queries:URLSearchParams[]=[];
  server.use(http.get("/api/forms/missing-requests",({request})=>{const q=new URL(request.url).searchParams;queries.push(q);return HttpResponse.json(q.get("state")==="Discarded"?page([{...topic,state:"Discarded",discardedBy:{userId:id,displayName:"Ana"},discardedAtUtc:"2026-10-17T13:00:00Z"}],{stateCounts:{pending:0,discarded:1}}):page([],{stateCounts:{pending:0,discarded:1}}));}));
- renderRouteWithProviders("/formularios/faltantes");const discarded=await screen.findByRole("button",{name:"Descartados (1)"});expect(screen.queryByText("Nadie pidió formularios que no existen")).not.toBeInTheDocument();await userEvent.click(discarded);
+ renderRouteWithProviders("/formularios/faltantes");await screen.findByRole("button",{name:"Estado del pedido Pendientes"});expect(screen.queryByText("Nadie pidió formularios que no existen")).not.toBeInTheDocument();await chooseState("Descartados");
  await screen.findByText(topic.name);
  // Who discarded it and when are a person and a date: each in its column (UD5); the description stays under the topic (A).
  const table=screen.getByRole("table"),row=within(table).getByText(topic.name).closest("tr")!;
@@ -142,7 +146,7 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  // The wait is the tooltip of Retry once it is off, so the button is read again each time.
  const retry=()=>screen.getByRole("button",{name:"Reintentar"});await waitFor(()=>expect(retry()).toHaveAttribute("aria-disabled", "true"));expect(screen.getByText(topic.name)).toBeInTheDocument();
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
- expect(screen.getByRole("button",{name:"Descartados (0)"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Estado del pedido Pendientes"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();
  expect(screen.getByRole("button",{name:/^Filas por página/})).toBeDisabled();
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
@@ -175,6 +179,18 @@ it("explains the page in the (i) of its title",async()=>{
  expect(screen.getByRole("button",{name:"Más información sobre Formularios que faltan"})).toHaveAccessibleDescription(description);
 });
 
+it("offers the two states without counts, and choosing the one it has keeps the page",async()=>{
+ setup();server.use(http.get("/api/forms/missing-requests",()=>HttpResponse.json(page())));
+ const {router}=renderRouteWithProviders("/formularios/faltantes?page=2");await screen.findByText(topic.name);
+ const list=await openStates();
+ expect(within(list).getAllByRole("option").map(option=>option.textContent)).toEqual(["Pendientes","Descartados"]);
+ expect(within(list).getByRole("option",{name:"Pendientes"})).toHaveAttribute("aria-selected","true");
+ await userEvent.click(within(list).getByRole("option",{name:"Pendientes"}));
+ await waitFor(()=>expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+ expect(screen.getByRole("button",{name:"Estado del pedido Pendientes"})).toHaveFocus();
+ expect(new URLSearchParams(router.state.location.search).get("page")).toBe("2");
+});
+
 // The list keeps its rows while it reads again (2026-10-31): the table runs its line and dims its rows until they arrive.
 it("shows that the list reads again while the state changes",async()=>{
  setup();let reads=0;let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
@@ -182,7 +198,7 @@ it("shows that the list reads again while the state changes",async()=>{
  renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
  const container=()=>screen.getByRole("table").closest('[data-slot="table-container"]');
  expect(container()).not.toHaveAttribute("aria-busy");
- await userEvent.click(screen.getByRole("button",{name:/^Descartados/}));
+ await chooseState("Descartados");
  await waitFor(()=>expect(reads).toBe(2));
  expect(container()).toHaveAttribute("aria-busy","true");
  await act(async()=>release());

@@ -15,8 +15,8 @@
   "history": "Historial de mensajes",
   "search": "Buscar por nombre o número",
   "show": "Mostrar",
-  "all": "Todos ({{count}})",
-  "unread": "Sin leer ({{count}})",
+  "all": "Todos",
+  "unread": "Sin leer",
   "draft": "Borrador sin enviar",
   "noResults": "No hay conversaciones con esos filtros.",
   "empty": "Todavía no llegaron mensajes a este WhatsApp.",
@@ -274,7 +274,6 @@
   },
   "needsPerson": {
     "label": "Necesita una persona",
-    "filter": "Necesita una persona ({{count}})",
     "help": "Se quita cuando alguien le responde."
   },
   "spreadsheetRows": {
