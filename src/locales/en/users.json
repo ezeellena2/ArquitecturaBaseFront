@@ -50,6 +50,8 @@
     "channel": "How",
     "email": "By email",
     "whatsApp": "By WhatsApp",
+    "emailMissing": "No email",
+    "phoneMissing": "No WhatsApp",
     "consent": "{{name}} agreed to receive WhatsApp messages.",
     "consentWithoutName": "The person agreed to receive WhatsApp messages.",
     "consentHint": "Without this, WhatsApp does not let us message them first."

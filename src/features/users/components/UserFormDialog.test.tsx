@@ -65,6 +65,15 @@ async function pickRole(name: string) {
   await userEvent.keyboard("{Escape}");
 }
 
+/// Abre «Por dónde», que va en la pieza para elegir (DS1-A, 2026-11-22): su botón dice la etiqueta y el canal elegido. Se abre
+/// por teclado, como el de los roles.
+async function openChannels(dialog: ReturnType<typeof within>) {
+  dialog.getByRole("button", { name: /^Por dónde/ }).focus();
+  await userEvent.keyboard("{Enter}");
+
+  return screen.findByRole("listbox", { name: "Por dónde" });
+}
+
 describe("UserFormDialog", () => {
   beforeEach(() => {
     queryClient.clear();
@@ -143,11 +152,10 @@ describe("UserFormDialog", () => {
       await userEvent.type(dialog.getByRole("textbox", { name: "Número de WhatsApp" }), "351 555-1234");
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      // Lista de chequeo (2026-11-11): the checkbox, its options and the consent, with no line, box or margins of their
-      // own. The options are still named by what they choose, and the checkbox above says what they are about.
+      // Lista de chequeo (2026-11-11): the checkbox, the channel and the consent, with no line or box of their own. The
+      // channel goes in the shared piece for choosing (DS1-A, 2026-11-22), named by its label and the one chosen.
       expect(dialog.queryByRole("separator")).not.toBeInTheDocument();
-      expect(dialog.getByRole("radiogroup", { name: "Por dónde" })).toBeInTheDocument();
-      expect(dialog.queryByText("Por dónde")).not.toBeInTheDocument();
+      expect(dialog.getByRole("button", { name: "Por dónde Por WhatsApp" })).toBeInTheDocument();
       expect(dialog.getByRole("checkbox", { name: "La persona aceptó recibir mensajes por WhatsApp." })).not.toBeChecked();
     });
 
@@ -161,8 +169,10 @@ describe("UserFormDialog", () => {
 
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      expect(dialog.getByRole("radio", { name: "Por correo" })).toBeInTheDocument();
-      expect(dialog.queryByRole("radio", { name: "Por WhatsApp" })).not.toBeInTheDocument();
+      const channels = await openChannels(dialog);
+      expect(within(channels).getByRole("option", { name: "Por correo" })).toBeInTheDocument();
+      expect(within(channels).queryByRole("option", { name: "Por WhatsApp" })).not.toBeInTheDocument();
+      await userEvent.keyboard("{Escape}");
     });
 
     it("asks for the email under its field when WhatsApp is off, without sending anything", async () => {
@@ -327,7 +337,7 @@ describe("UserFormDialog", () => {
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
       // Con correo y sin número, el único canal posible queda elegido.
-      expect(dialog.getByRole("radio", { name: "Por correo" })).toBeChecked();
+      expect(dialog.getByRole("button", { name: "Por dónde Por correo" })).toBeInTheDocument();
       expect(dialog.queryByRole("checkbox", { name: /aceptó recibir mensajes/ })).not.toBeInTheDocument();
 
       await userEvent.click(dialog.getByRole("button", { name: "Crear e invitar" }));
@@ -353,7 +363,7 @@ describe("UserFormDialog", () => {
       await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Laura Ríos");
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      expect(dialog.getByRole("radio", { name: "Por WhatsApp" })).toBeChecked();
+      expect(dialog.getByRole("button", { name: "Por dónde Por WhatsApp" })).toBeInTheDocument();
 
       // Por qué se pide va en la (i) al final de la casilla, y sigue siendo su descripción.
       const consent = dialog.getByRole("checkbox", {
@@ -390,9 +400,9 @@ describe("UserFormDialog", () => {
       await userEvent.type(dialog.getByRole("textbox", { name: "Nombre" }), "Laura Ríos");
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      expect(dialog.getByRole("radio", { name: "Por correo" })).toBeChecked();
+      expect(dialog.getByRole("button", { name: "Por dónde Por correo" })).toBeInTheDocument();
 
-      await userEvent.click(dialog.getByRole("radio", { name: "Por WhatsApp" }));
+      await userEvent.click(within(await openChannels(dialog)).getByRole("option", { name: "Por WhatsApp" }));
       await userEvent.click(dialog.getByRole("checkbox", { name: /aceptó recibir mensajes/ }));
       await userEvent.click(dialog.getByRole("button", { name: "Crear e invitar" }));
 
@@ -411,33 +421,38 @@ describe("UserFormDialog", () => {
   });
 
   describe("the channels", () => {
-    // La opción se prende sola al cargar el correo o el número: no lleva un texto que lo explique debajo.
-    it("disables Por correo without an email, with no line under it", async () => {
+    // La opción se prende sola al cargar el correo o el número. Apagada, su motivo es la descripción de la opción (MA1-A),
+    // sin un texto debajo del campo.
+    it("turns Por correo off without an email, with its reason", async () => {
       withCreate(whatsappLoginMethods);
 
       const dialog = await openNewUser();
       await userEvent.type(dialog.getByRole("textbox", { name: "Número de WhatsApp" }), "351 555-1234");
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      const email = dialog.getByRole("radio", { name: "Por correo" });
-      expect(email).toBeDisabled();
-      expect(email).not.toHaveAccessibleDescription();
       expect(dialog.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
-      expect(dialog.getByRole("radio", { name: "Por WhatsApp" })).toBeEnabled();
+      const channels = await openChannels(dialog);
+      const email = within(channels).getByRole("option", { name: "Por correo" });
+      expect(email).toHaveAttribute("aria-disabled", "true");
+      expect(email).toHaveAccessibleDescription("Sin correo");
+      expect(within(channels).getByRole("option", { name: "Por WhatsApp" })).not.toHaveAttribute("aria-disabled");
+      await userEvent.keyboard("{Escape}");
     });
 
-    it("disables Por WhatsApp without a number, with no line under it", async () => {
+    it("turns Por WhatsApp off without a number, with its reason", async () => {
       withCreate(whatsappLoginMethods);
 
       const dialog = await openNewUser();
       await userEvent.type(dialog.getByRole("textbox", { name: "Correo electrónico" }), "nueva@example.com");
       await userEvent.click(dialog.getByRole("checkbox", { name: "Mandarle una invitación" }));
 
-      const whatsapp = dialog.getByRole("radio", { name: "Por WhatsApp" });
-      expect(whatsapp).toBeDisabled();
-      expect(whatsapp).not.toHaveAccessibleDescription();
       expect(dialog.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
-      expect(dialog.getByRole("radio", { name: "Por correo" })).toBeEnabled();
+      const channels = await openChannels(dialog);
+      const whatsapp = within(channels).getByRole("option", { name: "Por WhatsApp" });
+      expect(whatsapp).toHaveAttribute("aria-disabled", "true");
+      expect(whatsapp).toHaveAccessibleDescription("Sin WhatsApp");
+      expect(within(channels).getByRole("option", { name: "Por correo" })).not.toHaveAttribute("aria-disabled");
+      await userEvent.keyboard("{Escape}");
     });
 
     it("says that the person agreed when there is no name to say it with", async () => {

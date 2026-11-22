@@ -50,6 +50,8 @@
     "channel": "Por dónde",
     "email": "Por correo",
     "whatsApp": "Por WhatsApp",
+    "emailMissing": "Sin correo",
+    "phoneMissing": "Sin WhatsApp",
     "consent": "{{name}} aceptó recibir mensajes por WhatsApp.",
     "consentWithoutName": "La persona aceptó recibir mensajes por WhatsApp.",
     "consentHint": "Sin esto, WhatsApp no permite escribirle primero."

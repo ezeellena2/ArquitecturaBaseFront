@@ -22,7 +22,9 @@ import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { AlertCircleIcon, AlertTriangleIcon, CheckCheckIcon, CheckIcon, ClockIcon, SendIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
-import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
+import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
+import type { RadioOption } from "@/shared/ui/RadioGroupField";
 import { useWaitText } from "@/shared/hooks/useWaitText";
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -154,20 +156,23 @@ function ResendInvitationForm({
         {t("resend.title")}
       </h3>
 
-      {/* Las opciones traen su propio margen interno: se lo compensa para que el botón de opción quede alineado con el
-          título, como en el tablero. */}
+      {/* The channel goes in the shared piece for choosing, like any list (DS1-A, 2026-11-22): each one says where it goes in
+          grey, and one without its datum is off, with its reason. */}
       <div className="col-start-2 mt-2 flex flex-col gap-0.5">
-        <div className="-ml-2.5">
-          <RadioGroupField
-            label={t("invitation.channel")}
-            options={options}
-            value={channel}
-            onValueChange={(next) => {
-              setChannel(channelOf(next));
-              onClearError("channel");
-            }}
-            error={errors.channel}
-          />
+        <div className="w-full sm:w-72">
+          <FormField label={t("invitation.channel")} error={errors.channel}>
+            <Picker
+              label={t("invitation.channel")}
+              value={channel ?? null}
+              options={options.map((option) => ({ id: option.value, label: option.label, description: option.description ?? null,
+                disabledReason: option.disabled ? (option.value === "Email" ? t("invitation.emailMissing") : t("invitation.phoneMissing")) : null }))}
+              onChange={(next) => {
+                if (next === channel) return;
+                setChannel(channelOf(next));
+                onClearError("channel");
+              }}
+            />
+          </FormField>
         </div>
 
         {channel === "WhatsApp" ? (
@@ -261,12 +266,9 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
   function open() {
     setErrors({});
     flushSync(() => setIsOpen(true));
-    // El foco va a la opción elegida, como en cualquier grupo de opciones.
+    // El foco va al canal, el campo de la pieza para elegir que dice el elegido.
     const section = sectionRef.current;
-    const radio =
-      section?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]') ??
-      section?.querySelector<HTMLElement>('[role="radio"]:not(:disabled)');
-    (radio ?? section)?.focus();
+    (section?.querySelector<HTMLElement>("button[aria-haspopup]") ?? section)?.focus();
   }
 
   const resend = useMutation({
@@ -309,7 +311,7 @@ export function LastInvitationStrip({ user, invitation, receivedAt, whatsappEnab
     },
   });
 
-  // Debajo de cada canal, su correo o su número; sin él, la opción queda apagada y sin un texto que lo explique.
+  // Debajo de cada canal, su correo o su número; sin él, la opción queda apagada con su motivo («Sin correo»).
   const phone = user.formattedPhoneNumber;
   const options: RadioOption[] = [
     { value: "Email", label: t("invitation.email"), description: user.email ?? undefined, disabled: user.email === null },

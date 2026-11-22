@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { PhoneField } from "@/shared/ui/PhoneField";
-import { RadioGroupField, type RadioOption } from "@/shared/ui/RadioGroupField";
+import { Picker } from "@/shared/ui/Picker";
+import type { RadioOption } from "@/shared/ui/RadioGroupField";
 
 const emailSchema = z.email();
 
@@ -251,14 +252,17 @@ export function UserFormDialog({ onClose }: { onClose: () => void }) {
               onCheckedChange={(invite) => change({ invite }, "channel")}
             />
 
+            {/* The channel goes in the shared piece for choosing, like any list (DS1-A, 2026-11-22). */}
             {draft.invite ? (
-              <RadioGroupField
-                label={t("invitation.channel")}
-                options={channelOptions}
-                value={channel}
-                onValueChange={(next) => change({ channel: next === "WhatsApp" ? "WhatsApp" : "Email" }, "channel")}
-                error={errors.fields.channel}
-              />
+              <FormField label={t("invitation.channel")} error={errors.fields.channel}>
+                <Picker
+                  label={t("invitation.channel")}
+                  value={channel ?? null}
+                  options={channelOptions.map((option) => ({ id: option.value, label: option.label,
+                    disabledReason: option.disabled ? (option.value === "Email" ? t("invitation.emailMissing") : t("invitation.phoneMissing")) : null }))}
+                  onChange={(next) => change({ channel: next === "WhatsApp" ? "WhatsApp" : "Email" }, "channel")}
+                />
+              </FormField>
             ) : null}
 
             {asksConsent ? (

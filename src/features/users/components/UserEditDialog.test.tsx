@@ -77,6 +77,20 @@ async function openEdit(identifier: string) {
   return within(dialog);
 }
 
+/// Abre «Por dónde» del reenvío, que va en la pieza para elegir (DS1-A, 2026-11-22): su botón dice la etiqueta y el canal
+/// elegido. Se abre por teclado, como los demás menús de Radix en jsdom.
+async function openChannels(panel: ReturnType<typeof within>) {
+  const channel = panel.getByRole("button", { name: /^Por dónde / });
+  await act(async () => channel.focus());
+  await userEvent.keyboard("{Enter}");
+
+  return screen.findByRole("listbox", { name: "Por dónde" });
+}
+
+async function chooseChannel(panel: ReturnType<typeof within>, name: string) {
+  await userEvent.click(within(await openChannels(panel)).getByRole("option", { name }));
+}
+
 /// La caja "Medios de ingreso" del diálogo.
 function methodsOf(dialog: ReturnType<typeof within>) {
   return within(dialog.getByRole("region", { name: "Medios de ingreso" }));
@@ -822,7 +836,7 @@ describe("UserEditDialog", () => {
       // Lo dijo la franja, y las opciones de canal ya ofrecen el otro: el panel no lo vuelve a explicar.
       const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
       expect(panel.queryByText(/no salió|no llegó/i)).not.toBeInTheDocument();
-      expect(panel.getByRole("radio", { name: "Por correo" })).toBeChecked();
+      expect(panel.getByRole("button", { name: "Por dónde Por correo" })).toBeInTheDocument();
     });
 
     it("waits a minute from the time of the last invitation before offering to resend it", async () => {
@@ -944,14 +958,16 @@ describe("UserEditDialog", () => {
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
         expect(panel.queryByText(/no llegó/i)).not.toBeInTheDocument();
 
-        const channels = panel.getByRole("radiogroup", { name: "Por dónde" });
-        const byEmail = within(channels).getByRole("radio", { name: "Por correo" });
-        const byWhatsApp = within(channels).getByRole("radio", { name: "Por WhatsApp" });
-        expect(byEmail).toHaveAccessibleDescription("laura.rios@gmail.com");
+        // Arranca en el canal de la última, con el foco puesto. Cada canal dice adónde va, en gris.
+        const channel = panel.getByRole("button", { name: "Por dónde Por WhatsApp" });
+        expect(channel).toHaveFocus();
+        const channels = await openChannels(panel);
+        expect(within(channels).getByRole("option", { name: "Por correo" })).toHaveAccessibleDescription("laura.rios@gmail.com");
+        const byWhatsApp = within(channels).getByRole("option", { name: "Por WhatsApp" });
         expect(byWhatsApp).toHaveAccessibleDescription("+54 9 351 555-1234");
-        // Arranca en el canal de la última, con el foco puesto.
-        expect(byWhatsApp).toBeChecked();
-        expect(byWhatsApp).toHaveFocus();
+        expect(byWhatsApp).toHaveAttribute("aria-selected", "true");
+        await userEvent.keyboard("{Escape}");
+        expect(channel).toHaveFocus();
 
         // Por qué se pide el consentimiento va en la (i) al final de la casilla, y sigue siendo su descripción.
         const consent = panel.getByRole("checkbox", {
@@ -987,7 +1003,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
 
         expect(panel.queryByRole("checkbox")).not.toBeInTheDocument();
 
@@ -996,18 +1012,21 @@ describe("UserEditDialog", () => {
         await waitFor(() => expect(sent).toEqual([{ channel: "Email", consent: false }]));
       });
 
-      it("turns off the channel the account cannot use, with no line under it", async () => {
+      // Apagado, su motivo es la descripción de la opción (MA1-A), sin un texto debajo del campo.
+      it("turns off the channel the account cannot use, with its reason", async () => {
         withUser(laura, detailOf(laura, { lastInvitation: invitation() }));
 
         const dialog = await openEdit("+54 9 351 555-1234");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
 
-        const byEmail = panel.getByRole("radio", { name: "Por correo" });
-        expect(byEmail).toBeDisabled();
-        expect(byEmail).not.toHaveAccessibleDescription();
         expect(panel.queryByText(/para usar esta opción/)).not.toBeInTheDocument();
-        expect(panel.getByRole("radio", { name: "Por WhatsApp" })).toBeChecked();
+        const channels = await openChannels(panel);
+        const byEmail = within(channels).getByRole("option", { name: "Por correo" });
+        expect(byEmail).toHaveAttribute("aria-disabled", "true");
+        expect(byEmail).toHaveAccessibleDescription("Sin correo");
+        expect(within(channels).getByRole("option", { name: "Por WhatsApp" })).toHaveAttribute("aria-selected", "true");
+        await userEvent.keyboard("{Escape}");
       });
 
       it("says it is resending, and takes no second click, while the invitation is on its way", async () => {
@@ -1024,7 +1043,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         const resending = await panel.findByRole("button", { name: "Reenviando…" });
@@ -1110,7 +1129,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() =>
@@ -1133,7 +1152,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() =>
@@ -1159,7 +1178,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
 
         await waitFor(() =>
@@ -1196,7 +1215,7 @@ describe("UserEditDialog", () => {
         const dialog = await openEdit("laura.rios@gmail.com");
         await userEvent.click(stripOf(dialog).getByRole("button", { name: "Reenviar invitación" }));
         const panel = within(dialog.getByRole("region", { name: "Reenviar la invitación" }));
-        await userEvent.click(panel.getByRole("radio", { name: "Por correo" }));
+        await chooseChannel(panel, "Por correo");
         await userEvent.click(panel.getByRole("button", { name: "Reenviar la invitación" }));
         await waitFor(() => expect(sent).toEqual([{ channel: "Email", consent: false }]));
 
