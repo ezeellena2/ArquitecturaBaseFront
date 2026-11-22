@@ -49,17 +49,27 @@ function held() { let release!: () => void; const answer = new Promise<void>(res
 
 /// The value next to a datum of a `DataList`.
 const valueOf = (scope: HTMLElement, label: string) => within(scope).getByText(label, { selector: "dt" }).nextElementSibling;
-// No explanation under the title (2026-11-01): what happens with the prefilled data goes in the (i) of its group. The group draws
-// its title with the common piece and is named by it (DL, 2026-11-11), not by a legend made by hand.
+/// The prefilled data are chosen with the shared piece (DS1-A): its button names the chosen ones, and its list marks and unmarks.
+const prefilled = (dialog: HTMLElement) => within(dialog).getByRole("button", { name: /^Datos que van prellenados/ });
+async function unmark(dialog: HTMLElement, name: string) {
+ await userEvent.click(prefilled(dialog));
+ await userEvent.click(within(await screen.findByRole("listbox", { name: "Datos que van prellenados" })).getByRole("option", { name }));
+ await userEvent.keyboard("{Escape}");
+ await waitFor(() => expect(prefilled(dialog)).toHaveFocus());
+}
+// No explanation under the title (2026-11-01): what happens with the prefilled data goes in the (i) of its field, which is the
+// shared piece for choosing several (DS1-A), with its values in grey in its list.
 it("reviews a suggestion without explanations under the title, with the prefilled help in the information icon", async () => {
  const { dialog } = await openSuggestion();
  expect(dialog).not.toHaveAttribute("aria-describedby");
  expect(within(dialog).queryByText(/Revisá los datos propuestos/)).not.toBeInTheDocument();
- const help = "Juan los ve cargados y los puede cambiar. Lo que destildes va vacío.";
+ const help = "Juan los ve cargados y los puede cambiar. Lo que no elijas va vacío.";
  expect(within(dialog).getByRole("button", { name: "Más información sobre Datos que van prellenados" })).toHaveAccessibleDescription(help);
- const group = within(dialog).getByRole("group", { name: "Datos que van prellenados" });
- for (const name of ["Cliente", "Fecha"]) expect(within(group).getByRole("checkbox", { name })).toBeChecked();
- expect(group.querySelector("legend")).toBeNull();
+ expect(prefilled(dialog)).toHaveAccessibleName("Datos que van prellenados Cliente, Fecha");
+ await userEvent.click(prefilled(dialog));
+ const list = await screen.findByRole("listbox", { name: "Datos que van prellenados" });
+ expect(within(list).getByRole("option", { name: "Fecha" })).toHaveAccessibleDescription("17/10/2026");
+ await userEvent.keyboard("{Escape}");
  for (const text of within(dialog).getAllByText(help)) expect(text).not.toBeVisible();
 });
 // DL (2026-11-11): the form, its version and until when it can be sent read in two columns, not «Registrar visita · versión 2»
@@ -159,7 +169,7 @@ it("requests one shared suggestion and sends only explicitly included IDs throug
  expect(requests).toHaveLength(1); expect(requests[0]).toMatchObject({ sourceMessageId, expectedModeRevision: 7 });
  expect(within(dialog).getByText(/Registrar visita/)).toBeInTheDocument();
  expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
- await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ await unmark(dialog, "Fecha");
  expect(sends).toEqual([]);
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
  await waitFor(() => expect(sends).toHaveLength(1));
@@ -216,10 +226,10 @@ it("consults a lost send response and consumes a shared accepted receipt without
 });
 it("preserves the frozen send selection after a lost response and repeats only explicitly after consultation", async () => {
  server.use(http.post("/api/whatsapp/chats/:id/assistant-suggestions/:requestId/send", async ({ request }) => { sends.push(await request.json() as typeof sends[number]); return sends.length === 1 ? HttpResponse.error() : HttpResponse.json(receipt(sends[0].requestId), { status: 202 }); }));
- const { dialog } = await openSuggestion(); await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ const { dialog } = await openSuggestion(); await unmark(dialog, "Fecha");
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
  await userEvent.click(await within(dialog).findByRole("button", { name: "Consultar envío" }));
- expect(sends).toHaveLength(1); expect(within(dialog).getByRole("checkbox", { name: "Fecha" })).toBeDisabled();
+ expect(sends).toHaveLength(1); expect(prefilled(dialog)).toBeDisabled();
  await userEvent.click(await within(dialog).findByRole("button", { name: "Repetir el mismo pedido" }));
  await waitFor(() => expect(sends).toHaveLength(2)); expect(sends[1]).toEqual(sends[0]);
 });
@@ -286,7 +296,7 @@ it.each(["notInstalled", "paused"] as const)("consults an authoritative configur
  expect(screen.queryByText(/El asistente sugiere/)).not.toBeInTheDocument();
  await userEvent.click(within(card).getByRole("button", { name: "Revisar y enviar" }));
  const dialog = await screen.findByRole("dialog");
- await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ await unmark(dialog, "Fecha");
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
  await waitFor(() => expect(sends).toHaveLength(1));
  expect(sends[0].includedFieldIds).toEqual([fields[0].fieldId]);
@@ -319,11 +329,11 @@ it("does not start a new captured interpretation when AI is unavailable and no p
 it("preserves the active pointer selection and dialog when AI becomes unavailable", async () => {
  currentPointer = { requestId: suggestionId, sourceMessageId, state: "Ready" };
  const { dialog } = await openSuggestion();
- await userEvent.click(within(dialog).getByRole("checkbox", { name: "Fecha" }));
+ await unmark(dialog, "Fecha");
  availability = "paused";
  await act(async () => { await testClient.invalidateQueries({ queryKey: chatKey }); });
  expect(screen.getByRole("dialog")).toBe(dialog);
- expect(within(dialog).getByRole("checkbox", { name: "Fecha" })).not.toBeChecked();
+ expect(prefilled(dialog)).toHaveAccessibleName("Datos que van prellenados Cliente");
  expect(requests).toEqual([]);
  await userEvent.click(within(dialog).getByRole("button", { name: "Enviar formulario" }));
  await waitFor(() => expect(sends).toHaveLength(1));

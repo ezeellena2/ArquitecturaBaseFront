@@ -1,18 +1,17 @@
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { useEffect, useEffectEvent, useId, useRef, type RefObject } from "react";
+import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
 import type { AssistantComposerState } from "../hooks/useAssistantSuggestion";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { DataList, type DataListItem } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
-import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { FormIcon } from "@/shared/ui/icons";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Textarea } from "@/shared/ui/textarea";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
@@ -30,7 +29,6 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   // Sending freezes the dialog on purpose (no ×, Escape nor Cancel) until the answer. Checking a lost send is a read: the
   // dialog stays closable and the footer shows its progress.
   const busy = assistantOpen ? assistant?.busyAction === "send" : state.sending;
-  const prefilledTitleId = useId();
   useEffect(() => { onAvailabilityChange?.(state.canOpen && !assistant?.attempt && !assistantOpen); },[onAvailabilityChange,state.canOpen,assistant?.attempt,assistantOpen]);
   const openRequested = useEffectEvent(() => { if (!assistantOpen && !assistant?.attempt) state.show(); });
   useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
@@ -96,14 +94,13 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         <DialogHeader><DialogTitle>{t("forms.title",{name})}</DialogTitle></DialogHeader>
         {assistantOpen && assistant?.proposal ? <>
           {sendData(assistant.proposal.culture, { name: assistant.proposal.name, version: assistant.proposal.versionNumber })}
-          {/* The group draws its title with its (i) and is named by it (DL, 2026-11-11). The title goes outside the boxes: its (i)
-              stays usable while they are off. */}
-          {assistant.proposal.fields.length ? <div className="flex flex-col gap-1.5">
-            <GroupLabel id={prefilledTitleId} help={t("assistant.prefilledHelp", { name })}>{t("assistant.prefilledTitle")}</GroupLabel>
-            <fieldset aria-labelledby={prefilledTitleId} disabled={assistant.busy || Boolean(assistant.attempt)} className="min-w-0">
-              {assistant.proposal.fields.map(field => <CheckboxField key={field.fieldId} label={field.label} description={field.displayValue} checked={assistant.selected.includes(field.fieldId)} disabled={assistant.busy || Boolean(assistant.attempt)} onCheckedChange={checked => assistant.setSelected(current => checked ? [...current, field.fieldId] : current.filter(id => id !== field.fieldId))} />)}
-            </fieldset>
-          </div> : null}
+          {/* The data the assistant proposes are chosen with the shared piece, several at a time (DS1-A): the field names the chosen
+              ones and its list says each value in grey. The (i) of the field stays usable while the piece is off. */}
+          {assistant.proposal.fields.length ? <FormField label={t("assistant.prefilledTitle")} help={t("assistant.prefilledHelp", { name })}>
+            <Picker multiple label={t("assistant.prefilledTitle")} placeholder={t("assistant.prefilledNone")} disabled={assistant.busy || Boolean(assistant.attempt)}
+              value={assistant.selected} onChange={next => assistant.setSelected([...next])}
+              options={assistant.proposal.fields.map(field => ({ id: field.fieldId, label: field.label, description: field.displayValue }))} />
+          </FormField> : null}
           <DialogFooter>
             <Button variant="outline" disabled={busy} onClick={() => assistant.setOpen(false)}>{t("forms.cancel")}</Button>
             <DisabledReason reason={waitReason(assistant.busy, assistant.waiting, assistant.waitSeconds)} className={footerReason}>{assistant.attempt && assistant.recovery === "consult" && !sendingSuggestion ? <Button variant="outline" pending={consulting} disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t(consulting ? "send.checking" : "send.check")}</Button> : <Button pending={sendingSuggestion} disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(sendingSuggestion ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}</DisabledReason>
