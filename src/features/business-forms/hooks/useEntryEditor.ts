@@ -99,7 +99,7 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     const control = document.getElementById(entryQuestionId(key));
     // LD1-A: a list still waiting for its value chosen first is off, so the value's list takes the focus.
     const waiting = control instanceof HTMLInputElement && control.disabled ? document.getElementById(entryQuestionId(key) + "-group") : null;
-    const target = waiting ?? control ?? container?.querySelector<HTMLElement>("input,textarea,button,[role=radio]");
+    const target = waiting ?? control ?? container?.querySelector<HTMLElement>("input,textarea,button");
     target?.focus();
   });
 

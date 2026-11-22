@@ -410,7 +410,9 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
   - Quedan como están los segmentados con cantidades de los listados (filtros, [FO1-A](#listados-y-filtros)) y el
     «Correo · WhatsApp» del ingreso público.
   - Quedan también las vistas previas que imitan WhatsApp.
-  - La carga de un formulario (el Sí o No y hasta cinco opciones en fila, AR1-A) espera la decisión del usuario.
+  - La carga de un formulario también entra («Sí, también», decisión del usuario del 2026-11-22): el Sí o No, elegir una
+    con cualquier cantidad de opciones y elegir varias van en la pieza, en lugar del segmentado, las opciones en fila y las
+    casillas de AR1-A.
 - **Varias, siempre en la pieza** (2026-11-22): nunca una lista de casillas ni un modal que sólo sirve para elegir. En la
   prueba integral, «Formularios de «Zona Norte»» de Carpetas era un buscador con una casilla por formulario, porque esta
   regla todavía decía «en casillas si se eligen varias». Cuando elegir es parte de una tarea que se guarda aparte, como

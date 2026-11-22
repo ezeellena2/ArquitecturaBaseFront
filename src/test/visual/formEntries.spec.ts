@@ -81,10 +81,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.evaluate(() => document.fonts.ready);
     await assertNoPageScroll(page, width);
     // CW16: the rows are built with the columns in use, so every visible row has its line. AR1-A: what has a single value
-    // takes one column, so the lot, the crop and the seed fill a row; the boxes of several options go in the zone's columns.
+    // takes one column, so the lot, the crop and the seed fill a row. Since 2026-11-22 the crop and the several tasks are the
+    // only piece to choose, a column each; the tasks stay alone because the notes take the whole row.
     expect(await questionsPerRow(page)).toEqual(phone ? [1, 1, 1, 1, 1, 1, 1, 1, 1] : [3, 3, 1, 1, 1]);
     await assertControlsInsideRows(page);
-    expect(await page.getByRole("group", { name: es ? /^Labores realizadas/ : /^Tasks done/ }).evaluate(node => getComputedStyle(node).columnCount)).toBe(phone ? "1" : "3");
+    await expect(catalogField(page, es ? "Labores realizadas" : "Tasks done")).toBeVisible();
     // The response hangs from its form; with a header as narrow as a phone's, the breadcrumbs keep only the form and the leaf.
     const sowing = es ? "Siembra" : "Sowing";
     const leaf = es ? "Nueva respuesta" : "New response";
@@ -107,7 +108,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: "test-results/form-entry-catalog-" + language + "-" + width + ".png" });
     await list.getByRole("option").filter({ hasText: es ? "Lote 2" : "Lot 2" }).first().click();
     await expect(list).toHaveCount(0);
-    await page.getByRole("radio", { name: es ? "Soja 1ª" : "1st soybean" }).click();
+    await choose(page, es ? "Cultivo" : "Crop", es ? "Soja 1ª" : "1st soybean");
     await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
     await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
@@ -151,12 +152,11 @@ for (const language of ["es", "en"] as const) {
     const short = { items: [es ? "Siembra" : "Sowing", "/", es ? "Nueva respuesta" : "New response"], squeezed: 0, leafCut: false };
     await expect.poll(() => shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768.png", fullPage: true });
-    // Closing the panel leaves room for two: each question of a single value takes one, so they go in pairs (AR1-A), and
-    // the boxes of several options in two columns.
+    // Closing the panel leaves room for two: each question of a single value takes one, so they go in pairs (AR1-A); the
+    // several tasks too, alone in their row before the notes.
     await page.getByRole("button", { name: es ? "Cerrar el panel Formularios" : "Close the Forms panel", exact: true }).click();
     await expect.poll(() => questionsPerRow(page)).toEqual([2, 2, 2, 1, 1, 1]);
     await assertControlsInsideRows(page);
-    expect(await page.getByRole("group", { name: es ? /^Labores realizadas/ : /^Tasks done/ }).evaluate(node => getComputedStyle(node).columnCount)).toBe("2");
     // The header is still under the phone's 40 rem, where the whole trail cuts the form's name.
     expect(await shownCrumbs(page, language)).toEqual(short);
     await page.screenshot({ path: "test-results/form-entry-page-" + language + "-768-two-columns.png", fullPage: true });
@@ -192,7 +192,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await expect(keep).toBeVisible();
     expect(await keep.evaluate((box, button) => !!(box.compareDocumentPosition(button!) & Node.DOCUMENT_POSITION_FOLLOWING), await send.elementHandle())).toBe(true);
     await choose(page, lot, es ? "Lote 2" : "Lot 2");
-    await page.getByRole("radio", { name: es ? "Soja 1ª" : "1st soybean" }).click();
+    await choose(page, es ? "Cultivo" : "Crop", es ? "Soja 1ª" : "1st soybean");
     await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
     await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
@@ -234,7 +234,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await expect(table.getByRole("columnheader", { name: es ? "Mi última carga" : "My last entry", exact: true })).toBeVisible();
       // When their last entry arrived goes in its own column (UD1).
       await expect(table.getByRole("columnheader", { name: es ? "Recibida" : "Received", exact: true })).toBeVisible();
-      await expect(page.getByRole("group", { name: es ? "Estado de los formularios" : "Form status" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: es ? /^Estado de los formularios / : /^Form status / })).toHaveCount(0);
     }
     await page.evaluate(() => document.fonts.ready);
     const area = page.locator('[data-slot="table-container"]');

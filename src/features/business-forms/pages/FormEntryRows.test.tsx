@@ -132,7 +132,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     await choose(user, 1, "GLIFOSATO");
     await user.type(screen.getByRole("textbox", { name: "Ítem 1 · Cantidad" }), "200,5");
     await pick(user, "Ítem 1 · Unidad Elegí una opción", "Litros");
-    await user.click(within(screen.getByRole("group", { name: "Ítem 1 · ¿Llegó en buen estado?" })).getByRole("button", { name: "Sí" }));
+    await pick(user, "Ítem 1 · ¿Llegó en buen estado? Elegí una opción", "Sí");
     await user.click(screen.getByRole("button", { name: "Agregar ítem" }));
     await choose(user, 2, "ATRAZINA");
     await user.type(screen.getByRole("textbox", { name: "Ítem 2 · Cantidad" }), "100");

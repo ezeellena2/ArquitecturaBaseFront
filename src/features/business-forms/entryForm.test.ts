@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FormEntry, FormEntryQuestion } from "./api/entries";
-import { carryEntryDraft, chooseEntryGroup, clearDependentChoices, correctionDraft, entryAnswered, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entrySignatureKey, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
+import { carryEntryDraft, chooseEntryGroup, clearDependentChoices, correctionDraft, entryAnswered, entryColumns, entryDependencyAnswers, entryFileProblem, entryQuestionSpan, entryRows, entrySignature, entrySignatureKey, entryTextRows, entryZones, initialEntryDraft, keepForNextEntry, toEntrySend, validateEntry } from "./entryForm";
 
 const ids = { lot: "00000000-0000-4000-8000-000000000001", crop: "00000000-0000-4000-8000-000000000002", density: "00000000-0000-4000-8000-000000000003",
   date: "00000000-0000-4000-8000-000000000004", notes: "00000000-0000-4000-8000-000000000005", photos: "00000000-0000-4000-8000-000000000006",
@@ -125,16 +125,10 @@ describe("entry form", () => {
     expect(entryQuestionSpan(question(ids.notes, "longText", { maxLength: 20 }))).toBe(3);
     expect(entryQuestionSpan(entry.questions[0])).toBe(1);
     expect([options(5), options(6), options(2, "Una opción demasiado larga")].map(items => entryQuestionSpan(question(ids.crop, "choice", { options: items })))).toEqual([1, 1, 1]);
-    expect(entryQuestionSpan(question(ids.crop, "multiChoice", { options: options(3), selection: { minSelected: 0, maxSelected: 3 } }))).toBe(3);
+    // Several own options are one field of the piece to choose since 2026-11-22, like a catalog of several.
+    expect(entryQuestionSpan(question(ids.crop, "multiChoice", { options: options(3), selection: { minSelected: 0, maxSelected: 3 } }))).toBe(1);
     expect(entryQuestionSpan(question(ids.lot, "multiChoice", { catalog: { onlyOption: null, issue: null, missingData: null }, selection: { minSelected: 0, maxSelected: 3 } }))).toBe(1);
     expect(entryQuestionSpan(entry.questions[5])).toBe(3);
-  });
-
-  it("shows up to five own options in a row however long they are, and more in a dropdown list", () => {
-    const options = (count: number, label: string) => Array.from({ length: count }, (_, index) => ({ id: "00000000-0000-4000-8000-0000000001" + String(index).padStart(2, "0"), label: label + " " + index }));
-    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(2, "Una opción bastante más larga que veinte letras") }))).toBe(true);
-    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(5, "Soja") }))).toBe(true);
-    expect(entryChoiceInRow(question(ids.crop, "choice", { options: options(6, "Soja") }))).toBe(false);
   });
 
   it("puts the questions in rows of three in their order, and one that does not fit starts the next row", () => {

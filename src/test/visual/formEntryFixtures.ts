@@ -39,7 +39,7 @@ export function createFormEntryVisualFixtures(language: "es" | "en", scenario: s
       { fieldId: fields.density, type: "decimal", label: en ? "Density (kg/ha)" : "Densidad (kg/ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.hectares, type: "decimal", label: en ? "Sown hectares (ha)" : "Hectáreas sembradas (ha)", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
       { fieldId: fields.date, type: "date", label: en ? "Sowing date" : "Fecha de siembra", help: null, required: true, maxLength: null, options: null, selection: null, files: null, catalog: null },
-      // Several own options take the whole row, with their boxes in columns (AR1-A).
+      // Several own options, in the only piece to choose (2026-11-22).
       { ...section("Labores", "Tasks"), fieldId: fields.tasks, type: "multiChoice", label: en ? "Tasks done" : "Labores realizadas", help: null, required: false, maxLength: null,
         options: (en ? ["Direct seeding", "Base fertilization", "Weed control", "Inoculation", "Seed treatment", "Irrigation", "Rolling"]
           : ["Siembra directa", "Fertilización de base", "Control de malezas", "Inoculación", "Curado de semilla", "Riego", "Rolado"]).map((label, index) => ({ id: id(800 + index), label })),

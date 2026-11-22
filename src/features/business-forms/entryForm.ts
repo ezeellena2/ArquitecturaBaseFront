@@ -95,11 +95,6 @@ export function entryZones(entry: FormEntry, draft?: EntryDraft): EntryZone[] {
   return [...zones.filter(zone => zone.questions.length > 0), ...files.length ? [{ key: "files", questions: files }] : []];
 }
 
-/** Up to five own options go in a row however long they are, and those that do not fit wrap; more, in a dropdown list (AR1-A). */
-export function entryChoiceInRow(question: FormEntryQuestion): boolean {
-  return !!question.options && question.options.length <= 5;
-}
-
 /**
  * How many of the three columns a question takes (AR1-A): what has a single value takes one; what needs room, the whole
  * row. The width comes from its type, never from the author.
@@ -109,7 +104,7 @@ export function entryQuestionSpan(question: FormEntryQuestion): 1 | 2 | 3 {
   // LD1-A: the field to choose first and the question go side by side, a column each.
   if (question.catalog?.groupBy) return 2;
   if (question.type === "shortText") return question.maxLength !== null && question.maxLength <= 80 ? 1 : 3;
-  if (question.type === "multiChoice") return question.catalog ? 1 : 3;
+  // Yes or no, one option and several, own or of a catalog, are a field of the piece to choose (2026-11-22).
   return 1;
 }
 

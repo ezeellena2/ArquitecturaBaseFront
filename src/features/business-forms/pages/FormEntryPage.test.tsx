@@ -235,7 +235,9 @@ describe("loading a response from the app", () => {
       options: [{ id: id(341), label: "Chinche" }, { id: id(342), label: "Oruga" }, { id: id(343), label: "Trips" }], selection: { minSelected: 0, maxSelected: 2 }, files: null, catalog: null });
     setup({ form });
     renderRouteWithProviders("/formularios/" + formId + "/cargar");
-    expect(await screen.findByRole("group", { name: "Plagas hasta 2" })).toBeVisible();
+    // Several own options are the only piece to choose (2026-11-22), named by the question and what is chosen.
+    expect(await screen.findByRole("button", { name: "Plagas Elegí una opción" })).toBeVisible();
+    expect(screen.getByText("hasta 2")).toBeVisible();
     expect(screen.queryByText("Elegí hasta 2.")).not.toBeInTheDocument();
   });
 

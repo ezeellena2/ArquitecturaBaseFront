@@ -1,7 +1,6 @@
 import { cloneElement, useCallback, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
@@ -10,15 +9,13 @@ import { Input } from "@/shared/ui/input";
 import { ItemCards, ItemTable, type ItemCellContext, type ItemTableColumn } from "@/shared/ui/ItemTable";
 import { Label } from "@/shared/ui/label";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import type { FormEntry, FormEntryGroup, FormEntryOption, FormEntryQuestion } from "../api/entries";
 import { calculationFormula, entryCalculations, entryFormulaOperands, type EntryCalculations } from "../calculations";
 import { entryHiddenQuestions } from "../conditions";
 import {
-  addEntryItem, changeEntryItem, chooseEntryGroup, clearDependentChoices, entryAnswered, entryBlock, entryChoiceInRow, entryColumns, entryDependencyAnswers, entryFileCount,
+  addEntryItem, changeEntryItem, chooseEntryGroup, clearDependentChoices, entryAnswered, entryBlock, entryColumns, entryDependencyAnswers, entryFileCount,
   entryItemPath, entryQuestionId, entryQuestionWidth, entryRows, entryTextRows, entryZones, moveEntryItem, removeEntryItem, type EntryDraft, type EntryItem,
   type EntryZone,
 } from "../entryForm";
@@ -48,7 +45,6 @@ interface Props {
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
 const gridClass = { 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" } as const;
 const widthClass = { 1: "", 2: "col-span-2", 3: "col-span-3" } as const;
-const boxColumnsClass = { 1: "columns-1", 2: "columns-2", 3: "columns-3" } as const;
 
 /**
  * The questions of the active version in the editor's order, each with the control and width of its type (CW12, CW16).
@@ -73,9 +69,6 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   }, []);
   // The panel keeps the zones of the page in one column (AR1-A).
   const columns = layout === "panel" ? 1 : widthRem > 0 ? entryColumns(widthRem) : phone ? 1 : tablet ? 2 : 3;
-  // The boxes of a multiple choice go in as many columns as the zone, from top to bottom, and in two in the panel except on
-  // the phone (AR1-A).
-  const boxColumns = layout === "panel" ? phone ? 1 : 2 : columns;
   // CO1-A: a question its condition hides is not drawn, and its zone hides when nothing is left in sight. CA1-A: each calculation
   // shows what the server would compute with what is loaded, without counting what is hidden.
   const zones = entryZones(entry, draft);
@@ -94,9 +87,9 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
   // The block is a table where the zone has columns, and boxes in one column: the panel and the phone (RG2-A).
   const question = (item: FormEntryQuestion) => item.type === "group" && block
     ? <EntryBlock key={item.fieldId} entry={entry} group={item} questions={block.questions} draft={draft} onChange={onChange} errors={errors} disabled={disabled} catalogReason={catalogReason}
-      cards={columns === 1} narrowClass={narrowClass} boxColumns={boxColumns} calculated={calculated}/>
+      cards={columns === 1} narrowClass={narrowClass} calculated={calculated}/>
     : <EntryQuestion key={item.fieldId} entry={entry} question={item} draft={draft} onChange={onChange} error={errors[item.fieldId]} disabled={disabled} catalogReason={catalogReason}
-      narrowClass={narrowClass} boxColumns={boxColumns} before={before?.[item.fieldId]} pairInRow={columns > 1} calculated={calculated}/>;
+      narrowClass={narrowClass} before={before?.[item.fieldId]} pairInRow={columns > 1} calculated={calculated}/>;
 
   // A calculation is not answered by the person: the band counts the others.
   const answered = (all: FormEntryQuestion[]) => {
@@ -123,10 +116,10 @@ export function FormEntryForm({ entry, draft, onChange, errors, layout, disabled
 // The key of the column of the field to choose first (LD1-A), before the question's own.
 const groupColumn = "group:";
 
-// What a question of the block takes in the table: number and date stay narrow (CW12), and texts and lists get room to read.
+// What a question of the block takes in the table: number and date stay narrow (CW12), and texts and lists get room to read; a
+// yes or no is a list too (2026-11-22).
 function cellWidth(question: FormEntryQuestion): string | undefined {
   if (question.type === "decimal" || question.type === "date") return "w-37.5 min-w-37.5";
-  if (question.type === "boolean") return undefined;
   return question.type === "longText" || question.catalog ? "min-w-56" : "min-w-44";
 }
 
@@ -134,9 +127,9 @@ function cellWidth(question: FormEntryQuestion): string | undefined {
  * The block of rows (RG2-A): its name and its items, as a table or in boxes, each with the questions of the block. A problem of
  * an item goes under its row in the table and under its question in a box; the block's own, under the block.
  */
-function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, catalogReason, cards, narrowClass, boxColumns, calculated }: {
+function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled, catalogReason, cards, narrowClass, calculated }: {
   entry: FormEntry; group: FormEntryQuestion; questions: readonly FormEntryQuestion[]; draft: EntryDraft; onChange: (draft: EntryDraft) => void;
-  errors: Readonly<Record<string, string>>; disabled?: boolean; catalogReason?: string; cards: boolean; narrowClass?: string; boxColumns: 1 | 2 | 3; calculated: EntryCalculations;
+  errors: Readonly<Record<string, string>>; disabled?: boolean; catalogReason?: string; cards: boolean; narrowClass?: string; calculated: EntryCalculations;
 }) {
   const formula = useEntryFormula(entry);
   const id = entryQuestionId(group.fieldId), messageId = id + "-message";
@@ -162,13 +155,13 @@ function EntryBlock({ entry, group, questions, draft, onChange, errors, disabled
     <Label asChild><span id={id + "-label"}>{group.label}{group.required ? <span aria-hidden="true"> *</span> : null}</span></Label>
     {cards
       ? <ItemCards {...list}>{(item, index) => questions.map(question => <EntryQuestion key={question.fieldId} entry={entry} question={question} draft={draft}
-        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} catalogReason={catalogReason} narrowClass={narrowClass} boxColumns={boxColumns} item={item} path={path(index, question)}
+        onChange={onChange} error={errors[path(index, question)]} disabled={disabled} catalogReason={catalogReason} narrowClass={narrowClass} item={item} path={path(index, question)}
         calculated={calculated}/>)}</ItemCards>
       : <ItemTable {...list} label={group.label} columns={tableColumns} error={(_, column, index) => errors[entryItemPath(group.fieldId, index, column.key)]}
         cell={(item, column, context) => {
           const value = column.key.startsWith(groupColumn);
           const question = questions.find(current => current.fieldId === (value ? column.key.slice(groupColumn.length) : column.key))!;
-          return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} catalogReason={catalogReason} boxColumns={boxColumns}
+          return <EntryQuestionControl entry={entry} question={question} draft={draft} onChange={onChange} disabled={disabled} catalogReason={catalogReason}
             item={item} path={path(context.index, question)} cell={context} part={value ? "group" : "options"} calculated={calculated}/>;
         }}/>}
     {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
@@ -222,12 +215,10 @@ function EntryQuestion(props: Parameters<typeof EntryQuestionControl>[0] & { bef
     {before === undefined ? null : <p className="text-xs text-[var(--color-content-muted)]">{before === "" ? t("correction.beforeEmpty") : t("correction.before", { value: before })}</p>}</div>;
 }
 
-function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, catalogReason, narrowClass, boxColumns, item, path, cell, pairInRow = false, part, calculated }: {
+function EntryQuestionControl({ entry, question, draft, onChange, error, disabled, catalogReason, narrowClass, item, path, cell, pairInRow = false, part, calculated }: {
   entry: FormEntry; question: FormEntryQuestion; draft: EntryDraft; onChange: (draft: EntryDraft) => void; error?: string; disabled?: boolean;
   /** The width of number and date; without it they go across. */
   narrowClass?: string;
-  /** The columns of the boxes of a multiple choice. */
-  boxColumns: 1 | 2 | 3;
   /** A question of the block answers in its item (RG2-A), under its path (`entryItemPath`). */
   item?: EntryItem;
   path?: string;
@@ -244,6 +235,8 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
 }) {
   const { t, i18n } = useTranslation("formEntries");
   const formula = useEntryFormula(entry);
+  // On the phone the piece to choose measures 44 px, like the catalog question.
+  const size = useMediaQuery("(width < 640px)") ? "touch" : "default";
   const key = path ?? question.fieldId;
   const id = entryQuestionId(key);
   const messageId = id + "-message";
@@ -265,6 +258,7 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   const describedBy = [help ? helpId : undefined, message ? messageId : undefined].filter(Boolean).join(" ") || undefined;
   const labelText = <>{question.label}{question.required ? <span aria-hidden="true"> *</span> : null}
     {limit !== undefined ? <>{" "}<span className="text-xs font-normal text-[var(--color-content-muted)]">{t("upTo", { count: limit })}</span></> : null}</>;
+  const options = (question.options ?? []).map(option => ({ id: option.id, label: option.label }));
   // A list, a group or the files carry their own controls: the label names the group and the message goes below it.
   const grouped = (control: ReactNode, labelled = true) => {
     if (cell) return control;
@@ -275,10 +269,11 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
       {message ? <p id={messageId} role={error ? "alert" : undefined} className={error ? "text-sm text-[var(--color-danger)]" : "text-sm text-[var(--color-content-muted)]"}>{message}</p> : null}
     </div>;
   };
+  // The label carries the mark of required and, for several options, «hasta N».
   const field = (control: ReactElement<{ id?: string; "aria-label"?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }>) => cell
     ? cloneElement(control, { id, "aria-label": cell.label, "aria-invalid": cell.invalid || undefined, "aria-describedby": cell.describedBy })
     : <div data-entry-question={key}>
-      <FormField label={question.label} htmlFor={id} required={question.required} hint={question.help ?? undefined} error={error}>{control}</FormField>
+      <FormField label={labelText} htmlFor={id} hint={question.help ?? undefined} error={error}>{control}</FormField>
     </div>;
 
   // CA1-A: a calculation is shown greyed and is not written; it changes as the numbers it uses are typed. Its (i) says how it is
@@ -321,35 +316,30 @@ function EntryQuestionControl({ entry, question, draft, onChange, error, disable
   // UB3-A: «Usar mi ubicación»; the label names the question and the point travels as the text the server reads.
   if (question.type === "location") return grouped(<EntryLocationField id={id} value={value} onChange={setValue} invalid={!!error}
     describedBy={describedBy} disabled={disabled}/>, false);
-  // Up to five options in a row however long they are, and those that do not fit wrap; more, the only piece to choose (AR1-A,
-  // DS1-A), which says «Elegí una opción» while there is none and offers «Sin respuesta» first to leave it empty. A cell of the
-  // table of items always takes the list.
-  if (question.type === "choice" && (cell || !entryChoiceInRow(question))) return field(<Picker label={cell?.label ?? question.label} value={choices[question.fieldId]?.[0]?.id ?? ""} disabled={disabled}
-    placeholder={t("page.choose")} first={{ id: "", label: t("page.noAnswer") }} onChange={choice => choose(question.options?.find(option => option.id === choice))}
-    options={(question.options ?? []).map(option => ({ id: option.id, label: option.label }))} />);
-  if (question.type === "choice") return grouped(<div id={id} tabIndex={-1} className="outline-none">
-    <RadioGroupField label={question.label} layout="row" value={choices[question.fieldId]?.[0]?.id}
-      options={(question.options ?? []).map(option => ({ value: option.id, label: option.label, disabled }))}
-      onValueChange={choice => choose(question.options?.find(item => item.id === choice))}/>
-  </div>, false);
+  // Yes or no, one option and several go in the only piece to choose (DS1-A; also up to five options and yes or no since
+  // 2026-11-22), in the order of the editor, which says «Elegí una opción» while there is none. One option offers «Sin respuesta»
+  // first to leave it empty; the yes or no starts with nothing chosen (CW12); several mark up to their limit without closing.
+  // Choosing the one it has changes nothing.
+  if (question.type === "choice") {
+    const chosen = choices[question.fieldId]?.[0]?.id ?? "";
+    return field(<Picker label={cell?.label ?? question.label} value={chosen} disabled={disabled} size={size} placeholder={t("page.choose")}
+      first={{ id: "", label: t("page.noAnswer") }} onChange={choice => { if (choice !== chosen) choose(question.options?.find(option => option.id === choice)); }}
+      options={options}/>);
+  }
   if (question.type === "multiChoice") {
     const chosen = choices[question.fieldId] ?? [];
-    const max = question.selection?.maxSelected ?? 20;
-    return grouped(<div id={id} tabIndex={-1} role="group" aria-labelledby={id + "-label"} className={"gap-x-5 outline-none " + boxColumnsClass[boxColumns]}>
-      {(question.options ?? []).map(option => {
-        const checked = chosen.some(item => item.id === option.id);
-        return <div key={option.id} className="break-inside-avoid pb-1"><CheckboxField label={option.label} checked={checked} disabled={disabled || !checked && chosen.length >= max}
-          onCheckedChange={next => onChange(changed({ choices: { [question.fieldId]: next
-            ? [...chosen, { id: option.id, title: option.label, description: null }] : chosen.filter(current => current.id !== option.id) } }))}/></div>;
-      })}
-    </div>, false);
+    return field(<Picker multiple label={cell?.label ?? question.label} value={chosen.map(option => option.id)} max={limit} disabled={disabled} size={size}
+      placeholder={t("page.choose")} options={options} onChange={ids => onChange(changed({ choices: { [question.fieldId]: ids.flatMap(optionId => {
+        // The ones already chosen stay as they were; a new one takes its option.
+        const kept = chosen.find(item => item.id === optionId);
+        if (kept) return [kept];
+        const option = question.options?.find(item => item.id === optionId);
+        return option ? [{ id: option.id, title: option.label, description: null }] : [];
+      }) } }))}/>);
   }
-  if (question.type === "boolean") return grouped(<div id={id} tabIndex={-1} className="outline-none">
-    <SegmentedControl aria-label={cell?.label ?? question.label} options={[
-      { key: "true", label: t("sent.yes"), pressed: value === "true", onSelect: () => setValue("true") },
-      { key: "false", label: t("sent.no"), pressed: value === "false", onSelect: () => setValue("false") },
-    ]}/>
-  </div>, false);
+  if (question.type === "boolean") return field(<Picker label={cell?.label ?? question.label} value={value || null} disabled={disabled} size={size}
+    placeholder={t("page.choose")} onChange={next => { if (next !== value) setValue(next); }}
+    options={[{ id: "true", label: t("sent.yes") }, { id: "false", label: t("sent.no") }]}/>);
   // In a cell, the long text starts as high as a field and grows with what is written, and a number goes to the right.
   if (question.type === "longText") return field(<Textarea value={value} maxLength={question.maxLength ?? undefined} rows={cell ? 1 : entryTextRows(question)}
     className={cell ? "min-h-[var(--height-control)] py-1" : undefined} disabled={disabled} onChange={event => setValue(event.target.value)}/>);

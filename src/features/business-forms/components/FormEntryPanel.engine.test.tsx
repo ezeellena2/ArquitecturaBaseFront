@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -45,6 +45,14 @@ function setup() {
   return { sends };
 }
 
+/** «Concepto» is the only piece to choose (2026-11-22): its list opens with the keyboard, like the other Radix lists in the tests. */
+async function pick(user: ReturnType<typeof userEvent.setup>, field: string, option: string) {
+  const trigger = screen.getByRole("button", { name: field });
+  await act(async () => { trigger.focus(); });
+  await user.keyboard("{Enter}");
+  await user.click(within(await screen.findByRole("listbox", { name: "Concepto" })).getByRole("option", { name: option }));
+}
+
 beforeEach(() => { queryClient.clear(); vi.mocked(notify).mockClear(); });
 afterEach(() => vi.restoreAllMocks());
 
@@ -58,9 +66,9 @@ describe("loading a form with calculations and conditions next to the sheet (CA1
     const item = await within(panel).findByRole("region", { name: "Ítem 1" });
 
     expect(within(panel).queryByLabelText(/^Período/)).not.toBeInTheDocument();
-    await user.click(within(panel).getByRole("radio", { name: "Servicios" }));
+    await pick(user, "Concepto Elegí una opción", "Servicios");
     await user.type(await within(panel).findByLabelText(/^Período/), "Noviembre");
-    await user.click(within(panel).getByRole("radio", { name: "Productos" }));
+    await pick(user, "Concepto Servicios", "Productos");
     expect(within(panel).queryByLabelText(/^Período/)).not.toBeInTheDocument();
 
     const amount = within(item).getByLabelText("Importe");
@@ -90,7 +98,7 @@ describe("loading a form with calculations and conditions next to the sheet (CA1
     const item = await within(panel).findByRole("region", { name: "Ítem 1" });
     await user.type(within(item).getByLabelText(/^Cantidad/), "1");
     await user.type(within(item).getByLabelText(/^Precio unitario/), "2");
-    await user.click(within(panel).getByRole("radio", { name: "Servicios" }));
+    await pick(user, "Concepto Elegí una opción", "Servicios");
 
     await user.click(within(panel).getByRole("button", { name: "Enviar" }));
     expect(await within(panel).findByText("Completá esta respuesta.")).toBeVisible();

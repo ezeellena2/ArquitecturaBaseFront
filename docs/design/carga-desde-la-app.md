@@ -34,9 +34,9 @@ Cómo se arma un formulario (2026-10-30):
 
 | Tablero | Qué define |
 | --- | --- |
-| CW12 · Cómo se arma un formulario | El autor decide el contenido y la app la forma, con una tabla fija por tipo de pregunta: texto corto con el ancho de su largo máximo, texto largo de 2 a 6 renglones, número y fecha angostos, «Sí \| No» sin nada marcado, hasta cinco opciones cortas en fila (si no, lista desplegable), elegir varias con una casilla por renglón y «Elegí hasta N», catálogo con la lista de CW3 y archivos con CW4. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) pone las casillas en columnas y las opciones en fila sin mirar su largo. |
+| CW12 · Cómo se arma un formulario | El autor decide el contenido y la app la forma, con una tabla fija por tipo de pregunta: texto corto con el ancho de su largo máximo, texto largo de 2 a 6 renglones, número y fecha angostos, «Sí \| No» sin nada marcado, hasta cinco opciones cortas en fila (si no, lista desplegable), elegir varias con una casilla por renglón y «Elegí hasta N», catálogo con la lista de CW3 y archivos con CW4. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) pone las casillas en columnas y las opciones en fila sin mirar su largo. Desde el 2026-11-22, por decisión del usuario, el «Sí \| No», elegir una y elegir varias van en la pieza única para elegir (`Picker`, DS1-A), como el catálogo. |
 | **CW13-A · Unidades en la etiqueta** (elegida) | La unidad la escribe el autor en la etiqueta, «Densidad (kg/ha)», igual en todos lados; el campo no la muestra adentro. |
-| **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) deja dos anchos, una columna o el renglón entero, y el panel con sus zonas. |
+| **CW16 · Hasta tres por renglón y zonas plegables** (elegida) | Cada zona es una grilla de tres columnas en escritorio, dos en tableta y una en el celular y en el panel, en el orden del editor; una pregunta que no entra baja de renglón, con una línea entre renglones. Una columna: número, fecha, sí o no, texto corto de hasta 30 y lista desplegable; dos: catálogo, opciones en fila y texto corto de hasta 80; el renglón entero: texto largo, texto corto de más de 80, elegir varias, fotos y documentos. Las zonas se pliegan, arrancan abiertas y, plegadas, dicen cuántas preguntas se respondieron; al enviar, una zona plegada con algo para corregir se abre sola. Desde el 2026-11-02, [AR1-A](#dos-anchos-ar1-a--2026-11-02) deja dos anchos, una columna o el renglón entero, y el panel con sus zonas. Desde el 2026-11-22, elegir varias con opciones propias, en la pieza única para elegir, ocupa una columna. |
 
 Las etapas siguientes, con su tablero en el mismo lienzo, también quedaron programadas: la vista propia de quien sólo completa (Etapa 2, [hecha](#lo-propio-etapa-2--2026-11-04)), corregir
 (CW10-A) y anular (CW11-A) en la Etapa 3, las listas dependientes (CW7) en la Etapa 4 y los títulos de sección (CW15-B) en la
@@ -58,20 +58,23 @@ dibujadas las preguntas en CW2-A y CW2-B.
 
    | Ocupa | Tipos de pregunta |
    | --- | --- |
-   | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 80, elegir una y elegir de un catálogo (una o varias) |
-   | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, elegir varias con opciones propias, foto, documento y el bloque de renglones |
+   | Una columna | Número, fecha, sí o no, texto corto con largo máximo de hasta 80, elegir una, elegir varias y elegir de un catálogo (una o varias) |
+   | El renglón entero | Texto largo, texto corto de más de 80 o sin largo máximo, foto, documento y el bloque de renglones |
 
    Son los dos anchos de [AR1-A](#dos-anchos-ar1-a--2026-11-02) (2026-11-02): las dos columnas que tenían el catálogo, las
-   opciones en fila y el texto corto de hasta 80 pasaron a una. El bloque de renglones (RG2-A, 2026-11-07) es una tabla con
+   opciones en fila y el texto corto de hasta 80 pasaron a una; elegir varias con opciones propias, el 2026-11-22, al pasar a la
+   pieza única para elegir. El bloque de renglones (RG2-A, 2026-11-07) es una tabla con
    un ítem por fila donde la zona tiene columnas y un recuadro por ítem en una columna (el panel y el celular), como dice su
    [diseño](renglones-en-formularios.md).
 
-4. **Controles por tipo (CW12 y AR1-A).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en una
-   columna; en el panel, como en CW2-B, salvo en el celular. Sí o no, un `SegmentedControl` sin valor inicial; elegir una,
-   hasta cinco opciones en fila aunque sean largas (las que no entran bajan, y en el celular van apiladas) y si no una lista
-   desplegable; elegir varias, casillas en las columnas de la zona, de arriba abajo, con «hasta N» en la etiqueta; catálogo,
-   la lista con búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece de 2 a 6 renglones con su largo
-   máximo.
+4. **Controles por tipo (CW12, AR1-A y DS1-A).** Número y fecha, angostos: en la página, dentro de su celda y a lo ancho en
+   una columna; en el panel, como en CW2-B, salvo en el celular. Desde el 2026-11-22, por decisión del usuario, sí o no,
+   elegir una y elegir varias van en la pieza única para elegir (`Picker`), en el orden del editor, con «Elegí una opción»
+   mientras no hay nada elegido y 44 px en el celular: sí o no arranca sin valor; elegir una, con cualquier cantidad de
+   opciones, ofrece primero «Sin respuesta», que la deja vacía; elegir varias marca sin cerrar la lista hasta su tope, con
+   «hasta N» en la etiqueta y en la lista. Antes eran un `SegmentedControl`, hasta cinco opciones en fila y casillas en las
+   columnas de la zona. Catálogo, la misma pieza con la búsqueda de CW3; fotos y documentos, como en CW4. El texto largo crece
+   de 2 a 6 renglones con su largo máximo.
 5. **Unidades en la etiqueta (CW13-A).** «Densidad (kg/ha)»: sin sufijo dentro del campo ni dato «Unidad» nuevo.
 6. **Títulos de sección (CW15-B, desde el 2026-11-05).** Un elemento del editor que no es una pregunta: en la app, una zona
    por título; en WhatsApp, un subtítulo. `entryZones` arma la lista de zonas y la página dibuja la que recibe
@@ -84,7 +87,7 @@ dibujadas las preguntas en CW2-A y CW2-B.
   pantalla (`entryColumns`: tres desde 46 rem, dos desde 30 rem y una debajo), porque en una tableta los paneles del menú
   ocupan parte del ancho: con el panel de Formularios abierto, una tableta tiene lugar para una columna. En una columna de la
   página, número y fecha también van a lo ancho. El panel usa las mismas zonas y controles en una columna, con número y
-  fecha angostos salvo en el celular, como en CW2-B, y las casillas de elegir varias en dos columnas. El largo de las
+  fecha angostos salvo en el celular, como en CW2-B. El largo de las
   opciones no cuenta desde AR1-A; el texto largo suma un renglón cada 100 caracteres de largo máximo, entre 2 y 6.
 - **Lo cargado vive en su dueño.** El borrador es de la página o del panel: nunca va a la URL, el storage ni la caché de
   consultas. «Pantalla completa» lo pasa en memoria. Repetir un envío con las mismas respuestas conserva su identificador, así
@@ -117,9 +120,7 @@ dibujadas las preguntas en CW2-A y CW2-B.
 | Banda con volver, Cancelar y Enviar | `Page` con `backTo` y `actions` |
 | Zonas «Datos» y «Fotos y documentos» | `CollapsibleSection` |
 | Número, fecha y texto con etiqueta y ayuda | `FormField` con `Input` o `Textarea` |
-| Sí o no | `SegmentedControl` |
-| Opciones en fila y lista desplegable | `RadioGroupField` con `layout="row"` y `NativeSelect` |
-| Casillas de elegir varias | `CheckboxField` |
+| Sí o no, elegir una y elegir varias | `Picker`, con `multiple` para varias (2026-11-22) |
 | Lista de catálogo en escritorio | `Autocomplete` con `header`, `status` y `multiple` |
 | Lista de catálogo en el celular | `Dialog` a pantalla completa (`placement="right"`) |
 | Elegidas de un catálogo | `FilterChip` |
@@ -169,10 +170,12 @@ mostrar las casillas en columnas.
   de la regla 3: un catálogo, las opciones en fila y el texto corto de hasta 80 pasan a una. La grilla sigue siendo de tres
   en la compu, dos en la tableta y una en el celular y en el panel, sin reordenar.
 - **Casillas en columnas.** Elegir varias reparte sus casillas en tres columnas en la compu, dos en la tableta y en el panel
-  y una en el celular, de arriba abajo, con «hasta N» en la etiqueta.
+  y una en el celular, de arriba abajo, con «hasta N» en la etiqueta. Desde el 2026-11-22, por decisión del usuario, va en la
+  pieza única para elegir (`Picker multiple`) y ocupa una columna.
 - **Opciones en fila, siempre.** Elegir una con hasta cinco opciones las muestra en fila aunque sean largas; las que no
   entran siguen abajo, dentro de su columna. Con más de cinco, una lista desplegable. Deja de contar el largo de cada opción
-  (los 20 caracteres de hoy).
+  (los 20 caracteres de hoy). Desde el 2026-11-22, por decisión del usuario, elegir una va siempre en la pieza única para
+  elegir (`Picker`), con cualquier cantidad de opciones, y el «Sí | No» también.
 - **El panel con sus zonas.** Junto a la planilla (CW2-B), «Datos» y «Fotos y documentos» se pliegan como en la página, en una
   columna, con las fotos y los documentos al final y no donde los puso el autor. Número y fecha siguen angostos.
 
