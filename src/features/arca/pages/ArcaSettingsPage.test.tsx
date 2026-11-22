@@ -62,6 +62,15 @@ afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); })
 const tested = (checks: ArcaTest["checks"], connection: ArcaConnection): ArcaTest => ({ checks, connection });
 const ready = (service: string) => ({ service, status: "Ready" as const, failureCode: null, ticketExpiresAtUtc: "2026-11-05T23:00:00Z", retryAfterUtc: null });
 
+// How it connects, the environment and the point of sale go in the shared piece for choosing (DS1-A, 2026-11-22).
+async function openList(field: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${field} `) }));
+  return screen.findByRole("listbox", { name: field });
+}
+async function chooseIn(field: string, option: string | RegExp) {
+  await userEvent.click(within(await openList(field)).getByRole("option", { name: option }));
+}
+
 describe("ARCA settings", () => {
   it("offers to connect to a manager and shows read only to a reader", async () => {
     const { unmount } = renderRouteWithProviders("/configuracion/arca");
@@ -195,8 +204,10 @@ describe("ARCA settings", () => {
     const activate = screen.getByRole("button", { name: "Activar la conexión" });
     expect(activate).toHaveAttribute("aria-disabled", "true");
     expect(activate).toHaveAccessibleDescription("Elegí el punto de venta.");
-    expect(await screen.findByRole("radio", { name: "0003 · bloqueado en ARCA" })).toBeDisabled();
-    await userEvent.click(screen.getByRole("radio", { name: "0005 · CAE - Factura" }));
+    const points = await openList("Punto de venta");
+    expect(within(points).getByRole("option", { name: "0003" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(points).getByRole("option", { name: "0003" })).toHaveAccessibleDescription("Bloqueado en ARCA");
+    await userEvent.click(within(points).getByRole("option", { name: "0005 · CAE - Factura" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Activar la conexión" })).not.toHaveAttribute("aria-disabled"));
     await userEvent.click(screen.getByRole("button", { name: "Activar la conexión" }));
 
@@ -297,7 +308,7 @@ describe("ARCA settings", () => {
     renderRouteWithProviders("/configuracion/arca");
 
     await userEvent.click(await screen.findByRole("button", { name: "Cambiar" }));
-    await userEvent.click(screen.getByRole("button", { name: "Homologación" }));
+    await chooseIn("Ambiente", "Homologación");
     await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
 
     await waitFor(() => expect(replaced).toHaveLength(1));
@@ -315,7 +326,7 @@ describe("ARCA settings", () => {
     renderRouteWithProviders("/configuracion/arca");
 
     await userEvent.click(await screen.findByRole("button", { name: "Cambiar" }));
-    await userEvent.click(screen.getByRole("button", { name: "Homologación" }));
+    await chooseIn("Ambiente", "Homologación");
     await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
 
     expect(await screen.findByRole("button", { name: "Leer lo actual" })).toBeInTheDocument();
@@ -364,7 +375,7 @@ describe("ARCA settings by delegation", () => {
     current = { ...none, platform };
     renderRouteWithProviders("/configuracion/arca");
     await userEvent.click(await screen.findByRole("button", { name: "Conectar con ARCA" }));
-    await userEvent.click(within(screen.getByRole("group", { name: "Cómo se conecta" })).getByRole("button", { name: "Delegación en Plataforma Ejemplo S.A." }));
+    await chooseIn("Cómo se conecta", "Delegación en Plataforma Ejemplo S.A.");
     await userEvent.type(screen.getByRole("textbox", { name: "CUIT de la empresa" }), "20-00000006-0");
     await userEvent.type(screen.getByRole("textbox", { name: "Alias de la plataforma" }), "plataforma");
     await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));
@@ -381,10 +392,11 @@ describe("ARCA settings by delegation", () => {
     renderRouteWithProviders("/configuracion/arca");
     await userEvent.click(await screen.findByRole("button", { name: "Conectar con ARCA" }));
 
-    const delegation = within(screen.getByRole("group", { name: "Cómo se conecta" })).getByRole("button", { name: "Delegación en la plataforma" });
+    const delegation = within(await openList("Cómo se conecta")).getByRole("option", { name: "Delegación en la plataforma" });
     expect(delegation).toHaveAttribute("aria-disabled", "true");
     expect(delegation).toHaveAccessibleDescription("La instalación no tiene configurada la CUIT de la plataforma.");
     await userEvent.click(delegation);
+    await userEvent.keyboard("{Escape}");
     expect(screen.getByRole("textbox", { name: "CUIT" })).toBeInTheDocument();
   });
 

@@ -5,10 +5,8 @@ import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
 import { DocumentIcon, DownloadIcon, ExternalLinkIcon, ShieldIcon } from "@/shared/ui/icons";
-import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { StepList } from "@/shared/ui/StepList";
 import {
   chooseArcaServices, downloadArcaRequest, replaceArcaConnection, startArcaCertificateRequest, testArcaConnection, uploadArcaCertificate,
@@ -211,23 +209,19 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
       <Button pending={action.pending === "generate"} disabled={locked} onClick={() => void generate()}>{t(action.pending === "generate" ? "data.generating" : "data.generate")}</Button>
     </> : undefined : canManage && connection.status === "AwaitingCertificate"
       ? <Button variant="link" onClick={() => onEditingChange(true)}>{t("data.change")}</Button> : undefined}>
-    <div className="flex flex-col items-start gap-1.5">
-      <span className="flex items-center gap-1 text-sm font-medium">{t("data.mode")}
-        <span className="-my-1 inline-flex"><InfoTip text={t("data.modeHelp")} label={t("common:actions.moreInfo", { label: t("data.mode") })} /></span></span>
-      <SegmentedControl wrap aria-label={t("data.mode")} disabled={locked} options={[
-        { key: "CompanyCertificate", label: t("data.modeCompany"), pressed: !delegation, onSelect: () => setMode("CompanyCertificate") },
-        {
-          key: "PlatformDelegation", label: platform ? t("data.modeDelegation", { platform: platform.name }) : t("data.modeDelegationUnknown"),
-          pressed: mode === "PlatformDelegation", onSelect: () => setMode("PlatformDelegation"),
-          disabledReason: platform || locked ? undefined : t("data.platformMissing"),
-        },
-        ...robotEnabled ? [{
-          key: "PlatformDelegationAutomated", label: t("arcaRobot:mode"),
-          pressed: mode === "PlatformDelegationAutomated", onSelect: () => setMode("PlatformDelegationAutomated"),
-          disabledReason: locked ? undefined : environment === "Testing" ? t("arcaRobot:modeProductionOnly") : undefined,
-        }] : [],
-      ]} />
-    </div>
+    {/* How it connects and the environment go in the shared piece for choosing, like any list (DS1-A, 2026-11-22); an option
+        that does not apply says why after its name. */}
+    <div className="w-full sm:w-96"><FormField label={t("data.mode")} help={t("data.modeHelp")}>
+      <Picker label={t("data.mode")} disabled={locked} value={delegation ? mode : "CompanyCertificate"}
+        onChange={next => { if (next !== (delegation ? mode : "CompanyCertificate")) setMode(next as typeof mode); }}
+        options={[
+          { id: "CompanyCertificate", label: t("data.modeCompany") },
+          { id: "PlatformDelegation", label: platform ? t("data.modeDelegation", { platform: platform.name }) : t("data.modeDelegationUnknown"),
+            disabledReason: platform ? null : t("data.platformMissing") },
+          ...robotEnabled ? [{ id: "PlatformDelegationAutomated", label: t("arcaRobot:mode"),
+            disabledReason: environment === "Testing" ? t("arcaRobot:modeProductionOnly") : null }] : [],
+        ]} />
+    </FormField></div>
     <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
       <FormField label={t(delegation ? "data.companyCuit" : "data.cuit")} error={errors.cuit} required>
         <Input value={cuit} inputMode="numeric" autoComplete="off" maxLength={13} disabled={locked} onChange={event => setCuit(event.target.value)} />
@@ -237,17 +231,17 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
         <Input value={alias} autoComplete="off" spellCheck={false} autoCapitalize="none" maxLength={30} disabled={locked} onChange={event => setAlias(event.target.value)} />
       </FormField>
     </div>
-    <div className="flex flex-col items-start gap-1.5">
-      <span className="flex items-center gap-1 text-sm font-medium">{t("data.environment")}
-        <span className="-my-1 inline-flex"><InfoTip text={t("data.environmentHelp")} label={t("common:actions.moreInfo", { label: t("data.environment") })} /></span></span>
-      <SegmentedControl aria-label={t("data.environment")} disabled={locked} options={(["Testing", "Production"] as const).map(option => ({
-        key: option, label: t(`environment.${option}`), pressed: environment === option, onSelect: () => {
+    <div className="w-full sm:w-72"><FormField label={t("data.environment")} help={t("data.environmentHelp")}>
+      <Picker label={t("data.environment")} disabled={locked} value={environment}
+        options={(["Testing", "Production"] as const).map(option => ({ id: option, label: t(`environment.${option}`) }))}
+        onChange={next => {
+          const option = next as "Testing" | "Production";
+          if (option === environment) return;
           setEnvironment(option);
           // En homologación no hay Administrador de Relaciones: el modo del robot pasa a la delegación guiada.
           if (option === "Testing" && mode === "PlatformDelegationAutomated") setMode("PlatformDelegation");
-        },
-      }))} />
-    </div>
+        }} />
+    </FormField></div>
     {/* The services are chosen with the shared piece, several at a time (DS1-A); the one ARCA always needs stays chosen and off,
         with its reason after its name. */}
     <FormField label={t("data.services")}>

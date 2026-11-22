@@ -44,6 +44,15 @@ beforeEach(() => {
   );
 });
 
+// How it connects, the environment and the point of sale go in the shared piece for choosing (DS1-A, 2026-11-22).
+async function openList(field: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${field} `) }));
+  return screen.findByRole("listbox", { name: field });
+}
+async function chooseIn(field: string, option: string | RegExp) {
+  await userEvent.click(within(await openList(field)).getByRole("option", { name: option }));
+}
+
 describe("the point of sale zone with the robot", () => {
   it("arrives with the point of sale the robot created, ready to activate, and lets the person pick another", async () => {
     let complete: (() => Promise<void>) | null = null;
@@ -51,13 +60,13 @@ describe("the point of sale zone with the robot", () => {
       <PointOfSaleZone step={4} connection={automated} canManage open onReady={next => { complete = next; }} />
     </MemoryRouter>);
 
-    expect(await screen.findByRole("radio", { name: /0002/ })).toBeChecked();
+    expect(await screen.findByRole("button", { name: /^Punto de venta 0002/ })).toBeInTheDocument();
     await waitFor(() => expect(complete).not.toBeNull());
     await complete!();
     expect(chosen).toEqual([{ pointOfSale: 2, expectedRevision: 3 }]);
 
-    await userEvent.click(screen.getByRole("radio", { name: /0005/ }));
-    expect(screen.getByRole("radio", { name: /0005/ })).toBeChecked();
+    await chooseIn("Punto de venta", /0005/);
+    expect(screen.getByRole("button", { name: /^Punto de venta 0005/ })).toBeInTheDocument();
   });
 });
 
@@ -82,7 +91,7 @@ describe("the point of sale with the connection active", () => {
     renderWithProviders(<MemoryRouter><PointOfSaleSection connection={active} canManage onConflict={() => {}} /></MemoryRouter>);
 
     await userEvent.click(await within(await screen.findByRole("region", { name: "Facturación · Punto de venta" })).findByRole("button", { name: "Cambiar" }));
-    await userEvent.click(await screen.findByRole("radio", { name: /0002/ }));
+    await chooseIn("Punto de venta", /0002/);
     await userEvent.click(within(zone()).getByRole("button", { name: "Guardar" }));
 
     await waitFor(() => expect(chosen).toEqual([{ pointOfSale: 2, expectedRevision: 2 }]));

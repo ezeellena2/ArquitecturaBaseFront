@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { MemoryRouter } from "react-router";
@@ -48,31 +48,43 @@ function renderZones(connection: ArcaConnection) {
   </MemoryRouter>);
 }
 
+// How it connects, the environment and the point of sale go in the shared piece for choosing (DS1-A, 2026-11-22).
+async function openList(field: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${field} `) }));
+  return screen.findByRole("listbox", { name: field });
+}
+async function chooseIn(field: string, option: string | RegExp) {
+  await userEvent.click(within(await openList(field)).getByRole("option", { name: option }));
+}
+
 describe("the setup with the robot", () => {
   it("offers the automated delegation as a third mode only with the robot on, and only in production", async () => {
     renderZones(none);
 
-    const option = await screen.findByRole("button", { name: "Delegación automática" });
-    await userEvent.click(option);
-    expect(option).toHaveAttribute("aria-pressed", "true");
+    await chooseIn("Cómo se conecta", "Delegación automática");
+    expect(screen.getByRole("button", { name: "Cómo se conecta Delegación automática" })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Homologación" }));
-    expect(screen.getByRole("button", { name: "Delegación automática" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: /Delegación guiada|ArquitecturaBase/ })).toHaveAttribute("aria-pressed", "true");
+    await chooseIn("Ambiente", "Homologación");
+    const modes = await openList("Cómo se conecta");
+    expect(within(modes).getByRole("option", { name: "Delegación automática" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(modes).getByRole("option", { name: /Delegación guiada|ArquitecturaBase/ })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Escape}");
   });
 
   it("does not offer it while the robot is off", async () => {
     robot = { enabled: false, company: null, platform: null };
     renderZones(none);
 
-    expect(await screen.findByRole("button", { name: "Homologación" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByRole("button", { name: "Delegación automática" })).not.toBeInTheDocument());
+    expect(await screen.findByRole("button", { name: /^Ambiente / })).toBeInTheDocument();
+    const modes = await openList("Cómo se conecta");
+    await waitFor(() => expect(within(modes).queryByRole("option", { name: "Delegación automática" })).not.toBeInTheDocument());
+    await userEvent.keyboard("{Escape}");
   });
 
   it("asks for the platform certificate with the automated mode", async () => {
     renderZones(none);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Delegación automática" }));
+    await chooseIn("Cómo se conecta", "Delegación automática");
     await userEvent.type(screen.getByLabelText(/CUIT de la empresa/, { selector: "input" }), "20-00000006-0");
     await userEvent.type(screen.getByLabelText(/Alias/, { selector: "input" }), "plataforma-demo");
     await userEvent.click(screen.getByRole("button", { name: "Generar el pedido" }));

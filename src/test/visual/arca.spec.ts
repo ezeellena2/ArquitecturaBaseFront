@@ -42,7 +42,9 @@ for (const language of ["es", "en"] as const) {
     await open(page, language, "arca-unverified");
     const activate = page.getByRole("button", { name: es ? "Activar la conexión" : "Activate the connection", exact: true });
     await expect(activate).toBeDisabled();
-    await page.getByRole("radio", { name: es ? "0005 · CAE - Factura" : "0005 · CAE - Factura", exact: true }).click();
+    // The point of sale goes in the shared piece for choosing (DS1-A, 2026-11-22).
+    await page.getByRole("button", { name: new RegExp("^" + (es ? "Punto de venta" : "Point of sale") + " ") }).click();
+    await page.getByRole("option", { name: "0005 · CAE - Factura", exact: true }).click();
     await expect(activate).toBeEnabled();
     await expect(page).toHaveScreenshot(`arca-unverified-${language}.png`, { fullPage: true });
 
@@ -75,23 +77,26 @@ for (const language of ["es", "en"] as const) {
     await expect(page).toHaveScreenshot(`arca-delegation-active-${language}.png`, { fullPage: true });
   });
 
-  // Con el robot prendido, «Cómo se conecta» tiene tres opciones: en el celular se acomodan en renglones y ninguna se corta.
+  // Con el robot prendido, «Cómo se conecta» tiene tres opciones, en la pieza para elegir (DS1-A, 2026-11-22): en el celular la
+  // lista ocupa la pantalla y ninguna se corta.
   for (const width of [390, 320]) {
     test(`ARCA details with the three modes ${language} at ${width}px`, async ({ page }) => {
       await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
       await open(page, language, "arca-empty-robot", width);
       await page.getByRole("button", { name: es ? "Conectar con ARCA" : "Connect to ARCA", exact: true }).click();
-      const automated = page.getByRole("button", { name: es ? "Delegación automática" : "Automated delegation", exact: true });
-      await automated.click();
-      await expect(automated).toHaveAttribute("aria-pressed", "true");
-      // Las tres enteras dentro de la pantalla: sin renglones, la zona se corre de costado y la primera queda afuera.
-      const modes = page.getByRole("group", { name: es ? "Cómo se conecta" : "How it connects" }).getByRole("button");
+      const modeLabel = es ? "Cómo se conecta" : "How it connects", automatedLabel = es ? "Delegación automática" : "Automated delegation";
+      const mode = page.getByRole("button", { name: new RegExp(`^${modeLabel} `) });
+      await mode.click();
+      // Las tres enteras dentro de la pantalla.
+      const modes = page.getByRole("option");
       await expect(modes).toHaveCount(3);
-      for (const mode of await modes.all()) {
-        const box = (await mode.boundingBox())!;
+      for (const option of await modes.all()) {
+        const box = (await option.boundingBox())!;
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(width);
       }
+      await page.getByRole("option", { name: automatedLabel, exact: true }).click();
+      await expect(mode).toHaveAccessibleName(`${modeLabel} ${automatedLabel}`);
       expect(await fitsWidth(page)).toBe(true);
       await expect(page).toHaveScreenshot(`arca-details-robot-${language}-${width}.png`, { fullPage: true });
     });

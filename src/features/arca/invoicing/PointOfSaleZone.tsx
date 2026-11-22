@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { DataList } from "@/shared/ui/DataList";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { arcaQueryKey } from "../connection/api";
@@ -27,13 +28,16 @@ function PointOfSaleChoice({ enabled, canManage, value, onChange }: { enabled: b
   if (query.isError) return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{query.error instanceof ApiError
     && query.error.code?.startsWith("Arca.") && query.error.detail ? query.error.detail : t("invoicing.loadError")}</p>{search}</div>;
   if (query.data.length === 0) return <div className="flex flex-wrap items-center gap-2"><p className="text-sm">{t("invoicing.none")}</p>{search}</div>;
-  return <RadioGroupField label={t("invoicing.pointOfSale")} value={value === null ? undefined : String(value)} onValueChange={next => onChange(Number(next))}
-    options={query.data.map(point => ({
-      value: String(point.number),
-      label: point.blocked ? t("invoicing.blocked", { number: formatPointOfSale(point.number) })
-        : t("invoicing.option", { number: formatPointOfSale(point.number), type: point.emissionType }),
-      disabled: point.blocked || !canManage,
-    }))} />;
+  // The points of sale go in the shared piece for choosing (DS1-A, 2026-11-22); a blocked one is off, with its reason after it.
+  return <div className="w-full sm:w-80"><FormField label={t("invoicing.pointOfSale")}>
+    <Picker label={t("invoicing.pointOfSale")} disabled={!canManage} value={value === null ? null : String(value)} placeholder={t("invoicing.choose")}
+      onChange={next => { if (Number(next) !== value) onChange(Number(next)); }}
+      options={query.data.map(point => ({
+        id: String(point.number),
+        label: point.blocked ? formatPointOfSale(point.number) : t("invoicing.option", { number: formatPointOfSale(point.number), type: point.emissionType }),
+        disabledReason: point.blocked ? t("invoicing.blockedReason") : null,
+      }))} />
+  </FormField></div>;
 }
 
 /// La configuración de Facturación no se pudo leer: sin lo guardado a la vista no se ofrece cargar ni cambiar, sólo volver a
