@@ -34,15 +34,21 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/engine-editor-" + language + "-" + width + ".png", fullPage: true });
 
-    // CA1-A: «Qué calcula» of the amount, in the block, with its two lists and «Sumar» off with its reason.
+    // CA1-A: «Qué calcula» of the amount, in the block, with its two lists and «Sumar» off with its reason. «Qué calcula» goes in the
+    // shared piece for choosing (DS1-A, 2026-11-22): «Sumar» is off in its list.
     await page.getByRole("button", { name: text(language, "Editar Importe", "Edit Amount"), exact: true }).click();
     await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Multiplica", "Multiplies") + " ") })).toBeVisible();
-    await expect(page.getByRole("button", { name: text(language, "Sumar", "Add"), exact: true })).toHaveAttribute("aria-disabled", "true");
+    await page.getByRole("button", { name: text(language, "Qué calcula Multiplicar", "What it calculates Multiply"), exact: true }).click();
+    const sum = page.getByRole("option", { name: text(language, "Sumar", "Add"), exact: true });
+    await expect(sum).toHaveAttribute("aria-disabled", "true");
+    await expect(sum).toHaveAccessibleDescription(text(language, "Una suma va afuera del bloque.", "A sum goes outside the block."));
+    await page.keyboard.press("Escape");
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/engine-calculation-" + language + "-" + width + ".png", fullPage: true });
 
     // CO1-A: «Se muestra» of the period, with «Si» and the chips of «es».
     await page.getByRole("button", { name: text(language, "Editar Período desde", "Edit Period from"), exact: true }).click();
+    await expect(page.getByRole("button", { name: text(language, "Se muestra Según otra respuesta", "Shown Depending on another answer"), exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Si", "If") + " ") })).toBeVisible();
     await expect(page.getByRole("group", { name: text(language, "es", "is"), exact: true })).toContainText(text(language, "Productos y servicios", "Goods and services"));
     await noPageScroll(page, width);
@@ -50,7 +56,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
 
     // BI1-A: the total, bound, keeps its calculation and its condition with the reason on each control.
     await page.getByRole("button", { name: text(language, "Editar Total", "Edit Total"), exact: true }).click();
-    await expect(page.getByRole("button", { name: text(language, "Multiplicar", "Multiply"), exact: true })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: text(language, "Qué calcula Sumar", "What it calculates Add"), exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: text(language, "Se muestra Siempre", "Shown Always"), exact: true })).toBeDisabled();
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/engine-bound-" + language + "-" + width + ".png", fullPage: true });
   });

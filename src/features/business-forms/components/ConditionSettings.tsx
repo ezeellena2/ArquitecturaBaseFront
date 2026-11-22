@@ -1,9 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
-import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import type { CatalogItem } from "../api/catalogResponse";
 import { canHaveCondition, chooseConditionQuestion, conditionAnswers, conditionCandidates, conditionDepth, toggleConditionAnswer, withCondition, type ConditionAnswer } from "../conditions";
 import { questionIdentity } from "../dependentLists";
@@ -77,9 +75,10 @@ function CatalogAnswers({ scope, catalog, values, readOnly, lockedReason, single
 }
 
 /**
- * «Se muestra» of a question (CO1-A): «Siempre» or «Según otra respuesta», with «Si» (an earlier choose-one question, own or from a
- * catalog, or a yes or no, outside the block) and «es» (the answers that show it). Neither the block nor its questions have it.
- * Bound by the library standard (BI1-A), the condition stays, with its reason on each control. In a form that goes through
+ * «Se muestra» of a question (CO1-A): «Siempre» or «Según otra respuesta», in the only piece to choose (DS1-A, 2026-11-22), with
+ * «Si» (an earlier choose-one question, own or from a catalog, or a yes or no, outside the block) and «es» (the answers that show
+ * it). Neither the block nor its questions have it. Bound by the library standard (BI1-A), the condition stays, with its reason on
+ * each control. In a form that goes through
  * WhatsApp (`whatsApp`), what it cannot publish is stopped or said here: one answer of a catalog question, and a fourth condition
  * in a row.
  */
@@ -101,15 +100,14 @@ export function ConditionSettings({ question, questions, culture, original, read
     ...next.filter(value => !showWhen?.values.includes(value)).map(value => [value, true] as const)].reduce((current, [value, chosen]) => toggleConditionAnswer(current, value, chosen, order), question));
   const labelOf = (value: string) => { const answer = answers?.find(item => item.id === value); return answer ? answerLabel(answer, culture, original, t("yes"), t("no")) : t("condition.unavailable"); };
   return <div data-question-control="showWhen" className="flex flex-col gap-3">
-    <div className="flex flex-col gap-1.5">
-      <GroupLabel id={question.localId + "-condition"} help={t("condition.help")}>{t("condition.shows")}</GroupLabel>
-      {/* wrap: in English, «Always | Depending on another answer» does not fit a phone of 320 px in one row. */}
-      <SegmentedControl aria-label={t("condition.shows")} disabled={readOnly} wrap options={[
-        { key: "always", label: t("condition.always"), pressed: !showWhen, onSelect: () => onChange(withCondition(question, false)), disabledReason: lockedReason ?? undefined },
-        { key: "answer", label: t("condition.byAnswer"), pressed: !!showWhen, onSelect: () => onChange(withCondition(question, true)),
-          disabledReason: lockedReason ?? (!showWhen && candidates.length === 0 ? t("condition.noQuestions") : undefined) },
-      ]} />
-    </div>
+    {/* As wide as «Si» under it. The piece calls back also with the option it has: choosing it again keeps the condition. */}
+    <div className="grid gap-4 sm:grid-cols-2"><FormField label={t("condition.shows")} help={t("condition.help")}>
+      <DisabledReason reason={lockedReason} className="grid w-full"><Picker label={t("condition.shows")} disabled={readOnly || !!lockedReason} value={showWhen ? "answer" : "always"}
+        onChange={next => { if ((next === "answer") !== !!showWhen) onChange(withCondition(question, next === "answer")); }} options={[
+          { id: "always", label: t("condition.always") },
+          { id: "answer", label: t("condition.byAnswer"), disabledReason: !showWhen && candidates.length === 0 ? t("condition.noQuestions") : null },
+        ]} /></DisabledReason>
+    </FormField></div>
     {showWhen ? <div className="grid items-start gap-4 sm:grid-cols-2">
       {/* The question still to choose is where the editor takes the focus (CO1-A). */}
       <div data-engine-unset={showWhen.questionId ? undefined : ""}><FormField label={t("condition.if")}><DisabledReason reason={lockedReason}><Picker label={t("condition.if")}

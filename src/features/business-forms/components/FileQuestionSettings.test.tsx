@@ -1,5 +1,6 @@
 import {useState} from "react";
-import {act,fireEvent,screen} from "@testing-library/react";
+import {act,fireEvent,screen,within} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {expect,it,vi} from "vitest";
 import {renderWithProviders} from "@/test/utils/renderWithProviders";
 import {newQuestion} from "../editorModel";
@@ -58,5 +59,29 @@ it.each([
   for (const note of ["Con mínimo 1, la pregunta es obligatoria. Con 0, es opcional.", "PDF, Excel, Word o imágenes JPEG y PNG. Sin CSV.", "Puede sacarla en el momento o elegir una que ya tiene.", "La saca en el momento: sirve como evidencia de la visita."])
     expect(screen.queryByText(note, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Más información sobre " + heading })).toHaveAccessibleDescription(help);
-  if (type === "photo") for (const name of [/Cámara o galería/, /Solo cámara/]) expect(screen.getByRole("radio", { name })).not.toHaveAccessibleDescription();
+  if (type === "photo") {
+    const sources = await openSources("De dónde sale la foto Cámara o galería");
+    for (const name of ["Cámara o galería", "Solo cámara"]) expect(within(sources).getByRole("option", { name })).not.toHaveAccessibleDescription();
+    await userEvent.keyboard("{Escape}");
+  }
 });
+
+// Where the photo comes from goes in the shared piece for choosing (DS1-A, 2026-11-22); the one it has changes nothing.
+it("chooses where the photo comes from in its list", async () => {
+  const question = newQuestion("photo", "es", "test");
+  if (question.type !== "photo") throw new Error("Expected a photo question");
+  const change = vi.fn();
+  renderWithProviders(<FileQuestionSettings question={question} readOnly={false} onChange={change}/>);
+  await userEvent.click(within(await openSources("De dónde sale la foto Cámara o galería")).getByRole("option", { name: "Cámara o galería" }));
+  expect(change).not.toHaveBeenCalled();
+  await userEvent.click(within(await openSources("De dónde sale la foto Cámara o galería")).getByRole("option", { name: "Solo cámara" }));
+  expect(change).toHaveBeenCalledWith({ ...question, files: { ...question.files, photoSource: "camera" } });
+});
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests.
+async function openSources(name: string) {
+  const button = screen.getByRole("button", { name });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "De dónde sale la foto" });
+}

@@ -27,13 +27,14 @@ beforeEach(() => {
 it("chooses «Sólo en la app» next to the prefix, leaves WhatsApp out of the editor and saves it with the draft", async () => {
   const offered = store.definitions.get(fixtureFormId)!.offerWhen;
   renderRouteWithProviders("/formularios/" + fixtureFormId);
-  const where = await screen.findByRole("group", { name: "Dónde se completa" });
-  expect(within(where).getByRole("button", { name: "En la app y por WhatsApp" })).toHaveAttribute("aria-pressed", "true");
+  // «Dónde se completa» is the only piece to choose (DS1-A, 2026-11-22), with its (i).
+  const where = await screen.findByRole("button", { name: "Dónde se completa En la app y por WhatsApp" });
+  expect(where).toHaveAccessibleDescription(expect.stringContaining("Con «Sólo en la app» se carga desde «Formularios»"));
   expect(screen.getByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publicar en WhatsApp" })).toBeInTheDocument();
 
-  await userEvent.click(within(where).getByRole("button", { name: "Sólo en la app" }));
-  expect(within(where).getByRole("button", { name: "Sólo en la app" })).toHaveAttribute("aria-pressed", "true");
+  await pick("Dónde se completa En la app y por WhatsApp", "Sólo en la app");
+  expect(screen.getByRole("button", { name: "Dónde se completa Sólo en la app" })).toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Publicar" })).toBeInTheDocument();
   await act(async () => { await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" })); });
@@ -41,7 +42,7 @@ it("chooses «Sólo en la app» next to the prefix, leaves WhatsApp out of the e
   // What the assistant offered stays saved, without its field.
   expect(store.writes.at(-1)?.offerWhen).toBe(offered);
 
-  await userEvent.click(within(screen.getByRole("group", { name: "Dónde se completa" })).getByRole("button", { name: "En la app y por WhatsApp" }));
+  await pick("Dónde se completa Sólo en la app", "En la app y por WhatsApp");
   await act(async () => { await userEvent.click(screen.getByRole("button", { name: "Guardar borrador" })); });
   expect(store.writes.at(-1)?.draft).not.toHaveProperty("appOnly");
 });
@@ -50,6 +51,14 @@ it("without a form channel has no setting and publishes in the app (SA5)", async
   server.use(presentation(["forms"]));
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   expect(await screen.findByRole("button", { name: "Publicar" })).toBeInTheDocument();
-  expect(screen.queryByRole("group", { name: "Dónde se completa" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Dónde se completa/ })).not.toBeInTheDocument();
   expect(screen.queryByRole("textbox", { name: "Cuándo lo ofrece el asistente" })).not.toBeInTheDocument();
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function pick(trigger: string, option: string) {
+  const button = screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox")).getByRole("option", { name: option }));
+}

@@ -26,7 +26,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { Page } from "@/shared/ui/Page";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { Picker } from "@/shared/ui/Picker";
 import { LockIcon } from "@/shared/ui/icons";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -475,15 +475,18 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
             <Input id={prefixId} aria-invalid={prefixError ? true : undefined} aria-describedby={prefixId + "-note" + (prefixError ? " " + prefixId + "-message" : "")} readOnly={readOnly || prefixLocked || contentCulture !== value.draft.culture} value={value.prefix} onChange={e => { setPrefixTouched(true); change({ ...value, prefix: e.target.value }); }} />
             {prefixError ? <p id={prefixId + "-message"} role="alert" className="text-sm text-[var(--color-danger)]">{prefixError}</p> : null}
           </div>
-          {/* SA1-A: next to the prefix, saved with the draft. «En la app y por WhatsApp» has no key in the draft. Like ARCA's mode, a
-              label with its (i) over the segmented, which names itself: FormField takes a single labelable control. */}
-          {channels ? <div className="flex flex-col gap-1.5">
-            <span className="flex items-center gap-1 text-sm font-medium">{t("completedIn.label")}<span className="-my-1 inline-flex"><InfoTip text={t("completedIn.hint")} label={t("common:actions.moreInfo", { label: t("completedIn.label") })} /></span></span>
-            {/* From 640 px, as wide as its texts; on the phone the option that does not fit goes to the next line. */}
-            <div className="sm:self-start"><SegmentedControl wrap aria-label={t("completedIn.label")} disabled={readOnly} options={(["channels", "app"] as const).map(key => ({ key, label: t("completedIn." + key), pressed: (key === "app") === appOnly,
-              // DOC1: the reading does not show in the app, so a lookup left half chosen goes with it; what was saved stays.
-              onSelect: () => { const { appOnly: _chosen, ...draft } = value.draft; change(key === "app" ? withoutIncompleteLookups({ ...value, draft: { ...draft, appOnly: true } }) : { ...value, draft }); } }))} /></div>
-          </div> : null}
+          {/* SA1-A: next to the prefix, saved with the draft, in the only piece to choose (DS1-A, 2026-11-22). «En la app y por
+              WhatsApp» has no key in the draft. Choosing the one it has changes nothing. */}
+          {channels ? <FormField label={t("completedIn.label")} help={t("completedIn.hint")}>
+            <Picker label={t("completedIn.label")} disabled={readOnly} value={appOnly ? "app" : "channels"}
+              options={(["channels", "app"] as const).map(key => ({ id: key, label: t("completedIn." + key) }))}
+              onChange={key => {
+                if ((key === "app") === appOnly) return;
+                // DOC1: the reading does not show in the app, so a lookup left half chosen goes with it; what was saved stays.
+                const { appOnly: _chosen, ...draft } = value.draft;
+                change(key === "app" ? withoutIncompleteLookups({ ...value, draft: { ...draft, appOnly: true } }) : { ...value, draft });
+              }} />
+          </FormField> : null}
           {/* SA2-A: completed only in the app, the assistant does not offer it; what was written stays saved. */}
           {!appOnly ? <div className="sm:col-span-2"><FormField label={t("offerWhen")} help={t("offerWhenHint")} error={errorFor("offerWhen")}><Textarea readOnly={readOnly} maxLength={1000} value={value.offerWhen ?? ""} onChange={event => change({ ...value, offerWhen: event.target.value || null })} /></FormField></div> : null}
         </div></Surface>

@@ -3,13 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
-import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { IconButton } from "@/shared/ui/IconButton";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { responseQuestionColumns, type ResponseColumn, type ResponseCondition } from "../responses";
 
 const presenceOperators = ["answered", "unanswered", "notAsked"];
@@ -85,12 +83,13 @@ export function FormConditionsEditor({ conditions, columns, blocked, error, onCh
           <Picker label={t("rules.operator")} disabled={blocked} value={condition.operator} onChange={operator => update({ ...condition, operator, values: firstValues(operator, field) })}
             options={operatorsOf(field).map(operator => ({ id: operator, label: t("rules.operators." + operator) }))} />
         </FormField>
-        {/* Sí or No, two fixed options, in a segmented control; the options of a question, several, in the Picker. */}
-        {presence ? <span/> : field?.type === "boolean" ? <div className="flex flex-col gap-1.5"><GroupLabel id={`${errorId}-value-${index}`}>{t("rules.value")}</GroupLabel>
-          <SegmentedControl aria-label={t("rules.value")} disabled={blocked} options={(["true", "false"] as const).map(choice => ({ key: choice, label: t(choice === "true" ? "responses.yes" : "responses.no"),
-            pressed: condition.values?.[0] === choice, onSelect: () => update({ ...condition, values: [choice] }) }))}/></div>
+        {/* Sí or No, and the options of a question, several, in the only piece to choose (DS1-A, 2026-11-22). */}
+        {presence ? <span/>
           : <FormField label={t("rules.value")}>
-            {field?.type === "choice" || field?.type === "multiChoice" ? <Picker label={t("rules.value")} multiple disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ id: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
+            {field?.type === "boolean" ? <Picker label={t("rules.value")} disabled={blocked} value={condition.values?.[0] ?? null}
+              options={(["true", "false"] as const).map(choice => ({ id: choice, label: t(choice === "true" ? "responses.yes" : "responses.no") }))}
+              onChange={choice => { if (choice !== condition.values?.[0]) update({ ...condition, values: [choice] }); }}/>
+              : field?.type === "choice" || field?.type === "multiChoice" ? <Picker label={t("rules.value")} multiple disabled={blocked} value={condition.values ?? []} options={field.options.map(choice => ({ id: choice.id, label: choice.label }))} placeholder={t("rules.chooseValues")} onChange={values => update({ ...condition, values })}/>
               : <Input disabled={blocked} type={field?.type === "date" ? "date" : "text"} inputMode={field?.type === "decimal" ? "decimal" : undefined} value={condition.values?.[0] ?? ""} onChange={event => update({ ...condition, values: [event.target.value] })}/>}
           </FormField>}
         <IconButton className="sm:mt-6" label={t("rules.removeCondition", { number: index + 1 })} disabled={blocked} onClick={() => { pendingFocus.current = Math.min(index, conditions.length - 2); onChange(conditions.filter((_, position) => position !== index)); }}><TrashIcon className="size-4"/></IconButton>

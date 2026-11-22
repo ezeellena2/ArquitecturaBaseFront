@@ -71,7 +71,11 @@ it("stops Guardar at a condition still to complete and takes the focus to the qu
   await user.click(await screen.findByRole("button", { name: "Agregar pregunta" }, { timeout: 15000 }));
   const added = [...document.querySelectorAll<HTMLElement>("[data-question-local-id]")].at(-1)!;
   await user.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Detalle");
-  await user.click(within(added).getByRole("button", { name: "Según otra respuesta" }));
+  // «Se muestra» is the only piece to choose (DS1-A, 2026-11-22): its list opens with the keyboard.
+  const shows = within(added).getByRole("button", { name: "Se muestra Siempre" });
+  await act(async () => { shows.focus(); });
+  await user.keyboard("{Enter}");
+  await user.click(within(await screen.findByRole("listbox", { name: "Se muestra" })).getByRole("option", { name: "Según otra respuesta" }));
   const writes = store.writes.length;
 
   await act(async () => { await user.click(screen.getByRole("button", { name: "Guardar borrador" })); });

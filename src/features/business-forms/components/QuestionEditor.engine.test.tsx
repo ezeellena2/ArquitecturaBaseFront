@@ -31,7 +31,7 @@ describe("calculations, conditions and bound questions in the editor of a questi
     await mount({ ...net, required: false, calculation: { operation: "multiply", operands: ["field-net", null] } });
     expect(screen.getByText("Cálculo · Neto por …")).toBeVisible();
     expect(screen.queryByRole("checkbox", { name: "Obligatoria" })).not.toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Qué calcula" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Qué calcula Multiplicar" })).toBeVisible();
   });
 
   it("says under the name when the question shows, and marks what is left to complete after a save stopped", async () => {
@@ -49,7 +49,8 @@ describe("calculations, conditions and bound questions in the editor of a questi
     expect(screen.getByRole("group", { name: "Tipo de respuesta" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");
     expect(screen.getByRole("checkbox", { name: "Obligatoria" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("button", { name: "Quitar Neto" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se puede quitar.");
-    expect(screen.getByRole("button", { name: "Siempre" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Se muestra Siempre" })).toBeDisabled();
+    expect(screen.getByRole("group", { name: "Se muestra" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");
     await userEvent.setup().type(screen.getByRole("textbox", { name: "Pregunta" }), " gravado");
     expect(onChange).toHaveBeenCalled();
   });
@@ -69,6 +70,8 @@ describe("calculations, conditions and bound questions in the editor of a questi
     const photo: DraftQuestion = { localId: "field-photo", fieldId: "field-photo", replacesFieldId: null, type: "photo", label: { es: "Foto" }, help: null, required: true,
       files: { minFiles: 1, maxFiles: 3, photoSource: "cameraOrGallery" } };
     await mount(photo, { bound: true });
+    expect(screen.getByRole("button", { name: "De dónde sale la foto Cámara o galería" })).toBeDisabled();
+    expect(screen.getByRole("group", { name: "De dónde sale la foto" })).toHaveAccessibleDescription(reason);
     for (const name of ["Mínimo", "Máximo"]) {
       const field = screen.getAllByRole("spinbutton", { name: new RegExp("^" + name) }).at(-1)!;
       expect(field).toBeDisabled();

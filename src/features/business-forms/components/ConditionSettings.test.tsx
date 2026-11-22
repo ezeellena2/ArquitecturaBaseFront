@@ -2,7 +2,7 @@ import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { server } from "@/test/mocks/server";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { DraftQuestion } from "../model";
@@ -26,9 +26,10 @@ describe("«Se muestra» of a question (CO1-A)", () => {
     const user = userEvent.setup();
     renderWithProviders(<Harness initial={from} others={[concept]} />);
 
-    expect(screen.getByRole("button", { name: "Siempre" })).toHaveAttribute("aria-pressed", "true");
+    // «Se muestra» is the only piece to choose (DS1-A, 2026-11-22), with its (i).
+    expect(screen.getByRole("button", { name: "Se muestra Siempre" })).toHaveAccessibleDescription(expect.stringContaining("Según la respuesta de una pregunta anterior"));
     expect(screen.queryByRole("button", { name: /^Si / })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Según otra respuesta" }));
+    await pick("Se muestra Siempre", "Según otra respuesta");
     expect(screen.getByTestId("line")).toHaveTextContent("Según otra respuesta");
     // «Si» is the only piece to choose (DS1-A): its list opens with the keyboard.
     await act(async () => { screen.getByRole("button", { name: "Si Elegí una pregunta" }).focus(); });
@@ -48,15 +49,26 @@ describe("«Se muestra» of a question (CO1-A)", () => {
     await user.click(within(answers).getByRole("button", { name: "Quitar «Productos y servicios»" }));
     expect(screen.getByTestId("line")).toHaveTextContent("Si Concepto es Servicios");
 
-    await user.click(screen.getByRole("button", { name: "Siempre" }));
+    await pick("Se muestra Según otra respuesta", "Siempre");
     expect(screen.queryByRole("button", { name: /^Si / })).not.toBeInTheDocument();
     expect(screen.getByTestId("line")).toBeEmptyDOMElement();
   });
 
-  it("says why «Según otra respuesta» is off without an earlier question to name", () => {
+  it("says why «Según otra respuesta» is off without an earlier question to name", async () => {
     renderWithProviders(<Harness initial={from} others={[]} />);
-    expect(screen.getByRole("button", { name: "Según otra respuesta" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Según otra respuesta" })).toHaveAccessibleDescription("No hay antes una pregunta de elegir una o de sí o no, afuera del bloque.");
+    const byAnswer = within(await openList("Se muestra Siempre")).getByRole("option", { name: "Según otra respuesta" });
+    expect(byAnswer).toHaveAttribute("aria-disabled", "true");
+    expect(byAnswer).toHaveAccessibleDescription("No hay antes una pregunta de elegir una o de sí o no, afuera del bloque.");
+    await userEvent.keyboard("{Escape}");
+  });
+
+  // The piece calls back also with the option it has: choosing it again keeps the question and the answers.
+  it("keeps the condition when the option it has is chosen again", async () => {
+    const onChange = vi.fn();
+    const shown = { ...from, showWhen: { questionId: "concept", values: ["services"] } };
+    renderWithProviders(<ConditionSettings question={shown} questions={[concept, shown]} culture="es" original="es" readOnly={false} scope={scope} onChange={onChange} />);
+    await pick("Se muestra Según otra respuesta", "Según otra respuesta");
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   // What WhatsApp cannot publish is stopped or said here, in a form that goes through it; «Sólo en la app» takes it all.
@@ -108,3 +120,14 @@ describe("«Se muestra» of a question (CO1-A)", () => {
     expect((await screen.findAllByRole("menuitem")).map(item => item.textContent)).toEqual(["Sí", "No"]);
   });
 });
+
+// The Picker opens with the keyboard, like the other Radix lists in the tests; its button says the label and the chosen one.
+async function openList(trigger: string | RegExp) {
+  const button = screen.getByRole("button", { name: trigger });
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox");
+}
+async function pick(trigger: string | RegExp, option: string | RegExp) {
+  await userEvent.click(within(await openList(trigger)).getByRole("option", { name: option }));
+}

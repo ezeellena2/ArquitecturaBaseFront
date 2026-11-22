@@ -1,7 +1,7 @@
 import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import type { DraftQuestion } from "../model";
 import { CalculationFormula, CalculationSettings } from "./CalculationSettings";
@@ -25,16 +25,31 @@ describe("«Qué calcula» of a calculation (CA1-A)", () => {
     const user = userEvent.setup();
     renderWithProviders(<Harness initial={number("amount", "Importe", { repeated: true, calculation: { operation: "multiply", operands: [null, null] } })} others={[freight, block, quantity, price]} />);
 
-    expect(screen.getByRole("button", { name: "Multiplicar" })).toHaveAttribute("aria-pressed", "true");
+    // «Qué calcula» is the only piece to choose (DS1-A, 2026-11-22): its button says the one chosen.
+    expect(screen.getByRole("button", { name: "Qué calcula Multiplicar" })).toBeInTheDocument();
     // Nothing chosen yet: the field says «Elegí una pregunta» and its list has only the questions.
     const first = await openList("Multiplica Elegí una pregunta");
     expect(within(first).getAllByRole("option").map(option => option.textContent)).toEqual(["Cantidad (pregunta 2.1)", "Precio unitario (pregunta 2.2)"]);
     await user.click(within(first).getByRole("option", { name: "Cantidad (pregunta 2.1)" }));
     await pick("Por Elegí una pregunta", "Precio unitario (pregunta 2.2)");
     expect(screen.getByTestId("formula")).toHaveTextContent("Cantidad por Precio unitario");
-    // In the block a sum is not offered: it goes outside.
-    expect(screen.getByRole("button", { name: "Sumar" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Sumar" })).toHaveAccessibleDescription("Una suma va afuera del bloque.");
+    // In the block a sum is not offered: it goes outside, as its reason says.
+    const sum = within(await openList("Qué calcula Multiplicar")).getByRole("option", { name: "Sumar" });
+    expect(sum).toHaveAttribute("aria-disabled", "true");
+    expect(sum).toHaveAccessibleDescription("Una suma va afuera del bloque.");
+    await user.keyboard("{Escape}");
+  });
+
+  it("changes what it calculates in its list, with its (i), and choosing the one it has changes nothing", async () => {
+    const onChange = vi.fn();
+    const amount = number("amount", "Importe", { calculation: { operation: "multiply", operands: ["freight", null] } });
+    renderWithProviders(<CalculationSettings question={amount} questions={[freight, amount]} culture="es" original="es" readOnly={false} onChange={onChange} />);
+
+    expect(screen.getByRole("button", { name: "Qué calcula Multiplicar" })).toHaveAccessibleDescription(expect.stringContaining("Una de tres operaciones"));
+    await pick("Qué calcula Multiplicar", "Multiplicar");
+    expect(onChange).not.toHaveBeenCalled();
+    await pick("Qué calcula Multiplicar", "Porcentaje");
+    expect(onChange).toHaveBeenCalledWith({ ...amount, calculation: { operation: "percent", operands: ["freight", null] } });
   });
 
   it("adds a question of the block over all the items and loose numbers, as chips with «+ Agregar»", async () => {
@@ -57,8 +72,9 @@ describe("«Qué calcula» of a calculation (CA1-A)", () => {
     renderWithProviders(<Harness initial={number("total", "Total", { fieldId: "field-total", calculation: { operation: "sum", operands: ["freight"] } })} others={[freight]}
       locked="La necesita el estándar de la biblioteca: no se cambia." />);
 
-    expect(screen.getByRole("button", { name: "Multiplicar" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Multiplicar" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");
+    // The field stays off, and its reason is on the field.
+    expect(screen.getByRole("button", { name: "Qué calcula Sumar" })).toBeDisabled();
+    expect(screen.getByRole("group", { name: "Qué calcula" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");
     const sum = screen.getByRole("group", { name: "Suma de" });
     expect(within(sum).queryByRole("button", { name: /^Quitar/ })).not.toBeInTheDocument();
     expect(within(sum).getByRole("button", { name: "+ Agregar" })).toHaveAccessibleDescription("La necesita el estándar de la biblioteca: no se cambia.");

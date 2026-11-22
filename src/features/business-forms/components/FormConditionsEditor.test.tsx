@@ -65,9 +65,13 @@ it("starts a condition on a question of the block with «Algún ítem con», its
   await userEvent.keyboard("{Escape}");
   expect(confirmed()).toEqual([{ fieldId: "quantity", operator: "equals", values: [""] }]);
   await pick("Pregunta Artículos › Cantidad", "Artículos › ¿Llegó en buen estado?");
-  // Sí or No in a segmented control, with Sí pressed.
-  expect(within(screen.getByRole("group", { name: "Valor" })).getByRole("button", { name: "Sí" })).toHaveAttribute("aria-pressed", "true");
+  // Sí or No in the piece for choosing (DS1-A, 2026-11-22), with Sí chosen.
+  expect(screen.getByRole("button", { name: "Valor Sí" })).toBeInTheDocument();
   expect(confirmed()).toEqual([{ fieldId: "good", operator: "in", values: ["true"] }]);
+  const answers = await openList("Valor Sí");
+  expect(within(answers).getAllByRole("option").map(option => option.textContent)).toEqual(["Sí", "No"]);
+  await userEvent.click(within(answers).getByRole("option", { name: "No" }));
+  expect(confirmed()).toEqual([{ fieldId: "good", operator: "in", values: ["false"] }]);
   await pick("Pregunta Artículos › ¿Llegó en buen estado?", "Remito");
   expect(confirmed()).toEqual([{ fieldId: "remito", operator: "answered", values: [] }]);
   expect(screen.queryByText("Algún ítem con")).not.toBeInTheDocument();

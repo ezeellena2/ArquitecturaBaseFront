@@ -23,8 +23,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: text(language, "Registrar visita", "Register visit"), exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    const where = page.getByRole("group", { name: text(language, "Dónde se completa", "Where it is completed"), exact: true });
-    await expect(where.getByRole("button", { name: text(language, "Sólo en la app", "Only in the app"), exact: true })).toHaveAttribute("aria-pressed", "true");
+    // «Dónde se completa» goes in the shared piece for choosing (DS1-A, 2026-11-22): its button says the one chosen.
+    await expect(page.getByRole("button", { name: text(language, "Dónde se completa Sólo en la app", "Where it is completed Only in the app"), exact: true })).toBeVisible();
     // SA2-A: nothing of WhatsApp; the preview is the app's «Nueva respuesta», with its final button off.
     await expect(page.getByRole("textbox", { name: text(language, "Cuándo lo ofrece el asistente", "When the assistant offers it"), exact: true })).toHaveCount(0);
     const preview = page.getByRole("region", { name: text(language, "Vista previa", "Preview"), exact: true });
@@ -45,7 +45,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: text(language, "Publicar", "Publish"), exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    await expect(page.getByRole("group", { name: text(language, "Dónde se completa", "Where it is completed"), exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: new RegExp("^" + text(language, "Dónde se completa", "Where it is completed") + " ") })).toHaveCount(0);
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/sa5-editor-" + language + "-" + width + ".png", fullPage: true });
   });

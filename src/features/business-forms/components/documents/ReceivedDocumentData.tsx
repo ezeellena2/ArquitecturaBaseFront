@@ -7,7 +7,6 @@ import { FormField } from "@/shared/ui/FormField";
 import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Input } from "@/shared/ui/input";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Textarea } from "@/shared/ui/textarea";
 import type { ReceivedDocumentValue } from "../../api/receivedDocuments";
 import { receivedDocumentErrorKey, receivedDocumentFieldId, receivedDocumentShownData, receivedDocumentValueNeedsLook, type ReceivedDocumentDraft,
@@ -25,10 +24,11 @@ function Mark({ value }: { value: ReceivedDocumentValue }) {
 /**
  * The data read for the document's form, in the form's order (DOC5-A): editable, a control per type, while the document waits for the
  * team; read, in two columns (`DataList`), otherwise. Each datum carries its mark, and what does not pass a fixed validation says so
- * under it until it is changed, as the server's problem when passing it does. A choice is chosen with the only piece to choose (DS1-A)
- * among its options (its own, or the ones of the catalog its sender sees), also when it was not read, and «Sin respuesta» first leaves
- * it empty; the options of a catalog question that chooses first by a field go together after a line, each with its group in grey
- * under its name, so two alike («San Martín» of two provinces) can be told apart. Its button says the mark of its label («Revisá»),
+ * under it until it is changed, as the server's problem when passing it does. A yes or no is chosen with the only piece to choose
+ * (DS1-A, 2026-11-22) between Sí and No. A choice too, among its options (its own, or the ones of the catalog its sender sees), also
+ * when it was not read, and «Sin respuesta» first leaves it empty; the options of a catalog question that chooses first by a field
+ * go together after a line, each with its group in grey under its name, so two alike («San Martín» of two provinces) can be told
+ * apart. Its button says the mark of its label («Revisá»),
  * as the label of its `FormField` names it (`labelledBy`). A catalog choice the server does not list is
  * searched (too many options for its sender, `ReceivedDocumentOptionSearch`), or says why it has none (its sender lacks the datum its
  * catalog filters by), which stops passing it only when it is required. After eight data the rest fold under «Ver los N datos más», except
@@ -74,15 +74,6 @@ export function ReceivedDocumentData({ documentId, person, values, draft, proble
         const error = server[value.fieldId] || (problem ? t("problems." + problem) : value.mark === "invalid" && unchanged ? t(receivedDocumentErrorKey(value.errorCode)) : undefined);
         // The space keeps the name and the mark apart where the label names a control («Moneda No se leyó»); the gap draws it.
         const label = <span className="inline-flex flex-wrap items-center gap-1.5">{value.label} <Mark value={value} /></span>;
-        if (value.type === "boolean") return <div key={value.fieldId} id={id} tabIndex={-1} className="flex flex-col gap-1.5 outline-none">
-          <GroupLabel id={id + "-label"}>{value.label}</GroupLabel>
-          <div className="flex flex-wrap items-center gap-2">
-            <SegmentedControl aria-label={value.label} disabled={disabled} options={(["true", "false"] as const).map(option => ({ key: option,
-              label: t(option === "true" ? "yes" : "no"), pressed: typed === option, onSelect: () => onChange(value.fieldId, option) }))} />
-            <Mark value={value} />
-          </div>
-          {error ? <p role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
-        </div>;
         const unavailable = value.type === "choice" ? value.optionsUnavailable : null;
         // Its sender lacks the datum its catalog filters by: its reason in the place of the list, which passing it stops if it is required.
         if (unavailable?.reason === "missingData") {
@@ -105,6 +96,10 @@ export function ReceivedDocumentData({ documentId, person, values, draft, proble
         const control = unavailable?.reason === "tooMany"
           ? <ReceivedDocumentOptionSearch id={id} documentId={documentId} fieldId={value.fieldId} label={value.label} value={typed}
             text={typed === original ? value.text : null} disabled={disabled} onChange={next => onChange(value.fieldId, next)} onConflict={onConflict} />
+          : value.type === "boolean"
+          ? <Picker id={id} label={value.label} labelledBy={id + "-label"} value={typed || null} disabled={disabled} placeholder={t("data.choose")}
+            onChange={next => { if (next !== typed) onChange(value.fieldId, next); }}
+            options={(["true", "false"] as const).map(option => ({ id: option, label: t(option === "true" ? "yes" : "no") }))} />
           : value.type === "choice"
           ? <Picker id={id} label={value.label} labelledBy={id + "-label"} value={typed} disabled={disabled} placeholder={t("data.choose")}
             first={{ id: "", label: t("data.none") }} onChange={next => onChange(value.fieldId, next)} options={choices} />

@@ -124,14 +124,14 @@ it("takes the choice away from a question that gets a condition, which WhatsApp 
   const name = within(contact).getByRole("button", { name: /^Nombre del contacto / });
   expect(name).toHaveAccessibleName("Nombre del contacto Recibió (pregunta 3)");
   await userEvent.click(screen.getByRole("button", { name: "Editar Recibió" }));
-  const shows = screen.getByRole("group", { name: "Se muestra" });
-  await userEvent.click(within(shows).getByRole("button", { name: "Según otra respuesta" }));
+  // «Se muestra» is the only piece to choose (DS1-A, 2026-11-22).
+  await pick("Se muestra Siempre", "Según otra respuesta");
   await waitFor(() => expect(name).toHaveAccessibleName("Nombre del contacto Ninguna"));
   expect(within(await openList(name)).queryByRole("option", { name: /^Recibió/ })).not.toBeInTheDocument();
   await userEvent.keyboard("{Escape}");
 
   // Shown always again, it can be chosen, but the choice went with the condition.
-  await userEvent.click(within(shows).getByRole("button", { name: "Siempre" }));
+  await pick("Se muestra Según otra respuesta", "Siempre");
   expect(within(await openList(name)).getByRole("option", { name: "Recibió (pregunta 3)" })).not.toHaveAttribute("aria-disabled");
   await userEvent.keyboard("{Escape}");
   expect(name).toHaveAccessibleName("Nombre del contacto Ninguna");
@@ -157,7 +157,7 @@ it("with a question «Ubicación», leaves the location row off with its reason 
 it("does not show with «Sólo en la app», and what was chosen stays saved", { timeout: 20_000 }, async () => {
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   await zone();
-  await userEvent.click(within(screen.getByRole("group", { name: "Dónde se completa" })).getByRole("button", { name: "Sólo en la app" }));
+  await pick("Dónde se completa En la app y por WhatsApp", "Sólo en la app");
   expect(screen.queryByRole("region", { name: "Ubicación y contacto" })).not.toBeInTheDocument();
   await save();
   expect(store.writes.at(-1)?.draft.appOnly).toBe(true);

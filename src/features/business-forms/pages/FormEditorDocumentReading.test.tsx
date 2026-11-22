@@ -178,7 +178,7 @@ it("does not show where WhatsApp does not complete the form: what was saved stay
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   await zone();
   await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
-  await userEvent.click(within(screen.getByRole("group", { name: "Dónde se completa" })).getByRole("button", { name: "Sólo en la app" }));
+  await pick("Dónde se completa En la app y por WhatsApp", "Sólo en la app");
   expect(screen.queryByRole("region", { name: "Lectura de documentos" })).not.toBeInTheDocument();
   await save();
   expect(store.writes.at(-1)?.draft.appOnly).toBe(true);

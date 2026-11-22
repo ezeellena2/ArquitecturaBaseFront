@@ -1,9 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
-import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { calculationCandidates, calculationFormula, changeCalculationOperation, draftFormulaOperands, maxSumOperands, type CalculationCandidate } from "../calculations";
 import { useCalculationWords } from "../hooks/useCalculationWords";
 import type { DraftCalculation, DraftQuestion, FormCalculationOperation, FormCulture } from "../model";
@@ -20,10 +18,10 @@ export function CalculationFormula({ question, questions, culture, original }: {
 }
 
 /**
- * «Qué calcula» of a calculation (CA1-A): Multiplicar, Sumar or Porcentaje and the questions it uses, earlier numbers within its
- * reach. Multiply and percent (base and rate) choose two in their lists; a sum, chips with «+ Agregar», also a question of the
- * block over all the items. A sum goes outside the block. Bound by the library standard (BI1-A), every control is off with its
- * reason on itself.
+ * «Qué calcula» of a calculation (CA1-A): Multiplicar, Sumar or Porcentaje, in the only piece to choose (DS1-A, 2026-11-22),
+ * and the questions it uses, earlier numbers within its reach. Multiply and percent (base and rate) choose two in their lists;
+ * a sum, chips with «+ Agregar», also a question of the block over all the items. A sum goes outside the block. Bound by the
+ * library standard (BI1-A), every control is off with its reason on itself.
  */
 export function CalculationSettings({ question, questions, culture, original, readOnly, lockedReason, error, onChange }: {
   question: DraftQuestion; questions: readonly DraftQuestion[]; culture: FormCulture; original: FormCulture; readOnly: boolean;
@@ -52,14 +50,13 @@ export function CalculationSettings({ question, questions, culture, original, re
   const chosen = calculation.operands.filter((item): item is string => item !== null);
   const left = sumCandidates.filter(candidate => !chosen.includes(candidate.id));
   return <div data-question-control="calculation" className="flex flex-col gap-3">
-    <div className="flex flex-col gap-1.5">
-      <GroupLabel id={question.localId + "-calculation"} help={t("calculation.help")}>{t("calculation.operation")}</GroupLabel>
-      <SegmentedControl aria-label={t("calculation.operation")} disabled={readOnly} options={operations.map(operation => ({
-        key: operation, label: t("calculation.operations." + operation), pressed: calculation.operation === operation,
-        onSelect: () => change(changeCalculationOperation(calculation, operation)),
-        disabledReason: lockedReason ?? (operation === "sum" && inBlock && calculation.operation !== "sum" ? t("calculation.sumInBlock") : undefined),
-      }))} />
-    </div>
+    {/* As wide as the first of the two lists under it; choosing the one it has changes nothing. */}
+    <div className="grid gap-4 sm:grid-cols-2"><FormField label={t("calculation.operation")} help={t("calculation.help")}>
+      <DisabledReason reason={lockedReason} className="grid w-full"><Picker label={t("calculation.operation")} disabled={readOnly || !!lockedReason} value={calculation.operation}
+        onChange={operation => { if (operation !== calculation.operation) change(changeCalculationOperation(calculation, operation as FormCalculationOperation)); }}
+        options={operations.map(operation => ({ id: operation, label: t("calculation.operations." + operation),
+          disabledReason: operation === "sum" && inBlock && calculation.operation !== "sum" ? t("calculation.sumInBlock") : null }))} /></DisabledReason>
+    </FormField></div>
     {calculation.operation === "sum"
       ? <QuestionChips label={t("calculation.sumOf")} chips={chosen.map(id => ({ id, label: nameOf(id, 0) }))} options={left.map(candidate => ({ id: candidate.id, label: name(candidate) }))}
         addLabel={t("calculation.add")} removeLabel={label => t("calculation.remove", { label })} readOnly={readOnly} lockedReason={lockedReason}

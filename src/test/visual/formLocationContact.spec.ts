@@ -47,9 +47,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: "test-results/visual/location-contact-help-" + language + "-" + width + ".png" });
     await page.keyboard.press("Escape");
 
-    // «Sólo en la app»: the zone does not show.
-    await page.getByRole("group", { name: text(language, "Dónde se completa", "Where it is completed"), exact: true })
-      .getByRole("button", { name: text(language, "Sólo en la app", "Only in the app"), exact: true }).click();
+    // «Sólo en la app», chosen in the shared piece for choosing (DS1-A, 2026-11-22): the zone does not show.
+    await page.getByRole("button", { name: new RegExp("^" + text(language, "Dónde se completa", "Where it is completed") + " ") }).click();
+    await page.getByRole("option", { name: text(language, "Sólo en la app", "Only in the app"), exact: true }).click();
     await expect(zone).toHaveCount(0);
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/visual/location-contact-app-only-" + language + "-" + width + ".png", fullPage: true });
