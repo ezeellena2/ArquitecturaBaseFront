@@ -3,6 +3,7 @@ import { catalogFieldTypes } from "./catalogResponse";
 import { z } from "zod";
 import { api } from "@/shared/api/httpClient";
 import type { ResponseQuery } from "../responses";
+import { responseEntrySchema } from "./entries";
 const guid = z.string().uuid();
 const utc = z.iso.datetime();
 const type = z.enum([
@@ -318,6 +319,9 @@ export const responseDetailSchema = z.strictObject({
   results: z.array(result).min(1).optional(),
   // A response with an issuance: the zone «Comprobante» keeps its place while the flow, read apart, arrives.
   hasIssuance: z.literal(true).optional(),
+  // VF1-A: the form of its own version, with its answers in that shape. Optional only while the screens that read it go in
+  // with the exported examples: the Api of b857e1d6 always sends it.
+  entry: responseEntrySchema.optional(),
 });
 export type ResponseSheet = z.infer<typeof responseSheetSchema>;
 export type ResponseRow = ResponseSheet["records"]["items"][number];

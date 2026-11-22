@@ -98,6 +98,12 @@ const issuePreviewSchema = z.strictObject({
 export type FormEntry = z.infer<typeof formEntrySchema>;
 export type FormIssuePreview = z.infer<typeof issuePreviewSchema>;
 export type FormEntryCorrection = z.infer<typeof correctionSchema>;
+/**
+ * The form of a response's own version as the app loads it, with its answers and files in that shape (VF1-A): the detail
+ * reads with it, as the form, and its conditions say what is not drawn.
+ */
+export const responseEntrySchema = correctionSchema.pick({ entry: true, answers: true, files: true });
+export type FormResponseEntry = z.infer<typeof responseEntrySchema>;
 export type FormEntryKeptFile = FormEntryCorrection["files"][number];
 export type FormEntryQuestion = FormEntry["questions"][number];
 export type FormEntryOption = z.infer<typeof entryOptionSchema>;
