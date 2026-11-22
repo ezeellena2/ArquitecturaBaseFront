@@ -1,5 +1,5 @@
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
-import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
+import { useEffect, useEffectEvent, useId, useRef, type RefObject } from "react";
 import type { AssistantComposerState } from "../hooks/useAssistantSuggestion";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
@@ -11,12 +11,10 @@ import { FormIcon } from "@/shared/ui/icons";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
-import { Picker } from "@/shared/ui/Picker";
+import { Picker, type PickerOption } from "@/shared/ui/Picker";
 import { Textarea } from "@/shared/ui/textarea";
-import { SearchInput } from "@/shared/ui/SearchInput";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
-import { Pagination } from "@/shared/ui/Pagination";
 import type { Chat, Outgoing } from "../api/chat";
+import type { ChatFormOption } from "../api/forms";
 import type { ChatDraft } from "./ChatComposer";
 import { useFormComposer } from "../hooks/useFormComposer";
 import { FormCatalogPreparation } from "./FormCatalogPreparation";
@@ -34,20 +32,14 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   useEffect(() => {if(openRequest>0)openRequested();},[openRequest]);
   const restoreFocus = useRestoreFocusOnClose(state.open || assistantOpen, focusFallback);
   const message = useRef<HTMLTextAreaElement>(null);
-  const list = useRef<HTMLDivElement>(null);
+  const formField = useId();
   useEffect(()=>{if(state.fieldError)message.current?.focus();},[state.fieldError]);
-  useEffect(()=>{if(state.selectionError)list.current?.querySelector<HTMLButtonElement>('[role="radio"]')?.focus();},[state.selectionError]);
+  // A form to choose, or the chosen one that is no longer available, takes the focus to the field of the forms.
+  useEffect(()=>{if(state.selectionError)document.getElementById(formField)?.focus();},[state.selectionError,formField]);
   const form = state.form;
   const selected = form?.selection;
-  const items = state.mayReadOptions ? state.forms.data?.page.items ?? [] : [];
   const frozen = Boolean(form?.attempt);
-  const offPage = Boolean(selected && !items.some(option => formOptionKey(option)===formOptionKey(selected)));
-  // The chosen form of another page stays first in the list, with its chosen card (LR3-A, 2026-11-03); on its page, in its place.
-  const listed = offPage&&selected&&!state.contextChanged ? [selected, ...items] : items;
-  // Another page moves the focus to its first form, past the chosen one that stays on top.
-  const pinned = listed.length - items.length;
-  const focusPage = useRef(false);
-  useEffect(() => { if (focusPage.current && !state.forms.isFetching && state.forms.data) { focusPage.current = false; list.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[pinned]?.focus(); } }, [state.forms.data, state.forms.isFetching, pinned]);
+  const chosenKey = selected && !state.contextChanged ? formOptionKey(selected) : null;
   const deadline = new Date(Date.parse(contact.lastInboundAtUtc)+24*60*60*1000).toISOString();
   const language = i18n.resolvedLanguage ?? "es";
   // NI1-A (2026-11-03): «Le llega en …» names the language only when it is not the menu's.
@@ -55,12 +47,22 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const name = contact.profileName ?? contact.linkedAccount?.displayName ?? t("unnamed");
   const presentationCulture = state.presentationCulture;
   const cta = presentationCulture && state.presentationReady ? t("forms.openForm",{lng:presentationCulture}) : undefined;
+  // Each form says its version and questions in grey, and the chosen one goes in the language it will be sent in. One whose list
+  // depends on another answer (CW7) or that is no longer available is off, with why (MA1-A).
+  const formOption = (option: ChatFormOption): PickerOption => {
+    const culture = selected && formOptionKey(option) === formOptionKey(selected) && presentationCulture ? presentationCulture : form?.recipientCulture ?? "es";
+    const dependent = formOptionDependentQuestion(option, culture);
+    const unavailable = form?.blocked === "formUnavailable" && option.versionId === selected?.versionId;
+    return { id: formOptionKey(option), label: formOptionName(option, culture),
+      description: dependent ? null : t("forms.optionDescription", { version: option.versionNumber, count: option.questionCount }),
+      disabledReason: dependent ? t("forms.dependsOnAnswer", { question: dependent }) : unavailable ? t("forms.optionUnavailable") : null };
+  };
   // Why a form cannot be sent (the account, the forms) and the wait of a 429 are the help of the disabled button, never a text beside it.
   // The reasons of the conversation (send.*) are told above the composer.
   const accountReason = state.disabledReason?.startsWith("forms.") ? t(state.disabledReason) : null;
   const waitReason = (working: boolean, waiting: boolean, seconds: number) => waiting && !working ? t("forms.waitingHint",{count:seconds}) : null;
-  // A 429 of the list or of the preparation also turns off their Retry, the search, the form cards and the pagination, with
-  // the same reason. Those regions keep the width of the dialog while they wait.
+  // A 429 of the list or of the preparation also turns off their Retry and the field of the forms, whose list searches and
+  // pages, with the same reason. The field keeps the width of the dialog while it waits.
   const retryReason = waitReason(false, state.waiting, state.waitSeconds);
   const regionReason = "grid w-full";
   // On the phone the footer stacks its buttons at full width; the wrapper of a waiting one keeps that width.
@@ -76,7 +78,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
   const consulting = assistant?.busyAction === "consult";
   const sendingSuggestion = assistant?.busyAction === "send";
   // What goes out reads in two columns, the same in both branches (DL, 2026-11-11), never in loose paragraphs: the form and its
-  // version where nothing else names them (in the list, the chosen card does), the language only when it is not the menu's
+  // version where nothing else names them (in the list, the field of the forms does), the language only when it is not the menu's
   // (NI1-A) and until when it can be sent, in the profile's zone.
   const sendData = (culture: string | undefined, chosen?: { name: string; version: number }) => {
     const items: DataListItem[] = chosen ? [{ key: "form", label: t("forms.formLabel"), value: chosen.name }, { key: "version", label: t("forms.versionLabel"), value: chosen.version }] : [];
@@ -106,20 +108,18 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
             <DisabledReason reason={waitReason(assistant.busy, assistant.waiting, assistant.waitSeconds)} className={footerReason}>{assistant.attempt && assistant.recovery === "consult" && !sendingSuggestion ? <Button variant="outline" pending={consulting} disabled={assistant.busy || assistant.waiting} onClick={() => void assistant.consult()}>{t(consulting ? "send.checking" : "send.check")}</Button> : <Button pending={sendingSuggestion} disabled={assistant.busy || assistant.waiting || Boolean(state.disabledReason) || Boolean(draft.attempt)} onClick={() => void assistant.send()}>{t(sendingSuggestion ? "forms.saving" : assistant.attempt ? "send.retry" : "forms.action")}</Button>}</DisabledReason>
           </DialogFooter>
         </> : <>
-        {state.mayReadOptions ? <div className="flex flex-col gap-3" ref={list}>
-          {/* Another search or page keeps the forms and the pagination in sight while it reads, with its progress beside the search. */}
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1"><DisabledReason reason={retryReason} className={regionReason}><fieldset disabled={state.waiting}><SearchInput value={state.search} onChange={value=>{state.setSearch(value);state.setPage(1);}} label={t("forms.search")} /></fieldset></DisabledReason></div>
-            {state.forms.isPlaceholderData ? <span role="status" className="inline-flex shrink-0"><Spinner decorative /><span className="sr-only">{t("forms.loading")}</span></span> : null}
-          </div>
-          {state.forms.isError || state.retryingForms ? <div className="flex items-center justify-between gap-2"><p className="text-sm text-[var(--color-content-muted)]">{t("forms.listUnavailable")}</p><DisabledReason reason={state.retryingForms ? null : retryReason}><Button variant="outline" size="sm" pending={state.retryingForms} disabled={state.waiting} onClick={state.retryForms}>{t(state.retryingForms ? "retrying" : "retry")}</Button></DisabledReason></div>
-            : state.forms.isPending ? <div role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("forms.loading")}</div> : <DisabledReason reason={retryReason} className={regionReason}><fieldset className="min-w-0"><RadioGroupField label={t("forms.formLabel")} variant="cards" value={selected&&!state.contextChanged?formOptionKey(selected):undefined} onValueChange={key=>{const option=listed.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} error={state.selectionError} options={listed.map(option=>{const culture=selected&&formOptionKey(option)===formOptionKey(selected)&&presentationCulture?presentationCulture:form?.recipientCulture??"es";
-                  // CW7: a list that depends on another answer is loaded in the app; the card says so and cannot be chosen.
-                  const dependent=formOptionDependentQuestion(option,culture);
-                  return {value:formOptionKey(option),label:formOptionName(option,culture),description:dependent?t("forms.dependsOnAnswer",{question:dependent}):t("forms.optionDescription",{version:option.versionNumber,count:option.questionCount}),disabled:!!dependent||frozen||state.sending||state.waiting||(form?.blocked==="formUnavailable"&&option.versionId===selected?.versionId)};})} /></fieldset></DisabledReason>}
-          {!state.forms.isPending&&!state.forms.isError&&!items.length ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.noResults")}</p> : null}
-          {state.forms.data ? <DisabledReason reason={retryReason} className={regionReason}><fieldset disabled={state.waiting}><Pagination {...state.forms.data.page} onPageChange={page=>{focusPage.current=true;state.setPage(page);}} /></fieldset></DisabledReason> : null}
-        </div> : null}
+        {/* The forms go in the only piece to choose, from the server (2026-11-22): the search, «Mostrar N más», the wait and the
+            failure with its Retry are said inside its list. The chosen one of another page stays first, chosen, and the field keeps
+            its name (LR3-A). A 429 turns the field off with the wait as its reason. */}
+        {state.mayReadOptions ? <FormField label={t("forms.formLabel")} htmlFor={formField} error={state.selectionError}>
+          <DisabledReason reason={retryReason} className={regionReason}>
+            <Picker label={t("forms.formLabel")} placeholder={t("forms.choose")} disabled={frozen||state.sending||state.waiting} value={chosenKey}
+              options={state.formList.options.map(formOption)} selectedOptions={selected&&chosenKey ? [formOption(selected)] : undefined}
+              search={state.search} onSearchChange={state.setSearch} total={state.formList.total} loading={state.formList.loading} failed={state.formList.failed}
+              onRetry={state.retryForms} retryReason={retryReason} onLoadMore={state.formList.onLoadMore} loadingMore={state.formList.loadingMore} pageSize={state.formList.pageSize}
+              onChange={key=>{if(key===chosenKey)return;const option=state.formList.options.find(value=>formOptionKey(value)===key);if(option)state.choose(option);}} />
+          </DisabledReason>
+        </FormField> : null}
         {sendData(state.mayReadOptions ? presentationCulture : undefined)}
         {recipientChanged ? <Banner tone="danger">{t("forms.recipientChanged")}</Banner>
           : state.mayReadOptions&&!state.contextChanged&&selected&&!frozen ? !state.presentationReady && state.preparation.isSuccess ? <div role="status" className="flex items-center gap-2 text-sm text-[var(--color-content-muted)]"><Spinner decorative />{t("forms.preparing")}</div> : <FormCatalogPreparation hasCatalogQuestions={selected.hasCatalogQuestions===true} query={state.preparation} waitReason={retryReason} recipientName={name} /> : null}

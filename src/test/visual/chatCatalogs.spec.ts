@@ -14,11 +14,13 @@ async function screenshot(page:Page,name:string,width:number){
   await page.screenshot({path:`test-results/k7-${name}.png`,fullPage:true});
 }
 const attempts=(page:Page)=>page.evaluate(()=>(window as typeof window&{chatFormsFixture:ReturnType<typeof createChatFormFixtures>}).chatFormsFixture.attempts.length);
+// The form is chosen in the only piece to choose (2026-11-22): its field opens the list, which on the phone takes the screen.
+async function chooseForm(page:Page,text:typeof es,name:string){await page.getByRole("dialog").getByRole("button",{name:new RegExp("^"+text.forms.formLabel+" ")}).click();await page.getByRole("listbox",{name:text.forms.formLabel,exact:true}).getByRole("option",{name,exact:true}).click();}
 for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const text=lang==="es"?es:en;
   test(`K7 recipient options and sending blockers ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"ready",width);
     const trigger=page.getByRole("button",{name:text.forms.action,exact:true});await trigger.click();
-    const dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
+    const dialog=page.getByRole("dialog");await chooseForm(page,text,"Registrar visita");
     const counts=lang==="es"?"Cliente: 2 opciones":"Cliente: 2 options";
     await expect(dialog.getByText(counts,{exact:true})).toBeVisible();
     await expect(dialog.getByRole("button",{name:text.forms.action,exact:true})).toBeEnabled();
@@ -27,7 +29,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
   });
   for(const state of ["unavailable","large","empty"])test(`K7 ${state} catalog blocker ${lang} ${width}px`,async({page})=>{
       await openChat(page,lang,state,width);await page.getByRole("button",{name:text.forms.action,exact:true}).click();
-      const dialog=page.getByRole("dialog");await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
+      const dialog=page.getByRole("dialog");await chooseForm(page,text,"Registrar visita");
       const input=dialog.getByRole("textbox",{name:text.forms.messageLabel});await input.fill("Private draft retained");
       await expect(dialog.getByRole("alert")).toBeVisible();
       await expect(dialog.getByRole("button",{name:text.forms.action,exact:true})).toBeDisabled();
@@ -52,7 +54,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
     await screenshot(page,`inactive-${lang}-${width}`,width);
     await page.getByRole("button",{name:text.forms.reply.resend,exact:true}).click();
     const dialog=page.getByRole("dialog");await expect(dialog).toBeVisible();expect(await attempts(page)).toBe(0);
-    await dialog.getByRole("radio",{name:"Registrar visita",exact:true}).click();
+    await chooseForm(page,text,"Registrar visita");
     await expect(dialog.getByText(lang==="es"?"Cliente: 2 opciones":"Cliente: 2 options",{exact:true})).toBeVisible();
     await dialog.getByRole("button",{name:text.forms.action,exact:true}).click();await expect(dialog).toHaveCount(0);
     expect(await attempts(page)).toBe(1);

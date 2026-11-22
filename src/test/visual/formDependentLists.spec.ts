@@ -81,10 +81,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.getByRole("button", { name: "Juan Gómez", exact: true }).click();
     await page.getByRole("button", { name: text(language, "Enviar formulario", "Send form"), exact: true }).click();
     const dialog = page.getByRole("dialog");
-    // The form and its question go in the recipient's language (Spanish here); the reason, in the menu's.
-    const sowing = dialog.getByRole("radio", { name: /Siembra/ });
-    await expect(sowing).toBeDisabled();
-    await expect(dialog.getByText(text(language, "«Lote» depende de otra respuesta: se carga desde la app", "«Lote» depends on another answer: it is loaded in the app"), { exact: true })).toBeVisible();
+    // The forms go in the only piece to choose (2026-11-22): the form is off in its list, with why after its name (MA1-A). The form
+    // and its question go in the recipient's language (Spanish here); the reason, in the menu's.
+    const label = text(language, "Formulario", "Form");
+    await dialog.getByRole("button", { name: new RegExp("^" + label + " ") }).click();
+    const sowing = page.getByRole("listbox", { name: label, exact: true }).getByRole("option", { name: /Siembra/ });
+    const reason = text(language, "«Lote» depende de otra respuesta: se carga desde la app", "«Lote» depends on another answer: it is loaded in the app");
+    await expect(sowing).toHaveAttribute("aria-disabled", "true");
+    await expect(sowing).toHaveAccessibleDescription(reason);
+    await expect(sowing).toContainText(reason);
     await noPageScroll(page, width);
     await page.screenshot({ path: "test-results/cw7-chat-" + language + "-" + width + ".png", fullPage: true });
   });

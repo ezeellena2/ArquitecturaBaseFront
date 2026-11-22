@@ -58,7 +58,11 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     await open();
     await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(await within(dialog).findByRole("radio",{name:selected.name[culture]}));
+    await userEvent.click(await within(dialog).findByRole("button",{name:/^Formulario /}));
+    // The list says the version and the questions of each form in grey, under its name.
+    const option = await within(await screen.findByRole("listbox",{name:"Formulario"})).findByRole("option",{name:selected.name[culture]});
+    expect(option).toHaveAccessibleDescription("Versión 1 · 1 pregunta");
+    await userEvent.click(option);
     await waitFor(() => expect(within(dialog).getByRole("button", {name:"Enviar formulario"})).toBeEnabled());
     return dialog;
   }
@@ -68,7 +72,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
   it("selects the real sealed version and accepts its exact request without a text POST", async () => {
     vi.spyOn(crypto,"randomUUID").mockReturnValue(receipt.requestId as ReturnType<Crypto["randomUUID"]>);
     const dialog = await choose();
-    expect(within(dialog).getByText("Versión 1 · 1 pregunta",{exact:true})).toBeInTheDocument();
+    expect(within(dialog).getByRole("button",{name:"Formulario "+selected.name[culture]})).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Respuesta al cliente"),{target:{value:"Borrador privado de texto"}});
     fireEvent.change(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"}),{target:{value:receipt.body}});
     await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
@@ -137,7 +141,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Ya no tenés permiso para esta acción.")).toBeInTheDocument();
     expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");
-    expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button",{name:/^Formulario /})).not.toBeInTheDocument();
     expect(within(dialog).queryByText(selected.name[culture])).not.toBeInTheDocument();
     expect(posts).toEqual([]);
   });

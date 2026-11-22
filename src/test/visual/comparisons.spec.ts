@@ -47,19 +47,27 @@ for (const width of [1440, 390, 320]) {
   });
 }
 
-// LR3-A: the chosen form of another page stays first in the list, with its chosen card, never «Elegido: …».
+// LR3-A: the chosen form of another page stays first in the list, chosen, never «Elegido: …». The forms go in the only piece to
+// choose (2026-11-22): another time the dialog opens, its list starts again from the first page and, on the phone, takes the screen.
 test("the chosen form of another page stays first in the list at 390px", async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 1100 });
   await page.goto("/src/test/visual/index.html?screen=/whatsapp/chat&scenario=forms-chat-recipient-en&lang=es");
   await page.getByRole("button", { name: "Juan Gómez", exact: true }).click();
   await page.getByRole("button", { name: "Enviar formulario", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("radio", { name: "Register visit", exact: true }).click();
-  await dialog.getByRole("button", { name: "Página siguiente", exact: true }).click();
-  await expect(dialog.getByRole("radio", { name: "Form 5", exact: true })).toBeFocused();
-  await expect(dialog.getByRole("radio").first()).toHaveAccessibleName("Register visit");
-  await expect(dialog.getByRole("radio", { name: "Register visit", exact: true })).toBeChecked();
-  await expect(dialog).not.toContainText("Elegido");
+  const composer = page.getByRole("dialog", { name: "Enviar un formulario a Juan Gómez", exact: true });
+  const list = page.getByRole("listbox", { name: "Formulario", exact: true });
+  await composer.getByRole("button", { name: "Formulario Elegí un formulario", exact: true }).click();
+  await page.getByRole("button", { name: "Mostrar 4 más", exact: true }).click();
+  await list.getByRole("option", { name: "Form 5", exact: true }).click();
+  await composer.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page.getByRole("button", { name: "Enviar formulario", exact: true }).click();
+  await composer.getByRole("button", { name: "Formulario Form 5", exact: true }).click();
+  await expect(list.getByRole("option", { name: "Register visit", exact: true })).toBeVisible();
+  await expect(list.getByRole("option").first()).toHaveAccessibleName("Form 5");
+  await expect(list.getByRole("option", { name: "Form 5", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(list).not.toContainText("Elegido");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await dialog.screenshot({ path: info.outputPath("form-chosen-elsewhere-es-390.png") });
+  await page.getByRole("dialog", { name: "Formulario", exact: true }).screenshot({ path: info.outputPath("form-chosen-elsewhere-es-390.png") });
+  await page.keyboard.press("Escape");
+  await expect(composer.getByRole("button", { name: "Formulario Form 5", exact: true })).toBeFocused();
 });

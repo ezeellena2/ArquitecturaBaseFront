@@ -3,11 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
+import { useSettledValue } from "@/shared/hooks/useSettledValue";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { chatKey, type Chat, type Outgoing } from "../api/chat";
 import { listChatForms, prepareChatForm, recoverFormMessage, sendFormMessage, type ChatFormOption } from "../api/forms";
 import type { ChatDraft } from "../components/ChatComposer";
-import { formOpening, freezeFormMessage, recipientChanged, selectedVersionChanged, type FormSendDraft } from "../lib/formSendSession";
+import { formOpening, formOptionKey, freezeFormMessage, recipientChanged, selectedVersionChanged, type FormSendDraft } from "../lib/formSendSession";
 import { formMessageIssue } from "../lib/formMessage";
 import { replyDisabledReason } from "../lib/replyAvailability";
 
@@ -18,12 +19,14 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   const { ready: spanishReady } = useTranslation("whatsapp", { lng: "es", useSuspense: false });
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  // The forms go in the only piece to choose, from the server (2026-11-22): what is typed waits 300 ms, «Mostrar N más» asks for
+  // the next page and keeps the forms already in sight, and another search starts again from the first page.
   const [search, setSearch] = useState("");
+  const settled = useSettledValue(search.trim());
+  const [more, setMore] = useState<{ search: string; page: number; earlier: readonly ChatFormOption[] }>({ search: "", page: 1, earlier: [] });
+  const pages = more.search === settled ? more : { search: settled, page: 1, earlier: [] as readonly ChatFormOption[] };
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
-  // A retry of a list that never arrived turns the query back to pending: the failure stays with its working Retry meanwhile.
-  const [retryingForms, setRetryingForms] = useState(false);
   const [fieldError, setFieldError] = useState<string>();
   const [selectionError, setSelectionError] = useState<string>();
   const [forbidden, setForbidden] = useState(false);
@@ -45,10 +48,26 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
   const disabledReason = commonReason ?? (!(eligibility?.recipientCulture === "en" ? englishReady : spanishReady) ? "forms.loading" : undefined) ?? (draft.attempt ? "send.pending" : recipientReason);
   const formsScope = [...chatKey, actor, "forms", contact.id, eligibility?.recipientContextRevision, eligibility?.recipientCulture];
   const formsStamp = JSON.stringify(formsScope);
-  const forms = useQuery({ queryKey: [...formsScope, page, search],
-    queryFn: async ({signal}) => { try { return await listChatForms(contact.id, page, search, signal); } catch(error) { const feedback = errorFeedback(error); if(feedback.kind === "wait") beginWait(feedback.retryAfterSeconds); throw error; } }, enabled: open && !denied && !changed && eligibility?.status === "Eligible", retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: {errorOwner:"local"},
-    // Another page or search keeps the previous forms in sight while it reads; another recipient context starts from zero.
+  const forms = useQuery({ queryKey: [...formsScope, pages.page, settled],
+    queryFn: async ({signal}) => { try { return await listChatForms(contact.id, pages.page, settled, signal); } catch(error) { const feedback = errorFeedback(error); if(feedback.kind === "wait") beginWait(feedback.retryAfterSeconds); throw error; } }, enabled: open && !denied && !changed && eligibility?.status === "Eligible", retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false, meta: {errorOwner:"local"},
+    // Another page or search keeps the previous answer while it reads; another recipient context starts from zero.
     placeholderData: (previous, previousQuery) => previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, formsScope.length)) === formsStamp ? previous : undefined });
+  // What the list shows: the forms of this search, page after page, or that it waits or failed, how many there are and how to
+  // ask for more. The answer kept while another arrives, or a failed one being retried, is not this page's.
+  const formsFailed = forms.isError && !forms.isFetching;
+  const formsFresh = forms.data !== undefined && !forms.isPlaceholderData && !forms.isError;
+  const loadedForms = formsFresh ? [...pages.earlier, ...forms.data!.page.items.filter(item => !pages.earlier.some(earlier => formOptionKey(earlier) === formOptionKey(item)))] : pages.earlier;
+  const formsLoading = !formsFailed && (search.trim() !== settled || (pages.page === 1 && !formsFresh));
+  const formsLoadingMore = !formsFailed && !formsLoading && pages.page > 1 && !formsFresh;
+  const formsHasNext = formsFresh && forms.data!.page.hasNext;
+  const formList = {
+    options: formsFailed || formsLoading ? [] : loadedForms,
+    loading: formsLoading, failed: formsFailed, loadingMore: formsLoadingMore,
+    total: forms.data?.page.totalCount,
+    pageSize: formsFresh ? Math.min(forms.data!.page.pageSize, forms.data!.page.totalCount - loadedForms.length) : undefined,
+    // While the next page arrives its button waits: asking again does not skip a page.
+    onLoadMore: formsHasNext || formsLoadingMore ? () => { if (formsHasNext) setMore({ search: settled, page: pages.page + 1, earlier: loadedForms }); } : undefined,
+  };
   const preparationKey = useMemo(()=>[...chatKey,actor,"forms",contact.id,"preparation",eligibility?.recipientContextRevision,
     eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage],
     [actor,contact.id,eligibility?.recipientContextRevision,eligibility?.recipientCulture,form?.selection?.definitionId,form?.selection?.versionId,i18n.resolvedLanguage]);
@@ -114,7 +133,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     const culture = eligibility.recipientCulture;
     const revision = eligibility.recipientContextRevision;
     updateDraft(value => ({...value, form:value.form ? {...value.form,recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision,blocked:recipientChanged(value.form,revision,culture)?"recipientChanged":value.form.blocked} : {message:formOpening(t,culture),recipientCulture:culture,recipientContextRevision:revision,modeRevision:contact.modeRevision}}));
-    setPage(1); setSearch(""); setOpen(true);
+    setMore({ search: "", page: 1, earlier: [] }); setSearch(""); setOpen(true);
   }
   function choose(option: ChatFormOption) {
     if (!forms.data?.recipientCulture || !forms.data.recipientContextRevision || !mayReadOptions || form?.attempt) return;
@@ -169,5 +188,5 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
       else {const feedback=errorFeedback(error);if(active.current&&feedback.kind==="wait")beginWait(feedback.retryAfterSeconds);if(active.current&&feedback.kind!=="session")notify({id:noticeId,kind:"error",message:feedback.kind==="forbidden"?t("send.forbidden"):t("send.checkFailed"),action:["forbidden","wait"].includes(feedback.kind)?undefined:{label:t("send.check"),onClick:()=>void checkOutcome()}});if(feedback.kind==="forbidden"){setForbidden(true);client.removeQueries({predicate:query=>query.queryKey[0]===chatKey[0]&&query.queryKey[1]===actor&&query.queryKey[2]==="forms"&&query.queryKey[3]===contact.id});}}
     } finally {pending.current=false;if(active.current)setChecking(false);}
   }
-  return {presentationCulture,presentationReady,canOpen,open,setOpen,page,setPage,search,setSearch,forms,preparation,preparationBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryingForms, retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied){setRetryingForms(true);void refetchForms().finally(()=>setRetryingForms(false));}}, updateForm};
+  return {presentationCulture,presentationReady,canOpen,open,setOpen,search,setSearch,forms,formList,preparation,preparationBlocked,form,show,choose,submit,checkOutcome,sending,checking,fieldError,setFieldError,selectionError,denied,mayReadOptions,contextChanged,versionChanged,disabledReason,blockedReason,waiting:now<waitUntil, waitSeconds:Math.max(0,Math.ceil((waitUntil-now)/1000)), retryForms:()=>{if(Date.now()>=waitDeadline.current&&!denied)void refetchForms();}, updateForm};
 }

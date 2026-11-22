@@ -11,6 +11,8 @@ import { chatKey, type Chat, type Thread } from "../api/chat";
 import type { ChatFormOption } from "../api/forms";
 import type { FormMessageRequest } from "../lib/formSendSession";
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
+// Choosing a form opens its list and waits for the server: with the machine busy, a whole send passes the 5 s.
+vi.setConfig({ testTimeout: 15_000 });
 const definitionId="019abcde-1000-7000-8000-000000000001",versionId="019abcde-1000-7000-8000-000000000002";
 let contact: Chat; let thread: Thread; let posts: FormMessageRequest[]; let options: ChatFormOption[];
 const receipt=(request:FormMessageRequest,culture=contact.formEligibility?.recipientCulture??"es")=>({ quickReplies: null, assistant: null,id:"019abcde-1000-7000-8000-000000000003",requestId:request.requestId,operatorUserId:currentUser.id,body:(request.message??(culture==="en"?"Complete the form “"+options[0].name.en+"”.":"Completá el formulario «"+options[0].name.es+"».")).trim(),requestedAtUtc:"2026-10-10T12:00:00Z",state:"Pending",waMessageId:null,kind:"Flow",origin:"Conversation" as const,recoveryPath:"/api/whatsapp/chats/"+contact.id+"/outgoing/"+request.requestId,form:{definitionId,versionId,versionNumber:1,name:options[0].name,culture}});
@@ -19,6 +21,9 @@ const formsPage=(items=options,page=1,totalPages=1,totalCount=options.length)=>(
 function held(){let release!:()=>void;const answer=new Promise<void>(resolve=>{release=resolve;});return {answer,release:()=>act(async()=>release())};}
 /// The value next to a datum of a `DataList`.
 const valueOf=(scope:HTMLElement,label:string)=>within(scope).getByText(label,{selector:"dt"}).nextElementSibling;
+// The form is chosen in the only piece to choose (2026-11-22): its button opens the list, which searches and pages in the server.
+async function openForms(dialog:HTMLElement){await userEvent.click(await within(dialog).findByRole("button",{name:/^Formulario /}));return screen.findByRole("listbox",{name:"Formulario"});}
+async function chooseForm(dialog:HTMLElement,name:string|RegExp){const list=await openForms(dialog);await userEvent.click(await within(list).findByRole("option",{name}));}
 async function openDialog(){await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));return screen.findByRole("dialog");}
 beforeEach(()=>{
  queryClient.clear();posts=[];options=[{definitionId,versionId,versionNumber:1,prefix:"VIS",name:{es:"Registrar visita",en:"Register visit"},questionCount:4,submitLabel:{es:"Confirmar visita",en:"Confirm visit"}}];
@@ -28,7 +33,7 @@ beforeEach(()=>{
 });
 afterEach(()=>{queryClient.clear();vi.restoreAllMocks();});
 async function openChat(){renderRouteWithProviders("/whatsapp/chat");await userEvent.click(await screen.findByRole("button",{name:"Juan"}));return screen.findByLabelText("Respuesta al cliente");}
-async function openForm(){await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));if(!options[0].hasCatalogQuestions)await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());return dialog;}
+async function openForm(){await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await chooseForm(dialog,"Registrar visita");if(!options[0].hasCatalogQuestions)await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());return dialog;}
 describe("WhatsApp form sending with simulated server",()=>{
  it("keeps read access without either sending action when the operator lacks send permission",async()=>{server.use(http.get("/api/me",()=>HttpResponse.json({...currentUser,permissions:["whatsapp.read"]})));await openChat();expect(screen.queryByRole("button",{name:"Enviar"})).not.toBeInTheDocument();expect(screen.queryByRole("button",{name:"Enviar formulario"})).not.toBeInTheDocument();});
  it("keeps ordinary text available when the recipient has no linked account",async()=>{contact.linkedAccount=null;contact.formEligibility={status:"NoLinkedAccount",recipientCulture:null,recipientContextRevision:null};const text=await openChat();expect(text).toBeEnabled();expect(screen.getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");expect(screen.getByText("Número sin cuenta vinculada")).toBeInTheDocument();expect(posts).toEqual([]);});
@@ -40,16 +45,16 @@ describe("WhatsApp form sending with simulated server",()=>{
 
 it.each(["InactiveAccount","NoEligibleForms"] as const)("keeps ordinary messages enabled for form-only restriction %s",async status=>{contact.formEligibility={...contact.formEligibility!,status};if(status==="InactiveAccount")contact.linkedAccount!.isActive=false;const text=await openChat();expect(text).toBeEnabled();expect(screen.getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");expect(posts).toEqual([]);});
 it("supports an eligible account without email",async()=>{contact.linkedAccount!.email=null;await openChat();expect(screen.getByText(/sin correo/)).toBeInTheDocument();expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled();});
-it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);expect(valueOf(dialog,"Idioma")).toHaveTextContent(/^Inglés$/);expect(posts).toEqual([]);});
+it("uses the recipient language for the initial message and both buttons, independently of Spanish UI",async()=>{contact.formEligibility!.recipientCulture="en";options[0]={...options[0],name:{es:"Registrar visita",en:"Register visit"},submitLabel:{es:"Confirmar visita",en:"Confirm visit"}};await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");await chooseForm(dialog,"Register visit");await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/«Open form».*«Confirm visit»/);expect(valueOf(dialog,"Idioma")).toHaveTextContent(/^Inglés$/);expect(posts).toEqual([]);});
 // NI1-A (2026-11-03): the language is named only when it is not the menu's, now in its row (DL, 2026-11-11).
 it("does not say it arrives in the menu language",async()=>{const dialog=await openForm();expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");expect(within(dialog).queryByText("Idioma",{selector:"dt"})).not.toBeInTheDocument();expect(within(dialog).queryByText(/^Le llega en/)).not.toBeInTheDocument();});
 // DL (2026-11-11): the language (only the other one) and until when it can be sent read in two columns, not in loose paragraphs
-// of two sizes; the chosen card already names the form and its version, so the list does not say them again. The count of the
+// of two sizes; the field of the forms already names the chosen one, with its version in its list, so the data do not say them again. The count of the
 // message is the datum of its field.
 it("reads the language and the deadline in two columns, without repeating the chosen form, and counts the message under its field",async()=>{contact.formEligibility!.recipientCulture="en";await openChat();await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");
  expect(valueOf(dialog,"Se puede mandar hasta")).toHaveTextContent(/^\d{2}\/\d{2}\/\d{4}, \d{1,2}:\d{2}$/);
  expect(within(dialog).queryByText(/^Se puede mandar hasta .+\.$/)).not.toBeInTheDocument();
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
+ await chooseForm(dialog,"Register visit");await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  expect(valueOf(dialog,"Idioma")).toHaveTextContent(/^Inglés$/);
  expect(within(dialog).getByText("Idioma",{selector:"dt"}).closest("dl")).toBe(within(dialog).getByText("Se puede mandar hasta",{selector:"dt"}).closest("dl"));
  expect(within(dialog).queryByText("Formulario",{selector:"dt"})).not.toBeInTheDocument();
@@ -64,12 +69,12 @@ it("names the chosen form and follows another choice until the operator edits th
  options=[options[0],{...options[0],definitionId:"019abcde-1000-7000-8000-000000000011",versionId:"019abcde-1000-7000-8000-000000000012",prefix:"INS",name:{es:"Recepción de insumos",en:"Supplies received"}}];
  const dialog=await openDialog();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});
  expect(message).toHaveValue("Completá este formulario.");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ await chooseForm(dialog,"Registrar visita");
  expect(message).toHaveValue("Completá el formulario «Registrar visita».");
- await userEvent.click(within(dialog).getByRole("radio",{name:"Recepción de insumos"}));
+ await chooseForm(dialog,"Recepción de insumos");
  expect(message).toHaveValue("Completá el formulario «Recepción de insumos».");
  fireEvent.change(message,{target:{value:"Pasá por la oficina antes de las 10."}});
- await userEvent.click(within(dialog).getByRole("radio",{name:"Registrar visita"}));
+ await chooseForm(dialog,"Registrar visita");
  await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  expect(message).toHaveValue("Pasá por la oficina antes de las 10.");
 });
@@ -77,7 +82,7 @@ it("names a newly chosen form while its preparation is still loading",async()=>{
  const preparing=held();
  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",async()=>{await preparing.answer;return HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,catalogs:[],issues:[]}});}));
  const dialog=await openDialog();
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ await chooseForm(dialog,"Registrar visita");
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita».");
  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
  await preparing.release();
@@ -86,8 +91,23 @@ it("names a newly chosen form while its preparation is still loading",async()=>{
 });
 it.each(["", "x".repeat(1025)])("validates message without truncating or posting",async text=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:text}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(message).toHaveFocus());expect(message).toHaveValue(text);expect(posts).toEqual([]);});
 it.each(["Assistant","Closed"])("invalidates send availability while preserving the message when %s",async reason=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Texto intacto"}});if(reason==="Assistant")contact.mode="Assistant";else contact.lastInboundAtUtc="2020-01-01T00:00:00Z";await queryClient.invalidateQueries({queryKey:chatKey});await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true"));expect(message).toHaveValue("Texto intacto");expect(posts).toEqual([]);});
-it("hides form metadata after permission is revoked by the API while preserving written text",async()=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Mensaje privado"}});server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"General.Forbidden"},{status:403})));await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument());expect(message).toHaveValue("Mensaje privado");expect(within(dialog).queryByText("Registrar visita")).not.toBeInTheDocument();expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");});
+it("hides form metadata after permission is revoked by the API while preserving written text",async()=>{const dialog=await openForm();const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Mensaje privado"}});server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"General.Forbidden"},{status:403})));await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(within(dialog).queryByRole("button",{name:/^Formulario /})).not.toBeInTheDocument());expect(message).toHaveValue("Mensaje privado");expect(within(dialog).queryByText("Registrar visita")).not.toBeInTheDocument();expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toHaveAttribute("aria-disabled", "true");});
 it("blocks a withdrawn selected version without converting it to a text send",async()=>{const dialog=await openForm();server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"WhatsApp.Flow.FormUnavailable"},{status:409})));const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});fireEvent.change(message,{target:{value:"Conservar texto"}});await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled());expect(message).toHaveValue("Conservar texto");expect(posts).toEqual([]);});
+// The chosen form the server says is no longer available stays chosen but off, with why (MA1-A); the field asks for another one.
+it("turns off the chosen form the server says is no longer available, with why",async()=>{
+ const dialog=await openForm();
+ server.use(http.post("/api/whatsapp/chats/:id/form-messages",()=>HttpResponse.json({code:"WhatsApp.Flow.FormUnavailable"},{status:409})));
+ await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Formulario Registrar visita"})).toHaveAccessibleDescription("El formulario elegido ya no está disponible. Elegí otro."));
+ expect(within(dialog).getByRole("button",{name:"Formulario Registrar visita"})).toHaveFocus();
+ const list=await openForms(dialog);
+ const option=within(list).getByRole("option",{name:"Registrar visita"});
+ expect(option).toHaveAttribute("aria-selected","true");
+ expect(option).toHaveAttribute("aria-disabled","true");
+ expect(option).toHaveAccessibleDescription("Versión 1 · 4 preguntas Ya no está disponible.");
+ await userEvent.keyboard("{Escape}");
+ expect(posts).toEqual([]);
+});
 it("recovers a persisted lost response by GET without reposting",async()=>{server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{posts.push(await request.json() as FormMessageRequest);return HttpResponse.error();}),http.get("/api/whatsapp/chats/:id/outgoing/:requestId",()=>HttpResponse.json(receipt(posts[0]))));const dialog=await openForm();await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));await userEvent.click((await screen.findAllByRole("button",{name:"Consultar envío"}))[0]);await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());expect(posts).toHaveLength(1);});
 it.each(["Failed","Uncertain","Reviewed"] as const)("keeps a %s form card in the existing timeline without text reuse or false delivery",async state=>{const request={requestId:"019abcde-1000-7000-8000-000000000004",definitionId,versionId,expectedModeRevision:7,expectedRecipientContextRevision:"opaque-1",message:"Pedido previo"};thread.outgoing=[{...receipt(request),state} as Thread['outgoing'][number]];await openChat();expect(screen.getByText("Registrar visita")).toBeInTheDocument();expect(screen.queryByRole("button",{name:"Usar este texto en el borrador"})).not.toBeInTheDocument();expect(screen.queryByText("Entregado",{exact:true})).not.toBeInTheDocument();expect(screen.queryByText(/El formulario no le llegó/)).not.toBeInTheDocument();if(state==="Uncertain")expect(screen.getByRole("button",{name:"Ya revisé el WhatsApp"})).toBeInTheDocument();});
 
@@ -117,17 +137,18 @@ it("explains the wait of a form send as help of the footer action",async()=>{
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
  expect(posts).toHaveLength(1);
 });
-// A 429 of the list or of the preparation also turns off their Retry: the wait is its reason, with no text in the dialog.
-it("explains the wait of a form list as help of its retry",async()=>{
+// A 429 of the list or of the preparation also turns off what would ask again: the wait is its reason, with no text in the
+// dialog. The list, which searches and pages, waits with its field off.
+it("explains the wait of a form list as help of the form field",async()=>{
  server.use(http.get("/api/whatsapp/chats/:id/forms",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
  await openChat();
  await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
  const dialog=await screen.findByRole("dialog");
  const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
- const retry=await within(dialog).findByRole("button",{name:"Reintentar"});
- await waitFor(()=>expect(retry).toHaveAccessibleDescription(wait));
- expect(retry).toHaveAttribute("aria-disabled", "true");
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Formulario Elegí un formulario"})).toHaveAccessibleDescription(wait));
+ expect(within(dialog).getByRole("button",{name:"Formulario Elegí un formulario"})).toBeDisabled();
+ expect(within(dialog).getByRole("group",{name:"Formulario"})).toHaveAccessibleDescription(wait);
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
 });
 it("explains the wait of a form preparation as help of its retry",async()=>{
@@ -136,29 +157,27 @@ it("explains the wait of a form preparation as help of its retry",async()=>{
  await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
  const dialog=await screen.findByRole("dialog");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ await chooseForm(dialog,"Registrar visita");
  const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
  const retry=await within(dialog).findByRole("button",{name:"Reintentar"});
  await waitFor(()=>expect(retry).toHaveAccessibleDescription(wait));
  expect(retry).toHaveAttribute("aria-disabled", "true");
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
 });
-// The same wait also turns off the search, the form cards and the pagination of the loaded list: it is their reason too.
-it("explains the wait of a form preparation as help of the search, the forms and the pagination",async()=>{
+// The same wait also turns off the field of the forms, whose list searches and pages: it is its reason too.
+it("explains the wait of a form preparation as help of the form field",async()=>{
  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>HttpResponse.json({code:"General.TooManyRequests"},{status:429,headers:{"Retry-After":"30"}})));
  await openChat();
  await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled());
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
  const dialog=await screen.findByRole("dialog");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ await chooseForm(dialog,"Registrar visita");
  const wait=/^Esperá [0-9]+ segundos antes de volver a consultar o enviar\.$/;
  await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Reintentar"})).toHaveAccessibleDescription(wait));
- const search=within(dialog).getByRole("searchbox",{name:"Buscar por nombre"});
- expect(search).toBeDisabled();
- expect(search.closest("fieldset")).toHaveAccessibleDescription(wait);
- expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toBeDisabled();
- expect(within(dialog).getByRole("radiogroup",{name:"Formulario"}).closest("fieldset")).toHaveAccessibleDescription(wait);
- expect(within(dialog).getByRole("navigation").closest("fieldset")).toHaveAccessibleDescription(wait);
+ const field=within(dialog).getByRole("button",{name:"Formulario Registrar visita"});
+ expect(field).toBeDisabled();
+ expect(field).toHaveAccessibleDescription(wait);
+ expect(within(dialog).getByRole("group",{name:"Formulario"})).toHaveAccessibleDescription(wait);
  for(const text of within(dialog).getAllByText(wait))expect(text).not.toBeVisible();
 });
 // With the dialog closed, the check next to «Enviar formulario» tells the same wait as its reason.
@@ -302,7 +321,7 @@ it("opens a fresh manual form send after an inactive item notice without posting
   await userEvent.click(await screen.findByRole("button",{name:"Mandar de nuevo"}));
   const dialog=await screen.findByRole("dialog");
   expect(posts).toEqual([]);
-  await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+  await chooseForm(dialog,"Registrar visita");
   await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"}));
   await waitFor(()=>expect(posts).toHaveLength(1));
   expect(posts[0]).not.toHaveProperty("flowToken");
@@ -320,7 +339,7 @@ it("retires prepared private options after an authoritative preparation denial",
   fireEvent.change(message,{target:{value:"Mensaje privado intacto"}});
   denied=true;
   await queryClient.invalidateQueries({queryKey:chatKey});
-  await waitFor(()=>expect(within(dialog).queryByRole("radio")).not.toBeInTheDocument());
+  await waitFor(()=>expect(within(dialog).queryByRole("button",{name:/^Formulario /})).not.toBeInTheDocument());
   await waitFor(()=>expect(JSON.stringify(queryClient.getQueryCache().getAll().map(query=>query.state.data))).not.toContain("Private option marker"));
   expect(message).toHaveValue("Mensaje privado intacto");
   expect(posts).toEqual([]);
@@ -385,13 +404,13 @@ it("waits for complete presentation culture even without catalogs and sends the 
  server.use(http.post("/api/whatsapp/chats/:id/form-messages",async({request})=>{const body=await request.json() as FormMessageRequest;posts.push(body);return HttpResponse.json(receipt(body,"es"),{status:202});}));
  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",async()=>{preparations++; await gate; return HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,issues:[],catalogs:[]}});}));
  await openChat(); await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled()); await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));
+ await chooseForm(dialog,"Register visit");
  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
  // While it prepares, the opening already names the chosen form, in the account's language.
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Complete the form “Register visit”.");
  await waitFor(()=>expect(preparations).toBe(1)); await act(async()=>release());
  await waitFor(()=>expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Completá el formulario «Registrar visita»."));
- expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toHaveAttribute("aria-checked","true");
+ expect(within(dialog).getByRole("button",{name:"Formulario Registrar visita"})).toBeInTheDocument();
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveAccessibleDescription(/^Es lo que lee arriba del botón.*«Confirmar visita»/);
  expect(within(dialog).queryByText(/Cambió la cuenta/)).not.toBeInTheDocument();
  await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"})); await waitFor(()=>expect(posts).toHaveLength(1));
@@ -402,19 +421,19 @@ it("preserves an edited opening while presentation culture is resolved after sel
  contact.formEligibility!.recipientCulture="en"; let release!: () => void; const gate=new Promise<void>(resolve=>{release=resolve;});
  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",async()=>{await gate; return HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,issues:[],catalogs:[]}});}));
  await openChat(); await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled()); await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"})); const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});
+ await chooseForm(dialog,"Register visit"); const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"});
  fireEvent.change(message,{target:{value:"Texto del operador intacto"}}); await act(async()=>release());
- await waitFor(()=>expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toHaveAttribute("aria-checked","true"));
+ await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Formulario Registrar visita"})).toBeInTheDocument());
  expect(message).toHaveValue("Texto del operador intacto"); await userEvent.click(within(dialog).getByRole("button",{name:"Enviar formulario"})); await waitFor(()=>expect(posts).toHaveLength(1)); expect(posts[0].message).toBe("Texto del operador intacto");
 });
 
 it("blocks a plain form after preparation fails and retries without losing the edited opening", async () => {
  contact.formEligibility!.recipientCulture="en"; let reads=0;
  server.use(http.get("/api/whatsapp/chats/:id/forms/:definitionId/versions/:versionId/preparation",()=>++reads===1?HttpResponse.json({detail:"Falla temporal"},{status:500}):HttpResponse.json({culture:"es",recipientContextRevision:"opaque-1",preparation:{canSend:true,catalogs:[],issues:[]}})));
- await openChat(); await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled()); await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog"); await userEvent.click(await within(dialog).findByRole("radio",{name:"Register visit"}));
+ await openChat(); await waitFor(()=>expect(screen.getByRole("button",{name:"Enviar formulario"})).toBeEnabled()); await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog"); await chooseForm(dialog,"Register visit");
  await within(dialog).findByText("No pudimos preparar el formulario."); expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
  const message=within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"}); fireEvent.change(message,{target:{value:"Texto conservado"}});
- await userEvent.click(within(dialog).getByRole("button",{name:"Reintentar"})); await waitFor(()=>expect(within(dialog).getByRole("radio",{name:"Registrar visita"})).toHaveAttribute("aria-checked","true"));
+ await userEvent.click(within(dialog).getByRole("button",{name:"Reintentar"})); await waitFor(()=>expect(within(dialog).getByRole("button",{name:"Formulario Registrar visita"})).toBeInTheDocument());
  expect(message).toHaveValue("Texto conservado"); expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeEnabled(); expect(reads).toBe(2); expect(posts).toEqual([]);
 });
 
@@ -430,7 +449,7 @@ for (const original of ["es", "en"] as const) for (const secondaryText of [undef
     await openChat();
     await userEvent.click(screen.getByRole("button", { name: "Enviar formulario" }));
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(await within(dialog).findByRole("radio", { name }));
+    await chooseForm(dialog, name);
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
     expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveAccessibleDescription(new RegExp("^Es lo que lee arriba del botón.*«" + submitLabel + "»"));
     expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveValue(original === "es" ? "Completá el formulario «" + name + "»." : "Complete the form “" + name + "”.");
@@ -456,7 +475,7 @@ it("opens the form dialog without explanations, with the message required and it
  // Only its count describes it, as the datum of the field (DL, 2026-11-11).
  expect(message).toHaveAccessibleDescription("25 / 1024 caracteres");
  expect(within(dialog).queryByText(/El mensaje es obligatorio/)).not.toBeInTheDocument();
- await userEvent.click(await within(dialog).findByRole("radio", { name: "Registrar visita" }));
+ await chooseForm(dialog,"Registrar visita");
  await waitFor(() => expect(within(dialog).getByRole("button", { name: "Enviar formulario" })).toBeEnabled());
  const help = "Es lo que lee arriba del botón «Abrir formulario». El botón final del formulario es otro: «Confirmar visita».";
  expect(message).toHaveAccessibleDescription(help + " 42 / 1024 caracteres");
@@ -480,18 +499,26 @@ it.each([
  expect(within(dialog).queryByText(/El envío de plantillas/)).not.toBeInTheDocument();
 });
 
-it("shows the forms loading in a status region until the list answers", async () => {
+// The list of forms is the only piece to choose, from the server (2026-11-22): the wait, the failure with its Retry, the search
+// and «Mostrar N más» are said inside it.
+it("shows the forms loading inside the list until it answers, each with its version and questions in grey", async () => {
  const wait = held();
  server.use(http.get("/api/whatsapp/chats/:id/forms", async () => { await wait.answer; return HttpResponse.json(formsPage()); }));
  const dialog = await openDialog();
+ const field = within(dialog).getByRole("button", { name: "Formulario Elegí un formulario" });
+ const list = await openForms(dialog);
  try {
-  const loading = await within(dialog).findByText("Cargando formularios…");
-  expect(loading.closest('[role="status"]')).not.toBeNull();
+  expect(await within(list.parentElement!).findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
  } finally { await wait.release(); }
- expect(await within(dialog).findByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
+ const option = await within(list).findByRole("option", { name: "Registrar visita" });
+ expect(option).toHaveAccessibleDescription("Versión 1 · 4 preguntas");
+ expect(option).toHaveAttribute("aria-selected", "false");
+ await userEvent.click(option);
+ expect(field).toHaveAccessibleName("Formulario Registrar visita");
+ expect(field).toHaveFocus();
 });
 
-it("keeps the forms and the pagination in sight with a loading status while another page loads", async () => {
+it("keeps the forms in sight while «Mostrar N más» brings the next page", async () => {
  const next = { ...options[0], definitionId: "019abcde-1000-7000-8000-000000000011", versionId: "019abcde-1000-7000-8000-000000000012", name: { es: "Otro formulario", en: "Another form" } };
  const wait = held();
  server.use(http.get("/api/whatsapp/chats/:id/forms", async ({ request }) => {
@@ -500,43 +527,72 @@ it("keeps the forms and the pagination in sight with a loading status while anot
   return HttpResponse.json(formsPage(page === 2 ? [next] : options, page, 2, 5));
  }));
  const dialog = await openDialog();
- await within(dialog).findByRole("radio", { name: "Registrar visita" });
+ const list = await openForms(dialog);
+ await within(list).findByRole("option", { name: "Registrar visita" });
+ expect(within(list.parentElement!).getByRole("status")).toHaveTextContent("5 opciones");
  try {
-  await userEvent.click(within(dialog).getByRole("button", { name: "Página siguiente" }));
-  const loading = await within(dialog).findByText("Cargando formularios…");
-  expect(loading.closest('[role="status"]')).not.toBeNull();
-  expect(within(dialog).getByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
-  expect(within(dialog).getByRole("navigation", { name: "Paginado" })).toBeInTheDocument();
+  await userEvent.click(within(list.parentElement!).getByRole("button", { name: "Mostrar 4 más" }));
+  expect(await within(list.parentElement!).findByRole("button", { name: "Cargando…" })).toHaveAttribute("aria-busy", "true");
+  expect(within(list).getByRole("option", { name: "Registrar visita" })).toBeInTheDocument();
  } finally { await wait.release(); }
- expect(await within(dialog).findByRole("radio", { name: "Otro formulario" })).toBeInTheDocument();
- expect(within(dialog).queryByText("Cargando formularios…")).not.toBeInTheDocument();
+ expect(await within(list).findByRole("option", { name: "Otro formulario" })).toBeInTheDocument();
+ expect(within(list).getAllByRole("option").map(option => option.querySelector("[id$='-label']")?.textContent)).toEqual(["Registrar visita", "Otro formulario"]);
 });
 
-// The chosen form of another page stays first in the list, chosen (LR3-A), never «Elegido: …» under it.
-it("keeps the chosen form first in the list, chosen, while another page shows", async () => {
+it("searches the forms in the server from the list", async () => {
+ const searches: string[] = [];
+ options = [options[0], { ...options[0], definitionId: "019abcde-1000-7000-8000-000000000011", versionId: "019abcde-1000-7000-8000-000000000012", name: { es: "Recepción de insumos", en: "Supplies received" } }];
+ server.use(http.get("/api/whatsapp/chats/:id/forms", ({ request }) => {
+  const search = new URL(request.url).searchParams.get("search") ?? "";
+  searches.push(search);
+  const matching = options.filter(option => option.name.es!.toLowerCase().includes(search.toLowerCase()));
+  return HttpResponse.json(formsPage(matching, 1, 1, matching.length));
+ }));
+ const dialog = await openDialog();
+ const list = await openForms(dialog);
+ await within(list).findByRole("option", { name: "Recepción de insumos" });
+ await userEvent.type(within(list.parentElement!).getByRole("combobox", { name: "Buscar en Formulario" }), "visita");
+ // What is typed waits until the person pauses: the server is asked once, and only for what matches.
+ const found = await within(list).findByRole("option", { name: "Registrar visita" });
+ expect(within(list).queryByRole("option", { name: "Recepción de insumos" })).not.toBeInTheDocument();
+ expect(searches).toEqual(["", "visita"]);
+ await userEvent.click(found);
+ expect(within(dialog).getByRole("textbox", { name: "Mensaje que lo acompaña" })).toHaveValue("Completá el formulario «Registrar visita».");
+});
+
+// The chosen form of another page stays first in the list, chosen (LR3-A), never «Elegido: …», and the field keeps its name.
+it("keeps the chosen form of another page first in the list, chosen, with its name in the field", { timeout: 15000 }, async () => {
  const next = { ...options[0], definitionId: "019abcde-1000-7000-8000-000000000011", versionId: "019abcde-1000-7000-8000-000000000012", versionNumber: 3, questionCount: 8, name: { es: "Visita técnica", en: "Technical visit" } };
  server.use(http.get("/api/whatsapp/chats/:id/forms", ({ request }) => {
   const page = Number(new URL(request.url).searchParams.get("page")) || 1;
   return HttpResponse.json(formsPage(page === 2 ? [next] : options, page, 2, 5));
  }));
- const dialog = await openDialog();
- await within(dialog).findByRole("radio", { name: "Registrar visita" });
- await userEvent.click(within(dialog).getByRole("button", { name: "Página siguiente" }));
- await userEvent.click(await within(dialog).findByRole("radio", { name: "Visita técnica" }));
- await userEvent.click(within(dialog).getByRole("button", { name: "Página anterior" }));
- await within(dialog).findByRole("radio", { name: "Registrar visita" });
- const chosen = within(dialog).getByRole("radio", { name: "Visita técnica" });
- expect(chosen).toBeChecked();
- // Another page moves the focus to its first form, past the chosen one that stays on top.
- await waitFor(() => expect(within(dialog).getByRole("radio", { name: "Registrar visita" })).toHaveFocus());
- expect(within(dialog).getAllByRole("radio")[0]).toBe(chosen);
- expect(within(dialog).getByText("Versión 3 · 8 preguntas")).toBeInTheDocument();
- expect(dialog).not.toHaveTextContent("Elegido");
- await userEvent.click(within(dialog).getByRole("radio", { name: "Registrar visita" }));
- expect(within(dialog).queryByRole("radio", { name: "Visita técnica" })).not.toBeInTheDocument();
+ let dialog = await openDialog();
+ let list = await openForms(dialog);
+ await within(list).findByRole("option", { name: "Registrar visita" });
+ await userEvent.click(within(list.parentElement!).getByRole("button", { name: "Mostrar 4 más" }));
+ await userEvent.click(await within(list).findByRole("option", { name: "Visita técnica" }));
+ // Another time the dialog opens, the list starts again from its first page.
+ await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+ await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+ await userEvent.click(screen.getByRole("button", { name: "Enviar formulario" }));
+ dialog = await screen.findByRole("dialog");
+ const field = await within(dialog).findByRole("button", { name: "Formulario Visita técnica" });
+ list = await openForms(dialog);
+ await within(list).findByRole("option", { name: "Registrar visita" });
+ const [chosen] = within(list).getAllByRole("option");
+ expect(chosen).toHaveAccessibleName("Visita técnica");
+ expect(chosen).toHaveAttribute("aria-selected", "true");
+ expect(chosen).toHaveAccessibleDescription("Versión 3 · 8 preguntas");
+ expect(list).not.toHaveTextContent("Elegido");
+ await userEvent.click(within(list).getByRole("option", { name: "Registrar visita" }));
+ expect(field).toHaveAccessibleName("Formulario Registrar visita");
+ list = await openForms(dialog);
+ expect(within(list).queryByRole("option", { name: "Visita técnica" })).not.toBeInTheDocument();
+ await userEvent.keyboard("{Escape}");
 });
 
-it("shows that it retries the forms list until it answers", async () => {
+it("says inside the list that the forms failed and searches again with its Retry until they answer", async () => {
  vi.spyOn(notifications, "notify").mockImplementation(() => 0);
  let reads = 0;
  const wait = held();
@@ -546,14 +602,14 @@ it("shows that it retries the forms list until it answers", async () => {
   return HttpResponse.json(formsPage());
  }));
  const dialog = await openDialog();
- const retry = await within(dialog).findByRole("button", { name: "Reintentar" });
+ const list = await openForms(dialog);
+ expect(await within(list.parentElement!).findByText("No se pudieron traer las opciones.")).toBeInTheDocument();
  try {
-  await userEvent.click(retry);
-  const working = await within(dialog).findByRole("button", { name: "Reintentando…" });
-  expect(working).toHaveAttribute("aria-busy", "true");
-  expect(working).toBeDisabled();
+  await userEvent.click(within(list.parentElement!).getByRole("button", { name: "Reintentar" }));
+  expect(await within(list.parentElement!).findByRole("status", { name: "Buscando…" })).toBeInTheDocument();
  } finally { await wait.release(); }
- expect(await within(dialog).findByRole("radio", { name: "Registrar visita" })).toBeInTheDocument();
+ expect(await within(list).findByRole("option", { name: "Registrar visita" })).toBeInTheDocument();
+ expect(reads).toBe(2);
 });
 
 it("shows that it retries the preparation of a form until it answers", async () => {
@@ -566,7 +622,7 @@ it("shows that it retries the preparation of a form until it answers", async () 
   return HttpResponse.json({ culture: "es", recipientContextRevision: "opaque-1", preparation: { canSend: true, catalogs: [], issues: [] } });
  }));
  const dialog = await openDialog();
- await userEvent.click(await within(dialog).findByRole("radio", { name: "Registrar visita" }));
+ await chooseForm(dialog,"Registrar visita");
  const retry = await within(dialog).findByRole("button", { name: "Reintentar" });
  try {
   await userEvent.click(retry);
@@ -631,12 +687,17 @@ it("shows that it checks a frozen form send from beside the composer until the l
  expect(posts).toHaveLength(1);
 });
 
-// CW7: a form with a list that depends on another answer is loaded in the app, so its card is off and says why.
+// CW7: a form with a list that depends on another answer is loaded in the app, so its option is off and says why (MA1-A).
 it("shows a form whose list depends on another answer off, with the question that depends", async () => {
  options[0] = { ...options[0], dependentQuestion: { es: "Lote", en: "Lot" } };
  const dialog = await openDialog();
- const card = await within(dialog).findByRole("radio", { name: /Registrar visita/ });
- expect(card).toBeDisabled();
- expect(within(dialog).getByText("«Lote» depende de otra respuesta: se carga desde la app")).toBeInTheDocument();
- expect(within(dialog).queryByText(/^Versión 1 ·/)).not.toBeInTheDocument();
+ const list = await openForms(dialog);
+ const option = await within(list).findByRole("option", { name: "Registrar visita" });
+ expect(option).toHaveAttribute("aria-disabled", "true");
+ expect(option).toHaveAccessibleDescription("«Lote» depende de otra respuesta: se carga desde la app");
+ expect(within(list).queryByText(/^Versión 1 ·/)).not.toBeInTheDocument();
+ await userEvent.click(option);
+ expect(screen.getByRole("listbox", { name: "Formulario" })).toBeInTheDocument();
+ await userEvent.keyboard("{Escape}");
+ expect(within(dialog).getByRole("button", { name: "Formulario Elegí un formulario" })).toHaveFocus();
 });

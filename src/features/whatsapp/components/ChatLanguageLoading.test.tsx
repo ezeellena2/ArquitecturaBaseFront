@@ -33,7 +33,7 @@ it("keeps the selected chat and both private drafts visible while English resour
  expect(screen.getByLabelText("Respuesta al cliente")).toBe(reply);expect(reply).toHaveValue("Borrador de respuesta");expect(screen.getByRole("heading",{name:"Juan"})).toBe(heading);
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));const dialog=await screen.findByRole("dialog");
  expect(within(dialog).getByRole("textbox",{name:"Mensaje que lo acompaña"})).toHaveValue("Mensaje de formulario editado");
- expect(await within(dialog).findByRole("radio",{name:"Register visit"})).toHaveAttribute("aria-checked","true");
+ expect(await within(dialog).findByRole("button",{name:"Formulario Register visit"})).toBeInTheDocument();
 });
 
 it("waits for presentation resources when a Spanish account receives a complete English original", async () => {
@@ -45,7 +45,7 @@ it("waits for presentation resources when a Spanish account receives a complete 
  function SelectedChat(){const[draft,setDraft]=useState<ChatDraft>({body:"Borrador del chat"});return <I18nextProvider i18n={language}><ChatThread id={contact.id} actor="me" readPermissions={["whatsapp.read","whatsapp.send"]} canSend canConfigureAssistant={false} draft={draft} updateDraft={setDraft} onBack={()=>{}}/></I18nextProvider>;}
  renderWithProviders(<SelectedChat/>); const ordinary=await screen.findByLabelText("Respuesta al cliente");
  await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"})); const dialog=await screen.findByRole("dialog");
- await userEvent.click(await within(dialog).findByRole("radio",{name:"Registrar visita"}));
+ await userEvent.click(await within(dialog).findByRole("button",{name:/^Formulario /}));await userEvent.click(await within(await screen.findByRole("listbox",{name:"Formulario"})).findByRole("option",{name:"Registrar visita"}));
  // The language goes in its row (DL, 2026-11-11), and until the English resources arrive only the count describes the message.
  expect((await within(dialog).findByText("Inglés",{selector:"dd"})).previousElementSibling).toHaveTextContent(/^Idioma$/); await waitFor(()=>expect(finish).toBeTypeOf("function"));
  expect(within(dialog).getByRole("button",{name:"Enviar formulario"})).toBeDisabled();
