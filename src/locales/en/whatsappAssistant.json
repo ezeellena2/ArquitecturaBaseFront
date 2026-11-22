@@ -66,7 +66,7 @@
     "doesNotPlaceholder": "E.g. Doesn't give prices.",
     "handoffMessage": "Message when handing off to a person",
     "handoffMessagePlaceholder": "E.g. I'll put you in touch with someone from the team.",
-    "handoffMessageHelp": "The person gets it as written: the AI doesn't draft it. The assistant hands off when a case says so, when it doesn't know the answer, when it's asked about a topic it doesn't answer, when a reply goes over the maximum length and when it reaches the daily reply limit. The conversation is marked «Needs a person», with the reason."
+    "handoffMessageHelp": "The person gets it as written: the AI doesn't draft it. The assistant hands off when a case says so, when it doesn't know the answer, when it's asked about a topic it doesn't answer, when a reply goes over the maximum length and when it reaches the daily reply or form offer limit. The conversation is marked «Needs a person», with the reason."
   },
   "knowledge": {
     "title": "Knowledge",
@@ -200,7 +200,9 @@
     "maxReplyLengthHelp": "If a drafted reply goes over, it doesn't go out: it hands off.",
     "characters": "characters",
     "dailyReplyLimit": "Reply limit",
-    "dailyReplyLimitHelp": "Apart from the 2 form offers a day. When reached, it hands off with the reason «It reached the daily reply limit».",
+    "dailyReplyLimitHelp": "Apart from the form offer limit. When reached, it hands off with the reason «It reached the daily reply limit».",
+    "dailyOfferLimit": "Form offer limit",
+    "dailyOfferLimitHelp": "How many times a day it offers a form on its own in a conversation. A clarification («which of these?») and the chosen form count as one; suggestions to the operator in Manual attention don't count. When reached, the form doesn't go out: it hands off with the reason «It reached the daily form offer limit».",
     "perDay": "per conversation and day",
     "allowedActions": "Actions it can use",
     "allowedActionsHelp": "What is turned off doesn't show in the case editor: a business can keep, for example, only exact texts."
@@ -246,6 +248,7 @@
     "checking": "Checking…",
     "handoff": {
       "dailyReplyLimit": "It reached the daily reply limit",
+      "dailyOfferLimit": "It reached the daily form offer limit",
       "limits": "The reply didn't pass the limits",
       "blockedTopic": "It was asked about a topic it doesn't answer",
       "unknown": "It didn't find the answer in what is loaded",

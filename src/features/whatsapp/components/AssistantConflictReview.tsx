@@ -32,6 +32,7 @@ export function AssistantConflictReview({ draft, review, forms, culture, working
     "limits.cannotPromise": { group: "limits", label: t("limits.cannotPromise"), text: version.limits.cannotPromise },
     "limits.maxReplyLength": { group: "limits", label: t("limits.maxReplyLength"), text: version.limits.maxReplyLength },
     "limits.dailyReplyLimit": { group: "limits", label: t("limits.dailyReplyLimit"), text: version.limits.dailyReplyLimit },
+    "limits.dailyOfferLimit": { group: "limits", label: t("limits.dailyOfferLimit"), text: version.limits.dailyOfferLimit },
     "limits.allowedActions": { group: "limits", label: t("limits.allowedActions"), text: version.limits.allowedActions.map(kind => t("actions." + kind)).join(", ") },
   });
   const groups: ComparisonGroup[] = [];

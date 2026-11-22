@@ -63,6 +63,12 @@ Programado contra el contrato del backend (`needsPerson`, `assistantReply`, `ass
 
 Capturas: `src/test/visual/screenshots/whatsapp-assistant-{handoff,replies,draft}-{es,en}-{1440,390,320}.png` y `whatsapp-assistant-list-{es,en}-{390,320}.png`; las `whatsapp-*-1440` (chat, accesos y planillas) muestran el filtro nuevo.
 
+### Tope de ofrecimientos (TO1-A) — 2026-11-21
+
+Elegido el 2026-11-21 en el lienzo [Tope de ofrecimientos del asistente](https://claude.ai/artifact/NsTVmw3osSU4MX5jYsb8ck) (privado, como los demás tableros). El tope de ofrecimientos de formularios, que era un 2 fijo en el código, se edita en Límites: la columna de la derecha suma un tercer número debajo de «Tope de respuestas», «Tope de ofrecimientos de formularios», con la misma pieza (obligatorio, de 1 a 50, «por conversación y día»). Vale 2 mientras no se cambie, se guarda con el resto de la pantalla (el mismo Guardar, la revisión y el 409) y la revisión del conflicto suma su renglón. La (i) de «Tope de respuestas» ya no nombra el 2: dice «Aparte del tope de ofrecimientos de formularios». La del campo nuevo explica qué cuenta y qué pasa al llegar: el formulario no sale y la conversación deriva con el motivo «Llegó al tope de ofrecimientos del día» (O36, decidido el mismo día), que también lee la franja del chat. En el celular el campo queda en la misma columna, debajo de «Tope de respuestas».
+
+Capturas: `src/test/visual/screenshots/assistant-agent-limits-{es,en}-{1440,390,320}.png`.
+
 ## Lo que se fijó al dibujar
 
 El plan no lo decía; se resolvió con la opción más simple y quedó confirmado al elegir:

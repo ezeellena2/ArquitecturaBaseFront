@@ -11,6 +11,6 @@ export const actionIcons: Record<AgentActionKind, ComponentType<{ className?: st
 // Where Guardar takes the focus when it finds a problem: the field, or the row of the case.
 export const profileFieldId = (field: keyof DraftProfile) => "agent-profile-" + field;
 export const limitsFieldId = { topics: "agent-limits-topics", cannotPromise: "agent-limits-cannot-promise", maxReplyLength: "agent-limits-max-length",
-  dailyReplyLimit: "agent-limits-daily", allowedActions: "agent-limits-action-" + agentActionKinds[0] } as const;
+  dailyReplyLimit: "agent-limits-daily", dailyOfferLimit: "agent-limits-offers", allowedActions: "agent-limits-action-" + agentActionKinds[0] } as const;
 export const caseRowId = (id: string) => "agent-case-" + id;
 export const fallbackRowId = "agent-case-fallback";

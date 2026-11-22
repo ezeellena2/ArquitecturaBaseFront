@@ -38,7 +38,7 @@ export function AssistantLimitsTab({ limits, errors, locked, message, onChange }
     onChange({ blockedTopics: [...limits.blockedTopics, value] });
     setTopic(""); setTopicIssue(null);
   };
-  const number = (field: "maxReplyLength" | "dailyReplyLimit", min: number, max: number, unit: string) => <FormField label={t("limits." + field)} help={t(`limits.${field}Help`)}
+  const number = (field: "maxReplyLength" | "dailyReplyLimit" | "dailyOfferLimit", min: number, max: number, unit: string) => <FormField label={t("limits." + field)} help={t(`limits.${field}Help`)}
     required error={errors["limits." + field]} beside={<span className="text-sm text-[var(--color-content-muted)]">{unit}</span>}>
     <Input id={limitsFieldId[field]} type="number" inputMode="numeric" step={1} min={min} max={max} className="w-24" disabled={locked} value={limits[field]}
       onChange={event => onChange({ [field]: event.target.value })} />
@@ -73,6 +73,7 @@ export function AssistantLimitsTab({ limits, errors, locked, message, onChange }
       <div className="flex min-w-0 flex-col gap-4">
         {number("maxReplyLength", agentLimits.minReplyLength, agentLimits.maxReplyLength, t("limits.characters"))}
         {number("dailyReplyLimit", agentLimits.minDailyReplies, agentLimits.maxDailyReplies, t("limits.perDay"))}
+        {number("dailyOfferLimit", agentLimits.minDailyOffers, agentLimits.maxDailyOffers, t("limits.perDay"))}
       </div>
     </div>
     <div role="group" aria-labelledby={ids + "actions"} aria-describedby={errors["limits.allowedActions"] ? ids + "actions-error" : undefined} className="flex flex-col gap-1.5">

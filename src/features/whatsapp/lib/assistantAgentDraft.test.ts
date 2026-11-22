@@ -12,7 +12,7 @@ const agent: AssistantAgent = {
     { id: "0199a0c0-0000-7000-8000-000000000002", when: "Pregunta el horario.", inputType: "Text", isActive: true, action: { ...none, kind: "ExactText", text: { es: "De 8 a 17.", en: null } } },
   ],
   fallback: none,
-  limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"] },
+  limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"] },
   forms: [{ definitionId: form, name: "Registrar visita", offerWhen: "Cuando terminó una visita." }, { definitionId: "0199a0c0-0000-7000-8000-0000000000f2", name: "Pedir repuesto", offerWhen: null }],
   knowledge: { availability: "Available", revision: 1, unansweredQuestions: 0, sections: [] },
   assistantAvailability: { state: "available" },
@@ -62,6 +62,7 @@ describe("what Guardar checks", () => {
     const added = newCase("0199a0c0-0000-7000-8000-000000000003");
     draft.cases.push(added);
     draft.limits.maxReplyLength = "50";
+    draft.limits.dailyOfferLimit = "0";
     draft.limits.blockedTopics = ["Precios", "precios"];
     const issues = validateDraft(draft, "es");
     expect(issues["profile.name"]).toEqual({ key: "validation.required" });
@@ -69,6 +70,7 @@ describe("what Guardar checks", () => {
     expect(issues[caseKey(added.id) + ".when"]).toEqual({ key: "validation.required" });
     expect(issues[caseKey(added.id) + ".action.kind"]).toEqual({ key: "validation.kindRequired" });
     expect(issues["limits.maxReplyLength"]).toEqual({ key: "validation.range", values: { min: 100, max: 1000 } });
+    expect(issues["limits.dailyOfferLimit"]).toEqual({ key: "validation.range", values: { min: 1, max: 50 } });
     expect(issues["limits.blockedTopics[1]"]).toEqual({ key: "validation.repeatedTopic" });
   });
 

@@ -43,6 +43,7 @@ describe("why the assistant handed off", () => {
     ["case", "Pide hablar con una persona.", "Pide hablar con una persona."],
     ["case", null, "Lo derivó el asistente"],
     ["dailyReplyLimit", null, "Llegó al tope de respuestas del día"],
+    ["dailyOfferLimit", null, "Llegó al tope de ofrecimientos del día"],
     ["replyTooLong", null, "La respuesta no pasó los límites"],
     ["replyNotAllowed", null, "La respuesta no pasó los límites"],
     ["blockedTopic", null, "Le preguntaron por un tema que no responde"],

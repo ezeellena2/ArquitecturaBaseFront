@@ -78,6 +78,7 @@ it("shows the mark in the header and why in a strip under it, without repeating 
 });
 it.each([
   ["dailyReplyLimit", null, "Llegó al tope de respuestas del día"],
+  ["dailyOfferLimit", null, "Llegó al tope de ofrecimientos del día"],
   ["replyTooLong", null, "La respuesta no pasó los límites"],
   ["blockedTopic", null, "Le preguntaron por un tema que no responde"],
   ["unknown", null, "No encontró la respuesta en lo cargado"],

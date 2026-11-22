@@ -66,7 +66,7 @@
     "doesNotPlaceholder": "Ej.: No da precios.",
     "handoffMessage": "Mensaje al derivar a una persona",
     "handoffMessagePlaceholder": "Ej.: Te paso con una persona del equipo.",
-    "handoffMessageHelp": "Le llega tal cual a la persona: no lo redacta la IA. El asistente deriva cuando un caso lo dice, cuando no sabe la respuesta, cuando le preguntan por un tema que no responde, cuando una respuesta se pasa del largo máximo y cuando llega al tope de respuestas del día. La conversación queda «Necesita una persona», con el motivo."
+    "handoffMessageHelp": "Le llega tal cual a la persona: no lo redacta la IA. El asistente deriva cuando un caso lo dice, cuando no sabe la respuesta, cuando le preguntan por un tema que no responde, cuando una respuesta se pasa del largo máximo y cuando llega al tope de respuestas o de ofrecimientos del día. La conversación queda «Necesita una persona», con el motivo."
   },
   "knowledge": {
     "title": "Conocimiento",
@@ -200,7 +200,9 @@
     "maxReplyLengthHelp": "Si una respuesta redactada se pasa, no sale: deriva.",
     "characters": "caracteres",
     "dailyReplyLimit": "Tope de respuestas",
-    "dailyReplyLimitHelp": "Aparte de los 2 ofrecimientos de formularios por día. Al llegar, deriva con el motivo «Llegó al tope de respuestas del día».",
+    "dailyReplyLimitHelp": "Aparte del tope de ofrecimientos de formularios. Al llegar, deriva con el motivo «Llegó al tope de respuestas del día».",
+    "dailyOfferLimit": "Tope de ofrecimientos de formularios",
+    "dailyOfferLimitHelp": "Cuántas veces por día ofrece un formulario por su cuenta en una conversación. Una aclaración («¿cuál de estos?») y el formulario elegido cuentan como uno; las sugerencias al operador en Atención manual no cuentan. Al llegar, el formulario no sale: deriva con el motivo «Llegó al tope de ofrecimientos del día».",
     "perDay": "por conversación y día",
     "allowedActions": "Acciones que puede usar",
     "allowedActionsHelp": "Lo que se apaga no aparece en el editor de casos: un negocio puede quedarse, por ejemplo, solo con textos exactos."
@@ -246,6 +248,7 @@
     "checking": "Consultando…",
     "handoff": {
       "dailyReplyLimit": "Llegó al tope de respuestas del día",
+      "dailyOfferLimit": "Llegó al tope de ofrecimientos del día",
       "limits": "La respuesta no pasó los límites",
       "blockedTopic": "Le preguntaron por un tema que no responde",
       "unknown": "No encontró la respuesta en lo cargado",

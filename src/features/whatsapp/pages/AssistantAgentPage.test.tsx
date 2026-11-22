@@ -31,7 +31,7 @@ function saved(): AssistantAgent {
         buttons: [{ title: { es: "Visita", en: null }, destination: "SendForm", formDefinitionId: visit, text: null }, { title: { es: "Otra cosa", en: null }, destination: "Handoff", formDefinitionId: null, text: null }] } },
     ],
     fallback: { ...none, kind: "DraftedReply", instructions: "Respondé breve con la información del negocio." },
-    limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, allowedActions: [...allowed] },
+    limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: [...allowed] },
     forms: [{ definitionId: visit, name: "Registrar visita", offerWhen: "Cuando avisa que terminó una visita." }, { definitionId: part, name: "Pedir repuesto", offerWhen: null }],
     knowledge: { availability: "Available", revision: 2, unansweredQuestions: 1, sections: [
       { key: "Details", state: "Loaded", facts: [{ id: "details.name", label: "Nombre", text: "Tu negocio" }] },
@@ -116,6 +116,28 @@ describe("the screen «Asistente»", () => {
     expect(router.state.location.search).toBe("?pestana=perfil");
     await userEvent.click(tab(/Casos/));
     expect(router.state.location.search).toBe("");
+  });
+
+  // TO1-A (2026-11-21): how many forms it offers a day is set in Límites, under the reply limit, and saved with the rest.
+  it("edits the form offer limit in Límites and saves it with the other limits", async () => {
+    server.use(http.put("/api/whatsapp/assistant-agent", async ({ request }) => {
+      const body = await request.json() as AssistantAgentSaveRequest; writes.push(body);
+      current = asSaved(body);
+      return HttpResponse.json(current);
+    }));
+    await open("/whatsapp/asistente?pestana=limites");
+    const offers = screen.getByRole("spinbutton", { name: /Tope de ofrecimientos de formularios/ });
+    expect(offers).toHaveValue(2);
+    await userEvent.clear(offers);
+    await userEvent.type(offers, "51");
+    await userEvent.click(save());
+    await waitFor(() => expect(offers).toHaveAccessibleDescription(expect.stringContaining("Elegí un número entre 1 y 50.")));
+    expect(writes).toHaveLength(0);
+    await userEvent.clear(offers);
+    await userEvent.type(offers, "4");
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]!.limits).toEqual({ ...saved().limits, dailyOfferLimit: 4 });
   });
 
   it("saves the four tabs with the revision read and only what each action uses", async () => {
