@@ -66,9 +66,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   título (`help`), y lo demás se saca. No agregar datos técnicos, auditoría, instrucciones largas ni
   resúmenes que no ayudan a decidir.
 - Elegir el componente según el dato: una colección administrable usa tabla; una o varias opciones de
-  una lista usan la pieza para elegir (`Picker`); dos a cuatro opciones fijas usan radios, si requieren
-  explicación, o un segmentado; varias entre pocas, checks; un dato libre usa un campo. No usar una tabla
-  para presentar un único ajuste.
+  una lista usan la pieza para elegir (`Picker`), también dos a cuatro opciones fijas y varias entre pocas
+  (2026-11-22); un sí o no suelto, una casilla; un dato libre usa un campo. No usar una tabla para presentar un
+  único ajuste.
 - Un formulario puede tener varios campos cuando resuelven la misma tarea. La relación entre ellos,
   no la cantidad de controles, decide si van juntos. Los temas independientes no se agrupan para
   llenar espacio y las superficies no se agregan como decoración.
@@ -171,8 +171,9 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - **Para elegir de una lista hay una sola pieza, `Picker`** (DS1-A y DS2-A, 2026-11-19): una o varias opciones, en un
   campo o en el botón de la barra, con el buscador adentro si son más de diez o vienen del servidor. Nunca un select, un
   combo que se escribe, un menú propio, una lista de casillas ni un modal que sólo sirve para elegir: elegir varios es la
-  pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Dos a cuatro opciones fijas de las que se
-  elige una van en radios o un segmentado; una casilla es sólo un sí o no suelto; un filtro sigue siendo la pieza
+  pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Dos a cuatro opciones fijas también
+  van en la pieza, no en radios ni en un segmentado (2026-11-22, en toda la app); una casilla es sólo un sí o no suelto;
+  un filtro sigue siendo la pieza, salvo los segmentados con cantidades de los listados
   ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
   (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
@@ -187,9 +188,10 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Un grupo de checks admite ninguno, algunos (`indeterminate`) y todos. El alcance de “todos” debe
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
-- Usar `RadioGroupField` o `SegmentedControl` para una única opción entre pocas y `Picker` con `multiple` para varias
-  de una lista. `Switch` corresponde a un ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo.
-  Configuración usa guardado explícito: Registro usa radios; Idioma y Listados, un segmentado; Zona horaria, `Picker`.
+- Usar `Picker` para una opción entre pocas o muchas y `Picker` con `multiple` para varias (2026-11-22). Los
+  segmentados quedan para los filtros con cantidades de los listados y el ingreso público. `Switch` corresponde a un
+  ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo. Configuración usa guardado explícito:
+  Registro, Idioma, Listados y Zona horaria, `Picker`.
   No convertir esos borradores en guardados automáticos.
 - Lo elegido se distingue sin dudas, nunca sólo con un tinte (decisión del usuario, 2026-11-03; tablero OE1-A). Pocas
   opciones de un clic, como un Sí o no o un filtro de estado, usan `SegmentedControl`, que rellena la elegida; una

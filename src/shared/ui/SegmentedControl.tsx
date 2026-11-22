@@ -11,9 +11,10 @@ export interface SegmentedOption {
   disabledReason?: string;
 }
 
-/// Un segmentado: pocas opciones fijas, a la vista y de un clic, en vez de un desplegable que pide dos. Lo usan
-/// el estado del listado de usuarios, el "Todos | Elegidos" del selector de permisos y el "Correo | WhatsApp" de
-/// la pantalla de ingreso.
+/// Un segmentado: pocas opciones fijas, a la vista y de un clic. Desde el 2026-11-22 un campo de formulario ya no lo usa:
+/// elegir entre pocas opciones fijas va en `Picker`, como cualquier lista (DS1-A, en toda la app). Queda para los filtros
+/// con cantidades de los listados (el estado del listado de usuarios, el de formularios), el "Todos | Elegidos" del
+/// selector de permisos y el "Correo | WhatsApp" de la pantalla de ingreso.
 ///
 /// Son botones con `aria-pressed` y no un grupo de radios porque cada uno actúa al apretarse, no al enviarse
 /// un formulario. El nombre del grupo es obligatorio: sin él, el lector anuncia botones sueltos ("Todos",
@@ -29,9 +30,8 @@ export interface SegmentedOption {
 /// 2026-11-03); las otras quedan blancas. Antes era un verde casi blanco sobre blanco y no se sabía cuál estaba elegida,
 /// sobre todo en un Sí o no. En el celular cada opción mide al menos 44 × 44 px.
 ///
-/// En un formulario va dentro de `FormField`, como cualquier control: le pasa el id, la marca de inválido y la
-/// descripción (la (i) y el error), y su etiqueta dice lo mismo que el `aria-label`, que es el que nombra al grupo
-/// (DS1-A, 2026-11-20: el idioma y «Filas por página» de Configuración).
+/// Dentro de un `FormField` recibe el id, la marca de inválido y la descripción (la (i) y el error), y su etiqueta dice lo
+/// mismo que el `aria-label`, que es el que nombra al grupo.
 export function SegmentedControl({
   options,
   fullWidth = false,

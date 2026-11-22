@@ -70,9 +70,9 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    sin partirla por tipo de control ni sumar superficies de adorno?
    ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
 3. **El control según el dato:** ¿una colección va en una tabla; una o varias opciones de una lista, en la pieza para
-   elegir, nunca en una lista de casillas ni en un modal que sólo sirve para elegir; dos a cuatro opciones fijas de las
-   que se elige una, en radios o un segmentado, también el idioma y «Filas por página»; una casilla, sólo para un sí o no
-   suelto? Los filtros no entran en esa regla: ¿un filtro de opciones sigue siendo la pieza aunque tenga pocas? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+   elegir, aunque sean dos a cuatro fijas (también el idioma y «Filas por página»), nunca en radios, un segmentado, una
+   lista de casillas ni un modal que sólo sirve para elegir; una casilla, sólo para un sí o no suelto? ¿Un filtro de
+   opciones sigue siendo la pieza aunque tenga pocas, salvo los segmentados con cantidades de los listados? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
    [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido?
@@ -403,9 +403,14 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
   en una sola lista para Mi perfil, Configuración y el horario del negocio. Lo que se guarda sigue siendo el
   identificador de IANA, y el buscador encuentra por ciudad, por país o por el identificador.
 - Lo que llega en mayúsculas de un catálogo se muestra como llega.
-- **Dos a cuatro opciones fijas de las que se elige una van en radios o un segmentado**, no en la lista, como pide la
-  [lista de chequeo](#lista-de-chequeo-de-diseño): también el idioma y «Filas por página». Los filtros no entran en esta
-  regla y siguen siendo la pieza ([FO1-A](#listados-y-filtros)).
+- **Dos a cuatro opciones fijas también van en la pieza** (2026-11-22, en toda la app). En Información del negocio el
+  usuario eligió que el estado de un día fuera «un combo desplegable a elegir las opciones» en vez de botones, y lo
+  extendió a toda la app. Hasta entonces iban en radios o un segmentado: el idioma, «Filas por página», «Dónde atendés»,
+  el proveedor de IA, un Sí o No.
+  - Quedan como están los segmentados con cantidades de los listados (filtros, [FO1-A](#listados-y-filtros)) y el
+    «Correo · WhatsApp» del ingreso público.
+  - Quedan también las vistas previas que imitan WhatsApp.
+  - La carga de un formulario (el Sí o No y hasta cinco opciones en fila, AR1-A) espera la decisión del usuario.
 - **Varias, siempre en la pieza** (2026-11-22): nunca una lista de casillas ni un modal que sólo sirve para elegir. En la
   prueba integral, «Formularios de «Zona Norte»» de Carpetas era un buscador con una casilla por formulario, porque esta
   regla todavía decía «en casillas si se eligen varias». Cuando elegir es parte de una tarea que se guarda aparte, como
@@ -513,9 +518,8 @@ crecen todos a 44 px en móvil.
 
 - `/configuracion`: tres `Surface` con título y margen (Preferencias regionales, Listados, Registro de cuentas) y una
   `Page` con Guardar/Descartar, sin estado del borrador. Las cuatro URLs anteriores redirigen.
-- El idioma y el tamaño («Filas por página») en un segmentado y la zona horaria en la
-  [pieza para elegir](#elegir-de-una-lista) (DS1-A, 2026-11-20); `RadioGroupField` para el registro, con confirmación
-  de su efecto.
+- El idioma, el tamaño («Filas por página»), la zona horaria y el registro en la [pieza para elegir](#elegir-de-una-lista)
+  (DS1-A, 2026-11-20 y 2026-11-22); el registro, con confirmación de su efecto.
 - Un conflicto muestra una tabla de los cuatro ajustes (actual y borrador), con scroll contenido en móvil. Conservar
   cambios incorpora valores ajenos de campos no tocados. Un resultado incierto se consulta antes de otro envío o descarte:
   hasta elegir, Descartar y Guardar se apagan con «Primero revisá los valores actuales y elegí qué conservar.» como motivo
@@ -567,8 +571,8 @@ revisión pendiente como motivo. Recorridos:
   semanal se marca al guardar, en su campo.
 - «Agregar franja» va siempre debajo de las franjas del día (y de la fecha especial), como botón de texto; con cuatro se
   apaga con «Podés agregar hasta 4 franjas.» como motivo. La papelera aparece en cada franja sólo con más de una.
-- El estado de cada día y de una fecha especial va en un segmentado, y cada hora y la zona del horario, en la
-  [pieza para elegir](#elegir-de-una-lista), con «Elegir» mientras no tiene una (DS1-A, 2026-11-20).
+- El estado de cada día y de una fecha especial, cada hora y la zona del horario van en la
+  [pieza para elegir](#elegir-de-una-lista), con «Elegir» mientras no tiene una (DS1-A, 2026-11-20 y 2026-11-22).
 - Ubicación: `Autocomplete` sobre `Input` (nombre/ciudad → sugerencia → enlace a la ficha), sin modal pequeño de
   coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. La espera de un
   429 es el motivo del buscador apagado; su línea de estado dice sólo el resultado. Atribución de

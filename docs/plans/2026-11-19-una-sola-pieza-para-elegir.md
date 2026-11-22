@@ -8,7 +8,7 @@ contratos ni servidor. La regla está en el [fundamento visual](../design/visual
 - **Etapa 1, hecha.** `Picker` con su test, el teclado y el lector de la figura 7 y la lista a pantalla completa en el
   celular; la lista única de zonas (`shared/lib/timeZones`); la escena `?scenario=pickers` del catálogo visual.
 - **Etapa 2, hecha.** Roles, los datos de la persona, el país del teléfono, Rol y «Más filtros» de Usuarios, y «Filas por
-  página» del paginado en un segmentado.
+  página» del paginado, en la pieza desde el 2026-11-22.
 - **Etapa 3, hecha.** Los combos y los selects de formularios, catálogos y documentos, la pregunta de catálogo de la carga
   en la compu y en el celular, y Canal, Estado y «Columnas» de la planilla.
 - **Etapa 4, hecha.** Configuración, Mi perfil y el horario del negocio, con la lista única de zonas; el ícono de una
@@ -21,7 +21,8 @@ contratos ni servidor. La regla está en el [fundamento visual](../design/visual
   - La corrida en una copia del front dio oxlint, build y vitest en verde. La visual dejó tres arreglos:
     - en el teléfono, cerrar la lista devuelve el foco al botón;
     - una confirmación que abre una elección («¿Cambiar el catálogo?») también se lo devuelve al cancelarse;
-    - el proveedor de IA y el tipo de entrada usan el segmentado `wrap`, porque cortaban su texto a 320 y 390.
+    - el proveedor de IA y el tipo de entrada usaron el segmentado `wrap`, porque cortaban su texto a 320 y 390; desde el
+      2026-11-22 van en la pieza, como todas las opciones fijas.
   - Las capturas se rehicieron comparándolas con el front sin la pieza.
   - Faltan la corrida completa en el front y la prueba guiada (tarea 15), y pasar los tableros al lienzo y lo hecho al
     traspaso (tarea 16).
@@ -66,8 +67,9 @@ en el lienzo aparte [Desplegables: una sola pieza](https://claude.ai/artifact/87
   - en una lista del servidor con varias, las elegidas que no están en la página van primero, como en LR3-A;
   - con un tope, la lista dice «Hasta 5» y, al llegar, «Elegiste 5 de 5», y las demás se apagan;
   - lo que llega en mayúsculas del catálogo se muestra como llega;
-  - dos a cuatro opciones fijas de un formulario van en radios o un segmentado, como ya pide la lista de chequeo, también
-    «Filas por página»; los filtros no entran en esta regla y siguen siendo desplegables (FO1-A);
+  - dos a cuatro opciones fijas de un formulario iban en radios o un segmentado; desde el 2026-11-22 también van en la
+    pieza, en toda la app, también «Filas por página». Los filtros siguen siendo desplegables (FO1-A), salvo los
+    segmentados con cantidades de los listados;
   - la zona horaria: la ciudad y, en gris, la hora de su país y el desfase («Montevideo · hora de Uruguay · GMT−3»), en
     una sola lista para Mi perfil, Configuración y el horario del negocio.
 - **Cambia una decisión vigente.** PL2-A y FO1-A, en un punto: en el combo de un filtro con muchas opciones se escribe en
@@ -86,8 +88,8 @@ entran». Sus figuras son el criterio de cierre; al programar, se abre el tabler
    y la barra de desplazamiento fina.
 4. El filtro de la barra de Usuarios: «Cualquier rol» conserva su botón y abre la lista con «Cualquier rol» primero y
    separado.
-5. La zona horaria con buscador, la ciudad y su hora en gris; «Filas por página» en un segmentado, en el pie y en
-   Configuración.
+5. La zona horaria con buscador, la ciudad y su hora en gris; «Filas por página» en la pieza (un segmentado hasta el
+   2026-11-22), en el pie y en Configuración.
 6. En el celular, a pantalla completa: buscador si son más de diez, renglones de 56 px y, en varias, «Listo (N)».
 7. El teclado y el lector de la figura 7 de DS1-A.
 8. Varias: los nombres, y «y N más» cuando no entran («Soja 1ª y 2 más» en el valor de una condición); el lector dice
@@ -136,15 +138,15 @@ una sola vez, al cerrar.
    asistente. La pregunta de catálogo de la carga (`EntryCatalogField`) también, en la compu y en el celular: se va su
    lista propia (`MobileCatalogField`).
 10. Los selects nativos de los editores (pregunta, reglas, condiciones, sugerencias, cálculos, catálogos y documentos)
-    pasan a la pieza; los de dos a cuatro opciones fijas, a un segmentado o radios (el tipo de un dato, Catálogo o Texto;
-    el valor Sí o No de una condición).
+    pasan a la pieza; los de dos a cuatro opciones fijas también (el tipo de un dato, Catálogo o Texto; el valor Sí o No
+    de una condición), que hasta el 2026-11-22 iban a un segmentado o radios.
 11. Canal y Estado de la planilla pasan a la pieza: en la barra, con el botón; adentro de «Filtros», con el campo.
     «Columnas» pasa a la pieza con varias y el botón de la barra, que sigue diciendo «Columnas».
 
 ### Etapa 4 · El resto y retirar lo viejo
 
-12. Configuración, Mi perfil, la IA, el asistente y el ícono de una carpeta. El idioma (dos opciones) va en un
-    segmentado, en Configuración y en Mi perfil, y también «Filas por página» de Configuración.
+12. Configuración, Mi perfil, la IA, el asistente y el ícono de una carpeta. El idioma (dos opciones), «Filas por
+    página» y el registro de Configuración van en la pieza (desde el 2026-11-22; antes, un segmentado y radios).
 13. Se retiran `MultiSelect` y `select.tsx`; `NativeSelect` queda sólo para la excepción de `FormPreview`. `Autocomplete` queda sólo para buscar un lugar
     (`BusinessPlaceSearch`), que es un buscador con sugerencias y no una lista conocida. Una regla de arquitectura del
     front impide un `<select>` o esas piezas fuera de `shared/ui`.
