@@ -11,6 +11,7 @@ import {useCountdown} from "@/shared/hooks/useCountdown";
 import {usePagination} from "@/shared/hooks/usePagination";
 import {useQueryUpdate} from "@/shared/hooks/useQueryUpdate";
 import {formatDateTimeInZone} from "@/shared/lib/dateTime";
+import {parseSort} from "@/shared/lib/sort";
 import {Badge} from "@/shared/ui/badge";
 import {Button} from "@/shared/ui/button";
 import {ConfirmDialog} from "@/shared/ui/ConfirmDialog";
@@ -24,9 +25,10 @@ import {Picker} from "@/shared/ui/Picker";
 import {BanIcon,CheckIcon,PlusIcon,SparklesIcon} from "@/shared/ui/icons";
 import {RowActions} from "@/shared/ui/RowActions";
 import {SearchInput} from "@/shared/ui/SearchInput";
+import {SortMenu} from "@/shared/ui/SortMenu";
 import {Surface} from "@/shared/ui/Surface";
 import {dismissNotification,notify} from "@/shared/ui/notifications";
-import {fetchMissingRequests,discardMissingTopic,reviewMissingTopic,type MissingRequestQuery,type MissingRequestsPage,type MissingTopic} from "../api/missingRequests";
+import {fetchMissingRequests,discardMissingTopic,reviewMissingTopic,missingRequestSortFields,type MissingRequestQuery,type MissingRequestsPage,type MissingTopic} from "../api/missingRequests";
 import {useUnobservedQueryCleanup} from "../hooks/useUnobservedQueryCleanup";
 
 export function MissingFormsPage(){
@@ -37,9 +39,12 @@ export function MissingFormsPage(){
 }
 function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{actorId:string;culture:"es"|"en";permissionsKey:string;timeZoneId?:string;canCreate:boolean}){
  const {t,i18n}=useTranslation("forms");const client=useQueryClient();const presentation=useSystemPresentation();const askAssistant=canAskAssistant(presentation.data?.installedFeatures,permissionsKey.split(","));
- const pagination=usePagination(presentation.data?.defaultPageSize,true);const [params]=useSearchParams();const update=useQueryUpdate();
+ const pagination=usePagination(presentation.data?.defaultPageSize,true,"-lastRequestedAtUtc");const [params]=useSearchParams();const update=useQueryUpdate();
  const state=params.get("state")==="Discarded"?"Discarded":"Pending";
- const query:MissingRequestQuery={page:Number.isSafeInteger(pagination.page)&&pagination.page>0?pagination.page:1,pageSize:Number.isSafeInteger(pagination.pageSize)&&pagination.pageSize>=1&&pagination.pageSize<=100?pagination.pageSize:presentation.data?.defaultPageSize??20,search:pagination.search,state,sort:pagination.sort==="lastRequestedAtUtc"||pagination.sort==="-lastRequestedAtUtc"?pagination.sort:undefined};
+ const query:MissingRequestQuery={page:Number.isSafeInteger(pagination.page)&&pagination.page>0?pagination.page:1,pageSize:Number.isSafeInteger(pagination.pageSize)&&pagination.pageSize>=1&&pagination.pageSize<=100?pagination.pageSize:presentation.data?.defaultPageSize??20,search:pagination.search,state,sort:missingRequestSortFields.includes(parseSort(pagination.sort)?.field??"")?pagination.sort:undefined};
+ // Every column with a datum orders in the server (OT1-C), and a field it does not order by is left out. The order seen is the chosen one
+ // or, without one, the usual one, the last request first.
+ const sort=query.sort??"-lastRequestedAtUtc";
  const root=useMemo(()=>["form-missing-requests",actorId,culture,permissionsKey] as const,[actorId,culture,permissionsKey]);
  useUnobservedQueryCleanup(root);
  const [denied,setDenied]=useState(false);const [lastLoaded,setLastLoaded]=useState<MissingRequestsPage>();
@@ -97,13 +102,14 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  }
  if(forbidden)return <ForbiddenPage/>;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
+ // Each column's id is the server's field to order by (OT1-C).
  const columns:Column<MissingTopic>[]=[
   // The description stays in grey under the topic (exception A); who discarded it and when go in their columns (UD5).
-  {sortable:false,id:"name",header:t("missing.topic"),cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}{row.state==="Pending"&&row.reviewedAtUtc===null?<Badge variant="warning" className="ml-2 align-middle">{t("missing.unreviewed")}</Badge>:null}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
-  ...(state==="Discarded"?[{sortable:false as const,id:"discardedBy",header:t("missing.discardedByColumn"),cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
-   {sortable:false as const,id:"discardedAtUtc",header:t("missing.discardedAtColumn"),cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
-  {sortable:false,id:"requestCount",header:t("missing.requests"),numeric:true,cell:row=>row.requestCount},
-  {sortable:false,id:"personCount",header:t("missing.people"),numeric:true,cell:row=>row.personCount},
+  {id:"name",header:t("missing.topic"),sortable:true,sortKind:"text",cell:row=><div className="min-w-48 max-w-72 whitespace-normal"><p className="font-medium">{row.name}{row.state==="Pending"&&row.reviewedAtUtc===null?<Badge variant="warning" className="ml-2 align-middle">{t("missing.unreviewed")}</Badge>:null}</p><p className="text-sm text-[var(--color-content-muted)]">{row.description}</p></div>},
+  ...(state==="Discarded"?[{id:"discardedBy",header:t("missing.discardedByColumn"),sortable:true as const,sortKind:"text" as const,cell:(row:MissingTopic)=>row.discardedBy?.displayName??"—"},
+   {id:"discardedAtUtc",header:t("missing.discardedAtColumn"),sortable:true as const,sortKind:"date" as const,cell:(row:MissingTopic)=>row.discardedAtUtc?<time dateTime={row.discardedAtUtc}>{date(row.discardedAtUtc)}</time>:"—"}]:[]),
+  {id:"requestCount",header:t("missing.requests"),sortable:true,sortKind:"number",numeric:true,cell:row=>row.requestCount},
+  {id:"personCount",header:t("missing.people"),sortable:true,sortKind:"number",numeric:true,cell:row=>row.personCount},
   {id:"lastRequestedAtUtc",header:t("missing.lastRequest"),sortable:true,sortKind:"date",cell:row=>date(row.lastRequestedAtUtc)},
   // A table row carries no text buttons: each action is an icon with its name in the tooltip, in one group; going elsewhere
   // (the assistant, a new form) stays a link, and «Marcar como revisado» swaps its drawing for the ring while it saves (LC1-A).
@@ -120,9 +126,9 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
  const waitReason=cooldown.isRunning?t("wait",{count:cooldown.seconds}):null;
  return <Page title={t("missing.title")} help={t("missing.description")}><div className="flex flex-col gap-4">
   <DisabledReason reason={waitReason} className="grid w-full"><fieldset disabled={cooldown.isRunning} className="min-w-0"><FilterBar><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 flex-wrap items-center gap-3"><div className="w-full sm:w-72" ref={node=>{search.current=node?.querySelector<HTMLInputElement>("input")??null;}}><SearchInput value={query.search??""} onChange={setSearch} label={t("missing.search")}/></div>{/* The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without counts
-     (FO1-A); choosing the one it has changes nothing (it would go back to page 1). */}<Picker trigger="button" label={t("missing.filter")} options={[{id:"Pending",label:t("missing.pending")},{id:"Discarded",label:t("missing.discarded")}]} value={state} onChange={id=>{if(id===state)return;setSelected(null);update({state:id==="Discarded"?id:undefined,page:undefined});}}/></div>{data?<p className="text-xs text-[var(--color-content-muted)]">{t("missing.totals",{topics:t("missing.topicCount",{count:data.totalCount}),requests:t("missing.requestCount",{count:data.totalRequests})})}</p>:null}</div></FilterBar></fieldset></DisabledReason>
+     (FO1-A); choosing the one it has changes nothing (it would go back to page 1). */}<Picker trigger="button" label={t("missing.filter")} options={[{id:"Pending",label:t("missing.pending")},{id:"Discarded",label:t("missing.discarded")}]} value={state} onChange={id=>{if(id===state)return;setSelected(null);update({state:id==="Discarded"?id:undefined,page:undefined});}}/></div><div className="flex flex-wrap items-center gap-3 max-sm:w-full">{data?<p className="text-xs text-[var(--color-content-muted)]">{t("missing.totals",{topics:t("missing.topicCount",{count:data.totalCount}),requests:t("missing.requestCount",{count:data.totalRequests})})}</p>:null}{/* Last in the bar, apart from the filters: it takes no rows out (OT1-C). */}<SortMenu columns={columns} sort={sort} onSortChange={pagination.setSort}/></div></div></FilterBar></fieldset></DisabledReason>
   {list.error&&data?<div><DisabledReason reason={rereading?null:waitReason}><Button type="button" variant="outline" disabled={cooldown.isRunning} pending={rereading} onClick={()=>void refresh()}>{t(rereading?"retrying":"common:actions.retry")}</Button></DisabledReason></div>:null}
-  <DisabledReason reason={waitReason} className="grid w-full"><fieldset disabled={cooldown.isRunning} className="min-w-0"><Surface><DataTable columns={columns} rows={data?.items??[]} rowKey={row=>row.id} hasData={data!==undefined} isLoading={list.isPending} refreshing={list.isPlaceholderData||rereading} error={list.error?t("missing.loadFailed"):undefined} onRetry={cooldown.isRunning?undefined:()=>void refresh()} sort={query.sort} onSortChange={pagination.toggleSort} emptyTitle={t(filtered?"missing.noMatches":globallyEmpty?"missing.empty":state==="Pending"?"missing.noPending":"missing.noDiscarded")} emptyAction={filtered?<Button type="button" variant="outline" onClick={()=>update({search:undefined,page:undefined})}>{t("clearFilters")}</Button>:undefined}/>{data?<Pagination {...data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/>:null}</Surface></fieldset></DisabledReason>
+  <DisabledReason reason={waitReason} className="grid w-full"><fieldset disabled={cooldown.isRunning} className="min-w-0"><Surface><DataTable columns={columns} rows={data?.items??[]} rowKey={row=>row.id} hasData={data!==undefined} isLoading={list.isPending} refreshing={list.isPlaceholderData||rereading} error={list.error?t("missing.loadFailed"):undefined} onRetry={cooldown.isRunning?undefined:()=>void refresh()} sort={sort} onSortChange={pagination.toggleSort} emptyTitle={t(filtered?"missing.noMatches":globallyEmpty?"missing.empty":state==="Pending"?"missing.noPending":"missing.noDiscarded")} emptyAction={filtered?<Button type="button" variant="outline" onClick={()=>update({search:undefined,page:undefined})}>{t("clearFilters")}</Button>:undefined}/>{data?<Pagination {...data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}/>:null}</Surface></fieldset></DisabledReason>
   <ConfirmDialog open={selected!==null} onOpenChange={open=>{if(!open)setSelected(null);}} focusFallback={search} title={t("missing.discardTitle")} description={t("missing.discardDescription",{name:selected?.name})} confirmLabel={t("missing.discard")} destructive pending={busy} pendingLabel={t("missing.discarding")} onConfirm={()=>{if(selected)void discard(selected);}}/>
  </div></Page>;
 }

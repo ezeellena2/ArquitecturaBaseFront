@@ -148,6 +148,7 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Estado del pedido Pendientes"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();
+ expect(screen.getByRole("button",{name:"Ordenar por: Último pedido, más reciente primero"})).toBeDisabled();
  expect(screen.getByRole("button",{name:/^Filas por página/})).toBeDisabled();
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
  await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry()).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
@@ -236,4 +237,57 @@ it("gives the wait of a 429 as the reason of the disabled controls",async()=>{
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  await userEvent.hover(screen.getByRole("table"));
  expect(await screen.findByRole("tooltip")).toHaveTextContent(/^Esperá \d+ segundos para volver a intentar\.$/);
+});
+
+// OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort`.
+const sortHeader=(name:string)=>within(within(screen.getByRole("table")).getByRole("columnheader",{name})).getByRole("button",{name});
+function readsOrder(){const asked:URLSearchParams[]=[];server.use(http.get("/api/forms/missing-requests",({request})=>{asked.push(new URL(request.url).searchParams);return HttpResponse.json(page());}));return asked;}
+it("orders by a header in its useful direction, back on the first page with the search and the state, and keeps the order in the address",async()=>{
+ setup();const asked=readsOrder();
+ const {router}=renderRouteWithProviders("/formularios/faltantes?page=2&search=reclamo&state=Discarded");const table=await screen.findByRole("table");
+ // Without an order chosen, the usual one is a column: its arrow is seen and the button says it, and the request does not carry it.
+ expect(asked.at(-1)?.has("sort")).toBe(false);
+ expect(within(table).getByRole("columnheader",{name:"Último pedido"})).toHaveAttribute("aria-sort","descending");
+ expect(screen.getByRole("button",{name:"Ordenar por: Último pedido, más reciente primero"})).toBeVisible();
+ await userEvent.click(sortHeader("Pedidos"));
+ await waitFor(()=>expect(asked.at(-1)?.get("sort")).toBe("-requestCount"));
+ expect(asked.at(-1)?.get("page")).toBe("1");expect(asked.at(-1)?.get("search")).toBe("reclamo");expect(asked.at(-1)?.get("state")).toBe("Discarded");
+ const params=new URLSearchParams(router.state.location.search);
+ expect(params.get("sort")).toBe("-requestCount");expect(params.has("page")).toBe(false);expect(params.get("search")).toBe("reclamo");expect(params.get("state")).toBe("Discarded");
+ expect(within(screen.getByRole("table")).getByRole("columnheader",{name:"Pedidos"})).toHaveAttribute("aria-sort","descending");
+ expect(within(screen.getByRole("table")).getByRole("columnheader",{name:"Último pedido"})).toHaveAttribute("aria-sort","none");
+ await userEvent.click(sortHeader("Pedidos"));
+ await waitFor(()=>expect(asked.at(-1)?.get("sort")).toBe("requestCount"));
+});
+it("orders each column by its server field, and the actions do not order",async()=>{
+ setup();const asked=readsOrder();
+ renderRouteWithProviders("/formularios/faltantes?state=Discarded");await screen.findByRole("table");
+ expect(within(screen.getByRole("columnheader",{name:"Acciones"})).queryByRole("button")).not.toBeInTheDocument();
+ // The first touch on «Último pedido» turns the usual order around; each other column starts in the useful direction of its datum.
+ for(const [name,sort] of [["Último pedido","lastRequestedAtUtc"],["Tema","name"],["Descartó","discardedBy"],["Descartado","-discardedAtUtc"],["Pedidos","-requestCount"],["Personas","-personCount"]] as const){
+  await userEvent.click(sortHeader(name));await waitFor(()=>expect(asked.at(-1)?.get("sort")).toBe(sort));
+ }
+});
+it("changes the order from «Ordenar por», last in the bar, which moves the arrow of the header",async()=>{
+ setup();const asked=readsOrder();
+ renderRouteWithProviders("/formularios/faltantes?sort=name");await screen.findByRole("table");
+ expect(asked.at(-1)?.get("sort")).toBe("name");
+ const trigger=screen.getByRole("button",{name:"Ordenar por: Tema, de la A a la Z"});
+ expect(within(trigger.closest<HTMLElement>('[data-slot="filter-bar"]')!).getAllByRole("button").at(-1)).toBe(trigger);
+ act(()=>trigger.focus());await userEvent.keyboard("{Enter}");
+ const columns=within(await screen.findByRole("menu")).getByRole("group",{name:"Columna"});
+ expect(within(columns).getAllByRole("menuitemradio").map(item=>item.textContent)).toEqual(["Tema","Pedidos","Personas","Último pedido"]);
+ await userEvent.click(within(columns).getByRole("menuitemradio",{name:"Personas"}));
+ await waitFor(()=>expect(asked.at(-1)?.get("sort")).toBe("-personCount"));
+ await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio",{name:"De menor a mayor"}));
+ await waitFor(()=>expect(asked.at(-1)?.get("sort")).toBe("personCount"));
+ await userEvent.keyboard("{Escape}");await waitFor(()=>expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+ expect(within(screen.getByRole("table")).getByRole("columnheader",{name:"Personas"})).toHaveAttribute("aria-sort","ascending");
+ expect(screen.getByRole("button",{name:"Ordenar por: Personas, de menor a mayor"})).toHaveFocus();
+});
+it("leaves out an order the server does not know",async()=>{
+ setup();const asked=readsOrder();
+ renderRouteWithProviders("/formularios/faltantes?sort=-secret");await screen.findByRole("table");
+ expect(asked.at(-1)?.has("sort")).toBe(false);
+ expect(screen.getByRole("button",{name:"Ordenar por: Último pedido, más reciente primero"})).toBeVisible();
 });

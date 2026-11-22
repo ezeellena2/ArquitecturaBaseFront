@@ -6,7 +6,10 @@ const topic=z.strictObject({id:z.string().uuid(),revision:z.number().int().posit
 const page=z.strictObject({items:z.array(topic),page:z.number().int().positive(),pageSize:z.number().int().min(1).max(100),totalCount:integer,totalRequests:integer,stateCounts:z.strictObject({pending:integer,discarded:integer}),totalPages:integer,hasPrevious:z.boolean(),hasNext:z.boolean()});
 export type MissingTopic=z.infer<typeof topic>;
 export type MissingRequestsPage=z.infer<typeof page>;
-export interface MissingRequestQuery {page:number;pageSize:number;search?:string;sort?:"lastRequestedAtUtc"|"-lastRequestedAtUtc";state:"Pending"|"Discarded"|null}
+/// The columns the server orders by (OT1-C); without one, the last request first.
+export const missingRequestSortFields:readonly string[]=["name","discardedBy","discardedAtUtc","requestCount","personCount","lastRequestedAtUtc"];
+/** `sort` is "field" or "-field", one of `missingRequestSortFields`. */
+export interface MissingRequestQuery {page:number;pageSize:number;search?:string;sort?:string;state:"Pending"|"Discarded"|null}
 function read<T>(schema:z.ZodType<T>,body:unknown):T {const parsed=schema.safeParse(body);if(!parsed.success)throw new Error("Invalid missing form requests contract.");return parsed.data;}
 export const readMissingTopic=(body:unknown)=>read(topic,body);
 export const readMissingRequests=(body:unknown)=>read(page,body);
