@@ -61,7 +61,7 @@
   "retrySame": "Retry the same save",
   "keepDraft": "Review with my draft",
   "useCurrent": "Use current configuration",
-  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}.",
+  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}. {{retention}}.",
   "cooldown_one": "Wait {{count}} second before testing again.",
   "cooldown_other": "Wait {{count}} seconds before testing again.",
   "providerErrors": {
@@ -74,5 +74,13 @@
     "ResponseInvalid": "The provider returned a response we couldn't verify.",
     "ResponseIncomplete": "The model did not complete the test within its limit. Try another model.",
     "TestUncertain": "The test ended without a confirmed outcome. The provider may have processed it; check usage before repeating it."
-  }
+  },
+  "privacySection": "Privacy",
+  "privacyHint": "How long the Home assistant keeps its conversations. The privacy policy has to promise the same period.",
+  "retentionDays": "Keep the Home assistant conversations",
+  "retentionDaysHelp": "After that they are deleted, with their audios and documents. At most {{max}} days, the installation ceiling.",
+  "days": "days",
+  "retentionRange": "Choose a number between {{min}} and {{max}}.",
+  "retentionSummary_one": "Keeps conversations {{days}} day",
+  "retentionSummary_other": "Keeps conversations {{days}} days"
 }

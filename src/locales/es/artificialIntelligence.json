@@ -61,7 +61,7 @@
   "retrySame": "Reintentar el mismo guardado",
   "keepDraft": "Revisar con mi borrador",
   "useCurrent": "Usar configuración actual",
-  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}.",
+  "currentSummary": "{{provider}}, {{model}}. {{credential}}. {{availability}}. {{retention}}.",
   "cooldown_one": "Esperá {{count}} segundo antes de probar otra vez.",
   "cooldown_other": "Esperá {{count}} segundos antes de probar otra vez.",
   "providerErrors": {
@@ -74,5 +74,13 @@
     "ResponseInvalid": "El proveedor devolvió una respuesta que no pudimos verificar.",
     "ResponseIncomplete": "El modelo no completó la prueba dentro del límite. Probá con otro modelo.",
     "TestUncertain": "La prueba terminó sin resultado confirmado. El proveedor podría haberla procesado; revisá su consumo antes de repetirla."
-  }
+  },
+  "privacySection": "Privacidad",
+  "privacyHint": "Cuánto se guardan las conversaciones del asistente de Inicio. La política de privacidad tiene que prometer el mismo plazo.",
+  "retentionDays": "Guardar las conversaciones del asistente de Inicio",
+  "retentionDaysHelp": "Después se borran solas, con sus audios y documentos. Como mucho {{max}} días, el techo de la instalación.",
+  "days": "días",
+  "retentionRange": "Elegí un número entre {{min}} y {{max}}.",
+  "retentionSummary_one": "Guarda las conversaciones {{days}} día",
+  "retentionSummary_other": "Guarda las conversaciones {{days}} días"
 }

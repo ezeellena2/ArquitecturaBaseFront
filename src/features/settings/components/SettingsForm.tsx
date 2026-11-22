@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { RegistrationMode, SettingField, SettingsDraft } from "../api/settings";
+import { retentionFields, retentionRanges, type RegistrationMode, type SettingField, type SettingsDraft } from "../api/settings";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { FormField } from "@/shared/ui/FormField";
+import { Input } from "@/shared/ui/input";
 import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
@@ -25,6 +27,8 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
   // «America/Argentina/Buenos_Aires», which the browser calls «America/Buenos_Aires», and «UTC».
   const zones = useMemo(() => timeZoneOptions(i18n.language, [draft.defaultTimeZoneId, "America/Argentina/Buenos_Aires", "UTC"]),
     [i18n.language, draft.defaultTimeZoneId]);
+  const range = (field: (typeof retentionFields)[number]) => ({ min: formatNumber(retentionRanges[field].min, i18n.language),
+    max: formatNumber(retentionRanges[field].max, i18n.language) });
   // Sin leyendas: lo que hace falta aclarar va en la (i) del título o de la etiqueta. El efecto de cada registro lo
   // explica la confirmación al guardar. Las opciones fijas, el idioma, las filas y el registro, van en la pieza para
   // elegir como cualquier lista (DS1-A, 2026-11-22), del ancho que tenían sus desplegables.
@@ -58,6 +62,17 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
           options={[{ id: "InviteOnly", label: t("registration.InviteOnlyLabel") }, { id: "Open", label: t("registration.OpenLabel") }]}
           onChange={value => { if (value !== draft.registrationMode) onChange({ registrationMode: value as RegistrationMode }); }}/>
       </FormField></div>
+    </Surface>
+    {/* RC1-A: los plazos de los datos del ingreso, como los números de Límites: el cuadro corto con su unidad al lado y el
+        rango en la (i). Que la política de privacidad tiene que prometer los mismos va en la (i) del título. */}
+    <Surface title={t("sections.retention")} help={t("hints.retention")} padded>
+      <div className="grid max-w-6xl gap-4 sm:grid-cols-3">
+        {retentionFields.map(field => <FormField key={field} label={t(`retention.${field}`)} help={t(`retention.${field}Help`, range(field))} required
+          error={errors[field]} beside={<span className="text-sm text-[var(--color-content-muted)]">{t(`retention.${field}Unit`)}</span>}>
+          <Input type="number" inputMode="numeric" step={1} min={retentionRanges[field].min} max={retentionRanges[field].max} className="w-24"
+            disabled={disabled} value={draft[field]} onChange={event => onChange({ [field]: event.target.value })} />
+        </FormField>)}
+      </div>
     </Surface>
   </>;
 }

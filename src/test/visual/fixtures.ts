@@ -143,10 +143,11 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     ] },
   ];
   const counts: UserFilterCounts = { status: { all: 4, active: 3, inactive: 1 }, roles: [{ name: "Admin", count: 1 }, { name: "User", count: 3 }], createdWithin: [{ days: 7, count: 0 }, { days: 30, count: 4 }] };
-  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1 };
+  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1,
+    branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
   const nativeFetch = globalThis.fetch;
   const folderFixture = createFolderVisualFixtures(language, scenario, profile.permissions);
-  let ai: AiConnection = { provider: "OpenAI", model: scenario === "ai-empty" ? "" : "fictional-model", hasCredential: scenario !== "ai-empty", enabled: scenario !== "ai-empty", revision: 1, providers: ["OpenAI", "Anthropic"] };
+  let ai: AiConnection = { provider: "OpenAI", model: scenario === "ai-empty" ? "" : "fictional-model", hasCredential: scenario !== "ai-empty", enabled: scenario !== "ai-empty", revision: 1, providers: ["OpenAI", "Anthropic"], conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
   const aiReceipts = new Map<string, { requestId: string; connection: AiConnection }>();
   if (roleGroupsScenario) permissions.push({ area: "whatsapp", name: "WhatsApp", permissions: [
     { code: "whatsapp.read", name: english ? "View chats" : "Ver chats", description: english ? "Read business conversations." : "Leer las conversaciones del negocio.", includes: [] },
@@ -320,7 +321,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
         const data = await request.json() as AiSaveRequest;
         if (scenario === "ai-conflict") return json({ code: "Ai.Connection.RevisionConflict", detail: "fictional conflict" }, 409);
         if (!aiReceipts.has(data.requestId)) {
-          ai = { ...ai, provider: data.provider, model: data.model, enabled: data.enabled, hasCredential: data.credentialChange === "Replace" || (data.credentialChange === "Keep" && ai.hasCredential), revision: ai.revision + 1 };
+          ai = { ...ai, provider: data.provider, model: data.model, enabled: data.enabled, hasCredential: data.credentialChange === "Replace" || (data.credentialChange === "Keep" && ai.hasCredential), revision: ai.revision + 1,
+            conversationRetentionDays: data.conversationRetentionDays ?? ai.conversationRetentionDays };
           aiReceipts.set(data.requestId, { requestId: data.requestId, connection: ai });
         }
         if (scenario === "ai-uncertain") throw new TypeError("Simulated lost response");

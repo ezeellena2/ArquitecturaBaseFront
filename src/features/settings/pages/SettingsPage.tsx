@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router";
-import { fetchSystemSettings, systemSettingsQueryKey, updateSystemSettings, settingFields, type SettingsChanges, type SettingsDraft, type SystemSettings } from "../api/settings";
-import { changesFrom, draftFrom } from "../model";
+import { fetchSystemSettings, systemSettingsQueryKey, updateSystemSettings, settingErrorKey, settingFields, type SettingsChanges, type SettingsDraft, type SystemSettings } from "../api/settings";
+import { changedFields, changesFrom, draftFrom, retentionIssues } from "../model";
+import { formatNumber } from "@/shared/lib/numberFormat";
 import { SettingsForm, type SettingsFieldErrors } from "../components/SettingsForm";
 import { SettingsReview } from "../components/SettingsReview";
 import { ApiError } from "@/shared/api/ApiError";
@@ -29,12 +30,12 @@ export function SettingsPage() {
   }
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   if (initial) return <SettingsEditor initial={initial} />;
-  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { fields: 1 }, { rows: 2 }]} />
+  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { fields: 1 }, { rows: 2 }, { fields: 3 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
 }
 
 function SettingsEditor({ initial }: { initial: SystemSettings }) {
-  const { t } = useTranslation("settings");
+  const { t, i18n } = useTranslation("settings");
   const client = useQueryClient();
   const navigate = useNavigate();
   const [baseline, setBaseline] = useState(initial);
@@ -51,8 +52,8 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   // Revisar está en la banda y la comparación aparece al final del contenido, a veces fuera de la vista: cada lectura
   // lleva el foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
   useEffect(() => { if (review) reviewTitle.current?.focus(); }, [review]);
-  const changes = changesFrom(draft, baseline);
-  const dirty = Object.keys(changes).length > 0;
+  const changed = changedFields(draft, baseline);
+  const dirty = changed.length > 0;
 
   async function readCurrent() {
     setReading(true);
@@ -82,7 +83,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
       notify({ id: noticeId, kind: "success", message: t("feedback.saved") });
     },
     onError: error => {
-      const feedback = errorFeedback(error, { writing: true, fields: settingFields, conflictCodes: ["Settings.System.RevisionConflict"] });
+      const feedback = errorFeedback(error, { writing: true, fields: settingFields.map(settingErrorKey), conflictCodes: ["Settings.System.RevisionConflict"] });
       if (feedback.kind === "session") return;
       if (!active.current) {
         notify({ id: noticeId, kind: "error", message: t(feedback.kind === "uncertain" ? "feedback.lateUncertain" : "feedback.lateFailed"),
@@ -91,7 +92,8 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
         return;
       }
       if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
-      setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field, messages.join(" ")])));
+      // El servidor nombra los plazos dentro de `retention`; cada mensaje va debajo de su cuadro.
+      setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([key, messages]) => [settingFields.find(field => settingErrorKey(field) === key) ?? key, messages.join(" ")])));
       if (feedback.kind === "fields") return;
       const uncertain = feedback.kind === "uncertain";
       const conflict = feedback.kind === "conflict";
@@ -111,11 +113,18 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   function acceptReview(keepDraft: boolean) {
     if (!review) return;
     // Preservar las ediciones y adoptar cambios ajenos en campos que no tocamos.
-    setDraft({ ...draftFrom(review), ...(keepDraft ? changes : {}) });
+    setDraft({ ...draftFrom(review), ...(keepDraft ? Object.fromEntries(changed.map(field => [field, draft[field]])) : {}) });
     setBaseline(review);
     setNeedsReview(false); setReview(undefined); setErrors({}); dismissNotification(noticeId);
   }
-  const save = () => mutation.mutate({ changes, baseline });
+  const save = () => mutation.mutate({ changes: changesFrom(draft, baseline), baseline });
+  // RC1-A: un plazo fuera de su rango se marca en su cuadro sin mandar nada; el servidor valida lo mismo.
+  function requestSave() {
+    const issues = Object.entries(retentionIssues(draft));
+    setErrors(Object.fromEntries(issues.map(([field, range]) => [field, t("retention.range", { min: formatNumber(range.min, i18n.language), max: formatNumber(range.max, i18n.language) })])));
+    if (issues.length > 0) return;
+    if (changed.includes("registrationMode")) setConfirm(true); else save();
+  }
   // La banda lleva solo el título y las acciones: Guardar habilitado ya dice que hay cambios. Revisar actúa sobre
   // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
   // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
@@ -123,7 +132,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   return <Page title={t("title")}
     actions={<>{needsReview ? <Button variant="outline" pending={reading} disabled={disabled} onClick={() => void readCurrent()}>{t(reading ? "review.reading" : "review.action")}</Button> : null}
       <DisabledReason reason={reviewReason}><Button variant="outline" disabled={!dirty || disabled || needsReview} onClick={discard}>{t("discard")}</Button></DisabledReason>
-      <DisabledReason reason={reviewReason}><Button pending={mutation.isPending} disabled={!dirty || disabled || needsReview} onClick={() => { setErrors({}); if (changes.registrationMode) setConfirm(true); else save(); }}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
+      <DisabledReason reason={reviewReason}><Button pending={mutation.isPending} disabled={!dirty || disabled || needsReview} onClick={requestSave}>{t(mutation.isPending ? "saving" : "save")}</Button></DisabledReason></>}>
     <div className="flex flex-col gap-4">
       <SettingsForm draft={draft} errors={errors} disabled={disabled} onChange={changeDraft} />
       {review ? <SettingsReview current={review} draft={draft} disabled={disabled} titleRef={reviewTitle} onAccept={acceptReview} /> : null}

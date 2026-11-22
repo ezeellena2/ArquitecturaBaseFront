@@ -15,11 +15,11 @@ let writes: AiSaveRequest[];
 let tests: unknown[];
 beforeEach(() => {
   queryClient.clear(); writes = []; tests = [];
-  current = { provider: "OpenAI", model: "fictional-model", hasCredential: true, enabled: true, revision: 1, providers: ["OpenAI", "Anthropic"] };
+  current = { provider: "OpenAI", model: "fictional-model", hasCredential: true, enabled: true, revision: 1, providers: ["OpenAI", "Anthropic"], conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.read", "ai.manage"] })),
     http.get("/api/ai/connection", () => HttpResponse.json(current)),
     http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: current.provider, revision: current.revision, models: [] })),
-    http.put("/api/ai/connection", async ({ request }) => { const body = await request.json() as AiSaveRequest; writes.push(body); current = { ...current, provider: body.provider, model: body.model, enabled: body.enabled, hasCredential: body.credentialChange !== "Remove", revision: current.revision + 1 }; return HttpResponse.json({ requestId: body.requestId, connection: current }); }),
+    http.put("/api/ai/connection", async ({ request }) => { const body = await request.json() as AiSaveRequest; writes.push(body); current = { ...current, provider: body.provider, model: body.model, enabled: body.enabled, hasCredential: body.credentialChange !== "Remove", revision: current.revision + 1, conversationRetentionDays: body.conversationRetentionDays }; return HttpResponse.json({ requestId: body.requestId, connection: current }); }),
     http.post("/api/ai/connection/test", async ({ request }) => { tests.push(await request.json()); return HttpResponse.json({ revision: current.revision, inputTokens: 4, outputTokens: 1 }); }));
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
@@ -63,7 +63,7 @@ describe("AI settings", () => {
     expect(within(zone).getByText("Disponibilidad")).toBeInTheDocument();
   });
   it("says that a provider this version does not know left the connection paused, to choose another (I4)", async () => {
-    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true };
+    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true, conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
     renderRouteWithProviders("/configuracion/ia");
     const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
     expect(notice.closest("[role=status]")).not.toBeNull();
@@ -72,7 +72,7 @@ describe("AI settings", () => {
   });
   it("tells who only reads that a provider this version does not know left it paused, without what to do to fix it (I4, review)", async () => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.read"] })));
-    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true };
+    current = { provider: "OpenAI", model: "", hasCredential: false, enabled: false, revision: 7, providers: ["OpenAI", "Anthropic"], unsupportedProvider: true, conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
     renderRouteWithProviders("/configuracion/ia");
     const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
     expect(notice.closest("[role=status]")).not.toBeNull();
@@ -534,7 +534,8 @@ describe("AI settings", () => {
     // Las acciones de la recuperación van al borde derecho de su banda; el cuerpo explica el estado.
     const band = within(review).getByRole("heading", { level: 2, name: "Revisión del guardado" }).parentElement as HTMLElement;
     await userEvent.click(within(band).getByRole("button", { name: "Leer configuración actual" }));
-    expect(await within(review).findByText("Anthropic, remote-model. Clave configurada. Disponible.")).toBeInTheDocument();
+    // RC1-A: the summary also says how many days the current connection keeps Home conversations.
+    expect(await within(review).findByText("Anthropic, remote-model. Clave configurada. Disponible. Guarda las conversaciones 30 días.")).toBeInTheDocument();
     // El número de revisión queda en los historiales, no en el resumen de la configuración actual.
     expect(within(review).queryByText(/Revisión 2/)).not.toBeInTheDocument();
     expect(within(band).getAllByRole("button").map(button => button.textContent)).toEqual(["Leer configuración actual", "Usar configuración actual", "Revisar con mi borrador"]);
@@ -554,5 +555,20 @@ describe("AI settings", () => {
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("");
     expect(screen.getByLabelText("Clave de API")).toHaveValue("");
     expect(JSON.stringify(queryClient.getMutationCache().getAll().map(x => x.state.variables))).not.toContain("fictional-private-key");
+  });
+
+  // RC1-A: the days to keep Home conversations go with the connection; beyond the installation's ceiling they are marked without sending.
+  it("saves the days to keep Home conversations with the connection and marks days beyond the ceiling", async () => {
+    renderRouteWithProviders("/configuracion/ia");
+    const days = await screen.findByRole("spinbutton", { name: /Guardar las conversaciones del asistente de Inicio/ });
+    expect(days).toHaveValue(30);
+    await userEvent.clear(days); await userEvent.type(days, "31");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Elegí un número entre 1 y 30.")).toBeInTheDocument();
+    expect(writes).toEqual([]);
+    await userEvent.clear(days); await userEvent.type(days, "7");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]).toMatchObject({ conversationRetentionDays: 7, model: "fictional-model", credentialChange: "Keep" });
   });
 });

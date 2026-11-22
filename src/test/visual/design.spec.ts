@@ -88,7 +88,8 @@ const screens = [
   { id: "users", path: "/usuarios", ready: "table" },
   { id: "roles", path: "/roles", ready: "table" },
   { id: "editor", path: "/roles/support", ready: "table" },
-  { id: "settings", path: "/configuracion", ready: "radiogroup" },
+  // The registration went to the shared piece (DS1-A): the boxes of «Privacidad y retención» (RC1-A) say the form is there.
+  { id: "settings", path: "/configuracion", ready: "spinbutton" },
   { id: "profile", path: "/perfil", ready: "textbox" },
   { id: "catalog", path: "/catalogo", ready: "table" },
 ] as const;
@@ -479,7 +480,8 @@ for (const language of ["es", "en"]) {
     const zoneLabel = english ? "Default time zone" : "Zona horaria predeterminada";
     const sizeLabel = english ? "Rows per page" : "Filas por página";
     const size = page.getByRole("button", { name: new RegExp("^" + sizeLabel + " ") });
-    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(3);
+    // Regional preferences, lists, registration and (RC1-A) privacy and retention.
+    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(4);
     await culture.click();
     await page.getByRole("option", { name: otherLanguage, exact: true }).click();
     await page.getByRole("button", { name: zoneLabel }).click();

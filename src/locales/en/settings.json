@@ -3,12 +3,29 @@
   "sections": {
     "regional": "Regional preferences",
     "lists": "Lists",
-    "registration": "Account registration"
+    "registration": "Account registration",
+    "retention": "Privacy and retention"
   },
   "registration": {
     "title": "Who can sign in",
     "OpenLabel": "Open registration",
     "InviteOnlyLabel": "Invitation only"
+  },
+  "retention": {
+    "loginAuditMonths": "Remove the IP and browser from a sign-in",
+    "loginAuditMonthsHelp": "After that, the sign-in stays recorded without its IP or browser. From {{min}} to {{max}} months.",
+    "loginAuditMonthsUnit": "months later",
+    "loginCodeDays": "Delete sign-in codes and links",
+    "loginCodeDaysHelp": "They are deleted with their destination and the address that requested them. From {{min}} to {{max}} days: at least one, because the request limits look at the last 24 hours.",
+    "loginCodeDaysUnit": "days later",
+    "invitationDays": "Delete old invitations",
+    "invitationDaysHelp": "Invitations that are no longer the latest of their account are deleted; the latest always stays. From {{min}} to {{max}} days: at least seven, because an invitation can take a day to be delivered.",
+    "invitationDaysUnit": "days later",
+    "range": "Choose a number between {{min}} and {{max}}.",
+    "months_one": "{{value}} month",
+    "months_other": "{{value}} months",
+    "days_one": "{{value}} day",
+    "days_other": "{{value}} days"
   },
   "confirm": {
     "openTitle": "Open registration",
@@ -29,13 +46,17 @@
   "errorTraceId": "Code to report: {{traceId}}",
   "hints": {
     "regional": "Initial values for new accounts and public pages. Each person keeps their preferences.",
-    "listados": "Initial number of rows. Each list can use a different size."
+    "listados": "Initial number of rows. Each list can use a different size.",
+    "retention": "How long sign-in data is kept. The cleanup runs once a day. The privacy policy has to promise these same periods."
   },
   "fields": {
     "defaultCulture": "Default language",
     "defaultTimeZoneId": "Default time zone",
     "defaultPageSize": "Rows per page",
-    "registrationMode": "Account registration"
+    "registrationMode": "Account registration",
+    "loginAuditMonths": "Remove the IP and browser from a sign-in",
+    "loginCodeDays": "Delete sign-in codes and links",
+    "invitationDays": "Delete old invitations"
   },
   "preview": {
     "label": "Preview"
@@ -59,6 +80,27 @@
   },
   "appearance": {
     "title": "Appearance",
+    "brand": "Name and emails",
+    "brandHint": "How the application presents itself in emails, in the WhatsApp invitation and in the response PDFs.",
+    "brandFields": {
+      "appName": "Application name",
+      "emailSenderName": "Sender name",
+      "emailLogoUrl": "Email logo"
+    },
+    "senderHint": "The name people see when they receive an email. The mailbox that sends them is set in the installation.",
+    "logoHint": "The https address of a public image, shown 32 px tall. Without a logo, the email shows the application name.",
+    "emailPreview": "How it arrives",
+    "emailFrom": "From",
+    "emailSubject": "Subject",
+    "emailSubjectSample": "{{code}} is your {{app}} access code",
+    "noLogo": "No logo",
+    "savedAll": "We saved the appearance changes.",
+    "issues": {
+      "required": "This field is required.",
+      "tooLong": "Use up to {{max}} characters.",
+      "singleLine": "Write it on a single line, without control characters.",
+      "logoUrl": "Enter an address that starts with https://."
+    },
     "colors": "System colors",
     "hint": "These colors apply to everyone and to sign-in screens.",
     "reset": "Restore initial colors",

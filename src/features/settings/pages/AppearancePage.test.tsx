@@ -10,11 +10,12 @@ import { queryClient } from "@/shared/api/queryClient";
 import { initialAppearance } from "@/shared/lib/appearance";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
-let settings = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, revision: 7, appearance: { ...initialAppearance } };
+let settings = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, revision: 7, appearance: { ...initialAppearance },
+  branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
 let writes: Record<string, unknown>[];
 beforeEach(() => {
   queryClient.clear(); writes = [];
-  settings = { ...settings, revision: 7, appearance: { ...initialAppearance } };
+  settings = { ...settings, revision: 7, appearance: { ...initialAppearance }, branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null } };
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["settings.manage"] })),
     http.get("/api/settings", () => HttpResponse.json(settings)),
     http.get("/api/settings/presentation", () => HttpResponse.json(settings)),
@@ -194,5 +195,32 @@ describe("AppearancePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Seguir editando" }));
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes[0]?.appearance).toEqual(initialAppearance));
+  });
+
+  // RC6-B: the name, the sender and the logo are saved like the colors, in the same request and revision; «Así llega» follows the draft.
+  it("saves the name, the sender and the logo, and the email preview follows the draft", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    const name = await screen.findByRole("textbox", { name: "Nombre de la aplicación" });
+    await userEvent.clear(name); await userEvent.type(name, "Campo");
+    const sender = screen.getByRole("textbox", { name: /Nombre del remitente/ });
+    await userEvent.clear(sender); await userEvent.type(sender, "Campo Avisos");
+    const preview = screen.getByText("Así llega").parentElement!;
+    expect(within(preview).getByText("123456 es tu código de acceso a Campo")).toBeInTheDocument();
+    expect(within(preview).getByText("Campo Avisos")).toBeInTheDocument();
+    await userEvent.type(screen.getByRole("textbox", { name: /Logo de los correos/ }), "https://cdn.example.com/campo.png");
+    expect(within(preview).getByRole("img", { name: "Campo" })).toHaveAttribute("src", "https://cdn.example.com/campo.png");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7,
+      branding: { appName: "Campo", emailSenderName: "Campo Avisos", emailLogoUrl: "https://cdn.example.com/campo.png" } }]));
+  });
+
+  it("marks an empty name and a logo without https in their boxes without sending", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    await userEvent.clear(await screen.findByRole("textbox", { name: "Nombre de la aplicación" }));
+    await userEvent.type(screen.getByRole("textbox", { name: /Logo de los correos/ }), "http://cdn.example.com/campo.png");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Este campo es obligatorio.")).toBeInTheDocument();
+    expect(screen.getByText("Escribí una dirección que empiece con https://.")).toBeInTheDocument();
+    expect(writes).toEqual([]);
   });
 });

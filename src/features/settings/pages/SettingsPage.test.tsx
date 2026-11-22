@@ -10,7 +10,8 @@ import { server } from "@/test/mocks/server";
 import { systemSettingsQueryKey } from "../api/settings";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
-const defaults = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, revision: 1 };
+const defaults = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, revision: 1,
+  branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
 let settings = { ...defaults };
 let writes: unknown[];
 beforeEach(() => {
@@ -499,5 +500,30 @@ describe("SettingsPage", () => {
     await waitFor(() => expectNoEditor());
     complete?.();
     await waitFor(() => expect(error).toHaveBeenCalledWith(expect.stringContaining("configuración"), expect.objectContaining({ duration: Infinity })));
+  });
+
+  // RC1-A: the three sign-in periods are saved together with the revision; one out of range is marked in its box without sending.
+  it("saves the sign-in retention periods together and marks one out of range in its box", async () => {
+    renderRouteWithProviders("/configuracion");
+    const codes = await screen.findByRole("spinbutton", { name: /Borrar los códigos y enlaces de ingreso/ });
+    expect(codes).toHaveValue(30);
+    const invitations = screen.getByRole("spinbutton", { name: /Borrar las invitaciones viejas/ });
+    await userEvent.clear(invitations); await userEvent.type(invitations, "6");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Elegí un número entre 7 y 3.650.")).toBeInTheDocument();
+    expect(writes).toEqual([]);
+    await userEvent.clear(invitations); await userEvent.type(invitations, "10");
+    await userEvent.clear(codes); await userEvent.type(codes, "2");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 1, retention: { loginAuditMonths: 12, loginCodeDays: 2, invitationDays: 10 } }]));
+  });
+
+  it("puts the server's message for a period under its box", async () => {
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Validation.Failed", errors: { "retention.loginAuditMonths": ["Elegí un número entre 1 y 120."] } }, { status: 400 })));
+    renderRouteWithProviders("/configuracion");
+    const months = await screen.findByRole("spinbutton", { name: /Quitar la IP y el navegador de un ingreso/ });
+    await userEvent.clear(months); await userEvent.type(months, "24");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(months).toHaveAccessibleDescription(expect.stringContaining("Elegí un número entre 1 y 120.")));
   });
 });

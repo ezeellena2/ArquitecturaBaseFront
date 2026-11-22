@@ -2,9 +2,12 @@ import { api } from "@/shared/api/httpClient";
 export type AiProvider = "OpenAI" | "Anthropic";
 export type CredentialChange = "Keep" | "Replace" | "Remove";
 // I4: the saved provider is one this version does not know (a newer one saved it): the connection reads empty and paused.
-export interface AiConnection { provider: AiProvider; model: string; hasCredential: boolean; enabled: boolean; revision: number; providers: AiProvider[]; unsupportedProvider?: boolean }
-export interface AiSaveRequest { provider: AiProvider; model: string; credentialChange: CredentialChange; apiKey: string | null; enabled: boolean; expectedRevision: number; requestId: string }
-export type AiTestRequest = Omit<AiSaveRequest, "enabled" | "requestId">;
+// RC1-A: how many days Home conversations are kept, at most the installation's ceiling, saved with the connection.
+export interface AiConnection { provider: AiProvider; model: string; hasCredential: boolean; enabled: boolean; revision: number; providers: AiProvider[]; unsupportedProvider?: boolean;
+  conversationRetentionDays: number; conversationRetentionCeilingDays: number }
+export interface AiSaveRequest { provider: AiProvider; model: string; credentialChange: CredentialChange; apiKey: string | null; enabled: boolean; expectedRevision: number; requestId: string;
+  conversationRetentionDays: number }
+export type AiTestRequest = Omit<AiSaveRequest, "enabled" | "requestId" | "conversationRetentionDays">;
 export type AiModelsRequest = Omit<AiTestRequest, "model">;
 export interface AiModel { id: string; displayName: string }
 export interface AiModels { provider: AiProvider; revision: number; models: AiModel[] }

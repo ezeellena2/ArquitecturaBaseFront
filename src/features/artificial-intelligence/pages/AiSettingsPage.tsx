@@ -21,6 +21,7 @@ import { changeProvider, hasCredential } from "../model";
 import { useAiConnectionEditor } from "../hooks/useAiConnectionEditor";
 import { useAiConnectionTest } from "../hooks/useAiConnectionTest";
 import { useAiModels } from "../hooks/useAiModels";
+import { formatNumber } from "@/shared/lib/numberFormat";
 
 export function AiSettingsPage() {
   const { t } = useTranslation("artificialIntelligence");
@@ -31,12 +32,12 @@ export function AiSettingsPage() {
   if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
   // Un cambio de permisos desmonta el editor y elimina sus referencias secretas.
   if (initial) return <AiEditor key={permissions.has("ai.manage") ? "manage" : "read"} initial={query.data ?? initial} canManage={permissions.has("ai.manage")} observedRevision={query.data?.revision ?? initial.revision} />;
-  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 4, stacked: true }]} /> :
+  return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 4, stacked: true }, { fields: 1 }]} /> :
     <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
 }
 
 function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnection; canManage: boolean; observedRevision: number }) {
-  const { t } = useTranslation("artificialIntelligence");
+  const { t, i18n } = useTranslation("artificialIntelligence");
   const navigate = useNavigate();
   const editor = useAiConnectionEditor(initial);
   const { draft, baseline, guard } = editor;
@@ -135,6 +136,15 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
           </div>
         </div>
       </Surface>
+      {/* RC1-A: cuánto se guardan las conversaciones de Inicio, como un número de Límites: el cuadro corto con su unidad al lado y el
+          techo de la instalación en la (i). Se guarda con la conexión: el mismo Guardar, la misma revisión y el mismo 409. */}
+      <Surface title={t("privacySection")} help={t("privacyHint")} padded>
+        <FormField label={t("retentionDays")} help={t("retentionDaysHelp", { max: formatNumber(baseline.conversationRetentionCeilingDays, i18n.language) })} required
+          error={error("conversationRetentionDays")} beside={<span className="text-sm text-[var(--color-content-muted)]">{t("days")}</span>}>
+          <Input type="number" inputMode="numeric" step={1} min={1} max={baseline.conversationRetentionCeilingDays} className="w-24" disabled={locked}
+            value={draft.retentionDays} onChange={event => editor.change({ retentionDays: event.target.value })} />
+        </FormField>
+      </Surface>
       {/* El cuerpo explica el estado del guardado; consultar, reintentar y elegir van en la banda, cada uno con su espera. */}
       {editor.recovery !== "none" ? <Surface title={t("reviewSection")} padded actions={<>
         <Button variant="outline" disabled={busy} pending={editor.working === "recover"} onClick={() => void editor.recover()}>{t(editor.working === "recover" ? "consulting" : editor.recovery === "conflict" ? "readCurrent" : "consultSave")}</Button>
@@ -143,7 +153,8 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
           <Button disabled={busy} onClick={() => editor.acceptReview(true)}>{t("keepDraft")}</Button></> : null}
       </>}>
         <p className="text-sm">{t(editor.recovery === "conflict" ? "conflict" : editor.recovery === "missing" ? "missingReceipt" : "uncertain")}</p>
-        {editor.review ? <p className="text-sm">{t("currentSummary", { provider: editor.review.provider, model: editor.review.model, credential: t(editor.review.hasCredential ? "configuredKey" : "absentKey"), availability: t(editor.review.enabled ? "available" : "paused") })}</p> : null}
+        {editor.review ? <p className="text-sm">{t("currentSummary", { provider: editor.review.provider, model: editor.review.model, credential: t(editor.review.hasCredential ? "configuredKey" : "absentKey"), availability: t(editor.review.enabled ? "available" : "paused"),
+          retention: t("retentionSummary", { count: editor.review.conversationRetentionDays, days: formatNumber(editor.review.conversationRetentionDays, i18n.language) }) })}</p> : null}
       </Surface> : null}
     </div>
     <ConfirmDialog open={removing} onOpenChange={setRemoving} title={t("removeTitle")} description={t("removeHint")} confirmLabel={t("remove")} destructive onConfirm={() => editor.change({ credentialChange: "Remove", apiKey: "", replacing: false, enabled: false })} />

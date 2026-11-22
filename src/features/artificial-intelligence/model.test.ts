@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { draftFrom, changeProvider, dirty, mergeReview, saveRequest } from "./model";
 import type { AiConnection } from "./api/aiConnection";
 
-const current: AiConnection = { provider: "OpenAI", model: "fictional-model", hasCredential: true, enabled: true, revision: 3, providers: ["OpenAI", "Anthropic"] };
+const current: AiConnection = { provider: "OpenAI", model: "fictional-model", hasCredential: true, enabled: true, revision: 3, providers: ["OpenAI", "Anthropic"], conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
 describe("AI connection draft", () => {
   it("clears the candidate key and pauses when changing providers", () => {
     const next = changeProvider({ ...draftFrom(current), apiKey: "fictional-key", credentialChange: "Replace" }, "Anthropic");

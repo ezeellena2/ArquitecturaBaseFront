@@ -536,6 +536,9 @@ crecen todos a 44 px en móvil.
   cambios, en el encabezado de la comparación. La comparación aparece al final del contenido: cada lectura lleva el
   foco a su título, que la deja a la vista y pone las elecciones en el siguiente Tab.
 - Evidencia: [guardado incierto](evidence/2026-09-30-configuracion-error.jpg) y [320 px](evidence/2026-09-30-configuracion-movil.jpg).
+- «Privacidad y retención» (RC1-A, 2026-11-22) es la cuarta `Surface`: los tres plazos del ingreso en cuadros cortos con su
+  unidad al lado y el rango en la (i) de cada etiqueta, como los números de Límites; la (i) del título avisa que la política
+  de privacidad tiene que prometer los mismos plazos (P1-A). La comparación de un conflicto los muestra con su unidad.
 
 ### Apariencia (2026-10-01)
 
@@ -548,6 +551,10 @@ Descartar, con Usar valores actuales y Conservar mis cambios en el encabezado de
 `/configuracion`, cada lectura lleva el foco al título de la comparación y, hasta elegir, Descartar y Guardar dan la
 revisión pendiente como motivo. Recorridos:
 `src/test/visual/appearance.spec.ts`.
+
+«Nombre y correos» (RC6-B, 2026-11-22) va arriba de «Colores del sistema»: el nombre de la aplicación, el del remitente y el
+logo de los correos (una dirección `https://`, explicada en su (i), sin leyenda) y, al lado, «Así llega», el correo de un
+código armado con el borrador. Se guarda con los colores, con un solo Guardar.
 
 ### Inteligencia artificial
 
@@ -568,6 +575,9 @@ revisión pendiente como motivo. Recorridos:
 - Alcance: una instalación por negocio (plantilla clonable), con IA compartida entre sus operadores y configurada por su
   administrador; sin conexiones personales, multitenancy ni Embedded Signup.
 - Pendientes: el gestor de contraseñas real y el acceso real de las cuentas a los modelos.
+- «Privacidad» (RC1-A, 2026-11-22), otra `Surface` debajo de la conexión: «Guardar las conversaciones del asistente de
+  Inicio», un cuadro corto con «días» al lado y el rango (de 1 al techo de la instalación) en su (i); la (i) del título
+  avisa lo de la política de privacidad. Se guarda con la conexión.
 
 ### Información del negocio
 
@@ -713,6 +723,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
 | Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
 | La respuesta como el formulario · VF1-A y VF2-A, en el lienzo aparte «Respuesta como formulario» | La vista rápida y la pantalla completa de una respuesta, corregir en el lugar y la actividad | [En programación](respuesta-como-formulario.md) desde el 2026-11-22, con la regla [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22) |
+| Reglas en Configuración · RC6-B y RC1-A, en el lienzo aparte «Núcleo e IA: reglas en Configuración» | `/configuracion/apariencia`, `/configuracion` y `/configuracion/ia` | Elegidas con P1-A y programadas el 2026-11-22; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a

@@ -7,18 +7,19 @@ import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { aiConnectionQueryKey, fetchAiChange, fetchAiConnection, saveAiConnection, type AiConnection, type AiSaveRequest } from "../api/aiConnection";
-import { dirty, draftFrom, mergeReview, saveRequest, type AiDraft } from "../model";
+import { dirty, draftFrom, mergeReview, retentionValid, saveRequest, type AiDraft } from "../model";
+import { formatNumber } from "@/shared/lib/numberFormat";
 
 type Recovery = "none" | "uncertain" | "missing" | "conflict";
 // Qué está esperando la red: cada uno muestra la espera en su botón, y consultar no es guardar.
 type Work = "save" | "retry" | "recover";
 const noticeId = "ai:save";
-const fields = ["provider", "model", "apiKey", "enabled"] as const;
+const fields = ["provider", "model", "apiKey", "enabled", "conversationRetentionDays"] as const;
 
 // Las operaciones con secretos pertenecen al editor, no a MutationCache. Sólo
 // los metadatos confirmados entran en QueryCache. No hay reintentos automáticos.
 export function useAiConnectionEditor(initial: AiConnection) {
-  const { t } = useTranslation("artificialIntelligence");
+  const { t, i18n } = useTranslation("artificialIntelligence");
   const client = useQueryClient();
   const navigate = useNavigate();
   const [baseline, setBaseline] = useState(initial);
@@ -83,6 +84,11 @@ export function useAiConnectionEditor(initial: AiConnection) {
     if (active.current) notify({ id: noticeId, kind: "success", message: t(newer ? "savedThenChanged" : "saved") });
   }
   async function save(retry = false) {
+    // RC1-A: days out of range are marked in their box without sending anything; the server checks the same.
+    if (!retry && !retentionValid(draft, baseline)) {
+      setErrors({ conversationRetentionDays: t("retentionRange", { min: formatNumber(1, i18n.language), max: formatNumber(baseline.conversationRetentionCeilingDays, i18n.language) }) });
+      return;
+    }
     const controller = begin(retry ? "retry" : "save"); if (!controller) return;
     setErrors({});
     if (!retry) pending.current = saveRequest(draft, baseline.revision, crypto.randomUUID());

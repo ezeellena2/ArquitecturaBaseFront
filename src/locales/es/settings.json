@@ -3,12 +3,29 @@
   "sections": {
     "regional": "Preferencias regionales",
     "lists": "Listados",
-    "registration": "Registro de cuentas"
+    "registration": "Registro de cuentas",
+    "retention": "Privacidad y retención"
   },
   "registration": {
     "title": "Quién puede entrar",
     "OpenLabel": "Registro abierto",
     "InviteOnlyLabel": "Solo por invitación"
+  },
+  "retention": {
+    "loginAuditMonths": "Quitar la IP y el navegador de un ingreso",
+    "loginAuditMonthsHelp": "Después, el ingreso queda registrado sin la IP ni el navegador. De {{min}} a {{max}} meses.",
+    "loginAuditMonthsUnit": "meses después",
+    "loginCodeDays": "Borrar los códigos y enlaces de ingreso",
+    "loginCodeDaysHelp": "Se borran con su destino y la dirección de quien los pidió. De {{min}} a {{max}} días: como mínimo uno, porque los límites de pedidos miran las últimas 24 horas.",
+    "loginCodeDaysUnit": "días después",
+    "invitationDays": "Borrar las invitaciones viejas",
+    "invitationDaysHelp": "Se borran las que ya no son la última de su cuenta; la última queda siempre. De {{min}} a {{max}} días: como mínimo siete, porque la entrega de una invitación puede tardar un día.",
+    "invitationDaysUnit": "días después",
+    "range": "Elegí un número entre {{min}} y {{max}}.",
+    "months_one": "{{value}} mes",
+    "months_other": "{{value}} meses",
+    "days_one": "{{value}} día",
+    "days_other": "{{value}} días"
   },
   "confirm": {
     "openTitle": "Abrir el registro",
@@ -29,13 +46,17 @@
   "errorTraceId": "Código para reportar: {{traceId}}",
   "hints": {
     "regional": "Valores iniciales para cuentas nuevas y pantallas públicas. Cada persona conserva sus preferencias.",
-    "listados": "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño."
+    "listados": "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
+    "retention": "Cuánto se guardan los datos del ingreso. La limpieza corre una vez por día. La política de privacidad tiene que prometer estos mismos plazos."
   },
   "fields": {
     "defaultCulture": "Idioma predeterminado",
     "defaultTimeZoneId": "Zona horaria predeterminada",
     "defaultPageSize": "Filas por página",
-    "registrationMode": "Registro de cuentas"
+    "registrationMode": "Registro de cuentas",
+    "loginAuditMonths": "Quitar la IP y el navegador de un ingreso",
+    "loginCodeDays": "Borrar los códigos y enlaces de ingreso",
+    "invitationDays": "Borrar las invitaciones viejas"
   },
   "preview": {
     "label": "Vista previa"
@@ -59,6 +80,27 @@
   },
   "appearance": {
     "title": "Apariencia",
+    "brand": "Nombre y correos",
+    "brandHint": "Cómo se presenta la aplicación en los correos, en la invitación por WhatsApp y en los PDF de las respuestas.",
+    "brandFields": {
+      "appName": "Nombre de la aplicación",
+      "emailSenderName": "Nombre del remitente",
+      "emailLogoUrl": "Logo de los correos"
+    },
+    "senderHint": "El nombre que ve quien recibe un correo. La casilla que los envía se configura en la instalación.",
+    "logoHint": "La dirección https de una imagen pública; se muestra de 32 px de alto. Sin logo, el correo muestra el nombre de la aplicación.",
+    "emailPreview": "Así llega",
+    "emailFrom": "De",
+    "emailSubject": "Asunto",
+    "emailSubjectSample": "{{code}} es tu código de acceso a {{app}}",
+    "noLogo": "Sin logo",
+    "savedAll": "Guardamos los cambios de apariencia.",
+    "issues": {
+      "required": "Este campo es obligatorio.",
+      "tooLong": "Usá hasta {{max}} caracteres.",
+      "singleLine": "Escribilo en una sola línea, sin caracteres de control.",
+      "logoUrl": "Escribí una dirección que empiece con https://."
+    },
     "colors": "Colores del sistema",
     "hint": "Estos colores se aplican a todas las personas y a las pantallas de ingreso.",
     "reset": "Restaurar colores iniciales",
