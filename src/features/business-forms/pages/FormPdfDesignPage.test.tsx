@@ -106,7 +106,10 @@ it("marks the invalid design when the preview is tried instead of disabling it",
  await waitFor(()=>expect(previews).toBe(1));
 });
 
-it("keeps a removed selected question available until its new design is saved",async()=>{setup();server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({...pdfOptionsFixture(),questions:[]})));renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");const removed=await screen.findByRole("checkbox",{name:"Pregunta retirada"});expect(removed).toBeChecked();await userEvent.click(removed);expect(screen.getByRole("checkbox",{name:"Pregunta retirada"})).not.toBeChecked();});
+it("keeps a removed selected question available until its new design is saved",async()=>{setup();server.use(http.get("/api/forms/definitions/:id/rules/options",()=>HttpResponse.json({...pdfOptionsFixture(),questions:[]})));renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");// DS1-A: the questions are chosen with the shared piece; the retired one stays in its list until the design is saved.
+await userEvent.click(await screen.findByRole("button",{name:"Qué preguntas incluye Pregunta retirada"}));const list=await screen.findByRole("listbox",{name:"Qué preguntas incluye"});
+expect(within(list).getByRole("option",{name:"Pregunta retirada"})).toHaveAttribute("aria-selected","true");await userEvent.click(within(list).getByRole("option",{name:"Pregunta retirada"}));
+expect(within(list).getByRole("option",{name:"Pregunta retirada"})).toHaveAttribute("aria-selected","false");});
 
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn(), dismissNotification: vi.fn() }));
 
@@ -222,6 +225,7 @@ it("lists a block of rows by its name and not its questions, and one an old desi
     {fieldId:quantityId,key:key(quantityId),type:"decimal",label:{es:"Cantidad",en:"Quantity"},help:null,required:true,maxLength:null,options:null,repeated:true}]})),
     http.get("/api/forms/definitions/:id/pdf-design",()=>HttpResponse.json({...design,design:{...design.design,questionIds:[...design.design.questionIds,quantityId]}})));
   renderRouteWithProviders("/formularios/"+responseFormId+"/pdf");
-  expect(await screen.findByRole("checkbox",{name:"Artículos"})).not.toBeChecked();
-  expect(screen.queryByRole("checkbox",{name:"Cantidad"})).not.toBeInTheDocument();
-  expect(screen.getByRole("checkbox",{name:"Pregunta retirada"})).toBeChecked();});
+  await userEvent.click(await screen.findByRole("button",{name:/^Qué preguntas incluye /}));const list=await screen.findByRole("listbox",{name:"Qué preguntas incluye"});
+  expect(within(list).getByRole("option",{name:"Artículos"})).toHaveAttribute("aria-selected","false");
+  expect(within(list).queryByRole("option",{name:"Cantidad"})).not.toBeInTheDocument();
+  expect(within(list).getByRole("option",{name:"Pregunta retirada"})).toHaveAttribute("aria-selected","true");});

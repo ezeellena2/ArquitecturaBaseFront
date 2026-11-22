@@ -14,6 +14,7 @@ import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
+import { Picker } from "@/shared/ui/Picker";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { Spinner } from "@/shared/ui/Spinner";
@@ -163,7 +164,11 @@ function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
   <div ref={host} className="grid items-start gap-4 xl:grid-cols-[3fr_2fr]">
    <Surface title={t("pdf.receipt")} padded actions={<DisabledReason reason={saveDisabledReason}><Button disabled={blocked || cooldown.isRunning || !dirty && baseline.revision > 0} pending={running === "save"} onClick={() => void save()}>{t(running === "save" ? "pdf.saving" : "pdf.save")}</Button></DisabledReason>}>
     <div className="space-y-5"><FormField label={t("pdf.name")} required={contentRequired(draft.name, culture, original)} hint={reference(draft.name)} error={textError("name")}><Input maxLength={160} placeholder={culture !== original ? t("missingText") : undefined} value={draft.name[culture] ?? ""} disabled={blocked} onChange={event => change({ ...draft, name: { ...draft.name, [culture]: event.target.value } })}/></FormField>
-    <fieldset className="space-y-2"><legend className="mb-2 text-sm font-medium">{t("pdf.questions")}</legend>{[...questions.map(question => ({ id: question.fieldId, label: localizedValue(question.label, scope.culture, original) })), ...selectedUnknown.map(id => ({ id, label: t("pdf.retiredQuestion") }))].map(question => <CheckboxField key={question.id} label={question.label} checked={draft.questionIds.includes(question.id)} disabled={blocked} onCheckedChange={checked => change({ ...draft, questionIds: checked ? [...draft.questionIds, question.id] : draft.questionIds.filter(id => id !== question.id) })}/>)}</fieldset>
+    {/* The questions go in the shared piece for choosing several (DS1-A); one an old design chose stays in it, retired, until the
+        design is saved. */}
+    <FormField label={t("pdf.questions")}><Picker multiple label={t("pdf.questions")} placeholder={t("pdf.noQuestions")} disabled={blocked} value={draft.questionIds}
+      onChange={next => change({ ...draft, questionIds: [...next] })}
+      options={[...questions.map(question => ({ id: question.fieldId, label: localizedValue(question.label, scope.culture, original) })), ...selectedUnknown.map(id => ({ id, label: t("pdf.retiredQuestion") }))]}/></FormField>
     <CheckboxField label={t("pdf.includePhotos")} help={t("pdf.photosHint")} checked={draft.includePhotos} disabled={blocked} onCheckedChange={checked => change({ ...draft, includePhotos: checked })}/>
     <CheckboxField label={t("pdf.includeApproval")} checked={draft.includeApproval} disabled={blocked} onCheckedChange={checked => change({ ...draft, includeApproval: checked })}/>
     <FormField label={t("pdf.footer")} hint={reference(draft.footer)} error={textError("footer")}><Textarea maxLength={1000} rows={3} disabled={blocked} placeholder={culture !== original && draft.footer?.[original]?.trim() ? t("missingText") : undefined} value={draft.footer?.[culture] ?? ""} onChange={event => change({ ...draft, footer: { ...draft.footer, [culture]: event.target.value } })}/></FormField>

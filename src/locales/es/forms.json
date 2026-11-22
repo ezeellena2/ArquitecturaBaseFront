@@ -1234,6 +1234,7 @@
     "name": "Nombre del PDF",
     "questions": "Qué preguntas incluye",
     "retiredQuestion": "Pregunta retirada",
+    "noQuestions": "Ninguna pregunta",
     "includePhotos": "Incluir las fotos",
     "photosHint": "Las de las preguntas elegidas, chicas y debajo de su pregunta. Sin marcar, solo dice cuántas hay. Los documentos se nombran, no se adjuntan.",
     "includeApproval": "Quién la aprobó y cuándo",

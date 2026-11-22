@@ -1234,6 +1234,7 @@
     "name": "PDF name",
     "questions": "Included questions",
     "retiredQuestion": "Removed question",
+    "noQuestions": "No questions",
     "includePhotos": "Include photos",
     "photosHint": "Small photos appear below their selected question. When unchecked, only their count is shown. Documents are named, not attached.",
     "includeApproval": "Who approved it and when",
