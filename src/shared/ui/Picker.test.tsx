@@ -59,6 +59,28 @@ async function cancelsTheConfirmation() {
   await waitFor(() => expect(screen.getByRole("button", { name: "Campo asignado EL TALA" })).toHaveFocus());
 }
 
+// A choice that shows a field with the focus on it, as «Pegar desde Excel» shows its grid (IM3-A).
+function Origin() {
+  const [value, setValue] = useState<string | null>("file");
+  return <>
+    <FormField label="Desde"><Picker label="Desde" options={[{ id: "file", label: "Subir un archivo" }, { id: "paste", label: "Pegar desde Excel" }]}
+      value={value} onChange={setValue}/></FormField>
+    {value === "paste" ? <input aria-label="Pegar filas" autoFocus/> : null}
+  </>;
+}
+
+async function keepsTheFocusWhereTheChoiceTookIt() {
+  renderWithProviders(<Origin/>);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Desde Subir un archivo" }));
+  await user.click(await screen.findByRole("option", { name: "Pegar desde Excel" }));
+  const field = await screen.findByRole("textbox", { name: "Pegar filas" });
+  await waitFor(() => expect(field).toHaveFocus());
+  // Radix gives the focus back a moment after the list leaves the page: it stays in the field that the choice showed.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+  expect(field).toHaveFocus();
+}
+
 async function openList(name: RegExp) {
   const user = userEvent.setup();
   const trigger = screen.getByRole("button", { name });
@@ -443,6 +465,8 @@ describe("Picker", () => {
 
   it("gives the focus back to its button when a confirmation that its choice opens is cancelled", cancelsTheConfirmation);
 
+  it("leaves the focus in the field that its choice shows", keepsTheFocusWhereTheChoiceTookIt);
+
   describe("on the phone", () => {
     let media: MockInstance;
     beforeEach(() => {
@@ -493,5 +517,7 @@ describe("Picker", () => {
     });
 
     it("gives the focus back to its button when a confirmation that its choice opens is cancelled", cancelsTheConfirmation);
+
+    it("leaves the focus in the field that its choice shows", keepsTheFocusWhereTheChoiceTookIt);
   });
 });

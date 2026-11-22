@@ -1,4 +1,4 @@
-import { Fragment, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { Fragment, useId, useLayoutEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -148,6 +148,7 @@ export function Picker(props: PickerProps) {
   const uid = useId();
   const triggerRef = useRef<HTMLButtonElement>(null), listRef = useRef<HTMLUListElement>(null), searchRef = useRef<HTMLInputElement>(null);
   const leaving = useRef<"next" | "back" | null>(null), typed = useRef({ text: "", at: -Infinity });
+  const closing = useRef(false), elsewhere = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
   const [active, setActive] = useState(-1);
@@ -212,6 +213,7 @@ export function Picker(props: PickerProps) {
   }
 
   function hide() {
+    closing.current = true;
     setOpen(false);
     setLocalSearch("");
     if (server && search) props.onSearchChange?.("");
@@ -230,6 +232,24 @@ export function Picker(props: PickerProps) {
   function done() {
     if (props.multiple) props.onChange([...picked]);
     hide();
+  }
+
+  // While the list closes it is still in the page for a moment, and Radix's trap takes back into it the focus that the choice
+  // sends outside, such as to the field it shows with `autoFocus`: where it went is kept to give it back once the list leaves.
+  function focusLeaves(event: FocusEvent<HTMLElement>) {
+    const next = event.relatedTarget;
+    if (closing.current && next instanceof HTMLElement && !event.currentTarget.contains(next)) elsewhere.current = next;
+  }
+
+  // Closing gives the focus back to the button, unless the choice took it somewhere else (IM3-A): to the field it showed,
+  // such as the first cell of «Pegar desde Excel», or to a confirmation it opened. Radix asks once the list has left the
+  // page, so a connected element that is not the button nor the page is outside it.
+  function focusTaken() {
+    const kept = elsewhere.current;
+    closing.current = false;
+    elsewhere.current = null;
+    return [document.activeElement, kept].find((element): element is HTMLElement =>
+      element instanceof HTMLElement && element.isConnected && element !== document.body && element !== triggerRef.current) ?? null;
   }
 
   function jumpTo(key: string, time: number) {
@@ -373,7 +393,7 @@ export function Picker(props: PickerProps) {
       {/* The button is not the dialog's own trigger, so Radix would leave the focus nowhere when the screen closes: it goes
           back to the button, as on a computer. */}
       <DialogContent placement="right" showCloseButton={false} aria-describedby={undefined} onOpenAutoFocus={focusList} data-return-focus-to={triggerId}
-        onCloseAutoFocus={event => { event.preventDefault(); triggerRef.current?.focus(); }}
+        onBlur={focusLeaves} onCloseAutoFocus={event => { event.preventDefault(); (focusTaken() ?? triggerRef.current)?.focus(); }}
         className="inset-0 flex h-svh w-screen max-w-none flex-col gap-0 overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-2">
           <DialogTitle className="min-w-0 flex-1 truncate">{props.label}</DialogTitle>
@@ -398,12 +418,16 @@ export function Picker(props: PickerProps) {
       {/* `data-return-focus-to`: a confirmation that a choice opens («¿Cambiar el catálogo?») opens while the list is still
           closing, with the focus inside it; the attribute tells it to give the focus back to the button (useRestoreFocusOnClose). */}
       <PopoverPrimitive.Content align="start" sideOffset={4} collisionPadding={8} onKeyDown={leaveWithTab} onOpenAutoFocus={focusList} data-return-focus-to={triggerId}
-        onCloseAutoFocus={event => {
-          const direction = leaving.current;
+        onBlur={focusLeaves} onCloseAutoFocus={event => {
+          const direction = leaving.current, taken = focusTaken();
           leaving.current = null;
-          if (direction !== "next") return;
-          event.preventDefault();
-          (nextTabbable(triggerRef.current) ?? triggerRef.current)?.focus();
+          if (direction === "next") {
+            event.preventDefault();
+            (nextTabbable(triggerRef.current) ?? triggerRef.current)?.focus();
+          } else if (taken) {
+            event.preventDefault();
+            taken.focus();
+          }
         }}
         // The list of a field is as wide as the field; the one of a bar's button («Columnas») is as wide as its names, up to a limit.
         className={cn("z-50 flex max-h-[min(28rem,var(--radix-popover-content-available-height))] min-w-48 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none",

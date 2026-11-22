@@ -95,6 +95,16 @@ it("pastes rows without headers into the catalog's columns and reviews only the 
   expect(await sentText(check)).toBe('"Code","Text"\r\n"N","Norte"\r\n"S","Sur"');
 });
 
+// IM3-A: choosing «Pegar desde Excel» leaves the focus in the grid's first cell, ready for the paste; the list that closes
+// does not take it back to «Desde».
+it("leaves the focus in the first cell of the grid when «Pegar desde Excel» is chosen", async () => {
+  await mount();
+  const target = screen.getByRole("textbox", { name: "Pegar filas" });
+  await waitFor(() => expect(target).toHaveFocus());
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+  expect(target).toHaveFocus();
+});
+
 // The first cell leaves with the paste; the focus is not lost: it goes to the filled grid, where another paste replaces the rows.
 // Choosing again the origin it already has keeps what was pasted: only another origin starts over.
 it("keeps the pasted rows when «Pegar desde Excel» is chosen again", async () => {
