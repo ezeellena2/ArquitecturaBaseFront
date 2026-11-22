@@ -169,7 +169,10 @@
     "closeConfirm": "Descartar",
     "stay": "Seguir corrigiendo",
     "unavailable": "Esta respuesta ya no se puede corregir.",
-    "loadFailed": "No se pudo abrir la respuesta para corregirla."
+    "loadFailed": "No se pudo abrir la respuesta para corregirla.",
+    "version": "Se corrige con la versión {{version}} del formulario, la activa.",
+    "versionEmpty_one": "Se corrige con la versión {{version}} del formulario, la activa: {{questions}} arranca vacía.",
+    "versionEmpty_other": "Se corrige con la versión {{version}} del formulario, la activa: {{questions}} arrancan vacías."
   },
   "calculation": {
     "multiply": "{{first}} por {{second}}",

@@ -17,3 +17,8 @@ export function correctionVersionNotice(recordEntry: FormEntry, correction: Form
     && (!before.has(question.fieldId) || answered.has(question.fieldId))).map(question => question.label);
   return { versionNumber: correction.entry.versionNumber, empty };
 }
+
+/** The questions a response answered, for the notice: those whose value in the detail is not empty («No» is an answer). */
+export function answeredQuestions(values: readonly { readonly fieldId: string; readonly value: unknown }[]): ReadonlySet<string> {
+  return new Set(values.filter(({ value }) => value !== null && value !== "" && !(Array.isArray(value) && value.length === 0)).map(({ fieldId }) => fieldId));
+}

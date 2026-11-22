@@ -19,7 +19,7 @@ import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
 import { useResponseDetailState } from "../hooks/useResponseDetailState";
 import { useFullResponseNavigation } from "../hooks/useFullResponseNavigation";
-import { responseCorrectionPath, responseFullPath } from "../responseNavigationPaths";
+import { responseFullPath } from "../responseNavigationPaths";
 import { composeWorkflowMoments } from "../workflowMoments";
 import { approvalStateVariant } from "../approvals";
 import type { ApprovalTask } from "../api/approvals";
@@ -30,6 +30,7 @@ import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseMoments } from "../components/ResponseDetailContent";
 import { ResponseDocumentActions, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
+import { FormEntryCorrection } from "../components/FormEntryCorrection";
 import { ResponseAmendActions, ResponseCorrectAction } from "../components/ResponseAmendActions";
 import { ResponseFiscalPdf } from "../components/ResponseFiscalPdf";
 import { ResponseIssuance } from "../components/ResponseIssuance";
@@ -54,9 +55,11 @@ export function FormResponseFullPage() {
 }
 
 function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: string; recordId: string; transitioning: boolean; openPdf: boolean }) {
-  const { t, i18n } = useTranslation("forms");
+  const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const routerNavigate = useNavigate();
   const [voiding, setVoiding] = useState(false);
+  // VF1-A, decision 5: «Corregir» unlocks the same page, without another route; it lives only here, for this response.
+  const [correcting, setCorrecting] = useState<string | null>(null);
   const mobile = useMediaQuery("(width < 640px)");
   const navigation = useFullResponseNavigation(formId, recordId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy || transitioning, navigationError: navigation.error, retryNavigation: navigation.onRetry });
@@ -66,9 +69,11 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const [unavailableTask, setUnavailableTask] = useState<string | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
   const draft = useMemo(() => data ? readingDraft(data, i18n.language) : undefined, [data, i18n.language]);
-  useLayoutEffect(() => { container.current?.focus(); }, [data?.id]);
-  // A replaced version reads as «Versión anterior» of its number (CW10-A).
-  useBreadcrumbLeaf(data?.replacedBy ? t("detail.previousVersion") : data?.number, data?.name);
+  const editing = correcting === recordId && allowed && !unavailable && data?.id === recordId;
+  // Back from correcting, the focus comes to the reading again.
+  useLayoutEffect(() => { container.current?.focus(); }, [data?.id, editing]);
+  // A replaced version reads as «Versión anterior» of its number (CW10-A); while it is corrected, «Corregir PED-000010».
+  useBreadcrumbLeaf(data && editing ? t("formEntries:correction.title", { number: data.number }) : data?.replacedBy ? t("detail.previousVersion") : data?.number, data?.name);
   const refresh = async (task?: ApprovalTask) => {
     if (task && !await workflow.observeApproval(task)) return;
     void workflow.query.refetch(); navigation.refreshPending();
@@ -80,6 +85,9 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const backTo = { to: navigation.backTo, label: t("detail.backToResponses") };
   if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
+  // Correcting takes the page: «Cancelar» reads it again and saving reads the new response, at its own full route.
+  if (editing) return <FormEntryCorrection layout="page" formId={formId} record={data} backTo={backTo} onClose={() => setCorrecting(null)}
+    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onSaved={id => routerNavigate(responseFullPath(formId, id, ""), { replace: true })}/>;
   const files = data.values.filter(value => value.type === "document").flatMap(responseFiles);
   // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
   const issuance = responseIssuance(current);
@@ -102,7 +110,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     {/* AC1-A: deciding is the task while it waits, so «Rechazar» and «Aprobar» go first; on the phone they go fixed at the foot. */}
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
     {/* VF1-A, decision 4: «Corregir» in view, for whoever may change it now. */}
-    {data.canAmend ? <ResponseCorrectAction disabled={loadingTarget} issuance={issuance} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))}/> : null}
+    {data.canAmend ? <ResponseCorrectAction disabled={loadingTarget} issuance={issuance} onCorrect={() => setCorrecting(recordId)}/> : null}
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {/* «PDF fiscal» next to «Descargar ▾» (EM1-A, AC2), which keeps the other copies and the loaded files. */}
     <ResponseFiscalPdf documents={fiscal} downloads={downloads}/>

@@ -17,6 +17,7 @@ import { useResponseDetailState } from "../hooks/useResponseDetailState";
 import { ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ResponseDetailContent } from "../components/ResponseDetailContent";
 import { ResponsePanelFrame, type ResponsePanelNavigation } from "../components/ResponsePanelFrame";
+import { FormEntryCorrection } from "../components/FormEntryCorrection";
 import { ResponseAmendActions, ResponseCorrectAction } from "../components/ResponseAmendActions";
 import { ResponseFiscalPdf } from "../components/ResponseFiscalPdf";
 import { VoidResponseDialog } from "../components/VoidResponseDialog";
@@ -25,10 +26,11 @@ import { responseIssuance } from "../issuance";
 function ResponsePanelFilesScope({ enabled, scope, children }: { enabled: boolean; scope: string | null; children: ReactNode }) {
   return enabled ? <PrivateFormFilesScopeProvider scope={scope}>{children}</PrivateFormFilesScopeProvider> : children;
 }
-export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed = true, retainPreviousForm = false, onCorrect, onVoided }: {
+export function FormResponseDetailPage({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed = true, retainPreviousForm = false, onCorrected, onVoided }: {
   formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm?: boolean;
-  /** «Corregir» opens the correction next to the sheet (CW10-A); «Anular» voids it and the owner reads the sheet again (CW11-A). */
-  onCorrect?: (recordId: string) => void; onVoided?: () => void;
+  /** «Corregir» corrects in this same panel (VF1-A, decision 5) and hands over the saved correction; «Anular» voids it (CW11-A):
+   * either way the owner reads the sheet again. */
+  onCorrected?: (recordId: string) => void; onVoided?: () => void;
 }) {
   const mobile = useMediaQuery("(width < 640px)");
   const navigate = useNavigate();
@@ -47,11 +49,11 @@ export function FormResponseDetailPage({ formId, recordId, navigation, onDecided
     navigate(responseFullPath(formId, recordId, location.search), { replace: true });
   }, [mobile, navigate, formId, recordId, location.search, workspace]);
   return mobile ? null : <QuickResponseDetail formId={formId} recordId={recordId} navigation={navigation} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed} retainPreviousForm={retainPreviousForm}
-    onCorrect={onCorrect} onVoided={onVoided}/>;
+    onCorrected={onCorrected} onVoided={onVoided}/>;
 }
-function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed, retainPreviousForm, onCorrect, onVoided }: {
+function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisionForbidden, decisionAllowed, retainPreviousForm, onCorrected, onVoided }: {
   formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm: boolean;
-  onCorrect?: (recordId: string) => void; onVoided?: () => void;
+  onCorrected?: (recordId: string) => void; onVoided?: () => void;
 }) {
   const { t } = useTranslation("forms");
   const location = useLocation();
@@ -59,17 +61,22 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy, navigationError: navigation.error, retryNavigation: navigation.onRetry, retainPreviousForm });
   const { detail, workflow, data, current, downloads, unavailable, fileScope, allowed, loadingTarget, loading } = state;
   const [voiding, setVoiding] = useState<string | null>(null);
+  // The response being corrected in this panel (VF1-A, decision 5); another response reads.
+  const [correcting, setCorrecting] = useState<string | null>(null);
   // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
   const issuance = responseIssuance(current);
   const fiscal = current?.documents.filter(document => issuance.fiscalRunIds.has(document.runId)) ?? [];
   const copies = current?.documents.filter(document => !issuance.fiscalRunIds.has(document.runId)) ?? [];
   if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
+  // Correcting takes the panel: «Cancelar» reads the response again and saving hands the correction to the owner.
+  if (correcting === recordId && data.id === recordId) return <FormEntryCorrection layout="panel" formId={formId} record={data} onClose={() => setCorrecting(null)}
+    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onSaved={id => { setCorrecting(null); onCorrected?.(id); }}/>;
   return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge> : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge> : null}</>} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A); «Corregir», the pencil, goes
         first, for whoever may change it now (VF1-A, decision 4). */}
-    {data.canAmend && onCorrect && data.id === recordId ? <ResponseCorrectAction compact disabled={loadingTarget} issuance={issuance} onCorrect={() => onCorrect(recordId)}/> : null}
+    {data.canAmend && onCorrected && data.id === recordId ? <ResponseCorrectAction compact disabled={loadingTarget} issuance={issuance} onCorrect={() => setCorrecting(recordId)}/> : null}
     <IconButton label={t("detail.openFull")} asChild><Link to={responseFullPath(formId, recordId, location.search)} onClick={event => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       if (workspace.navigation?.selection.recordId !== recordId) {
@@ -84,7 +91,7 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
     {/* «PDF fiscal» goes with the icons that go elsewhere, right before ⋮ (EM1-A, AC2). */}
     <ResponseFiscalPdf compact documents={fiscal} downloads={downloads}/>
     {/* ⋮ with «Anular» after the icons, before ↑ ↓ × (CW11-A), for whoever may change it now: canAmend. */}
-    {data.canAmend && onCorrect && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onVoid={() => setVoiding(recordId)}/> : null}
+    {data.canAmend && onVoided && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onVoid={() => setVoiding(recordId)}/> : null}
   </>}>
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
     {/* With a live issuance the void waits for its reversal (NC1-A): the panel stays, reads the flow again and says «Anulándose». */}

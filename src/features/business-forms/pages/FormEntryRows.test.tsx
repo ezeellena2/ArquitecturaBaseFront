@@ -6,8 +6,9 @@ import { queryClient } from "@/shared/api/queryClient";
 import { notify } from "@/shared/ui/notifications";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
-import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { renderInRouterWithProviders, renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import type { FormEntry, FormEntryCorrection } from "../api/entries";
+import { FormEntryCorrection as Correction } from "../components/FormEntryCorrection";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -223,7 +224,9 @@ describe("loading the items of a block from the page (RG2-A)", () => {
   it("opens a correction with its items in their order and sends them corrected", async () => {
     const { sends } = setup();
     const user = userEvent.setup({ delay: null });
-    renderRouteWithProviders(`/formularios/${formId}/respuestas/${recordId}/corregir`);
+    // Read with the same version, so with no notice; the full page and the quick view mount it the same way (VF1-A).
+    renderInRouterWithProviders(<Correction layout="page" formId={formId} record={{ id: recordId, number: "INS-000005", name: entry.name, values: [], entry: { entry, answers: [], files: [] } }}
+      onClose={vi.fn()} onViewCurrent={vi.fn()} onSaved={vi.fn()}/>);
 
     expect(await screen.findByRole("button", { name: "Ítem 1 · Artículo ATRAZINA 50%" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Ítem 2 · Cantidad" })).toHaveValue("200,5");

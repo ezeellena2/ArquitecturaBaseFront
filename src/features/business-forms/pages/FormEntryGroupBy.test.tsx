@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "@/shared/api/queryClient";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
-import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { renderInRouterWithProviders, renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import type { FormEntry, FormEntryCorrection, FormEntryQuestion } from "../api/entries";
+import { FormEntryCorrection as Correction } from "../components/FormEntryCorrection";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
@@ -66,7 +67,8 @@ describe("choosing first by a field while loading (LD1-A)", () => {
   it("starts a correction with the value of the saved option", async () => {
     setup(loose, { entry: loose, recordId, number: "PED-000003", files: [], answers: [
       { fieldId: fields.article, value: herbicides[1].id, choiceIds: null, options: [herbicides[1]], group: { id: "Herbicidas", text: "Herbicidas" } }] });
-    renderRouteWithProviders(`/formularios/${formId}/respuestas/${recordId}/corregir`);
+    renderInRouterWithProviders(<Correction layout="page" formId={formId} record={{ id: recordId, number: "PED-000003", name: loose.name, values: [], entry: { entry: loose, answers: [], files: [] } }}
+      onClose={vi.fn()} onViewCurrent={vi.fn()} onSaved={vi.fn()}/>);
     expect(await screen.findByRole("button", { name: "Rubro Herbicidas" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Artículo Glifosato 66,2 %" })).toBeEnabled();
   });

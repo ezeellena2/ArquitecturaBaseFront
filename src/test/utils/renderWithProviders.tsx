@@ -26,6 +26,14 @@ export function renderWithProviders(ui: ReactElement) {
   return render(ui, { wrapper: Wrapper });
 }
 
+/// Renderiza una pieza suelta con los providers de la app y un router de datos propio: para la que usa las guardas del
+/// router (`useBlocker`) sin montar la app entera, como la corrección de una respuesta.
+export function renderInRouterWithProviders(ui: ReactElement) {
+  const router = createMemoryRouter([{ path: "*", element: ui }]);
+
+  return { router, ...render(<AppProviders><RouterProvider router={router} /></AppProviders>) };
+}
+
 /// Renderiza la app entera en una ruta concreta, con los providers reales. Devuelve también el router, para
 /// saber dónde terminó una navegación o para moverse como lo haría el navegador (`router.navigate`).
 export function renderRouteWithProviders(path: string, options?: { state?: unknown }) {

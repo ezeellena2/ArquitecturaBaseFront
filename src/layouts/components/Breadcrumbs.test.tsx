@@ -188,10 +188,10 @@ it.each([[["formrecords.read", "formrecords.create"]], [["formrecords.create"]]]
   expect(items[4]).toHaveAttribute("aria-current", "page");
 });
 
-// Correcting also hangs from the form's sheet, like the full view it opens from (CW10-A).
+// Correcting happens in the full view (VF1-A), which hangs from the form's sheet, with «Corregir VIS-000024» as its leaf.
 it("hangs «Corregir» from its form's sheet", async () => {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrecords.amend"] })));
-  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/respuestas/record-id/corregir"]}>
+  renderWithProviders(<MemoryRouter initialEntries={["/formularios/form-id/respuestas/record-id/completa"]}>
     <Breadcrumbs/><ChildScreen leaf="Corregir VIS-000024" parent="Registrar visita"/>
   </MemoryRouter>);
   const items = await breadcrumbs();

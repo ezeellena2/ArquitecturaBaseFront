@@ -38,7 +38,7 @@ import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, resp
 import { responseResultColumnLabel, responseResultText } from "../responseResults";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
-import { responseCorrectionPath, responseFullPath } from "../responseNavigationPaths";
+import { responseFullPath } from "../responseNavigationPaths";
 import { ResponseValue } from "../components/ResponseValue";
 import { ResponseColumnsMenu } from "../components/ResponseColumnsMenu";
 import { ResponseFilterBar } from "../components/ResponseFilterBar";
@@ -47,7 +47,6 @@ import { DashboardSkeleton } from "../components/dashboard/DashboardSkeleton";
 import { dashboardFrame } from "../components/dashboard/dashboardLayout";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
 import { FormEntryPanel } from "../components/FormEntryPanel";
-import { FormEntryCorrectionPanel } from "../components/FormEntryCorrectionPanel";
 // The dashboard (DOC7-A) loads when its tab opens: the sheet does not pay for its charts. Its bar is not in that chunk: while
 // the charts arrive the page draws it over the skeleton, as the dashboard does, so nothing jumps on the first open.
 const FormDashboard = lazy(async () => ({ default: (await import("../components/dashboard/FormDashboard")).FormDashboard }));
@@ -63,8 +62,6 @@ export function FormResponsesPage() {
   const matchedRecord = useMatch("/formularios/:formId/respuestas/:recordId")?.params.recordId;
   const recordId = adding ? undefined : matchedRecord;
   const [savedRecord, setSavedRecord] = useState<string | undefined>();
-  // The response being corrected next to the sheet, where D2 was (CW10-A); it lives only here.
-  const [correcting, setCorrecting] = useState<string | null>(null);
   const navigate = useNavigate();
   const update = useQueryUpdate();
   const client = useQueryClient();
@@ -357,11 +354,9 @@ export function FormResponsesPage() {
       onClose={() => navigate({ pathname: "/formularios/" + formId + "/respuestas", search: route.params.toString() })}
       onSaved={id => { setSavedRecord(id); readAgain(); }}/> : null}
     {adding && mobile ? <Navigate to={"/formularios/" + formId + "/cargar"} state={{ from: "sheet" }} replace/> : null}
-    {recordId && correcting === recordId && !mobile ? <FormEntryCorrectionPanel key={scope.owner + ":" + recordId} formId={formId} recordId={recordId}
-      number={data?.records.items.find(row => row.id === recordId)?.number ?? ""} onClose={() => setCorrecting(null)}
-      onSaved={id => { setCorrecting(null); readAgain(); navigate({ pathname: "/formularios/" + formId + "/respuestas/" + id, search: route.params.toString() }); }}/> : null}
-    {recordId && !(correcting === recordId && !mobile) ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId}
-      onCorrect={id => mobile ? navigate(responseCorrectionPath(formId, id), { state: { from: "sheet" } }) : setCorrecting(id)}
+    {/* D2 corrects in its own panel (VF1-A, decision 5): once saved, the sheet reads again and opens the correction. */}
+    {recordId ? <FormResponseDetailPage key={scope.owner + ":" + formId} formId={formId} recordId={recordId}
+      onCorrected={id => { readAgain(); navigate({ pathname: "/formularios/" + formId + "/respuestas/" + id, search: route.params.toString() }); }}
       onVoided={() => { readAgain(); update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }); }} navigation={{ selectionId: recordId, focusRequest, previous: index > 0 || index === 0 && !!data?.records.hasPrevious || motion.gap !== null && (motion.gap > 0 || !!data?.records.hasPrevious), next: index >= 0 && (index < (data?.records.items.length ?? 0) - 1 || !!data?.records.hasNext) || motion.gap !== null && (motion.gap < (data?.records.items.length ?? 0) || !!data?.records.hasNext), busy: motion.busy, position: index >= 0 && data ? (data.records.page - 1) * data.records.pageSize + index + 1 : undefined, count: data?.records.totalCount, onMove: direction => { void motion.move(direction); }, onClose: () => update({ tab: undefined }, { pathname: "/formularios/" + formId + "/respuestas", replace: false }), error: query.error ?? motion.error, onRetry: motion.error ? motion.retry : query.refetch, retrying: query.isError && query.isFetching }} onDecided={readAgain}/> : null}
     </div>
   );

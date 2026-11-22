@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { FormEntry, FormEntryCorrection, FormEntryQuestion } from "./api/entries";
-import { correctionVersionNotice } from "./correctionVersion";
+import { answeredQuestions, correctionVersionNotice } from "./correctionVersion";
 
 const id = (n: number) => "0199a0c0-0000-7000-8000-" + String(n).padStart(12, "0");
 const question = (n: number, type: FormEntryQuestion["type"], label: string, extra: Partial<FormEntryQuestion> = {}): FormEntryQuestion => ({
@@ -31,4 +31,11 @@ it("names the active version and what starts empty: what it added and what was a
 
 it("names only the version when everything comes along", () => {
   expect(correctionVersionNotice(entry(1, [lot, dose]), correction([lot, dose], [id(1), id(2)]), answered)).toEqual({ versionNumber: 2, empty: [] });
+});
+
+it("counts as answered every value of the detail that is not empty, a «No» included", () => {
+  const values = [{ fieldId: id(1), value: "Lote 4" }, { fieldId: id(2), value: null }, { fieldId: id(3), value: "" }, { fieldId: id(4), value: [] },
+    { fieldId: id(5), value: false }, { fieldId: id(6), value: [{ choiceId: id(7), label: "Litros" }] }];
+
+  expect([...answeredQuestions(values)]).toEqual([id(1), id(5), id(6)]);
 });

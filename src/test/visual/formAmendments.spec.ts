@@ -31,10 +31,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    // «Corregir» is the first item of ⋮ (AC1-A).
-    await page.getByRole("button", { name: moreActions, exact: true }).click();
-    await page.getByRole("menuitem", { name: correct, exact: true }).click();
-    // Where D2 was on the computer; from the full view and on the phone, on its own page.
+    // «Corregir» in view (VF1-A, decision 4): the pencil of D2 on the computer, the button of the band in the full view.
+    await page.getByRole("button", { name: correct, exact: true }).click();
+    // In place (decision 5): in the panel of D2 on the computer; on the phone, in the same full view.
     const scope = phone ? page.locator("body")
       : page.getByRole("region", { name: text(language, "Corregir TEST-000002 de Informe de entregas", "Correct TEST-000002 of Delivery report"), exact: true });
     if (phone) await expect(page.getByRole("heading", { name: text(language, "Corregir TEST-000002", "Correct TEST-000002"), level: 1 })).toBeVisible();
@@ -138,17 +137,15 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("heading", { name: "TEST-000002", exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await closeMenu(page, language, width);
-    // «Corregir» waits in ⋮ (AC1-A).
-    await page.getByRole("button", { name: moreActions, exact: true }).click();
-    await expect(page.getByRole("menuitem", { name: correct, exact: true })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("menu")).toHaveCount(0);
+    // «Corregir» in view (VF1-A, decision 4).
+    await expect(page.getByRole("button", { name: correct, exact: true })).toBeVisible();
     await noPageScroll(page, width);
     await capture(page, "cw10-own" + suffix);
     // Once decided, it is no longer theirs to change.
     if (phone) await open(page, language, width, response(ids.approved, phone), "responses-full-amend-own");
     else await page.getByRole("link", { name: "TEST-000001", exact: true }).click();
     await expect(page.getByRole("heading", { name: "TEST-000001", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: correct, exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: moreActions, exact: true })).toHaveCount(0);
   });
 

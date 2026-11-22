@@ -169,7 +169,10 @@
     "closeConfirm": "Discard",
     "stay": "Keep correcting",
     "unavailable": "This response can no longer be corrected.",
-    "loadFailed": "The response could not be opened to correct it."
+    "loadFailed": "The response could not be opened to correct it.",
+    "version": "It is corrected with version {{version}} of the form, the active one.",
+    "versionEmpty_one": "It is corrected with version {{version}} of the form, the active one: {{questions}} starts empty.",
+    "versionEmpty_other": "It is corrected with version {{version}} of the form, the active one: {{questions}} start empty."
   },
   "calculation": {
     "multiply": "{{first}} times {{second}}",
