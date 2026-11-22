@@ -10,6 +10,8 @@ import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
 import type { AgentAction, AgentTestResult, AssistantAgent, AssistantAgentSaveRequest } from "../api/assistantAgent";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
+// Choosing in the lists of the editor takes several steps: with the machine busy, a whole case passes the 5 s.
+vi.setConfig({ testTimeout: 15_000 });
 
 const none: AgentAction = { kind: "NoReply", formDefinitionId: null, text: null, instructions: null, question: null, buttons: null, handoffReason: null };
 const visit = "0199a0c0-0000-7000-8000-0000000000f1", part = "0199a0c0-0000-7000-8000-0000000000f2";
@@ -26,6 +28,11 @@ async function chooseRecipient(panel: HTMLElement, name: RegExp = /Juan Gómez/)
   await act(async () => { trigger.focus(); });
   await userEvent.keyboard("{Enter}");
   await userEvent.click(await within(await screen.findByRole("listbox", { name: "Como si escribiera" })).findByRole("option", { name }));
+}
+// «Qué hacer» is the only piece to choose too (2026-11-22): its button opens the list of the allowed actions.
+async function chooseAction(editor: HTMLElement, name: string) {
+  await userEvent.click(within(editor).getByRole("button", { name: /^Qué hacer/ }));
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Qué hacer" })).getByRole("option", { name }));
 }
 function saved(): AssistantAgent {
   return {
@@ -258,7 +265,7 @@ describe("the screen «Asistente»", () => {
     let editor = await screen.findByRole("dialog", { name: "Nuevo caso" });
     await userEvent.click(within(editor).getByRole("textbox", { name: "Cuándo" }));
     await userEvent.paste("Manda un currículum.");
-    await userEvent.click(within(editor).getByRole("radio", { name: "Responder con un texto exacto" }));
+    await chooseAction(editor, "Responder con un texto exacto");
     await userEvent.click(within(editor).getByRole("textbox", { name: "Texto" }));
     await userEvent.paste("Gracias por escribir.");
     // The removal goes apart, on the left; a new case does not have it yet.
@@ -339,11 +346,44 @@ describe("the screen «Asistente»", () => {
     expect(within(editor).getByRole("button", { name: "Es fijo: este caso siempre existe y va al final." })).toBeInTheDocument();
     expect(within(editor).queryByRole("checkbox", { name: /Activo/ })).not.toBeInTheDocument();
     expect(within(editor).queryByRole("button", { name: "Quitar caso" })).not.toBeInTheDocument();
-    await userEvent.click(within(editor).getByRole("radio", { name: "No responder" }));
+    await chooseAction(editor, "No responder");
     await userEvent.click(within(editor).getByRole("button", { name: "Listo" }));
     await userEvent.click(save());
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]!.fallback).toEqual(none);
+  });
+
+  // «Qué hacer» goes in the only piece to choose (2026-11-22): the help of each action is the grey line under its name, and
+  // choosing the action it already has changes nothing.
+  it("chooses what to do in the only piece to choose, with the help of each action under its name", { timeout: 15000 }, async () => {
+    server.use(http.put("/api/whatsapp/assistant-agent", async ({ request }) => {
+      writes.push(await request.json() as AssistantAgentSaveRequest);
+      return HttpResponse.json({ code: "Validation.Failed", errors: { "cases[0].action.kind": ["Esa acción no sirve."] } }, { status: 400 });
+    }));
+    await open();
+    await userEvent.click(within(ownCases()[0]!).getByRole("checkbox", { name: "Caso 1 · Activo" }));
+    await userEvent.click(save());
+    await waitFor(() => expect(within(ownCases()[0]!).getByText("Revisá este caso")).toBeInTheDocument());
+    await userEvent.click(within(ownCases()[0]!).getByRole("button", { name: "Editar el caso 1" }));
+    const editor = await screen.findByRole("dialog", { name: "Caso 1" });
+    const field = within(editor).getByRole("button", { name: "Qué hacer Derivar a una persona" });
+    expect(field).toHaveAccessibleDescription("Esa acción no sirve.");
+    await userEvent.click(field);
+    let list = await screen.findByRole("listbox", { name: "Qué hacer" });
+    expect(within(list).getAllByRole("option").map(option => option.querySelector("[id$='-label']")?.textContent)).toEqual([
+      "Mandar un formulario", "Responder con un texto exacto", "Responder con la información del negocio", "Preguntar con botones", "Derivar a una persona", "No responder"]);
+    expect(within(list).getByRole("option", { name: "Derivar a una persona" })).toHaveAttribute("aria-selected", "true");
+    expect(within(list).getByRole("option", { name: "Mandar un formulario" })).toHaveAccessibleDescription("El que elijas, prellenado con lo que diga el mensaje, como hoy.");
+    expect(within(list).getByRole("option", { name: "No responder" })).toHaveAccessibleDescription("No manda nada; en el chat queda «Sin respuesta del asistente», con el caso que eligió.");
+    await userEvent.click(within(list).getByRole("option", { name: "Derivar a una persona" }));
+    expect(field).toHaveFocus();
+    expect(within(editor).getByText("Esa acción no sirve.")).toBeInTheDocument();
+    await userEvent.click(field);
+    list = await screen.findByRole("listbox", { name: "Qué hacer" });
+    await userEvent.click(within(list).getByRole("option", { name: "Responder con un texto exacto" }));
+    expect(within(editor).getByRole("button", { name: "Qué hacer Responder con un texto exacto" })).toHaveFocus();
+    expect(within(editor).queryByText("Esa acción no sirve.")).not.toBeInTheDocument();
+    expect(within(editor).getByRole("textbox", { name: "Texto" })).toBeInTheDocument();
   });
 
   it("takes a turned-off action out of the editor and marks the case that uses it when saving", async () => {
@@ -353,9 +393,12 @@ describe("the screen «Asistente»", () => {
     await userEvent.click(tab(/Casos/));
     await userEvent.click(within(ownCases()[0]!).getByRole("button", { name: "Editar el caso 1" }));
     let editor = await screen.findByRole("dialog", { name: "Caso 1" });
-    const options = within(editor).getByRole("radiogroup", { name: "Qué hacer" });
-    expect(within(options).queryByRole("radio", { name: "Derivar a una persona" })).not.toBeInTheDocument();
-    expect(within(options).getAllByRole("radio").every(radio => radio.getAttribute("aria-checked") === "false")).toBe(true);
+    // Nothing is chosen: the field asks for an action and its list does not offer the turned-off one.
+    await userEvent.click(within(editor).getByRole("button", { name: "Qué hacer Elegí qué hacer" }));
+    const options = await screen.findByRole("listbox", { name: "Qué hacer" });
+    expect(within(options).queryByRole("option", { name: "Derivar a una persona" })).not.toBeInTheDocument();
+    expect(within(options).getAllByRole("option").every(option => option.getAttribute("aria-selected") === "false")).toBe(true);
+    await userEvent.keyboard("{Escape}");
     await userEvent.click(within(editor).getByRole("button", { name: "Cancelar" }));
     await userEvent.click(save());
     // The second case's buttons lead to a hand-off too: both rows are marked, and the focus goes to the first.

@@ -132,6 +132,7 @@
     "inputType": "Input type",
     "inputTypeHelp": "Any input, text or audio, already transcribed.",
     "kind": "What to do",
+    "chooseKind": "Choose what to do",
     "form": "Form",
     "formHelp": "Only published ones. It goes prefilled with what it recognizes in the message, and the person confirms it.",
     "chooseForm": "Choose a form",

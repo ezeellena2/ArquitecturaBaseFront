@@ -132,6 +132,7 @@
     "inputType": "Tipo de entrada",
     "inputTypeHelp": "Cualquier entrada, texto o audio, ya transcripto.",
     "kind": "Qué hacer",
+    "chooseKind": "Elegí qué hacer",
     "form": "Formulario",
     "formHelp": "Solo los publicados. Va prellenado con lo que reconozca del mensaje, y la persona lo confirma.",
     "chooseForm": "Elegí un formulario",

@@ -12,7 +12,6 @@ import { CloseIcon, LockIcon, PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { agentActionKinds, type AgentActionKind, type AgentButtonDestination, type AgentCulture, type AgentForm, type AgentInputType } from "../api/assistantAgent";
@@ -132,9 +131,13 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
           <Picker label={t("editor.inputType")} value={value.inputType} options={inputTypes.map(type => ({ id: type, label: t("inputTypes." + type) }))}
             onChange={type => { if (type !== value.inputType) change({ inputType: type as typeof value.inputType }, "inputType"); }} />
         </FormField></div>}
-        <RadioGroupField label={t("editor.kind")} showLabel variant="cards" value={kind} error={error("action.kind")}
-          options={agentActionKinds.filter(option => allowed.includes(option)).map(option => ({ value: option, label: t("actions." + option), help: t("actionHelp." + option) }))}
-          onValueChange={next => changeAction({ kind: next as AgentActionKind }, "kind")} />
+        {/* What to do goes in the only piece to choose too (2026-11-22): the help of each action is its grey line. Choosing the
+            one it has changes nothing, so its problem stays until another is chosen. */}
+        <FormField label={t("editor.kind")} error={error("action.kind")}>
+          <Picker label={t("editor.kind")} placeholder={t("editor.chooseKind")} value={kind ?? null}
+            options={agentActionKinds.filter(option => allowed.includes(option)).map(option => ({ id: option, label: t("actions." + option), description: t("actionHelp." + option) }))}
+            onChange={next => { if (next === kind) return; changeAction({ kind: next as AgentActionKind }, "kind"); }} />
+        </FormField>
         {config ? <Surface title={t("actions." + kind)} headingLevel={3} padded>{config}</Surface> : null}
         {fallback ? null : <CheckboxField label={t("editor.active")} help={t("editor.activeHelp")} checked={value.isActive} onCheckedChange={isActive => change({ isActive }, "isActive")} />}
       </div></div>
