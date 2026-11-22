@@ -132,7 +132,7 @@ describe("Catálogos with the «Carpeta» filter", () => {
     await act(async () => { renderRouteWithProviders("/catalogos?pageSize=20"); });
     await userEvent.click(await screen.findByRole("button", { name: "Carpetas de «Artículos»" }));
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
-    expect(await within(dialog).findByRole("checkbox", { name: "Norte" })).toBeChecked();
+    expect(await within(dialog).findByRole("button", { name: "Carpetas Norte" })).toBeInTheDocument();
     expect(within(dialog).queryByRole("button", { name: "Nueva carpeta" })).not.toBeInTheDocument();
   });
 
@@ -168,7 +168,7 @@ describe("Diseñar formularios with the «Carpeta» filter", () => {
     await waitFor(() => expect(facets.at(-1)?.get("folderId")).toBe(delivery));
     await userEvent.click(await screen.findByRole("button", { name: "Carpetas de «Hoja de ruta»" }));
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Hoja de ruta»" });
-    expect(await within(dialog).findByRole("checkbox", { name: "Repartos" })).not.toBeChecked();
+    expect(await within(dialog).findByRole("button", { name: /^Carpetas / })).not.toHaveAccessibleName(/Repartos/);
     expect(within(dialog).getByRole("button", { name: "Nueva carpeta" })).toBeInTheDocument();
   });
 

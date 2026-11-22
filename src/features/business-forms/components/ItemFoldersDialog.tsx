@@ -2,10 +2,11 @@ import { useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { FormField } from "@/shared/ui/FormField";
 import { PlusIcon } from "@/shared/ui/icons";
 import { notify } from "@/shared/ui/notifications";
+import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 import type { FolderItemKind } from "../api/folders";
 import { folderPath, treeOrder } from "../folderTree";
@@ -13,9 +14,9 @@ import { useFolderScope, useFolderTree, useItemFolders } from "../hooks/useFormF
 import { FolderEditDialog } from "./FolderEditDialog";
 import { folderWriteFailure } from "./folderFeedback";
 
-/// «Carpetas…» of a form or a catalog (CP2-A, CM3): the two levels with a box per folder, «Nueva carpeta» for whoever administers
-/// forms, which opens «Nueva carpeta» and leaves the new folder ticked, and «Guardar». Unticking every box leaves it without a
-/// folder. It saves the whole set with the one it read; if someone changed it in between, what is ticked stays and the notice
+/// «Carpetas…» of a form or a catalog (CP2-A, CM3, DS1-A): the folders are chosen with the shared piece, several at a time, the
+/// two levels with each subfolder under its folder and saying where it lives; «Nueva carpeta» for whoever administers forms opens
+/// «Nueva carpeta» and leaves the new folder chosen, and «Guardar». Choosing none leaves it without a folder. It saves the whole set with the one it read; if someone changed it in between, what is ticked stays and the notice
 /// offers to read again. Opened from an item of a ⋮, `focusFallback` is where the focus goes back, because the item is gone when
 /// the dialog closes.
 export function ItemFoldersDialog({ kind, id, name, onClose, focusFallback }: { kind: FolderItemKind; id: string; name: string; onClose: () => void; focusFallback?: RefObject<HTMLElement | null> }) {
@@ -52,11 +53,11 @@ export function ItemFoldersDialog({ kind, id, name, onClose, focusFallback }: { 
   const pending = save.pending;
   return (
     <Dialog open onOpenChange={open => { if (!open && !pending) onClose(); }}>
-      <DialogContent mobileFullscreen aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("item.saving") : undefined}>
+      <DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("item.saving") : undefined}>
         <DialogHeader><DialogTitle>{t("item.title", { name })}</DialogTitle></DialogHeader>
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+        <div className="flex flex-col items-start gap-3">
           {loading ? (
-            <div aria-hidden="true" className="flex flex-col gap-2"><Skeleton className="h-5 w-3/5" /><Skeleton className="h-5 w-2/5" /><Skeleton className="h-5 w-1/2" /></div>
+            <div role="status" aria-label={t("item.loading")} className="flex w-full flex-col gap-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-[var(--height-control)] w-full" /></div>
           ) : failed ? (
             <div className="flex flex-col items-start gap-2">
               <p className="text-sm text-[var(--color-content-muted)]">{t("item.loadFailed")}</p>
@@ -66,18 +67,16 @@ export function ItemFoldersDialog({ kind, id, name, onClose, focusFallback }: { 
             </div>
           ) : (
             <>
-              {folders.length === 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("item.empty")}</p> : null}
-              {treeOrder(folders).map(({ folder, depth }) => (
-                <div key={folder.id} className={depth > 1 ? "pl-6" : undefined}>
-                  {/* A subfolder says where it lives, so two with the same name read differently (premise 5.3). */}
-                  <CheckboxField label={folder.name} description={depth > 1 && folder.parentId ? t("moveDialog.inside", { path: folderPath(folders, folder.parentId).join(" / ") }) : undefined}
-                    checked={draft?.has(folder.id) === true} disabled={pending} onCheckedChange={checked => toggle(folder.id, checked)} />
-                </div>
-              ))}
+              {folders.length === 0 ? <p className="text-sm text-[var(--color-content-muted)]">{t("item.empty")}</p> : (
+                <div className="w-full"><FormField label={t("item.folders")}>
+                  {/* A subfolder goes under its folder and says where it lives, so two with the same name read differently (premise 5.3). */}
+                  <Picker multiple label={t("item.folders")} placeholder={t("item.none")} disabled={pending} value={chosen} onChange={next => setDraft(new Set(next))}
+                    options={treeOrder(folders).map(({ folder, depth }) => ({ id: folder.id, label: folder.name, depth: depth - 1,
+                      description: depth > 1 && folder.parentId ? t("moveDialog.inside", { path: folderPath(folders, folder.parentId).join(" / ") }) : null }))} />
+                </FormField></div>
+              )}
               {tree.data?.canManage ? (
-                <div className="pt-1">
-                  <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => setCreating(true)}><PlusIcon className="size-3.5" aria-hidden="true" />{t("newFolder")}</Button>
-                </div>
+                <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => setCreating(true)}><PlusIcon className="size-3.5" aria-hidden="true" />{t("newFolder")}</Button>
               ) : null}
             </>
           )}

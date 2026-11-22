@@ -9,7 +9,7 @@ const texts = {
     forms: "Diseñar formularios", catalogs: "Catálogos", crumbs: "Migas de pan", mainMenu: "Navegación principal", drawer: "Menú de navegación", collapse: "Contraer menú",
     billing: "Facturación", delivery: "Repartos", north: "Norte", south: "Sur", sowing: "Siembra y cosecha", control: "Control de carga",
     whatsapp: "WhatsApp", administration: "Administración", newFolder: "Nueva carpeta", name: "Nombre", icon: "Ícono", create: "Crear", purchases: "Compras",
-    empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", draft: "Borrador",
+    empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", formsField: "Formularios", foldersField: "Carpetas", draft: "Borrador",
     actions: (name: string) => `Acciones de «${name}»`, move: /^Mover a…/, moveReason: "Tiene subcarpetas: no puede ir adentro de otra.", addFormsItem: "Agregar formularios…",
     moveTitle: "Mover «Norte» a…", into: (name: string) => `Adentro de «${name}»`, delete: "Borrar", deleteTitle: "¿Borrar «Repartos»?", deleteConfirm: "Borrar carpeta",
     filter: "Carpeta Todas las carpetas", withoutFolder: "Sin carpeta", rowFolders: /^Carpetas de «/, catalogsLink: "Ver sus 2 catálogos", loadError: "No pudimos cargar tu menú.", retry: "Reintentar",
@@ -18,7 +18,7 @@ const texts = {
     forms: "Design forms", catalogs: "Catalogs", crumbs: "Breadcrumb", mainMenu: "Main navigation", drawer: "Navigation menu", collapse: "Collapse menu",
     billing: "Billing", delivery: "Deliveries", north: "North", south: "South", sowing: "Sowing and harvest", control: "Load check",
     whatsapp: "WhatsApp", administration: "Administration", newFolder: "New folder", name: "Name", icon: "Icon", create: "Create", purchases: "Purchases",
-    empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", draft: "Draft",
+    empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", formsField: "Forms", foldersField: "Folders", draft: "Draft",
     actions: (name: string) => `Actions of “${name}”`, move: /^Move to…/, moveReason: "It has subfolders: it can't go inside another one.", addFormsItem: "Add forms…",
     moveTitle: "Move “North” to…", into: (name: string) => `Inside “${name}”`, delete: "Delete", deleteTitle: "Delete “Deliveries”?", deleteConfirm: "Delete folder",
     filter: "Folder All folders", withoutFolder: "No folder", rowFolders: /^Folders of “/, catalogsLink: "See its 2 catalogs", loadError: "We couldn't load your menu.", retry: "Retry",
@@ -128,7 +128,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await dismissNotices(page);
     await folder.getByRole("button", { name: text.addForms, exact: true }).click();
     const forms = page.getByRole("dialog", { name: text.formsOf, exact: true });
-    await expect(forms.getByText(text.draft, { exact: true }).first()).toBeVisible();
+    // DS1-A: the forms are chosen with the shared piece, several at a time; its list says a draft in grey.
+    await forms.getByRole("button", { name: new RegExp("^" + text.formsField + " ") }).click();
+    await expect(page.getByRole("option").filter({ hasText: text.draft }).first()).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "forms");
   });
@@ -143,8 +145,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: text.rowFolders }).first().click();
     const dialog = page.getByRole("dialog", { name: text.rowFolders });
-    await expect(dialog.getByRole("checkbox", { name: text.north, exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: text.newFolder, exact: true })).toBeVisible();
+    // DS1-A: the folders are chosen with the shared piece; a subfolder goes under its folder.
+    await dialog.getByRole("button", { name: new RegExp("^" + text.foldersField + " ") }).click();
+    await expect(page.getByRole("option", { name: text.north, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "item");
   });

@@ -43,7 +43,7 @@ function renderDialog(children: (scope: ReturnType<typeof useFolderScope>) => Re
 const conflict = (code: string, detail: string) => HttpResponse.json({ code, detail }, { status: 409 });
 
 describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
-  it("ticks the folders it is in, in two levels, and saves the whole set with the one it read", async () => {
+  it("chooses the folders it is in, in two levels, and saves the whole set with the one it read", async () => {
     const saved: unknown[] = [];
     server.use(
       http.get(`/api/forms/catalogs/${catalog}/folders`, () => HttpResponse.json({ folderIds: [billing] })),
@@ -52,21 +52,27 @@ describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
     const onClose = vi.fn();
     renderDialog(() => <ItemFoldersDialog kind="catalogs" id={catalog} name="Artículos" onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
-    expect(await within(dialog).findByRole("checkbox", { name: "Facturación" })).toBeChecked();
-    // A subfolder says where it lives (premise 5.3): two folders with the same name read differently.
-    expect(within(dialog).getByRole("checkbox", { name: "Norte" })).toHaveAccessibleDescription("En Repartos");
-    expect(within(dialog).getByRole("checkbox", { name: "Repartos" })).not.toHaveAccessibleDescription();
+    // DS1-A: the folders are chosen with the shared piece; its button says the ones it is in.
+    const folders = await within(dialog).findByRole("button", { name: "Carpetas Facturación" });
     const save = within(dialog).getByRole("button", { name: "Guardar" });
     expect(save).toBeDisabled();
-    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Facturación" }));
-    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Norte" }));
+    await userEvent.click(folders);
+    const list = await screen.findByRole("listbox", { name: "Carpetas" });
+    expect(within(list).getByRole("option", { name: "Facturación" })).toHaveAttribute("aria-selected", "true");
+    // A subfolder says where it lives (premise 5.3): two folders with the same name read differently.
+    expect(within(list).getByRole("option", { name: "Norte" })).toHaveAccessibleDescription("En Repartos");
+    expect(within(list).getByRole("option", { name: "Repartos" })).not.toHaveAccessibleDescription();
+    await userEvent.click(within(list).getByRole("option", { name: "Facturación" }));
+    await userEvent.click(within(list).getByRole("option", { name: "Norte" }));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Carpetas Norte" })).toHaveFocus());
     await userEvent.click(save);
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(saved).toEqual([{ expectedFolderIds: [billing], folderIds: [north] }]);
     expect(await screen.findByText("Guardamos las carpetas de «Artículos».")).toBeInTheDocument();
   });
 
-  it("opens «Nueva carpeta» and leaves the folder it creates ticked", async () => {
+  it("opens «Nueva carpeta» and leaves the folder it creates chosen", async () => {
     const posted: unknown[] = [];
     let folders = tree;
     server.use(
@@ -89,7 +95,7 @@ describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
     await userEvent.type(within(create).getByRole("textbox", { name: "Nombre" }), "Compras{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Nueva carpeta" })).not.toBeInTheDocument());
     expect(posted).toEqual([{ parentId: null, name: "Compras", icon: "package" }]);
-    expect(await within(dialog).findByRole("checkbox", { name: "Compras" })).toBeChecked();
+    expect(await within(dialog).findByRole("button", { name: "Carpetas Compras" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Guardar" })).toBeEnabled();
   });
 
@@ -97,11 +103,11 @@ describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
     server.use(http.get(`/api/forms/catalogs/${catalog}/folders`, () => HttpResponse.json({ folderIds: [] })));
     renderDialog(() => <ItemFoldersDialog kind="catalogs" id={catalog} name="Artículos" onClose={vi.fn()} />, false);
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
-    await within(dialog).findByRole("checkbox", { name: "Facturación" });
+    await within(dialog).findByRole("button", { name: "Carpetas Sin carpeta" });
     expect(within(dialog).queryByRole("button", { name: "Nueva carpeta" })).not.toBeInTheDocument();
   });
 
-  it("keeps what is ticked when someone changed the set, and saves against the one read again", async () => {
+  it("keeps what is chosen when someone changed the set, and saves against the one read again", async () => {
     let current = [billing];
     const saved: unknown[] = [];
     server.use(
@@ -116,15 +122,18 @@ describe("«Carpetas…» of a catalog (CP2-A, CM3)", () => {
     const onClose = vi.fn();
     renderDialog(() => <ItemFoldersDialog kind="catalogs" id={catalog} name="Artículos" onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Carpetas de «Artículos»" });
-    await userEvent.click(await within(dialog).findByRole("checkbox", { name: "Repartos" }));
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Carpetas Facturación" }));
+    await userEvent.click(within(await screen.findByRole("listbox", { name: "Carpetas" })).getByRole("option", { name: "Repartos" }));
+    await userEvent.keyboard("{Escape}");
+    const chosen = await within(dialog).findByRole("button", { name: /^Carpetas (Facturación, Repartos|Repartos, Facturación)$/ });
     current = [delivery];
     await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("Las carpetas de este elemento cambiaron. Recargalas e intentá de nuevo.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("checkbox", { name: "Repartos" })).toBeChecked();
-    expect(within(dialog).getByRole("checkbox", { name: "Facturación" })).toBeChecked();
+    expect(chosen).toHaveAccessibleName(/Facturación/); expect(chosen).toHaveAccessibleName(/Repartos/);
     // The notice lives in the one Toaster, outside the modal dialog that jsdom leaves the rest of the page hidden for.
     await userEvent.click(screen.getByRole("button", { name: "Volver a leer", hidden: true }));
-    await waitFor(() => expect(within(dialog).getByRole("checkbox", { name: "Facturación" })).toBeChecked());
+    await waitFor(() => expect(screen.queryByText("Las carpetas de este elemento cambiaron. Recargalas e intentá de nuevo.")).not.toBeInTheDocument());
+    expect(within(dialog).getByRole("button", { name: /^Carpetas / })).toHaveAccessibleName(/Facturación/);
     await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(saved.at(-1)).toEqual({ expectedFolderIds: [delivery], folderIds: [billing, delivery] });
@@ -274,7 +283,7 @@ describe("the forms of a folder (CM2)", () => {
   const rows = [row(1, "Control de carga", 2), row(2, "Entrega", null), row(3, "Visita", 1)];
   const page = { items: rows, page: 1, pageSize: 50, totalCount: 3, totalPages: 1, hasPrevious: false, hasNext: false };
 
-  it("puts the forms already in it first, tags a draft and saves what was read plus the ticked minus the unticked", async () => {
+  it("puts the forms already in it first, tags a draft and saves what was read plus the marked minus the unmarked", async () => {
     let current = [formId(3), formId(5)];
     const saved: unknown[] = [];
     const listings: URLSearchParams[] = [];
@@ -292,25 +301,28 @@ describe("the forms of a folder (CM2)", () => {
     const onClose = vi.fn();
     renderDialog(scope => <FolderFormsDialog scope={scope} folder={{ id: delivery, name: "Repartos" }} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Formularios de «Repartos»" });
-    await within(dialog).findByRole("checkbox", { name: "Visita" });
-    expect(within(dialog).getAllByRole("checkbox").map(box => document.querySelector(`label[for="${box.id}"]`)?.textContent)).toEqual(["Visita", "Control de carga", "Entrega"]);
-    expect(within(dialog).getByRole("checkbox", { name: "Visita" })).toBeChecked();
-    expect(within(dialog).getByRole("checkbox", { name: "Entrega" })).toHaveAccessibleDescription("Borrador");
-    expect(within(dialog).getByRole("checkbox", { name: "Control de carga" })).not.toHaveAccessibleDescription();
+    // DS1-A: the forms are chosen with the shared piece; its button says the ones in the folder.
+    const forms = await within(dialog).findByRole("button", { name: "Formularios Visita" });
     expect(listings[0].get("publicationFilter")).toBe("Active");
-    expect(within(dialog).getByRole("searchbox", { name: "Buscar formularios" })).toBeInTheDocument();
-    const save = within(dialog).getByRole("button", { name: "Guardar" });
-    expect(save).toBeDisabled();
-    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Entrega" }));
-    await userEvent.click(within(dialog).getByRole("checkbox", { name: "Visita" }));
+    expect(within(dialog).getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await userEvent.click(forms);
+    const list = await screen.findByRole("listbox", { name: "Formularios" });
+    expect(within(list).getAllByRole("option").map(option => option.querySelector("[id$='-label']")?.textContent)).toEqual(["Visita", "Control de carga", "Entrega"]);
+    expect(within(list).getByRole("option", { name: "Visita" })).toHaveAttribute("aria-selected", "true");
+    expect(within(list).getByRole("option", { name: "Entrega" })).toHaveAccessibleDescription("Borrador");
+    expect(within(list).getByRole("option", { name: "Control de carga" })).not.toHaveAccessibleDescription();
+    await userEvent.click(within(list).getByRole("option", { name: "Entrega" }));
+    await userEvent.click(within(list).getByRole("option", { name: "Visita" }));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Formularios Entrega" })).toHaveFocus());
     // Someone added «Control de carga» in between: the set read is no longer the current one.
     current = [formId(3), formId(5), formId(1)];
-    await userEvent.click(save);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
     expect(await screen.findByText("Los formularios de la carpeta cambiaron. Recargalos e intentá de nuevo.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("checkbox", { name: "Entrega" })).toBeChecked();
-    expect(within(dialog).getByRole("checkbox", { name: "Visita" })).not.toBeChecked();
+    expect(within(dialog).getByRole("button", { name: "Formularios Entrega" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Volver a leer", hidden: true }));
-    await waitFor(() => expect(within(dialog).getByRole("checkbox", { name: "Control de carga" })).toBeChecked());
+    // What was marked stays over the set read again.
+    expect(await within(dialog).findByRole("button", { name: "Formularios Control de carga, Entrega" })).toBeInTheDocument();
     // «Volver a leer» closes its notice, which has to be gone before the result takes its place.
     await waitFor(() => expect(screen.queryByText("Los formularios de la carpeta cambiaron. Recargalos e intentá de nuevo.")).not.toBeInTheDocument());
     await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
@@ -323,19 +335,20 @@ describe("the forms of a folder (CM2)", () => {
     expect(await screen.findByText("Guardamos los formularios de «Repartos».")).toBeInTheDocument();
   });
 
-  it("brings the next page with «Ver más»", async () => {
+  it("reads every page of forms, so the piece knows them all and searches among them", async () => {
     server.use(
       http.get("/api/forms/definitions", ({ request }) => {
         const second = new URL(request.url).searchParams.get("page") === "2";
         return HttpResponse.json(second ? { ...page, items: [row(4, "Zona", 1)], page: 2, hasPrevious: true } : { ...page, totalCount: 4, totalPages: 2, hasNext: true });
       }),
-      http.get(`/api/forms/folders/${delivery}/forms`, () => HttpResponse.json({ formIds: [] })),
+      http.get(`/api/forms/folders/${delivery}/forms`, () => HttpResponse.json({ formIds: [formId(4)] })),
     );
     renderDialog(scope => <FolderFormsDialog scope={scope} folder={{ id: delivery, name: "Repartos" }} onClose={vi.fn()} />);
     const dialog = await screen.findByRole("dialog", { name: "Formularios de «Repartos»" });
-    await within(dialog).findByRole("checkbox", { name: "Visita" });
-    await userEvent.click(within(dialog).getByRole("button", { name: "Ver más" }));
-    expect(await within(dialog).findByRole("checkbox", { name: "Zona" })).toBeInTheDocument();
-    expect(within(dialog).queryByRole("button", { name: "Ver más" })).not.toBeInTheDocument();
+    // The form of the second page is in the folder: the button names it without anyone asking for more.
+    await userEvent.click(await within(dialog).findByRole("button", { name: "Formularios Zona" }));
+    const list = await screen.findByRole("listbox", { name: "Formularios" });
+    expect(within(list).getAllByRole("option")).toHaveLength(4);
+    expect(screen.queryByRole("button", { name: /^Mostrar/ })).not.toBeInTheDocument();
   });
 });
