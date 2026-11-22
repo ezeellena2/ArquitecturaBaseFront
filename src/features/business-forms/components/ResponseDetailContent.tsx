@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
@@ -17,14 +17,17 @@ import { responseFullPath } from "../responseNavigationPaths";
 import { ApprovalDecisionPanel } from "./ApprovalDecisionPanel";
 import { ResponseDocumentActions, ResponseDocuments } from "./ResponseDocuments";
 import { ResponseWorkflowHistory } from "./ResponseWorkflowHistory";
-import { ResponseAnswer } from "./ResponseAnswer";
+import { readingDraft } from "../responseReading";
+import { ResponseAssistance, ResponseAssistanceBadges } from "./ResponseAssistance";
+import { ResponseForm } from "./ResponseForm";
 import { ResponseIssuance } from "./ResponseIssuance";
 
 export function ResponseDetailContent({ state, formId, recordId, onDecided, onDecisionForbidden, decisionAllowed = true }: {
   state: ResponseDetailState; formId: string; recordId: string; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean;
 }) {
-  const { t } = useTranslation("forms");
+  const { t, i18n } = useTranslation("forms");
   const { detail, workflow, data, current, hasPhotos, photos, downloads, loadingTarget, deny, onFileError } = state;
+  const draft = useMemo(() => data ? readingDraft(data, i18n.language) : undefined, [data, i18n.language]);
   const [params] = useSearchParams();
   const update = useQueryUpdate();
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
@@ -48,7 +51,12 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
       decision={task => decidable(task.id) ? <><ApprovalDecisionPanel embedded statusId={"approval-moment-" + task.id} taskId={task.id} disabled={loadingTarget} onForbidden={onDecisionForbidden} onUnavailable={() => { const key = decisionKey(task.id); setUnavailable(previous => previous.has(key) ? previous : new Set(previous).add(key)); }} actionsTarget={decisionActions} onDecided={refresh}/><div ref={setDecisionActions} className={task.state === "Open" ? "mt-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/></> : null}/>
     <Tabs value={tab} onValueChange={value => update({ tab: value === "answer" ? undefined : value })}>
       <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger>{hasPhotos ? <TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger> : null}{own ? null : <TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>}{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>
-      <TabsContent value="answer"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError}/></TabsContent>
+      {/* VF1-A: the answer reads with the shape of its form, in one column, and what the assistant proposed goes after it. */}
+      <TabsContent value="answer" className="space-y-4">
+        {draft ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="panel" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
+          onError={onFileError} aside={fieldId => <ResponseAssistanceBadges record={data} fieldId={fieldId}/>}/> : null}
+        <ResponseAssistance key={data.id} record={data} actor={detail.scope.user!.id} busy={loadingTarget} onForbidden={deny} onError={onFileError}/>
+      </TabsContent>
       <TabsContent value="photos">{photos.length ? <FormRecordFiles actor={detail.scope.user!.id} recordId={data.id} files={photos} photo label={t("responses.photos")} thumbnailLimit={photos.length} viewerFiles={photos} onForbidden={deny} onError={onFileError}/> : <p className="text-sm text-[var(--color-content-muted)]">{t("responses.unanswered")}</p>}</TabsContent>
       {/* The tab already says «Actividad»: over the columns only the revision of the rules that ran. In the quick view
           «Ver PDF» and «Descargar» are icons (board TL3-A). */}

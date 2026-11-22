@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 import { cn } from "@/shared/lib/utils";
@@ -53,9 +53,11 @@ function useFormula(entry: FormEntry) {
  * in its control with what was answered and nothing to change. What its condition hides is not drawn (CO1-A), each datum of a
  * catalog option is a field of its own («Artículo · Rubro») and the block is the load's table or boxes, without actions.
  */
-export function ResponseForm({ entry, draft, record, layout, actor, photos, onForbidden, onError }: {
+export function ResponseForm({ entry, draft, record, layout, actor, photos, onForbidden, onError, aside }: {
   entry: FormEntry; draft: EntryDraft; record: ResponseDetail; layout: "page" | "panel"; actor: string; photos: readonly PrivateFormFile[];
   onForbidden: () => void; onError: (error: unknown) => void;
+  /** What goes at the end of a question's label row, such as what the assistant did with its answer: never under the value. */
+  aside?: (fieldId: string) => ReactNode;
 }) {
   const { t, i18n } = useTranslation("formEntries");
   const [folded, setFolded] = useState<Readonly<Record<string, boolean>>>({});
@@ -78,7 +80,7 @@ export function ResponseForm({ entry, draft, record, layout, actor, photos, onFo
     if (question.type === "group" && block) return <ReadingBlock entry={entry} group={question} questions={block.questions}
       answer={answers.get(question.fieldId)} cards={columns === 1} words={words}/>;
     return <ReadingQuestion entry={entry} question={question} answer={answers.get(question.fieldId)} draft={draft} narrowClass={narrowClass}
-      pairInRow={columns > 1} words={words} viewer={viewer}/>;
+      pairInRow={columns > 1} words={words} viewer={viewer} aside={aside?.(question.fieldId)}/>;
   };
   return <div ref={measured} className="flex flex-col gap-4">{readingZones(entry, draft, record.values).map(zone =>
     <CollapsibleSection key={zone.key} title={title(zone.key, zone.title)} open={!folded[zone.key]}
@@ -100,8 +102,9 @@ function ReadingDatumField({ datum, answer, words }: { datum: ReadingDatum; answ
   </FormField>;
 }
 
-function ReadingQuestion({ entry, question, answer, draft, narrowClass, pairInRow, words, viewer }: {
+function ReadingQuestion({ entry, question, answer, draft, narrowClass, pairInRow, words, viewer, aside }: {
   entry: FormEntry; question: FormEntryQuestion; answer?: Answer; draft: EntryDraft; narrowClass?: string; pairInRow: boolean; words: Words; viewer: Viewer;
+  aside?: ReactNode;
 }) {
   const { t } = useTranslation("forms");
   const formula = useFormula(entry);
@@ -139,13 +142,13 @@ function ReadingQuestion({ entry, question, answer, draft, narrowClass, pairInRo
         <Input readOnly answered id={groupId}
           value={readingGroupText(question, chosen, draft.groups?.[question.fieldId], words.culture, words.yes, words.no)}/>
       </FormField>
-      <FormField label={question.label} htmlFor={id}><Input readOnly answered id={id} value={text}/></FormField>
+      <FormField label={question.label} htmlFor={id} action={aside}><Input readOnly answered id={id} value={text}/></FormField>
     </div>;
   }
   const narrow = question.type === "decimal" || question.type === "date";
   const control = question.type === "longText" ? <Textarea readOnly id={id} value={text}/>
     : <Input readOnly answered={!question.calculation} id={id} value={text} className={cn(question.type === "decimal" && "text-right", narrow && narrowClass)}/>;
-  return <FormField label={question.label} htmlFor={id} help={question.calculation ? formula(question) : undefined}>{control}</FormField>;
+  return <FormField label={question.label} htmlFor={id} help={question.calculation ? formula(question) : undefined} action={aside}>{control}</FormField>;
 }
 
 /** The block of rows (RG2-A) with what each item answered: the load's table, or its boxes in one column, without actions. */

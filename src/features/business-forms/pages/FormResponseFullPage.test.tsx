@@ -111,7 +111,8 @@ it("opens the own response of whoever only completes forms in full with where it
   expect(await screen.findByText("Faltó la foto del remito.")).toBeVisible();
   expect(screen.getByText("Por WhatsApp", { exact: true })).toBeVisible();
   expect(screen.queryByText(/Supervisión|Luz/)).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /respuesta$/ })).toBeInTheDocument();
+  // VF1-A: the answer reads in the zones of its form.
+  expect(screen.getByRole("heading", { name: "Datos" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /actividad$/ })).not.toBeInTheDocument();
 });
 
@@ -505,15 +506,15 @@ it("says it reads the next response next to its position and dims the previous s
   renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });
   await waitFor(() => expect(screen.getByRole("button", { name: "Siguiente" })).toBeEnabled());
-  expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).toBeNull();
+  expect(screen.getByRole("heading", { name: "Datos" }).closest("[inert]")).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Siguiente" }));
   try {
     const header = screen.getByRole("heading", { name: "TEST-000002", level: 1 }).closest("header")!;
     await waitFor(() => expect(within(header).getByRole("status")).toHaveTextContent("Cargando…"));
-    expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Datos" }).closest("[inert]")).not.toBeNull();
   } finally { await act(async () => release?.()); }
   await screen.findByRole("heading", { name: "TEST-000001", level: 1 });
-  expect(screen.getByRole("heading", { name: "Respuesta" }).closest("[inert]")).toBeNull();
+  expect(screen.getByRole("heading", { name: "Datos" }).closest("[inert]")).toBeNull();
 });
 
 // The state badge and the decision arrive with the workflow: until then its place says it is loading.

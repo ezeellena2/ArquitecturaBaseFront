@@ -2,7 +2,65 @@ import type {
   ResponseSheet,
   ResponseDetail,
 } from "@/features/business-forms/api/responses";
+import type { FormEntryQuestion, FormResponseEntry } from "@/features/business-forms/api/entries";
 type DetailValue = ResponseDetail["values"][number]["value"];
+type DetailAnswer = Pick<ResponseDetail["values"][number], "fieldId" | "type" | "label" | "value">;
+type EntryAnswer = FormResponseEntry["answers"][number];
+const isChoice = (value: unknown): value is { choiceId: string; label: string; catalogId?: string | null; detail?: string | null } =>
+  typeof value === "object" && value !== null && "choiceId" in value;
+const isFile = (value: unknown): value is { fileId: string; name: string; contentType: string; size: number; hasThumbnail?: boolean } =>
+  typeof value === "object" && value !== null && "fileId" in value;
+// An own option that no answer chose, so a list question always has its options (the form asks for at least one).
+const placeholderOption = { id: "0199a0c0-0000-7000-8000-0000000009ff", label: "Otra opción" };
+
+/**
+ * The form of a response's version and its answers in that shape (VF1-A), built from the values of the detail: each value is
+ * a question of its type, a catalog option a catalog question and a block the questions of its items. Synthetic: enough for the
+ * reading to draw the same answers the detail brings.
+ */
+export function responseEntryFixture(values: readonly DetailAnswer[], versionId = "0199a0c0-0000-7000-8000-000000000013", versionNumber = 2): FormResponseEntry {
+  const question = (value: DetailAnswer, repeated = false): FormEntryQuestion => {
+    const chosen = Array.isArray(value.value) ? (value.value as unknown[]).filter(isChoice) : isChoice(value.value) ? [value.value] : [];
+    const list = value.type === "choice" || value.type === "multiChoice";
+    const catalog = list && chosen.some(option => option.catalogId);
+    const options = chosen.map(option => ({ id: option.choiceId, label: option.label }));
+    return {
+      fieldId: value.fieldId, type: value.type as FormEntryQuestion["type"], label: value.label || "Pregunta", help: null, required: false, maxLength: null,
+      options: list && !catalog ? options.length ? options : [placeholderOption] : null,
+      selection: value.type === "multiChoice" ? { minSelected: 0, maxSelected: 20 } : null,
+      files: value.type === "photo" || value.type === "document" ? { minFiles: 0, maxFiles: 10, photoSource: null } : null,
+      catalog: catalog ? { onlyOption: null, issue: null, missingData: null } : null,
+      ...value.type === "group" ? { rows: { minRows: 0, maxRows: 20 } } : {},
+      ...repeated ? { repeated: true as const } : {},
+    };
+  };
+  const answer = (value: DetailAnswer): EntryAnswer | null => {
+    const chosen = Array.isArray(value.value) ? (value.value as unknown[]).filter(isChoice) : isChoice(value.value) ? [value.value] : [];
+    const catalog = chosen.some(option => option.catalogId);
+    const texts = catalog ? chosen.map(option => ({ id: option.choiceId, title: option.label, description: option.detail ?? null })) : null;
+    if (value.type === "multiChoice") return { fieldId: value.fieldId, value: null, choiceIds: chosen.map(option => option.choiceId), options: texts };
+    if (value.type === "choice") return chosen.length ? { fieldId: value.fieldId, value: chosen[0].choiceId, choiceIds: null, options: texts } : null;
+    if (typeof value.value === "boolean") return { fieldId: value.fieldId, value: value.value ? "true" : "false", choiceIds: null, options: null };
+    return typeof value.value === "string" ? { fieldId: value.fieldId, value: value.value, choiceIds: null, options: null } : null;
+  };
+  const questions: FormEntryQuestion[] = [], answers: FormResponseEntry["answers"] = [], files: FormResponseEntry["files"] = [];
+  for (const value of values) {
+    questions.push(question(value));
+    if (value.type === "group") {
+      const items = (Array.isArray(value.value) ? value.value : []) as { values: DetailAnswer[] }[];
+      for (const inner of items[0]?.values ?? []) questions.push(question(inner, true));
+      answers.push({ fieldId: value.fieldId, value: null, choiceIds: null, options: null,
+        rows: items.map(item => item.values.map(answer).filter((inner): inner is EntryAnswer => inner !== null)) });
+      continue;
+    }
+    if (Array.isArray(value.value)) for (const file of (value.value as unknown[]).filter(isFile))
+      files.push({ fileId: file.fileId, fieldId: value.fieldId, name: file.name, contentType: file.contentType, size: file.size, hasThumbnail: file.hasThumbnail ?? false });
+    const loaded = answer(value);
+    if (loaded) answers.push(loaded);
+  }
+  return { entry: { definitionId: "0199a0c0-0000-7000-8000-000000000010", versionId, versionNumber, prefix: "TEST", name: "Formulario publicado",
+    culture: "es", submitLabel: "Enviar", maxFileSizeMiB: 10, questions }, answers, files };
+}
 type SheetCell = ResponseSheet["records"]["items"][number]["cells"][number];
 /** A cell of the sheet as the detail brings it: a block turns its items of cells into items with the questions its version had. */
 export function detailValue(cell: SheetCell, columns: ResponseSheet["columns"]): DetailValue {
@@ -158,6 +216,8 @@ export function responseDetailFixture(
       { kind: "Submitted", atUtc: row.submittedAtUtc, actor },
       { kind: "Saved", atUtc: row.submittedAtUtc, actor: null },
     ],
+    entry: responseEntryFixture(row.cells.filter(cell => cell.state !== "NotAsked").map(cell => ({ fieldId: cell.fieldId, type: cell.type,
+      label: sheet.columns.find(column => column.fieldId === cell.fieldId)!.label, value: detailValue(cell, sheet.columns) })), row.versionId, row.versionNumber),
   };
 }
 

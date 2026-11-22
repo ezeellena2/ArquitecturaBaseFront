@@ -1,5 +1,5 @@
 import { responseFiles } from "../responses";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
@@ -23,12 +23,14 @@ import { responseCorrectionPath, responseFullPath } from "../responseNavigationP
 import { composeWorkflowMoments } from "../workflowMoments";
 import { approvalStateVariant } from "../approvals";
 import type { ApprovalTask } from "../api/approvals";
-import { ResponseAnswer } from "../components/ResponseAnswer";
+import { readingDraft } from "../responseReading";
+import { ResponseAssistance, ResponseAssistanceBadges } from "../components/ResponseAssistance";
+import { ResponseForm } from "../components/ResponseForm";
 import { ResponseWorkflowHistory } from "../components/ResponseWorkflowHistory";
 import { ResponseMoments } from "../components/ResponseDetailContent";
 import { ResponseDocumentActions, ResponseDocumentDownloads } from "../components/ResponseDocuments";
 import { ApprovalDecisionPanel } from "../components/ApprovalDecisionPanel";
-import { ResponseAmendActions } from "../components/ResponseAmendActions";
+import { ResponseAmendActions, ResponseCorrectAction } from "../components/ResponseAmendActions";
 import { ResponseFiscalPdf } from "../components/ResponseFiscalPdf";
 import { ResponseIssuance } from "../components/ResponseIssuance";
 import { VoidResponseDialog } from "../components/VoidResponseDialog";
@@ -59,11 +61,11 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const navigation = useFullResponseNavigation(formId, recordId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy || transitioning, navigationError: navigation.error, retryNavigation: navigation.onRetry });
   const { detail, data, current, workflow, downloads, loadingTarget, allowed, unavailable, deny, onFileError, photos } = state;
-  const [answerOpen, setAnswerOpen] = useState(true);
   const [activityOpen, setActivityOpen] = useState(!mobile || openPdf);
   const [decisionTarget, setDecisionTarget] = useState<HTMLDivElement | null>(null);
   const [unavailableTask, setUnavailableTask] = useState<string | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
+  const draft = useMemo(() => data ? readingDraft(data, i18n.language) : undefined, [data, i18n.language]);
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id]);
   // A replaced version reads as «Versión anterior» of its number (CW10-A).
   useBreadcrumbLeaf(data?.replacedBy ? t("detail.previousVersion") : data?.number, data?.name);
@@ -94,15 +96,19 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   }}><Page title={data.number} backTo={backTo} status={<>{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge>
     : issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge>
     : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
-    {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}</>} actions={<>
+    {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}
+    {/* VF1-A, decision 6: the response reads with its own version, which the band says. */}
+    <span className="text-xs text-[var(--color-content-muted)]">{t("responses.versionLabel", { version: data.versionNumber })}</span></>} actions={<>
     {/* AC1-A: deciding is the task while it waits, so «Rechazar» and «Aprobar» go first; on the phone they go fixed at the foot. */}
     <div ref={setDecisionTarget} className={pending ? "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-[var(--color-border)] max-sm:bg-[var(--color-surface)] max-sm:p-4" : undefined}/>
+    {/* VF1-A, decision 4: «Corregir» in view, for whoever may change it now. */}
+    {data.canAmend ? <ResponseCorrectAction disabled={loadingTarget} issuance={issuance} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))}/> : null}
     {data.origin?.conversationId && detail.scope.user?.permissions.includes("whatsapp.read") ? <Button variant="outline" size="sm" asChild><Link to={"/whatsapp/chat?conversacion=" + data.origin.conversationId}>{t("responses.openChat")}</Link></Button> : null}
     {/* «PDF fiscal» next to «Descargar ▾» (EM1-A, AC2), which keeps the other copies and the loaded files. */}
     <ResponseFiscalPdf documents={fiscal} downloads={downloads}/>
     {copies.length || files.length ? <ResponseDocumentDownloads documents={copies} files={files} downloads={downloads}/> : null}
-    {/* ⋮ after «Descargar» (AC1-A): «Corregir» opens its page and «Anular» asks for the reason, for whoever may change it now. */}
-    {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onCorrect={() => routerNavigate(responseCorrectionPath(formId, recordId))} onVoid={() => setVoiding(true)}/> : null}
+    {/* ⋮ after «Descargar» (CW11-A): «Anular» asks for the reason, for whoever may change it now. */}
+    {data.canAmend ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onVoid={() => setVoiding(true)}/> : null}
     {/* «1 de 2», the spinner and ↑ ↓ wrap as one group: on a narrow screen ↓ never goes alone to the next line. */}
     <span data-slot="response-navigation" className="flex shrink-0 items-center gap-2">
     {navigation.position !== undefined && navigation.count !== undefined ? <span className="text-xs text-[var(--color-content-muted)]">{t(navigation.kind === "pending" ? "overview.pendingNavigation" : "responses.position", { position: navigation.position, count: navigation.count })}</span> : null}
@@ -121,9 +127,10 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
       {/* Whoever only loads sees where their response stands, as in the quick view, without the activity (CW6-C); a correction
           or a void are told the same way to everyone. */}
       {detail.scope.ownOnly || data.correction || data.void ? <ResponseMoments data={data} current={current} own={detail.scope.ownOnly} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
-      <CollapsibleSection title={t("responses.answer")} open={answerOpen} onOpenChange={setAnswerOpen} expandLabel={t("detail.expandAnswer")} collapseLabel={t("detail.collapseAnswer")} meta={t("responses.versionLabel", { version: data.versionNumber })} summary={t("detail.answerSummary", { count: data.values.length })}>
-        <div className="px-4"><ResponseAnswer record={data} actor={detail.scope.user!.id} busy={loadingTarget} photos={photos} onForbidden={deny} onError={onFileError} layout="page"/></div>
-      </CollapsibleSection>
+      {/* VF1-A: the answer reads with the shape of its form, in its zones, and what the assistant proposed goes after it. */}
+      {draft ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="page" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
+        onError={onFileError} aside={fieldId => <ResponseAssistanceBadges record={data} fieldId={fieldId}/>}/> : null}
+      <ResponseAssistance key={data.id} record={data} actor={detail.scope.user!.id} busy={loadingTarget} onForbidden={deny} onError={onFileError}/>
       {detail.scope.ownOnly ? null : <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>
         {/* VF2-A: the activity is a table on the full page, with «Ver PDF» and «Descargar» as icons in their row. */}
         <div className="p-4"><ResponseWorkflowHistory key={detail.scope.owner + ":" + data.id} layout="page" workflow={workflow} record={data} timeZoneId={detail.scope.user?.timeZoneId} documentActions={document => <ResponseDocumentActions compact owner={detail.scope.owner} recordId={data.id} document={document} downloads={downloads} onForbidden={deny}/>}/></div>

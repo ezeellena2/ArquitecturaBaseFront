@@ -6,7 +6,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import { responseDetailFixture, responseSheetFixture, responseWorkflowFixture, responseFormId, responseRecordId, responseSecondId } from "@/test/responseFixtures";
+import { responseDetailFixture, responseSheetFixture, responseWorkflowFixture, responseFormId, responseRecordId, responseSecondId, responseEntryFixture } from "@/test/responseFixtures";
 import { approvalTaskFixture, approveAndConfirm } from "@/test/approvalFixtures";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 beforeEach(() => { queryClient.clear(); vi.clearAllMocks(); });
@@ -396,6 +396,7 @@ it("retains the pending panel, focus and cached photos while the next task and r
       if (params.id === responseSecondId) { recordRequested = true; await recordGate; }
       const detail = responseDetailFixture(String(params.id));
       detail.values.push({ fieldId: "0199a0c0-0000-7000-8000-000000000099", key: "photo", type: "photo", label: "Foto de la visita", value: [{ fileId: String(params.id), name: "Visita.jpg", contentType: "image/jpeg", size: 4, hasThumbnail: true }] });
+      detail.entry = responseEntryFixture(detail.values, detail.versionId, detail.versionNumber);
       return HttpResponse.json(detail);
     }),
     http.get("/api/forms/records/:recordId/files/:fileId/thumbnail", ({ params }) => { thumbnails.push(String(params.recordId)); return new HttpResponse(new Uint8Array([1, 2, 3]), { headers: { "content-type": "image/jpeg" } }); }),

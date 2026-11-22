@@ -41,5 +41,5 @@ export function ResponseAssistanceBadges({ record, fieldId }: { record: Response
  const { t } = useTranslation("forms"); const item = record.assistance?.values.find(item => item.proposed.fieldId === fieldId && item.included);
  if (!item) return null;
  const source = record.chain.find(row => row.id === record.assistance?.suggestion?.originRecordId);
- return <div className="mt-1 flex flex-wrap gap-1">{item.mapped ? <Badge variant="outline">{source ? t("detail.assistance.from", { name: source.name }) : t("detail.assistance.mapped")}</Badge> : null}{item.changed ? <Badge variant="outline">{t("detail.assistance.changed")}</Badge> : null}</div>;
+ return <div className="flex flex-wrap gap-1">{item.mapped ? <Badge variant="outline">{source ? t("detail.assistance.from", { name: source.name }) : t("detail.assistance.mapped")}</Badge> : null}{item.changed ? <Badge variant="outline">{t("detail.assistance.changed")}</Badge> : null}</div>;
 }

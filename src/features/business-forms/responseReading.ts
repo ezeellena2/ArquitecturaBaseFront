@@ -1,6 +1,7 @@
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import type { FormEntry, FormEntryGroup, FormEntryQuestion } from "./api/entries";
-import { entryQuestionWidth, entryZones, type EntryDraft } from "./entryForm";
+import type { FormResponseEntry } from "./api/entries";
+import { correctionDraft, entryQuestionWidth, entryZones, type EntryDraft } from "./entryForm";
 import { responseCatalogColumnId, responseCatalogFieldText, type ResponseChoice, type ResponseItemValues, type ResponseValue } from "./responses";
 
 /**
@@ -87,6 +88,11 @@ export function readingText(question: FormEntryQuestion, value: ResponseValue | 
   if (question.type === "boolean") return value === true ? yes : value === false ? no : "";
   if (typeof value !== "string") return "";
   return question.type === "decimal" || question.type === "date" ? formatTypedValue(question.type, value, culture) ?? value : value;
+}
+
+/** The answers of a response in the shape of its form, as a draft: what its conditions read to say what is not drawn. */
+export function readingDraft(record: { id: string; number: string; entry: FormResponseEntry }, culture: string): EntryDraft {
+  return correctionDraft({ ...record.entry, recordId: record.id, number: record.number }, culture);
 }
 
 /** LD1-A: the field chosen first, as the option had it when saved; without it, what the draft brought. */

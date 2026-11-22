@@ -75,10 +75,13 @@ describe("the zone «Comprobante» (EM1-A)", () => {
     expect(within(issued).getByText("00004-00000012")).toBeInTheDocument();
     expect(within(issued).getByText("19/11/2026")).toBeInTheDocument();
 
+    // VF1-A: «Corregir» is in view, off with why; ⋮ keeps «Anular con nota de crédito».
+    const correct = screen.getByRole("button", { name: "Corregir" });
+    expect(correct).toHaveAttribute("aria-disabled", "true");
+    expect(correct).toHaveAccessibleDescription("Tiene un comprobante emitido o en curso: anulala y cargá otra.");
     await user.click(screen.getByRole("button", { name: "Más acciones" }));
     const menu = await screen.findByRole("menu");
-    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["CorregirTiene un comprobante emitido o en curso: anulala y cargá otra.", "Anular con nota de crédito"]);
-    expect(within(menu).getAllByRole("menuitem")[0]).toHaveAttribute("aria-disabled", "true");
+    expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["Anular con nota de crédito"]);
     await user.keyboard("{Escape}");
 
     // «PDF fiscal» is an icon before ⋮ and «Descargar ▾» keeps only the other copies: here there are none.
@@ -290,8 +293,10 @@ describe("voiding with a credit note (NC1-A)", () => {
     act(() => more.focus());
     await user.keyboard("{Enter}");
     const items = within(await screen.findByRole("menu")).getAllByRole("menuitem");
-    expect(items.map(item => item.textContent)).toEqual(["CorregirLa respuesta se está anulando.", "Anular con nota de créditoLa respuesta se está anulando."]);
-    for (const item of items) expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(items.map(item => item.textContent)).toEqual(["Anular con nota de créditoLa respuesta se está anulando."]);
+    expect(items[0]).toHaveAttribute("aria-disabled", "true");
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: "Corregir" })).toHaveAccessibleDescription("La respuesta se está anulando.");
   });
 
   it("keeps the invoice issued with the notice of a credit note that did not go out", async () => {
