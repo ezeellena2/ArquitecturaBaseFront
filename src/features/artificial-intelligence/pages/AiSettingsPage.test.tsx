@@ -25,8 +25,12 @@ beforeEach(() => {
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const keyField = () => screen.getByLabelText("Nueva clave de API");
 // The provider is a segmented control, and a model of the list is chosen in the Picker (DS1-A).
-const providers = () => screen.getByRole("group", { name: "Proveedor" });
-const chooseProvider = (name: string) => userEvent.click(within(providers()).getByRole("button", { name }));
+// The provider and the availability go in the shared piece for choosing (DS1-A, 2026-11-22): the button names the chosen one.
+const providers = (options?: { hidden?: boolean }) => screen.getByRole("button", { name: /^Proveedor /, ...options });
+async function chooseProvider(name: string) {
+  await userEvent.click(providers());
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Proveedor" })).getByRole("option", { name }));
+}
 const modelPicker = () => screen.findByRole("button", { name: /^Modelo / });
 async function openModels() {
   const trigger = await modelPicker();
@@ -48,7 +52,7 @@ describe("AI settings", () => {
     for (const name of ["Proveedor y modelo", "Clave y prueba de conexión", "Disponibilidad"]) expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
     // El orden en que se completa: los modelos se cargan con la clave, así que la clave va antes que el modelo.
     const key = within(zone).getByRole("group", { name: "Clave de API" });
-    const order = [within(zone).getByRole("group", { name: "Proveedor" }), key, model, within(zone).getByRole("radiogroup", { name: "Disponibilidad de la conexión" })];
+    const order = [within(zone).getByRole("button", { name: /^Proveedor / }), key, model, within(zone).getByRole("button", { name: /^Disponibilidad de la conexión / })];
     for (const [index, element] of order.slice(1).entries()) expect(order[index].compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // Cada botón en el renglón del dato que toca; quitar va en rojo.
     expect(within(key).getByText("Configurada")).toBeInTheDocument();
@@ -63,7 +67,7 @@ describe("AI settings", () => {
     renderRouteWithProviders("/configuracion/ia");
     const notice = await screen.findByText(/La conexión guardada usa un proveedor que esta versión de la app no conoce, así que quedó pausada/);
     expect(notice.closest("[role=status]")).not.toBeNull();
-    expect(screen.getByRole("radio", { name: "Pausada" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Disponibilidad de la conexión Pausada" })).toBeInTheDocument();
     expect(notice).toHaveTextContent("Elegí un proveedor, cargá su clave y guardá.");
   });
   it("tells who only reads that a provider this version does not know left it paused, without what to do to fix it (I4, review)", async () => {
@@ -202,9 +206,9 @@ describe("AI settings", () => {
     await chooseProvider("Anthropic / Claude");
     const confirm = await screen.findByRole("dialog");
     // The saved key asks first: the provider does not change until it is confirmed (the open dialog hides the page).
-    expect(within(screen.getByRole("group", { name: "Proveedor", hidden: true })).getByRole("button", { name: "OpenAI", hidden: true })).toHaveAttribute("aria-pressed", "true");
+    expect(providers({ hidden: true })).toHaveAccessibleName("Proveedor OpenAI");
     await userEvent.click(within(confirm).getByRole("button", { name: "Cambiar proveedor" }));
-    expect(within(providers()).getByRole("button", { name: "Anthropic / Claude" })).toHaveAttribute("aria-pressed", "true");
+    expect(providers()).toHaveAccessibleName("Proveedor Anthropic / Claude");
     expect(screen.queryByRole("button", { name: /^Modelo / })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("");
     expect(screen.getByRole("button", { name: "Cargar modelos" })).toBeDisabled();
@@ -261,7 +265,7 @@ describe("AI settings", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await userEvent.click(await screen.findByRole("button", { name: "Leer configuración actual" }));
     await userEvent.click(await screen.findByRole("button", { name: "Revisar con mi borrador" }));
-    expect(within(providers()).getByRole("button", { name: "OpenAI" })).toHaveAttribute("aria-pressed", "true");
+    expect(providers()).toHaveAccessibleName("Proveedor OpenAI");
     expect(screen.getByRole("textbox", { name: "Modelo" })).toHaveValue("fictional-model");
     expect(screen.getByLabelText("Clave de API")).toHaveValue("fictional-private-key");
     expect(writes).toHaveLength(1);
@@ -388,8 +392,11 @@ describe("AI settings", () => {
     expect(model).not.toHaveAccessibleDescription();
     for (const legend of [/Una conexión compartida/, /Ingresá la clave de API/, /Modelos disponibles para esta clave/, /No guarda cambios/, /Deja la conexión preparada/, /Conserva proveedor, modelo y clave/])
       expect(screen.queryByText(legend)).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Disponible" })).not.toHaveAccessibleDescription();
-    expect(screen.getByRole("radio", { name: "Pausada" })).not.toHaveAccessibleDescription();
+    await userEvent.click(screen.getByRole("button", { name: /^Disponibilidad de la conexión / }));
+    const availability = await screen.findByRole("listbox", { name: "Disponibilidad de la conexión" });
+    expect(within(availability).getByRole("option", { name: "Disponible" })).not.toHaveAccessibleDescription();
+    expect(within(availability).getByRole("option", { name: "Pausada" })).not.toHaveAccessibleDescription();
+    await userEvent.keyboard("{Escape}");
     // Por qué no se ve la clave guardada y que la prueba puede tener costo van en la (i), con su tooltip.
     expect(screen.queryByText("La clave guardada nunca se muestra ni se devuelve al navegador.", { selector: "p" })).toBeNull();
     expect(screen.getByRole("button", { name: "Más información sobre Clave de API" })).toHaveAccessibleDescription("La clave guardada nunca se muestra ni se devuelve al navegador.");

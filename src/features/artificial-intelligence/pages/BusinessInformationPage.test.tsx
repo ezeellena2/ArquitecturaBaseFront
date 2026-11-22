@@ -27,9 +27,11 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const save = () => screen.getByRole("button", { name: "Guardar" });
-// The state of a day is a segmented control, and a time or the zone is the Picker, with its search inside (DS1-A).
-async function chooseStatus(group: string, status: string, container: HTMLElement = document.body) {
-  await userEvent.click(within(within(container).getByRole("group", { name: group })).getByRole("button", { name: status }));
+// The state of a day, a time and the zone go in the shared piece for choosing (DS1-A, 2026-11-22); a time or the zone, with
+// its search inside.
+async function chooseStatus(label: string, status: string, container: HTMLElement = document.body) {
+  await userEvent.click(within(container).getByRole("button", { name: new RegExp(`^${label} `) }));
+  await userEvent.click(within(await screen.findByRole("listbox", { name: label })).getByRole("option", { name: status }));
 }
 async function pick(field: string, search: string, option: string, container: HTMLElement = document.body) {
   const trigger = within(container).getByRole("button", { name: new RegExp(`^${field} `) });
@@ -118,11 +120,12 @@ describe("business information editor", { timeout: 15_000 }, () => {
     current.details = emptyBusinessDetails("UTC");
     current.details.location = { mode: "local", address: "Address", reference: "Por el portón", area: "", latitude: null, longitude: null };
     renderRouteWithProviders("/configuracion/negocio");
-    // Four fixed options with long names, in sight (DS1-A).
-    const where = await screen.findByRole("radiogroup", { name: "Dónde atendés" });
-    expect(within(where).getAllByRole("radio").map(radio => radio.closest("div")?.textContent)).toEqual(["Sin definir", "En un local", "Sólo en una zona", "Local y zona de atención"]);
-    expect(within(where).getByRole("radio", { name: "En un local" })).toBeChecked();
-    await userEvent.click(within(where).getByRole("radio", { name: "Sólo en una zona" }));
+    // The four ways of attending go in the shared piece for choosing (DS1-A, 2026-11-22).
+    await userEvent.click(await screen.findByRole("button", { name: "Dónde atendés En un local" }));
+    const where = await screen.findByRole("listbox", { name: "Dónde atendés" });
+    expect(within(where).getAllByRole("option").map(option => option.textContent)).toEqual(["Sin definir", "En un local", "Sólo en una zona", "Local y zona de atención"]);
+    expect(within(where).getByRole("option", { name: "En un local" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(where).getByRole("option", { name: "Sólo en una zona" }));
     expect(screen.queryByRole("textbox", { name: "Dirección del local" })).not.toBeInTheDocument();
     await userEvent.type(screen.getByRole("textbox", { name: "Zona de atención o entrega" }), "Zona norte");
     await userEvent.click(save());
@@ -233,10 +236,9 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const dialog = await screen.findByRole("dialog", { name: "Horario de una fecha especial" });
     // Like the date, each part has its visible label (lista de chequeo, 2026-11-11): «Atención» names the state and
     // «Horario» its time slots, which appear only when the date is open.
-    const state = within(dialog).getByRole("group", { name: "Atención" });
-    expect(within(dialog).getByText("Atención")).toBeVisible();
+    expect(within(dialog).getByText("Atención", { ignore: "button *, script, style" })).toBeVisible();
     expect(within(dialog).queryByRole("group", { name: "Horario" })).not.toBeInTheDocument();
-    await userEvent.click(within(state).getByRole("button", { name: "Abierto" }));
+    await chooseStatus("Atención", "Abierto", dialog);
     const hours = within(dialog).getByRole("group", { name: "Horario" });
     expect(within(dialog).getByText("Horario", { selector: "label" })).toBeVisible();
     expect(within(hours).getByRole("button", { name: "Fecha 1 · Desde Elegir" })).toBeInTheDocument();
@@ -320,7 +322,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     await chooseStatus("Lunes · Atención", "Cerrado");
     await userEvent.click(save());
     await userEvent.click(await screen.findByRole("button", { name: "Revisar guardado" }));
-    for (const option of within(screen.getByRole("group", { name: "Lunes · Atención" })).getAllByRole("button")) expect(option).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Lunes · Atención / })).toBeDisabled();
     await userEvent.click(await screen.findByRole("button", { name: "Reintentar el mismo guardado" }));
     await waitFor(() => expect(writes).toHaveLength(2));
     expect(writes[1]).toEqual(writes[0]);

@@ -31,10 +31,11 @@ for (const language of ["es", "en"] as const) {
       const hours = page.getByRole("group", { name: es ? "Horario de atención" : "Opening hours", exact: true });
       await expect(hours).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      // The status of each day is a segmented control and the times are the Picker (DS1-A). An open day adds its times:
-      // neither they nor the options of each status cut their text, and none goes past the hours.
-      await hours.getByRole("group", { name: es ? "Lunes · Atención" : "Monday · Opening", exact: true }).getByRole("button", { name: es ? "Abierto" : "Open", exact: true }).click();
-      const states = hours.getByRole("group", { name: es ? / · Atención$/ : / · Opening$/ });
+      // The status of each day and the times go in the shared piece (DS1-A, 2026-11-22). An open day adds its times: neither
+      // they nor the status of each day cut their text, and none goes past the hours.
+      await hours.getByRole("button", { name: new RegExp("^" + (es ? "Lunes · Atención" : "Monday · Opening") + " ") }).click();
+      await page.getByRole("option", { name: es ? "Abierto" : "Open", exact: true }).click();
+      const states = hours.getByRole("button", { name: es ? /^[^ ]+ · Atención / : /^[^ ]+ · Opening / });
       await expect(states).toHaveCount(7);
       const times = hours.getByRole("button", { name: es ? /^Lunes 1 · (Desde|Hasta) / : /^Monday 1 · (From|Until) / });
       await expect(times).toHaveCount(2);

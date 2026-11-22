@@ -13,7 +13,6 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Picker } from "@/shared/ui/Picker";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { agentActionKinds, type AgentActionKind, type AgentButtonDestination, type AgentCulture, type AgentForm, type AgentInputType } from "../api/assistantAgent";
@@ -127,11 +126,11 @@ export function AssistantCaseEditor({ target, forms, allowed, culture, original,
       <div className="min-h-0 flex-1 overflow-y-auto p-4"><div className="flex flex-col gap-4">
         {unmatched.length ? <p role="alert" className="text-sm text-[var(--color-danger)]">{unmatched.join(" ")}</p> : null}
         {whenField}
-        {/* Three fixed input types, in sight and one click away (DS1-A); choosing the one it has changes nothing. On the phone they go
-            apart, because «Cualquier entrada» does not fit in a third of the width. */}
+        {/* The input types go in the shared piece for choosing, like any list (DS1-A, 2026-11-22); choosing the one it has
+            changes nothing. */}
         {fallback ? null : <div className="w-full sm:w-72"><FormField label={t("editor.inputType")} help={t("editor.inputTypeHelp")}>
-          <SegmentedControl wrap aria-label={t("editor.inputType")} options={inputTypes.map(type => ({ key: type, label: t("inputTypes." + type), pressed: value.inputType === type,
-            onSelect: () => { if (type !== value.inputType) change({ inputType: type }, "inputType"); } }))} />
+          <Picker label={t("editor.inputType")} value={value.inputType} options={inputTypes.map(type => ({ id: type, label: t("inputTypes." + type) }))}
+            onChange={type => { if (type !== value.inputType) change({ inputType: type as typeof value.inputType }, "inputType"); }} />
         </FormField></div>}
         <RadioGroupField label={t("editor.kind")} showLabel variant="cards" value={kind} error={error("action.kind")}
           options={agentActionKinds.filter(option => allowed.includes(option)).map(option => ({ value: option, label: t("actions." + option), help: t("actionHelp." + option) }))}

@@ -291,11 +291,13 @@ describe("the screen «Asistente»", () => {
     await open();
     await userEvent.click(within(ownCases()[2]!).getByRole("button", { name: "Editar el caso 3" }));
     const editor = await screen.findByRole("dialog", { name: "Caso 3" });
-    const input = within(editor).getByRole("group", { name: "Tipo de entrada" });
-    expect(within(input).getAllByRole("button").map(button => button.textContent)).toEqual(["Cualquier entrada", "Texto", "Audio"]);
-    expect(within(input).getByRole("button", { name: "Texto" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(within(input).getByRole("button", { name: "Audio" }));
-    expect(within(input).getByRole("button", { name: "Audio" })).toHaveAttribute("aria-pressed", "true");
+    // The input type goes in the shared piece for choosing (DS1-A, 2026-11-22).
+    await userEvent.click(within(editor).getByRole("button", { name: "Tipo de entrada Texto" }));
+    const types = await screen.findByRole("listbox", { name: "Tipo de entrada" });
+    expect(within(types).getAllByRole("option").map(option => option.querySelector("[id$='-label']")?.textContent)).toEqual(["Cualquier entrada", "Texto", "Audio"]);
+    expect(within(types).getByRole("option", { name: "Texto" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(types).getByRole("option", { name: "Audio" }));
+    expect(within(editor).getByRole("button", { name: "Tipo de entrada Audio" })).toBeInTheDocument();
     expect(within(editor).getByRole("button", { name: "A dónde lleva el botón 1 Mandar Registrar visita" })).toBeInTheDocument();
     const second = within(editor).getByRole("button", { name: "A dónde lleva el botón 2 Derivar a una persona" });
     await act(async () => { second.focus(); });

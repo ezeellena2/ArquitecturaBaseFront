@@ -14,9 +14,7 @@ import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { FormSkeleton } from "@/shared/ui/FormSkeleton";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { aiConnectionQueryKey, fetchAiConnection, type AiConnection, type AiProvider } from "../api/aiConnection";
 import { changeProvider, hasCredential } from "../model";
@@ -80,14 +78,12 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
         </DisabledReason> : undefined}>
         <div className="divide-y divide-[var(--color-border)] px-4">
           <div className="py-3">
-            {/* Two fixed providers, in sight and one click away (DS1-A); on the phone they go apart, because «Anthropic / Claude»
-                does not fit in half the width. With a key, changing it asks first, so the chosen one stays until it is confirmed;
-                choosing the one it has changes nothing. */}
+            {/* The providers go in the shared piece for choosing, like any list (DS1-A, 2026-11-22). With a key, changing it asks
+                first, so the chosen one stays until it is confirmed; choosing the one it has changes nothing. */}
             <div className="w-full sm:w-72"><FormField label={t("provider")} error={error("provider")}>
-              <SegmentedControl wrap aria-label={t("provider")} disabled={locked} options={baseline.providers.map(item => ({
-                key: item, label: item === "Anthropic" ? "Anthropic / Claude" : item, pressed: draft.provider === item,
-                onSelect: () => { if (item === draft.provider) return; if (savedCredential || draft.apiKey) setNextProvider(item); else provider(item); },
-              }))} />
+              <Picker label={t("provider")} disabled={locked} value={draft.provider}
+                options={baseline.providers.map(item => ({ id: item, label: item === "Anthropic" ? "Anthropic / Claude" : item }))}
+                onChange={item => { if (item === draft.provider) return; if (savedCredential || draft.apiKey) setNextProvider(item as typeof draft.provider); else provider(item as typeof draft.provider); }} />
             </FormField></div>
           </div>
           <div className="py-3">
@@ -131,10 +127,11 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
             {catalog.models?.length === 0 ? <p role="status" className="text-sm text-[var(--color-content-muted)]">{t("modelsEmpty")}</p> : null}
           </div>
           <div className="flex flex-col gap-1.5 py-3">
-            {/* El grupo ya se nombra «Disponibilidad de la conexión»: la etiqueta visible no se lee dos veces. */}
-            <p aria-hidden="true" className="text-sm leading-none font-medium">{t("availabilityLabel")}</p>
-            <RadioGroupField label={t("availability")} layout="row" value={draft.enabled ? "on" : "off"} onValueChange={value => editor.change({ enabled: value === "on" })} error={error("enabled")}
-              options={[{ value: "on", label: t("available"), disabled: locked || !credential }, { value: "off", label: t("paused"), disabled: locked }]} />
+            {/* The availability goes in the shared piece too (DS1-A, 2026-11-22); without a key it cannot be available. */}
+            <div className="w-full sm:w-72"><FormField label={t("availabilityLabel")} error={error("enabled")}>
+              <Picker label={t("availability")} disabled={locked} value={draft.enabled ? "on" : "off"} onChange={value => { if ((value === "on") !== draft.enabled) editor.change({ enabled: value === "on" }); }}
+                options={[{ id: "on", label: t("available"), disabledReason: credential ? null : t("absentKey") }, { id: "off", label: t("paused") }]} />
+            </FormField></div>
           </div>
         </div>
       </Surface>

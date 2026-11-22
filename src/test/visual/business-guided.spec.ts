@@ -42,8 +42,10 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("alert")).toContainText(es?"El cierre debe ser posterior":"Closing must be after");
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
     await pickEnd("18:00");await expect(page.getByRole("alert")).toHaveCount(0);
-    const allDay=page.getByRole("group",{name:es?"Domingo · Atención":"Sunday · Opening",exact:true}).getByRole("button",{name:es?"24 horas":"24 hours",exact:true});
-    await allDay.click();
+    // The status of a day goes in the shared piece (DS1-A, 2026-11-22).
+    const sundayLabel=es?"Domingo · Atención":"Sunday · Opening",allDayLabel=es?"24 horas":"24 hours";
+    const sunday=page.getByRole("button",{name:new RegExp(`^${sundayLabel} `)});
+    await sunday.click();await page.getByRole("option",{name:allDayLabel,exact:true}).click();
     await page.getByRole("button",{name:es?"Agregar fecha especial":"Add special date",exact:true}).click();
     await page.getByRole("dialog").getByLabel(es?"Fecha":"Date",{exact:true}).fill("2026-10-10");
     await page.getByRole("dialog").getByRole("button",{name:es?"Agregar fecha":"Add date",exact:true}).click();
@@ -57,7 +59,7 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("button",{name:es?"Guardar":"Save",exact:true})).toBeDisabled();
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);
     await expect(answer).toHaveValue(es?"Consultar antes de confirmar el pedido.":"Ask before confirming the order.");
-    await expect(allDay).toHaveAttribute("aria-pressed","true");
+    await expect(sunday).toHaveAccessibleName(`${sundayLabel} ${allDayLabel}`);
     expect(external).toEqual([]);
     await page.screenshot({path:`test-results/business-guided-${language}-${width}.png`,fullPage:true});
   });

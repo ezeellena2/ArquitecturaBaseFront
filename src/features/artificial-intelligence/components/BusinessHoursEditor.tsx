@@ -13,7 +13,6 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Picker, type PickerOption } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { emptyBusinessDetails, emptyPeriod, timeOptions, validateBusinessDetails, validateHours } from "../businessDetailsModel";
 import type { BusinessDetails, OpeningDay, OpeningPeriod, OpeningStatus, SpecialDate } from "../api/businessInformation";
@@ -59,14 +58,14 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   {special && editable && !locked ? <SpecialDateDialog initial={special} hours={value} onCancel={() => setSpecial(null)} onConfirm={next => { onChange({ ...value, exceptions: [...value.exceptions.filter(item => item.date !== special.date), next].sort((a,b) => a.date.localeCompare(b.date)) }); setSpecial(null); }} /> : null}
   </Surface>;
 }
-/// Four fixed options, in sight and one click away (DS1-A), as wide as their names: on the phone they go apart and down a
-/// line. A weekday is named by its row («Lunes · Atención»); the state of a special date, by its title («Atención»).
+/// The four states go in the shared piece for choosing, like any list (DS1-A, 2026-11-22: «un combo desplegable a elegir las
+/// opciones»). A weekday is named by its row («Lunes · Atención»); the state of a special date, by its title («Atención»).
 /// Choosing the state it already has changes nothing: a special date would lose its periods.
 function OpeningStatusControl({ status, label, disabled, onChange }: { status: OpeningStatus; label: string; disabled: boolean; onChange: (status: OpeningStatus) => void }) {
   const { t } = useTranslation("businessInformation");
-  return <SegmentedControl wrap aria-label={label} disabled={disabled} options={openingStatuses.map(value => ({
-    key: value, label: t(value), pressed: status === value, onSelect: () => { if (value !== status) onChange(value); },
-  }))} />;
+  return <Picker label={label} disabled={disabled} value={status} className="w-full sm:w-44"
+    options={openingStatuses.map(value => ({ id: value, label: t(value) }))}
+    onChange={value => { if (value !== status) onChange(value as OpeningStatus); }} />;
 }
 /// «Agregar franja» va siempre debajo de las franjas, con la misma forma: con cuatro se apaga con el límite como motivo
 /// (`DisabledReason`) y, mientras el editor está bloqueado, sólo se apaga. La papelera aparece en cada franja cuando hay

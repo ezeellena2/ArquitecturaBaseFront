@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Input } from "@/shared/ui/input";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 import { businessLocationLink } from "../businessDetailsModel";
@@ -17,13 +17,15 @@ export function BusinessLocationEditor({ value, onChange, editable, locked, plac
   const cleared = { latitude: null, longitude: null, placeId: null };
   return <Surface title={t("locationSection")} padded>
     <div id="business-details.location" tabIndex={-1} role="group" aria-label={t("locationSection")} aria-invalid={!!error} aria-describedby={error ? "business-location-error" : undefined} className="space-y-4">
-      {/* Four fixed options with long names, in sight (DS1-A): radios in a row that go down a line when they do not fit. */}
-      <RadioGroupField label={t("locationType")} showLabel layout="row" value={value.mode} options={modes.map(mode => ({ value: mode, label: t(mode), disabled: !editable || locked }))}
-        onValueChange={next => {
-          const mode = modes.find(item => item === next);
-          if (!mode) return;
-          onChange({ ...value, mode, ...(mode === "unknown" || mode === "area" ? { address: "", reference: "", ...cleared } : {}), ...(mode === "unknown" || mode === "local" ? { area: "" } : {}) });
-        }} />
+      {/* The four ways of attending go in the shared piece for choosing, like any list (DS1-A, 2026-11-22). */}
+      <div className="w-full sm:w-72"><FormField label={t("locationType")}>
+        <Picker label={t("locationType")} disabled={!editable || locked} value={value.mode} options={modes.map(mode => ({ id: mode, label: t(mode) }))}
+          onChange={next => {
+            const mode = modes.find(item => item === next);
+            if (!mode || mode === value.mode) return;
+            onChange({ ...value, mode, ...(mode === "unknown" || mode === "area" ? { address: "", reference: "", ...cleared } : {}), ...(mode === "unknown" || mode === "local" ? { area: "" } : {}) });
+          }} />
+      </FormField></div>
       {value.mode === "local" || value.mode === "both" ? <>
         {/* Sin leyendas: al cambiar la dirección el enlace se vacía a la vista, y el enlace vacío ya dice que no hay lugar elegido. */}
         <FormField label={t("address")}><Input value={value.address} maxLength={500} readOnly={!editable} disabled={locked} onChange={event => onChange({ ...value, address: event.target.value, ...cleared })} /></FormField>
