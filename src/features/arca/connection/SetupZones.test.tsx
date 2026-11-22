@@ -15,7 +15,7 @@ vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof im
 const services = [{ code: "ws_sr_constancia_inscripcion", family: "Registry", required: true, delegated: false }, { code: "wsfe", family: "Invoicing", required: false, delegated: true }];
 const none: ArcaConnection = {
   status: null, mode: null, environment: null, cuit: null, platformCuit: null, platform: { cuit: "30718887778", name: "ArquitecturaBase" },
-  installedServices: services, enabledServices: [], certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 0,
+  installedServices: services, enabledServices: [], certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 0, certificateNoticeDays: 30,
 };
 const automated: ArcaConnection = {
   ...none, status: "AwaitingCertificate", mode: "PlatformDelegationAutomated", environment: "Production", cuit: "20000000060", platformCuit: "30718887778",

@@ -75,6 +75,30 @@ cuando se cerró la etapa 1, a pedido del chat que coordina la tanda del 11/11.
 - **Código:** `VoucherDataSection` e `InvoicingSections` en `features/arca/invoicing`, sobre
   `PUT /api/arca/invoicing/voucher-data`; `VoucherDataSection.test.tsx` fija cada caso.
 
+## AC5 · Aviso de vencimiento — 2026-11-22
+
+RC7-B del [inventario de reglas fijas](../../../ArquitecturaBase/docs/plans/2026-11-22-reglas-a-configuracion.md): «Avisar N días
+antes» del vencimiento del certificado pasa a la pantalla, con el correo a quienes administran la conexión. El usuario eligió
+AC5-A entre dos tableros (AC5-B era una zona propia, «Certificado · Aviso de vencimiento», que se editaba en el lugar como
+AC4) en el lienzo [Aviso de vencimiento del certificado de ARCA](https://claude.ai/artifact/NtZCTDQyqeJuD6uvFrN3Lh), y un correo
+por certificado en vez de uno por día.
+
+- **Dónde:** un tercer renglón en «Certificado», debajo de «Vence» (y de «Actual» y «Nuevo» durante una renovación): «Aviso de
+  vencimiento» con su (i) y «30 días antes, por correo». La (i) dice a quién le llega y que desde ese día la pantalla muestra el
+  aviso amarillo.
+- **Cambiar:** el lápiz al final del renglón, sin texto (`IconButton` con su nombre «Cambiar el aviso de vencimiento»), abre el
+  diálogo «Aviso de vencimiento»: «Avisar» (obligatorio, con su (i)) y el número con «días antes del vencimiento» al lado,
+  «Cancelar» y «Guardar», que se habilita cuando cambia el número. Vacío o fuera de 1 a 365, «Elegí un número entre 1 y 365.»
+  debajo del campo, sin llamar al servidor; si el servidor lo rechaza, el mismo texto.
+- **Guardar con la revisión leída:** manda la revisión de la conexión con que se abrió el diálogo, aunque la pantalla la
+  vuelva a leer mientras tanto (otra pestaña guardó): «Guardar» no se habilita solo y no pisa ese cambio. Un 409 cierra el
+  diálogo y abre «Revisar», como el resto de la pantalla. Mientras guarda, «Guardando…» en el botón y la × apagada con ese motivo.
+- **El aviso amarillo** sale desde esos días (antes, fijo en 30); vencido, el rojo, como siempre.
+- **Sin `arca.manage`:** el renglón se lee, sin el lápiz.
+- **Código:** `CertificateNoticeDialog` y el renglón en `CertificateSection` de `features/arca/connection`, sobre
+  `PUT /api/arca/connection/certificate-notice`; `ArcaSettingsPage.test.tsx` fija cada caso y las escenas `arca-active`,
+  `arca-renewal`, `arca-delegation-active` y `arca-certificate-notice` guardan las capturas.
+
 ## Correspondencia con `shared/ui`
 
 | En el tablero | Pieza |
@@ -90,10 +114,11 @@ cuando se cerró la etapa 1, a pedido del chat que coordina la tanda del 11/11.
 | Puntos de venta | `RadioGroupField` |
 | «Lo usa esta empresa» | `Switch` |
 | Avisos de vencimiento | `Banner`, amarillo o rojo |
+| «Aviso de vencimiento» (AC5-A) | Un renglón de `DataList` con `InfoTip` y el lápiz en `IconButton`; el diálogo, `Dialog` con `FormField` (`beside` con la unidad) e `Input` numérico |
 | «Revisar» | `Surface` con «Leer lo actual» |
 | «¿Desconectar ARCA?» | `ConfirmDialog` |
 | Sin conexión y no se pudo leer | `EmptyState` |
 | Cargando | `Skeleton` |
 
-Las escenas `arca-empty`, `arca-setup`, `arca-unverified`, `arca-active` y `arca-renewal` de
+Las escenas `arca-empty`, `arca-setup`, `arca-unverified`, `arca-active`, `arca-renewal` y `arca-certificate-notice` de
 `src/test/visual/arca.spec.ts` guardan las capturas `arca-*.png`; `arca-read` comprueba «Solo lectura» sin captura.

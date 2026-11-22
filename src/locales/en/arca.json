@@ -82,7 +82,17 @@
     "expiredBanner": "The certificate expired on {{date}}. You can't issue until you renew it.",
     "platformTitle": "Platform certificate",
     "platformBy": "Done by {{platform}}, with its tax key",
-    "renewAliasHelp": "Keep the same alias: delegations stay assigned to it."
+    "renewAliasHelp": "Keep the same alias: delegations stay assigned to it.",
+    "notice": "Expiry notice",
+    "noticeHelp": "Everyone with “Manage connection” in ARCA gets an email, once per certificate, when that many days are left. From that day, the screen shows the yellow notice.",
+    "noticeValue_one": "{{count}} day before, by email",
+    "noticeValue_other": "{{count}} days before, by email",
+    "noticeChange": "Change the expiry notice",
+    "noticeTitle": "Expiry notice",
+    "noticeDays": "Notify",
+    "noticeDaysUnit": "days before it expires",
+    "noticeInvalid": "Choose a number between {{min}} and {{max}}.",
+    "noticeSaving": "Saving…"
   },
   "test": {
     "title": "Test",

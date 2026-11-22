@@ -7,7 +7,7 @@ import { DelegationGuide } from "./DelegationGuide";
 const connection: ArcaConnection = {
   status: "Unverified", mode: "PlatformDelegationAutomated", environment: "Production", cuit: "20000000060", platformCuit: "30719998883",
   platform: { cuit: "30719998883", name: "Plataforma Ejemplo S.A." }, enabledServices: ["ws_sr_constancia_inscripcion", "wsfe"], certificates: [],
-  lastTestPassed: false, lastTestedAtUtc: null, revision: 3,
+  lastTestPassed: false, lastTestedAtUtc: null, revision: 3, certificateNoticeDays: 30,
   installedServices: [{ code: "ws_sr_constancia_inscripcion", family: "Registry", required: true, delegated: false },
     { code: "wsfe", family: "Invoicing", required: false, delegated: true }],
 };

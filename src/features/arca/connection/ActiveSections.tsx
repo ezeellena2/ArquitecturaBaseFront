@@ -5,7 +5,9 @@ import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { DataList } from "@/shared/ui/DataList";
 import { FormField } from "@/shared/ui/FormField";
-import { DownloadIcon } from "@/shared/ui/icons";
+import { IconButton } from "@/shared/ui/IconButton";
+import { DownloadIcon, PencilIcon } from "@/shared/ui/icons";
+import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { notify } from "@/shared/ui/notifications";
 import { Surface } from "@/shared/ui/Surface";
@@ -15,6 +17,7 @@ import {
   cancelArcaRenewal, chooseArcaServices, downloadArcaRequest, startArcaCertificateRequest, testArcaConnection, uploadArcaCertificate,
   type ArcaConnection, type ArcaTest,
 } from "./api";
+import { CertificateNoticeDialog } from "./CertificateNoticeDialog";
 import { CertificatePicker } from "./CertificatePicker";
 import { DelegationGuide } from "./DelegationGuide";
 import type { ArcaFamilyGuideStep } from "./families";
@@ -104,7 +107,8 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
   const [aliasError, setAliasError] = useState<string>();
   const [certificateError, setCertificateError] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
-  const expired = expiryOf(active?.notAfterUtc, now) === "expired";
+  const expired = expiryOf(active?.notAfterUtc, now, connection.certificateNoticeDays) === "expired";
+  const [noticeOpen, setNoticeOpen] = useState(false);
 
   async function request() {
     if (!isValidAlias(alias)) { setAliasError(t("data.aliasInvalid")); return; }
@@ -134,12 +138,22 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
   }
 
   const expiry = active?.notAfterUtc ? format.date(active.notAfterUtc) : "—";
+  // AC5-A (RC7-B): «Avisar N días antes», en un renglón; el lápiz abre el diálogo para cambiarlo.
+  const notice = {
+    key: "notice",
+    label: <span className="inline-flex items-center gap-1">{t("certificate.notice")}
+      <span className="-my-1 inline-flex"><InfoTip text={t("certificate.noticeHelp")} label={t("common:actions.moreInfo", { label: t("certificate.notice") })} /></span></span>,
+    value: <span className="flex items-center justify-between gap-2">{t("certificate.noticeValue", { count: connection.certificateNoticeDays })}
+      {canManage ? <IconButton size="icon-sm" className="-my-1.5 shrink-0" label={t("certificate.noticeChange")} disabled={action.pending !== null}
+        onClick={() => setNoticeOpen(true)}><PencilIcon className="size-4" /></IconButton> : null}</span>,
+  };
   return <Surface title={t(delegation ? "certificate.platformTitle" : "certificate.title")} padded actions={canManage && !pending && !renewing
     ? <Button variant="outline" disabled={action.pending !== null} onClick={() => onRenewingChange(true)}>{t("certificate.renew")}</Button> : undefined}>
     {pending ? <>
       <DataList items={[
         { key: "current", label: t("certificate.current"), value: `${active?.alias ?? ""} · ${expiry}` },
         { key: "next", label: t("certificate.next"), value: `${pending.alias} · ${t(pending.isLoaded ? "certificate.pendingLoaded" : "certificate.pendingRequest")}` },
+        notice,
       ]} />
       {canManage ? <div className="flex flex-wrap items-start gap-2">
         <Button variant="outline" pending={action.pending === "download"} disabled={action.pending !== null} onClick={() => void download()}>
@@ -152,6 +166,7 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
     </> : <DataList items={[
       { key: "alias", label: t("certificate.alias"), value: active?.alias ?? "—" },
       { key: "expires", label: t(expired ? "certificate.expired" : "certificate.expires"), value: expiry },
+      notice,
     ]} />}
     {renewing && !pending ? <div className="flex flex-wrap items-end gap-2">
       <div className="min-w-0 flex-1 sm:max-w-sm"><FormField label={t("certificate.renewAlias")} help={t(delegation ? "certificate.renewAliasHelp" : "data.aliasHelp")} error={aliasError} required>
@@ -161,5 +176,6 @@ function CertificateSection({ connection, canManage, renewing, onRenewingChange,
       <Button pending={action.pending === "renew"} disabled={action.pending !== null} onClick={() => void request()}>
         {t(action.pending === "renew" ? "data.generating" : "certificate.renewGenerate")}</Button>
     </div> : null}
+    {noticeOpen ? <CertificateNoticeDialog connection={connection} onChanged={onChanged} onConflict={onConflict} onClose={() => setNoticeOpen(false)} /> : null}
   </Surface>;
 }

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ArcaConnection } from "./api";
-import { delegationStepsOf, expiryOf, formatCuit, isDelegation, isValidAlias, normalizeCuit, phaseOf, setupZonesOf } from "./model";
+import { delegationStepsOf, expiryOf, formatCuit, isDelegation, isValidAlias, isValidCertificateNotice, normalizeCuit, phaseOf, setupZonesOf } from "./model";
 
 const connection = (status: ArcaConnection["status"]): ArcaConnection => ({
   status, mode: null, environment: null, cuit: null, platformCuit: null, platform: null, installedServices: [], enabledServices: [], certificates: [],
-  lastTestPassed: null, lastTestedAtUtc: null, revision: status ? 1 : 0,
+  lastTestPassed: null, lastTestedAtUtc: null, revision: status ? 1 : 0, certificateNoticeDays: 30,
 });
 
 describe("ARCA connection model", () => {
@@ -57,11 +57,18 @@ describe("ARCA connection model", () => {
     expect(delegationStepsOf(chosen.slice(0, 1), "Production")).toMatchObject({ company: [], platform: [] });
   });
 
-  it("warns thirty days before the certificate expires", () => {
+  // RC7-B: the yellow notice starts as many days before as the connection says (30 by default).
+  it("warns as many days before the certificate expires as the connection says", () => {
     const now = Date.parse("2026-11-05T12:00:00Z");
-    expect(expiryOf("2028-11-05T00:00:00Z", now)).toBe("valid");
-    expect(expiryOf("2026-12-01T00:00:00Z", now)).toBe("soon");
-    expect(expiryOf("2026-11-01T00:00:00Z", now)).toBe("expired");
-    expect(expiryOf(null, now)).toBe("valid");
+    expect(expiryOf("2028-11-05T00:00:00Z", now, 30)).toBe("valid");
+    expect(expiryOf("2026-12-01T00:00:00Z", now, 30)).toBe("soon");
+    expect(expiryOf("2026-12-20T00:00:00Z", now, 30)).toBe("valid");
+    expect(expiryOf("2026-12-20T00:00:00Z", now, 45)).toBe("soon");
+    expect(expiryOf("2026-11-01T00:00:00Z", now, 30)).toBe("expired");
+    expect(expiryOf(null, now, 30)).toBe("valid");
+  });
+
+  it("takes notice days from 1 to 365, as the server", () => {
+    expect([0, 1, 30, 365, 366, 1.5].map(isValidCertificateNotice)).toEqual([false, true, true, true, false, false]);
   });
 });

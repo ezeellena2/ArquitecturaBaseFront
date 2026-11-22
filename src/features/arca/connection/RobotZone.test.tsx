@@ -17,7 +17,7 @@ const connection = {
   platformCuit: "30718887778", platform: { cuit: "30718887778", name: "ArquitecturaBase" },
   installedServices: [{ code: "ws_sr_constancia_inscripcion", family: "Registry", required: true, delegated: false },
     { code: "wsfe", family: "Invoicing", required: false, delegated: true }],
-  enabledServices: ["ws_sr_constancia_inscripcion", "wsfe"], certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 3,
+  enabledServices: ["ws_sr_constancia_inscripcion", "wsfe"], certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 3, certificateNoticeDays: 30,
 } as ArcaConnection;
 const side = (overrides: Partial<ArcaRobotSide>): ArcaRobotSide => ({
   state: "Running", currentStep: null, completedSteps: [], outputs: {}, failure: null, failedStep: null, nextAttemptAtUtc: null,

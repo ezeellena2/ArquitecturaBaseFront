@@ -82,7 +82,17 @@
     "expiredBanner": "El certificado venció el {{date}}. No se puede emitir hasta renovarlo.",
     "platformTitle": "Certificado de la plataforma",
     "platformBy": "Lo hace {{platform}}, con su clave fiscal",
-    "renewAliasHelp": "Conviene el mismo alias: las delegaciones siguen asignadas a él."
+    "renewAliasHelp": "Conviene el mismo alias: las delegaciones siguen asignadas a él.",
+    "notice": "Aviso de vencimiento",
+    "noticeHelp": "Le llega un correo a cada persona con «Administrar conexión» de ARCA, uno por certificado, cuando faltan esos días. Desde ese día, la pantalla muestra el aviso amarillo.",
+    "noticeValue_one": "{{count}} día antes, por correo",
+    "noticeValue_other": "{{count}} días antes, por correo",
+    "noticeChange": "Cambiar el aviso de vencimiento",
+    "noticeTitle": "Aviso de vencimiento",
+    "noticeDays": "Avisar",
+    "noticeDaysUnit": "días antes del vencimiento",
+    "noticeInvalid": "Elegí un número entre {{min}} y {{max}}.",
+    "noticeSaving": "Guardando…"
   },
   "test": {
     "title": "Prueba",

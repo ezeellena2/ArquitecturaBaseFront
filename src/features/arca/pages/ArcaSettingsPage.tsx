@@ -83,7 +83,7 @@ export function ArcaSettingsPage() {
   const connection = query.data;
   const phase = phaseOf(connection);
   const active = certificateOf(connection, "Active");
-  const expiry = expiryOf(active?.notAfterUtc, now);
+  const expiry = expiryOf(active?.notAfterUtc, now, connection.certificateNoticeDays);
   const families = [...new Set(connection.installedServices.filter(service => connection.enabledServices.includes(service.code)).map(service => service.family))]
     .filter(family => family in familyZones);
   const canActivate = connection.lastTestPassed === true && families.length > 0 && families.every(family => !!completions[family]);

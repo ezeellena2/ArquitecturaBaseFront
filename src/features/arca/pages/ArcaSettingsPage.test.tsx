@@ -7,7 +7,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
-import type { ArcaCertificate, ArcaConnection, ArcaTest, StartArcaRequest } from "../connection/api";
+import { arcaConnectionQueryKey, type ArcaCertificate, type ArcaConnection, type ArcaTest, type StartArcaRequest } from "../connection/api";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
 
@@ -16,7 +16,7 @@ const invoicing = "wsfe";
 const day = 24 * 60 * 60 * 1000;
 const none: ArcaConnection = {
   status: null, mode: null, environment: null, cuit: null, platformCuit: null, platform: null, enabledServices: [], certificates: [], lastTestPassed: null,
-  lastTestedAtUtc: null, revision: 0,
+  lastTestedAtUtc: null, revision: 0, certificateNoticeDays: 30,
   installedServices: [{ code: registry, family: "Registry", required: true, delegated: false }, { code: invoicing, family: "Invoicing", required: false, delegated: true }],
 };
 const pendingRequest = (alias = "plataforma"): ArcaCertificate => ({ role: "Pending", alias, isLoaded: false, notBeforeUtc: null, notAfterUtc: null, thumbprint: null });
@@ -266,17 +266,119 @@ describe("ARCA settings", () => {
     expect(screen.getByRole("button", { name: "Cancelar la renovación" })).toBeInTheDocument();
   });
 
-  it("warns in yellow thirty days before the certificate expires and in red once it expired", async () => {
+  it("warns in yellow as many days before the certificate expires as the connection says and in red once it expired", async () => {
     current = { ...active, certificates: [activeCertificate(new Date(Date.now() + 10 * day).toISOString())] };
     const { unmount } = renderRouteWithProviders("/configuracion/arca");
     expect(await screen.findByText(/El certificado vence el/)).toBeInTheDocument();
     unmount();
+
+    // RC7-B: with 30 days, one that expires in 45 does not warn yet; with 60, it does.
+    queryClient.clear();
+    current = { ...active, certificates: [activeCertificate(new Date(Date.now() + 45 * day).toISOString())] };
+    const later = renderRouteWithProviders("/configuracion/arca");
+    expect(await screen.findByText("30 días antes, por correo")).toBeInTheDocument();
+    expect(screen.queryByText(/El certificado vence el/)).not.toBeInTheDocument();
+    later.unmount();
+
+    queryClient.clear();
+    current = { ...current, certificateNoticeDays: 60 };
+    const wider = renderRouteWithProviders("/configuracion/arca");
+    expect(await screen.findByText(/El certificado vence el/)).toBeInTheDocument();
+    expect(screen.getByText("60 días antes, por correo")).toBeInTheDocument();
+    wider.unmount();
 
     queryClient.clear();
     current = { ...active, status: "NeedsAttention", certificates: [activeCertificate(new Date(Date.now() - day).toISOString())] };
     renderRouteWithProviders("/configuracion/arca");
     expect(await screen.findByRole("alert")).toHaveTextContent(/El certificado venció el/);
     expect(screen.getByText("Requiere atención")).toBeInTheDocument();
+  });
+
+  // AC5-A: the pencil of the row opens «Aviso de vencimiento»; an out of range number stays in the field, and Save sends the revision it read.
+  it("changes the notice days in its dialog with the revision it read", async () => {
+    current = active;
+    const changes: unknown[] = [];
+    server.use(http.put("/api/arca/connection/certificate-notice", async ({ request }) => {
+      const body = await request.json() as { days: number; expectedRevision: number };
+      changes.push(body);
+      current = { ...current, certificateNoticeDays: body.days, revision: current.revision + 1 };
+      return HttpResponse.json(current);
+    }));
+    renderRouteWithProviders("/configuracion/arca");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cambiar el aviso de vencimiento" }));
+    const dialog = await screen.findByRole("dialog", { name: "Aviso de vencimiento" });
+    const days = within(dialog).getByRole("spinbutton", { name: "Avisar" });
+    expect(days).toHaveValue(30);
+    expect(within(dialog).getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await userEvent.clear(days);
+    await userEvent.type(days, "0");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Elegí un número entre 1 y 365.");
+    expect(changes).toHaveLength(0);
+
+    await userEvent.clear(days);
+    await userEvent.type(days, "45");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(changes).toEqual([{ days: 45, expectedRevision: 4 }]);
+    expect(await screen.findByText("45 días antes, por correo")).toBeInTheDocument();
+  });
+
+  it("closes the notice dialog and opens review when someone else changed the connection", async () => {
+    current = active;
+    server.use(http.put("/api/arca/connection/certificate-notice", () => HttpResponse.json({ code: "Arca.Connection.RevisionConflict" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion/arca");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cambiar el aviso de vencimiento" }));
+    const dialog = await screen.findByRole("dialog", { name: "Aviso de vencimiento" });
+    const days = within(dialog).getByRole("spinbutton", { name: "Avisar" });
+    await userEvent.clear(days);
+    await userEvent.type(days, "45");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
+
+    expect(await screen.findByText("Otra persona cambió la conexión mientras la editabas.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  // Review of RC7-B: the dialog keeps the days and the revision it opened with; a connection read again meanwhile (another
+  // tab saved) neither enables Save by itself nor lets it write over that change without the 409.
+  it("saves the notice days with the revision it opened with even if the connection was read again", async () => {
+    current = active;
+    const changes: unknown[] = [];
+    server.use(http.put("/api/arca/connection/certificate-notice", async ({ request }) => {
+      const body = await request.json() as { days: number; expectedRevision: number };
+      changes.push(body);
+      return body.expectedRevision === current.revision ? HttpResponse.json(current)
+        : HttpResponse.json({ code: "Arca.Connection.RevisionConflict" }, { status: 409 });
+    }));
+    renderRouteWithProviders("/configuracion/arca");
+    await userEvent.click(await screen.findByRole("button", { name: "Cambiar el aviso de vencimiento" }));
+    const dialog = await screen.findByRole("dialog", { name: "Aviso de vencimiento" });
+
+    current = { ...active, certificateNoticeDays: 60, revision: 5 };
+    await act(() => queryClient.invalidateQueries({ queryKey: arcaConnectionQueryKey }));
+    await waitFor(() => expect(queryClient.getQueryData<ArcaConnection>(arcaConnectionQueryKey)?.revision).toBe(5));
+
+    const days = within(dialog).getByRole("spinbutton", { name: "Avisar" });
+    expect(days).toHaveValue(30);
+    expect(within(dialog).getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await userEvent.clear(days);
+    await userEvent.type(days, "45");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
+
+    expect(await screen.findByText("Otra persona cambió la conexión mientras la editabas.")).toBeInTheDocument();
+    expect(changes).toEqual([{ days: 45, expectedRevision: 4 }]);
+  });
+
+  it("shows the notice days to a reader without the pencil", async () => {
+    current = active;
+    permissions = ["arca.read"];
+    renderRouteWithProviders("/configuracion/arca");
+
+    expect(await screen.findByText("30 días antes, por correo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cambiar el aviso de vencimiento" })).not.toBeInTheDocument();
   });
 
   it("opens review on a conflict and reads the current connection", async () => {

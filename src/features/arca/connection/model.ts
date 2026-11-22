@@ -29,14 +29,19 @@ export const certificateOf = (connection: ArcaConnection, role: ArcaCertificate[
   connection.certificates.find(certificate => certificate.role === role);
 
 export type ArcaExpiry = "valid" | "soon" | "expired";
-const soonWindow = 30 * 24 * 60 * 60 * 1000;
+const day = 24 * 60 * 60 * 1000;
 
-/// Treinta días antes del vencimiento, el aviso amarillo; vencido, el rojo.
-export function expiryOf(notAfterUtc: string | null | undefined, now: number): ArcaExpiry {
+/// «Avisar N días antes» del vencimiento del certificado, la misma regla que el servidor (RC7-B).
+export const certificateNoticeDays = { min: 1, max: 365 } as const;
+export const isValidCertificateNotice = (days: number) =>
+  Number.isInteger(days) && days >= certificateNoticeDays.min && days <= certificateNoticeDays.max;
+
+/// Desde los días de aviso de la conexión antes del vencimiento, el aviso amarillo; vencido, el rojo.
+export function expiryOf(notAfterUtc: string | null | undefined, now: number, noticeDays: number): ArcaExpiry {
   if (!notAfterUtc) return "valid";
   const notAfter = Date.parse(notAfterUtc);
   if (notAfter <= now) return "expired";
-  return notAfter - now <= soonWindow ? "soon" : "valid";
+  return notAfter - now <= noticeDays * day ? "soon" : "valid";
 }
 
 export type ZoneState = "open" | "done" | "off";

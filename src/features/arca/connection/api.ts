@@ -14,11 +14,13 @@ export interface ArcaCertificate {
 }
 /// Sin conexión, el estado es null y la revisión 0: los servicios instalados y la plataforma vienen igual, para el alta. En
 /// delegación, `cuit` es la de la empresa y `platformCuit`, la de la plataforma que guardó la conexión.
+/// `certificateNoticeDays`: desde cuántos días antes del vencimiento del certificado avisan la pantalla y el correo (RC7-B);
+/// sin conexión, el valor por defecto.
 export interface ArcaConnection {
   status: ArcaStatus | null; mode: ArcaAccessMode | null; environment: ArcaEnvironment | null; cuit: string | null;
   platformCuit: string | null; platform: ArcaPlatform | null;
   installedServices: ArcaInstalledService[]; enabledServices: string[]; certificates: ArcaCertificate[];
-  lastTestPassed: boolean | null; lastTestedAtUtc: string | null; revision: number;
+  lastTestPassed: boolean | null; lastTestedAtUtc: string | null; revision: number; certificateNoticeDays: number;
 }
 export interface ArcaCheck { service: string; status: ArcaCheckStatus; failureCode: string | null; ticketExpiresAtUtc: string | null; retryAfterUtc: string | null }
 export interface ArcaTest { checks: ArcaCheck[]; connection: ArcaConnection }
@@ -38,6 +40,9 @@ export const cancelArcaRenewal = (expectedRevision: number) =>
 export const replaceArcaConnection = (request: StartArcaRequest) => api.put<ArcaConnection>("/api/arca/connection", request);
 export const chooseArcaServices = (services: string[], expectedRevision: number) =>
   api.put<ArcaConnection>("/api/arca/connection/services", { services, expectedRevision });
+/// RC7-B: «Avisar N días antes» del vencimiento del certificado, con la revisión de la conexión que se leyó.
+export const changeArcaCertificateNotice = (days: number, expectedRevision: number) =>
+  api.put<ArcaConnection>("/api/arca/connection/certificate-notice", { days, expectedRevision });
 export const uploadArcaCertificate = (certificate: string, expectedRevision: number) =>
   api.put<ArcaTest>("/api/arca/connection/certificate", { certificate, expectedRevision });
 export const testArcaConnection = () => api.post<ArcaTest>("/api/arca/connection/test");

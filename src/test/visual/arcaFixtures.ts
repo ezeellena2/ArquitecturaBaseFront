@@ -11,7 +11,7 @@ export function createArcaVisualFixtures(scenario: string) {
   const pending = (alias: string, isLoaded = false): ArcaCertificate => ({ role: "Pending", alias, isLoaded, notBeforeUtc: null, notAfterUtc: null, thumbprint: null });
   const activeCertificate = (notAfterUtc: string): ArcaCertificate => ({ role: "Active", alias: "plataforma", isLoaded: true, notBeforeUtc: "2024-11-01T00:00:00Z", notAfterUtc, thumbprint: "AB12" });
   const base: ArcaConnection = { status: null, mode: null, environment: null, cuit: null, platformCuit: null, platform, installedServices, enabledServices: [],
-    certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 0 };
+    certificates: [], lastTestPassed: null, lastTestedAtUtc: null, revision: 0, certificateNoticeDays: 30 };
   const connected: ArcaConnection = { ...base, mode: "CompanyCertificate", environment: "Production", cuit: "30710001231", enabledServices: [registry, invoicing] };
   const delegated: ArcaConnection = { ...connected, mode: "PlatformDelegation", platformCuit: platform.cuit };
   let connection: ArcaConnection =

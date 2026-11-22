@@ -23,6 +23,8 @@ for (const language of ["es", "en"] as const) {
       const voucher = page.getByRole("region", { name: es ? /Facturación · Datos del comprobante/ : /Invoicing · Voucher details/ });
       await expect(voucher.getByText("901-123456-7", { exact: true })).toBeVisible();
       await expect(voucher.getByText(es ? "01/03/2019" : "03/01/2019", { exact: true })).toBeVisible();
+      // AC5-A: el aviso de vencimiento, en un renglón de «Certificado», con su lápiz.
+      await expect(page.getByText(es ? "30 días antes, por correo" : "30 days before, by email", { exact: true })).toBeVisible();
       expect(await fitsWidth(page)).toBe(true);
       await expect(page).toHaveScreenshot(`arca-active-${language}-${width}.png`, { fullPage: true });
     });
@@ -52,6 +54,17 @@ for (const language of ["es", "en"] as const) {
     await expect(page.getByRole("status").filter({ hasText: es ? "El certificado vence el" : "The certificate expires on" })).toBeVisible();
     await expect(page.getByRole("button", { name: es ? "Cancelar la renovación" : "Cancel the renewal", exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot(`arca-renewal-${language}.png`, { fullPage: true });
+  });
+
+  // AC5-A (RC7-B): el lápiz del renglón abre «Aviso de vencimiento» con los días de la conexión.
+  test(`ARCA certificate notice dialog ${language}`, async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-11-05T15:00:00Z") });
+    await open(page, language, "arca-active");
+    await page.getByRole("button", { name: es ? "Cambiar el aviso de vencimiento" : "Change the expiry notice", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: es ? "Aviso de vencimiento" : "Expiry notice" });
+    await expect(dialog.getByRole("spinbutton", { name: es ? "Avisar" : "Notify" })).toHaveValue("30");
+    await expect(dialog.getByRole("button", { name: es ? "Guardar" : "Save", exact: true })).toBeDisabled();
+    await expect(page).toHaveScreenshot(`arca-certificate-notice-${language}.png`);
   });
 
   for (const width of [1440, 390]) {
