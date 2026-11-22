@@ -85,9 +85,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 
 - Envolver los controles en `FilterBar`, separado de la tabla. Compone buscador, filtros principales,
   filtros secundarios y el resumen de resultados; deja que los controles pasen a otra línea en móvil.
-- Usar `SearchInput` para búsqueda con espera. Pocas opciones excluyentes y frecuentes se muestran
-  con `SegmentedControl`; el resto, con un desplegable simple (abajo). Los filtros menos usados van
-  en “Más filtros” o en «Filtros»; lo aplicado se muestra y se puede quitar individualmente.
+- Usar `SearchInput` para búsqueda con espera. Todo filtro de opciones es un desplegable simple (abajo),
+  también las pocas opciones excluyentes y frecuentes que iban en un segmentado (2026-11-22). Los filtros
+  menos usados van en “Más filtros” o en «Filtros»; lo aplicado se muestra y se puede quitar individualmente.
 - **Un filtro de opciones es un desplegable simple** (PL2-A y FO1-A, 2026-11-03), en toda la app:
   cerrado dice «Todas» (o «Cualquier …») o la elegida; abierto, una opción por renglón, sin la
   cantidad ni texto debajo, con la elegida tildada, y ninguna se apaga por no traer nada: si no hay
@@ -103,14 +103,14 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   página 1 y filtros ausentes, y conservar el orden al limpiar. `pageSize` se fija explícitamente
   después de resolver el tamaño general, para conservarlo durante la visita. Atrás y una URL
   compartida restauran la vista.
-- Un segmentado de pocas opciones fijas puede decir la cantidad de cada conjunto («Activos (8) ·
-  Dados de baja (2)»). Esa cantidad sale del backend con los demás filtros aplicados e ignorando el
-  propio; no se cuenta sobre la página visible.
+- Ningún filtro dice la cantidad de cada opción (decisión del usuario, 2026-11-22). Hasta entonces la
+  decían los segmentados de pocas opciones fijas («Activos (8) · Dados de baja (2)»), contada por el
+  backend; pasaron a la pieza, con el botón de la barra y sin cantidades.
 - Mostrar cuántos resultados hay y una acción para limpiar cuando hay filtros activos. Distinguir
   “todavía no hay datos” de “ninguno coincide”: el primero ofrece crear cuando hay permiso; el segundo,
   limpiar los filtros. Conservar la composición de `UsersFilterBar` como referencia y usar
-  los controles genéricos ya compartidos (`Picker` con el botón de la barra, `FilterChip`, `FilterBar` y
-  `SegmentedControl`); las consultas, opciones y composición siguen en la feature.
+  los controles genéricos ya compartidos (`Picker` con el botón de la barra, `FilterChip` y `FilterBar`);
+  las consultas, opciones y composición siguen en la feature.
 
 ## Tablas
 
@@ -175,10 +175,11 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - **Para elegir de una lista hay una sola pieza, `Picker`** (DS1-A y DS2-A, 2026-11-19): una o varias opciones, en un
   campo o en el botón de la barra, con el buscador adentro si son más de diez o vienen del servidor. Nunca un select, un
   combo que se escribe, un menú propio, una lista de casillas ni un modal que sólo sirve para elegir: elegir varios es la
-  pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Dos a cuatro opciones fijas también
-  van en la pieza, no en radios ni en un segmentado (2026-11-22, en toda la app); una casilla es sólo un sí o no suelto;
-  un filtro sigue siendo la pieza, salvo los segmentados con cantidades de los listados
-  ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
+  pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Todo lo que se elige va en la
+  pieza (decisión del usuario, 2026-11-22, en toda la app): dos a cuatro opciones fijas, un Sí o No, los filtros de los
+  listados, sin cantidades, la carga de un formulario y «Correo | WhatsApp» del acceso, nunca radios ni un segmentado;
+  una casilla es sólo un sí o no suelto. Quedan afuera las vistas previas que imitan WhatsApp, las pestañas y los menús
+  de acciones ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
   (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
   problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,
@@ -192,18 +193,18 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Un grupo de checks admite ninguno, algunos (`indeterminate`) y todos. El alcance de “todos” debe
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
-- Usar `Picker` para una opción entre pocas o muchas y `Picker` con `multiple` para varias (2026-11-22). Los
-  segmentados quedan para los filtros con cantidades de los listados y el ingreso público. `Switch` corresponde a un
+- Usar `Picker` para una opción entre pocas o muchas y `Picker` con `multiple` para varias (2026-11-22). Desde el
+  mismo día, tampoco los filtros ni el ingreso usan un segmentado. `Switch` corresponde a un
   ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo. Configuración usa guardado explícito:
   Registro, Idioma, Listados y Zona horaria, `Picker`.
   No convertir esos borradores en guardados automáticos.
-- Lo elegido se distingue sin dudas, nunca sólo con un tinte (decisión del usuario, 2026-11-03; tablero OE1-A). Pocas
-  opciones de un clic, como un Sí o no o un filtro de estado, usan `SegmentedControl`, que rellena la elegida; una
-  tarjeta, `RadioGroupField variant="cards"`; lo elegido de una lista, `Picker`, con la tilde a la izquierda y, en varias,
-  la casilla; una elección dentro de un menú de acciones, `DropdownMenuRadioItem` dentro de su
+- Lo elegido se distingue sin dudas, nunca sólo con un tinte (decisión del usuario, 2026-11-03; tablero OE1-A). Lo
+  elegido en la pieza, también un Sí o No o un filtro de estado (2026-11-22), lleva la tilde a la izquierda y, en
+  varias, la casilla (`Picker`); una elección dentro de un menú de acciones, `DropdownMenuRadioItem` dentro de su
   `DropdownMenuRadioGroup`, con su tilde; la fila abierta de una tabla, `DataTable selectedRowKey`, y lo abierto en una
-  lista con detalle, el tinte de la marca con una barra al inicio. No armar botones sueltos que se rellenan para hacer de
-  segmentado ([detalle](../design/visual-baseline.md#opción-elegida--2026-11-03)).
+  lista con detalle, el tinte de la marca con una barra al inicio. `SegmentedControl` (rellena) y `RadioGroupField`
+  quedan sólo en las vistas previas que imitan WhatsApp. No armar botones sueltos que se rellenan para elegir: eso es
+  la pieza ([detalle](../design/visual-baseline.md#opción-elegida--2026-11-03)).
 - Un control deshabilitado mantiene el valor legible. Si el motivo no es evidente, `DisabledReason`
   lo muestra sobre el mismo control, como tooltip y descripción accesible, sin íconos ni textos al
   lado ni debajo. Se abre al pasar el mouse, con el foco, con un clic o con un toque, y el clic no

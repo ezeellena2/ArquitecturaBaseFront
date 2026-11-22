@@ -69,10 +69,11 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
 2. **Una tarea, zonas que se entienden solas:** ¿resuelve una tarea? ¿Cada zona es una cosa, en el orden en que se usa,
    sin partirla por tipo de control ni sumar superficies de adorno?
    ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
-3. **El control según el dato:** ¿una colección va en una tabla; una o varias opciones de una lista, en la pieza para
-   elegir, aunque sean dos a cuatro fijas (también el idioma y «Filas por página»), nunca en radios, un segmentado, una
-   lista de casillas ni un modal que sólo sirve para elegir; una casilla, sólo para un sí o no suelto? ¿Un filtro de
-   opciones sigue siendo la pieza aunque tenga pocas, salvo los segmentados con cantidades de los listados? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+3. **El control según el dato:** ¿una colección va en una tabla; todo lo que se elige, en la pieza para elegir: una o
+   varias opciones de una lista, aunque sean dos a cuatro fijas (también el idioma, «Filas por página» y un Sí o No), un
+   filtro de un listado, la carga de un formulario y el acceso, nunca en radios, un segmentado, una lista de casillas ni
+   un modal que sólo sirve para elegir; una casilla, sólo para un sí o no suelto? ¿Un filtro de opciones va sin
+   cantidades? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
    [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido? ¿Nada va debajo de
@@ -322,8 +323,10 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   dice «Todas» (o «Cualquier …») o la elegida; abierto, «Todas» primero, una opción por renglón, sin la cantidad ni texto
   debajo, con la elegida tildada y ninguna apagada por no traer nada. Se elige una. Si son muchas o vienen del servidor
   (las opciones de un catálogo, las personas), se escribe en el buscador de adentro de la lista, no en el campo: es el
-  punto de PL2-A y FO1-A que cambió DS1-A (2026-11-19). Un segmentado de pocas opciones fijas conserva la cantidad de
-  cada conjunto («Activos (8) · Dados de baja (2)»).
+  punto de PL2-A y FO1-A que cambió DS1-A (2026-11-19). Ningún filtro lleva cantidades (2026-11-22, por decisión del
+  usuario: «los filtros también, todo en desplegable»): los segmentados que decían la cantidad de cada conjunto
+  («Activos (8) · Dados de baja (2)») también pasaron a la pieza, con el botón de la barra
+  ([FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)).
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
@@ -382,6 +385,11 @@ buscador adentro cuando son muchas; descartó DS1-B (el campo que se escribe, co
 Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (chips debajo del campo) y DS2-C («3 de 8»). El
 [plan](../plans/2026-11-19-una-sola-pieza-para-elegir.md) tiene las etapas y dónde se usaba cada pieza.
 
+**Todo lo que se elige va en la pieza** (2026-11-22, por decisión del usuario): una o varias opciones, de dos a cuatro
+fijas, un Sí o No, los filtros de los listados (con el botón de la barra y sin cantidades, [FO1-A](#listados-y-filtros)),
+la carga de un formulario y «Correo | WhatsApp» del acceso. Para elegir ya no se usan `RadioGroupField`,
+`SegmentedControl` ni listas de casillas; una casilla suelta de sí o no sigue siendo casilla.
+
 - **Cerrada, un campo con su flecha fina** que dice lo elegido, igual para una y para varias; sin nada elegido, lo dice
   en gris («Sin zona», «Elegí una opción»). En la barra de un listado el filtro conserva su botón («Cualquier rol»,
   «Columnas», «Más filtros») y abre la misma lista.
@@ -410,9 +418,11 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
   usuario eligió que el estado de un día fuera «un combo desplegable a elegir las opciones» en vez de botones, y lo
   extendió a toda la app. Hasta entonces iban en radios o un segmentado: el idioma, «Filas por página», «Dónde atendés»,
   el proveedor de IA, un Sí o No.
-  - Quedan como están los segmentados con cantidades de los listados (filtros, [FO1-A](#listados-y-filtros)) y el
-    «Correo · WhatsApp» del ingreso público.
-  - Quedan también las vistas previas que imitan WhatsApp.
+  - Los segmentados con cantidades de los listados (filtros, [FO1-A](#listados-y-filtros)) y el «Correo · WhatsApp» del
+    ingreso público quedaban como estaban. Ese mismo día también pasaron a la pieza: los filtros («los filtros también,
+    todo en desplegable»), con el botón de la barra y sin cantidades, e «Ingresar con» del acceso, del ancho de la
+    tarjeta y con los íconos de correo y WhatsApp.
+  - Quedan afuera sólo las vistas previas que imitan WhatsApp, las pestañas y los menús de acciones (abajo).
   - La carga de un formulario también entra («Sí, también», decisión del usuario del 2026-11-22): el Sí o No, elegir una
     con cualquier cantidad de opciones y elegir varias van en la pieza, en lugar del segmentado, las opciones en fila y las
     casillas de AR1-A.
@@ -423,9 +433,10 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
   y «Guardar». Así quedaron esos dos, los datos que el asistente propone prellenar, los servicios de ARCA y las preguntas
   que incluye un PDF. Una casilla queda para un sí o no suelto («Incluir las fotos»).
 
-Quedan fuera la vista previa de un formulario (`FormPreview`), que imita WhatsApp y conserva su select, como conserva sus
-radios, y el idioma del menú de la cuenta y «Contar» de una tarjeta del tablero, que son menús de acciones. El buscador de
-lugares de Información del negocio (`Autocomplete`) es un buscador con sugerencias, no una lista conocida.
+Quedan fuera las vistas previas que imitan WhatsApp: la de un formulario (`FormPreview`), con su select y sus radios, y
+la de un catálogo (`CatalogPreview`), con su segmentado «Una opción | Varias» y sus radios. También las pestañas y el
+idioma del menú de la cuenta y «Contar» de una tarjeta del tablero, que son menús de acciones. El buscador de lugares de
+Información del negocio (`Autocomplete`) es un buscador con sugerencias, no una lista conocida.
 
 En el código: `Picker` y la lista única de zonas (`timeZoneOptions`, en `shared/lib/timeZones`). La escena
 `?scenario=pickers` del catálogo muestra los estados de los tableros (`pickers.spec.ts`, en es/en a 1440, 390 y 320 px).
@@ -766,7 +777,7 @@ Se compara antes de programar; el laboratorio se borra al decidir.
 | Densidad de fila / encabezado | **36 px** / **48 px** sin expandido ni antetítulo |
 | Submenú | **Desplegable lateral**; Administración en **carril propio** |
 | Rutas al agrupar | **Se quedan** `/usuarios` y `/roles` |
-| Conteos por opción de filtro | **Ahora**, con contrato de backend; desde el 2026-11-03, **sólo en los segmentados**: un desplegable no lleva cantidades ([FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)) |
+| Conteos por opción de filtro | **Ahora**, con contrato de backend; desde el 2026-11-03, **sólo en los segmentados**: un desplegable no lleva cantidades ([FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)); desde el 2026-11-22, **en ninguno**: los segmentados también son la pieza, sin cantidades (decisión del usuario) |
 | Grupo del menú al entrar | **Plegado salvo el activo** |
 | Submenú con barra contraída | **Íconos sueltos** |
 | Estado en Usuarios | **Punto** con la palabra para lector de pantalla |
@@ -1004,6 +1015,10 @@ botones sueltos que se rellenan para hacer de segmentado.
 | La fila abierta de una tabla: la respuesta de la vista rápida, lo que espera una decisión | El tinte de la marca y una barra de 3 px al inicio, como las listas con detalle | `DataTable selectedRowKey`, `TableRow` e `index.css` |
 | La conversación abierta en el chat de WhatsApp | El tinte de la marca y una barra de 3 px al inicio | `WhatsAppChatPage` |
 
+Desde el 2026-11-22, por decisión del usuario, los botones agrupados y las tarjetas de esta tabla son la pieza
+(`Picker`), con su tilde: `SegmentedControl` queda sólo en la vista previa de un catálogo, y
+`RadioGroupField variant="cards"`, sólo en el catálogo de la biblioteca.
+
 Ya cumplían y no cambian de forma: los radios (el punto, ahora en el tono de los enlaces), las casillas (la tilde), las
 solapas (subrayado y negrita), el ingreso público (subrayado), el menú lateral (barra), las listas con detalle de «Campos
 de…», «Opciones» y «Filtros» (barra y tinte), la foto que se ve en grande (anillo), los menús con casillas y el combo
@@ -1076,6 +1091,11 @@ la matriz (RO1-A, 2026-11-11) y no volvió con las áreas plegables (RO3-D, 2026
 
 Desde DS1-A (2026-11-19) los desplegables y el combo de esta tabla son la [pieza para elegir](#elegir-de-una-lista), y con
 muchas opciones se busca en el buscador de adentro de la lista, no en el campo; los segmentados quedan como están.
+
+Desde el 2026-11-22, por decisión del usuario («los filtros también, todo en desplegable»), los segmentados también
+son la pieza, con el botón de la barra y sin cantidades: el estado de Usuarios, el origen de Catálogos, el estado de
+Diseñar formularios, la Biblioteca, Formularios, Formularios que faltan y Documentos recibidos, el período del tablero
+y «Mostrar» del chat. Elegir la opción que ya está no vuelve a la página 1.
 
 ## Comparaciones lado a lado — 2026-11-03
 

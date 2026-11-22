@@ -116,8 +116,8 @@ Contrato: [WhatsApp](../../ArquitecturaBase/docs/features/whatsapp.md) (módulo 
   la pestaña relee. `VerifyDestinationDialog` (`email`/`whatsapp`) pide destino y código en el mismo diálogo, con título y
   aviso propios para verificar o vincular (`copy`); el `409` de otra cuenta tiene texto propio.
 - **Invitación:** `UserFormDialog` (alta) y `UserEditDialog` (edición, no crea identidades) van separados. Pide canal
-  (`RadioGroupField`) y consentimiento; Por correo se deshabilita sin correo. Lo cargado por un admin queda Sin verificar,
-  con explicación alcanzable por teclado.
+  (`Picker`, desde el 2026-11-22) y consentimiento; Por correo se apaga sin correo, con su motivo. Lo cargado por un admin
+  queda Sin verificar, con explicación alcanzable por teclado.
 
 ### Lo que subió a `shared`
 
@@ -126,9 +126,11 @@ usan ingreso, perfil y usuarios. Textos en `common.json`.
 
 ### Piezas nuevas de `shared/ui`
 
-Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (una opción entre pocas, como `FormField`);
-`VerificationBadge` (igual en perfil y usuarios); `SegmentedControl` con `fullWidth` o `appearance="public"` (táctil desde
-44 px); `Banner`, auditado por significado; tokens `--color-success-50/700` y `--color-warning-50/700`. Todo color nuevo es un token.
+Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (como `FormField`; desde el 2026-11-22, sólo
+en las vistas previas que imitan WhatsApp: para elegir está `Picker`); `VerificationBadge` (igual en perfil y usuarios);
+`SegmentedControl` (táctil desde 44 px; desde el 2026-11-22, sólo en la vista previa de un catálogo, y `fullWidth` y
+`appearance="public"` quedaron sin consumidores); `Banner`, auditado por significado; tokens `--color-success-50/700` y
+`--color-warning-50/700`. Todo color nuevo es un token.
 
 ## Listados
 

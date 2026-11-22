@@ -27,7 +27,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Necesidad | Pieza común | Responsabilidad de la pantalla |
 |---|---|---|
 | Cabecera, acciones y margen | `Page` | Título, estado y acciones |
-| Búsqueda y filtros | `FilterBar`, `SearchInput`, `SegmentedControl`, `Picker trigger="button"`, `FilterChip` | Opciones, conteos, permisos y estado de URL |
+| Búsqueda y filtros | `FilterBar`, `SearchInput`, `Picker trigger="button"`, `FilterChip` | Opciones, permisos y estado de URL; sin cantidades por opción (2026-11-22) |
 | Listado | `Surface` con `DataTable` y `Pagination` | Columnas, datos y estados |
 | Tabla especial | `Surface` y primitivos `table` | Columnas y semántica; `TableRowHeader` identifica filas de una comparación |
 | Columnas de números | `numeric` en `TableHead` y `TableCell` o en la columna de `DataTable`; la línea entre columnas la pone la biblioteca en toda tabla | Cuáles columnas son números (cantidades, medidas, importes, número de fila) |
@@ -37,8 +37,8 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Formulario corto | `DialogContent`, `DialogHeader`, `DialogFooter` | Campos y acciones; conservar `useRestoreFocusOnClose` |
 | Decisión extensa en móvil | `DialogContent mobileFullscreen`, cuerpo desplazable y `DialogFooter` fuera del scroll | Variante optativa; conserva el diálogo predeterminado en otros usos |
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
-| Casillas y alternativas | `CheckboxField`, `RadioGroupField`, `Checkbox` para tablas | Opciones, estado y validación |
-| Elegir una o varias opciones de una lista, en un campo o en el botón de una barra | `Picker`, la única pieza; la zona horaria, con la lista `timeZoneOptions` | Las opciones (su descripción, su motivo si están apagadas), la primera («Todas», «Sin …»), lo vacío, el tope y, si busca el servidor, la búsqueda, la cantidad, la carga y el error; nunca un select, un combo ni un menú propios. Dos a cuatro opciones fijas también van en la pieza, no en radios ni en un segmentado (2026-11-22); sólo los filtros con cantidades de los listados conservan su segmentado ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista), DS1-A y DS2-A) |
+| Un sí o no suelto | `CheckboxField`, `Checkbox` para tablas | Estado y validación; elegir entre alternativas es `Picker` (2026-11-22), y `RadioGroupField` queda para las vistas previas que imitan WhatsApp |
+| Elegir una o varias opciones de una lista, en un campo o en el botón de una barra | `Picker`, la única pieza; la zona horaria, con la lista `timeZoneOptions` | Las opciones (su descripción, su motivo si están apagadas), la primera («Todas», «Sin …»), lo vacío, el tope y, si busca el servidor, la búsqueda, la cantidad, la carga y el error; nunca un select, un combo ni un menú propios. Todo lo que se elige va en la pieza (2026-11-22, por decisión del usuario): también dos a cuatro opciones fijas, un Sí o No, los filtros de los listados, sin cantidades, la carga de un formulario y «Correo | WhatsApp» del acceso; nunca radios, un segmentado ni una lista de casillas ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista), DS1-A y DS2-A) |
 | Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `Picker` (tilde a la izquierda; en varias, la casilla), `DropdownMenuRadioItem` (tilde, en un menú de acciones), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
 | Lectura de algo que pasa en orden (una regla, una sugerencia) | `StepList` | Un paso por parte con su ícono; palabras que unen en gris y datos en negrita ([lecturas](../design/visual-baseline.md#lecturas), LR1-A) |
 | Datos de un registro, sin editar | `DataList` | Rótulos y valores ya formateados, en dos columnas; nunca «Rótulo: valor» en un renglón |
@@ -84,9 +84,10 @@ conservan sus blancos táctiles de 44 px en móvil. Un mínimo no recorta conten
 
 `Button` ofrece variantes principal, secundaria, terciaria, destructiva, destructiva con borde (`destructive-outline`, para quitar algo antes de confirmarlo) y enlace; `size="inline"`
 es la acción de texto de filtros y `size="touch"` permite el tamaño táctil aprobado.
-`SegmentedControl appearance="public"` conserva la selección subrayada del acceso;
-el resto usa su variante compacta, con la elegida rellena con el tono de los enlaces y su tinta, el foco por fuera y
-44 × 44 px por opción en el celular ([OE1-A](../design/visual-baseline.md#opción-elegida--2026-11-03)).
+`SegmentedControl` usa su variante compacta, con la elegida rellena con el tono de los enlaces y su tinta, el foco por
+fuera y 44 × 44 px por opción en el celular ([OE1-A](../design/visual-baseline.md#opción-elegida--2026-11-03)). Desde el
+2026-11-22 sólo lo usa la vista previa de un catálogo; `appearance="public"`, la selección subrayada del acceso, quedó
+sin consumidores cuando «Ingresar con» pasó a la pieza.
 `Input` y `Textarea` definen el aspecto de solo lectura.
 Una feature elige variantes y distribuye contenido; no cambia fondo, texto, radio o alto de un control.
 

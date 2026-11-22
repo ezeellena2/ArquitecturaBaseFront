@@ -1,9 +1,21 @@
 # Una sola pieza para elegir (DS1-A y DS2-A)
 
-Fecha: **2026-11-19**. Estado: **en programación (2026-11-20)**; decidido el 2026-11-19. Sólo cambia el front: ni
-contratos ni servidor. La regla está en el [fundamento visual](../design/visual-baseline.md#elegir-de-una-lista).
+Fecha: **2026-11-19**. Estado: **programado y en el front (2026-11-22)**; faltan la corrida completa y la prueba guiada.
+Decidido el 2026-11-19. Sólo cambia el front: ni contratos ni servidor. La regla está en el
+[fundamento visual](../design/visual-baseline.md#elegir-de-una-lista).
 
-## Avance (2026-11-20)
+## Avance (2026-11-22)
+
+- **La regla creció el 2026-11-22**, por decisiones del usuario de ese día: todo lo que se elige va en la pieza.
+  - Elegir varios va en la pieza múltiple: los formularios de una carpeta, «Carpetas de…», los datos prellenados del
+    asistente, los servicios de ARCA y las preguntas de un PDF.
+  - También las opciones fijas de dos a cuatro y la carga de un formulario.
+  - También los filtros de los listados, sin cantidades.
+  - También «Qué hacer» de un caso del asistente, el formulario de «Mandar formulario» e «Ingresar con» del acceso.
+  - Quedan afuera las vistas previas que imitan WhatsApp, las pestañas y los menús de acciones. Una casilla suelta de sí
+    o no sigue siendo casilla.
+- **Entró al front en cortes**, hasta 5f459c50, con sus guías, las capturas rehechas y un arreglo: el foco queda donde
+  lo llevó la elección, como en la grilla de «Pegar desde Excel» (IM3-A).
 
 - **Etapa 1, hecha.** `Picker` con su test, el teclado y el lector de la figura 7 y la lista a pantalla completa en el
   celular; la lista única de zonas (`shared/lib/timeZones`); la escena `?scenario=pickers` del catálogo visual.
@@ -67,13 +79,18 @@ en el lienzo aparte [Desplegables: una sola pieza](https://claude.ai/artifact/87
   - en una lista del servidor con varias, las elegidas que no están en la página van primero, como en LR3-A;
   - con un tope, la lista dice «Hasta 5» y, al llegar, «Elegiste 5 de 5», y las demás se apagan;
   - lo que llega en mayúsculas del catálogo se muestra como llega;
-  - dos a cuatro opciones fijas de un formulario iban en radios o un segmentado; desde el 2026-11-22 también van en la
-    pieza, en toda la app, también «Filas por página». Los filtros siguen siendo desplegables (FO1-A), salvo los
-    segmentados con cantidades de los listados;
+  - dos a cuatro opciones fijas de un formulario iban en radios o un segmentado. Desde el 2026-11-22 todo lo que se
+    elige va en la pieza, en toda la app:
+    - «Filas por página», un Sí o No y la carga de un formulario;
+    - los filtros de los listados, sin cantidades;
+    - «Ingresar con» del acceso;
+    - elegir varios, en modo múltiple, nunca con casillas ni en un modal que sólo sirve para elegir;
   - la zona horaria: la ciudad y, en gris, la hora de su país y el desfase («Montevideo · hora de Uruguay · GMT−3»), en
     una sola lista para Mi perfil, Configuración y el horario del negocio.
 - **Cambia una decisión vigente.** PL2-A y FO1-A, en un punto: en el combo de un filtro con muchas opciones se escribe en
   el buscador de la lista, no en el campo. El resto de PL2-A queda: «Todas», una por renglón, la tilde y sin cantidades.
+  El 2026-11-22 cambió también un punto de FO1-A: los segmentados con cantidades pasaron a la pieza y ningún filtro
+  lleva cantidades.
 
 ## Qué tiene que quedar
 
@@ -128,8 +145,8 @@ una sola vez, al cerrar.
 6. Roles (`RolesField`) y los datos de la persona (`PersonDataSection`) pasan a la pieza; el país del WhatsApp
    (`PhoneField`) también, con el disparador angosto («AR +54»).
 7. Los filtros Rol y Creado de `UsersFilterBar` pasan a la pieza con el disparador de la barra.
-8. «Filas por página» de `Pagination` pasa a un `SegmentedControl` (10, 20, 50, 100); el de Configuración, en la
-   etapa 4.
+8. «Filas por página» de `Pagination` pasa a la pieza (10, 20, 50, 100; hasta el 2026-11-22, un segmentado); el de
+   Configuración, en la etapa 4.
 
 ### Etapa 3 · Formularios, catálogos y documentos
 
@@ -163,9 +180,13 @@ una sola vez, al cerrar.
 
 ## Excepciones
 
-- La vista previa de un formulario (`FormPreview`) imita WhatsApp y conserva su select, como conserva sus radios (OE1-A).
+- Las vistas previas imitan WhatsApp:
+  - la de un formulario (`FormPreview`) conserva su select y sus radios (OE1-A);
+  - la de un catálogo (`CatalogPreview`) conserva su segmentado «Una opción | Varias» y sus radios.
+- Las pestañas no cambian.
 - El idioma del menú de la cuenta y «Contar» de una tarjeta del tablero (`ActionsMenu choice`) son menús de acciones, no
   campos: no cambian.
+- Una casilla suelta de sí o no («Incluir las fotos») sigue siendo casilla.
 
 ## Coordinación
 

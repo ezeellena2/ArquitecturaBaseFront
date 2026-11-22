@@ -11,20 +11,23 @@ export interface SegmentedOption {
   disabledReason?: string;
 }
 
-/// Un segmentado: pocas opciones fijas, a la vista y de un clic. Desde el 2026-11-22 un campo de formulario ya no lo usa:
-/// elegir entre pocas opciones fijas va en `Picker`, como cualquier lista (DS1-A, en toda la app). Queda para los filtros
-/// con cantidades de los listados (el estado del listado de usuarios, el de formularios), el "Todos | Elegidos" del
-/// selector de permisos y el "Correo | WhatsApp" de la pantalla de ingreso.
+/// Un segmentado: pocas opciones fijas, a la vista y de un clic. Desde el 2026-11-22, por decisión del usuario, no lo
+/// usa ningún campo ni filtro de la app: todo lo que se elige va en `Picker` (DS1-A), también los filtros de los
+/// listados, la carga de un formulario y el "Correo | WhatsApp" del ingreso. Queda para la vista previa de un catálogo
+/// (`CatalogPreview`), donde "Una opción | Varias" sólo cambia la ilustración de cómo se ve en WhatsApp, y para el
+/// catálogo de la biblioteca. Para elegir un dato no se usa.
+///
+/// `appearance="public"` (el subrayado del ingreso) y `wrap` (las opciones que bajan de renglón) quedaron sin
+/// consumidores, igual que `fullWidth`, `disabled` y el `disabledReason` de una opción.
 ///
 /// Son botones con `aria-pressed` y no un grupo de radios porque cada uno actúa al apretarse, no al enviarse
 /// un formulario. El nombre del grupo es obligatorio: sin él, el lector anuncia botones sueltos ("Todos",
 /// "Activos") y no dice qué están eligiendo.
 ///
-/// `fullWidth` lo estira al ancho de su contenedor, en partes iguales: es la forma que tiene en una tarjeta
-/// angosta, como la del ingreso, donde el segmentado encabeza el formulario. Sin eso, mide lo que sus textos.
+/// `fullWidth` lo estira al ancho de su contenedor, en partes iguales; sin eso, mide lo que sus textos.
 ///
-/// `disabled` apaga todas las opciones mientras su dueño trabaja, como el origen de una importación que revisa. Una opción
-/// sola se apaga con `disabledReason`, que dice por qué, como la delegación de ARCA sin la plataforma configurada.
+/// `disabled` apaga todas las opciones mientras su dueño trabaja. Una opción sola se apaga con `disabledReason`, que dice
+/// por qué (MA1-A).
 ///
 /// La elegida va rellena con el color de los botones y su texto en blanco o negro, el que más contraste dé (OE1-A,
 /// 2026-11-03); las otras quedan blancas. Antes era un verde casi blanco sobre blanco y no se sabía cuál estaba elegida,
