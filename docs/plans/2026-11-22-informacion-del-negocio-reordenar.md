@@ -34,8 +34,10 @@ Tableros: lienzo aparte [Información del negocio: reordenar](https://claude.ai/
 - **IN2, con un cambio.**
   - Un día se edita en el mismo diálogo que una fecha especial («Horario del lunes»), que abre el lápiz de su fila.
   - **La atención (Sin definir, Abierto, Cerrado, 24 horas) va en un desplegable, con la pieza única, y no en el
-    segmentado.** Lo pidió el usuario el 22/11. DS1-A pone de dos a cuatro opciones fijas en un segmentado: esto es una
-    excepción para el horario (el de un día y el de una fecha), salvo que el usuario la amplíe.
+    segmentado.** Lo pidió el usuario el 22/11 y, preguntado si valía sólo para el horario o para toda la app, contestó
+    «En toda la app». Reemplaza la regla de DS1-A que ponía de dos a cuatro opciones fijas en radios o un segmentado:
+    elegir de opciones fijas también va en la pieza única. Si la carga de formularios (Sí o No y hasta cinco opciones en
+    fila, AR1-A) entra en la regla quedó preguntado al usuario.
   - Los botones: «Agregar fecha» al crear una fecha especial; «Listo» al editar un día o una fecha.
   - Un problema se marca al tocar «Listo» y el diálogo no se cierra. Lo que cruza de un día al otro se revisa al guardar,
     debajo de la semana, como hoy.
@@ -79,8 +81,8 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
    - La escena visual `business-information.spec.ts` a 1440, 390 y 320 px, en español e inglés, rehecha con
      `--update-snapshots=all` y mirada una por una.
 7. **Documentación.**
-   - [El fundamento visual](../design/visual-baseline.md): «Información del negocio» y la excepción del desplegable en
-     la atención.
+   - [El fundamento visual](../design/visual-baseline.md): «Información del negocio». La regla general de las opciones
+     fijas la escribe «Desplegables» con la pieza única (ver Coordinación).
    - [Información del negocio guiada](../design/informacion-del-negocio-guiada.md).
    - Al cerrar, las fuentes de las [premisas](../../../ArquitecturaBase/docs/architecture/premisas-de-la-plantilla.md);
      el plan se retira con la auditoría documental.
@@ -88,8 +90,10 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
 ## Coordinación
 
 - **La copia de «Desplegables».** Sus 57 commits, sin aplicar todavía, cambian `BusinessHoursEditor.tsx` (el estado en
-  segmentado, las horas y la zona en `Picker`) y `BusinessLocationEditor.tsx` (radios). Este plan se programa encima, y
-  el estado vuelve a un desplegable (`Picker`) sólo en el horario.
+  segmentado, las horas y la zona en `Picker`) y `BusinessLocationEditor.tsx` (radios), y escriben la regla vieja de las
+  opciones fijas en `visual-baseline.md`, `estandar-visual.md`, `premisas-de-desarrollo.md` y el plan de la pieza única.
+  Con la regla del 22/11, esa sesión pasa en su copia los segmentados y radios de opciones fijas a la pieza y corrige
+  esos documentos antes de aplicar, así no hay choques. Este plan se programa encima.
 - **La URL.** Nada vive en la URL, como hoy.
 
 ## Verificación
