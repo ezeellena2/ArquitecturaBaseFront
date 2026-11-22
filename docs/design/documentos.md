@@ -234,7 +234,7 @@ orden de la ubicación se confirmaron con las otras sesiones de la tanda; donde 
    «Propuesto», el que espera a la persona, con «Descartar» y «Pasar al formulario» apagados y su motivo encima. El filtro
    «Propuestos» incluye los dos. De lo leído se muestra «Monto», un dato por columna.
 9. **«Fila 5»** es la fila como la numera Excel; si el libro tiene varias hojas, «Ventas · fila 5».
-10. **Las cargas contestan un archivo que mandó la persona:** no son ofertas y no gastan los dos ofrecimientos del día. Las
+10. **Las cargas contestan un archivo que mandó la persona:** no son ofertas y no gastan los ofrecimientos del día. Las
     acotan los cupos de lectura y de interpretación: la planilla se lee en el servidor, sin `ReadDocument`, y su interpretación
     cuenta en el cupo global, como hoy.
 11. **Como DOC4:** una cuenta sin vincular o sin permiso de cargar, y una planilla que no se abre (con macros, con contraseña o
