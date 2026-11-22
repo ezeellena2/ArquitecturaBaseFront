@@ -23,7 +23,11 @@ async function importAction(page: Page, en: boolean, width: number, source: "fil
     await page.getByRole("button", { name: en ? "More option actions" : "Más acciones de opciones", exact: true }).click();
     await page.getByRole("menuitem", { name, exact: true }).click();
   } else await page.getByRole("button", { name, exact: true }).click();
-  if (source === "paste") await page.getByRole("dialog").getByRole("button", { name: en ? "Paste from Excel" : "Pegar desde Excel", exact: true }).click();
+  if (source === "paste") {
+    // «Desde» is the shared piece to choose (2026-11-22).
+    await page.getByRole("dialog").getByRole("button", { name: en ? "From Upload a file" : "Desde Subir un archivo", exact: true }).click();
+    await page.getByRole("option", { name: en ? "Paste from Excel" : "Pegar desde Excel", exact: true }).click();
+  }
 }
 
 // Evidence scenes only: real routes/components with an explicit simulated HTTP transport, no goldens.

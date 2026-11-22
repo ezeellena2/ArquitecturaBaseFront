@@ -15,7 +15,6 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Picker } from "@/shared/ui/Picker";
 import { notify } from "@/shared/ui/notifications";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import type { CatalogFieldFeedback } from "../api/catalogFieldFeedback";
 import { catalogFieldTypes, type CatalogPresentation } from "../api/catalogResponse";
 import { catalogFieldHasErrors, catalogFieldKeyFromName, catalogFieldRuleSummary, newCatalogField, type CatalogFieldDraft, type CatalogFieldErrors, type CatalogFieldType } from "../catalogFields";
@@ -247,9 +246,10 @@ function FieldForm({ field, takenKeys, culture, original, scope, errors, uses, f
     <Row label={<Label>{t("catalogs.fields.rules")}</Label>}>
       <div className="flex flex-wrap items-start gap-x-6 gap-y-2 sm:min-h-[var(--height-control)] sm:items-center">{check("required", t("catalogs.fields.requiredLabel"), field.id === null ? t("catalogs.fields.optionalFirst") : null)}{check("unique", t("catalogs.fields.unique"), null)}</div>
     </Row>
-    <Row label={<><Label>{t("catalogs.fields.role")}</Label><Help label={t("catalogs.fields.roleHelp")} text={t("catalogs.fields.roleHelpText")} /></>}>
-      {/* Halves of the width on the phone; from 640 px, as wide as its texts. */}
-      <div className="sm:self-start"><SegmentedControl fullWidth aria-label={t("catalogs.fields.role")} options={(["filter", "data"] as const).map(role => ({ key: role, label: t("catalogs.fields.roles." + role), pressed: field.role === role, onSelect: () => set({ role }) }))} /></div>
+    <Row label={<><Label htmlFor={id + "role"}>{t("catalogs.fields.role")}</Label><Help label={t("catalogs.fields.roleHelp")} text={t("catalogs.fields.roleHelpText")} /></>}>
+      {/* The shared piece to choose, like Tipo (2026-11-22). */}
+      <Picker id={id + "role"} label={t("catalogs.fields.role")} value={field.role} {...marked("role")} onChange={role => set({ role: role === "filter" ? "filter" : "data" })}
+        options={(["filter", "data"] as const).map(role => ({ id: role, label: t("catalogs.fields.roles." + role) }))} />
       {messageOf("role")}
     </Row>
   </div>;

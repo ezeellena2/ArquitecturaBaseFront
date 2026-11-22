@@ -25,8 +25,13 @@ async function mount(source: "file" | "paste" = "paste", props: Partial<Paramete
   let view!: ReturnType<typeof renderWithProviders>;
   await act(async () => { view = renderWithProviders(<CatalogImportDialog {...all}/>); });
   const user = userEvent.setup();
-  if (source === "paste") await user.click(screen.getByRole("button", { name: /^(Pegar desde Excel|Paste from Excel)$/ }));
+  if (source === "paste") await chooseFrom(user, /^(Pegar desde Excel|Paste from Excel)$/);
   return { ...view, props: all, user, onApplied, onObserved, onClose };
+}
+// «Desde» is the shared piece to choose (2026-11-22): its button says «Desde» and the chosen origin.
+async function chooseFrom(user: ReturnType<typeof userEvent.setup>, option: string | RegExp) {
+  await user.click(screen.getByRole("button", { name: /^(Desde|From) / }));
+  await user.click(within(await screen.findByRole("listbox", { name: /^(Desde|From)$/ })).getByRole("option", { name: option }));
 }
 // The empty grid's first cell takes the paste, as Ctrl+V or the phone's «Pegar» would.
 async function paste(user: ReturnType<typeof userEvent.setup>, text: string, english = false) {
@@ -44,7 +49,7 @@ it("opens on the file with its origin in rows, the template in the band and the 
     for (const text of within(dialog).queryAllByText(note)) expect(text).not.toBeVisible();
   expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
   expect(within(dialog).getByRole("heading", { name: "Origen" })).toBeInTheDocument();
-  expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(dialog).getByRole("button", { name: "Desde Subir un archivo" })).toBeInTheDocument();
   expect(within(dialog).getByText("Ningún archivo elegido")).toBeInTheDocument();
   await user.hover(within(dialog).getByRole("button", { name: "Qué archivo sirve" }));
   expect(await screen.findByRole("tooltip")).toHaveTextContent("XLSX o CSV, hasta 10 MB y 10.000 filas. No se ejecutan fórmulas ni macros.");
@@ -91,6 +96,17 @@ it("pastes rows without headers into the catalog's columns and reviews only the 
 });
 
 // The first cell leaves with the paste; the focus is not lost: it goes to the filled grid, where another paste replaces the rows.
+// Choosing again the origin it already has keeps what was pasted: only another origin starts over.
+it("keeps the pasted rows when «Pegar desde Excel» is chosen again", async () => {
+  const { user } = await mount();
+  await paste(user, "N\tNorte\nS\tSur");
+  await chooseFrom(user, "Pegar desde Excel");
+  expect(within(grid()).getAllByRole("row").slice(1)).toHaveLength(2);
+  await chooseFrom(user, "Subir un archivo");
+  await chooseFrom(user, "Pegar desde Excel");
+  expect(screen.getByRole("textbox", { name: "Pegar filas" })).toBeInTheDocument();
+});
+
 it("moves the focus to the filled grid, where another paste replaces the rows", async () => {
   const { user } = await mount();
   await paste(user, "N\tNorte\nS\tSur");
@@ -143,7 +159,7 @@ it("shows that it is reviewing with the button and a skeleton, and Cancel stops 
   expect(screen.getByRole("button", { name: "Revisando…" })).toHaveAttribute("aria-busy", "true");
   expect(screen.getByRole("heading", { name: "Revisión" })).toBeInTheDocument();
   expect(screen.getByRole("status", { name: "Revisando…" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Pegar desde Excel" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Desde Pegar desde Excel" })).toBeDisabled();
   const cancel = screen.getByRole("button", { name: "Cancelar" });
   expect(cancel).toBeEnabled();
   await user.click(cancel);
@@ -581,8 +597,7 @@ it("opens on the chat spreadsheet already reviewed and applies it from the copy,
   const upload = vi.spyOn(imports, "previewCatalogImport");
   const { user, onApplied, onClose } = await mount("file", { assistant: chat });
   const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
-  expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
-  expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "false");
+  expect(within(dialog).getByRole("button", { name: "Desde La planilla del chat: contratistas.xlsx (86 filas)" })).toBeInTheDocument();
   expect(within(dialog).queryByRole("button", { name: "Elegir archivo" })).not.toBeInTheDocument();
   expect(within(dialog).queryByRole("button", { name: "Descargar la plantilla" })).not.toBeInTheDocument();
   await within(dialog).findByText("Repetido: también está en otra fila.");
@@ -609,8 +624,10 @@ it("turns to uploading the file when the chat spreadsheet is no longer there, sa
     await mount("file", { assistant: chat });
     const dialog = screen.getByRole("dialog", { name: "Importar opciones a «Lista»" });
     expect(await within(dialog).findByText(reason)).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(dialog).queryByRole("button", { name: /La planilla del chat/ })).not.toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Desde Subir un archivo" }));
+    const origins = await screen.findByRole("listbox", { name: "Desde" });
+    expect(within(origins).getAllByRole("option").map(option => option.textContent)).toEqual(["Subir un archivo", "Pegar desde Excel"]);
+    await userEvent.keyboard("{Escape}");
     expect(within(dialog).getByRole("button", { name: "Elegir archivo" })).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalled();
     cleanup(); vi.restoreAllMocks(); queryClient.clear();
@@ -623,7 +640,7 @@ it("turns to uploading the file when the copy is gone at applying, too", async (
   const { user, onApplied } = await mount("file", { assistant: chat });
   await user.click(await screen.findByRole("button", { name: "Aplicar" }));
   expect(await screen.findByText("La planilla que viste en el chat ya no está disponible. Podés subir el archivo a mano.")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Desde Subir un archivo" })).toBeInTheDocument();
   expect(onApplied).not.toHaveBeenCalled();
 });
 
@@ -631,9 +648,9 @@ it("names only «La planilla del chat» without its file, and reviews it again w
   const check = vi.spyOn(imports, "previewAssistantCatalogImport").mockResolvedValue(catalogImportPreviewFixture());
   const { user } = await mount("file", { assistant: { requestId: chat.requestId, proposalId: chat.proposalId } });
   await screen.findByText("Repetido: también está en otra fila.");
-  await user.click(screen.getByRole("button", { name: "Subir un archivo" }));
+  await chooseFrom(user, "Subir un archivo");
   expect(screen.queryByText("Repetido: también está en otra fila.")).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "La planilla del chat" }));
+  await chooseFrom(user, "La planilla del chat");
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await screen.findByText("Repetido: también está en otra fila.");
   expect(check).toHaveBeenCalledTimes(2);

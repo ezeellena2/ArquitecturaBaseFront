@@ -1,14 +1,11 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { FormField } from "@/shared/ui/FormField";
-import { GroupLabel } from "@/shared/ui/GroupLabel";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/IconButton";
 import { PlusIcon, TrashIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Picker, type PickerOption } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 
 interface LabeledChoice { readonly key: string; readonly label: string }
@@ -44,7 +41,6 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
   const textColumns = displayColumns.filter(column => column.key === "name");
   const filterColumns = columns.filter(column => column.canFilter !== false && column.operators.length > 0);
   const sortColumns = columns.filter(column => column.canSort !== false);
-  const directionId = useId();
   // A chosen key that is no longer offered stays first, named as unavailable, so the field still says what it keeps.
   const choices = (items: readonly LabeledChoice[], current: string | null, unavailable: string): PickerOption[] => [
     ...current === null || items.some(item => item.key === current) ? [] : [{ id: current, label: t(unavailable) }],
@@ -81,10 +77,10 @@ export function CatalogFiltersEditor({ view, columns, value, canManage, busy = f
       <CheckboxField label={t("catalogs.filters.excludeRecipient")} disabled={disabled} checked={value.excludeRecipient} onCheckedChange={excludeRecipient => onChange({ ...value, excludeRecipient })} />
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label={t("catalogs.filters.order")} error={errors["filters.sortColumn"]?.join(" ")}><Picker label={t("catalogs.filters.order")} disabled={disabled} value={value.sortColumn} onChange={sortColumn => onChange({ ...value, sortColumn })} options={choices(sortColumns, value.sortColumn, "catalogs.filters.unavailableColumn")} /></FormField>
-        {/* Two fixed options, in sight and one click away: «A → Z» and «Z → A». */}
-        <div className="flex flex-col gap-1.5"><GroupLabel id={directionId}>{t("catalogs.filters.direction")}</GroupLabel>
-          <SegmentedControl aria-label={t("catalogs.filters.direction")} disabled={disabled} options={([false, true] as const).map(descending => ({ key: descending ? "desc" : "asc",
-            label: t(descending ? "catalogs.filters.descending" : "catalogs.filters.ascending"), pressed: value.sortDescending === descending, onSelect: () => onChange({ ...value, sortDescending: descending }) }))} /></div>
+        {/* «A → Z» and «Z → A» in the shared piece to choose, like the column (2026-11-22). */}
+        <FormField label={t("catalogs.filters.direction")}><Picker label={t("catalogs.filters.direction")} disabled={disabled} value={value.sortDescending ? "desc" : "asc"}
+          onChange={direction => onChange({ ...value, sortDescending: direction === "desc" })}
+          options={[{ id: "asc", label: t("catalogs.filters.ascending") }, { id: "desc", label: t("catalogs.filters.descending") }]} /></FormField>
       </div>
     </div>
   </Surface>;

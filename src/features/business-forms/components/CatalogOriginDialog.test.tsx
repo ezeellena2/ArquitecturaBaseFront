@@ -28,17 +28,21 @@ describe("Chosen catalog origin board K2", () => {
   for (const language of ["es", "en"] as const) {
     it("selects Filters by keyboard only after explicit Continue in " + language, async () => {
       const { user, onSelect } = await mount(language);
-      const manual = screen.getByRole("radio", { name: language === "es" ? "Escribirlas a mano" : "Write them manually" });
-      const filters = screen.getByRole("radio", { name: language === "es" ? "Tomarlas de la base, con filtros" : "Use database options with filters" });
-      expect(manual).toBeChecked();
-      act(() => manual.focus());
-      await user.keyboard("{ArrowDown>}");
-      await waitFor(() => expect(filters).toBeChecked());
-      await user.keyboard("{/ArrowDown}");
-      expect(filters).toHaveFocus();
+      const es = language === "es", question = es ? "¿De dónde salen las opciones?" : "Where do the options come from?";
+      // The origin is chosen with the shared piece (DS1-A, 2026-11-22): its button says the question and the chosen one.
+      const origin = screen.getByRole("button", { name: question + " " + (es ? "Escribirlas a mano" : "Write them manually") });
+      act(() => origin.focus());
+      await user.keyboard("{ArrowDown}");
+      const list = await screen.findByRole("listbox", { name: question });
+      expect(within(list).getAllByRole("option")).toHaveLength(2);
+      expect(within(list).getByRole("option", { name: es ? "Escribirlas a mano" : "Write them manually" })).toHaveAttribute("aria-selected", "true");
+      expect(within(list).queryByRole("option", { name: es ? "Escribir una consulta" : "Write a query" })).not.toBeInTheDocument();
+      await user.keyboard("{ArrowDown}{Enter}");
+      await waitFor(() => expect(screen.getByRole("button", { name: question + " " + (es ? "Tomarlas de la base, con filtros" : "Use database options with filters") })).toHaveFocus());
       expect(onSelect).not.toHaveBeenCalled();
-      expect(screen.queryByRole("radio", { name: language === "es" ? "Escribir una consulta" : "Write a query" })).not.toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
+      // A catalog with filters has no value type to choose.
+      expect(screen.queryByRole("button", { name: es ? /^Tipo de valor / : /^Value type / })).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: es ? "Continuar" : "Continue" }));
       expect(onSelect).toHaveBeenCalledExactlyOnceWith("Filters", "Text");
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
@@ -51,7 +55,8 @@ describe("Chosen catalog origin board K2", () => {
   for (const action of ["Cancel", "Escape"] as const) {
     it("does not select a source and restores the trigger on " + action, async () => {
       const { user, trigger, onSelect } = await mount("es");
-      await user.click(screen.getByRole("radio", { name: "Tomarlas de la base, con filtros" }));
+      await user.click(screen.getByRole("button", { name: "¿De dónde salen las opciones? Escribirlas a mano" }));
+      await user.click(within(await screen.findByRole("listbox", { name: "¿De dónde salen las opciones?" })).getByRole("option", { name: "Tomarlas de la base, con filtros" }));
       if (action === "Escape") await user.keyboard("{Escape}");
       else await user.click(screen.getByRole("button", { name: "Cancelar" }));
       expect(onSelect).not.toHaveBeenCalled();
@@ -64,34 +69,39 @@ describe("Chosen catalog origin board K2", () => {
 
 it.each(["es", "en"] as const)("chooses the immutable manual value type explicitly in %s", async language => {
   const { user, onSelect } = await mount(language);
-  await user.click(screen.getByRole("radio", { name: "Decimal" }));
+  const es = language === "es";
+  await user.click(screen.getByRole("button", { name: es ? "Tipo de valor Texto" : "Value type Text" }));
+  const list = await screen.findByRole("listbox", { name: es ? "Tipo de valor" : "Value type" });
+  expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(es ? ["Texto", "Entero", "Decimal", "Fecha"] : ["Text", "Whole number", "Decimal", "Date"]);
+  await user.click(within(list).getByRole("option", { name: "Decimal" }));
+  expect(screen.getByRole("button", { name: es ? "Tipo de valor Decimal" : "Value type Decimal" })).toBeInTheDocument();
   expect(onSelect).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: language === "es" ? "Continuar" : "Continue" }));
   expect(onSelect).toHaveBeenCalledExactlyOnceWith("Manual", "Decimal");
 });
 
-// Without legends (2026-10-31): the question is the visible label of the cards, and what cannot change goes in the (i).
-it.each(["es", "en"] as const)("asks where the options come from as the label of the cards and explains in the information icons in %s", async language => {
-  await mount(language);
+// Without legends (2026-10-31): the question is the visible label of the field, and what cannot change goes in the (i).
+it.each(["es", "en"] as const)("asks where the options come from as the label of its field and explains in the information icons in %s", async language => {
+  const { user } = await mount(language);
   const es = language === "es", question = es ? "¿De dónde salen las opciones?" : "Where do the options come from?";
   const dialog = screen.getByRole("dialog", { name: es ? "Nuevo catálogo" : "New catalog" });
   expect(dialog).not.toHaveAccessibleDescription();
-  expect(within(dialog).getByText(question)).toBeVisible();
-  expect(within(dialog).getByRole("radiogroup", { name: question })).toBeInTheDocument();
-  // Each group draws its own title with its (i) and is named by it, not by a hidden label (lista de chequeo, 2026-11-11).
-  for (const title of [question, es ? "Tipo de valor" : "Value type"]) {
-    const group = within(dialog).getByRole("radiogroup", { name: title });
-    expect(group).not.toHaveAttribute("aria-label");
-    expect(document.getElementById(group.getAttribute("aria-labelledby") ?? "")?.textContent).toBe(title);
-  }
-  expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + question }))
-    .toHaveAccessibleDescription(es ? "No se puede cambiar después: para otro origen, se arma otro catálogo." : "This cannot change later: use a new catalog for another source.");
-  expect(within(dialog).getByRole("radio", { name: es ? "Escribirlas a mano" : "Write them manually" })).not.toHaveAccessibleDescription();
+  expect(within(dialog).getByText(question, { selector: "label" })).toBeVisible();
+  const fixed = es ? "No se puede cambiar después: para otro origen, se arma otro catálogo." : "This cannot change later: use a new catalog for another source.";
+  // Each choice is the shared piece with its visible label (DS1-A, 2026-11-22): the (i) also describes its button.
+  const origin = within(dialog).getByRole("button", { name: question + " " + (es ? "Escribirlas a mano" : "Write them manually") });
+  expect(origin).toHaveAccessibleDescription(fixed);
+  expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + question })).toHaveAccessibleDescription(fixed);
   expect(within(dialog).queryByText(es ? /Para listas que mantiene una persona/ : /For lists maintained by a person/)).not.toBeInTheDocument();
   const filters = es ? "Elegís una vista de catálogo (por ahora, Usuarios) y qué filas entran. Se actualiza sola: un usuario nuevo aparece en el próximo envío."
     : "Choose a catalog view (currently Users) and which rows to include. It updates automatically: a new user appears in the next send.";
-  expect(within(dialog).getByRole("radio", { name: es ? "Tomarlas de la base, con filtros" : "Use database options with filters" })).toHaveAccessibleDescription(filters);
-  expect(within(dialog).queryByText(filters, { selector: "p" })).not.toBeInTheDocument();
+  expect(within(dialog).queryByText(filters)).not.toBeInTheDocument();
+  // How the options with filters work is the grey line under that option, inside the list.
+  await user.click(origin);
+  const list = await screen.findByRole("listbox", { name: question });
+  expect(within(list).getByRole("option", { name: es ? "Escribirlas a mano" : "Write them manually" })).not.toHaveAccessibleDescription();
+  expect(within(list).getByRole("option", { name: es ? "Tomarlas de la base, con filtros" : "Use database options with filters" })).toHaveAccessibleDescription(filters);
+  await user.keyboard("{Escape}");
   const valueType = es ? "Se elige al crear el catálogo y después no se puede cambiar." : "Choose it when creating the catalog. It cannot be changed later.";
   expect(within(dialog).getByRole("button", { name: (es ? "Más información sobre " : "More about ") + (es ? "Tipo de valor" : "Value type") })).toHaveAccessibleDescription(valueType);
   expect(within(dialog).queryByText(valueType, { selector: "p" })).not.toBeInTheDocument();

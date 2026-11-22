@@ -29,16 +29,37 @@ it("names a filter field and the person data written only in the other language"
   expect(within(row).getByRole("button", { name: /^Campo / })).toHaveAccessibleName("Campo Branch");
   expect(within(row).getByRole("button", { name: /^Dato de la persona/ })).toHaveAccessibleName("Dato de la persona Customer branch");
 });
-it("keeps inherited presentation absent until the author explicitly chooses their own", async () => { const changed = vi.fn(); renderWithProviders(<Harness changed={changed}/>); expand("En WhatsApp"); expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toBeChecked(); expect(changed).not.toHaveBeenCalled(); await userEvent.click(screen.getByRole("radio", { name: /Propio de esta pregunta/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, presentation: { title: ["text"], description: ["detail"] } }); await userEvent.click(screen.getByRole("radio", { name: /Como en el catálogo/ })); expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog }); });
+// The mode is chosen with the shared piece (2026-11-22): its button says «Qué viaja a WhatsApp» and the chosen one.
+async function choosePresentation(option: string) {
+  await userEvent.click(screen.getByRole("button", { name: /^Qué viaja a WhatsApp / }));
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Qué viaja a WhatsApp" })).getByRole("option", { name: option }));
+}
+it("keeps inherited presentation absent until the author explicitly chooses their own", async () => {
+  const changed = vi.fn();
+  renderWithProviders(<Harness changed={changed}/>);
+  expand("En WhatsApp");
+  expect(screen.getByRole("button", { name: "Qué viaja a WhatsApp Como en el catálogo" })).toBeInTheDocument();
+  expect(changed).not.toHaveBeenCalled();
+  await choosePresentation("Propio de esta pregunta");
+  expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog, presentation: { title: ["text"], description: ["detail"] } });
+  // Choosing it again keeps what is its own: the list calls back with the chosen one, which does not start it over.
+  changed.mockClear();
+  await choosePresentation("Propio de esta pregunta");
+  expect(changed).not.toHaveBeenCalled();
+  await choosePresentation("Como en el catálogo");
+  expect(changed).toHaveBeenLastCalledWith({ catalog: ids.catalog });
+});
 // The parts are data; that they follow the catalog, and what «Propio de esta pregunta» means, are not notes (2026-10-31).
-it("names the catalog fields used by «Como en el catálogo»", () => {
+it("names the catalog fields used by «Como en el catálogo»", async () => {
   options.presentation = { title: ["text"], description: [ids.field, "data-field"] };
   renderWithProviders(<Harness changed={vi.fn()}/>);
   // Folded, the band says the same parts after the mode.
   expect(screen.getByText("Como en el catálogo · Texto · Sucursal · Precio")).toBeVisible();
   expand("En WhatsApp");
-  expect(screen.getByRole("radio", { name: /Como en el catálogo/ })).toHaveAccessibleDescription("Texto · Sucursal · Precio");
-  expect(screen.getByRole("radio", { name: /Propio de esta pregunta/ })).not.toHaveAccessibleDescription();
+  await userEvent.click(screen.getByRole("button", { name: "Qué viaja a WhatsApp Como en el catálogo" }));
+  const list = await screen.findByRole("listbox", { name: "Qué viaja a WhatsApp" });
+  expect(within(list).getByRole("option", { name: "Como en el catálogo" })).toHaveAccessibleDescription("Texto · Sucursal · Precio");
+  expect(within(list).getByRole("option", { name: "Propio de esta pregunta" })).not.toHaveAccessibleDescription();
 });
 it("shows a fixed catalog value outside the first twenty options, also read-only", () => {
   options.page = Array.from({ length: 20 }, (_, index) => option("01990000-0000-7000-8000-0000000001" + String(index).padStart(2, "0"), "Zona " + (index + 1), index + 1));

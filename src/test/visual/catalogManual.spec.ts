@@ -14,7 +14,11 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await enter("/catalogos");
     await expect(page.getByRole("link", { name: english ? "Customers" : "Clientes", exact: true })).toBeVisible();
     await page.getByRole("button", { name: english ? "New catalog" : "Nuevo catálogo", exact: true }).click();
-    await expect(page.getByRole("radio", { name: english ? "Write a query" : "Escribir una consulta" })).toHaveCount(0);
+    // The origin is the shared piece to choose (2026-11-22): its list has the two origins and no query.
+    await page.getByRole("button", { name: english ? "Where do the options come from? Write them manually" : "¿De dónde salen las opciones? Escribirlas a mano", exact: true }).click();
+    await expect(page.getByRole("option")).toHaveCount(2);
+    await expect(page.getByRole("option", { name: english ? "Write a query" : "Escribir una consulta" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: english ? "Continue" : "Continuar", exact: true }).click();
     await page.getByRole("textbox", { name: english ? "Name" : "Nombre", exact: true }).fill(english ? "Warehouses" : "Depósitos");
     // No language selector: the catalog is written in the menu language, which is its original.

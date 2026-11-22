@@ -43,24 +43,32 @@ describe("«Ordenar por…» (OR1-A)", () => {
     expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Texto", "Código", "Rubro", "Stock mínimo", "Alta", "Importado"]);
     expect(within(list).getByRole("option", { name: "Texto" })).toHaveAttribute("aria-selected", "true");
     await userEvent.keyboard("{Escape}");
-    expect(within(dialog).getByRole("radio", { name: "De la A a la Z" })).toBeChecked();
-    expect(within(dialog).getByRole("radio", { name: "De la Z a la A" })).not.toBeChecked();
+    // The direction is chosen with the same piece (2026-11-22): its button says the chosen one.
+    const order = await openList("Orden De la A a la Z");
+    expect(within(order).getAllByRole("option").map(option => option.textContent)).toEqual(["De la A a la Z", "De la Z a la A"]);
+    expect(within(order).getByRole("option", { name: "De la A a la Z" })).toHaveAttribute("aria-selected", "true");
+    expect(within(order).getByRole("option", { name: "De la Z a la A" })).toHaveAttribute("aria-selected", "false");
+    await userEvent.keyboard("{Escape}");
+    expect(within(dialog).getByRole("button", { name: "Orden De la A a la Z" })).toHaveFocus();
   });
 
   it("names the direction by the column's data", async () => {
     const { dialog } = await mount();
-    const directions = () => within(dialog).getAllByRole("radio").map(radio => radio.closest("label")?.textContent ?? radio.getAttribute("aria-label") ?? "");
+    const directions = async () => {
+      const list = await openList(/^Orden /);
+      const names = within(list).getAllByRole("option").map(option => option.textContent);
+      await userEvent.keyboard("{Escape}");
+      return names;
+    };
     await choose(/^Columna /, "Rubro");
-    expect(within(dialog).getByRole("radio", { name: "De la A a la Z" })).toBeInTheDocument();
+    expect(await directions()).toEqual(["De la A a la Z", "De la Z a la A"]);
     await choose(/^Columna /, "Stock mínimo");
-    expect(within(dialog).getByRole("radio", { name: "De menor a mayor" })).toBeChecked();
-    expect(within(dialog).getByRole("radio", { name: "De mayor a menor" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Orden De menor a mayor" })).toBeInTheDocument();
+    expect(await directions()).toEqual(["De menor a mayor", "De mayor a menor"]);
     await choose(/^Columna /, "Alta");
-    expect(within(dialog).getByRole("radio", { name: "De la más antigua a la más reciente" })).toBeInTheDocument();
+    expect(await directions()).toEqual(["De la más antigua a la más reciente", "De la más reciente a la más antigua"]);
     await choose(/^Columna /, "Importado");
-    expect(within(dialog).getByRole("radio", { name: "Primero «No»" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("radio", { name: "Primero «Sí»" })).toBeInTheDocument();
-    expect(directions()).toHaveLength(2);
+    expect(await directions()).toEqual(["Primero «No»", "Primero «Sí»"]);
   });
 
   it("says in its (i) that ties keep their order and empty values go last", async () => {
@@ -72,7 +80,7 @@ describe("«Ordenar por…» (OR1-A)", () => {
   it("returns the chosen column and direction only with «Ordenar», and gives the focus back to ⋮", async () => {
     const { user, onApply, dialog } = await mount();
     await choose("Columna Texto", "Stock mínimo");
-    await user.click(within(dialog).getByRole("radio", { name: "De mayor a menor" }));
+    await choose("Orden De menor a mayor", "De mayor a menor");
     expect(onApply).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "Ordenar" }));
     expect(onApply).toHaveBeenCalledExactlyOnceWith({ column: stock.id, descending: true });
@@ -83,7 +91,7 @@ describe("«Ordenar por…» (OR1-A)", () => {
   it("opens with the pending order and «Cancelar» keeps it as it was", async () => {
     const { user, onApply, dialog } = await mount({ column: "code", descending: true });
     expect(within(dialog).getByRole("button", { name: "Columna Código" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("radio", { name: "De la Z a la A" })).toBeChecked();
+    expect(within(dialog).getByRole("button", { name: "Orden De la Z a la A" })).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     expect(onApply).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -95,7 +103,7 @@ describe("«Ordenar por…» (OR1-A)", () => {
     const list = await openList("Column Stock mínimo EN");
     expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["Text", "Code", "Rubro EN", "Stock mínimo EN", "Alta EN", "Importado EN"]);
     await userEvent.keyboard("{Escape}");
-    expect(within(dialog).getByRole("radio", { name: "Smallest to largest" })).toBeChecked();
+    expect(within(dialog).getByRole("button", { name: "Order Smallest to largest" })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Sort" })).toBeInTheDocument();
   });
 });

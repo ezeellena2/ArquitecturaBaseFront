@@ -7,7 +7,7 @@ import { RefreshIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { Picker } from "@/shared/ui/Picker";
 import { Textarea } from "@/shared/ui/textarea";
 import { withCatalogFieldValue, type CatalogManualItemValue } from "../catalogItemEdits";
 import type { FormCulture } from "../model";
@@ -124,8 +124,10 @@ export function CatalogItemFields({ item, culture, original, valueType, fields =
         </CatalogRow>;
       }
       // A new option is born active; a saved one chooses its state here, with what a deactivation means in the (i).
-      case "isActive": return item.itemId === null ? null : <CatalogRow key={column.id} label={<><Label>{t("catalogs.columns.state")}</Label><CatalogRowHelp label={t("catalogs.items.stateHelp")} text={t("catalogs.items.activeHint")} /></>}>
-        <div className="sm:self-start"><SegmentedControl fullWidth aria-label={t("catalogs.columns.state")} options={([true, false] as const).map(isActive => ({ key: String(isActive), label: t(isActive ? "catalogs.items.active" : "catalogs.items.inactive"), pressed: item.isActive === isActive, onSelect: () => { if (!readOnly) onChange({ ...item, isActive }); } }))} /></div>
+      // In the shared piece to choose (2026-11-22).
+      case "isActive": return item.itemId === null ? null : <CatalogRow key={column.id} label={<><Label htmlFor={id + column.id}>{t("catalogs.columns.state")}</Label><CatalogRowHelp label={t("catalogs.items.stateHelp")} text={t("catalogs.items.activeHint")} /></>}>
+        <Picker id={id + column.id} label={t("catalogs.columns.state")} disabled={readOnly} value={String(item.isActive)} onChange={next => onChange({ ...item, isActive: next === "true" })}
+          options={([true, false] as const).map(isActive => ({ id: String(isActive), label: t(isActive ? "catalogs.items.active" : "catalogs.items.inactive") }))} />
       </CatalogRow>;
       }
     })}

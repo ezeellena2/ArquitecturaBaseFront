@@ -29,8 +29,12 @@ describe("Catalog routes and navigation", () => {
     let router!: ReturnType<typeof renderRouteWithProviders>["router"];
     await act(async () => { router = renderRouteWithProviders("/catalogos?pageSize=20").router; });
     const user = userEvent.setup(); await user.click(await screen.findByRole("button", { name: "Nuevo catálogo" }));
-    expect(screen.getByRole("radio", { name: "Tomarlas de la base, con filtros" })).toBeEnabled();
-    expect(screen.queryByRole("radio", { name: "Escribir una consulta" })).not.toBeInTheDocument();
+    // The origin is the shared piece to choose (2026-11-22): its list offers the two origins and no query.
+    await user.click(screen.getByRole("button", { name: "¿De dónde salen las opciones? Escribirlas a mano" }));
+    const origins = await screen.findByRole("listbox", { name: "¿De dónde salen las opciones?" });
+    expect(within(origins).getByRole("option", { name: "Tomarlas de la base, con filtros" })).not.toHaveAttribute("aria-disabled");
+    expect(within(origins).queryByRole("option", { name: "Escribir una consulta" })).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Continuar" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/catalogos/nuevo"));
     await screen.findByRole("textbox", { name: "Nombre" });

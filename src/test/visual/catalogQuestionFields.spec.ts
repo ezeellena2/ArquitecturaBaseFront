@@ -72,14 +72,19 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CE3 inherited and own presentation with recipient filters " + language + " " + width, async ({ page }, info) => {
     const label = (es: string, en: string) => text(language, es, en);
     const editor = await open(page, language, width);
-    const inherit = editor.getByRole("radio", { name: new RegExp("^" + label("Como en el catálogo", "As in the catalog")) });
+    // The mode is the shared piece to choose (2026-11-22): its button says «Qué viaja a WhatsApp» and the chosen one.
+    const mode = editor.getByRole("button", { name: new RegExp("^" + label("Qué viaja a WhatsApp", "What goes to WhatsApp") + " ") });
     const description = editor.getByRole("button", { name: label("Descripción · hasta 300 Agregar campo", "Description · up to 300 Add field"), exact: true });
-    await expect(inherit).toBeChecked();
+    await expect(mode).toHaveAccessibleName(label("Qué viaja a WhatsApp Como en el catálogo", "What goes to WhatsApp As in the catalog"));
     // The filter additions (by who receives it, fixed and by another answer) act on the whole section: they go in the band of
     // «Qué opciones ve cada persona», expanded. The band holds the title with its (i) and the actions.
     const filtersTitle = label("Qué opciones ve cada persona", "Which options each person sees");
     await expect(editor.getByRole("region", { name: filtersTitle, exact: true }).getByRole("heading", { name: filtersTitle, exact: true }).locator("../..").getByRole("button", { name: /^(Agregar filtro|Add (?:filter|fixed filter))/ })).toHaveCount(3);
-    await expect(inherit).toHaveAccessibleDescription(label("Texto · CUIT · Zona", "Text · CUIT · Zone"));
+    await mode.click();
+    const modes = page.getByRole("listbox", { name: label("Qué viaja a WhatsApp", "What goes to WhatsApp"), exact: true });
+    await expect(modes.getByRole("option", { name: label("Como en el catálogo", "As in the catalog"), exact: true })).toHaveAccessibleDescription(label("Texto · CUIT · Zona", "Text · CUIT · Zone"));
+    await page.keyboard.press("Escape");
+    await expect(modes).toHaveCount(0);
     await expect(description).toBeDisabled();
     await recipient(page, editor, language, "Juan Gómez");
     await fillsColumn(editor.getByRole("button", { name: new RegExp("^" + label("Como si lo recibiera", "As if received by")) }));
@@ -93,10 +98,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await contained(page, editor, width);
     await page.screenshot({ path: info.outputPath("ce3-inherited-ready.png"), fullPage: true });
 
-    const own = editor.getByRole("radio", { name: new RegExp("^" + label("Propio de esta pregunta", "Own for this question")) });
-    await own.focus();
-    await own.press("Space");
-    await expect(own).toBeChecked();
+    await mode.click();
+    await page.getByRole("option", { name: label("Propio de esta pregunta", "Own for this question"), exact: true }).click();
+    await expect(mode).toHaveAccessibleName(label("Qué viaja a WhatsApp Propio de esta pregunta", "What goes to WhatsApp Own for this question"));
     await expect(description).toBeEnabled();
     await editor.getByRole("button", { name: label("Quitar CUIT de Descripción · hasta 300", "Remove CUIT from Description · up to 300"), exact: true }).click();
     await editor.getByRole("button", { name: label("Quitar Zona de Descripción · hasta 300", "Remove Zone from Description · up to 300"), exact: true }).click();

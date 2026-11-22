@@ -13,19 +13,18 @@ for (const scene of ["chat", "chat-gone"] as const)
         const dialog = page.getByRole("dialog", { name: en ? "Import options into “Customers”" : "Importar opciones a «Clientes»", exact: true });
         await expect(dialog).toBeVisible();
         if (scene === "chat") {
-          await expect(dialog.getByRole("button", { name: en ? "The chat spreadsheet: clientes.xlsx (27 rows)" : "La planilla del chat: clientes.xlsx (27 filas)", exact: true })).toHaveAttribute("aria-pressed", "true");
+          await expect(dialog.getByRole("button", { name: en ? "From The chat spreadsheet: clientes.xlsx (27 rows)" : "Desde La planilla del chat: clientes.xlsx (27 filas)", exact: true })).toBeVisible();
           await expect(dialog.getByRole("button", { name: en ? "Apply without the 24 rows with errors" : "Aplicar sin las 24 filas con errores", exact: true })).toBeVisible();
         } else {
           await expect(dialog.getByText(en ? "The spreadsheet you saw in the chat is no longer available. You can upload the file yourself."
             : "La planilla que viste en el chat ya no está disponible. Podés subir el archivo a mano.", { exact: true })).toBeVisible();
-          await expect(dialog.getByRole("button", { name: en ? "Upload a file" : "Subir un archivo", exact: true })).toHaveAttribute("aria-pressed", "true");
+          await expect(dialog.getByRole("button", { name: en ? "From Upload a file" : "Desde Subir un archivo", exact: true })).toBeVisible();
         }
         await page.evaluate(() => document.fonts.ready);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        // No option of «Desde» goes out of its box, not even the long one of the chat on a phone: the control is measured, not
-        // only the page's scroll.
-        const from = dialog.getByRole("group", { name: en ? "From" : "Desde", exact: true });
-        expect(await from.evaluate(group => group.scrollWidth <= group.clientWidth)).toBe(true);
-        expect(await from.getByRole("button").evaluateAll(buttons => buttons.every(button => button.scrollWidth <= button.clientWidth))).toBe(true);
+        // «Desde» (the shared piece to choose, 2026-11-22) does not go out of its box, not even with the long name of the chat on a
+        // phone: the field is measured, not only the page's scroll.
+        const from = dialog.getByRole("button", { name: en ? /^From / : /^Desde / });
+        expect(await from.evaluate(button => button.scrollWidth <= button.clientWidth)).toBe(true);
         await expect(page).toHaveScreenshot(`catalog-assistant-import-${scene}-${language}-${width}.png`);
       });

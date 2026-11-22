@@ -50,11 +50,12 @@ async function doneOptions(user: ReturnType<typeof userEvent.setup>) {
   if (back) await user.click(back);
   await user.click(within(dialog).getByRole("button", { name: /^(Listo|Done)$/ }));
 }
-// «Importar» opens the import dialog on «Subir un archivo»; «Pegar desde Excel» in «Desde» shows the grid, whose first cell
-// takes the rows (2026-10-31: the options bar has no paste button).
+// «Importar» opens the import dialog on «Subir un archivo»; «Pegar desde Excel» in «Desde» (the shared piece to choose,
+// 2026-11-22) shows the grid, whose first cell takes the rows (2026-10-31: the options bar has no paste button).
 async function pasteRows(user: ReturnType<typeof userEvent.setup>, rows: string) {
   await user.click(await screen.findByRole("button", { name: "Importar" }));
-  await user.click(screen.getByRole("button", { name: "Pegar desde Excel" }));
+  await user.click(screen.getByRole("button", { name: "Desde Subir un archivo" }));
+  await user.click(within(await screen.findByRole("listbox", { name: "Desde" })).getByRole("option", { name: "Pegar desde Excel" }));
   await pasteText(user, screen.getByRole("textbox", { name: "Pegar filas" }), rows);
 }
 const id = "01990000-0000-7000-8000-000000000020";
@@ -401,7 +402,9 @@ describe("Manual catalog page with synthetic current DTO responses", () => {
     await user.click(await screen.findByRole("button", { name: "Reactivar Pérez" }));
     await user.click(screen.getByRole("button", { name: "Editar Pérez" }));
     const text = screen.getByRole("textbox", { name: "Texto" }); await user.clear(text); await pasteText(user, text, "Pérez Norte");
-    await user.click(within(screen.getByRole("group", { name: "Estado" })).getByRole("button", { name: "De baja" }));
+    // The state is the shared piece to choose (2026-11-22).
+    await user.click(screen.getByRole("button", { name: "Estado Activa" }));
+    await user.click(within(await screen.findByRole("listbox", { name: "Estado" })).getByRole("option", { name: "De baja" }));
     await doneOptions(user);
     expect(screen.getByRole("button", { name: "Guardar" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "Guardar" }));
@@ -1561,7 +1564,7 @@ it("saves the order chosen in «Ordenar por…» as a single command and no move
  setup();twoOptions();const bodies:Record<string,unknown>[]=[];server.use(http.put("/api/forms/catalogs/"+id,async({request})=>{bodies.push(await request.json() as Record<string,unknown>);return HttpResponse.json({catalog:{...initial,revision:2},itemIdentityMap:{}, fieldIdentityMap: {}});}));
  await mount("/catalogos/"+id);const user=userEvent.setup();expect(await screen.findByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
  const {more,dialog}=await sortBy(user);
- await pick(within(dialog).getByRole("button",{name:"Columna Texto"}),"Código");await user.click(within(dialog).getByRole("radio",{name:"De la Z a la A"}));
+ await pick(within(dialog).getByRole("button",{name:"Columna Texto"}),"Código");await pick(within(dialog).getByRole("button",{name:"Orden De la A a la Z"}),"De la Z a la A");
  await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));await waitFor(()=>expect(more).toHaveFocus());
  expect(screen.getByRole("status")).toHaveTextContent("Se ordenará por «Código», de la Z a la A, al guardar.");expect(bodies).toEqual([]);
  expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeDisabled();
@@ -1573,10 +1576,10 @@ it("names a pending order by a field in its words, opens again with it and cance
  setup();twoOptions({fields:[stock]});await mount("/catalogos/"+id);const user=userEvent.setup();await screen.findByRole("button",{name:"Bajar Pérez"});
  const {dialog}=await sortBy(user);
  await pick(within(dialog).getByRole("button",{name:"Columna Texto"}),"Stock mínimo");
- await user.click(within(dialog).getByRole("radio",{name:"De mayor a menor"}));await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));
+ await pick(within(dialog).getByRole("button",{name:"Orden De menor a mayor"}),"De mayor a menor");await user.click(within(dialog).getByRole("button",{name:"Ordenar"}));
  expect(await screen.findByRole("status")).toHaveTextContent("Se ordenará por «Stock mínimo», de mayor a menor, al guardar.");
  const {dialog:again}=await sortBy(user);
- expect(within(again).getByRole("button",{name:"Columna Stock mínimo"})).toBeInTheDocument();expect(within(again).getByRole("radio",{name:"De mayor a menor"})).toBeChecked();
+ expect(within(again).getByRole("button",{name:"Columna Stock mínimo"})).toBeInTheDocument();expect(within(again).getByRole("button",{name:"Orden De mayor a menor"})).toBeInTheDocument();
  await user.click(within(again).getByRole("button",{name:"Cancelar"}));await waitFor(()=>expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
  await user.click(screen.getByRole("button",{name:"Cancelar orden"}));
  expect(screen.queryByText(/Se ordenará por/)).not.toBeInTheDocument();expect(screen.getByRole("button",{name:"Bajar Pérez"})).toBeEnabled();
@@ -1684,7 +1687,7 @@ describe("the import of a proposal's spreadsheet", () => {
     const pending = vi.spyOn(catalogImports, "fetchAssistantCatalogImport");
     const router = await mountAt({ pathname: "/catalogos/" + id, state: assistantImportState({ requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 }) });
     const dialog = await chatDialog();
-    expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).getByRole("button", { name: "Desde La planilla del chat: contratistas.xlsx (86 filas)" })).toBeInTheDocument();
     await within(dialog).findByText("Repetido: también está en otra fila.");
     expect(check).toHaveBeenCalledExactlyOnceWith(id, { requestId, proposalId, expectedRevision: 1 }, expect.any(AbortSignal));
     expect(pending).not.toHaveBeenCalled();
@@ -1699,7 +1702,7 @@ describe("the import of a proposal's spreadsheet", () => {
     const check = vi.spyOn(catalogImports, "previewAssistantCatalogImport").mockResolvedValue(chatPreview());
     const router = await mountAt("/catalogos/" + id + "?pedido=" + requestId.replaceAll("-", "") + "&propuesta=" + proposalId.replaceAll("-", ""));
     const dialog = await chatDialog();
-    expect(within(dialog).getByRole("button", { name: "La planilla del chat" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).getByRole("button", { name: "Desde La planilla del chat" })).toBeInTheDocument();
     await within(dialog).findByText("Repetido: también está en otra fila.");
     expect(check).toHaveBeenCalledExactlyOnceWith(id, { requestId, proposalId, expectedRevision: 1 }, expect.any(AbortSignal));
     // The resolved page size stays in the address, as always; the link's parameters leave it.
@@ -1713,15 +1716,17 @@ describe("the import of a proposal's spreadsheet", () => {
     const pending = vi.spyOn(catalogImports, "fetchAssistantCatalogImport").mockResolvedValue({ requestId, proposalId, fileName: "contratistas.xlsx", rowCount: 86 });
     await mountAt("/catalogos/" + id);
     const dialog = await chatDialog();
-    expect(within(dialog).getByRole("button", { name: "La planilla del chat: contratistas.xlsx (86 filas)" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).getByRole("button", { name: "Desde La planilla del chat: contratistas.xlsx (86 filas)" })).toBeInTheDocument();
     expect(pending).toHaveBeenCalledExactlyOnceWith(id, expect.any(AbortSignal));
     await within(dialog).findByText("Repetido: también está en otra fila.");
     await userEvent.click(within(dialog).getByRole("button", { name: "Cancelar" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     // Opened by hand afterwards, it is the import of always.
     await userEvent.click(screen.getByRole("button", { name: "Importar" }));
-    expect(within(await chatDialog()).getByRole("button", { name: "Subir un archivo" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("button", { name: /La planilla del chat/ })).not.toBeInTheDocument();
+    await userEvent.click(within(await chatDialog()).getByRole("button", { name: "Desde Subir un archivo" }));
+    const origins = await screen.findByRole("listbox", { name: "Desde" });
+    expect(within(origins).queryByRole("option", { name: /La planilla del chat/ })).not.toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
     expect(pending).toHaveBeenCalledOnce();
     cleanup(); vi.restoreAllMocks(); queryClient.clear();
     // Reading catalogs only: neither the pending import nor the link opens anything, and the link still leaves the address.

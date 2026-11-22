@@ -39,7 +39,7 @@ it("offers neither filters nor its own presentation for a Filters catalog", asyn
   expect(screen.getByText("Una o varias")).toBeInTheDocument();
   expect(screen.queryByText("Qué opciones ve cada persona")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Agregar filtro fijo" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("radio", { name: /Propio de esta pregunta/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Qué viaja a WhatsApp/ })).not.toBeInTheDocument();
 });
 
 const ownCatalogId = "01990000-0000-7000-8000-000000000098";
@@ -61,7 +61,7 @@ const longTitles = () => HttpResponse.json({ cultures: [{ culture: "es", titleTo
 
 it("shows the server title check of an own presentation over every catalog option", async () => {
   const bodies = renderOwnPresentation(longTitles);
-  expect(await screen.findByRole("radio", { name: /Propio de esta pregunta/ })).toBeChecked();
+  expect(await screen.findByRole("button", { name: "Qué viaja a WhatsApp Propio de esta pregunta" })).toBeInTheDocument();
   expect(await screen.findByText("C1 · Opción 1")).toBeInTheDocument();
   expect(await screen.findByText("41 opciones superan los 30 caracteres del título.")).toBeInTheDocument();
   for (const example of ownExamples) expect(screen.getByText(example.title)).toBeInTheDocument();
@@ -457,7 +457,7 @@ it("starts both zones folded, each band saying what it holds", async () => {
   const whatsapp = screen.getByRole("region", { name: whatsappTitle });
   expect(within(whatsapp).getByRole("button", { name: "Expandir «En WhatsApp»" })).toHaveAttribute("aria-expanded", "false");
   expect(within(whatsapp).getByText("Como en el catálogo · Texto · Detalle")).toBeVisible();
-  expect(within(whatsapp).queryByRole("radio", { name: /Como en el catálogo/ })).not.toBeInTheDocument();
+  expect(within(whatsapp).queryByRole("button", { name: /^Qué viaja a WhatsApp/ })).not.toBeInTheDocument();
   await userEvent.click(toggle);
   expect(within(filters).getByRole("button", { name: "Plegar «Qué opciones ve cada persona»" })).toHaveAttribute("aria-expanded", "true");
   expect(within(filters).getByRole("group", { name: "Condición 1" })).toBeVisible();

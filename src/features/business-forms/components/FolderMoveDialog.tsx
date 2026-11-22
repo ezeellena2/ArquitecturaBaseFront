@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useRestoreFocusOnClose } from "@/shared/hooks/useRestoreFocusOnClose";
 import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
+import { FormField } from "@/shared/ui/FormField";
 import { notify } from "@/shared/ui/notifications";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { Picker } from "@/shared/ui/Picker";
 import type { FormFolder } from "../api/folders";
 import { hasSubfolders } from "../folderTree";
 import { useFolderWrites, type FolderScope } from "../hooks/useFormFolders";
@@ -13,9 +14,9 @@ import { folderWriteFailure } from "./folderFeedback";
 const toMenu = "menu";
 
 /// «Mover a…» (CM4): «Al menú, como carpeta propia» or «Adentro de «Compras»» for each other folder of the first level, starting
-/// where the folder is. A folder with subfolders cannot go into another, so those options stay off with the reason (MA1-A). The
-/// folder that goes into another loses its icon and the one that comes up to the menu takes the first free one: it goes without
-/// an icon and the server decides.
+/// where the folder is, in the shared piece to choose (DS1-A). A folder with subfolders cannot go into another, so those options
+/// stay off with the reason (MA1-A). The folder that goes into another loses its icon and the one that comes up to the menu takes
+/// the first free one: it goes without an icon and the server decides.
 export function FolderMoveDialog({ scope, folders, folder, onClose, focusFallback }: {
   scope: FolderScope;
   folders: readonly FormFolder[];
@@ -30,8 +31,8 @@ export function FolderMoveDialog({ scope, folders, folder, onClose, focusFallbac
   const [target, setTarget] = useState(initial);
   const [error, setError] = useState<string>();
   const nested = hasSubfolders(folders, folder.id);
-  const options = [{ value: toMenu, label: t("moveDialog.toMenu") }, ...folders.filter(option => option.parentId === null && option.id !== folder.id).map(option => ({
-    value: option.id, label: t("moveDialog.into", { name: option.name }), disabled: nested, disabledReason: nested ? t("hasSubfolders") : null,
+  const options = [{ id: toMenu, label: t("moveDialog.toMenu") }, ...folders.filter(option => option.parentId === null && option.id !== folder.id).map(option => ({
+    id: option.id, label: t("moveDialog.into", { name: option.name }), disabledReason: nested ? t("hasSubfolders") : null,
   }))];
   const pending = writes.update.pending;
   const save = async () => {
@@ -46,11 +47,11 @@ export function FolderMoveDialog({ scope, folders, folder, onClose, focusFallbac
   };
   return (
     <Dialog open onOpenChange={open => { if (!open && !pending) onClose(); }}>
-      <DialogContent mobileFullscreen aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("moveDialog.saving") : undefined}>
+      <DialogContent aria-describedby={undefined} onCloseAutoFocus={restoreFocus} closeDisabledReason={pending ? t("moveDialog.saving") : undefined}>
         <DialogHeader><DialogTitle>{t("moveDialog.title", { name: folder.name })}</DialogTitle></DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <RadioGroupField label={t("moveDialog.label")} options={options} value={target} error={error} onValueChange={value => { setTarget(value); setError(undefined); }} />
-        </div>
+        <FormField label={t("moveDialog.label")} error={error}>
+          <Picker label={t("moveDialog.label")} options={options} value={target} disabled={pending} onChange={value => { setTarget(value); setError(undefined); }} />
+        </FormField>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={onClose}>{t("common:actions.cancel")}</Button>
           <Button type="button" disabled={target === initial} pending={pending} onClick={() => { void save(); }}>

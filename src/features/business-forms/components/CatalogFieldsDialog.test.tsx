@@ -65,7 +65,8 @@ it("opens every field from «Agregar campos», with their count, in a modal with
   await userEvent.click(within(dialog).getByRole("button", { name: "Editar Zona" }));
   expect(within(dialog).getByRole("textbox", { name: "Nombre" })).toHaveValue("Zona");
   expect(within(dialog).getByText("Campo 2 de 2")).toBeInTheDocument();
-  expect(within(dialog).getByRole("button", { name: "Filtro" })).toHaveAttribute("aria-pressed", "true");
+  // The role is chosen with the shared piece (2026-11-22): its button says «Papel» and the chosen one.
+  expect(within(dialog).getByRole("button", { name: "Papel Filtro" })).toBeInTheDocument();
   cleanup();
   // Without fields «Agregar campos» has no count and opens on a new field, with the cursor in its name; untouched, «Listo»
   // leaves nothing in the catalog.
@@ -115,7 +116,7 @@ it("adds an optional field at the end, with the cursor in its name, and says why
   expect(required).toHaveAttribute("aria-disabled", "true");
   expect(required).toHaveAccessibleDescription(optionalFirst);
   expect(within(dialog).queryByText(optionalFirst, { selector: "p" })).not.toBeInTheDocument();
-  expect(within(dialog).getByRole("button", { name: "Dato" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(dialog).getByRole("button", { name: "Papel Dato" })).toBeInTheDocument();
   // A saved field can be made required.
   await userEvent.click(within(dialog).getByRole("button", { name: "Editar CUIT" }));
   expect(within(dialog).getByRole("checkbox", { name: "Obligatorio" })).toBeEnabled();
@@ -276,8 +277,10 @@ it("puts the type's detail beside the type and changes it with the type", async 
   expect(within(dialog).getByRole("checkbox", { name: "Único" })).toBeChecked();
   await userEvent.click(within(dialog).getByRole("checkbox", { name: "Obligatorio" }));
   expect(within(dialog).getByRole("checkbox", { name: "Obligatorio" })).toBeChecked();
-  await userEvent.click(within(dialog).getByRole("button", { name: "Filtro" }));
-  expect(within(dialog).getByRole("button", { name: "Filtro" })).toHaveAttribute("aria-pressed", "true");
+  const roles = await openList(/^Papel /);
+  expect(within(roles).getAllByRole("option").map(option => option.textContent)).toEqual(["Filtro", "Dato"]);
+  await userEvent.click(within(roles).getByRole("option", { name: "Filtro" }));
+  expect(within(dialog).getByRole("button", { name: "Papel Filtro" })).toHaveFocus();
   // The role is explained only by its tooltip, without a text under it.
   expect(within(dialog).queryByText("Para mostrarle a cada persona lo suyo, o para un filtro fijo de una pregunta.")).not.toBeInTheDocument();
   await choose(/^Tipo /, "Sí o no");

@@ -6,7 +6,6 @@ import { DataList } from "@/shared/ui/DataList";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { FormField } from "@/shared/ui/FormField";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
 import { AlertTriangleIcon, CheckIcon } from "@/shared/ui/icons";
 import { cn } from "@/shared/lib/utils";
@@ -156,7 +155,7 @@ export function CatalogQuestionSettings({ scope, source, type = "choice", questi
           groupName={groupField ? administrativeName(groupField.name, scope.culture) : null}/></div>
       </CollapsibleSection>
       {inApp ? null : <CollapsibleSection title={presentationTitle} open={presentationOpen} onOpenChange={setPresentationOpen} expandLabel={t("catalogQuestion.zones.expand", { name: presentationTitle })} collapseLabel={t("catalogQuestion.zones.collapse", { name: presentationTitle })} summary={presentationSummary}>
-        <div className="flex flex-col gap-4 p-4"><RadioGroupField label={t("catalogQuestion.presentation.mode")} variant="cards" value={own ? "own" : "catalog"} onValueChange={mode => change({ ...source, presentation: mode === "own" ? { title: [...(catalog.presentation?.title ?? ["text"])], description: [...(catalog.presentation?.description ?? ["detail"])] } : null })} options={[{ value: "catalog", disabled: readOnly, label: t("catalogQuestion.presentation.inherit"), description: inherited }, { value: "own", disabled: readOnly, label: t("catalogQuestion.presentation.own") }]}/><CatalogPresentationSection embedded value={source.presentation ?? catalog.presentation} fields={draftFields} items={draftItems} valueType={catalog.valueType} culture={contentCulture} inputCulture="en" readOnly={readOnly || !own} errors={errors} check={check} onChange={presentation => change({ ...source, presentation })}/>
+        <div className="flex flex-col gap-4 p-4"><FormField label={t("catalogQuestion.presentation.mode")}><Picker label={t("catalogQuestion.presentation.mode")} disabled={readOnly} value={own ? "own" : "catalog"} onChange={mode => { if ((mode === "own") !== own) change({ ...source, presentation: mode === "own" ? { title: [...(catalog.presentation?.title ?? ["text"])], description: [...(catalog.presentation?.description ?? ["detail"])] } : null }); }} options={[{ id: "catalog", label: t("catalogQuestion.presentation.inherit"), description: inherited }, { id: "own", label: t("catalogQuestion.presentation.own") }]}/></FormField><CatalogPresentationSection embedded value={source.presentation ?? catalog.presentation} fields={draftFields} items={draftItems} valueType={catalog.valueType} culture={contentCulture} inputCulture="en" readOnly={readOnly || !own} errors={errors} check={check} onChange={presentation => change({ ...source, presentation })}/>
         {own && ownCheck.isFetching ? <div role="status" className="flex items-center gap-2"><Spinner decorative/><p className="text-sm">{t("catalogQuestion.presentation.checking")}</p></div> : null}
         {own && ownCheck.isError && !ownCheck.isFetching ? <div role="alert"><p className="text-sm">{t("catalogQuestion.presentation.checkFailed")}</p><Button type="button" variant="link" onClick={() => void ownCheck.refetch()}>{t("common:actions.retry")}</Button></div> : null}</div>
       </CollapsibleSection>}

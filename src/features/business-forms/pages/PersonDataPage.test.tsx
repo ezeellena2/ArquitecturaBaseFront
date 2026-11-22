@@ -16,6 +16,10 @@ async function openPicker(trigger: HTMLElement) {
   await userEvent.keyboard("{Enter}");
   return screen.findByRole("listbox");
 }
+// The type is chosen with the shared piece (2026-11-22): its button says «Tipo» and the chosen one.
+async function chooseType(dialog: ReturnType<typeof within>, option: string) {
+  await userEvent.click(within(await openPicker(dialog.getByRole("button", { name: /^Tipo / }))).getByRole("option", { name: option }));
+}
 vi.mock("react-oidc-context", async () => { const actual = await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"); return { ...actual, useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }; });
 const id = "01990000-0000-7000-8000-000000000001", userId = "01990000-0000-7000-8000-000000000002";
 const attribute = { id, key: "branch", name: { es: "Sucursal", en: "Branch" }, originalCulture: "es", type: "Text", sourceCatalogId: null, sourceCatalogName: null, position: 1, isActive: true, revision: 1, usedBy: [] };
@@ -194,7 +198,7 @@ it("creates a text attribute with an immutable key and without reading catalogs"
  // Edited by hand, the key no longer follows the name.
  const key = dialog.getByRole("textbox", { name: "Clave" });
  await userEvent.clear(key); await userEvent.type(key, "site");
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "site", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
 });
@@ -226,7 +230,7 @@ it("marks the empty fields of a new attribute when saving and clears each one as
  // The key follows the name, so it is filled too.
  expect(key).toHaveValue("sede");
  expect(key).not.toHaveAttribute("aria-invalid", "true");
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  await userEvent.click(save);
  await waitFor(() => expect(bodies).toEqual([{ key: "sede", name: { es: "Sede" }, type: "Text", sourceCatalogId: null }]));
 });
@@ -271,7 +275,7 @@ it("fills a new attribute's key from its name, without repeating another attribu
  await userEvent.clear(key); await userEvent.type(key, "sede");
  await userEvent.type(name, " norte");
  expect(key).toHaveValue("sede");
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  await waitFor(() => expect(bodies).toEqual([{ key: "sede", name: { es: "Branch norte" }, type: "Text", sourceCatalogId: null }]));
  // A saved attribute keeps its key.
@@ -362,21 +366,24 @@ it("asks to confirm clearing stored values when the type changes and resends wit
  }));
  await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
  const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  const confirm = await dialog.findByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" });
  expect(dialog.getByText(notConfirmed)).toBeInTheDocument();
  await userEvent.click(confirm);
  expect(confirm).toBeChecked();
+ // Choosing the same type again is not a change: the box stays checked.
+ await chooseType(dialog, "Texto");
+ expect(confirm).toBeChecked();
  // Checking it answers the request: Tipo is no longer marked (validated live after the first error, point 7).
- expect(dialog.getByRole("radiogroup", { name: "Tipo" })).not.toHaveAccessibleDescription();
+ expect(dialog.getByRole("button", { name: "Tipo Texto" })).not.toHaveAccessibleDescription();
  expect(dialog.queryByText(notConfirmed)).not.toBeInTheDocument();
  // Back to the saved type nothing is cleared: neither the request nor the box stay.
- await userEvent.click(dialog.getByRole("radio", { name: "Elegir de un catálogo" }));
+ await chooseType(dialog, "Elegir de un catálogo");
  expect(dialog.queryByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" })).not.toBeInTheDocument();
  expect(dialog.queryByText(notConfirmed)).not.toBeInTheDocument();
  // Changing it again shows the box unchecked, with the request until it is checked.
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  const again = dialog.getByRole("checkbox", { name: "Sí, cambiar el dato y borrar los valores de 3 personas" });
  expect(again).not.toBeChecked();
  expect(dialog.getByText(notConfirmed)).toBeInTheDocument();
@@ -439,7 +446,7 @@ it("keeps the value removal confirmation visible while the confirmed save runs a
  }));
  await userEvent.click(await screen.findByRole("button", { name: "Editar Sucursal" }));
  const dialog = within(screen.getByRole("dialog", { name: "Editar dato" }));
- await userEvent.click(dialog.getByRole("radio", { name: "Texto" }));
+ await chooseType(dialog, "Texto");
  await userEvent.click(dialog.getByRole("button", { name: "Guardar" }));
  const confirmName = "Sí, cambiar el dato y borrar los valores de 3 personas";
  await userEvent.click(await dialog.findByRole("checkbox", { name: confirmName }));
@@ -486,15 +493,14 @@ it.each([
  expect(valueOf(dialog, "Se usa en")).toHaveTextContent(new RegExp("^" + usedIn + "$"));
  expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
  expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
- for (const name of ["Elegir de un catálogo", "Texto"]) {
-  expect(within(dialog).getByRole("radio", { name })).toHaveAttribute("aria-disabled", "true");
-  expect(within(dialog).getByRole("radio", { name })).toHaveAccessibleDescription(inUseReason);
- }
+ // While in use its type cannot change: the field is off and the reason describes its wrapper (MA1-A).
+ expect(within(dialog).getByRole("button", { name: "Tipo Texto" })).toBeDisabled();
+ expect(within(dialog).getByRole("group", { name: "Tipo" })).toHaveAccessibleDescription(inUseReason);
  const active = within(dialog).getByRole("checkbox", { name: "Dato activo" });
  expect(active).toHaveAttribute("aria-disabled", "true");
  expect(active).toHaveAccessibleDescription(inUseReason);
  for (const text of within(dialog).getAllByText(inUseReason)) expect(text).not.toBeVisible();
- await userEvent.hover(within(dialog).getByRole("radio", { name: "Texto" }));
+ await userEvent.hover(within(dialog).getByRole("group", { name: "Tipo" }));
  expect(await screen.findByRole("tooltip")).toHaveTextContent(inUseReason);
 });
 it("gives why the catalog of an attribute in use is off as its reason", async () => {

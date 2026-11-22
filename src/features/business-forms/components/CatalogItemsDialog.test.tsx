@@ -65,18 +65,28 @@ it("edits only the menu language of the chosen option and keeps its identity", a
   expect(last).toEqual({ ...first, label: { es: "Pérez Hnos.", en: "Perez Brothers" } });
 });
 
+// The state is chosen with the shared piece (2026-11-22): its button says «Estado» and the chosen one.
+async function chooseState(user: ReturnType<typeof userEvent.setup>, option: string) {
+  await user.click(screen.getByRole("button", { name: /^Estado / }));
+  await user.click(within(await screen.findByRole("listbox", { name: "Estado" })).getByRole("option", { name: option }));
+}
+
 it("says which saved option it is and stages its state as active or inactive", async () => {
   const { user, onChange } = await mount({ items: [first, second] });
   expect(screen.getByRole("heading", { name: "Opción 1 de 2" })).toBeInTheDocument();
-  await user.click(within(screen.getByRole("group", { name: "Estado" })).getByRole("button", { name: "De baja" }));
+  await user.click(screen.getByRole("button", { name: "Estado Activa" }));
+  const states = await screen.findByRole("listbox", { name: "Estado" });
+  expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Activa", "De baja"]);
+  expect(within(states).getByRole("option", { name: "Activa" })).toHaveAttribute("aria-selected", "true");
+  await user.click(within(states).getByRole("option", { name: "De baja" }));
   expect(onChange).toHaveBeenLastCalledWith({ ...first, isActive: false });
-  await user.click(within(screen.getByRole("group", { name: "Estado" })).getByRole("button", { name: "Activa" }));
+  await chooseState(user, "Activa");
   expect(onChange).toHaveBeenLastCalledWith(first);
 });
 
 it("offers no state for a new option and generates its code from the text until it has one", async () => {
   const { user, onGenerateCode } = await mount({ mode: "new", items: [{ ...blank, label: { es: "Norte", en: null } }, fuel] });
-  expect(screen.queryByRole("group", { name: "Estado" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Estado / })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Generar desde el texto" }));
   expect(onGenerateCode).toHaveBeenCalledWith(expect.objectContaining({ localId: "blank" }));
   await user.click(screen.getByRole("button", { name: "Editar Combustibles" }));
@@ -172,7 +182,7 @@ it("presents a required field as optional on an inactive option, as the server o
   expect(screen.getByText("Confirmado", { selector: "label" })).toHaveTextContent(/^Confirmado$/);
   await user.click(screen.getByRole("button", { name: "Limpiar Confirmado" }));
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ localId: "first", fields: { [confirmed.id]: null } }));
-  await user.click(within(screen.getByRole("group", { name: "Estado" })).getByRole("button", { name: "Activa" }));
+  await chooseState(user, "Activa");
   expect(screen.getByText("Confirmado", { selector: "label" })).toHaveTextContent(/^Confirmado \*$/);
 });
 

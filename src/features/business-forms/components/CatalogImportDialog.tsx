@@ -17,7 +17,7 @@ import { DocumentIcon } from "@/shared/ui/icons";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { PasteGrid } from "@/shared/ui/PasteGrid";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
@@ -193,9 +193,11 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   const origin = <Surface title={t("catalogs.import.origin")} headingLevel={3} actions={state.source === "file" ? <Button type="button" variant="link" pending={downloadingTemplate} disabled={busy} onClick={onTemplate}>{t(downloadingTemplate ? "catalogs.actions.downloadingTemplate" : "catalogs.import.template")}</Button> : null}>
     <div className={rows}>
       {state.chatGone ? <div><Banner tone="warning">{state.chatGone}</Banner></div> : null}
-      <Row label={<><Label>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t(chatOffered ? "catalogs.import.sourceHelpChat" : "catalogs.import.sourceHelp")} /></>}>
-        {/* On a 320 px phone not even two of its texts fit side by side: in the phone its options go down a line (`wrap`). */}
-        <div className="sm:self-start"><SegmentedControl wrap aria-label={t("catalogs.import.from")} disabled={busy} options={sources.map(source => ({ key: source, label: sourceLabel(source), pressed: state.source === source, onSelect: () => changeSource(source) }))} /></div>
+      <Row label={<><Label htmlFor={id + "from"}>{t("catalogs.import.from")}</Label><Help label={t("catalogs.import.sourceHelpLabel")} text={t(chatOffered ? "catalogs.import.sourceHelpChat" : "catalogs.import.sourceHelp")} /></>}>
+        {/* The shared piece to choose (2026-11-22). Choosing again the origin it has keeps the file or the pasted rows. */}
+        <Picker id={id + "from"} label={t("catalogs.import.from")} disabled={busy} value={state.source}
+          onChange={next => { const source = sources.find(item => item === next); if (source && source !== state.source) changeSource(source); }}
+          options={sources.map(source => ({ id: source, label: sourceLabel(source) }))} />
       </Row>
       {state.source === "file" ? <Row label={<><Label htmlFor={id + "file"}>{t("catalogs.import.file")}</Label><Help label={t("catalogs.import.fileHelpLabel")} text={t("catalogs.import.fileHint")} /></>}>
         <div className="flex min-w-0 items-center gap-2">

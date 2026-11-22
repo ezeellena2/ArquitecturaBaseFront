@@ -14,10 +14,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await more.click();
     await page.getByRole("menuitem", { name: english ? "Sort by…" : "Ordenar por…" }).click();
     const dialog = page.getByRole("dialog", { name: english ? "Sort the options" : "Ordenar las opciones" });
-    await expect(dialog.getByRole("radio", { name: english ? "A to Z" : "De la A a la Z" })).toBeChecked();
+    // The direction is the shared piece to choose (2026-11-22): its button says «Orden» and the chosen one.
+    const order = dialog.getByRole("button", { name: english ? /^Order / : /^Orden / });
+    await expect(order).toHaveAccessibleName(english ? "Order A to Z" : "Orden De la A a la Z");
     await dialog.getByRole("button", { name: english ? "Column Text" : "Columna Texto", exact: true }).click();
     await page.getByRole("option", { name: english ? "Code" : "Código", exact: true }).click();
-    await dialog.getByRole("radio", { name: english ? "Z to A" : "De la Z a la A" }).click();
+    await order.click();
+    await page.getByRole("option", { name: english ? "Z to A" : "De la Z a la A", exact: true }).click();
     await page.screenshot({ path: info.outputPath("manual-sort-dialog.png") });
     await dialog.getByRole("button", { name: english ? "Sort" : "Ordenar", exact: true }).click();
     await expect(dialog).toHaveCount(0);

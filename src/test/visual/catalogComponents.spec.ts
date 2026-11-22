@@ -12,12 +12,16 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const create = page.getByRole("button", { name: es ? "Nuevo catálogo" : "New catalog", exact: true });
     await create.click();
     const dialog = page.getByRole("dialog", { name: es ? "Nuevo catálogo" : "New catalog" });
-    const manual = dialog.getByRole("radio", { name: es ? "Escribirlas a mano" : "Write them manually" });
-    await manual.focus();
-    await page.keyboard.down("ArrowDown");
-    await expect(dialog.getByRole("radio", { name: es ? "Tomarlas de la base, con filtros" : "Use database options with filters" })).toBeChecked();
-    await page.keyboard.up("ArrowDown");
-    await expect(dialog.getByRole("radio", { name: es ? "Escribir una consulta" : "Write a query" })).toHaveCount(0);
+    // The origin is the shared piece to choose (2026-11-22): the arrow opens its list, which has no query, and Enter chooses.
+    const question = es ? "¿De dónde salen las opciones?" : "Where do the options come from?";
+    await dialog.getByRole("button", { name: question + " " + (es ? "Escribirlas a mano" : "Write them manually"), exact: true }).focus();
+    await page.keyboard.press("ArrowDown");
+    const origins = page.getByRole("listbox", { name: question, exact: true });
+    await expect(origins.getByRole("option")).toHaveCount(2);
+    await expect(origins.getByRole("option", { name: es ? "Escribir una consulta" : "Write a query" })).toHaveCount(0);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByRole("button", { name: question + " " + (es ? "Tomarlas de la base, con filtros" : "Use database options with filters"), exact: true })).toBeFocused();
     await dialog.screenshot({ path: "test-results/catalog-origin-" + language + "-" + width + ".png" });
     await page.keyboard.press("Escape");
     await expect(create).toBeFocused();

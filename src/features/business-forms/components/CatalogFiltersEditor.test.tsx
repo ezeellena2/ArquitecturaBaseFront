@@ -79,9 +79,20 @@ describe("Chosen Users filters editor K4", () => {
     expect(last.conditions[1]?.localId).not.toBe("role");
     expect(last.conditions[1]?.localId).toBeTruthy();
   });
+  // The direction of the order is chosen with the shared piece (2026-11-22), like its column.
+  it("chooses the direction of the order in the shared piece", async () => {
+    const { onChange } = await mount();
+    const list = await openList("Dirección A → Z");
+    expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual(["A → Z", "Z → A"]);
+    expect(within(list).getByRole("option", { name: "A → Z" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(list).getByRole("option", { name: "Z → A" }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...initial, sortDescending: true });
+    expect(screen.getByRole("button", { name: "Dirección Z → A" })).toHaveFocus();
+  });
   it("keeps configuration readable and offers no mutations without Manage", async () => {
     const { onChange } = await mount(false);
     expect(screen.getByRole("button", { name: "Texto de cada opción nombre" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Dirección A → Z" })).toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "Sin incluir a quien lo recibe" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Agregar condición" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Quitar condición 1" })).not.toBeInTheDocument();

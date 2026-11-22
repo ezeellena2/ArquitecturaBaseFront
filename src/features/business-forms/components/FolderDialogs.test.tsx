@@ -232,12 +232,17 @@ describe("moving and deleting a folder (CM4)", () => {
     const onClose = vi.fn();
     renderDialog(scope => <FolderMoveDialog scope={scope} folders={tree} folder={tree[2]} onClose={onClose} />);
     const dialog = await screen.findByRole("dialog", { name: "Mover «Norte» a…" });
-    expect(within(dialog).getAllByRole("radio")).toHaveLength(3);
-    expect(within(dialog).getByRole("radio", { name: "Adentro de «Repartos»" })).toBeChecked();
-    expect(within(dialog).getByRole("radio", { name: "Adentro de «Facturación»" })).not.toBeChecked();
-    expect(within(dialog).getByRole("button", { name: "Mover" })).toBeDisabled();
-    await userEvent.click(within(dialog).getByRole("radio", { name: "Al menú, como carpeta propia" }));
-    await userEvent.click(within(dialog).getByRole("button", { name: "Mover" }));
+    const save = within(dialog).getByRole("button", { name: "Mover" });
+    expect(save).toBeDisabled();
+    // The destination is chosen with the shared piece (2026-11-22); its button says where the folder is.
+    await userEvent.click(within(dialog).getByRole("button", { name: "Dónde va Adentro de «Repartos»" }));
+    const list = await screen.findByRole("listbox", { name: "Dónde va" });
+    expect(within(list).getAllByRole("option")).toHaveLength(3);
+    expect(within(list).getByRole("option", { name: "Adentro de «Repartos»" })).toHaveAttribute("aria-selected", "true");
+    expect(within(list).getByRole("option", { name: "Adentro de «Facturación»" })).toHaveAttribute("aria-selected", "false");
+    await userEvent.click(within(list).getByRole("option", { name: "Al menú, como carpeta propia" }));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Dónde va Al menú, como carpeta propia" })).toHaveFocus());
+    await userEvent.click(save);
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(moved).toEqual([{ expectedRevision: 1, name: "Norte", parentId: null, icon: null }]);
   });
@@ -245,11 +250,18 @@ describe("moving and deleting a folder (CM4)", () => {
   it("does not let a folder with subfolders go into another, and says why", async () => {
     renderDialog(scope => <FolderMoveDialog scope={scope} folders={tree} folder={tree[1]} onClose={vi.fn()} />);
     const dialog = await screen.findByRole("dialog", { name: "Mover «Repartos» a…" });
-    expect(within(dialog).getByRole("radio", { name: "Al menú, como carpeta propia" })).toBeChecked();
-    expect(within(dialog).queryByRole("radio", { name: "Adentro de «Repartos»" })).not.toBeInTheDocument();
-    const into = within(dialog).getByRole("radio", { name: "Adentro de «Facturación»" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Dónde va Al menú, como carpeta propia" }));
+    const list = await screen.findByRole("listbox", { name: "Dónde va" });
+    expect(within(list).getByRole("option", { name: "Al menú, como carpeta propia" })).toHaveAttribute("aria-selected", "true");
+    expect(within(list).queryByRole("option", { name: "Adentro de «Repartos»" })).not.toBeInTheDocument();
+    const into = within(list).getByRole("option", { name: "Adentro de «Facturación»" });
     expect(into).toHaveAttribute("aria-disabled", "true");
     expect(into).toHaveAccessibleDescription("Tiene subcarpetas: no puede ir adentro de otra.");
+    // Touching it does not choose it: the list stays open and the folder stays in the menu.
+    await userEvent.click(into);
+    expect(into).toHaveAttribute("aria-selected", "false");
+    await userEvent.keyboard("{Escape}");
+    expect(within(dialog).getByRole("button", { name: "Mover" })).toBeDisabled();
   });
 
   it("says that a folder of the first level leaves the menu, counts what is lost and deletes with the revision it read", async () => {

@@ -5,7 +5,6 @@ import { Button } from "@/shared/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
 import { FormField } from "@/shared/ui/FormField";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import type { CatalogItemSort } from "../api/catalogs";
 import type { CatalogFieldDraft } from "../catalogFields";
 import { catalogSortFields, catalogSortKind } from "../catalogSort";
@@ -39,8 +38,10 @@ export function CatalogSortDialog({ fields, culture, value, focusFallback, onApp
       <FormField label={t("catalogs.sort.column")}>
         <Picker label={t("catalogs.sort.column")} value={column} onChange={setColumn} options={columns.map(option => ({ id: option.value, label: option.label }))} />
       </FormField>
-      <RadioGroupField label={t("catalogs.sort.order")} showLabel help={t("catalogs.sort.orderHelp")} value={descending ? "desc" : "asc"} onValueChange={next => setDescending(next === "desc")}
-        options={[{ value: "asc", label: t("catalogs.sort." + kind + ".asc") }, { value: "desc", label: t("catalogs.sort." + kind + ".desc") }]} />
+      <FormField label={t("catalogs.sort.order")} help={t("catalogs.sort.orderHelp")}>
+        <Picker label={t("catalogs.sort.order")} value={descending ? "desc" : "asc"} onChange={next => setDescending(next === "desc")}
+          options={[{ id: "asc", label: t("catalogs.sort." + kind + ".asc") }, { id: "desc", label: t("catalogs.sort." + kind + ".desc") }]} />
+      </FormField>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button type="button" onClick={() => { onApply({ column, descending }); onClose(); }}>{t("catalogs.sort.apply")}</Button>

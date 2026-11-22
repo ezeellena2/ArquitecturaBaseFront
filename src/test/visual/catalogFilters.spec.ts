@@ -23,7 +23,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: label("Todos (1)", "All (1)"), exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: label("De la base (1)", "From the database (1)"), exact: true })).toBeVisible();
     await page.getByRole("button", { name: label("Nuevo catálogo", "New catalog"), exact: true }).click();
-    await page.getByRole("radio", { name: label("Tomarlas de la base, con filtros", "Use database options with filters"), exact: true }).click();
+    await page.getByRole("button", { name: label("¿De dónde salen las opciones? Escribirlas a mano", "Where do the options come from? Write them manually"), exact: true }).click();
+    await page.getByRole("option", { name: label("Tomarlas de la base, con filtros", "Use database options with filters"), exact: true }).click();
     await page.getByRole("button", { name: label("Continuar", "Continue"), exact: true }).click();
     await page.getByRole("heading", { name: label("Nuevo catálogo", "New catalog"), exact: true }).waitFor();
     // No language selector: the catalog is written in the menu language, which is its original.
