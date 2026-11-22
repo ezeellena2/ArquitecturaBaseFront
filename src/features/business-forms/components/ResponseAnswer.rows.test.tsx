@@ -41,3 +41,16 @@ it("shows the items in a table with the number to the right and a column per que
     ["1", "GLIFOSATO 64%", "1.500,5", "Sí"], ["2", "UREA GRANULADA", "Sin respuesta", "Sí"]]);
   expect(within(rows[0]).getAllByRole("cell")[2]).toHaveClass("text-right");
 });
+
+// On the phone the table scrolls sideways in its box (DC1), so what an option captured never gets narrower than its words: at
+// 390 px the column of «Tipo» shrank to 8.5 px and «Agroquímicos» went down letter by letter.
+it("keeps the words of the fields an option captured whole inside the table", () => {
+  const choice = { choiceId: id(70), label: "2 4 D 100%", fields: [{ fieldId: id(71), label: "Tipo", type: "text", role: "data", value: "Agroquímicos" }] };
+  renderWithProviders(<ResponseAnswer record={{ ...record(), values: [{ fieldId: id(60), key: "field_60", type: "group", label: "Artículos",
+    value: [{ values: [value(61, "choice", "Producto", choice)] }] } as never] }} actor={id(1)} busy={false} photos={[]}
+    onForbidden={() => {}} onError={() => {}} layout="page"/>);
+
+  const cell = within(within(screen.getByRole("region", { name: "Artículos" })).getByRole("table")).getAllByRole("cell")[1];
+  expect(within(cell).getByText("Agroquímicos").closest("dl")).not.toBeNull();
+  expect(cell).toHaveClass("[&_dl]:grid-cols-[auto_minmax(min-content,1fr)]");
+});

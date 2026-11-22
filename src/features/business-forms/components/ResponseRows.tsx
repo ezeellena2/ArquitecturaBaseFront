@@ -24,6 +24,8 @@ export function ResponseRowsList({ label, items, answer }: { label: string; item
 /**
  * The items of a block of rows on the full page (DC1): a table with the number of the item to the right, without a visible
  * header, and a column per question of the block, with the numbers to the right. On the phone it scrolls sideways in its box.
+ * Since it scrolls, the fields an option captured keep their words whole: with `minmax(0,1fr)` their column measured nothing
+ * inside the cell and a word went down letter by letter.
  */
 export function ResponseRowsTable({ label, items, answer }: { label: string; items: readonly ResponseItemValues[]; answer: (value: ItemValue) => ReactNode }) {
   const { t } = useTranslation("forms");
@@ -35,7 +37,7 @@ export function ResponseRowsTable({ label, items, answer }: { label: string; ite
     </TableRow></TableHeader>
     <TableBody>{items.map((item, index) => <TableRow key={index}>
       <TableCell numeric>{index + 1}</TableCell>
-      {item.values.map(value => <TableCell key={value.fieldId} numeric={value.type === "decimal"}>{answer(value)}</TableCell>)}
+      {item.values.map(value => <TableCell key={value.fieldId} numeric={value.type === "decimal"} className="[&_dl]:grid-cols-[auto_minmax(min-content,1fr)]">{answer(value)}</TableCell>)}
     </TableRow>)}</TableBody>
   </WideTable>;
 }
