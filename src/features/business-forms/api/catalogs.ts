@@ -48,7 +48,8 @@ export const checkCatalogPresentation = async (id: string, presentation: Catalog
 export const createManualCatalog = async (body: CreateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.post<unknown>("/api/forms/catalogs", body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), undefined, undefined, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
 export const updateManualCatalog = async (id: string, body: UpdateManualCatalogBody, signal?: AbortSignal) => readCatalogSave(await api.put<unknown>(`/api/forms/catalogs/${catalogId(id)}`, body, { signal }), body.items.filter(item => item.itemId === null).map(item => item.localId), id, body.expectedRevision, body.fields?.filter(field => field.id === null).map(field => field.localId) ?? []);
 
-export type CatalogSortField = "name" | "kind" | "revision" | "optionsCount" | "usageCount";
+/// The fields the server orders the list by (OT1-C); `kind` and `state` follow their circuit, not their text.
+export type CatalogSortField = "name" | "kind" | "revision" | "optionsCount" | "usageCount" | "state";
 export interface CatalogListQuery {
   readonly page: number;
   readonly pageSize: number;

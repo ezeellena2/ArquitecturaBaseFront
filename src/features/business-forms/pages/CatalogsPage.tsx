@@ -14,10 +14,12 @@ import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 import type { CatalogListQuery } from "../api/catalogs";
 import { catalogOriginKey } from "../catalogOrigin";
 import { CatalogListTable } from "../components/CatalogListTable";
+import { catalogListColumns, type CatalogListActions } from "../components/catalogListColumns";
 import { FolderFilter } from "../components/FolderFilter";
 import { ItemFoldersDialog } from "../components/ItemFoldersDialog";
 import { folderListQuery } from "../folderTree";
@@ -29,12 +31,14 @@ import type { CatalogReadScope } from "../hooks/useCatalogDraftEditor";
 const filterKeys = ["kind", "state"] as const;
 const catalogStates = ["Active", "Inactive", "Unavailable"] as const;
 const catalogKinds = ["Manual", "Filters", "External"] as const;
-const sortFields = ["name", "-name", "kind", "-kind", "revision", "-revision", "optionsCount", "-optionsCount", "usageCount", "-usageCount"] as const;
+const sortFields = ["name", "-name", "kind", "-kind", "revision", "-revision", "optionsCount", "-optionsCount", "usageCount", "-usageCount", "state", "-state"] as const;
+// Without an order chosen the server orders by name: it is a column, so its arrow shows and the first touch inverts it (OT1-C).
+const usualSort = "name";
 export function CatalogsPage() {
   const { t, i18n } = useTranslation("forms");
   const { data: user } = useCurrentUser();
   const presentation = useSystemPresentation();
-  const pagination = usePagination(presentation.data?.defaultPageSize, true);
+  const pagination = usePagination(presentation.data?.defaultPageSize, true, usualSort);
   const navigate = useNavigate();
   const filters = useFilters(filterKeys);
   const state = catalogStates.find(value => value === filters.values.state);
@@ -50,6 +54,8 @@ export function CatalogsPage() {
   const folderEmpty = useFolderEmpty(folders, "catalogs", hasFilters);
   const visiblePage = list.data ? { ...list.data, items: list.data.items.map(row => ({ ...row, stateReason: row.state === "Unavailable" && row.stateReason ? t("catalogs.unavailableReason") : null })) } : undefined;
   const canManage = !!user?.permissions.includes("formcatalogs.manage");
+  const rowActions: CatalogListActions = { canManage, onEdit: id => { void navigate("/catalogos/" + id); }, onViewUsage: id => { void navigate("/catalogos/" + id); },
+    onFolders: row => setFoldersOf({ id: row.id, name: row.name }) };
   // The catalogs a module keeps (External) are a choice only when the server counts some, or when the address already chose them.
   const kindOptions = ["Manual", "Filters", ...(list.data?.filterCounts.byKind.external !== undefined || kind === "External" ? ["External"] as const : [])] as const;
   const feedbackId = `catalogs:list:${scope.actorId}:${scope.culture}`;
@@ -71,15 +77,15 @@ export function CatalogsPage() {
       value={kind ?? ""} onChange={id => { if (id !== (kind ?? "")) filters.setFilter("kind", id || undefined); }} />
     <Picker trigger="button" label={t("catalogs.columns.state")} first={{ id: "", label: t("catalogs.allStates") }}
       options={catalogStates.map(value => ({ id: value, label: t("catalogs.state." + value) }))}
-      value={state ?? ""} onChange={id => { if (id !== (state ?? "")) filters.setFilter("state", id || undefined); }} /><FolderFilter folders={folders} /></div></FilterBar>
-    <CatalogListTable page={visiblePage} canManage={canManage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
+      value={state ?? ""} onChange={id => { if (id !== (state ?? "")) filters.setFilter("state", id || undefined); }} /><FolderFilter folders={folders} />
+    {/* Last in the bar, apart from the filters: it takes no rows out, and «Limpiar» keeps it (OT1-C). */}
+    <SortMenu columns={catalogListColumns(t, rowActions)} sort={query.sort ?? usualSort} onSortChange={pagination.setSort} /></div></FilterBar>
+    <CatalogListTable {...rowActions} page={visiblePage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
-      sort={query.sort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}
+      sort={query.sort ?? usualSort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}
       emptyTitle={folderEmpty?.title}
       emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button></div>
-        : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button> : newAction}
-      onEdit={id => { void navigate("/catalogos/" + id); }} onViewUsage={id => { void navigate("/catalogos/" + id); }}
-      onFolders={row => setFoldersOf({ id: row.id, name: row.name })} />
+        : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button> : newAction} />
     {foldersOf && canManage ? <ItemFoldersDialog kind="catalogs" id={foldersOf.id} name={foldersOf.name} onClose={() => setFoldersOf(null)} /> : null}
     {choosingOrigin && canManage ? <CatalogOriginDialog onOpenChange={setChoosingOrigin} onSelect={(origin, valueType) => { void navigate(origin === "Filters" ? "/catalogos/nuevo?kind=Filters" : "/catalogos/nuevo" + (valueType === "Text" ? "" : "?valueType=" + valueType)); }} /> : null}
   </Page>;

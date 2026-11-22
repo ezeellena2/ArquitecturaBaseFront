@@ -184,3 +184,77 @@ it("offers the catalogs a module keeps only when the server counts some, and ask
   const origins = await openOrigins();
   expect(within(origins).queryByRole("option", { name: "De otro sistema" })).not.toBeInTheDocument();
 });
+
+// OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort`.
+describe("Catalog order", () => {
+  const sortPage = { items: [{ valueType: "Text" as const, id: "01990000-0000-7000-8000-000000000031", name: "Clientes", description: null, origin: "Manual", optionsCount: 46, usageCount: 3, state: "Active", stateReason: null, canEdit: true }],
+    page: 1, pageSize: 20, totalCount: 1, totalPages: 1, hasPrevious: false, hasNext: false, filterCounts: { byKind: { all: 1, manual: 1, filters: 0 } } };
+  function sortRequests() {
+    setup(["formcatalogs.read", "formcatalogs.manage"]); const requests: URLSearchParams[] = [];
+    server.use(http.get("/api/forms/catalogs", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(sortPage); }));
+    return requests;
+  }
+  const header = (name: string) => within(screen.getByRole("table")).getByRole("columnheader", { name });
+
+  it("orders by a header in its useful direction, back on the first page, keeping the search and the filters", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/catalogos?page=3&pageSize=20&kind=Manual&search=cli");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    // Without an order chosen, the server's usual one is the name: its arrow shows, and the first touch inverts it.
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(header("Catálogo")).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Catálogo, de la A a la Z" })).toBeVisible();
+
+    // The origin is a type: it orders as the segment does (by hand, from the base, from another system).
+    await userEvent.click(within(header("De dónde salen")).getByRole("button", { name: "De dónde salen" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("kind"));
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("kind");
+    expect(params.has("page")).toBe(false);
+    expect(params.get("kind")).toBe("Manual");
+    expect(params.get("search")).toBe("cli");
+    expect(requests.at(-1)?.get("page")).toBe("1");
+    expect(header("De dónde salen")).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: De dónde salen, según el circuito" })).toBeVisible();
+
+    await userEvent.click(within(header("Catálogo")).getByRole("button", { name: "Catálogo" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("name"));
+  });
+
+  it.each([
+    ["Catálogo", "-name"], ["De dónde salen", "kind"], ["Opciones", "-optionsCount"], ["Lo usan", "-usageCount"], ["Estado", "state"],
+  ])("orders «%s» by the server field %s", async (name, sort) => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/catalogos");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    await userEvent.click(within(header(name)).getByRole("button", { name }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe(sort));
+  });
+
+  it("changes the order from «Ordenar por», last in the bar, and the actions do not order", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/catalogos?sort=-usageCount&state=Active");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    expect(requests.at(-1)?.get("sort")).toBe("-usageCount");
+    expect(within(header("Acciones")).queryByRole("button")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Lo usan, de mayor a menor" });
+    expect(screen.getByRole("button", { name: /^Estado / }).compareDocumentPosition(trigger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitemradio", { name: "Estado" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("state"));
+    expect(new URLSearchParams(router.state.location.search).get("state")).toBe("Active");
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "Al revés del circuito" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-state"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(header("Estado")).toHaveAttribute("aria-sort", "descending");
+  });
+
+  it("leaves out the old order by origin, which the server rejects", async () => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/catalogos?sort=origin");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+  });
+});
