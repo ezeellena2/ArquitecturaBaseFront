@@ -219,6 +219,81 @@ describe("MF1 form overview", () => {
     expect(reads).toBe(1);
   });
 
+  // OT1-C (2026-11-22): every column orders in the server, by its header and by «Ordenar por», with the same `sort`.
+  it("orders by a header in its useful direction, back on the first page, and sends the order to the server", async () => {
+    const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
+    const { router } = renderRouteWithProviders("/formularios/respuestas?page=2&pageSize=20&search=visita");
+    const table = await screen.findByRole("table");
+    // Without an order chosen, the usual one is composite: no arrow, and the button says «Ordenar por».
+    expect(requests.at(-1)?.searchParams.has("sort")).toBe(false);
+    expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toHaveAttribute("aria-sort", "none");
+    expect(screen.getByRole("button", { name: "Ordenar por" })).toBeVisible();
+
+    await userEvent.click(within(within(table).getByRole("columnheader", { name: "Respuestas" })).getByRole("button", { name: "Respuestas" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("-responseCount"));
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("-responseCount");
+    expect(params.has("page")).toBe(false);
+    expect(params.get("search")).toBe("visita");
+    expect(requests.at(-1)?.searchParams.get("page")).toBe("1");
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Respuestas" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Respuestas, de mayor a menor" })).toBeVisible();
+
+    await userEvent.click(within(screen.getByRole("columnheader", { name: "Respuestas" })).getByRole("button", { name: "Respuestas" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("responseCount"));
+  });
+
+  it.each([
+    ["Formulario", "name"], ["Por aprobar", "-pendingApprovalCount"], ["Respuestas", "-responseCount"],
+    ["Última respuesta", "lastResponseNumber"], ["Recibida", "-lastSubmittedAtUtc"], ["Estado", "lastResponseState"],
+  ])("orders «%s» by the server field %s", async (header, sort) => {
+    const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
+    renderRouteWithProviders("/formularios/respuestas");
+    const table = await screen.findByRole("table");
+    await userEvent.click(within(within(table).getByRole("columnheader", { name: header })).getByRole("button", { name: header }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe(sort));
+  });
+
+  it("names the order of whoever only loads with their own columns", async () => {
+    const { requests } = setup(["formrecords.create"]);
+    renderRouteWithProviders("/formularios/respuestas?sort=-lastSubmittedAtUtc");
+    const table = await screen.findByRole("table");
+    expect(requests.at(-1)?.searchParams.get("sort")).toBe("-lastSubmittedAtUtc");
+    expect(within(table).getByRole("columnheader", { name: "Recibida" })).toHaveAttribute("aria-sort", "descending");
+    await userEvent.click(within(within(table).getByRole("columnheader", { name: "Mis cargas" })).getByRole("button", { name: "Mis cargas" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("-responseCount"));
+    expect(within(screen.getByRole("columnheader", { name: "Acciones" })).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("changes the order from «Ordenar por», which moves the arrow of the header", async () => {
+    const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
+    const { router } = renderRouteWithProviders("/formularios/respuestas?sort=name&pendingOnly=true");
+    await screen.findByRole("table");
+    expect(requests.at(-1)?.searchParams.get("sort")).toBe("name");
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Formulario, de la A a la Z" });
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    const menu = await screen.findByRole("menu");
+    await userEvent.click(within(menu).getByRole("menuitemradio", { name: "Recibida" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("-lastSubmittedAtUtc"));
+    expect(new URLSearchParams(router.state.location.search).get("pendingOnly")).toBe("true");
+    // The list stays open: the table behind it is out of the accessibility tree until it closes.
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la más antigua a la más reciente" }));
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("lastSubmittedAtUtc"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Recibida" })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Recibida, más antigua primero" })).toHaveFocus();
+  });
+
+  it("leaves out an order the server does not know", async () => {
+    const { requests } = setup(["formrecords.read"]);
+    renderRouteWithProviders("/formularios/respuestas?sort=-secret");
+    await screen.findByRole("table");
+    expect(requests.at(-1)?.searchParams.has("sort")).toBe(false);
+    expect(screen.getByRole("button", { name: "Ordenar por" })).toBeVisible();
+  });
+
   it("shows one static overview link with the global pending count without per-form links", async () => {
     setup(["formrecords.read", "formapprovals.decide"]);
     renderRouteWithProviders("/");

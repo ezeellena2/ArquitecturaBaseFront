@@ -23,10 +23,15 @@ export const formOverviewSchema = z.strictObject({
 });
 export type FormOverview = z.infer<typeof formOverviewSchema>;
 export type FormOverviewRow = FormOverview["forms"]["items"][number];
+/// The columns the server orders by (OT1-C); without one, the list keeps its usual order: what awaits approval first, then the
+/// last response received and the name.
+export const formOverviewSortFields: readonly string[] = ["name", "formState", "pendingApprovalCount", "responseCount", "lastResponseNumber", "lastSubmittedAtUtc", "lastResponseState"];
 export interface FormOverviewQuery {
   page: number;
   pageSize: number;
   search?: string;
+  /** "field" or "-field", one of `formOverviewSortFields`. */
+  sort?: string;
   state: "Active" | "Deactivated";
   pendingOnly?: boolean;
 }
@@ -38,6 +43,7 @@ export function readFormOverview(body: unknown): FormOverview {
 export async function fetchFormOverview(query: FormOverviewQuery, signal: AbortSignal): Promise<FormOverview> {
   const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize), state: query.state });
   if (query.search) params.set("search", query.search);
+  if (query.sort) params.set("sort", query.sort);
   if (query.pendingOnly) params.set("pendingOnly", "true");
   return readFormOverview(await api.get<unknown>("/api/forms/overview?" + params, { signal, cache: "no-store" }));
 }
