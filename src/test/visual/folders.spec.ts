@@ -11,7 +11,7 @@ const texts = {
     whatsapp: "WhatsApp", administration: "Administración", newFolder: "Nueva carpeta", name: "Nombre", icon: "Ícono", create: "Crear", purchases: "Compras",
     empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", formsField: "Formularios", foldersField: "Carpetas", draft: "Borrador",
     actions: (name: string) => `Acciones de «${name}»`, move: /^Mover a…/, moveReason: "Tiene subcarpetas: no puede ir adentro de otra.", addFormsItem: "Agregar formularios…",
-    moveTitle: "Mover «Norte» a…", into: (name: string) => `Adentro de «${name}»`, delete: "Borrar", deleteTitle: "¿Borrar «Repartos»?", deleteConfirm: "Borrar carpeta",
+    moveTitle: "Mover «Norte» a…", where: "Dónde va", into: (name: string) => `Adentro de «${name}»`, delete: "Borrar", deleteTitle: "¿Borrar «Repartos»?", deleteConfirm: "Borrar carpeta",
     filter: "Carpeta Todas las carpetas", withoutFolder: "Sin carpeta", rowFolders: /^Carpetas de «/, catalogsLink: "Ver sus 2 catálogos", loadError: "No pudimos cargar tu menú.", retry: "Reintentar",
   },
   en: {
@@ -20,7 +20,7 @@ const texts = {
     whatsapp: "WhatsApp", administration: "Administration", newFolder: "New folder", name: "Name", icon: "Icon", create: "Create", purchases: "Purchases",
     empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", formsField: "Forms", foldersField: "Folders", draft: "Draft",
     actions: (name: string) => `Actions of “${name}”`, move: /^Move to…/, moveReason: "It has subfolders: it can't go inside another one.", addFormsItem: "Add forms…",
-    moveTitle: "Move “North” to…", into: (name: string) => `Inside “${name}”`, delete: "Delete", deleteTitle: "Delete “Deliveries”?", deleteConfirm: "Delete folder",
+    moveTitle: "Move “North” to…", where: "Where it goes", into: (name: string) => `Inside “${name}”`, delete: "Delete", deleteTitle: "Delete “Deliveries”?", deleteConfirm: "Delete folder",
     filter: "Folder All folders", withoutFolder: "No folder", rowFolders: /^Folders of “/, catalogsLink: "See its 2 catalogs", loadError: "We couldn't load your menu.", retry: "Retry",
   },
 } as const;
@@ -178,7 +178,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await shot(page, "subfolder-actions");
     await page.getByRole("menuitem", { name: text.move }).click();
     const moving = page.getByRole("dialog", { name: text.moveTitle, exact: true });
-    await expect(moving.getByRole("radio", { name: text.into(text.delivery), exact: true })).toBeChecked();
+    await expect(moving.getByRole("button", { name: `${text.where} ${text.into(text.delivery)}`, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "move");
     await page.keyboard.press("Escape");
