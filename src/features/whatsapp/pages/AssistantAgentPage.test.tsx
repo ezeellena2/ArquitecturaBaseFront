@@ -328,8 +328,8 @@ describe("the screen «Asistente»", () => {
     expect(writes[0]!.cases[2]!.action).toEqual({ ...none, kind: "ExactText", text: { es: "Gracias por escribir.", en: null } });
   });
 
-  // DS1-A: the input type (three fixed) is a segmented control; the form and where a button leads, the only piece to choose.
-  it("chooses the input type in a segmented control and where each button leads in the only piece to choose", { timeout: 15000 }, async () => {
+  // DS1-A: the input type (three fixed ones, there since 2026-11-22) and where a button leads go in the only piece to choose.
+  it("chooses the input type and where each button leads in the only piece to choose", { timeout: 15000 }, async () => {
     await open();
     await userEvent.click(within(ownCases()[2]!).getByRole("button", { name: "Editar el caso 3" }));
     const editor = await screen.findByRole("dialog", { name: "Caso 3" });

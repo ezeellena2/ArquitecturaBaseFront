@@ -9,7 +9,7 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-guided&lang=${language}`);
     await expect(page.getByRole("heading",{name:es?"Información del negocio":"Business information",exact:true})).toBeVisible();
     // A time is chosen in the Picker, with its search inside (on the phone, the list takes the screen); the status of a
-    // day, in a segmented control (DS1-A).
+    // day, too, since 2026-11-22 (DS1-A).
     const endLabel=es?"Lunes 1 · Hasta":"Monday 1 · Until";
     const end=page.getByRole("button",{name:new RegExp(`^${endLabel} `)});
     const pickEnd=async(time:string)=>{

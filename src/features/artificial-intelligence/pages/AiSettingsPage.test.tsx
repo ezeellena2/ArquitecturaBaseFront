@@ -24,8 +24,8 @@ beforeEach(() => {
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
 const keyField = () => screen.getByLabelText("Nueva clave de API");
-// The provider is a segmented control, and a model of the list is chosen in the Picker (DS1-A).
-// The provider and the availability go in the shared piece for choosing (DS1-A, 2026-11-22): the button names the chosen one.
+// The provider, the availability (both since 2026-11-22) and a model of the list go in the shared piece for choosing
+// (DS1-A): the button names the chosen one.
 const providers = (options?: { hidden?: boolean }) => screen.getByRole("button", { name: /^Proveedor /, ...options });
 async function chooseProvider(name: string) {
   await userEvent.click(providers());

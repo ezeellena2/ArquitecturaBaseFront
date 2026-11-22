@@ -34,8 +34,8 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   return <Surface title={t("hoursSection")} padded><div className="@container space-y-4" id="business-details.openingHours" tabIndex={-1} role="group" aria-label={t("hoursSection")} aria-invalid={!!error} aria-describedby={error ? "business-hours-error" : undefined}>
     <div className="divide-y divide-[var(--color-border)]">{value.days.map(day => {
       const label = t(`days.${weekdays[day.weekday]}`);
-      // The state is a segmented control as wide as its options (four fixed ones, DS1-A): from 44rem it has its own column
-      // between the day and its periods; narrower, it goes under the day and, on the phone, its options go down a line.
+      // The state goes in the shared piece for choosing (four fixed ones, DS1-A, 2026-11-22): from 44rem it has its own
+      // column between the day and its periods; narrower, it goes under the day.
       return <div key={day.weekday} className="grid grid-cols-1 items-start gap-2 py-3 @min-[424px]:grid-cols-[5rem_minmax(0,1fr)] @min-[44rem]:grid-cols-[5rem_max-content_minmax(0,1fr)]">
         <p className="text-sm font-medium @min-[424px]:pt-1.5">{label}</p>
         <div className="min-w-0"><OpeningStatusControl status={day.status} label={`${label} · ${t("attention")}`} disabled={disabled} onChange={status => changeDay({ ...day, status, periods: status === "open" ? day.periods.length ? day.periods : [emptyPeriod()] : [] })} /></div>

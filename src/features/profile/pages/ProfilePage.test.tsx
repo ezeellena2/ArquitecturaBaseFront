@@ -47,8 +47,8 @@ function profileHandlers(saved: ProfileBody[], account: { profile: CurrentUser }
   ];
 }
 
-// The language is a segmented control and the time zone is the Picker, with its search inside the list (DS1-A).
-// The language goes in the shared piece for choosing (DS1-A, 2026-11-22): its button names the field and the chosen one.
+// The language (since 2026-11-22) and the time zone go in the shared piece for choosing (DS1-A), the zone with its search
+// inside the list: each button names the field and the chosen one.
 async function chooseLanguage(field: string, language: string) {
   await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${field} `) }));
   await userEvent.click(within(await screen.findByRole("listbox", { name: field })).getByRole("option", { name: language }));
