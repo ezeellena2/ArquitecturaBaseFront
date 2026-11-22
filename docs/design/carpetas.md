@@ -45,7 +45,7 @@ niveles. Los tableros fueron revisados contra las capturas reales y la lista de 
 | CP1-A · El árbol a la izquierda | Elegido el 2026-11-03: un panel «Carpetas» a la izquierda de los tres listados. Lo reemplazaron CM1 y CM3. |
 | CP1-B · Entrar como en una unidad de archivos | Descartado. |
 | CP1-C · Un filtro y una columna | Descartado. |
-| **CP2-A · «Carpetas…» con casillas** (elegido, sigue) | «Carpetas…» en la fila (Diseñar formularios y Catálogos) y en el ⋮ del encabezado del formulario y del catálogo ([AC1-A](acciones-del-encabezado.md)). Abre «Carpetas de «Artículos»» con las carpetas y sus subcarpetas, una casilla por carpeta; destildar todas lo deja en «Sin carpeta». Desde CM3, su «Nueva carpeta» abre el diálogo de CM2. Guarda al tocar «Guardar». |
+| **CP2-A · «Carpetas…» con casillas** (elegido, sigue) | «Carpetas…» en la fila (Diseñar formularios y Catálogos) y en el ⋮ del encabezado del formulario y del catálogo ([AC1-A](acciones-del-encabezado.md)). Abre «Carpetas de «Artículos»» con las carpetas y sus subcarpetas; desde el 2026-11-22 se eligen con la pieza múltiple ([elegir de una lista](visual-baseline.md#elegir-de-una-lista)) y no elegir ninguna lo deja en «Sin carpeta». Desde CM3, su «Nueva carpeta» abre el diálogo de CM2. Guarda al tocar «Guardar». |
 | CP2-B · Arrastrar y etiquetas | Descartado. |
 | CP3-A · Se administran en el mismo panel | Elegido el 2026-11-03: el + y el «…» de cada carpeta en el panel de los listados. Lo reemplazaron CM2 y CM4. |
 | CP3-B · Una pantalla «Carpetas» | Descartado. |
@@ -105,10 +105,12 @@ niveles. Los tableros fueron revisados contra las capturas reales y la lista de 
 - **En el cajón** cada carpeta es un `NavBranch` con lo mismo adentro, y se abre una a la vez, como los paneles.
 - **Crear y editar** es un solo diálogo de 32 rem: el nombre y, en una carpeta del primer nivel, el ícono, en un `Select` con
   el dibujo y el nombre de cada uno, que en una carpeta nueva arranca en el primero libre; una subcarpeta lleva sólo el nombre.
-  La carpeta creada desde el menú se abre en él; desde «Carpetas…», queda tildada.
-- **«Agregar formularios»** abre «Formularios de «Compras»»: el buscador y una casilla por formulario no dado de baja, de a 50
-  con «Ver más», con los que ya están primero y la etiqueta «Borrador» (el `tag` de `CheckboxField`) en los que nunca se
-  publicaron. Guarda con la lista leída y conserva los dados de baja, que no lista.
+  La carpeta creada desde el menú se abre en él; desde «Carpetas…», queda elegida.
+- **«Agregar formularios»** abre «Formularios de «Compras»»: un campo «Formularios» con la pieza múltiple, que dice los
+  elegidos con «y N más», y «Guardar» (2026-11-22; antes, un buscador con una casilla por formulario). Lee todos los
+  formularios no dados de baja al abrir, y la pieza busca entre ellos. Los que ya están en la carpeta van primero, y
+  «Borrador» va en gris en los que nunca se publicaron. Guarda con la lista leída y conserva los dados de baja, que no
+  lista.
 - **El filtro «Carpeta»** dice «Carpeta: Todas» o la elegida (antes «Todos»). Abierto, «Todas», separada con una línea, «Sin
   carpeta» y las carpetas con sus subcarpetas debajo, con sangría y la tilde a la izquierda. Si no se pudieron leer las
   carpetas, lo dice adentro con «Reintentar», sin cerrarse, y el listado sigue con «Todas».

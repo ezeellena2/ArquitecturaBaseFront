@@ -169,9 +169,11 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   descripción accesible del control. El placeholder muestra un ejemplo; no reemplaza la etiqueta. Usar `Input`, `Textarea`
   y, para elegir, `Picker`. Teléfonos y códigos usan `PhoneField` y `OtpInput` cuando corresponda.
 - **Para elegir de una lista hay una sola pieza, `Picker`** (DS1-A y DS2-A, 2026-11-19): una o varias opciones, en un
-  campo o en el botón de la barra, con el buscador adentro si son más de diez o vienen del servidor; nunca un select, un
-  combo que se escribe ni un menú propio. Dos a cuatro opciones fijas de un formulario van en radios o un segmentado; un
-  filtro sigue siendo la pieza ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
+  campo o en el botón de la barra, con el buscador adentro si son más de diez o vienen del servidor. Nunca un select, un
+  combo que se escribe, un menú propio, una lista de casillas ni un modal que sólo sirve para elegir: elegir varios es la
+  pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Dos a cuatro opciones fijas de las que se
+  elige una van en radios o un segmentado; una casilla es sólo un sí o no suelto; un filtro sigue siendo la pieza
+  ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
   (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
   problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,

@@ -70,9 +70,9 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    sin partirla por tipo de control ni sumar superficies de adorno?
    ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
 3. **El control según el dato:** ¿una colección va en una tabla; una o varias opciones de una lista, en la pieza para
-   elegir; dos a cuatro opciones fijas de un formulario, en radios o un segmentado (en casillas si se eligen varias),
-   también el idioma y «Filas por página»? Los filtros no entran en esa regla: ¿un filtro de opciones sigue siendo la
-   pieza aunque tenga pocas? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+   elegir, nunca en una lista de casillas ni en un modal que sólo sirve para elegir; dos a cuatro opciones fijas de las
+   que se elige una, en radios o un segmentado, también el idioma y «Filas por página»; una casilla, sólo para un sí o no
+   suelto? Los filtros no entran en esa regla: ¿un filtro de opciones sigue siendo la pieza aunque tenga pocas? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
    [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido?
@@ -403,9 +403,15 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
   en una sola lista para Mi perfil, Configuración y el horario del negocio. Lo que se guarda sigue siendo el
   identificador de IANA, y el buscador encuentra por ciudad, por país o por el identificador.
 - Lo que llega en mayúsculas de un catálogo se muestra como llega.
-- **Dos a cuatro opciones fijas de un formulario van en radios o un segmentado**, no en la lista, como pide la
+- **Dos a cuatro opciones fijas de las que se elige una van en radios o un segmentado**, no en la lista, como pide la
   [lista de chequeo](#lista-de-chequeo-de-diseño): también el idioma y «Filas por página». Los filtros no entran en esta
   regla y siguen siendo la pieza ([FO1-A](#listados-y-filtros)).
+- **Varias, siempre en la pieza** (2026-11-22): nunca una lista de casillas ni un modal que sólo sirve para elegir. En la
+  prueba integral, «Formularios de «Zona Norte»» de Carpetas era un buscador con una casilla por formulario, porque esta
+  regla todavía decía «en casillas si se eligen varias». Cuando elegir es parte de una tarea que se guarda aparte, como
+  los formularios de una carpeta o las carpetas de un formulario, el diálogo lleva un campo con la pieza en modo múltiple
+  y «Guardar». Así quedaron esos dos, los datos que el asistente propone prellenar, los servicios de ARCA y las preguntas
+  que incluye un PDF. Una casilla queda para un sí o no suelto («Incluir las fotos»).
 
 Quedan fuera la vista previa de un formulario (`FormPreview`), que imita WhatsApp y conserva su select, como conserva sus
 radios, y el idioma del menú de la cuenta y «Contar» de una tarjeta del tablero, que son menús de acciones. El buscador de
