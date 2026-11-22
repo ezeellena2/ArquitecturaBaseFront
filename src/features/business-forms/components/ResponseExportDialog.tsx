@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/shared/api/httpClient";
 import { ApiError } from "@/shared/api/ApiError";
@@ -17,7 +17,8 @@ import { formatExactDecimal } from "@/shared/lib/decimal";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DataList } from "@/shared/ui/DataList";
 import { FilterChip } from "@/shared/ui/FilterChip";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Button } from "@/shared/ui/button";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { InfoTip } from "@/shared/ui/InfoTip";
@@ -72,7 +73,7 @@ export function ResponseExportDialog({
   const [includeVoided, setIncludeVoided] = useState(false);
   const [pending, setPending] = useState(false);
   const controller = useRef<AbortController | null>(null);
-  const columnsGroup = useRef<HTMLDivElement | null>(null);
+  const columnsId = useId();
   const feedbackId = `responses:export:${formId}`;
   const restore = useRestoreFocusOnClose();
   const count = formatExactDecimal(String(total), i18n.language) ?? String(total);
@@ -154,10 +155,10 @@ export function ResponseExportDialog({
         if (!open) onClose();
       }}
     >
-      {/* The dialog opens on the chosen option, as before the (i): focused first, its tooltip would cover the options. */}
+      {/* The dialog opens on the choice of columns, not on its (i): focused first, its tooltip would cover the choice. */}
       <DialogContent aria-describedby={undefined} onCloseAutoFocus={restore} onOpenAutoFocus={event => {
-        const chosen = columnsGroup.current?.querySelector<HTMLElement>('[role="radio"][data-state="checked"]');
-        if (chosen) { event.preventDefault(); chosen.focus(); }
+        const columns = document.getElementById(columnsId);
+        if (columns) { event.preventDefault(); columns.focus(); }
       }}>
         <DialogHeader>
           <DialogTitle>{t("responses.exportTitle")}</DialogTitle>
@@ -174,25 +175,23 @@ export function ResponseExportDialog({
               : <span className="text-[var(--color-content-muted)]">{t("responses.exportNoFilters")}</span>,
           },
         ]} />
-        <div ref={columnsGroup}>
-          <RadioGroupField
+        {/* The only piece to choose (DS1-A, 2026-11-22). */}
+        <FormField label={t("responses.exportColumns")} help={t("responses.exportHint")} htmlFor={columnsId}>
+          <Picker
             label={t("responses.exportColumns")}
-            showLabel
-            help={t("responses.exportHint")}
             value={selection}
-            onValueChange={setSelection}
+            onChange={setSelection}
             options={[
-              { value: "all", label: t("responses.allColumns", { count: allColumns }) },
+              { id: "all", label: t("responses.allColumns", { count: allColumns }) },
               {
-                value: "visible",
+                id: "visible",
                 label: t("responses.visibleColumns", { count: visibleColumns }),
                 // Without hidden columns both options give the same file.
-                disabled: nothingHidden,
                 disabledReason: nothingHidden ? t("responses.exportAllVisible") : null,
               },
             ]}
           />
-        </div>
+        </FormField>
         {/* Voided responses stay out of the file unless they are asked for (CW11-A); with a state chosen, the state says which go. */}
         {!offersVoided ? null : <CheckboxField label={t("responses.includeVoided")} help={t("responses.includeVoidedHelp")} checked={includeVoided} onCheckedChange={setIncludeVoided}/>}
         <DataList items={[

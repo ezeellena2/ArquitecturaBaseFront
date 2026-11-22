@@ -92,7 +92,11 @@ it("lets the Excel take only the result data that are seen, also when only one o
   await screen.findByRole("columnheader", { name: "Comprobante" }, { timeout: 10_000 });
   await userEvent.click(screen.getByRole("button", { name: "Exportar a Excel" }));
   const dialog = await screen.findByRole("dialog", { name: "Exportar respuestas a Excel" });
-  const visible = within(dialog).getByRole("radio", { name: /Solo las visibles/ });
+  // «Columnas» is the only piece to choose (2026-11-22): its list opens with the keyboard, like the other Radix lists in the tests.
+  const columns = within(dialog).getByRole("button", { name: /^Columnas / });
+  await act(async () => { columns.focus(); });
+  await userEvent.keyboard("{Enter}");
+  const visible = within(await screen.findByRole("listbox", { name: "Columnas" })).getByRole("option", { name: /Solo las visibles/ });
   expect(visible).not.toHaveAttribute("aria-disabled");
   await userEvent.click(visible);
   await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));

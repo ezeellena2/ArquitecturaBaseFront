@@ -164,6 +164,13 @@ async function openFilters(section?: string) {
   return dialog;
 }
 // The tab already says «Actividad»: its columns go straight in it, without a surface that repeats the title (board TL3-A).
+/** The only piece to choose opens with the keyboard, like the other Radix lists in the tests, and a click chooses. */
+async function pickOption(trigger: HTMLElement, option: string | RegExp) {
+  await act(async () => { trigger.focus(); });
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox")).getByRole("option", { name: option }));
+}
+
 async function openResponseActivity() {
   return openResponseTab("Actividad");
 }
@@ -1004,9 +1011,7 @@ describe("response sheet", () => {
       screen.getByRole("button", { name: "Exportar a Excel" }),
     );
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(
-      within(dialog).getByRole("radio", { name: /Solo las visibles/ }),
-    );
+    await pickOption(within(dialog).getByRole("button", { name: /^Columnas / }), /Solo las visibles/);
     await userEvent.click(
       within(dialog).getByRole("button", { name: "Exportar a Excel" }),
     );

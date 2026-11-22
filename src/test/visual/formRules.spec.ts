@@ -62,7 +62,9 @@ for (const language of ["es", "en"] as const)
       await page.goto("/src/test/visual/index.html?screen=/formularios/" + fixtureFormId + "&scenario=forms-rules&lang=" + language);
       await expect(page.getByRole("heading", { name: en ? "Register visit" : "Registrar visita", exact: true })).toBeVisible();
       await page.getByRole("button", { name: en ? "Add rule" : "Agregar regla", exact: true }).click();
-      await page.getByRole("radio", { name: en ? "A response is approved" : "Se aprueba una respuesta", exact: true }).click();
+      // «Cuándo» is the only piece to choose (2026-11-22).
+      await page.getByRole("button", { name: en ? "When A response is received" : "Cuándo Se recibe una respuesta", exact: true }).click();
+      await page.getByRole("listbox", { name: en ? "When" : "Cuándo", exact: true }).getByRole("option", { name: en ? "A response is approved" : "Se aprueba una respuesta", exact: true }).click();
       await page.getByRole("button", { name: en ? "Add action" : "Agregar acción", exact: true }).click();
       await page.getByRole("textbox", { name: en ? "Message" : "Mensaje", exact: true }).fill(en ? "We approved it." : "La aprobamos.");
       const attach = page.getByRole("checkbox", { name: en ? "Attach PDF" : "Adjuntar el PDF", exact: true });

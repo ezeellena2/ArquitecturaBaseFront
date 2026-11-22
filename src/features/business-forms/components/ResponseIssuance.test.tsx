@@ -173,7 +173,8 @@ describe("an issuance in review (NC1-A)", () => {
     await user.click(within(section).getByRole("button", { name: "Revisar" }));
     const dialog = await screen.findByRole("dialog", { name: "Revisar la emisión de TEST-000002" });
     expect(within(dialog).getByText("Antes de decidir, mirá «Mis comprobantes» en ARCA.")).toBeInTheDocument();
-    expect(within(dialog).getByRole("radio", { name: "Emitir con el número siguiente" })).toBeChecked();
+    // «Qué hacer con la emisión» is the only piece to choose (2026-11-22); going on comes chosen.
+    expect(within(dialog).getByRole("button", { name: "Qué hacer con la emisión Emitir con el número siguiente" })).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Confirmar" }));
     await waitFor(() => expect(posts).toEqual([{ path: "review:" + issueRun, body: { expectedRevision: 3, wasSent: true } }]));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -187,9 +188,13 @@ describe("an issuance in review (NC1-A)", () => {
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     await user.click(within(await zone()).getByRole("button", { name: "Revisar" }));
     const dialog = await screen.findByRole("dialog", { name: "Revisar la emisión de TEST-000002" });
-    const stop = within(dialog).getByRole("radio", { name: "No emitir" });
+    const choice = within(dialog).getByRole("button", { name: "Qué hacer con la emisión Emitir con el número siguiente" });
+    await act(async () => { choice.focus(); });
+    await user.keyboard("{Enter}");
+    const stop = within(await screen.findByRole("listbox", { name: "Qué hacer con la emisión" })).getByRole("option", { name: "No emitir" });
     expect(stop).toHaveAccessibleDescription("La respuesta queda anulada, sin comprobante.");
     await user.click(stop);
+    expect(choice).toHaveAccessibleName("Qué hacer con la emisión No emitir");
     await user.click(within(dialog).getByRole("button", { name: "Confirmar" }));
     await waitFor(() => expect(posts).toEqual([{ path: "review:" + issueRun, body: { expectedRevision: 3, wasSent: false } }]));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({ kind: "success", message: "TEST-000002 se anula, sin comprobante." })));

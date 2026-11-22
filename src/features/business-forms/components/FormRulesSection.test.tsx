@@ -457,7 +457,7 @@ it("keeps an attached PDF when the event changes, tells why under it and turns o
   const writes = vi.fn(); server.use(http.post("/api/forms/definitions/:id/rules", async ({request}) => { const body = await request.json() as {rules:FormRule[]}; writes(body); return HttpResponse.json({...initial(),id:actor,revision:2,rules:body.rules,createdAtUtc:"2026-10-17T12:00:00Z"}); }));
   renderWithProviders(<MemoryRouter><FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Editar regla 1"}));
-  await userEvent.click(screen.getByRole("radio",{name:"Se rechaza una respuesta"}));
+  await pick("Cuándo Se aprueba una respuesta","Se rechaza una respuesta");
   const attach = screen.getByRole("checkbox",{name:"Adjuntar el PDF"});
   // The choice stays and the reason is next to it right away, without trying to save; no button can fix the event.
   expect(attach).toBeChecked(); expect(attach).toBeEnabled();
@@ -514,7 +514,10 @@ it("tells right away why a checked attachment needs a PDF before it, without try
   setup();
   renderWithProviders(<MemoryRouter><FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/></MemoryRouter>);
   await userEvent.click(await screen.findByRole("button",{name:"Agregar regla"}));
-  await userEvent.click(screen.getByRole("radio",{name:"Se aprueba una respuesta"}));
+  // «Cuándo» is the only piece to choose (2026-11-22): a new rule runs when a response is received.
+  const when=await openList("Cuándo Se recibe una respuesta");
+  expect(within(when).getAllByRole("option").map(option=>option.textContent)).toEqual(["Se recibe una respuesta","Se aprueba una respuesta","Se rechaza una respuesta"]);
+  await userEvent.click(within(when).getByRole("option",{name:"Se aprueba una respuesta"}));
   await userEvent.click(screen.getByRole("button",{name:"Agregar acción"}));
   await userEvent.click(screen.getByRole("checkbox",{name:"Adjuntar el PDF"}));
   expect(screen.getByRole("alert")).toHaveTextContent(pdfFirst);

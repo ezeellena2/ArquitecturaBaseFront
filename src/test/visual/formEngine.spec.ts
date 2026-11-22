@@ -69,7 +69,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await closeMenu(page, language, width);
     // CO1-A: the period appears in its place only with «Servicios».
     await expect(page.getByLabel(text(language, "Período desde", "Period from"))).toHaveCount(0);
-    await page.getByRole("radio", { name: text(language, "Servicios", "Services"), exact: true }).click();
+    // «Concepto» is the only piece to choose, also with two options (2026-11-22).
+    await page.getByRole("button", { name: new RegExp("^" + text(language, "Concepto", "Concept") + " ") }).click();
+    await page.getByRole("listbox", { name: text(language, "Concepto", "Concept"), exact: true }).getByRole("option", { name: text(language, "Servicios", "Services"), exact: true }).click();
     await expect(page.getByLabel(new RegExp(text(language, "^Período desde", "^Period from")))).toBeVisible();
     // CA1-A: the amount and the total change as the numbers are typed, greyed and not written.
     const quantity = page.getByLabel(new RegExp(text(language, "Cantidad", "Quantity"))).first();

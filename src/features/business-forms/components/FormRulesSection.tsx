@@ -14,7 +14,6 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { IconButton } from "@/shared/ui/IconButton";
 import { Picker } from "@/shared/ui/Picker";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { Spinner } from "@/shared/ui/Spinner";
 import { StepList } from "@/shared/ui/StepList";
 import { Surface } from "@/shared/ui/Surface";
@@ -195,8 +194,10 @@ function RulesEditor({ definitionId, definitionRevision, prefix, scope, timeZone
           <IconButton label={t("rules.removeRule", { number: index + 1 })} disabled={blocked} onClick={() => { const neighbor = rules[index + 1] ?? rules[index - 1]; pendingFocus.current = { selector: neighbor ? '[data-edit-rule="' + neighbor.id + '"]' : "[data-add-rule]" }; change(rules.filter(item => item.id !== rule.id)); if (expanded === rule.id) setExpanded(null); }}><TrashIcon className="size-4" /></IconButton>
         </div></div>
         {expanded === rule.id ? <div className="mt-3 space-y-5">
-          <RadioGroupField label={t("rules.when")} showLabel layout="row" value={rule.event} onValueChange={event => changeRule(index, { ...rule, event: event as FormRule["event"] })}
-            options={ruleEvents.map(event => ({ value: event, label: t("rules.events." + event), disabled: blocked }))} />
+          {/* «Cuándo» in the only piece to choose (DS1-A, 2026-11-22); choosing the one it has changes nothing. */}
+          <div className="sm:w-80"><FormField label={t("rules.when")}><Picker label={t("rules.when")} disabled={blocked} value={rule.event}
+            onChange={event => { if (event !== rule.event) changeRule(index, { ...rule, event: event as FormRule["event"] }); }}
+            options={ruleEvents.map(event => ({ id: event, label: t("rules.events." + event) }))} /></FormField></div>
           <FormConditionsEditor heading={t("rules.ifOptional")} help={t("rules.always")} fieldPath={"rules." + index + ".conditions"} conditions={rule.conditions} columns={columns} blocked={blocked} error={fieldError("rules." + index + ".conditions")} onChange={conditions => changeRule(index, { ...rule, conditions })}/>
           <div className="space-y-3"><h3 className="text-sm font-medium">{t("rules.doInOrder")}</h3>{rule.actions.map((action, actionIndex) => {
             const actionPath = "rules." + index + ".actions." + actionIndex;

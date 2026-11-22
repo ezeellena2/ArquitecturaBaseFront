@@ -44,6 +44,24 @@ function valueOf(dialog: HTMLElement, label: string): HTMLElement {
   return term.nextElementSibling as HTMLElement;
 }
 
+/// «Columnas» is the only piece to choose (2026-11-22): its list opens with the keyboard, like the other Radix lists in the tests.
+const columnsOf = (dialog: HTMLElement) => within(dialog).getByRole("button", { name: /^Columnas / });
+async function openColumns(dialog: HTMLElement) {
+  const button = columnsOf(dialog);
+  await act(async () => { button.focus(); });
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Columnas" });
+}
+/// Each option of «Columnas» with whether it is off; the list closes again.
+async function columnOptions(dialog: HTMLElement) {
+  const options = within(await openColumns(dialog)).getAllByRole("option").map(option => [option.textContent, option.getAttribute("aria-disabled") === "true"]);
+  await userEvent.keyboard("{Escape}");
+  return options;
+}
+async function pickColumns(dialog: HTMLElement, option: string | RegExp) {
+  await userEvent.click(within(await openColumns(dialog)).getByRole("option", { name: option }));
+}
+
 describe("ResponseExportDialog (EX1-A)", () => {
   it("reads what goes out in two columns, with the filters as the chips of the sheet without their cross", async () => {
     const dialog = await show({ filterLabels: ["Estado: Dañado (en algún ítem de Artículos)"] });
@@ -60,13 +78,16 @@ describe("ResponseExportDialog (EX1-A)", () => {
     expect(valueOf(dialog, "Filtros")).toHaveTextContent("Ninguno");
   });
 
-  it("names its group of options Columnas, with what always goes in its (i), and keeps Solo las visibles off with its reason when nothing is hidden", async () => {
+  it("names its piece to choose Columnas, with what always goes in its (i), and keeps Solo las visibles off with its reason when nothing is hidden", async () => {
     const dialog = await show();
+    const hint = "Número, recibida, cargó, canal y estado van siempre. De los archivos van la cantidad y los nombres.";
 
-    expect(within(dialog).getByRole("radiogroup", { name: "Columnas" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("button", { name: "Más información sobre Columnas" }))
-      .toHaveAccessibleDescription("Número, recibida, cargó, canal y estado van siempre. De los archivos van la cantidad y los nombres.");
-    const visible = within(dialog).getByRole("radio", { name: /Solo las visibles/ });
+    // The dialog opens on the choice, not on its (i), whose tooltip would cover it.
+    const columns = within(dialog).getByRole("button", { name: "Columnas Todas las preguntas (3 columnas)" });
+    await waitFor(() => expect(columns).toHaveFocus());
+    expect(columns).toHaveAccessibleDescription(hint);
+    expect(within(dialog).getByRole("button", { name: "Más información sobre Columnas" })).toHaveAccessibleDescription(hint);
+    const visible = within(await openColumns(dialog)).getByRole("option", { name: /Solo las visibles/ });
     expect(visible).toHaveAttribute("aria-disabled", "true");
     expect(visible).toHaveAccessibleDescription("Se ven todas las columnas.");
   });
@@ -74,8 +95,7 @@ describe("ResponseExportDialog (EX1-A)", () => {
   it("lets both options be chosen with hidden columns, each saying how many columns it takes", async () => {
     const dialog = await show({ visible: [supplier] });
 
-    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (3 columnas)" })).not.toHaveAttribute("aria-disabled");
-    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (1 columna)" })).not.toHaveAttribute("aria-disabled");
+    expect(await columnOptions(dialog)).toEqual([["Todas las preguntas (3 columnas)", false], ["Solo las visibles (1 columna)", false]]);
   });
 
   it("counts the value of a catalog with values as one more column, also among the visible ones", async () => {
@@ -83,23 +103,20 @@ describe("ResponseExportDialog (EX1-A)", () => {
     const product: ResponseColumn = { fieldId: "product", type: "choice", label: "Producto", options: [], introducedInVersion: 1, valueType: "Decimal" };
     const dialog = await show({ columns: [supplier, product], visible: [product] });
 
-    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (3 columnas)" })).not.toHaveAttribute("aria-disabled");
-    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (2 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(await columnOptions(dialog)).toEqual([["Todas las preguntas (3 columnas)", false], ["Solo las visibles (2 columnas)", false]]);
   });
 
   it("counts a location as its three columns, Latitud, Longitud and Precisión, also among the visible ones", async () => {
     const place: ResponseColumn = { fieldId: "place", type: "location", label: "Lugar", options: [], introducedInVersion: 1 };
     const dialog = await show({ columns: [supplier, place], visible: [place] });
 
-    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (4 columnas)" })).not.toHaveAttribute("aria-disabled");
-    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (3 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(await columnOptions(dialog)).toEqual([["Todas las preguntas (4 columnas)", false], ["Solo las visibles (3 columnas)", false]]);
   });
 
   it("counts each datum of the results as a column, and lets Solo las visibles be chosen when only one of them is hidden", async () => {
     const dialog = await show({ columns: [supplier], resultColumns: [voucher, expires], visibleResults: [voucher] });
 
-    expect(within(dialog).getByRole("radio", { name: "Todas las preguntas (3 columnas)" })).not.toHaveAttribute("aria-disabled");
-    expect(within(dialog).getByRole("radio", { name: "Solo las visibles (2 columnas)" })).not.toHaveAttribute("aria-disabled");
+    expect(await columnOptions(dialog)).toEqual([["Todas las preguntas (3 columnas)", false], ["Solo las visibles (2 columnas)", false]]);
   });
 
   it.each([
@@ -113,7 +130,7 @@ describe("ResponseExportDialog (EX1-A)", () => {
     }));
     const dialog = await show({ columns: [supplier], resultColumns: [voucher, expires], visibleResults: [expires] });
 
-    await userEvent.click(within(dialog).getByRole("radio", { name: option }));
+    await pickColumns(dialog, option);
     await userEvent.click(within(dialog).getByRole("button", { name: "Exportar a Excel" }));
     await waitFor(() => expect(sent).toMatchObject(body));
   });
@@ -125,7 +142,7 @@ describe("ResponseExportDialog (EX1-A)", () => {
     expect(valueOf(dialog, "Filas")).toHaveTextContent("Una por ítem de Artículos");
     expect(within(dialog).getByRole("button", { name: "Más información sobre Filas" }))
       .toHaveAccessibleDescription("Los datos de cada respuesta se repiten en sus ítems. Una respuesta sin ítems ocupa una fila. Hasta 100.000 filas.");
-    await userEvent.click(within(dialog).getByRole("radio", { name: /Solo las visibles/ }));
+    await pickColumns(dialog, /Solo las visibles/);
 
     expect(valueOf(dialog, "Filas")).toHaveTextContent("Una por respuesta");
     expect(within(dialog).queryByRole("button", { name: "Más información sobre Filas" })).not.toBeInTheDocument();

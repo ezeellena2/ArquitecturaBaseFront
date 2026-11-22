@@ -63,7 +63,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const exportButton = page.getByRole("button", { name: label("Exportar a Excel", "Export to Excel"), exact: true });
     await exportButton.click();
     const dialog = page.getByRole("dialog", { name: label("Exportar respuestas a Excel", "Export responses to Excel"), exact: true });
-    await dialog.getByRole("radio", { name: new RegExp(label("^Solo las visibles", "^Visible only")) }).click();
+    // «Columnas» is the only piece to choose (2026-11-22); its list goes outside the dialog.
+    await dialog.getByRole("button", { name: new RegExp(label("^Columnas ", "^Columns ")) }).click();
+    await page.getByRole("listbox", { name: label("Columnas", "Columns"), exact: true }).getByRole("option", { name: new RegExp(label("^Solo las visibles", "^Visible only")) }).click();
     const download = page.waitForEvent("download");
     await dialog.getByRole("button", { name: label("Exportar a Excel", "Export to Excel"), exact: true }).click();
     expect((await download).suggestedFilename()).toBe("E2.xlsx");

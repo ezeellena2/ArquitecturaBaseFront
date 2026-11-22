@@ -5,7 +5,8 @@ import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/ui/dialog";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Surface } from "@/shared/ui/Surface";
@@ -136,10 +137,13 @@ function IssuanceReviewDialog({ number, action, working, onClose, onDecide }: {
       onEscapeKeyDown={event => { if (working) event.preventDefault(); }} onPointerDownOutside={event => { if (working) event.preventDefault(); }}>
       <DialogHeader><DialogTitle>{t("issuance.reviewDialogTitle", { number })}</DialogTitle></DialogHeader>
       {advice ? <Banner>{advice}</Banner> : null}
-      <RadioGroupField label={t("issuance.reviewChoice")} value={choice} onValueChange={setChoice} options={[
-        { value: "proceed", label: proceed, disabled: !!working },
-        { value: "stop", label: t("issuance.stop"), help: t("issuance.stopHelp"), disabled: !!working },
-      ]}/>
+      {/* The only piece to choose (DS1-A, 2026-11-22): what not issuing means is the grey line of its option. */}
+      <FormField label={t("issuance.reviewChoice")}>
+        <Picker label={t("issuance.reviewChoice")} value={choice} onChange={setChoice} disabled={!!working} options={[
+          { id: "proceed", label: proceed },
+          { id: "stop", label: t("issuance.stop"), description: t("issuance.stopHelp") },
+        ]}/>
+      </FormField>
       <DialogFooter>
         <Button type="button" variant="outline" disabled={!!working} onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button type="button" pending={!!working} onClick={() => onDecide(choice === "proceed")}>{t(working ? "issuance.confirming" : "issuance.confirm")}</Button>

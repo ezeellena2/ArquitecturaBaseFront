@@ -289,7 +289,12 @@ it("explains a suggestion in its (i) instead of notes",async()=>{
   expect(screen.queryByText("Solo aparecen formularios publicados.")).not.toBeInTheDocument();
   expect(screen.getByRole("button",{name:/^Formulario a sugerir /})).not.toHaveAccessibleDescription();
   expect(screen.getByRole("button",{name:"Más información sobre Cómo se ofrece"})).toHaveAccessibleDescription("La IA decide: lo ofrece si encaja con el cuándo o si la persona lo pide. Preguntar siempre: lo ofrece después de cada respuesta, sin IA. Se puede limitar con «Si (opcional)».");
-  for(const name of [/La IA decide/,/Preguntar siempre/])expect(screen.getByRole("radio",{name})).not.toHaveAccessibleDescription();
+  // «Cómo se ofrece» is the only piece to choose (2026-11-22): its (i) describes the button, and its options say only their names.
+  expect(screen.getByRole("button",{name:"Cómo se ofrece La IA decide"})).toHaveAccessibleDescription(/^La IA decide: lo ofrece si encaja/);
+  const modes=await openList("Cómo se ofrece La IA decide");
+  expect(within(modes).getAllByRole("option").map(option=>option.textContent)).toEqual(["La IA decide","Preguntar siempre"]);
+  for(const option of within(modes).getAllByRole("option"))expect(option).not.toHaveAccessibleDescription();
+  await userEvent.keyboard("{Escape}");
   expect(screen.getByRole("textbox",{name:"Cuándo sugerirlo"})).toHaveAccessibleDescription("Es lo que lee el asistente para decidirlo. Escribilo como se lo explicarías a un compañero.");
   expect(screen.getByRole("button",{name:"Más información sobre Si (opcional)"})).toHaveAccessibleDescription("Sin condición, la sugerencia corre siempre. Las condiciones usan las preguntas del formulario.");
   expect(screen.queryByText(/la regla corre siempre/)).not.toBeInTheDocument();
