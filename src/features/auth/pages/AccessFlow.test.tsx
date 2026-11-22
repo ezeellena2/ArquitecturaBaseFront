@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -69,7 +69,11 @@ it("keeps the name when switching to WhatsApp and returning from verification", 
   );
   const { router } = renderRouteWithProviders(registration);
   await userEvent.type(await screen.findByRole("textbox", { name: "Nombre y apellido" }), "Ana Perez");
-  await userEvent.click(screen.getByRole("button", { name: "WhatsApp" }));
+  // «Ingresar con» is the field of the piece to choose (2026-11-22), opened with the keyboard as the other Radix lists.
+  const channel = screen.getByRole("button", { name: "Ingresar con Correo" });
+  await act(async () => channel.focus());
+  await userEvent.keyboard("{Enter}");
+  await userEvent.click(within(await screen.findByRole("listbox", { name: "Ingresar con" })).getByRole("option", { name: "WhatsApp" }));
   expect(screen.getByRole("textbox", { name: "Nombre y apellido" })).toHaveValue("Ana Perez");
   await userEvent.type(screen.getByRole("textbox", { name: "Número de WhatsApp" }), "3415551234");
   await userEvent.click(screen.getByRole("button", { name: "Enviar código" }));
@@ -77,7 +81,7 @@ it("keeps the name when switching to WhatsApp and returning from verification", 
   expect(router.state.location.state).toMatchObject({ register: true, displayName: "Ana Perez", channel: "whatsapp" });
   await userEvent.click(screen.getByRole("link", { name: "Usar otro número" }));
   expect(await screen.findByRole("textbox", { name: "Nombre y apellido" })).toHaveValue("Ana Perez");
-  expect(screen.getByRole("button", { name: "WhatsApp" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Ingresar con WhatsApp" })).toBeInTheDocument();
 });
 
 it("offers sign-in after an already registered account without reusing its consumed code", async () => {

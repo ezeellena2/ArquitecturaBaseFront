@@ -18,7 +18,8 @@ import { createSigninReturnUrl } from "@/auth/accessRequests";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { GoogleIcon } from "@/shared/ui/GoogleIcon";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
+import { FormField } from "@/shared/ui/FormField";
+import { Picker } from "@/shared/ui/Picker";
 import { Button } from "@/shared/ui/button";
 
 type LoginChannel = "email" | "whatsapp";
@@ -179,13 +180,16 @@ export function LoginPage() {
       ) : null}
 
       <div className="flex flex-col gap-4">
+        {/* El medio se elige con la pieza única, como todo lo que se elige (DS1-A, 2026-11-22): un campo del ancho de la tarjeta,
+            con su ícono. */}
         {whatsappCountries === undefined ? null : (
-          <SegmentedControl appearance="public" aria-label={t("login.methodLabel")} options={(["email", "whatsapp"] as const).map(option => ({
-            key: option,
-            pressed: activeChannel === option,
-            onSelect: () => setChannel(option),
-            label: <>{option === "email" ? <Mail size={18} aria-hidden="true" /> : <MessageCircle size={18} aria-hidden="true" />}{t(`login.methods.${option}`)}</>,
-          }))} />
+          <FormField label={t("login.methodLabel")}>
+            <Picker label={t("login.methodLabel")} value={activeChannel} onChange={(option) => setChannel(option === "whatsapp" ? "whatsapp" : "email")}
+              options={[
+                { id: "email", label: t("login.methods.email"), icon: <Mail size={18} aria-hidden="true" /> },
+                { id: "whatsapp", label: t("login.methods.whatsapp"), icon: <MessageCircle size={18} aria-hidden="true" /> },
+              ]} />
+          </FormField>
         )}
 
         {/* Cambiar de medio arma el otro formulario de cero: lo escrito en uno no sirve en el otro. */}

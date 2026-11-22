@@ -169,7 +169,9 @@ test("WhatsApp code login completes OIDC while the business conversation remains
   await openChat(page);
   await page.getByRole("button", { name: "Menú de Operador", exact: true }).click();
   await page.getByRole("menuitem", { name: "Cerrar sesión" }).click();
-  await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
+  // «Ingresar con» is the field of the piece to choose (2026-11-22): it says the channel chosen and opens its list.
+  await page.getByRole("button", { name: "Ingresar con Correo", exact: true }).click();
+  await page.getByRole("listbox", { name: "Ingresar con", exact: true }).getByRole("option", { name: "WhatsApp", exact: true }).click();
   await page.getByLabel("Número de WhatsApp", { exact: true }).fill("3515551234");
   await page.getByRole("button", { name: /código/i }).click();
   await expect.poll(() => api.codeRequests.length).toBe(1);

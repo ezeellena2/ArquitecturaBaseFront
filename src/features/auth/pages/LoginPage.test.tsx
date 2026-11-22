@@ -45,8 +45,17 @@ async function loginMethodsSettled() {
   await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 }
 
+/// «Ingresar con» es el campo de la pieza para elegir (2026-11-22): su botón dice la etiqueta y el medio elegido. Se abre con el
+/// teclado, como las demás listas de Radix en jsdom.
+async function openChannels() {
+  const channel = await screen.findByRole("button", { name: "Ingresar con Correo" });
+  await act(async () => channel.focus());
+  await userEvent.keyboard("{Enter}");
+  return screen.findByRole("listbox", { name: "Ingresar con" });
+}
+
 async function chooseWhatsApp() {
-  await userEvent.click(await screen.findByRole("button", { name: "WhatsApp" }));
+  await userEvent.click(within(await openChannels()).getByRole("option", { name: "WhatsApp" }));
 }
 
 const whatsAppCodeResponse = { resendAfterSeconds: 60, phone: "+5491123456789", maskedPhone: "+54 9 11 •••• 6789" };
@@ -121,7 +130,7 @@ describe("LoginPage", () => {
 
       await loginMethodsSettled();
 
-      expect(screen.queryByRole("group", { name: "Ingresar con" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Ingresar con / })).not.toBeInTheDocument();
       expect(screen.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Ingresar con Google" })).toBeInTheDocument();
       // El título y el formulario alcanzan: sin un subtítulo que explique para qué es la pantalla.
@@ -166,7 +175,7 @@ describe("LoginPage", () => {
 
       await loginMethodsSettled();
 
-      expect(screen.queryByRole("group", { name: "Ingresar con" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Ingresar con / })).not.toBeInTheDocument();
       expect(screen.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Ingresar con Google" })).toBeInTheDocument();
       // Es un pedido de la pantalla, no uno que la persona hizo: su falla no se anuncia con un aviso.
@@ -177,10 +186,13 @@ describe("LoginPage", () => {
       withLoginMethods(whatsappOn);
       renderRouteWithProviders(loginUrl);
 
-      const group = await screen.findByRole("group", { name: "Ingresar con" });
+      const channels = await openChannels();
 
-      expect(within(group).getByRole("button", { name: "Correo" })).toHaveAttribute("aria-pressed", "true");
-      expect(within(group).getByRole("button", { name: "WhatsApp" })).toHaveAttribute("aria-pressed", "false");
+      expect(within(channels).getAllByRole("option").map((option) => option.textContent)).toEqual(["Correo", "WhatsApp"]);
+      expect(within(channels).getByRole("option", { name: "Correo" })).toHaveAttribute("aria-selected", "true");
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+      expect(screen.getByRole("button", { name: "Ingresar con Correo" })).toHaveFocus();
       expect(screen.getByRole("textbox", { name: "Correo electrónico" })).toBeInTheDocument();
     });
 
@@ -190,7 +202,7 @@ describe("LoginPage", () => {
 
       await chooseWhatsApp();
 
-      expect(screen.getByRole("button", { name: "WhatsApp" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Ingresar con WhatsApp" })).toBeInTheDocument();
       expect(screen.queryByRole("textbox", { name: "Correo electrónico" })).not.toBeInTheDocument();
 
       const number = screen.getByRole("textbox", { name: "Número de WhatsApp" });
@@ -218,7 +230,7 @@ describe("LoginPage", () => {
       renderRouteWithProviders(loginUrl, { state: { channel: "whatsapp" } });
 
       expect(await screen.findByRole("textbox", { name: "Número de WhatsApp" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "WhatsApp" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Ingresar con WhatsApp" })).toBeInTheDocument();
     });
   });
 
