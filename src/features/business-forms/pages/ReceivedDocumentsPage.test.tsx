@@ -165,7 +165,8 @@ describe("the list", () => {
     await user.click(within(form).getByRole("option", { name: "Pagos de clientes" }));
     await waitFor(() => expect(lastList(requests).definitionId).toBe(receivedDocumentForms.payments));
     expect(await screen.findByRole("button", { name: "Formulario Pagos de clientes" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Mandó/ }));
+    // The section of the panel: the header «Mandó» of the table is a button too, because it orders (OT1-C).
+    await user.click(within(screen.getByRole("dialog", { name: "Filtros" })).getByRole("button", { name: /^Mandó/ }));
     // Three people: their list has no search (DS1-A), and a letter goes to the first one that starts with it.
     const sender = await openPicker(user, await screen.findByRole("button", { name: "Mandó Todos" }));
     expect(screen.queryByRole("combobox", { name: "Buscar en Mandó" })).not.toBeInTheDocument();
@@ -194,7 +195,7 @@ describe("the list", () => {
     expect(screen.queryByText("Se muestran los 100 con más documentos.")).not.toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: /^Mandó/ }));
+    await user.click(within(screen.getByRole("dialog", { name: "Filtros" })).getByRole("button", { name: /^Mandó/ }));
     await openPicker(user, await screen.findByRole("button", { name: "Mandó Todos" }));
     expect(screen.getByText("Se muestran los 100 con más documentos.")).toBeInTheDocument();
   }, 20_000);
@@ -244,6 +245,82 @@ describe("the list", () => {
     setup({ list: () => HttpResponse.json({ status: 403 }, { status: 403 }) });
     renderRouteWithProviders("/formularios/documentos");
     expect(await screen.findByRole("heading", { name: "No tenés permiso" }, { timeout: 10_000 })).toBeInTheDocument();
+  }, 20_000);
+});
+
+// OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort` in the
+// body. The data read stay without order: they are kept encrypted.
+describe("the order", () => {
+  const header = (name: string) => within(within(screen.getByRole("table")).getByRole("columnheader", { name })).getByRole("button", { name });
+
+  it("orders by a header in its useful direction, back on the first page, without touching the private filters, and keeps it in the address", async () => {
+    const { requests } = setup();
+    const { router } = renderRouteWithProviders("/formularios/documentos?page=2");
+    const table = await screen.findByRole("table", {}, { timeout: 10_000 });
+    // Without an order chosen, the usual one is a column: its arrow is seen and the button says it, and the body does not carry it.
+    expect(lastList(requests)).not.toHaveProperty("sort");
+    expect(within(table).getByRole("columnheader", { name: "Recibido" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Recibido, más reciente primero" })).toBeVisible();
+
+    await userEvent.click(header("Documento"));
+    await waitFor(() => expect(lastList(requests).sort).toBe("document"));
+    expect(lastList(requests).page).toBe(1);
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("document");
+    expect(params.has("page")).toBe(false);
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Documento" })).toHaveAttribute("aria-sort", "ascending");
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Recibido" })).toHaveAttribute("aria-sort", "none");
+
+    // A private filter keeps the order, and the order keeps the filter.
+    await chooseState("Propuestos");
+    await waitFor(() => expect(lastList(requests)).toMatchObject({ state: "proposed", sort: "document" }));
+    await userEvent.click(header("Documento"));
+    await waitFor(() => expect(lastList(requests)).toMatchObject({ state: "proposed", sort: "-document" }));
+    expect(new URLSearchParams(router.state.location.search).get("sort")).toBe("-document");
+    expect(router.state.location.search).not.toMatch(/state|proposed/);
+  }, 20_000);
+
+  it("orders each column by its server field, and the data read do not order", async () => {
+    const { requests } = setup();
+    renderRouteWithProviders("/formularios/documentos");
+    const table = await screen.findByRole("table", {}, { timeout: 10_000 });
+    for (const datum of ["Monto", "Banco o billetera de origen", "CUIT o CUIL de origen"])
+      expect(within(within(table).getByRole("columnheader", { name: datum })).queryByRole("button")).not.toBeInTheDocument();
+    // The first touch on «Recibido» turns the usual order around; each other column starts in the useful direction of its datum.
+    for (const [name, sort] of [["Recibido", "receivedAtUtc"], ["Documento", "document"], ["Mandó", "sender"], ["Formulario", "form"], ["Estado", "state"],
+      ["Se borra", "-deleteAfterUtc"], ["Respuesta", "record"]] as const) {
+      await userEvent.click(header(name));
+      await waitFor(() => expect(lastList(requests).sort).toBe(sort));
+    }
+  }, 20_000);
+
+  it("changes the order from «Ordenar por», last in the bar, which moves the arrow of the header", async () => {
+    const { requests } = setup();
+    renderRouteWithProviders("/formularios/documentos?sort=-deleteAfterUtc");
+    await screen.findByRole("table", {}, { timeout: 10_000 });
+    expect(lastList(requests).sort).toBe("-deleteAfterUtc");
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Se borra, más reciente primero" });
+    expect(within(trigger.closest<HTMLElement>('[data-slot="filter-bar"]')!).getAllByRole("button").at(-1)).toBe(trigger);
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    const columns = within(await screen.findByRole("menu")).getByRole("group", { name: "Columna" });
+    expect(within(columns).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Documento", "Recibido", "Mandó", "Formulario", "Estado", "Se borra", "Respuesta"]);
+    await userEvent.click(within(columns).getByRole("menuitemradio", { name: "Mandó" }));
+    await waitFor(() => expect(lastList(requests).sort).toBe("sender"));
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la Z a la A" }));
+    await waitFor(() => expect(lastList(requests).sort).toBe("-sender"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Mandó" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Mandó, de la Z a la A" })).toHaveFocus();
+  }, 20_000);
+
+  it("leaves out an order the server does not know", async () => {
+    const { requests } = setup();
+    renderRouteWithProviders("/formularios/documentos?sort=-datum:Monto");
+    await screen.findByRole("table", {}, { timeout: 10_000 });
+    expect(lastList(requests)).not.toHaveProperty("sort");
+    expect(screen.getByRole("button", { name: "Ordenar por: Recibido, más reciente primero" })).toBeVisible();
   }, 20_000);
 });
 

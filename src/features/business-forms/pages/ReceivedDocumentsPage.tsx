@@ -8,6 +8,7 @@ import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { calendarDateInZone, formatDateInZone, formatDateOnly, formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { parseSort } from "@/shared/lib/sort";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
@@ -22,9 +23,10 @@ import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
 import { Picker } from "@/shared/ui/Picker";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
-import { fetchReceivedDocuments, type ReceivedDocument, type ReceivedDocumentsQuery } from "../api/receivedDocuments";
+import { fetchReceivedDocuments, receivedDocumentSortFields, type ReceivedDocument, type ReceivedDocumentsQuery } from "../api/receivedDocuments";
 import { ReceivedDocumentFacetControl } from "../components/documents/ReceivedDocumentFacetControl";
 import { ReceivedDocumentGroups } from "../components/documents/ReceivedDocumentGroups";
 import { ReceivedDocumentPanel } from "../components/documents/ReceivedDocumentPanel";
@@ -84,7 +86,8 @@ function ReceivedDocuments() {
   const query: ReceivedDocumentsQuery = {
     page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
     pageSize: Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : presentation.data?.defaultPageSize ?? 20,
-    sort: pagination.sort === "receivedAtUtc" || pagination.sort === "-receivedAtUtc" ? pagination.sort : undefined,
+    // Every column with a datum orders in the server (OT1-C); a field it does not order by is left out.
+    sort: receivedDocumentSortFields.includes(parseSort(pagination.sort)?.field ?? "") ? pagination.sort : undefined,
     search: searchValid ? filter.search?.trim() || undefined : undefined, state: filter.state, definitionId: filter.form?.id, senderUserId: filter.sender?.id,
     receivedFromUtc: filter.receivedFromUtc, receivedToUtc: filter.receivedToUtc,
   };
@@ -137,10 +140,11 @@ function ReceivedDocuments() {
   const apply = (next: ReceivedDocumentsFilter) => { setFilter(next); pagination.setPage(1); };
   const date = (value: string) => formatDateTimeInZone(value, i18n.language, zone);
   const dataColumns = receivedDocumentDataColumns(items);
+  // Each column's id is the server's field to order by (OT1-C).
   const columns: Column<ReceivedDocument>[] = [
     // The document: its kind and its name, which opens it. A row of a spreadsheet (VC1-A) is its spreadsheet with its «Fila 5» in grey
     // below it, the exception A of one datum per column.
-    { sortable: false, id: "document", header: t("columns.document"), cell: item => {
+    { id: "document", header: t("columns.document"), sortable: true, sortKind: "text", cell: item => {
       const kind = receivedDocumentKind(item.file.mediaType);
       const Icon = kind === "photo" ? ImageIcon : kind === "file" ? FileIcon : DocumentIcon;
       const row = item.row ? receivedDocumentRowLabel(item.row) : null;
@@ -152,15 +156,15 @@ function ReceivedDocuments() {
       </div>;
     } },
     { id: "receivedAtUtc", header: t("columns.received"), sortable: true, sortKind: "date", cell: item => <time dateTime={item.receivedAtUtc}>{date(item.receivedAtUtc)}</time> },
-    { sortable: false, id: "sender", header: t("columns.sender"), cell: item => item.sender.displayName ?? t("unknownPerson") },
-    { sortable: false, id: "form", header: t("columns.form"), cell: item => item.form?.name ?? "—" },
-    // One datum read per column (UD): each question the page's documents bring, by its name.
+    { id: "sender", header: t("columns.sender"), sortable: true, sortKind: "text", cell: item => item.sender.displayName ?? t("unknownPerson") },
+    { id: "form", header: t("columns.form"), sortable: true, sortKind: "text", cell: item => item.form?.name ?? "—" },
+    // One datum read per column (UD): each question the page's documents bring, by its name. They do not order: they are kept encrypted.
     ...dataColumns.map(label => ({ sortable: false as const, id: "datum:" + label, header: label, cell: (item: ReceivedDocument) => receivedDocumentDatum(item, label) ?? "—" })),
-    { sortable: false, id: "state", header: t("columns.state"), cell: item => { const label = receivedDocumentStateLabel(item); return <Badge variant={receivedDocumentStateVariant(label)}>{t("states." + label)}</Badge>; } },
+    { id: "state", header: t("columns.state"), sortable: true, sortKind: "state", cell: item => { const label = receivedDocumentStateLabel(item); return <Badge variant={receivedDocumentStateVariant(label)}>{t("states." + label)}</Badge>; } },
     // When a discarded or unclassified one is deleted, in its own column and only when the page has one.
-    ...items.some(item => item.deleteAfterUtc) ? [{ sortable: false as const, id: "deleteAfterUtc", header: t("columns.deletes"),
+    ...items.some(item => item.deleteAfterUtc) ? [{ id: "deleteAfterUtc", header: t("columns.deletes"), sortable: true as const, sortKind: "date" as const,
       cell: (item: ReceivedDocument) => item.deleteAfterUtc ? <time dateTime={item.deleteAfterUtc}>{formatDateInZone(item.deleteAfterUtc, i18n.language, zone)}</time> : "—" }] : [],
-    { sortable: false, id: "record", header: t("columns.record"), cell: item => item.record
+    { id: "record", header: t("columns.record"), sortable: true, sortKind: "text", cell: item => item.record
       ? scope.readsResponses && item.form ? <Link to={`/formularios/${item.form.definitionId}/respuestas/${item.record.recordId}`} className="font-medium text-[var(--color-brand-700)] underline">{item.record.number}</Link> : item.record.number
       : "—" },
   ];
@@ -176,6 +180,8 @@ function ReceivedDocuments() {
   ];
   const waitReason = cooldown.isRunning ? t("wait", { count: cooldown.seconds }) : null;
   const refreshing = list.isPlaceholderData || list.isError && list.isFetching;
+  // The order seen: the chosen one or, without one, the usual one, the last received first.
+  const sort = query.sort ?? "-receivedAtUtc";
 
   return <div ref={container} tabIndex={-1} className="relative h-full min-h-0 outline-none">
     <div inert={mobile && !!documentId} className="h-full overflow-y-auto"><Page title={t("title")} help={data ? t("help") + " " + t("helpRetention", { days: data.discardedRetentionDays }) : t("help")}>
@@ -204,6 +210,8 @@ function ReceivedDocuments() {
               onClear: () => apply({ ...filter, receivedFromUtc: undefined, receivedToUtc: undefined }),
               content: <ReceivedRange filter={filter} zone={zone} onApply={(receivedFromUtc, receivedToUtc) => apply({ ...filter, receivedFromUtc, receivedToUtc })} /> },
           ]} />
+          {/* Last in the bar, apart from the filters: it takes no rows out (OT1-C). */}
+          <SortMenu columns={columns} sort={sort} onSortChange={pagination.setSort} />
         </div>
         {chips.length ? <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] pt-3">
           {chips.map(chip => <FilterChip key={chip.key} removeLabel={t("remove", { name: chip.label })} onRemove={chip.clear}>{chip.label}</FilterChip>)}
@@ -215,7 +223,7 @@ function ReceivedDocuments() {
       <Surface>
         <DataTable columns={columns} rows={items} rowKey={item => item.id} selectedRowKey={documentId} onRowClick={item => navigate(documentPath(item.id))}
           isLoading={list.isPending && !data} refreshing={refreshing} hasData={!!data} error={list.error ? t("loadFailed") : undefined}
-          onRetry={() => void list.refetch()} retryReason={waitReason} sort={query.sort ?? "-receivedAtUtc"} onSortChange={pagination.toggleSort}
+          onRetry={() => void list.refetch()} retryReason={waitReason} sort={sort} onSortChange={pagination.toggleSort}
           emptyTitle={t(filtered ? "noMatches" : "empty")}
           emptyAction={filtered ? <Button type="button" variant="outline" onClick={() => apply({})}>{t("clear")}</Button> : undefined} />
         {data ? <Pagination page={data.page} pageSize={data.pageSize} totalCount={data.totalCount} totalPages={totalPages} hasPrevious={data.page > 1}

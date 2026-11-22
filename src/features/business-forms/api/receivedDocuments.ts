@@ -157,11 +157,14 @@ export type ReceivedDocumentGroup = z.infer<typeof group>;
 export const receivedDocumentItemSchema = item;
 export const receivedDocumentTopicSchema = topic;
 
+/// The columns the server orders by (OT1-C); without one, the last received first. The data read do not order: they are kept encrypted.
+export const receivedDocumentSortFields: readonly string[] = ["receivedAtUtc", "document", "sender", "form", "state", "deleteAfterUtc", "record"];
 /** The private filters and the paging and order of the list: they travel in a body, never in a URL. */
 export interface ReceivedDocumentsQuery {
   page: number;
   pageSize: number;
-  sort?: "receivedAtUtc" | "-receivedAtUtc";
+  /** "field" or "-field", one of `receivedDocumentSortFields`. */
+  sort?: string;
   search?: string;
   definitionId?: string;
   senderUserId?: string;
