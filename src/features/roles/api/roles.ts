@@ -3,8 +3,12 @@ import { api } from "@/shared/api/httpClient";
 import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import type { PagedResult } from "@/shared/api/pagedResult";
 
-export function fetchPagedRoles(page: number, pageSize: number): Promise<PagedResult<RoleListItem>> {
-  return api.get<PagedResult<RoleListItem>>('/api/roles/paged?' + new URLSearchParams({ page: String(page), pageSize: String(pageSize) }));
+/// `sort` es "campo" o "-campo" (OT1-C): `name`, `description`, `userCount` o `permissions` (la cantidad). Sin él, el backend
+/// ordena por nombre.
+export function fetchPagedRoles(page: number, pageSize: number, sort?: string): Promise<PagedResult<RoleListItem>> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (sort) params.set("sort", sort);
+  return api.get<PagedResult<RoleListItem>>('/api/roles/paged?' + params);
 }
 
 /// Un permiso del catálogo (`GET /api/permissions`): el código estable, y su nombre y su descripción ya

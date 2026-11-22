@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router";
@@ -14,14 +14,20 @@ import { rolesQueryKey, type RoleListItem } from "@/shared/api/roles";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
+import { FilterBar } from "@/shared/ui/FilterBar";
 import { EyeIcon, PencilIcon,  TrashIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Surface } from "@/shared/ui/Surface";
 import { Page } from "@/shared/ui/Page";
 import { Pagination } from "@/shared/ui/Pagination";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { formatNumber } from "@/shared/lib/numberFormat";
+
+/// Sin un orden elegido, el backend ordena por nombre: es una columna, así que su flecha se ve y el primer toque la invierte
+/// (OT1-C).
+const usualSort = "name";
 
 /// `/roles` usa el endpoint paginado; los selectores conservan el catálogo completo.
 ///
@@ -33,13 +39,19 @@ export function RolesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const presentation = useSystemPresentation();
-  const { page, pageSize, ready, setPage, setPageSize } = usePagination(presentation.data?.defaultPageSize, true);
+  const { page, pageSize, sort, ready, setPage, setPageSize, toggleSort, setSort } = usePagination(presentation.data?.defaultPageSize, true, usualSort);
 
   const [deletingRole, setDeletingRole] = useState<RoleListItem | undefined>();
 
   const canManage = has("roles.manage");
 
-  const { data, error, isLoading, refetch } = useQuery({ queryKey: [...rolesQueryKey, "paged", page, pageSize], queryFn: () => fetchPagedRoles(page, pageSize), enabled: ready });
+  // `keepPreviousData`: al ordenar o paginar, las filas anteriores quedan a la vista, atenuadas, mientras llegan las nuevas.
+  const { data, error, isLoading, isPlaceholderData, refetch } = useQuery({
+    queryKey: [...rolesQueryKey, "paged", page, pageSize, sort],
+    queryFn: () => fetchPagedRoles(page, pageSize, sort),
+    placeholderData: keepPreviousData,
+    enabled: ready,
+  });
 
   const removal = useMutation({
     mutationFn: (role: RoleListItem) => deleteRole(role.id),
@@ -53,20 +65,17 @@ export function RolesPage() {
 
   const apiError = error instanceof ApiError ? error : undefined;
 
+  // Toda columna con un dato ordena en el servidor (OT1-C), con su `id` como campo; «Permisos» ordena por la cantidad.
   const columns: Column<RoleListItem>[] = [
+    { id: "name", header: t("columns.name"), cell: (row) => row.name, sortable: true, sortKind: "text" },
+    { id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—", sortable: true, sortKind: "text" },
+    { id: "userCount", header: t("columns.userCount"), numeric: true, cell: (row) => formatNumber(row.userCount, i18n.language), sortable: true, sortKind: "number" },
     {
-      sortable: false,
-      id: "name",
-      header: t("columns.name"),
-      cell: (row) => row.name,
-    },
-    { sortable: false, id: "description", header: t("columns.description"), cell: (row) => row.description ?? "—" },
-    { sortable: false, id: "userCount", header: t("columns.userCount"), numeric: true, cell: (row) => formatNumber(row.userCount, i18n.language) },
-    {
-      sortable: false,
       id: "permissions",
       header: t("columns.permissions"),
       cell: (row) => t("permissionsCount", { count: row.permissions.length }),
+      sortable: true,
+      sortKind: "number",
     },
   ];
 
@@ -124,6 +133,11 @@ export function RolesPage() {
         </Can>
       }
     >
+      {/* Sin filtros: la barra lleva sólo «Ordenar por» (OT1-C). */}
+      <FilterBar>
+        <SortMenu columns={columns} sort={sort ?? usualSort} onSortChange={setSort} />
+      </FilterBar>
+
       {/* Sin padding y con `overflow-hidden`: la banda del encabezado llega a los bordes de la caja y se
           recorta con su radio. Con padding, la tabla flota adentro y la banda deja de ser la cabecera de la
           caja para ser un rectángulo suelto. */}
@@ -134,8 +148,11 @@ export function RolesPage() {
           hasData={data !== undefined}
           rowKey={(row) => row.id}
           isLoading={isLoading}
+          refreshing={isPlaceholderData}
           error={error ? t("common:states.loadFailed") : undefined}
           onRetry={() => void refetch()}
+          sort={sort ?? usualSort}
+          onSortChange={toggleSort}
           // Sin una frase que explique para qué sirve un rol: «Nuevo rol» está en la banda.
           emptyTitle={t("empty.title")}
         />

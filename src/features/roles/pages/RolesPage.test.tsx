@@ -139,6 +139,70 @@ describe("RolesPage", () => {
     expect(within(table).getByRole("cell", { name: "Mira usuarios y nada más." })).not.toHaveClass("text-right");
   });
 
+  // OT1-C (2026-11-22): every column with a datum orders in the server, by its header and by «Ordenar por», with the same `sort`.
+  function sortRequests() {
+    const requests: URLSearchParams[] = [];
+    // A later `server.use` goes first: this one answers the list instead of the one of `managerHandlers`.
+    server.use(...managerHandlers());
+    server.use(http.get("/api/roles/paged", ({ request }) => {
+      requests.push(new URL(request.url).searchParams);
+      return HttpResponse.json({ items: roles, page: 1, pageSize: 20, totalCount: roles.length, totalPages: 1, hasPrevious: false, hasNext: false });
+    }));
+    return requests;
+  }
+
+  const header = (name: string) => within(screen.getByRole("table")).getByRole("columnheader", { name });
+
+  it("orders by a header in its useful direction, back on the first page, and keeps the order in the URL", async () => {
+    const requests = sortRequests();
+    const { router } = renderRouteWithProviders("/roles?page=2&pageSize=20");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    // Without an order chosen, the server's usual one is the name: its arrow shows, and the first touch inverts it.
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+    expect(header("Rol")).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Rol, de la A a la Z" })).toBeVisible();
+
+    await userEvent.click(within(header("Rol")).getByRole("button", { name: "Rol" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-name"));
+    const params = new URLSearchParams(router.state.location.search);
+    expect(params.get("sort")).toBe("-name");
+    expect(params.has("page")).toBe(false);
+    expect(requests.at(-1)?.get("page")).toBe("1");
+    expect(header("Rol")).toHaveAttribute("aria-sort", "descending");
+
+    await userEvent.click(within(header("Usuarios")).getByRole("button", { name: "Usuarios" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-userCount"));
+    expect(screen.getByRole("button", { name: "Ordenar por: Usuarios, de mayor a menor" })).toBeVisible();
+  });
+
+  it.each([
+    ["Rol", "-name"], ["Descripción", "description"], ["Usuarios", "-userCount"], ["Permisos", "-permissions"],
+  ])("orders «%s» by the server field %s", async (name, sort) => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/roles");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    await userEvent.click(within(header(name)).getByRole("button", { name }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe(sort));
+  });
+
+  it("changes the order from «Ordenar por», alone in its bar, and the actions do not order", async () => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/roles?sort=description");
+    await screen.findByRole("table", {}, { timeout: 5000 });
+    expect(requests.at(-1)?.get("sort")).toBe("description");
+    expect(within(header("Acciones")).queryByRole("button")).not.toBeInTheDocument();
+    const trigger = screen.getByRole("button", { name: "Ordenar por: Descripción, de la A a la Z" });
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitemradio", { name: "Permisos" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-permissions"));
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De menor a mayor" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("permissions"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(header("Permisos")).toHaveAttribute("aria-sort", "ascending");
+  });
+
   it("says there are no roles yet without explaining what they are for, with Nuevo rol in the band", async () => {
     server.use(...managerHandlers());
     // Aparte y después: dentro de un mismo `server.use`, gana el primero que coincide.
