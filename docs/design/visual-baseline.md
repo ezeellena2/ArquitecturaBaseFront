@@ -79,8 +79,9 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido? ¿Nada va debajo de
    otro dato: los datos de una opción en su campo o su columna («Artículo · Rubro»), y una respuesta con la forma de su
    formulario? ([lecturas](#lecturas), [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22))
-5. **Un dato por columna:** ¿cada columna de una tabla o de una lista con columnas muestra un solo dato?
-   ([un dato por columna](#un-dato-por-columna--2026-11-09))
+5. **Un dato por columna, que ordena:** ¿cada columna de una tabla o de una lista con columnas muestra un solo dato? En un
+   listado, ¿toda columna con un dato ordena desde su encabezado y desde «Ordenar por», salvo Acciones, un ícono o varios
+   valores? ([un dato por columna](#un-dato-por-columna--2026-11-09), [ordenar](#ordenar-por-columnas--2026-11-22))
 6. **Sin leyendas:** ¿ningún texto debajo o al costado de un control, una sección o un título explica cómo funciona algo?
    ¿Lo que sirve está en la (i), y `hint` y `description` llevan sólo datos?
    ([diálogos](#formularios-y-diálogos), [leyendas y carga](#leyendas-y-carga--2026-11-01))
@@ -328,6 +329,9 @@ Complementa las [premisas](../guides/premisas-de-desarrollo.md#filtros-y-búsque
   ([FO1-A](#los-filtros-de-opciones-en-toda-la-app--2026-11-03)).
 - Filtros activos como chips removibles y una única acción “Limpiar todo”. Sin coincidencias, el vacío dice cuántos
   filtros hay y permite limpiarlos. Cambiar el orden también vuelve a la página 1.
+- **Toda columna con un dato ordena** ([OT1-C, 2026-11-22](#ordenar-por-columnas--2026-11-22)), desde su encabezado y desde
+  «Ordenar por», último en la barra. La flecha marca la columna; lo vacío va al final y un estado sigue el orden del circuito.
+  Una tabla paginada ordena en la base; una entera, en el navegador con la misma pieza.
 - El backend filtra, ordena y pagina; el front no simula resultados sobre una página parcial.
 - Selección masiva con checkboxes nativos o equivalentes con nombre accesible.
 - **Líneas entre columnas y números a la derecha** ([A, 2026-11-02](#líneas-entre-columnas--2026-11-02)). Toda tabla,
@@ -747,6 +751,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | La respuesta como el formulario · VF1-A y VF2-A, en el lienzo aparte «Respuesta como formulario» | La vista rápida y la pantalla completa de una respuesta, corregir en el lugar y la actividad | [En programación](respuesta-como-formulario.md) desde el 2026-11-22, con la regla [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22) |
 | Reglas en Configuración · RC6-B y RC1-A, en el lienzo aparte «Núcleo e IA: reglas en Configuración» | `/configuracion/apariencia`, `/configuracion` y `/configuracion/ia` | Elegidas con P1-A y programadas el 2026-11-22; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Formularios: una sola entrada · FU1-B y FU2-A, en el lienzo aparte «Formularios: una sola entrada» | El panel de «Gestión de formularios», `/formularios` (Formularios y Diseñar formularios en una lista) y `/formularios/respuestas` | [Elegidas y programadas](formularios-una-entrada.md) el 2026-11-23; faltan las escenas de `test:visual`, la prueba manual y pasar los tableros al lienzo del sistema visual |
+| Ordenar las tablas por sus columnas · OT1-A, OT1-B y OT1-C, en el lienzo aparte «Ordenar las tablas por sus columnas» | El encabezado de toda tabla, «Ordenar por» en la barra de filtros, `DataTable`, `SortMenu`, `usePagination` y `useClientSort` | [OT1-C elegida](#ordenar-por-columnas--2026-11-22) el 2026-11-22; programados la pieza común y Formularios (corte 1); faltan las demás tablas, `test:visual`, la prueba manual y pasar el tablero al lienzo del sistema visual |
 | Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
@@ -1490,3 +1495,39 @@ Con la regla entraron dos tableros del lienzo aparte «Respuesta como formulario
 - **VF2-A:** la actividad es una tabla, con un renglón por cada cosa que pasó y un dato por columna.
 
 Reemplazan la lectura en dos columnas del detalle (TL1-A), con los datos de la opción debajo, y la actividad de TL3-A.
+
+## Ordenar por columnas — 2026-11-22
+
+Durante la prueba integral, mirando «Formularios», el usuario pidió que todas las tablas se ordenen por sus columnas, desde
+el encabezado y desde un botón «Ordenar por», en la base o en el navegador según la tabla. Eligió **OT1-C**, los dos a la
+vez, en el lienzo aparte [Ordenar las tablas por sus columnas](https://claude.ai/artifact/HumQW2KEkQxzvw8pbcRcvs#artboard-OT1-C)
+(descartó OT1-A, sólo el encabezado, y OT1-B, sólo el botón). El relevamiento y los cortes están en el
+[plan](../../../ArquitecturaBase/docs/plans/2026-11-22-ordenar-tablas-por-columnas.md). La regla quedó en
+[Listados y filtros](#listados-y-filtros) y en el punto 5 de la [lista de chequeo](#lista-de-chequeo-de-diseño).
+
+- **Qué ordena.** Toda columna con un dato. No ordenan Acciones, las de un ícono (el PDF) ni las de varios valores (los roles
+  de una persona, las preguntas de varias opciones, de grupo y de ubicación).
+- **El encabezado.** La columna que ordena es un botón con su título y la letra del encabezado; la que ordena muestra ↑ o ↓
+  del color de la marca después del título, o antes en una columna de números o alineada a la derecha, para que el título
+  siga alineado con las cifras. Las demás que ordenan muestran ↕ y un tono más oscuro del encabezado al pasar el mouse o con
+  el foco; una que no ordena no cambia. El lector de pantalla oye el sentido por `aria-sort`, sin tooltip. Con puntero
+  táctil, el encabezado mide 44 px.
+- **«Ordenar por».** Va último en la barra, separado de los filtros porque no saca filas. Dice el orden con palabras
+  («Recibida, más reciente primero») y abre una lista con «Columna» (las visibles que ordenan, con la tilde en la elegida) y
+  «Orden» (los dos sentidos, nombrados según el dato). Cada elección se aplica enseguida y la lista queda abierta hasta
+  tocar afuera o Escape. Sin orden elegido y con un orden de siempre compuesto (Formularios), no hay flecha y dice
+  «Ordenar por». En el celular ocupa el ancho y su lista se abre a pantalla completa, con renglones de 44 px y la ×.
+- **El primer toque** va en el sentido útil del dato: el texto de la A a la Z, los números de mayor a menor, las fechas de la
+  más reciente a la más antigua, un sí o no con «Sí» primero y un estado en el orden del circuito. El segundo lo invierte;
+  elegir otra columna en «Ordenar por» la ordena en su sentido útil.
+- **En la dirección**, `sort=campo` o `sort=-campo` con el nombre del backend, que es el `id` de la columna. Cambiarlo
+  vuelve a la página 1 y no toca la búsqueda, las solapas ni los filtros; «Limpiar todo» lo conserva. Una tabla paginada
+  ordena en la base; una entera, en el navegador (`useClientSort`), y se ve igual.
+- **Lo vacío va al final** («—»), en los dos sentidos. Un estado sigue el orden del circuito, igual en español y en inglés.
+- **No cambian** las tablas cuyo orden es un dato (las opciones de un catálogo, los atributos de Datos de personas, los
+  renglones de una respuesta) ni «Por aprobar», que es una cola.
+
+Lo programado: `Column.sortable` obligatorio y `sortKind` (`text`, `number`, `date`, `yesNo`, `state`) en `DataTable`,
+`SortMenu`, `usePagination.toggleSort` y `setSort`, `useClientSort` y los sentidos en `common:sort`. «Ordenar por» todavía usa
+las piezas de menú de «Columnas»; pasarlo a la [pieza única para elegir](../plans/2026-11-19-una-sola-pieza-para-elegir.md)
+(`Picker`) queda pendiente. Formularios es la primera tabla que ordena por todas sus columnas; las demás siguen en los próximos cortes.

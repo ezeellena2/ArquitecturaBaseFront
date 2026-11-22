@@ -99,6 +99,8 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - En listados, usar `usePagination`, `useFilters` y `useQueryUpdate`. Búsqueda, página, tamaño, orden
   y filtros viajan en la URL con los nombres del backend; no duplicarlos en estado de la pantalla.
   El borrador interno de `SearchInput` solo permite escribir antes de confirmar la búsqueda.
+- «Ordenar por» (`SortMenu`) va último en la barra, separado de los filtros: no saca filas. «Limpiar todo» no lo toca, y
+  cambiar el orden vuelve a la página 1.
 - Cambiar búsqueda o filtros vuelve a la primera página. Actualizar filtro y página juntos; omitir
   página 1 y filtros ausentes, y conservar el orden al limpiar. `pageSize` se fija explícitamente
   después de resolver el tamaño general, para conservarlo durante la visita. Atrás y una URL
@@ -134,8 +136,9 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
   artículo, van en una columna propia nombrada «Pregunta · Dato» o no van. Nunca se apilan debajo de su valor. La
   excepción del texto secundario en gris no vale para ellos. Siguen debajo sólo «Antes: …» al corregir, el error de un
   campo y la línea gris de quién y cuándo en los momentos ([detalle](../design/visual-baseline.md#nada-debajo-de-otro-dato--2026-11-22)).
-- Declarar `rowKey` con la identidad estable de la fila. Las columnas ordenables usan los campos
-  aceptados por el backend; conservar `aria-sort` y ordenar/paginar con el servidor.
+- Declarar `rowKey` con la identidad estable de la fila. Toda columna declara `sortable`: con un dato, `true` y su
+  `sortKind`; Acciones, un ícono o varios valores, `false`. El `id` de una columna que ordena es el campo de orden del
+  backend. Una tabla paginada ordena con el servidor; una entera, con `useClientSort`. Conservar `aria-sort`.
 - La tabla contiene su scroll horizontal en móvil; no desborda el documento. Las medidas de los
   componentes comunes son la referencia: no cambiar la densidad de filas en una feature.
 - El cuerpo alterna blanco y el tono Campo suave (`table-row-alternate`); hover, selección y bandas de
