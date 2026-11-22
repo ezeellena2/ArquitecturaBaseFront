@@ -87,11 +87,19 @@ describe("ARCA settings", () => {
 
     expect(screen.getByText("Revisá la CUIT: tiene once dígitos y el último es el verificador.")).toBeInTheDocument();
     expect(starts).toHaveLength(0);
-    const services = screen.getByRole("group", { name: "Servicios que usa" });
-    expect(within(services).getByRole("checkbox", { name: "Constancia de inscripción" })).toBeChecked();
-    expect(within(services).getByRole("checkbox", { name: "Constancia de inscripción" })).toBeDisabled();
-    expect(within(services).getByRole("checkbox", { name: "Facturación electrónica" })).toBeChecked();
-    expect(within(services).getByRole("checkbox", { name: "Facturación electrónica" })).toBeEnabled();
+    // DS1-A: the services are chosen with the shared piece; the one ARCA always needs stays chosen and off, with its reason.
+    const services = screen.getByRole("button", { name: /^Servicios que usa / });
+    expect(services).toHaveAccessibleName(/Constancia de inscripción/); expect(services).toHaveAccessibleName(/Facturación electrónica/);
+    await userEvent.click(services);
+    const list = await screen.findByRole("listbox", { name: "Servicios que usa" });
+    const registration = within(list).getByRole("option", { name: "Constancia de inscripción" });
+    expect(registration).toHaveAttribute("aria-selected", "true");
+    expect(registration).toHaveAttribute("aria-disabled", "true");
+    expect(registration).toHaveAccessibleDescription("Siempre: trae los datos de la empresa.");
+    const invoicing = within(list).getByRole("option", { name: "Facturación electrónica" });
+    expect(invoicing).toHaveAttribute("aria-selected", "true");
+    expect(invoicing).not.toHaveAttribute("aria-disabled");
+    await userEvent.keyboard("{Escape}");
   });
 
   it("generating the request folds the details with their summary and offers the download", async () => {

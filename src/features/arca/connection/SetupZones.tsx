@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { ApiError } from "@/shared/api/ApiError";
 import { savePrivateBlob } from "@/shared/hooks/usePrivateFormFile";
 import { Button } from "@/shared/ui/button";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { FormField } from "@/shared/ui/FormField";
 import { DocumentIcon, DownloadIcon, ExternalLinkIcon, ShieldIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
+import { Picker } from "@/shared/ui/Picker";
 import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { StepList } from "@/shared/ui/StepList";
 import {
@@ -248,14 +248,14 @@ function DataZone({ connection, state, canManage, editing, onEditingChange, onCh
         },
       }))} />
     </div>
-    <div role="group" aria-label={t("data.services")} className="flex flex-col gap-2">
-      <p className="text-sm font-medium">{t("data.services")}</p>
-      {connection.installedServices.map(service => <CheckboxField key={service.code}
-        label={t(`services.names.${service.code}`, { defaultValue: service.code })}
-        checked={service.required || services.includes(service.code)}
-        disabled={locked || service.required}
-        help={service.required ? t("data.requiredHelp") : undefined}
-        onCheckedChange={checked => setServices(previous => checked ? [...previous, service.code] : previous.filter(code => code !== service.code))} />)}
-    </div>
+    {/* The services are chosen with the shared piece, several at a time (DS1-A); the one ARCA always needs stays chosen and off,
+        with its reason after its name. */}
+    <FormField label={t("data.services")}>
+      <Picker multiple label={t("data.services")} placeholder={t("data.noServices")} disabled={locked}
+        value={connection.installedServices.filter(service => service.required || services.includes(service.code)).map(service => service.code)}
+        onChange={next => setServices(next.filter(code => !connection.installedServices.some(service => service.code === code && service.required) || services.includes(code)))}
+        options={connection.installedServices.map(service => ({ id: service.code, label: t(`services.names.${service.code}`, { defaultValue: service.code }),
+          disabledReason: service.required ? t("data.requiredHelp") : null }))} />
+    </FormField>
   </ArcaZone>;
 }

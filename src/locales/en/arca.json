@@ -29,6 +29,7 @@
     "aliasInvalid": "The alias has 3 to 30 lowercase letters, digits or hyphens, and starts with a letter.",
     "services": "Services it uses",
     "requiredHelp": "Always: it brings the company's details.",
+    "noServices": "No services",
     "generate": "Generate the request",
     "generating": "Generating…",
     "change": "Change",

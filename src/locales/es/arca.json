@@ -29,6 +29,7 @@
     "aliasInvalid": "El alias va de 3 a 30 letras minúsculas, números o guiones, y empieza con una letra.",
     "services": "Servicios que usa",
     "requiredHelp": "Siempre: trae los datos de la empresa.",
+    "noServices": "Ningún servicio",
     "generate": "Generar el pedido",
     "generating": "Generando…",
     "change": "Cambiar",
