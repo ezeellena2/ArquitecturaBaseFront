@@ -44,6 +44,8 @@ interface ItemListProps<T extends { key: string }> {
   onMove: (key: string, offset: -1 | 1) => void;
   /// Apaga todo mientras su dueño trabaja, sin motivo.
   disabled?: boolean;
+  /// Sólo para leer, como la respuesta con la forma de su formulario (VF1-A): sin ↑ ↓, sin quitar y sin «Agregar ítem».
+  readOnly?: boolean;
   /// El id de «Agregar ítem»: el dueño lleva ahí el foco cuando faltan ítems.
   addId?: string;
   /// Describe «Agregar ítem», como el mensaje de que faltan ítems.
@@ -138,7 +140,7 @@ export function ItemTable<T extends { key: string }>({ label, columns, cell, err
             {column.help ? <span className={cn("inline-flex items-center gap-1", column.numeric && "justify-end")}>{column.label}{column.required ? <span aria-hidden="true"> *</span> : null}
               <span className="-my-1 inline-flex"><InfoTip text={column.help} label={t("actions.moreInfo", { label: column.label })} /></span></span>
               : <>{column.label}{column.required ? <span aria-hidden="true"> *</span> : null}</>}</TableHead>)}
-          <TableHead className="w-px px-2"><span className="sr-only">{t("itemTable.actions")}</span></TableHead>
+          {list.readOnly ? null : <TableHead className="w-px px-2"><span className="sr-only">{t("itemTable.actions")}</span></TableHead>}
         </TableRow></TableHeader>
         <TableBody striped={false}>{list.items.map((item, index) => {
           const problems = columns.flatMap(column => {
@@ -154,10 +156,10 @@ export function ItemTable<T extends { key: string }>({ label, columns, cell, err
                   {cell(item, column, { index, label: t("itemTable.cell", { number: index + 1, label: column.label }), invalid: !!problem, describedBy: problem?.id })}
                 </TableCell>;
               })}
-              <TableCell className="px-2 py-1.5 align-top"><div className="flex items-center gap-1 pt-0.5">{arrows(item, index)}{trash(item, index)}</div></TableCell>
+              {list.readOnly ? null : <TableCell className="px-2 py-1.5 align-top"><div className="flex items-center gap-1 pt-0.5">{arrows(item, index)}{trash(item, index)}</div></TableCell>}
             </TableRow>
             {problems.length > 0 ? <TableRow className="h-auto hover:bg-transparent">
-              <TableCell colSpan={columns.length + 2} className="px-2 pb-2 whitespace-normal">
+              <TableCell colSpan={columns.length + (list.readOnly ? 1 : 2)} className="px-2 pb-2 whitespace-normal">
                 <div className="sticky left-2 flex w-fit flex-col gap-0.5">{problems.map(problem => <p key={problem.id} id={problem.id} role="alert"
                   className="flex items-start gap-1 text-xs text-[var(--color-danger)]"><AlertTriangleIcon className="mt-px size-3.5 shrink-0" />{problem.text}</p>)}</div>
               </TableCell>
@@ -166,7 +168,7 @@ export function ItemTable<T extends { key: string }>({ label, columns, cell, err
         })}</TableBody>
       </WideTable>
     </Surface>
-    {footer}
+    {list.readOnly ? null : footer}
     {status}
   </div>;
 }
@@ -181,11 +183,12 @@ export function ItemCards<T extends { key: string }>({ children, ...list }: Item
   const { root, arrows, removeButton, footer, status } = useItemList(list);
   return <div ref={root} className="flex flex-col gap-3">
     {list.items.map((item, index) => <div key={item.key} data-item={item.key}>
-      <Surface headingLevel={3} title={t("itemTable.item", { number: index + 1 })} actions={<div className="flex items-center gap-1">{arrows(item, index)}{removeButton(item, index)}</div>}>
+      <Surface headingLevel={3} title={t("itemTable.item", { number: index + 1 })}
+        actions={list.readOnly ? undefined : <div className="flex items-center gap-1">{arrows(item, index)}{removeButton(item, index)}</div>}>
         <div data-item-body className="flex flex-col gap-4 p-4">{children(item, index)}</div>
       </Surface>
     </div>)}
-    {footer}
+    {list.readOnly ? null : footer}
     {status}
   </div>;
 }

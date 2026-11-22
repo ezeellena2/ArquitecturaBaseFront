@@ -156,3 +156,25 @@ describe("a column that explains itself (CA1-A)", () => {
     expect(within(header).getByRole("button", { name: "Más información sobre Importe" })).toHaveAccessibleDescription("Cantidad por Precio unitario");
   });
 });
+
+// The reading of a response (VF1-A): the same table and boxes, with what was answered and nothing to change.
+describe("the items only to read", () => {
+  const list = { items: three, minItems: 0, maxItems: 3, onAdd: () => {}, onRemove: () => {}, onMove: () => {}, readOnly: true };
+
+  it("draws the table without the column of actions, the arrows, the trash or «Agregar ítem»", () => {
+    renderWithProviders(<ItemTable {...list} label="Artículos" columns={columns} cell={(entry, column) => entry.values[column.key]} />);
+
+    expect(within(screen.getByRole("region", { name: "Artículos" })).getAllByRole("columnheader").map(header => header.textContent))
+      .toEqual(["Ítem", "Artículo *", "Cantidad *"]);
+    expect(bodyRows().map(row => within(row).getAllByRole("cell").map(cell => cell.textContent))).toEqual([
+      ["1", "Glifosato 64%", "200"], ["2", "Atrazina 50%", "100"], ["3", "Urea granulada", "5000"]]);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("draws each box with its number and nothing in its band", () => {
+    renderWithProviders(<ItemCards {...list}>{entry => entry.values.article}</ItemCards>);
+
+    expect(screen.getAllByRole("region", { name: /^Ítem/ }).map(box => box.textContent)).toEqual(["Ítem 1Glifosato 64%", "Ítem 2Atrazina 50%", "Ítem 3Urea granulada"]);
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+});
