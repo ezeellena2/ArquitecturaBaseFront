@@ -19,7 +19,6 @@ import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { timeZoneCity, timeZoneOptions } from "@/shared/lib/timeZones";
 
@@ -322,19 +321,15 @@ export function ProfilePage() {
             </div>
 
             <div className="w-full sm:w-72">
-              {/* Two fixed options, in sight and one click away (DS1-A). */}
+              {/* The language goes in the shared piece for choosing, like any list (DS1-A, 2026-11-22). */}
               <FormField label={t("form.language")} error={fieldErrors?.culture?.[0]}>
-                <SegmentedControl
-                  fullWidth
-                  aria-label={t("form.language")}
-                  options={supportedLanguages.map((language) => ({
-                    key: language,
-                    label: t(`common:language.${language}`),
-                    pressed: draft.culture === language,
-                    onSelect: () => {
-                      if (language !== draft.culture) setDraft({ ...draft, culture: language });
-                    },
-                  }))}
+                <Picker
+                  label={t("form.language")}
+                  value={draft.culture}
+                  options={supportedLanguages.map((language) => ({ id: language, label: t(`common:language.${language}`) }))}
+                  onChange={(language) => {
+                    if (language !== draft.culture) setDraft({ ...draft, culture: language as typeof draft.culture });
+                  }}
                 />
               </FormField>
             </div>

@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { RegistrationMode, SettingField, SettingsDraft } from "../api/settings";
 import { FormField } from "@/shared/ui/FormField";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { timeZoneOptions } from "@/shared/lib/timeZones";
 
@@ -28,15 +26,15 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
   const zones = useMemo(() => timeZoneOptions(i18n.language, [draft.defaultTimeZoneId, "America/Argentina/Buenos_Aires", "UTC"]),
     [i18n.language, draft.defaultTimeZoneId]);
   // Sin leyendas: lo que hace falta aclarar va en la (i) del título o de la etiqueta. El efecto de cada registro lo
-  // explica la confirmación al guardar. Pocas opciones fijas, el idioma y las filas, van en un segmentado a la vista
-  // (DS1-A), del ancho que tenían sus desplegables.
+  // explica la confirmación al guardar. Las opciones fijas, el idioma, las filas y el registro, van en la pieza para
+  // elegir como cualquier lista (DS1-A, 2026-11-22), del ancho que tenían sus desplegables.
   return <>
     <Surface title={t("sections.regional")} help={t("hints.regional")} padded>
       <div className="flex flex-wrap gap-4">
         <div className="w-full sm:w-72"><FormField label={t("fields.defaultCulture")} error={errors.defaultCulture}>
-          <SegmentedControl fullWidth aria-label={t("fields.defaultCulture")} disabled={disabled} options={languages.map(language => ({
-            key: language, label: t(`common:language.${language}`), pressed: draft.defaultCulture === language, onSelect: () => { if (language !== draft.defaultCulture) onChange({ defaultCulture: language }); },
-          }))}/>
+          <Picker label={t("fields.defaultCulture")} disabled={disabled} value={draft.defaultCulture}
+            options={languages.map(language => ({ id: language, label: t(`common:language.${language}`) }))}
+            onChange={language => { if (language !== draft.defaultCulture) onChange({ defaultCulture: language as SettingsDraft["defaultCulture"] }); }}/>
         </FormField></div>
         <div className="w-full sm:w-96"><FormField label={t("fields.defaultTimeZoneId")} error={errors.defaultTimeZoneId}>
           <Picker label={t("fields.defaultTimeZoneId")} options={zones} value={draft.defaultTimeZoneId} disabled={disabled} onChange={defaultTimeZoneId => onChange({ defaultTimeZoneId })}/>
@@ -49,19 +47,17 @@ export function SettingsForm({ draft, errors, disabled, onChange }: Props) {
     </Surface>
     <Surface title={t("sections.lists")} padded>
       <div className="w-full sm:w-72"><FormField label={t("fields.defaultPageSize")} help={t("hints.listados")} error={errors.defaultPageSize}>
-        <SegmentedControl fullWidth aria-label={t("fields.defaultPageSize")} disabled={disabled} options={pageSizes.map(size => ({
-          key: String(size), label: size, pressed: draft.defaultPageSize === size, onSelect: () => { if (size !== draft.defaultPageSize) onChange({ defaultPageSize: size }); },
-        }))}/>
+        <Picker label={t("fields.defaultPageSize")} disabled={disabled} value={String(draft.defaultPageSize)}
+          options={pageSizes.map(size => ({ id: String(size), label: String(size) }))}
+          onChange={size => { if (Number(size) !== draft.defaultPageSize) onChange({ defaultPageSize: Number(size) as SettingsDraft["defaultPageSize"] }); }}/>
       </FormField></div>
     </Surface>
     <Surface title={t("sections.registration")} padded>
-      <div className="max-w-2xl"><RadioGroupField label={t("registration.title")} value={draft.registrationMode}
-        onValueChange={value => onChange({ registrationMode: value as RegistrationMode })} error={errors.registrationMode}
-        options={[
-          { value: "InviteOnly", label: t("registration.InviteOnlyLabel"), disabled },
-          { value: "Open", label: t("registration.OpenLabel"), disabled },
-        ]} />
-      </div>
+      <div className="w-full sm:w-96"><FormField label={t("registration.title")} error={errors.registrationMode}>
+        <Picker label={t("registration.title")} disabled={disabled} value={draft.registrationMode}
+          options={[{ id: "InviteOnly", label: t("registration.InviteOnlyLabel") }, { id: "Open", label: t("registration.OpenLabel") }]}
+          onChange={value => { if (value !== draft.registrationMode) onChange({ registrationMode: value as RegistrationMode }); }}/>
+      </FormField></div>
     </Surface>
   </>;
 }

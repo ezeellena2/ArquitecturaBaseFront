@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeftIcon, ChevronRightIcon } from "./icons";
 import { IconButton } from "./IconButton";
 import type { PagedResult } from "@/shared/api/pagedResult";
-import { SegmentedControl } from "./SegmentedControl";
+import { Picker } from "./Picker";
 
 type PaginationProps = Pick<
   PagedResult<unknown>,
@@ -26,9 +26,9 @@ export function Pagination({ page, pageSize, totalCount, totalPages, hasPrevious
       aria-label={t("pagination.label")}
     >
       <div className="flex flex-wrap items-center gap-3"><p>{t("pagination.range", { from, to, total: totalCount })}</p>
-      {/* A few fixed options in a segmented control, in sight and one click away (DS1-A): 10, 20, 50 and 100, and the current
-          size if it is none of them. The text in sight names the group, which the reader hears once. */}
-      {onPageSizeChange ? <div className="flex items-center gap-2"><span aria-hidden="true">{t("pagination.pageSize")}</span><SegmentedControl aria-label={t("pagination.pageSize")} options={[...new Set([10, 20, 50, 100, pageSize])].sort((a, b) => a - b).map(size => ({ key: String(size), label: size, pressed: size === pageSize, onSelect: () => { if (size !== pageSize) onPageSizeChange(size); } }))}/></div> : null}</div>
+      {/* The rows per page go in the shared piece for choosing, like any list (DS1-A, 2026-11-22): 10, 20, 50 and 100, and the
+          current size if it is none of them. The text in sight is the name the piece is heard by, once. */}
+      {onPageSizeChange ? <div className="flex items-center gap-2"><span aria-hidden="true">{t("pagination.pageSize")}</span><Picker label={t("pagination.pageSize")} className="w-20" value={String(pageSize)} options={[...new Set([10, 20, 50, 100, pageSize])].sort((a, b) => a - b).map(size => ({ id: String(size), label: String(size) }))} onChange={size => { if (Number(size) !== pageSize) onPageSizeChange(Number(size)); }}/></div> : null}</div>
       <div className="flex items-center gap-1">
         <IconButton
           label={t("pagination.previous")}

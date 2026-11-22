@@ -20,17 +20,28 @@ beforeEach(() => {
     http.patch("/api/settings", async ({ request }) => { const body = await request.json() as Record<string, unknown>; writes.push(body); settings = { ...settings, ...body, revision: settings.revision + 1 }; return new HttpResponse(null, { status: 204 }); }));
 });
 afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
+// Each choice opens the list of the shared piece: the walks that change several settings take longer than five seconds.
+vi.setConfig({ testTimeout: 15_000 });
 
-// The language and «Filas por página» are segmented controls, and the time zone is the Picker (DS1-A).
-const sizes = () => screen.findByRole("group", { name: "Filas por página" });
+// The language, «Filas por página», the registration and the time zone go in the shared piece for choosing (DS1-A, 2026-11-22):
+// each button names its field and what is chosen, and its list chooses.
+const sizes = () => screen.findByRole("button", { name: /^Filas por página / });
 async function shownSize() {
-  return within(await sizes()).getByRole("button", { pressed: true }).textContent;
+  const [, valueId] = (await sizes()).getAttribute("aria-labelledby")!.split(" ");
+  return document.getElementById(valueId!)?.textContent;
+}
+async function choose(field: RegExp, listName: string, option: string) {
+  await userEvent.click(await screen.findByRole("button", { name: field }));
+  await userEvent.click(within(await screen.findByRole("listbox", { name: listName })).getByRole("option", { name: option }));
 }
 async function pickSize(size: string) {
-  await userEvent.click(within(await sizes()).getByRole("button", { name: size }));
+  await choose(/^Filas por página /, "Filas por página", size);
 }
 async function pickLanguage(language: "Español" | "Inglés") {
-  await userEvent.click(within(await screen.findByRole("group", { name: "Idioma predeterminado" })).getByRole("button", { name: language }));
+  await choose(/^Idioma predeterminado /, "Idioma predeterminado", language);
+}
+async function pickRegistration(mode: "Solo por invitación" | "Registro abierto") {
+  await choose(/^Quién puede entrar /, "Quién puede entrar", mode);
 }
 async function openZones() {
   const trigger = await screen.findByRole("button", { name: /^Zona horaria predeterminada/ });
@@ -44,9 +55,9 @@ async function pickZone(city: string) {
   await userEvent.click(within(list).getByRole("option", { name: city }));
 }
 function expectNoEditor() {
-  expect(screen.queryByRole("group", { name: "Idioma predeterminado" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Idioma predeterminado / })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /^Zona horaria predeterminada/ })).not.toBeInTheDocument();
-  expect(screen.queryByRole("group", { name: "Filas por página" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /^Filas por página / })).not.toBeInTheDocument();
 }
 
 describe("SettingsPage", () => {
@@ -63,7 +74,7 @@ describe("SettingsPage", () => {
 
     await act(() => router.navigate("/configuracion/listados"));
     await waitFor(() => expect(complete).toBeDefined());
-    expect(screen.queryByRole("group", { name: "Filas por página" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Filas por página / })).not.toBeInTheDocument();
     complete?.();
     expect(await shownSize()).toBe("50");
     await pickSize("100");
@@ -111,9 +122,11 @@ describe("SettingsPage", () => {
     const { router } = renderRouteWithProviders("/configuracion");
     expect(await screen.findByRole("heading", { level: 1, name: "Configuración" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/configuracion");
-    expect(await screen.findByRole("group", { name: "Idioma predeterminado" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^Idioma predeterminado / })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Zona horaria predeterminada/ })).toBeInTheDocument();
-    expect(within(screen.getByRole("group", { name: "Filas por página" })).getAllByRole("button").map(button => button.textContent)).toEqual(["10", "20", "50", "100"]);
+    await userEvent.click(await sizes());
+    expect(within(await screen.findByRole("listbox", { name: "Filas por página" })).getAllByRole("option").map(option => option.textContent)).toEqual(["10", "20", "50", "100"]);
+    await userEvent.keyboard("{Escape}");
     expect(screen.getByRole("region", { name: "Preferencias regionales" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Listados" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Registro de cuentas" })).toBeInTheDocument();
@@ -151,14 +164,17 @@ describe("SettingsPage", () => {
     );
     expect(screen.queryByText(/Valores iniciales para cuentas nuevas/, { selector: "p" })).not.toBeInTheDocument();
     // La de «Filas por página», junto a su etiqueta, y es la descripción del desplegable.
-    expect(screen.getByRole("group", { name: "Filas por página" })).toHaveAccessibleDescription(
+    expect(await sizes()).toHaveAccessibleDescription(
       "Cantidad inicial de filas. En cada listado se puede elegir otro tamaño.",
     );
     expect(screen.getByRole("button", { name: "Más información sobre Filas por página" })).toBeInTheDocument();
     expect(screen.queryByText(/Cantidad inicial de filas/, { selector: "p" })).not.toBeInTheDocument();
     // El efecto de cada registro lo explica la confirmación al guardar: las opciones no llevan texto debajo.
-    expect(screen.getByRole("radio", { name: "Solo por invitación" })).not.toHaveAccessibleDescription();
-    expect(screen.getByRole("radio", { name: "Registro abierto" })).not.toHaveAccessibleDescription();
+    await userEvent.click(screen.getByRole("button", { name: /^Quién puede entrar / }));
+    const modes = await screen.findByRole("listbox", { name: "Quién puede entrar" });
+    expect(within(modes).getByRole("option", { name: "Solo por invitación" })).not.toHaveAccessibleDescription();
+    expect(within(modes).getByRole("option", { name: "Registro abierto" })).not.toHaveAccessibleDescription();
+    await userEvent.keyboard("{Escape}");
   });
 
   it("says it is saving, and takes no second click, while the changes are on their way", async () => {
@@ -206,7 +222,7 @@ describe("SettingsPage", () => {
 
   it.each(["idioma", "zona-horaria", "listados", "registro"])("redirects the former %s URL to the unified screen", async topic => {
     const { router } = renderRouteWithProviders(`/configuracion/${topic}`);
-    await screen.findByRole("group", { name: "Idioma predeterminado" });
+    await screen.findByRole("button", { name: /^Idioma predeterminado / });
     expect(router.state.location.pathname).toBe("/configuracion");
   });
 
@@ -215,7 +231,7 @@ describe("SettingsPage", () => {
     await pickLanguage("Inglés");
     await pickZone("UTC");
     await pickSize("50");
-    await userEvent.click(screen.getByRole("radio", { name: "Registro abierto" }));
+    await pickRegistration("Registro abierto");
     expect(writes).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(writes).toHaveLength(0);
@@ -234,7 +250,7 @@ describe("SettingsPage", () => {
   });
   it("confirms the consequence before changing registration", async () => {
     renderRouteWithProviders("/configuracion/registro");
-    await userEvent.click(await screen.findByRole("radio", { name: "Registro abierto" }));
+    await pickRegistration("Registro abierto");
     expect(writes).toHaveLength(0);
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     const dialog = await screen.findByRole("dialog");
@@ -308,7 +324,7 @@ describe("SettingsPage", () => {
 
   it("keeps the settings header without an unsaved status while the draft changes", async () => {
     renderRouteWithProviders("/configuracion");
-    await screen.findByRole("group", { name: "Filas por página" });
+    await sizes();
     const header = screen.getByRole("heading", { level: 1, name: "Configuración" }).closest("header") as HTMLElement;
     expect(within(header).getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
 
@@ -420,9 +436,9 @@ describe("SettingsPage", () => {
     await pickSize("50");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(await screen.findByText("Revisá el idioma.")).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Idioma predeterminado" })).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("group", { name: "Idioma predeterminado" })).toHaveAccessibleDescription("Revisá el idioma.");
-    expect(screen.getByRole("group", { name: "Filas por página" })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Idioma predeterminado / })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: /^Idioma predeterminado / })).toHaveAccessibleDescription("Revisá el idioma.");
+    expect(await sizes()).toHaveAttribute("aria-invalid", "true");
     await pickLanguage("Español");
     expect(screen.queryByText("Revisá el idioma.")).not.toBeInTheDocument();
     expect(screen.getByText("Revisá el tamaño.")).toBeInTheDocument();
@@ -433,11 +449,11 @@ describe("SettingsPage", () => {
     renderRouteWithProviders("/configuracion");
     await pickLanguage("Inglés");
     await pickSize("50");
-    await userEvent.click(screen.getByRole("radio", { name: "Registro abierto" }));
+    await pickRegistration("Registro abierto");
     await userEvent.click(screen.getByRole("button", { name: "Descartar" }));
-    expect(within(screen.getByRole("group", { name: "Idioma predeterminado" })).getByRole("button", { name: "Español" })).toHaveAttribute("aria-pressed", "true");
-    expect(await shownSize()).toBe("20");
-    expect(screen.getByRole("radio", { name: "Solo por invitación" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Idioma predeterminado Español" })).toBeInTheDocument();
+    expect(await sizes()).toHaveAccessibleName("Filas por página 20");
+    expect(screen.getByRole("button", { name: "Quién puede entrar Solo por invitación" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     expect(writes).toHaveLength(0);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

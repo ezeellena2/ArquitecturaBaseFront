@@ -144,7 +144,7 @@ it("recovers a throttled refresh explicitly while retaining the previously loade
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Descartados (0)"})).toBeDisabled();
  expect(screen.getByRole("button",{name:"Último pedido"})).toBeDisabled();
- for(const size of within(screen.getByRole("group",{name:"Filas por página"})).getAllByRole("button"))expect(size).toBeDisabled();
+ expect(screen.getByRole("button",{name:/^Filas por página/})).toBeDisabled();
  await act(async()=>{await new Promise(resolve=>setTimeout(resolve,350));});expect(calls).toBe(2);
  await act(async()=>{now+=3000;document.dispatchEvent(new Event("visibilitychange"));});await waitFor(()=>expect(retry()).toBeEnabled());expect(calls).toBe(2);clock.mockRestore();
  await userEvent.click(retry());await waitFor(()=>expect(calls).toBe(3));

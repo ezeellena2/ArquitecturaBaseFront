@@ -363,8 +363,8 @@ test("filter menus and removable filters work with keyboard", async ({ page }) =
 test("settings revisit refreshes cached values after another administrator changes them", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await openScreen(page, "/configuracion");
-  const size = page.getByRole("group", { name: "Filas por página", exact: true });
-  await expect(size.getByRole("button", { name: "20", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const size = page.getByRole("button", { name: /^Filas por página / });
+  await expect(size).toHaveAccessibleName("Filas por página 20");
   await page.getByRole("link", { name: "Inicio", exact: true }).first().click();
   await expect(page.getByRole("heading", { name: "Inicio", exact: true, level: 1 })).toBeVisible();
   const status = await page.evaluate(async () => (await fetch("/api/settings", {
@@ -376,7 +376,7 @@ test("settings revisit refreshes cached values after another administrator chang
   const configuration = page.getByRole("button", { name: "Configuración", exact: true });
   if (await configuration.getAttribute("aria-expanded") !== "true") await configuration.click();
   await page.locator('a[href="/configuracion"]').click();
-  await expect(size.getByRole("button", { name: "50", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(size).toHaveAccessibleName("Filas por página 50");
   await expect(page.getByRole("button", { name: "Guardar cambios", exact: true })).toBeDisabled();
   await page.screenshot({ path: testInfo.outputPath("settings-fresh.png"), fullPage: true });
 });
@@ -420,7 +420,8 @@ test("a user dialog fits a narrow screen and restores focus", async ({ page }) =
 test("a settings conflict uses the common comparison table", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await openScreen(page, "/configuracion", "es", "conflict");
-  await page.getByRole("group", { name: "Filas por página", exact: true }).getByRole("button", { name: "100", exact: true }).click();
+  await page.getByRole("button", { name: /^Filas por página / }).click();
+  await page.getByRole("option", { name: "100", exact: true }).click();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await page.getByRole("button", { name: "Revisar valores actuales", exact: true }).first().click();
   await expect(page.getByRole("table")).toBeVisible();
@@ -444,7 +445,8 @@ for (const width of [1024, 800]) {
   test(`a settings conflict keeps the whole title with its actions on the right at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await openScreen(page, "/configuracion", "es", "conflict");
-    await page.getByRole("group", { name: "Filas por página", exact: true }).getByRole("button", { name: "100", exact: true }).click();
+    await page.getByRole("button", { name: /^Filas por página / }).click();
+    await page.getByRole("option", { name: "100", exact: true }).click();
     await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
     const title = page.getByRole("heading", { level: 1, name: "Configuración", exact: true });
     const header = page.locator("header").filter({ has: title });
@@ -470,20 +472,23 @@ for (const language of ["es", "en"]) {
     await page.setViewportSize({ width: 320, height: 740 });
     await openScreen(page, "/configuracion", language);
     const english = language === "en";
-    // The language and the rows per page are segmented controls; the time zone is the Picker, which at 320 px takes the
-    // screen with its search (DS1-A).
-    const culture = page.getByRole("group", { name: english ? "Default language" : "Idioma predeterminado", exact: true });
-    const otherLanguage = culture.getByRole("button", { name: english ? "Spanish" : "Inglés", exact: true });
+    // The language, the rows per page, the time zone and the registration go in the shared piece, which at 320 px takes
+    // the screen (DS1-A, 2026-11-22); the time zone, with its search.
+    const cultureLabel = english ? "Default language" : "Idioma predeterminado", otherLanguage = english ? "Spanish" : "Inglés";
+    const culture = page.getByRole("button", { name: new RegExp("^" + cultureLabel + " ") });
     const zoneLabel = english ? "Default time zone" : "Zona horaria predeterminada";
-    const size = page.getByRole("group", { name: english ? "Rows per page" : "Filas por página", exact: true });
-    const fifty = size.getByRole("button", { name: "50", exact: true });
+    const sizeLabel = english ? "Rows per page" : "Filas por página";
+    const size = page.getByRole("button", { name: new RegExp("^" + sizeLabel + " ") });
     await expect(page.getByRole("heading", { level: 2 })).toHaveCount(3);
-    await otherLanguage.click();
+    await culture.click();
+    await page.getByRole("option", { name: otherLanguage, exact: true }).click();
     await page.getByRole("button", { name: zoneLabel }).click();
     await page.getByRole("combobox", { name: `${english ? "Search in" : "Buscar en"} ${zoneLabel}`, exact: true }).fill("UTC");
     await page.getByRole("option", { name: "UTC", exact: true }).click();
-    await fifty.click();
-    await page.getByRole("radio", { name: english ? "Open registration" : "Registro abierto", exact: true }).click();
+    await size.click();
+    await page.getByRole("option", { name: "50", exact: true }).click();
+    await page.getByRole("button", { name: new RegExp("^" + (english ? "Who can sign in" : "Quién puede entrar") + " ") }).click();
+    await page.getByRole("option", { name: english ? "Open registration" : "Registro abierto", exact: true }).click();
     const save = page.getByRole("button", { name: english ? "Save changes" : "Guardar cambios", exact: true });
     await save.click();
     const dialog = page.getByRole("dialog");
@@ -494,14 +499,14 @@ for (const language of ["es", "en"]) {
     await page.screenshot({ path: testInfo.outputPath("settings-confirmation.png"), animations: "disabled" });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(otherLanguage).toHaveAttribute("aria-pressed", "true");
+    await expect(culture).toHaveAccessibleName(`${cultureLabel} ${otherLanguage}`);
     await expect(page.getByRole("button", { name: `${zoneLabel} UTC`, exact: true })).toBeVisible();
-    await expect(fifty).toHaveAttribute("aria-pressed", "true");
+    await expect(size).toHaveAccessibleName(`${sizeLabel} 50`);
     await save.click();
     await dialog.getByRole("button", { name: english ? "Save changes" : "Guardar cambios", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(save).toBeDisabled();
-    await expect(fifty).toHaveAttribute("aria-pressed", "true");
+    await expect(size).toHaveAccessibleName(`${sizeLabel} 50`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   });
 }

@@ -48,8 +48,10 @@ function profileHandlers(saved: ProfileBody[], account: { profile: CurrentUser }
 }
 
 // The language is a segmented control and the time zone is the Picker, with its search inside the list (DS1-A).
-async function chooseLanguage(group: string, language: string) {
-  await userEvent.click(within(await screen.findByRole("group", { name: group })).getByRole("button", { name: language }));
+// The language goes in the shared piece for choosing (DS1-A, 2026-11-22): its button names the field and the chosen one.
+async function chooseLanguage(field: string, language: string) {
+  await userEvent.click(await screen.findByRole("button", { name: new RegExp(`^${field} `) }));
+  await userEvent.click(within(await screen.findByRole("listbox", { name: field })).getByRole("option", { name: language }));
 }
 
 async function openZones() {
@@ -280,8 +282,7 @@ describe("ProfilePage", () => {
 
     // El idioma de la pantalla tiene que acompañar: antes seguía diciendo "Spanish" con la interfaz ya
     // en inglés, y el primer Guardar mandaba culture: "es" y devolvía la cuenta a español.
-    const language = await screen.findByRole("group", { name: "Language" });
-    await waitFor(() => expect(within(language).getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true"));
+    expect(await screen.findByRole("button", { name: "Language English" })).toBeInTheDocument();
     await waitFor(() => expect(saved).toEqual([{ displayName: "Ana", culture: "en", timeZoneId: currentUser.timeZoneId }]));
     // El idioma no avanza la revisión: la pantalla lo sigue aparte, y Guardar no queda prendido por él.
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
@@ -367,7 +368,7 @@ describe("ProfilePage", () => {
 
     // Sin leyendas debajo de los campos.
     expect(details.getByRole("textbox", { name: "Nombre" })).not.toHaveAccessibleDescription();
-    expect(details.getByRole("group", { name: "Idioma" })).not.toHaveAccessibleDescription();
+    expect(details.getByRole("button", { name: /^Idioma / })).not.toHaveAccessibleDescription();
     expect(details.getByRole("button", { name: "Zona horaria Buenos Aires" })).not.toHaveAccessibleDescription();
   });
 
