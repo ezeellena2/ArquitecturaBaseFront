@@ -53,6 +53,8 @@ interface DataTableProps<TRow> {
   sort?: string;
   /// Tocar el encabezado de una columna que ordena: `usePagination.toggleSort` elige el sentido.
   onSortChange?: (field: string, kind: SortKind) => void;
+  /// Una tabla ancha: su desplazamiento es una región con este nombre, a la que se llega con el teclado (como `WideTable`).
+  scrollLabel?: string;
 }
 
 /// El nivel "rótulo" de la escala tipográfica: 11 px, semibold, mayúsculas con letter-spacing. Es el mismo
@@ -92,6 +94,7 @@ export function DataTable<TRow>({
   emptyAction,
   sort,
   onSortChange,
+  scrollLabel,
 }: DataTableProps<TRow>) {
   const { t } = useTranslation();
 
@@ -177,7 +180,7 @@ export function DataTable<TRow>({
   }
 
   return (
-    <Table refreshing={refreshing}>
+    <Table refreshing={refreshing} scrollLabel={scrollLabel}>
       {header}
       <TableBody>
         {rows.map((row) => {

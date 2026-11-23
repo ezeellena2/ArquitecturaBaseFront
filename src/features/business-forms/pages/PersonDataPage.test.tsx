@@ -50,6 +50,8 @@ it("shows the dedicated people table with field values when both read permission
  const table = (await screen.findByRole("heading", { name: "Personas" })).closest("section")!;
  expect(await within(table).findByText("Juan Gómez")).toBeInTheDocument();
  expect(within(table).getByText("Centro")).toBeInTheDocument();
+ // A wide table: its scroll is a region with its name, reachable with the keyboard.
+ expect(within(table).getByRole("region", { name: "Personas" })).toHaveAttribute("tabindex", "0");
  expect(screen.getByRole("button", { name: "Agregar dato" })).toBeEnabled();
 });
 it("summarizes how many people match and how many lack each attribute used by a filter", async () => {

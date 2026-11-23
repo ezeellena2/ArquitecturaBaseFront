@@ -101,7 +101,7 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
   {canReadPeople ? <Surface title={t("personData.people")} actions={summary ? <span className="text-xs text-[var(--color-content-muted)]">{summary}</span> : undefined}><FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput label={t("personData.searchPeople")} value={pagination.search ?? ""} onChange={pagination.setSearch} /></div>
    {/* Last in the bar, apart from the search: it takes no rows out (OT1-C). */}
    <SortMenu columns={columns} sort={sort} onSortChange={setSort} /></div></FilterBar>
-   <DataTable columns={columns} rows={people.data?.items ?? []} rowKey={person => person.userId} isLoading={people.isPending} refreshing={people.isPlaceholderData} hasData={!!people.data}
+   <DataTable columns={columns} rows={people.data?.items ?? []} rowKey={person => person.userId} scrollLabel={t("personData.people")} isLoading={people.isPending} refreshing={people.isPlaceholderData} hasData={!!people.data}
     error={people.error ? readErrorMessage(people.error, t) : undefined} onRetry={() => void people.refetch()} emptyTitle={t("personData.noPeople")} sort={sort} onSortChange={toggleSort} />
    {people.data ? <Pagination {...people.data} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize} /> : null}
   </Surface> : <p className="text-sm text-[var(--color-content-muted)]">{t("personData.requiresUsersRead")}</p>}

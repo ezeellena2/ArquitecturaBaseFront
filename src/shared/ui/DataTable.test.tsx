@@ -23,6 +23,16 @@ const rows: Row[] = [
 ];
 
 describe("DataTable", () => {
+  it("makes a wide table's scroll a named region reachable with the keyboard, and none without a name", () => {
+    const { unmount } = renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} scrollLabel="People" />);
+    expect(screen.getByRole("region", { name: "People" })).toHaveAttribute("tabindex", "0");
+    unmount();
+
+    renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} />);
+    expect(screen.getByRole("table").parentElement).not.toHaveAttribute("tabindex");
+    expect(screen.getByRole("table").parentElement).not.toHaveAttribute("role");
+  });
+
   it("keeps the last rows visible after a refresh fails", () => {
     renderWithProviders(<DataTable columns={columns} rows={rows} rowKey={(row) => row.id} error="Refresh failed" />);
 
