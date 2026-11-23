@@ -5,7 +5,6 @@ import { Input } from "@/shared/ui/input";
 import { ItemCards, ItemTable, type ItemCellContext, type ItemTableColumn } from "@/shared/ui/ItemTable";
 import { Label } from "@/shared/ui/label";
 import { Picker } from "@/shared/ui/Picker";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Surface } from "@/shared/ui/Surface";
 import { Textarea } from "@/shared/ui/textarea";
 
@@ -63,9 +62,8 @@ export function CatalogItemTable() {
     const field = { "aria-label": cell?.label, "aria-invalid": cell?.invalid || undefined, "aria-describedby": cell?.describedBy };
     if (column.key === "unit") return <Picker label={cell?.label ?? column.label} aria-invalid={field["aria-invalid"]} aria-describedby={field["aria-describedby"]}
       placeholder={text.choose} options={[{ id: "liters", label: text.liters }, { id: "kilos", label: text.kilos }]} value={value || null} onChange={set} />;
-    if (column.key === "state") return <SegmentedControl aria-label={cell?.label ?? column.label} options={[
-      { key: "true", label: text.yes, pressed: value === "true", onSelect: () => set("true") },
-      { key: "false", label: text.no, pressed: value === "false", onSelect: () => set("false") }]} />;
+    if (column.key === "state") return <Picker label={cell?.label ?? column.label} aria-invalid={field["aria-invalid"]} aria-describedby={field["aria-describedby"]}
+      placeholder={text.choose} options={[{ id: "true", label: text.yes }, { id: "false", label: text.no }]} value={value || null} onChange={set} />;
     if (column.key === "notes") return <Textarea {...field} rows={1} className={cell ? "min-h-[var(--height-control)] py-1" : undefined} value={value} onChange={event => set(event.target.value)} />;
     return <Input {...field} value={value} inputMode={column.numeric ? "decimal" : undefined}
       className={column.numeric ? cell ? "text-right" : "w-full sm:w-37.5" : undefined} onChange={event => set(event.target.value)} />;

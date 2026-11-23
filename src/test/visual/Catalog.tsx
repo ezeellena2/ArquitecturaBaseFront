@@ -17,7 +17,6 @@ import { Textarea } from "@/shared/ui/textarea";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SearchInput } from "@/shared/ui/SearchInput";
-import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { IconButton } from "@/shared/ui/IconButton";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
@@ -99,14 +98,14 @@ export function Catalog() {
       </Surface>
       <Surface title={pieces.selection} padded>
         <div className="grid gap-4 md:grid-cols-2">
-          <RadioGroupField label={pieces.registration} value={choice} onValueChange={setChoice} options={[{ value: "InviteOnly", label: pieces.invited }, { value: "Open", label: pieces.open }]} />
+          <FormField label={pieces.registration}><Picker label={pieces.registration} options={[{ id: "InviteOnly", label: pieces.invited }, { id: "Open", label: pieces.open }]} value={choice} onChange={setChoice} /></FormField>
           <CheckboxField label={pieces.checkbox} checked={checked} onCheckedChange={setChecked} />
         </div>
       </Surface>
       <section aria-label={pieces.filters}>
         <FilterBar className="flex flex-wrap items-center gap-2">
           <div className="w-80 max-w-full"><SearchInput value={search} onChange={setSearch} label={pieces.search} /></div>
-          <SegmentedControl aria-label={pieces.status} options={[{ key: "all", label: pieces.all, pressed: filter === "all", onSelect: () => setFilter("all") }, { key: "active", label: pieces.active, pressed: filter === "active", onSelect: () => setFilter("active") }]} />
+          <Picker trigger="button" label={pieces.status} first={{ id: "all", label: pieces.all }} options={[{ id: "active", label: pieces.active }]} value={filter} onChange={setFilter} />
         </FilterBar>
       </section>
       <Surface title={english ? "Conversation messages" : "Mensajes de conversación"}>

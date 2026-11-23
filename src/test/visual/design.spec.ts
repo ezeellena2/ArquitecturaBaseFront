@@ -543,14 +543,15 @@ for (const language of ["es", "en"]) {
     await expect(admin).toHaveAttribute("aria-selected", "true");
     await page.getByRole("button", { name: english ? "Done (2)" : "Listo (2)", exact: true }).click();
     await expect(page.getByRole("button", { name: "Roles Admin, User", exact: true })).toBeVisible();
-    const group = page.getByRole("radiogroup", { name: english ? "Account registration" : "Registro de cuentas" });
-    const invited = group.getByRole("radio", { name: english ? "Invitation only" : "Solo por invitación" });
-    await invited.scrollIntoViewIfNeeded();
-    await invited.focus();
-    await expect(invited).toBeFocused();
-    await page.keyboard.down("ArrowDown");
-    await expect(group.getByRole("radio", { name: english ? "Open registration" : "Registro abierto" })).toBeChecked();
-    await page.keyboard.up("ArrowDown");
+    // The registration chooses in the same piece: the arrows walk its list and Enter chooses and gives the focus back.
+    const registration = page.getByRole("button", { name: english ? "Account registration Invitation only" : "Registro de cuentas Solo por invitación", exact: true });
+    await registration.scrollIntoViewIfNeeded();
+    await registration.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("option", { name: english ? "Open registration" : "Registro abierto", exact: true })).toBeVisible();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: english ? "Account registration Open registration" : "Registro de cuentas Registro abierto", exact: true })).toBeFocused();
     const checkbox = page.getByRole("checkbox", { name: english ? "Send an invitation" : "Mandar una invitación" });
     await checkbox.focus();
     await page.keyboard.press("Space");
