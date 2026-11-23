@@ -33,6 +33,12 @@ it("welcomes an anonymous visitor without starting interactive sign-in", async (
   expect(signinRedirect).not.toHaveBeenCalled();
 });
 
+// The year is a date, not an amount: it never takes the thousands separator of the region («© 2.026»).
+it("shows the year of the copyright without a thousands separator", async () => {
+  renderRouteWithProviders("/");
+  expect(await screen.findByText(`© ${new Date().getFullYear()} Tu organización`)).toBeInTheDocument();
+});
+
 it("starts registration through OIDC with the signup hint", async () => {
   const { router } = renderRouteWithProviders("/registro");
   await screen.findByRole("textbox", { name: "Correo electrónico" });

@@ -34,7 +34,8 @@ export function AuthLayout({ children }: { children?: ReactNode }) {
       </main>
       <footer className="access-footer">
         <div className="access-footer-inner">
-          {home ? <small className="access-copyright">{t("landing.copyright", { year: new Date().getFullYear() })}</small> : null}
+          {/* The year goes as text: every number of a text takes the region's thousands separator («© 2.026»). */}
+          {home ? <small className="access-copyright">{t("landing.copyright", { year: String(new Date().getFullYear()) })}</small> : null}
           <div role="group" className="access-languages" aria-label={t("common:language.label")}>
             {supportedLanguages.map((language) => (
               <button key={language} type="button" aria-pressed={i18n.language === language}
