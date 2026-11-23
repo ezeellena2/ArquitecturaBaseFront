@@ -8,16 +8,17 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { ChevronDownIcon } from "@/shared/ui/icons";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
+import { Picker } from "@/shared/ui/Picker";
 import { Surface } from "@/shared/ui/Surface";
 
 // MA1-A (2026-11-09): what is off says why on the same control, with the mouse, the focus, a click or a touch, and
 // nothing goes next to it. The pieces of the board: a box off in a block, a button off while a publication runs, an
 // icon button at the first place, a field and an (i), with the texts of the app; and an option of «Mover a…» that cannot
-// be chosen, whose whole row answers like the box (2026-11-11), with the texts of moving a folder of the menu (CM4).
+// be chosen, with the texts of moving a folder of the menu (CM4). Since DS1-A it is chosen in the piece, like «Mover a…»:
+// that option goes off in the list and says why after its name (2026-11-23).
 export function CatalogDisabledReasons() {
   const { t, i18n } = useTranslation();
-  const [place, setPlace] = useState("menu");
+  const [place, setPlace] = useState<string | null>("menu");
   const text = i18n.language === "en"
     ? {
       title: "Reason for what is off", multiple: "Allow choosing several", multipleReason: "A block picks a single option.",
@@ -48,11 +49,13 @@ export function CatalogDisabledReasons() {
         <FormField label={text.sample}>
           <DisabledReason reason={text.sampleReason} className="grid w-full"><Input disabled /></DisabledReason>
         </FormField>
-        <RadioGroupField label={text.place} value={place} onValueChange={setPlace} options={[
-          { value: "menu", label: text.menu },
-          { value: "other", label: text.other },
-          { value: "self", label: text.self, disabled: true, disabledReason: text.selfReason },
-        ]} />
+        <FormField label={text.place}>
+          <Picker label={text.place} value={place} onChange={setPlace} options={[
+            { id: "menu", label: text.menu },
+            { id: "other", label: text.other },
+            { id: "self", label: text.self, disabledReason: text.selfReason },
+          ]} />
+        </FormField>
       </div>
     </Surface>
   );

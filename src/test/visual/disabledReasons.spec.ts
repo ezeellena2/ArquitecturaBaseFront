@@ -37,18 +37,14 @@ async function away(page: Page, region: Locator) {
   await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0);
 }
 
-// The capture takes the zone and some room around it, so a tooltip that goes past its edge is seen whole.
-async function evidence(page: Page, region: Locator, name: string) {
-  const box = (await region.boundingBox())!, view = page.viewportSize()!;
+// The capture takes the zone and some room around it, so a tooltip that goes past its edge is seen whole. With the list of the
+// piece open, Radix hides the rest of the page from the reader: the zone is measured before opening it.
+type Box = { x: number; y: number; width: number; height: number };
+async function evidence(page: Page, region: Locator, name: string, zone?: Box) {
+  const box = zone ?? (await region.boundingBox())!, view = page.viewportSize()!;
   const x = Math.max(0, box.x - 160), y = Math.max(0, box.y - 60);
   await page.screenshot({ path: `test-results/${name}.png`, clip: { x, y, width: Math.min(view.width - x, box.width + 320), height: box.height + 80 } });
 }
-
-// To the right of a text, still on its row: only the area of the option that stretches over the row is there.
-const rightOf = async (target: Locator) => {
-  const box = (await target.boundingBox())!;
-  return { x: box.x + box.width + 48, y: box.y + box.height / 2 };
-};
 
 const center = async (target: Locator) => {
   const box = (await target.boundingBox())!;
@@ -95,24 +91,23 @@ for (const lang of ["es", "en"] as const) {
     await evidence(page, region, `disabled-reasons-click-${lang}-1440`);
     await away(page, region);
 
-    // An option of a group answers on its whole row too, like the box: its text shows the reason above the dot and a click
-    // there does not choose it; an option that can be chosen is chosen from anywhere on its row.
-    await region.getByRole("radiogroup", { name: text.place, exact: true }).scrollIntoViewIfNeeded();
-    const self = region.getByRole("radio", { name: text.self, exact: true });
-    const onSelf = await center(region.getByText(text.self, { exact: true }));
-    await page.mouse.move(onSelf.x, onSelf.y);
-    await expectReasonAbove(page, self, text.selfReason);
-    await evidence(page, region, `disabled-reasons-option-${lang}-1440`);
+    // An option that cannot be chosen is chosen in the piece, like «Mover a…» (DS1-A): off in the list, with its reason after
+    // its name, and a click on it does not choose it; one that can be chosen closes the list and the field says it.
+    const place = region.getByRole("button", { name: new RegExp(`^${text.place} `) });
+    const zone = (await region.boundingBox())!;
+    await place.click();
+    const list = page.getByRole("listbox", { name: text.place, exact: true });
+    const self = list.getByRole("option", { name: text.self, exact: true });
+    await expect(self).toHaveAttribute("aria-disabled", "true");
+    await expect(self).toContainText(text.selfReason);
+    await evidence(page, region, `disabled-reasons-option-${lang}-1440`, zone);
+    const onSelf = await center(self);
     await page.mouse.click(onSelf.x, onSelf.y);
-    await expectReasonAbove(page, self, text.selfReason);
-    await expect(self).toHaveAttribute("aria-checked", "false");
-    const besideSelf = await rightOf(region.getByText(text.self, { exact: true }));
-    await page.mouse.move(besideSelf.x, besideSelf.y, { steps: 4 });
-    await expectReasonAbove(page, self, text.selfReason);
-    await away(page, region);
-    const besideOther = await rightOf(region.getByText(text.other, { exact: true }));
-    await page.mouse.click(besideOther.x, besideOther.y);
-    await expect(region.getByRole("radio", { name: text.other, exact: true })).toHaveAttribute("aria-checked", "true");
+    await expect(list).toBeVisible();
+    await expect(self).toHaveAttribute("aria-selected", "false");
+    await list.getByRole("option", { name: text.other, exact: true }).click();
+    await expect(list).toHaveCount(0);
+    await expect(place).toHaveAccessibleName(`${text.place} ${text.other}`);
 
     // With the keyboard the control itself takes the focus, after the box, with no stop on a wrapper; Enter shows the
     // reason again and Escape closes it.
@@ -162,18 +157,25 @@ for (const lang of ["es", "en"] as const) {
       await page.touchscreen.tap(onInfo.x, onInfo.y);
       await expectReasonAbove(page, info, text.infoText);
       await evidence(page, region, `disabled-reasons-tap-info-${lang}-390`);
-      // Touching the row of an option, beside its text, chooses it; touching the text of one that cannot be chosen shows
-      // its reason above the dot, over the option above, and does not choose it.
-      await region.getByRole("radiogroup", { name: text.place, exact: true }).scrollIntoViewIfNeeded();
-      const besideOther = await rightOf(region.getByText(text.other, { exact: true }));
-      await page.touchscreen.tap(besideOther.x, besideOther.y);
-      await expect(region.getByRole("radio", { name: text.other, exact: true })).toHaveAttribute("aria-checked", "true");
-      const self = region.getByRole("radio", { name: text.self, exact: true });
-      const onSelf = await center(region.getByText(text.self, { exact: true }));
+      // On the phone the piece opens on the whole screen: touching the option that cannot be chosen does not choose it, and
+      // its reason stays after its name; touching another one chooses it and closes the list.
+      const place = region.getByRole("button", { name: new RegExp(`^${text.place} `) });
+      await place.scrollIntoViewIfNeeded();
+      const zone = (await region.boundingBox())!;
+      const onPlace = await center(place);
+      await page.touchscreen.tap(onPlace.x, onPlace.y);
+      const list = page.getByRole("listbox", { name: text.place, exact: true });
+      const self = list.getByRole("option", { name: text.self, exact: true });
+      await expect(self).toHaveAttribute("aria-disabled", "true");
+      await expect(self).toContainText(text.selfReason);
+      const onSelf = await center(self);
       await page.touchscreen.tap(onSelf.x, onSelf.y);
-      await expectReasonAbove(page, self, text.selfReason);
-      await expect(self).toHaveAttribute("aria-checked", "false");
-      await evidence(page, region, `disabled-reasons-tap-option-${lang}-390`);
+      await expect(self).toHaveAttribute("aria-selected", "false");
+      await evidence(page, region, `disabled-reasons-tap-option-${lang}-390`, zone);
+      const onOther = await center(list.getByRole("option", { name: text.other, exact: true }));
+      await page.touchscreen.tap(onOther.x, onOther.y);
+      await expect(list).toHaveCount(0);
+      await expect(place).toHaveAccessibleName(`${text.place} ${text.other}`);
       const onTitle = await center(region.getByRole("heading", { name: text.title, exact: true }));
       await page.touchscreen.tap(onTitle.x, onTitle.y);
       await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0);
