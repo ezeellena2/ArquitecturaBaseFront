@@ -34,7 +34,7 @@ Es privado y puede cambiar fuera de Git.
     del texto. Un cálculo o un dato del catálogo quedan en el gris de sólo lectura.
   - El bloque usa `ItemTable` o `ItemCards` con `readOnly`, sin ↑ ↓, sin quitar y sin «Agregar ítem».
   - La ubicación va en un renglón, con su precisión al lado y «Ver en el mapa». Las fotos y documentos usan
-    `FormRecordFiles`.
+    `FormRecordFiles`; el visor de una pregunta lleva su nombre y recorre sólo sus fotos.
 - **Corregir** (`FormEntryCorrection`, en la página o en el panel) reusa `FormEntryForm`, el editor de la corrección y el
   aviso de versión (`correctionVersion.ts`).
 - **La actividad** (`ResponseWorkflowHistory`): la tabla de `shared/ui` en la pantalla completa y recuadros en la vista
@@ -42,6 +42,6 @@ Es privado y puede cambiar fuera de Git.
 
 ## Estado
 
-En programación desde el 2026-11-22: la lectura está hecha (`ResponseForm`) y se corrige en el lugar
-(`FormEntryCorrection`, con `/corregir` que lleva a la pantalla completa). Faltan la actividad y el barrido de la regla en
-toda la app.
+Programado entre el 2026-11-22 y el 2026-11-23: la lectura (`ResponseForm`), corregir en el lugar (`FormEntryCorrection`,
+con `/corregir` que lleva a la pantalla completa), la actividad fila por fila (`workflowActivity`) y el barrido de la regla
+en toda la app (VF3 con R2-A). Falta la prueba a mano.

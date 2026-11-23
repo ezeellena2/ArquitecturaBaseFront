@@ -118,7 +118,7 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
 | Precisión baja | el color `--color-warning` con `AlertTriangleIcon` y un `InfoTip` |
 | Renglón de error | el de los problemas de un archivo (`--color-danger-700`, `aria-live="polite"`) |
 | La pregunta en la carga | `FormEntryForm`, en «Datos», una columna |
-| Detalle y planilla | `ResponseValue` (en `ResponseAnswer` para el detalle) |
+| Detalle y planilla | `ResponseForm` en el detalle (VF1-A) y `ResponseValue` en la planilla |
 | Tipo en el editor | el `NativeSelect` de `QuestionEditor`, con el motivo después de «·» en el bloque (RG9-A) |
 | Problema del chequeo | `PublicationCheckDialog` y `PublicationFindings`, con «Ir a la pregunta» |
 | Publicado al instante | el aviso de éxito (AV1-A) |

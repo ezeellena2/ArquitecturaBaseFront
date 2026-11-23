@@ -141,7 +141,7 @@ Relevamiento del 2026-11-09: unos 120 lugares. No cambian los ítems de menú co
 | `business-forms/components/FormConditionsEditor.tsx` | 1 botón |
 | `business-forms/components/FormDeactivationDialog.tsx` | 1 botón |
 | `business-forms/components/FormDeletionDialog.tsx` | 1 botón |
-| `business-forms/components/FormEntryCorrectionPanel.tsx` | 1 botón |
+| `business-forms/components/FormEntryCorrection.tsx` (desde VF1-A, la página y el panel) | 1 botón |
 | `business-forms/components/FormEntryPanel.tsx` | 1 botón |
 | `business-forms/components/FormPdfPreview.tsx` | 1 botón |
 | `business-forms/components/FormRulesSection.tsx` | 3 botones, 1 casilla |
@@ -160,7 +160,6 @@ Relevamiento del 2026-11-09: unos 120 lugares. No cambian los ítems de menú co
 | `business-forms/pages/CatalogEditorPage.tsx` | 1 botón |
 | `business-forms/pages/CatalogFiltersEditorPage.tsx` | 1 botón |
 | `business-forms/pages/FormEditorPage.tsx` | 8 botones |
-| `business-forms/pages/FormEntryCorrectionPage.tsx` | 1 botón |
 | `business-forms/pages/FormEntryPage.tsx` | 1 botón |
 | `business-forms/pages/FormPdfDesignPage.tsx` | 1 botón |
 | `business-forms/pages/MissingFormsPage.tsx` | 2 grupos, 1 botón |

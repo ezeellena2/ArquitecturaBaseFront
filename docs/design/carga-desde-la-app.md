@@ -279,9 +279,10 @@ cualquiera con «Corregir y anular respuestas». La regla está en
   línea, «Motivo de la corrección *». Abajo, «Cancelar» y «Guardar corrección», que muestra el avance al subir archivos.
   Cerrar con cambios pregunta «¿Descartar la corrección?»; sin cambios, cierra. Sin motivo, «Escribí el motivo.» y el foco va
   ahí. Las listas de catálogo son las de quien la cargó.
-- **Corregir desde DC1 y en el celular** abre su página, `/formularios/:formId/respuestas/:recordId/corregir`, con el mismo
-  contenido; en el celular, «Guardar corrección» queda fijo abajo, del tamaño táctil. Si la respuesta ya no se puede corregir,
-  lo dice («Esta respuesta ya no se puede corregir.») con «Ver la actual».
+- **Corregir desde DC1 y en el celular** es en el lugar desde VF1-A (2026-11-22, [diseño](respuesta-como-formulario.md)): la
+  pantalla completa pasa a la carga con el mismo contenido, sin otra página, y `/formularios/:formId/respuestas/:recordId/corregir`
+  lleva a la pantalla completa. En el celular, «Guardar corrección» queda fijo abajo, del tamaño táctil. Si la respuesta ya no
+  se puede corregir, lo dice («Esta respuesta ya no se puede corregir.») con «Ver la actual».
 - **Después de corregir,** el aviso dice «Se corrigió TEST-000002», la planilla se relee y D2 abre la corrección. La fila lleva
   «Corregida» junto al número; el detalle, «Corregida» junto al estado y el momento «Corregida» con «Ana Pérez · «motivo»» y
   «Ver la versión anterior» («… y su PDF» si la anterior tenía uno). Si estaba aprobada, antes va «Aprobada» con quién la
