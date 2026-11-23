@@ -136,6 +136,6 @@ En el caparazón, cada carpeta usa `PanelTrigger` y el panel de Administración;
 de 1,5 rem, con el motivo de un ítem apagado adentro; «Nueva carpeta» y «Agregar formularios» son renglones del menú con su +
 (`MenuActionRow`, con `ActionTooltip` en la barra contraída), y el aviso del menú con «Reintentar» es el de siempre. En la
 feature: `DialogContent` (crear y editar, los formularios de una carpeta, mover, con `mobileFullscreen`, y borrar),
-`FormField` e `Input` (el nombre), `Select` (el ícono), `SearchInput` y `CheckboxField` con `tag` (los formularios),
-`CheckboxField` (CP2-A), `RadioGroupField` con `disabledReason` (mover), `FilterMenuTrigger` con `DropdownMenuRadioGroup` (el
-filtro), `EmptyState` (los vacíos de un listado), `Skeleton` (lo que lee un diálogo) y el aviso común (resultados y errores).
+`FormField` e `Input` (el nombre), y desde el 2026-11-22 la pieza para elegir (`Picker`, DS1-A): el ícono, los formularios
+de una carpeta y las carpetas de un formulario o un catálogo con `multiple` (CP2-A), mover con el motivo de la opción que no se
+puede elegir y el filtro con `trigger="button"`; `EmptyState` (los vacíos de un listado), `Skeleton` (lo que lee un diálogo) y el aviso común (resultados y errores).
