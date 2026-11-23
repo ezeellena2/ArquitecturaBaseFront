@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/shared/api/ApiError";
 import { fetchPersonAttributes, fetchPersonData, fetchPersonDataPage, fetchPersonAttributeOptions, savePersonData, type PersonData, type PersonDataPageQuery } from "../api/personData";
 import type { FormCulture } from "../model";
@@ -15,9 +15,11 @@ export function usePersonAttributes(scope: PersonDataScope, enabled = true) {
  return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersonAttributes(signal), enabled: attributeAccess(scope) && enabled, staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
 }
 export function usePersonDataPage(scope: PersonDataScope, query: PersonDataPageQuery, enabled = true) {
- const key = [...personDataScopeKey(scope), "page", query] as const;
+ const root = personDataScopeKey(scope), owner = JSON.stringify(root), key = [...root, "page", query] as const;
  useUnobservedQueryCleanup(key);
- return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersonDataPage(query, signal), enabled: enabled && !!scope.actorId && scope.permissions.includes("formpersondata.manage") && scope.permissions.includes("users.read"), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" } });
+ // While another page, search or order arrives, the rows in sight stay dimmed (LC2-A); never another owner's.
+ return useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersonDataPage(query, signal), enabled: enabled && !!scope.actorId && scope.permissions.includes("formpersondata.manage") && scope.permissions.includes("users.read"), staleTime: 0, gcTime: 0, meta: { errorOwner: "local" },
+  placeholderData: (previous, previousQuery) => JSON.stringify(previousQuery?.queryKey.slice(0, root.length)) === owner ? keepPreviousData(previous) : undefined });
 }
 /** The options of a catalog datum, fifty at a time and searched in the server; its field asks for them only while its list is open. */
 export function usePersonAttributeOptions(scope: PersonDataScope, id: string, search: string, enabled = true) {

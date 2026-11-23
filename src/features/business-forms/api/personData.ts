@@ -31,7 +31,8 @@ export interface PersonDataPage extends PagedResult<PersonDataRow> { readonly mi
 export interface PersonAttributeBody { readonly key: string; readonly name: Readonly<Partial<Record<FormCulture, string>>>; readonly type: "Catalog" | "Text"; readonly sourceCatalogId: string | null }
 export interface UpdatePersonAttributeBody extends Omit<PersonAttributeBody, "key"> { readonly expectedRevision: number; readonly position: number; readonly isActive: boolean; readonly confirmValueRemoval?: true }
 export interface PersonDataBody { readonly expectedRevision: number | null; readonly values: Readonly<Record<string, string | null>> }
-export interface PersonDataPageQuery { readonly page: number; readonly pageSize: number; readonly sort?: "displayName" | "-displayName"; readonly search?: string }
+/** OT1-C: the people order by their name or by a datum, `attribute` with its id in `sortAttributeId`. */
+export interface PersonDataPageQuery { readonly page: number; readonly pageSize: number; readonly sort?: "displayName" | "-displayName" | "attribute" | "-attribute"; readonly sortAttributeId?: string; readonly search?: string }
 export interface PersonAttributeOptionsQuery { readonly page: number; readonly pageSize: number; readonly sort?: "text" | "-text"; readonly search?: string }
 export class UnsupportedPersonDataResponse extends Error { constructor() { super("Unsupported person data response."); this.name = "UnsupportedPersonDataResponse"; } }
 function read<T>(schema: z.ZodType<T>, value: unknown): T {

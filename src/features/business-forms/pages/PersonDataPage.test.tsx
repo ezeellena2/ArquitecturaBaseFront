@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { expect, it, vi } from "vitest";
 import i18n from "@/shared/i18n";
-import { renderWithProviders } from "@/test/utils/renderWithProviders";
+import { renderRouteWithProviders, renderWithProviders } from "@/test/utils/renderWithProviders";
 import { cellUnder } from "@/test/utils/tableCells";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
@@ -535,4 +535,83 @@ it("explains the data in the (i) of their title", async () => {
  const definitions = (await screen.findByRole("heading", { name: "Datos" })).closest("section")!;
  expect(within(definitions).queryByText(hint, { ignore: "script, style, [hidden]" })).not.toBeInTheDocument();
  expect(within(definitions).getByRole("button", { name: "Más información sobre Datos" })).toHaveAccessibleDescription(hint);
+});
+
+// OT1-C (F11): the people order in the server by their name or by a datum, from the header and from «Ordenar por», last in the
+// bar. The address keeps it, a datum as `sort=attribute` with its id in `sortAttributeId`; whoever lacks the datum goes last.
+const zoneId = "01990000-0000-7000-8000-000000000007";
+const zone = { ...attribute, id: zoneId, key: "zone", name: { es: "Zona", en: "Zone" }, position: 0 };
+function mountPeople(path = "/datos-de-personas", permissions = ["formpersondata.manage", "users.read"]) {
+ const requests: URLSearchParams[] = [];
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [zone, attribute] })),
+  http.get("/api/forms/person-data", ({ request }) => { requests.push(new URL(request.url).searchParams); return HttpResponse.json(people); }));
+ return { requests, ...renderRouteWithProviders(path) };
+}
+const peopleTable = async () => within((await screen.findByRole("heading", { name: "Personas" }, { timeout: 10_000 })).closest("section")!).findByRole("table");
+const personHeader = (table: HTMLElement, name: string) => within(table).getByRole("columnheader", { name });
+const sortedBy = (requests: URLSearchParams[]) => Object.fromEntries([...requests.at(-1)!].filter(([key]) => key.startsWith("sort")));
+it("orders the people by name from the header, back on the first page and keeping the search", async () => {
+ const { requests, router } = mountPeople("/datos-de-personas?page=2&search=juan");
+ const table = await peopleTable();
+ // Without an order chosen, by name from A to Z: its arrow and «Ordenar por» say so.
+ expect(sortedBy(requests)).toEqual({ sort: "displayName" });
+ expect(personHeader(table, "Persona")).toHaveAttribute("aria-sort", "ascending");
+ expect(screen.getByRole("button", { name: "Ordenar por: Persona, de la A a la Z" })).toBeVisible();
+ await userEvent.click(within(personHeader(table, "Persona")).getByRole("button", { name: "Persona" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "-displayName" }));
+ expect(requests.at(-1)?.get("page")).toBe("1");
+ const params = new URLSearchParams(router.state.location.search);
+ expect(params.get("sort")).toBe("-displayName");
+ expect(params.has("page")).toBe(false);
+ expect(params.get("search")).toBe("juan");
+ expect(personHeader(await peopleTable(), "Persona")).toHaveAttribute("aria-sort", "descending");
+});
+it("orders the people by a datum with its id in the address and in the request", async () => {
+ const { requests, router } = mountPeople();
+ let table = await peopleTable();
+ await userEvent.click(within(personHeader(table, "Zona")).getByRole("button", { name: "Zona" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "attribute", sortAttributeId: zoneId }));
+ expect(Object.fromEntries([...new URLSearchParams(router.state.location.search)].filter(([key]) => key.startsWith("sort")))).toEqual({ sort: "attribute", sortAttributeId: zoneId });
+ table = await peopleTable();
+ expect(personHeader(table, "Zona")).toHaveAttribute("aria-sort", "ascending");
+ expect(personHeader(table, "Persona")).toHaveAttribute("aria-sort", "none");
+ await userEvent.click(within(personHeader(table, "Zona")).getByRole("button", { name: "Zona" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "-attribute", sortAttributeId: zoneId }));
+ await userEvent.click(within(personHeader(await peopleTable(), "Persona")).getByRole("button", { name: "Persona" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "displayName" }));
+ expect(new URLSearchParams(router.state.location.search).has("sortAttributeId")).toBe(false);
+});
+it("changes the order of the people from «Ordenar por», last in the bar, which moves the arrow of the header", async () => {
+ const { requests } = mountPeople();
+ await peopleTable();
+ const trigger = screen.getByRole("button", { name: "Ordenar por: Persona, de la A a la Z" });
+ expect(within(trigger.closest<HTMLElement>('[data-slot="filter-bar"]')!).getAllByRole("button").at(-1)).toBe(trigger);
+ act(() => trigger.focus());
+ await userEvent.keyboard("{Enter}");
+ await userEvent.click(within(await screen.findByRole("menu")).getByRole("menuitemradio", { name: "Sucursal" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "attribute", sortAttributeId: id }));
+ // The list stays open: the table behind it is out of the accessibility tree until it closes.
+ await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la Z a la A" }));
+ await waitFor(() => expect(sortedBy(requests)).toEqual({ sort: "-attribute", sortAttributeId: id }));
+ await userEvent.keyboard("{Escape}");
+ await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+ expect(personHeader(await peopleTable(), "Sucursal")).toHaveAttribute("aria-sort", "descending");
+ expect(screen.getByRole("button", { name: "Ordenar por: Sucursal, de la Z a la A" })).toHaveFocus();
+});
+it.each([
+ ["?sort=-attribute&sortAttributeId=" + zoneId, { sort: "-attribute", sortAttributeId: zoneId }],
+ ["?sort=attribute&sortAttributeId=zona", { sort: "displayName" }],
+ ["?sort=secret", { sort: "displayName" }],
+])("reads the order of a shared link %s", async (search, expected) => {
+ const { requests } = mountPeople("/datos-de-personas" + search);
+ await peopleTable();
+ expect(sortedBy(requests)).toEqual(expected);
+});
+it("does not order the actions of a person", async () => {
+ server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formpersondata.manage", "users.read", "users.manage"] })), http.get("/api/forms/person-attributes", () => HttpResponse.json({ items: [attribute] })), http.get("/api/forms/person-data", () => HttpResponse.json(people)));
+ await act(async () => { renderWithProviders(<MemoryRouter><UserDataSectionContext.Provider value={{ Section: () => null, openUser: () => undefined }}><PersonDataPage /></UserDataSectionContext.Provider></MemoryRouter>); });
+ const table = await peopleTable();
+ expect(await within(table).findByRole("button", { name: "Editar a Juan Gómez" })).toBeInTheDocument();
+ expect(within(personHeader(table, "Acciones")).queryByRole("button")).not.toBeInTheDocument();
+ expect(within(personHeader(table, "Persona")).getByRole("button", { name: "Persona" })).toBeInTheDocument();
 });
