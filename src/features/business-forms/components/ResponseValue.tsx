@@ -6,13 +6,8 @@ import { FormRecordFiles } from "@/shared/ui/FormRecordFiles";
 import { formatTypedValue } from "@/shared/lib/typedValue";
 import { ExternalLinkIcon } from "@/shared/ui/icons";
 import { formatAccuracy, formatCoordinates, mapUrl, toLocationPoint } from "../locationAnswer";
-import { responseCatalogFieldText, responseFiles, responseRowsSummary, responseValueText, selectedResponseChoices, type ResponseCell, type ResponseChoice } from "../responses";
+import { responseFiles, responseRowsSummary, responseValueText, type ResponseCell } from "../responses";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
-// The captured fields of an option, aligned under its value (board TL1-A): the field in grey and its value in the text color,
-// with a line that ties them to the value.
-function CapturedFields({ choice, culture, yes, no }: { choice: ResponseChoice; culture: string; yes: string; no: string }) {
-  return choice.fields?.length ? <dl className="mt-1 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 border-l-2 border-[var(--color-surface-header)] pl-2.5 text-xs whitespace-normal">{choice.fields.map(field => <div key={field.fieldId} className="contents"><dt className="text-[var(--color-content-muted)]">{field.label}</dt><dd className="min-w-0 break-words">{responseCatalogFieldText(field, culture, yes, no)}</dd></div>)}</dl> : null;
-}
 export function ResponseValue({
   cell,
   actor,
@@ -85,19 +80,10 @@ export function ResponseValue({
       {coordinates}{" "}<ExternalLinkIcon className="size-3.5 shrink-0"/><span className="sr-only">{t("responses.viewOnMap")}</span></a>;
     return <div className="min-w-0">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1"><span className="tabular-nums">{coordinates}</span>
+        {point.accuracyMeters !== undefined ? <span className="text-[var(--color-content-muted)]">{formatAccuracy(point.accuracyMeters, i18n.language)}</span> : null}
         <a {...external} className="inline-flex items-center gap-1 text-[var(--color-brand-700)] underline">{t("responses.viewOnMap")}<ExternalLinkIcon className="size-3.5 shrink-0"/></a></p>
-      {point.accuracyMeters !== undefined ? <p className="text-xs text-[var(--color-content-muted)]">{formatAccuracy(point.accuracyMeters, i18n.language)}</p> : null}
     </div>;
   }
-  const choices = selectedResponseChoices(cell);
-  if (cell.type === "multiChoice" && detail)
-    return <div className="min-w-0 space-y-2 break-words whitespace-pre-wrap">
-      {choices.map(choice => <div key={choice.choiceId}>
-        <span className={choice.fields?.length ? "font-medium" : undefined}>{choice.label}</span>
-        {choice.detail ? <p className="text-xs text-[var(--color-content-muted)]">{choice.detail}</p> : null}
-        <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/>
-      </div>)}
-    </div>;
   const text =
     typeof cell.value === "string" && (cell.type === "decimal" || cell.type === "date")
       ? (formatTypedValue(cell.type, cell.value, i18n.language) ?? cell.value)
@@ -107,22 +93,16 @@ export function ResponseValue({
           t("responses.yes"),
           t("responses.no"),
         );
-  const choice = cell.type === "choice" ? choices[0] : undefined;
   return (
     <div
       className={
         detail ? "min-w-0 break-words whitespace-pre-wrap" : cell.type === "multiChoice" ? "max-w-64 break-words whitespace-normal" : "max-w-64 truncate"
       }
     >
-      {/* The detail no longer repeats the catalog's name under the value (TL1-A): the question already says it. A multiple
-          choice wraps in the sheet: a code among its labels stays whole (2026-11-02). */}
-      <span className={detail && choice?.fields?.length ? "font-medium" : undefined}>{cell.type === "multiChoice" ? <CellText text={text} /> : text}</span>
-      {choice?.detail ? (
-        <p className="text-xs text-[var(--color-content-muted)]">
-          {choice.detail}
-        </p>
-      ) : null}
-      {detail && choice ? <CapturedFields choice={choice} culture={i18n.language} yes={t("responses.yes")} no={t("responses.no")}/> : null}
+      {/* Nothing goes under the value (VF3, R2-A, 2026-11-22): neither the catalog, which the question already names, nor the
+          detail or the data of the option, which are columns or rows of their own. A multiple choice wraps in the sheet: a code
+          among its labels stays whole (2026-11-02). */}
+      <span>{cell.type === "multiChoice" ? <CellText text={text} /> : text}</span>
     </div>
   );
 }

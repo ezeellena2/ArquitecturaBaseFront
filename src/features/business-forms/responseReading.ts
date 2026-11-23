@@ -49,6 +49,17 @@ export function readingZones(entry: FormEntry, draft: EntryDraft, values: readon
     fields: zone.questions.flatMap(question => withData(question, readingChoices(answers.get(question.fieldId)))) }));
 }
 
+/**
+ * The data of the options chosen in an answer read as rows of their own, «Pregunta · Dato», where the form of the version is not at
+ * hand, such as what the assistant proposed: without the one that filters a list that depends on another answer (CW7).
+ */
+export function readingChoiceData(label: string, chosen: readonly ResponseChoice[]): { readonly key: string; readonly fieldId: string; readonly label: string }[] {
+  const data = new Map<string, { key: string; fieldId: string; label: string }>();
+  for (const option of chosen) for (const field of option.fields ?? [])
+    if (field.role !== "filter" && !data.has(field.fieldId)) data.set(field.fieldId, { key: field.fieldId, fieldId: field.fieldId, label: label + " · " + field.label });
+  return [...data.values()];
+}
+
 /** The columns of the block in the reading: each question and, after a catalog one, the data its items chose; nothing more if none did. */
 export function readingBlockColumns(questions: readonly FormEntryQuestion[], items: readonly ResponseItemValues[]): ReadingField[] {
   return questions.flatMap(question => withData(question,

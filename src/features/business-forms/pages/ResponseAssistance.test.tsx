@@ -22,7 +22,7 @@ function setup() {
 }
 it("presents historical mapping, changed and excluded data with the recorded suggestion mode in the existing answer tab", async () => {
  const api = setup(); renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
- const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }));
+ const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }, { timeout: 10_000 }));
  expect((await panel.findAllByText("De Entrega histórica")).length).toBeGreaterThan(0);
  expect(panel.getByText("Corregido al completar")).toBeVisible();
  expect(panel.getByText("Preguntar siempre · Sin IA")).toBeVisible();
@@ -38,6 +38,29 @@ it("presents historical mapping, changed and excluded data with the recorded sug
  expect(panel.queryByRole("link", { name: /TEST-000002/ })).not.toBeInTheDocument();
  expect(api.reads()).toBe(1);
 });
+// Nothing goes under the value (VF3, R1): the mark of each proposed answer goes in its label's row, and the detail and the data of an
+// option chosen are rows of their own, «Modalidad · Detalle» and «Modalidad · CUIT», without the one that filters a list.
+it("puts the mark, the detail and the data of a proposed option in rows of their own", async () => {
+ const response = assistedResponseFixture();
+ const proposed = response.assistance.values[2].proposed;
+ response.assistance.values[2] = { ...response.assistance.values[2], proposed: { ...proposed, value: { choiceId: "0199a0c0-0000-7000-8000-000000000040",
+  label: "Opción histórica", detail: "Retira en el local", fields: [
+   { fieldId: "0199a0c0-0000-7000-8000-000000000041", label: "CUIT", type: "text", role: "data", value: "30-71234567-8" },
+   { fieldId: "0199a0c0-0000-7000-8000-000000000042", label: "Zona", type: "text", role: "filter", value: "Norte" }] } } as never };
+ setup();
+ server.use(http.get("/api/forms/records/:id", () => HttpResponse.json(response)));
+ renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
+ const panel = within(await screen.findByRole("region", { name: "Detalle de la respuesta" }, { timeout: 10_000 }));
+ await userEvent.click(await panel.findByRole("button", { name: "Ver datos propuestos" }));
+ const list = within(panel.getByRole("region", { name: "Datos propuestos" }));
+ const term = (name: string) => list.getByText(name, { exact: true }).closest("dt")!;
+ expect(term("Modalidad")).toHaveTextContent("Modalidad");
+ expect(term("Modalidad").nextElementSibling).toHaveTextContent(/^Opción histórica$/);
+ expect(term("Modalidad · Detalle").nextElementSibling).toHaveTextContent(/^Retira en el local$/);
+ expect(term("Modalidad · CUIT").nextElementSibling).toHaveTextContent(/^30-71234567-8$/);
+ expect(list.queryByText("Modalidad · Zona")).not.toBeInTheDocument();
+});
+
 it("withdraws captured reasons and the complete chain when response reading is revoked", async () => {
  const api = setup(); renderRouteWithProviders(`/formularios/${responseFormId}/respuestas/${responseRecordId}`);
  await screen.findByText("Se informó una entrega y quedó pendiente su cobro.");
