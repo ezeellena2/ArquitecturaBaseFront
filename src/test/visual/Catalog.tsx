@@ -15,7 +15,6 @@ import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { notify } from "@/shared/ui/notifications";
 import { Textarea } from "@/shared/ui/textarea";
 import { CheckboxField } from "@/shared/ui/CheckboxField";
-import { RadioGroupField } from "@/shared/ui/RadioGroupField";
 import { SearchInput } from "@/shared/ui/SearchInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -141,7 +140,6 @@ export function Catalog() {
       </Surface>
       {formPieces ? <Surface title={english ? "Form controls" : "Controles de formularios"} padded>
         <div className="flex flex-col gap-4">
-          <RadioGroupField label={english ? "Choose a card" : "Elegí una tarjeta"} variant="cards" value={choice} onValueChange={setChoice} options={[{value:"InviteOnly",label:english ? "First card" : "Primera tarjeta",description:english ? "A shared selectable row." : "Una fila seleccionable común."},{value:"Open",label:english ? "Second card" : "Segunda tarjeta",description:english ? "Keyboard keeps the same radio behavior." : "Conserva el teclado del control de opción."}]} />
           <MessageBubble direction="outgoing" text={english ? "An attached card." : "Una tarjeta adjunta."} attachment={<MessageCard icon={<FormIcon className="size-4" />} title={english ? "Example attachment" : "Adjunto de ejemplo"} description={english ? "A title and description inside the message." : "Título y descripción dentro del mensaje."} />} timestamp="2026-10-02T12:00:00Z" timeLabel="9:00" dateLabel={english ? "10/02/2026, 9:00 AM" : "02/10/2026, 9:00"} delivery={{state:"pending",label:t("whatsapp:status.Pending")}} />
         </div>
       </Surface> : null}

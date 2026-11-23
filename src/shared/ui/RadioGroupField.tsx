@@ -35,7 +35,6 @@ interface RadioGroupFieldProps {
   value: string | undefined;
   onValueChange: (value: string) => void;
   error?: string;
-  variant?: "plain" | "cards";
   /// "row": pocas opciones cortas en un renglón desde el escritorio; en el celular se apilan igual.
   layout?: "column" | "row";
 }
@@ -43,8 +42,10 @@ interface RadioGroupFieldProps {
 /// Una elección entre pocas opciones, una debajo de la otra, cada una con su etiqueta y su ayuda al lado: la del canal
 /// de la invitación en el alta de un usuario (tablero "WhatsApp · Usuarios: alta con teléfono", punto 2). Es el Radio
 /// Group de Radix, que da el rol `radiogroup`, las flechas para moverse y el foco en la elegida, con la misma fila que
-/// `CheckboxField`: el renglón entero elige la opción o, si está apagada, muestra su motivo.
-export function RadioGroupField({ label, showLabel, help, options, value, onValueChange, error, variant = "plain", layout = "column" }: RadioGroupFieldProps): ReactNode {
+/// `CheckboxField`: el renglón entero elige la opción o, si está apagada, muestra su motivo. Desde el 2026-11-22 sólo la
+/// usan las vistas previas que imitan WhatsApp (`FormPreview`, `CatalogPreview`): para elegir está `Picker` (DS1-A). La
+/// variante de tarjetas (`variant="cards"`), que había quedado sólo en el catálogo de la biblioteca, se retiró el 2026-11-23.
+export function RadioGroupField({ label, showLabel, help, options, value, onValueChange, error, layout = "column" }: RadioGroupFieldProps): ReactNode {
   const { t } = useTranslation();
   const id = useId();
   const errorId = `${id}-error`;
@@ -78,9 +79,7 @@ export function RadioGroupField({ label, showLabel, help, options, value, onValu
           return (
             // `relative`: dentro de un formulario, Radix pone al lado del botón un input escondido y posicionado, para
             // que el valor viaje con el formulario. Sin un ancestro posicionado cerca, se ubica contra el diálogo.
-            // La tarjeta elegida suma un borde de 2 px, sin moverse, y el tinte de la marca (OE1-A, 2026-11-03).
-            <div key={option.value} className={cn("relative flex items-start gap-2.5 px-2.5 py-1.5", variant === "cards" && cn("rounded-[var(--radius-control)] border py-2.5",
-              option.value === value ? "border-[var(--color-brand-600)] bg-[var(--color-brand-50)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]" : "border-[var(--color-border)]"))}>
+            <div key={option.value} className="relative flex items-start gap-2.5 px-2.5 py-1.5">
               {/* Con motivo, el envoltorio del punto se estira sobre el renglón, como la etiqueta de una opción encendida:
                   el renglón entero muestra el motivo, que se ancla en el punto. */}
               <DisabledReason reason={option.disabled ? option.disabledReason : null} className="after:absolute after:inset-0">

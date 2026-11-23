@@ -133,8 +133,7 @@ de `features/users/columns.tsx`; avatar de cuenta en `Sidebar.tsx` y `UserMenu.t
 
 **Deuda de sincronización** (está en `shared/ui` y no en la biblioteca; abrir el Artifact requiere autorización
 explícita): tokens Campo, contextos y cabeceras; `FilterBar`, `Picker` (DS1-A y DS2-A), `Surface`, `FilterChip`,
-`TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `SegmentedControl` (`fullWidth`,
-`appearance="public"`, `wrap="always"` de AS4), `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
+`TableSectionToggle`, `TableRowHeader`, `EmptyState embedded`, `Button inline/touch`, `Banner`, `RadioGroupField`, `VerificationBadge`, `PhoneField`, `OtpInput`, `CheckboxField` con
 `error`, `Spinner decorative`, `DisabledReason`, `InfoTip` y las props `help`, `Button`/`IconButton` con `pending`,
 `ConfirmDialog` con `pending`, `Table`/`DataTable` con `refreshing` y `numeric`, la línea entre columnas, la opción elegida
 (OE1-A), `StepList` y `DataList` (LR1), `ComparisonTable` (LR2-A), `AccountRows` y `VerificationBadge hint` (PF1-A), `FormField beside` y `FormSkeleton stacked` (IA1-A), el tooltip que conserva sus renglones (RO1-A), `Page` con `backTo`/`status`, `ConfirmDialog` con `cancelLabel`, caparazón `h-svh`, migas
@@ -1016,8 +1015,8 @@ botones sueltos que se rellenan para hacer de segmentado.
 | La conversación abierta en el chat de WhatsApp | El tinte de la marca y una barra de 3 px al inicio | `WhatsAppChatPage` |
 
 Desde el 2026-11-22, por decisión del usuario, los botones agrupados y las tarjetas de esta tabla son la pieza
-(`Picker`), con su tilde: `SegmentedControl` queda sólo en la vista previa de un catálogo, y
-`RadioGroupField variant="cards"`, sólo en el catálogo de la biblioteca.
+(`Picker`), con su tilde: `SegmentedControl` queda sólo en la vista previa de un catálogo. Las tarjetas
+(`RadioGroupField variant="cards"`), que habían quedado sólo en el catálogo de la biblioteca, se retiraron el 2026-11-23.
 
 Ya cumplían y no cambian de forma: los radios (el punto, ahora en el tono de los enlaces), las casillas (la tilde), las
 solapas (subrayado y negrita), el ingreso público (subrayado), el menú lateral (barra), las listas con detalle de «Campos

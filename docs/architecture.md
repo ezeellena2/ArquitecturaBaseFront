@@ -128,8 +128,8 @@ usan ingreso, perfil y usuarios. Textos en `common.json`.
 
 Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (como `FormField`; desde el 2026-11-22, sólo
 en las vistas previas que imitan WhatsApp: para elegir está `Picker`); `VerificationBadge` (igual en perfil y usuarios);
-`SegmentedControl` (táctil desde 44 px; desde el 2026-11-22, sólo en la vista previa de un catálogo, y `fullWidth` y
-`appearance="public"` quedaron sin consumidores); `Banner`, auditado por significado; tokens `--color-success-50/700` y
+`SegmentedControl` (táctil desde 44 px; desde el 2026-11-22, sólo en la vista previa de un catálogo, y con una sola
+forma desde el 2026-11-23); `Banner`, auditado por significado; tokens `--color-success-50/700` y
 `--color-warning-50/700`. Todo color nuevo es un token.
 
 ## Listados

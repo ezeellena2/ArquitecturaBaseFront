@@ -39,7 +39,7 @@ El laboratorio se retiró al promover la elección. El PATCH guarda el conjunto 
 | Decisión previa | `ConfirmDialog` | Consecuencia y acción concreta |
 | Un sí o no suelto | `CheckboxField`, `Checkbox` para tablas | Estado y validación; elegir entre alternativas es `Picker` (2026-11-22), y `RadioGroupField` queda para las vistas previas que imitan WhatsApp |
 | Elegir una o varias opciones de una lista, en un campo o en el botón de una barra | `Picker`, la única pieza; la zona horaria, con la lista `timeZoneOptions` | Las opciones (su descripción, su motivo si están apagadas), la primera («Todas», «Sin …»), lo vacío, el tope y, si busca el servidor, la búsqueda, la cantidad, la carga y el error; nunca un select, un combo ni un menú propios. Todo lo que se elige va en la pieza (2026-11-22, por decisión del usuario): también dos a cuatro opciones fijas, un Sí o No, los filtros de los listados, sin cantidades, la carga de un formulario y «Correo | WhatsApp» del acceso; nunca radios, un segmentado ni una lista de casillas ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista), DS1-A y DS2-A) |
-| Opción elegida | `SegmentedControl` (rellena), `RadioGroupField variant="cards"` (borde de 2 px), `Picker` (tilde a la izquierda; en varias, la casilla), `DropdownMenuRadioItem` (tilde, en un menú de acciones), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
+| Opción elegida | `SegmentedControl` (rellena), `Picker` (tilde a la izquierda; en varias, la casilla), `DropdownMenuRadioItem` (tilde, en un menú de acciones), `DataTable selectedRowKey` (barra y tinte) | Cuál está elegida o abierta; la biblioteca la marca con algo más que un tinte (OE1-A) |
 | Lectura de algo que pasa en orden (una regla, una sugerencia) | `StepList` | Un paso por parte con su ícono; palabras que unen en gris y datos en negrita ([lecturas](../design/visual-baseline.md#lecturas), LR1-A) |
 | Datos de un registro, sin editar | `DataList` | Rótulos y valores ya formateados, en dos columnas; nunca «Rótulo: valor» en un renglón |
 | Lo que se lee de una cuenta: medios de ingreso, el chat de su número, el último ingreso | `AccountRows` y `AccountRow` | Ícono, dato, valor ya formateado, estado (`VerificationBadge`, con `hint` si hay un porqué) y acción; la lista elige un renglón, el dato arriba del valor o la acción junto al dato según el ancho de su contenedor (PF1-A) |
@@ -84,10 +84,10 @@ conservan sus blancos táctiles de 44 px en móvil. Un mínimo no recorta conten
 
 `Button` ofrece variantes principal, secundaria, terciaria, destructiva, destructiva con borde (`destructive-outline`, para quitar algo antes de confirmarlo) y enlace; `size="inline"`
 es la acción de texto de filtros y `size="touch"` permite el tamaño táctil aprobado.
-`SegmentedControl` usa su variante compacta, con la elegida rellena con el tono de los enlaces y su tinta, el foco por
-fuera y 44 × 44 px por opción en el celular ([OE1-A](../design/visual-baseline.md#opción-elegida--2026-11-03)). Desde el
-2026-11-22 sólo lo usa la vista previa de un catálogo; `appearance="public"`, la selección subrayada del acceso, quedó
-sin consumidores cuando «Ingresar con» pasó a la pieza.
+`SegmentedControl` tiene una sola forma, compacta, con la elegida rellena con el tono de los enlaces y su tinta, el foco
+por fuera y 44 × 44 px por opción en el celular ([OE1-A](../design/visual-baseline.md#opción-elegida--2026-11-03)). Desde
+el 2026-11-22 sólo lo usa la vista previa de un catálogo; `appearance="public"`, la selección subrayada del acceso, quedó
+sin consumidores cuando «Ingresar con» pasó a la pieza y se retiró el 2026-11-23 con las demás variantes sin uso.
 `Input` y `Textarea` definen el aspecto de solo lectura.
 Una feature elige variantes y distribuye contenido; no cambia fondo, texto, radio o alto de un control.
 
