@@ -201,7 +201,7 @@ describe("the list", () => {
 
   it("says when nothing arrived yet, when nothing matches and when the list could not be read", async () => {
     const empty: Omit<ReceivedDocumentsPage, "pageSize"> = { items: [], page: 1, totalCount: 0, counts: { proposed: 0, forReview: 0, unclassified: 0, confirmed: 0, discarded: 0 },
-      facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false }, groups: [] };
+      facets: { forms: [], senders: [], formsTruncated: false, sendersTruncated: false }, groups: [], discardedRetentionDays: 90 };
     let failing = true;
     setup({ list: body => body.state ? HttpResponse.json({ ...empty, pageSize: body.pageSize })
       : failing ? HttpResponse.json({ status: 500, traceId: "trace" }, { status: 500 }) : HttpResponse.json({ ...empty, pageSize: body.pageSize }) });

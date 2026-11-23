@@ -7,8 +7,13 @@ export const ruleEvents = ["Received", "Approved", "Rejected"] as const;
 export const ruleActionKinds = ["RequestApproval", "GeneratePdf", "NotifyAuthor", "NotifyRole", "IssueDocument", "SendCopy"] as const;
 export type RuleEvent = typeof ruleEvents[number];
 export type RuleActionKind = typeof ruleActionKinds[number];
-/** `issuerId`: the installed issuer of an «IssueDocument» action; the other kinds do not carry it. */
-export interface RuleAction { readonly id: string; readonly kind: RuleActionKind; readonly roleId: string | null; readonly text: LocalizedText | null; readonly includePdf: boolean; readonly issuerId?: string | null }
+/**
+ * `issuerId`: the installed issuer of an «IssueDocument» action; the other kinds do not carry it. `authorMayDecide` («Puede decidir quien
+ * cargó») and `reasonOptional` («Exigir motivo al rechazar» unchecked) belong to «RequestApproval» (RC4-A): the server sends them only when
+ * true, and they are saved only with that kind.
+ */
+export interface RuleAction { readonly id: string; readonly kind: RuleActionKind; readonly roleId: string | null; readonly text: LocalizedText | null; readonly includePdf: boolean; readonly issuerId?: string | null;
+  readonly authorMayDecide?: boolean; readonly reasonOptional?: boolean }
 /** An issuer the rule options offer (only on a form copied from its standard): its name and the data its result brings. */
 export interface RuleIssuer { readonly id: string; readonly name: LocalizedText; readonly resultFields: readonly { readonly key: string; readonly label: LocalizedText; readonly kind: string }[] }
 export interface FormRule { readonly id: string; readonly event: RuleEvent; readonly conditions: readonly ResponseCondition[]; readonly actions: readonly RuleAction[] }
@@ -108,7 +113,10 @@ export function prepareRules(rules: readonly FormRule[], original: FormCulture, 
       // A datum of a result only arrives after the action that brings it (RE1-A).
       const results = ruleResultsBefore(rule, actionIndex, issuers);
       for (const [culture, value] of Object.entries(text ?? {})) if (hasUnavailableResults(value, results)) issues.push({ path: actionPath + ".text." + culture, key: "resultBeforeIssue" });
-      return { ...action, roleId: role ? action.roleId : null, text, includePdf: attached, issuerId: action.kind === "IssueDocument" ? action.issuerId ?? null : undefined };
+      // The choices of an approval (RC4-A) go only with «RequestApproval» and only when they leave today's rule.
+      const approval = action.kind === "RequestApproval";
+      return { ...action, roleId: role ? action.roleId : null, text, includePdf: attached, issuerId: action.kind === "IssueDocument" ? action.issuerId ?? null : undefined,
+        authorMayDecide: approval && action.authorMayDecide ? true : undefined, reasonOptional: approval && action.reasonOptional ? true : undefined };
     });
     return { ...rule, conditions: normalized?.conditions ?? rule.conditions, actions };
   });
@@ -125,7 +133,7 @@ export function ruleFieldErrors(source: Readonly<Record<string, readonly string[
   const fields = rules.flatMap((rule, index) => ["rules." + index + ".conditions", "rules." + index + ".actions", ...rule.actions.flatMap((action, position) => {
     const path = "rules." + index + ".actions." + position;
     return [path, ...(usesRole(action.kind) ? [path + ".roleId"] : []), ...(usesMessage(action.kind) ? [path + ".text.es", path + ".text.en"] : []), ...(action.kind === "NotifyAuthor" ? [path + ".includePdf"] : []),
-      ...(action.kind === "IssueDocument" ? [path + ".issuerId"] : [])];
+      ...(action.kind === "IssueDocument" ? [path + ".issuerId"] : []), ...(action.kind === "RequestApproval" ? [path + ".authorMayDecide", path + ".reasonOptional"] : [])];
   })]);
   const first = Object.keys(errors).find(path => errors[path].length > 0 && fields.includes(path));
   const index = first ? /^rules\.(\d+)\./.exec(first)?.[1] : undefined;

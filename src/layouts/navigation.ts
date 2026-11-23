@@ -79,6 +79,8 @@ export const administration: NavigationPanel = {
       { labelKey: "navigation.arca", to: "/configuracion/arca", icon: PreferencesIcon, permission: "arca.read" },
       // RC3-A: the installation's settings of WhatsApp, for whoever manages the settings, only with the module installed.
       { labelKey: "navigation.whatsappSettings", to: "/configuracion/whatsapp", icon: PreferencesIcon, permission: "settings.manage", feature: "whatsapp" },
+      // RC4-A: the numbers of the forms module, for whoever manages the settings, only with the module installed.
+      { labelKey: "navigation.formSettings", to: "/configuracion/formularios", icon: PreferencesIcon, permission: "settings.manage", feature: "forms" },
     ] },
   ],
 };

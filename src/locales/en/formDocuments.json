@@ -1,6 +1,7 @@
 {
   "title": "Received documents",
-  "help": "What arrives by WhatsApp for the forms that read documents. An unclassified or discarded document is deleted after 90 days, with its reading.",
+  "help": "What arrives by WhatsApp for the forms that read documents.",
+  "helpRetention": "An unclassified or discarded document is deleted after {{days}} days, with its reading.",
   "search": "Amount, CUIT or operation",
   "searchDigits": "Type at least 3 digits: an amount, a CUIT or an operation.",
   "segments": {
@@ -122,7 +123,7 @@
     "unknown": "The AI did not recognize it in any form that reads documents.",
     "reviewerBy": "{{person}} discarded it.",
     "reviewer": "Someone of the team discarded it.",
-    "expired": "Nobody reviewed it in 90 days: it expired.",
+    "expired": "Nobody reviewed it in time: it expired.",
     "duplicateOf": "It had already been loaded in {{number}}.",
     "duplicate": "The same document had already been received.",
     "unreadable": {
@@ -147,7 +148,7 @@
       "unseen": "The AI did not get to read it.",
       "reviewerBy": "{{person}} discarded it.",
       "reviewer": "Someone of the team discarded it.",
-      "expired": "Nobody reviewed it in 90 days: it expired.",
+      "expired": "Nobody reviewed it in time: it expired.",
       "duplicateOf_one": "Repeated: the same {{data}} as {{number}}.",
       "duplicateOf_other": "Repeated: the same {{data}} as {{number}}.",
       "duplicateRow": "Repeated: the same as row {{number}}.",

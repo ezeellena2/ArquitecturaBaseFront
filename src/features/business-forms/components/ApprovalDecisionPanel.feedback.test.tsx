@@ -90,6 +90,23 @@ it("explains the decision wait as help of the decision buttons and of the reject
   expect(decisions).toBe(1);
 });
 
+// RC4-A: an approval without «Exigir motivo al rechazar» rejects without a reason: the dialog says it is optional and sends none.
+it("rejects without a reason when the approval leaves it optional", async () => {
+  const bodies: unknown[] = [];
+  const task = { ...approvalTaskFixture(), reasonOptional: true };
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formapprovals.decide"] })),
+    http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(task)),
+    http.post("/api/forms/approvals/:id/decisions", async ({ request }) => { bodies.push(await request.json());
+      return HttpResponse.json({ taskId: approvalTaskId, recordId: task.recordId, revision: 2, state: "Rejected", decidedAtUtc: "2026-10-16T13:00:00Z",
+        decidedBy: { userId: approvalTaskId, displayName: "Ana" }, reason: null }); }));
+  renderWithProviders(<ApprovalDecisionPanel taskId={approvalTaskId}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Rechazar" }));
+  const dialog = await screen.findByRole("dialog", { name: "Rechazar VIS-00001" });
+  expect(within(dialog).getByRole("textbox", { name: "Motivo (opcional)" })).not.toBeRequired();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Rechazar" }));
+  await waitFor(() => expect(bodies).toEqual([{ expectedRevision: 1, decision: "Rejected" }]));
+});
+
 it("keeps a live task query when one of two panels leaves and purges it after permission revocation", async () => {
   const user = { ...currentUser, permissions: ["formapprovals.decide"] };
   server.use(http.get("/api/me", () => HttpResponse.json(user)), http.get("/api/forms/approvals/" + approvalTaskId, () => HttpResponse.json(approvalTaskFixture())));

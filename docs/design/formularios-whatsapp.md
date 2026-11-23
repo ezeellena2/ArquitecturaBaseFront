@@ -1092,3 +1092,29 @@ administra reglas. Del lienzo aparte
 - «Formularios», el menú lateral y «Filtros» no cambian.
 
 Falta la prueba manual, `test:visual` con una escena de la pestaña y pasar el tablero al lienzo del sistema visual.
+
+## Reglas fijas a Configuración: «Pedir aprobación» y Configuración › Formularios, RC4-A — 2026-11-22
+
+El usuario decidió el 2026-11-22, en el [inventario de reglas fijas](../../../ArquitecturaBase/docs/plans/2026-11-22-reglas-a-configuracion.md),
+RC4-A y la retención de documentos de RC1-A, y confirmó el mismo día los tableros del lienzo
+[Formularios: reglas a Configuración](https://claude.ai/artifact/AztsoQxhy2CW7DiZCbH4P1): AP1 y AP2 (las casillas; no son el
+AP1-A de «Por aprobar») y CF1 (la pantalla, también en el celular). Quedó programado el mismo día.
+
+- **AP1: «Pedir aprobación» con sus dos casillas.** Debajo de «Rol», dos `CheckboxField` con su ayuda en la (i): «Puede decidir
+  quien cargó» (sin marcar) y «Exigir motivo al rechazar» (marcada). Sólo viajan cuando cambian la regla de siempre
+  (`authorMayDecide` y `reasonOptional` en `true`) y nunca con otro tipo de acción. La regla plegada y el historial las
+  dicen como un dato más en un `Badge`: «Decide también quien cargó» y «Motivo opcional».
+- **AP2: el rechazo sin motivo obligatorio.** Con una tarea que trae `reasonOptional`, el diálogo de rechazar dice «Motivo
+  (opcional)», el campo no es obligatorio y rechazar sin escribir manda la decisión sin motivo; con texto, se recorta y se manda
+  como siempre. Sin la casilla, el diálogo no cambia.
+- **CF1: Configuración › Formularios** (`/configuracion/formularios`, «Administrar la configuración» y sólo con el módulo; en el
+  menú, después de las demás entradas de Configuración). Es el editor de Configuración general con dos zonas: «Archivos» (el
+  tamaño máximo por archivo, de 1 a 25 MiB) y «Documentos recibidos» (las relecturas por persona y día, desde cuántos documentos
+  parecidos se sugiere armar un formulario y los dos plazos, vencer los propuestos sin revisar y borrar los descartados). Cada
+  número dice su unidad al lado (corta en el celular) y su rango se comprueba al guardar y después en vivo, con «Elegí un número
+  entre 1 y 3.650.» con los miles del idioma. Guardar se apaga sin cambios; un 409 conserva lo escrito y «Revisar valores actuales»
+  compara lado a lado (`ComparisonTable`) antes de elegir; salir con cambios pide confirmar.
+- **La bandeja** dice en su ayuda a los cuántos días se borra un descartado (`discardedRetentionDays`) y el aviso de los parecidos
+  acepta grupos desde 2, el mínimo que admite la pantalla.
+
+La escena `formSettings` recorre CF1 con golden. Falta la prueba manual y pasar los tableros al lienzo del sistema visual.

@@ -1,0 +1,63 @@
+{
+  "title": "Forms",
+  "unavailable": "Forms settings unavailable",
+  "discard": "Discard",
+  "save": "Save changes",
+  "saving": "Saving…",
+  "sections": {
+    "files": "Files",
+    "documents": "Received documents"
+  },
+  "fields": {
+    "maxFileSizeMiB": "Maximum size per file",
+    "dailyRereadsPerAsker": "Re-reads per person and day",
+    "similarDocumentsToSuggest": "Suggest building a form from",
+    "proposedExpiryDays": "Expire the proposed ones not reviewed",
+    "discardedRetentionDays": "Delete the discarded ones"
+  },
+  "units": {
+    "maxFileSizeMiB": "MiB per photo or document when answering",
+    "dailyRereadsPerAsker": "documents, after “Build form with AI”",
+    "similarDocumentsToSuggest": "similar unclassified documents",
+    "proposedExpiryDays": "days waiting for the team",
+    "discardedRetentionDays": "days after being discarded"
+  },
+  "unitsShort": {
+    "maxFileSizeMiB": "MiB per photo or document",
+    "dailyRereadsPerAsker": "documents",
+    "similarDocumentsToSuggest": "similar documents",
+    "proposedExpiryDays": "days",
+    "discardedRetentionDays": "days"
+  },
+  "hints": {
+    "maxFileSizeMiB": "For each photo or document when answering, from {{min}} to {{max}} MiB; {{max}} MiB is WhatsApp's ceiling. In the app it applies at once; in WhatsApp, each form takes it when it is published again.",
+    "dailyRereadsPerAsker": "After “Build form with AI”, how many documents of whoever asked are read again a day with the published form, from {{min}} to {{max}}. The rest continue the next day.",
+    "similarDocumentsToSuggest": "The inbox proposes “Build form with AI” when there are at least this many similar unclassified documents, from {{min}} to {{max}}.",
+    "proposedExpiryDays": "A document waiting for the team that nobody passed or discarded within this term is discarded as expired. From {{min}} to {{max}} days.",
+    "discardedRetentionDays": "A discarded or unclassified document is deleted, with its copy and its reading, these days after it was discarded. From {{min}} to {{max}} days."
+  },
+  "validation": {
+    "range": "Choose a number between {{min}} and {{max}}."
+  },
+  "feedback": {
+    "saved": "We saved the forms settings.",
+    "uncertain": "We could not confirm the save. Review the current values before saving again.",
+    "conflict": "Someone else changed the forms settings. Review the current values.",
+    "failed": "We could not save the forms settings.",
+    "reviewFailed": "We could not read the current settings.",
+    "lateUncertain": "We could not confirm the save of the forms settings. Review the current values.",
+    "lateFailed": "We could not save the forms settings."
+  },
+  "review": {
+    "action": "Review current values",
+    "reading": "Reading…",
+    "pending": "First review the current values and choose what to keep.",
+    "title": "Review changes",
+    "setting": "Setting",
+    "current": "Currently saved",
+    "mine": "My draft",
+    "useCurrent": "Use current values",
+    "keepMine": "Keep my changes"
+  },
+  "errorTraceId": "Code to report: {{traceId}}"
+}

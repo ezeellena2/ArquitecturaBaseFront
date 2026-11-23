@@ -42,6 +42,22 @@ describe("issuing a document", () => {
   });
 });
 describe("rule preparation", () => {
+  // RC4-A: «Puede decidir quien cargó» and «Exigir motivo al rechazar» go only with «Pedir aprobación» and only when they change today's rule.
+  it("saves the choices of an approval only when they change today's rule and never with another kind", () => {
+    const approval = { ...newRuleAction("RequestApproval"), roleId: "0199a0c0-0000-7000-8000-000000000001" };
+    const plain = prepareRules([{ ...newRule(), actions: [approval] }], original, [column]).rules[0].actions[0];
+    expect(plain.authorMayDecide).toBeUndefined();
+    expect(plain.reasonOptional).toBeUndefined();
+    const chosen = prepareRules([{ ...newRule(), actions: [{ ...approval, authorMayDecide: true, reasonOptional: true }] }], original, [column]).rules[0].actions[0];
+    expect(chosen).toMatchObject({ authorMayDecide: true, reasonOptional: true });
+    const unchecked = prepareRules([{ ...newRule(), actions: [{ ...approval, authorMayDecide: false, reasonOptional: false }] }], original, [column]).rules[0].actions[0];
+    expect(unchecked.authorMayDecide).toBeUndefined();
+    expect(unchecked.reasonOptional).toBeUndefined();
+    const notice = withRuleActionKind({ ...approval, authorMayDecide: true, reasonOptional: true }, "NotifyRole");
+    const prepared = prepareRules([{ ...newRule(), actions: [{ ...notice, text: { es: "Llegó.", en: "" } }] }], original, [column]).rules[0].actions[0];
+    expect(prepared.authorMayDecide).toBeUndefined();
+    expect(prepared.reasonOptional).toBeUndefined();
+  });
   it("requires only the original message language and preserves the optional text", () => {
     const rule = { ...newRule(), actions: [{ ...newRuleAction("NotifyAuthor"), text: { es: " Recibimos {número}. ", en: "" } }] };
     expect(prepareRules([rule], original, [column])).toMatchObject({ issues: [], rules: [{ actions: [{ text: { es: "Recibimos {número}.", en: "" } }] }] });

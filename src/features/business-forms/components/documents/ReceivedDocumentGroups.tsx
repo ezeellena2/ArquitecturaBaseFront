@@ -6,9 +6,10 @@ import type { ReceivedDocumentGroup } from "../../api/receivedDocuments";
 import { documentFormProposalPath } from "../../documentFormProposal";
 
 /**
- * The notice of similar documents (DOC6), above the inbox's sheet: each topic of «Formularios que faltan» that three or more unclassified
- * documents share under the page's other filters, the largest first, with how many they are and «Armar formulario con la IA», which
- * opens its page under a new request. Its owner shows it only to whoever reviews documents and designs forms.
+ * The notice of similar documents (DOC6), above the inbox's sheet: each topic of «Formularios que faltan» that at least «Sugerir armar un
+ * formulario desde» unclassified documents share (Configuración › Formularios), under the page's other filters, the largest first, with
+ * how many they are and «Armar formulario con la IA», which opens its page under a new request. Its owner shows it only to whoever
+ * reviews documents and designs forms.
  */
 export function ReceivedDocumentGroups({ groups }: { groups: readonly ReceivedDocumentGroup[] }) {
   const { t } = useTranslation("formDocuments");

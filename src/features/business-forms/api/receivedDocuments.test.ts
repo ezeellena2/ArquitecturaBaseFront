@@ -45,13 +45,15 @@ describe("the guards", () => {
     expect(readReceivedDocument(unlisted({ reason: "missingData", datum: "Provincia" })).proposal!.candidates[0]!.values[0]!.optionsUnavailable).toEqual({ reason: "missingData", datum: "Provincia" });
   });
 
-  // DOC6 (task 14): the notice of similar documents, up to five topics of «Formularios que faltan» that three or more unclassified
-  // documents share under the page's other filters, the largest first, each with how many and the newest of them, up to a request's 20.
+  // DOC6 (task 14): the notice of similar documents, up to five topics of «Formularios que faltan» that at least «Sugerir armar un
+  // formulario desde» unclassified documents share (Configuración › Formularios, RC4-A: 3 by default, never under 2) under the page's
+  // other filters, the largest first, each with how many and the newest of them, up to a request's 20.
   const topicId = (n: number) => `0199b0c0-0000-7000-8000-${String(950 + n).padStart(12, "0")}`;
   const documentIds = (count: number) => Array.from({ length: count }, (_, n) => `0199b0c0-0000-7000-8000-${String(1000 + n).padStart(12, "0")}`);
   const group = { topic: { id: topicId(1), name: "tickets de combustible" }, count: 3, documentIds: [receivedDocumentIds.unclassified, receivedDocumentIds.other, documentIds(1)[0]] };
   it("read the notice of similar documents, also with none", () => {
-    const groups = [{ topic: { id: topicId(2), name: "remitos de entrega" }, count: 25, documentIds: documentIds(20) }, group];
+    const groups = [{ topic: { id: topicId(2), name: "remitos de entrega" }, count: 25, documentIds: documentIds(20) }, group,
+      { topic: { id: topicId(3), name: "facturas de luz" }, count: 2, documentIds: documentIds(2) }];
     expect(readReceivedDocuments({ ...page, groups }).groups).toEqual(groups);
     expect(readReceivedDocuments(page).groups).toEqual([]);
   });
@@ -95,7 +97,7 @@ describe("the guards", () => {
     ["filters that do not say whether their lists were cut", { ...page, facets: { forms: page.facets.forms, senders: page.facets.senders } }],
     ["no notice of similar documents", withoutGroups],
     ["a null notice of similar documents", { ...page, groups: null }],
-    ["a group of two documents", { ...page, groups: [{ ...group, count: 2 }] }],
+    ["a group of one document", { ...page, groups: [{ ...group, count: 1, documentIds: documentIds(1) }] }],
     ["a group of a count that is not whole", { ...page, groups: [{ ...group, count: 3.5 }] }],
     ["a group without its newest documents", { ...page, groups: [{ ...group, documentIds: [] }] }],
     ["a group with more documents than a request takes", { ...page, groups: [{ ...group, count: 21, documentIds: documentIds(21) }] }],

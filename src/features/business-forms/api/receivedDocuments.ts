@@ -62,12 +62,15 @@ const facets = z.strictObject({
   formsTruncated: z.boolean(), sendersTruncated: z.boolean(),
 });
 // DOC6 (task 14): a topic of «Formularios que faltan», by the name it was noted with, and the notice of similar documents: up to five
-// topics that three or more unclassified documents share under the page's other filters (never its state's), the largest first, each
-// with how many they are and the newest of them, up to the 20 a request takes. Always present, possibly empty.
+// topics that at least «Sugerir armar un formulario desde» unclassified documents share (Configuración › Formularios, RC4-A: 3 by
+// default, never under 2) under the page's other filters (never its state's), the largest first, each with how many they are and the
+// newest of them, up to the 20 a request takes. Always present, possibly empty.
 const topic = z.strictObject({ id: guid, name: z.string().min(1).max(120) });
-const group = z.strictObject({ topic, count: z.number().int().min(3), documentIds: z.array(guid).min(1).max(20).refine(unique) });
+const group = z.strictObject({ topic, count: z.number().int().min(2), documentIds: z.array(guid).min(1).max(20).refine(unique) });
 const groups = z.array(group).max(5).refine(values => unique(values.map(value => value.topic.id)));
-const page = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, counts, facets, groups })
+// discardedRetentionDays: «Borrar los descartados» of Configuración › Formularios (RC1-A), for the help of the inbox.
+const page = z.strictObject({ items: z.array(item), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: count, counts, facets, groups,
+  discardedRetentionDays: z.number().int().min(1).max(3650) })
   .refine(value => value.items.length <= value.pageSize && unique(value.items.map(row => row.id)));
 const menuCounts = z.strictObject({ forReview: count, unclassified: count, total: count }).refine(value => value.total === value.forReview + value.unclassified);
 

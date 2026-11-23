@@ -148,6 +148,11 @@ const branches: RouteObject[] = [
                     path: "/configuracion/whatsapp",
                     lazy: async () => ({ Component: (await import("@/features/whatsapp/pages/WhatsAppSettingsPage")).WhatsAppSettingsPage }),
                   },
+                  // RC4-A: Configuración › Formularios, with the same permission as General; the menu shows it only with the module.
+                  {
+                    path: "/configuracion/formularios",
+                    lazy: async () => ({ Component: (await import("@/features/business-forms/pages/FormSettingsPage")).FormSettingsPage }),
+                  },
                   ...["idioma", "zona-horaria", "listados", "registro"].map(topic => ({
                     path: `/configuracion/${topic}`, element: <Navigate to="/configuracion" replace />,
                   })),

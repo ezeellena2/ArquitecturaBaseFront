@@ -6,8 +6,10 @@ const guid = z.string().uuid();
 const text = z.record(z.string().refine(value => value === "es" || value === "en"), z.string());
 const author = z.strictObject({ userId: guid, displayName: z.string().nullable() });
 const condition = z.strictObject({ fieldId: guid, operator: z.enum(["in", "anyOf", "contains", "equals", "gte", "lte", "answered", "unanswered", "notAsked"]), values: z.array(z.string()).nullable() });
-// The issuer goes only in an «IssueDocument» action: the server omits it in the others.
-const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean(), issuerId: z.string().min(1).optional() });
+// The issuer goes only in an «IssueDocument» action: the server omits it in the others. The choices of «RequestApproval» (RC4-A) come only
+// when true.
+const action = z.strictObject({ id: guid, kind: z.enum(ruleActionKinds), roleId: guid.nullable(), text: text.nullable(), includePdf: z.boolean(), issuerId: z.string().min(1).optional(),
+  authorMayDecide: z.literal(true).optional(), reasonOptional: z.literal(true).optional() });
 const issuer = z.strictObject({ id: z.string().min(1), name: text, resultFields: z.array(z.strictObject({ key: z.string().min(1), label: text, kind: z.enum(["text", "date", "number", "amount"]) })) });
 const rule = z.strictObject({ id: guid, event: z.enum(ruleEvents), conditions: z.array(condition), actions: z.array(action) });
 const ruleSet = z.strictObject({ id: guid.nullable(), definitionId: guid, revision: z.number().int().nonnegative(), originalCulture: z.enum(["es", "en"]), rules: z.array(rule), createdAtUtc: z.iso.datetime().nullable(), author: author.nullable() });

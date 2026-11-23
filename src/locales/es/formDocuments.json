@@ -1,6 +1,7 @@
 {
   "title": "Documentos recibidos",
-  "help": "Lo que llega por WhatsApp a los formularios con lectura de documentos. Un documento sin clasificar o descartado se borra a los 90 días, con su lectura.",
+  "help": "Lo que llega por WhatsApp a los formularios con lectura de documentos.",
+  "helpRetention": "Un documento sin clasificar o descartado se borra a los {{days}} días, con su lectura.",
   "search": "Monto, CUIT u operación",
   "searchDigits": "Escribí al menos 3 números: un monto, un CUIT o una operación.",
   "segments": {
@@ -122,7 +123,7 @@
     "unknown": "La IA no lo reconoció en ningún formulario con lectura.",
     "reviewerBy": "Lo descartó {{person}}.",
     "reviewer": "Lo descartó alguien del equipo.",
-    "expired": "Nadie lo revisó en 90 días: venció.",
+    "expired": "Nadie lo revisó a tiempo: venció.",
     "duplicateOf": "Ya se había cargado en {{number}}.",
     "duplicate": "Ya se había recibido el mismo documento.",
     "unreadable": {
@@ -147,7 +148,7 @@
       "unseen": "La IA no llegó a leerla.",
       "reviewerBy": "La descartó {{person}}.",
       "reviewer": "La descartó alguien del equipo.",
-      "expired": "Nadie la revisó en 90 días: venció.",
+      "expired": "Nadie la revisó a tiempo: venció.",
       "duplicateOf_one": "Repetida: el mismo dato {{data}} que {{number}}.",
       "duplicateOf_other": "Repetida: los mismos datos {{data}} que {{number}}.",
       "duplicateRow": "Repetida: igual a la fila {{number}}.",

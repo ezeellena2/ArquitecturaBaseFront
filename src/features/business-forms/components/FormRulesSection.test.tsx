@@ -641,6 +641,33 @@ it("shows a save error of the translation under the original message, with its l
   await waitFor(() => expect(message).toHaveFocus());
   expect(notify).not.toHaveBeenCalled();
 });
+// RC4-A: «Pedir aprobación» shows its two choices below the role, saves them only when they change today's rule and reads them as tags.
+it("saves who may decide and whether a rejection needs a reason with the approval and reads them back as tags", async () => {
+  setup();
+  const saved = vi.fn();
+  server.use(http.post("/api/forms/definitions/:id/rules", async ({ request }) => {
+    const body = await request.json() as { rules: FormRule[] };
+    saved(body);
+    return HttpResponse.json({ ...initial(), id: crypto.randomUUID(), revision: 1, rules: body.rules, createdAtUtc: "2026-10-16T12:00:00Z", author: { userId: actor, displayName: "Ana" } });
+  }));
+  renderWithProviders(<FormRulesSection prefix="VIS" definitionId={id} definitionRevision={1} scope={scope} onDirtyChange={vi.fn()}/>);
+  await userEvent.click(await screen.findByRole("button", { name: "Agregar regla" }));
+  await userEvent.click(screen.getByRole("button", { name: "Agregar acción" }));
+  await pick(/^Acción 1 /, "Pedir aprobación a una persona con un rol");
+  await pick(/^Rol /, "Supervisor");
+  const author = screen.getByRole("checkbox", { name: "Puede decidir quien cargó" });
+  const reason = screen.getByRole("checkbox", { name: "Exigir motivo al rechazar" });
+  expect(author).not.toBeChecked();
+  expect(reason).toBeChecked();
+  await userEvent.click(author);
+  await userEvent.click(reason);
+  await userEvent.click(screen.getByRole("button", { name: "Guardar reglas" }));
+  await waitFor(() => expect(saved).toHaveBeenCalledWith(expect.objectContaining({ rules: [expect.objectContaining({ actions: [
+    expect.objectContaining({ kind: "RequestApproval", roleId: actor, authorMayDecide: true, reasonOptional: true })] })] })));
+  await userEvent.click(await screen.findByRole("button", { name: "Listo" }));
+  expect(await screen.findByText("Decide también quien cargó")).toBeInTheDocument();
+  expect(screen.getByText("Motivo opcional")).toBeInTheDocument();
+});
 // A limit or a rule that is not obvious is the reason of the disabled add button: tooltip and accessible description.
 it("explains why no action can follow an approval request", async () => {
   setup();

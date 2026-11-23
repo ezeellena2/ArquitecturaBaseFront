@@ -1,0 +1,63 @@
+{
+  "title": "Formularios",
+  "unavailable": "Configuración de Formularios no disponible",
+  "discard": "Descartar",
+  "save": "Guardar cambios",
+  "saving": "Guardando…",
+  "sections": {
+    "files": "Archivos",
+    "documents": "Documentos recibidos"
+  },
+  "fields": {
+    "maxFileSizeMiB": "Tamaño máximo por archivo",
+    "dailyRereadsPerAsker": "Relecturas por persona y día",
+    "similarDocumentsToSuggest": "Sugerir armar un formulario desde",
+    "proposedExpiryDays": "Vencer los propuestos sin revisar",
+    "discardedRetentionDays": "Borrar los descartados"
+  },
+  "units": {
+    "maxFileSizeMiB": "MiB por foto o documento al responder",
+    "dailyRereadsPerAsker": "documentos, después de «Armar formulario con la IA»",
+    "similarDocumentsToSuggest": "documentos parecidos sin clasificar",
+    "proposedExpiryDays": "días esperando al equipo",
+    "discardedRetentionDays": "días después de descartados"
+  },
+  "unitsShort": {
+    "maxFileSizeMiB": "MiB por foto o documento",
+    "dailyRereadsPerAsker": "documentos",
+    "similarDocumentsToSuggest": "documentos parecidos",
+    "proposedExpiryDays": "días",
+    "discardedRetentionDays": "días"
+  },
+  "hints": {
+    "maxFileSizeMiB": "Para cada foto o documento al responder, de {{min}} a {{max}} MiB; {{max}} MiB es el techo de WhatsApp. En la app vale enseguida; en WhatsApp, cada formulario lo toma al volver a publicarse.",
+    "dailyRereadsPerAsker": "Después de «Armar formulario con la IA», cuántos documentos de quien lo pidió se vuelven a leer por día con el formulario publicado, de {{min}} a {{max}}. Los demás siguen al día siguiente.",
+    "similarDocumentsToSuggest": "La bandeja propone «Armar formulario con la IA» cuando hay al menos esta cantidad de documentos parecidos sin clasificar, de {{min}} a {{max}}.",
+    "proposedExpiryDays": "Un documento que espera al equipo y nadie pasó ni descartó en este plazo queda descartado como vencido. De {{min}} a {{max}} días.",
+    "discardedRetentionDays": "Un documento descartado o sin clasificar se borra, con su copia y su lectura, a los días de haberse descartado. De {{min}} a {{max}} días."
+  },
+  "validation": {
+    "range": "Elegí un número entre {{min}} y {{max}}."
+  },
+  "feedback": {
+    "saved": "Guardamos la configuración de Formularios.",
+    "uncertain": "No pudimos confirmar el guardado. Revisá los valores actuales antes de volver a guardar.",
+    "conflict": "Otra persona cambió la configuración de Formularios. Revisá los valores actuales.",
+    "failed": "No pudimos guardar la configuración de Formularios.",
+    "reviewFailed": "No pudimos consultar la configuración actual.",
+    "lateUncertain": "No pudimos confirmar el guardado de la configuración de Formularios. Revisá los valores actuales.",
+    "lateFailed": "No pudimos guardar la configuración de Formularios."
+  },
+  "review": {
+    "action": "Revisar valores actuales",
+    "reading": "Consultando…",
+    "pending": "Primero revisá los valores actuales y elegí qué conservar.",
+    "title": "Revisar cambios",
+    "setting": "Ajuste",
+    "current": "Guardado actualmente",
+    "mine": "Mi borrador",
+    "useCurrent": "Usar valores actuales",
+    "keepMine": "Conservar mis cambios"
+  },
+  "errorTraceId": "Código para reportar: {{traceId}}"
+}

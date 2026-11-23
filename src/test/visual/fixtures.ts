@@ -390,8 +390,10 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A) and Configuración has its WhatsApp
     // (RC3-A); `forms-publication-without-channels` is the template without a form channel (SA5).
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
-      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
+      ...scenario?.endsWith("-folders") || scenario === "form-settings" ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
     if (path === "/api/settings") return json(settings);
+    // RC4-A: Configuración › Formularios with today's values, as nobody saved them yet.
+    if (path === "/api/forms/settings") return json({ maxFileSizeMiB: 25, dailyRereadsPerAsker: 5, similarDocumentsToSuggest: 3, proposedExpiryDays: 90, discardedRetentionDays: 90, revision: 0 });
     if (path === "/api/roles/paged") return json(pageOf(roles));
     if (path === "/api/roles") return json(roles);
     if (path.startsWith("/api/roles/")) return json(roles.find(role => role.id === path.split("/").at(-1)) ?? null);

@@ -178,7 +178,7 @@ function ReceivedDocuments() {
   const refreshing = list.isPlaceholderData || list.isError && list.isFetching;
 
   return <div ref={container} tabIndex={-1} className="relative h-full min-h-0 outline-none">
-    <div inert={mobile && !!documentId} className="h-full overflow-y-auto"><Page title={t("title")} help={t("help")}>
+    <div inert={mobile && !!documentId} className="h-full overflow-y-auto"><Page title={t("title")} help={data ? t("help") + " " + t("helpRetention", { days: data.discardedRetentionDays }) : t("help")}>
       <FilterBar className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start gap-2">
           <div className="flex w-full flex-col gap-1 sm:w-72">
