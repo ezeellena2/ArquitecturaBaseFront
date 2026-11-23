@@ -52,7 +52,7 @@ export function parseFormOutgoing(value: unknown, request: FormMessageRequest, a
 }
 const base = "/api/whatsapp/chats";
 export async function listChatForms(id: string, page: number, search: string, signal?: AbortSignal) {
-  const query = new URLSearchParams({page:String(page),pageSize:"4",search});
+  const query = new URLSearchParams({page:String(page),pageSize:"20",search});
   return parseChatForms(await api.get<unknown>(`${base}/${id}/forms?${query}`,{signal}));
 }
 export async function sendFormMessage(id: string, request: FormMessageRequest, actor: string) {

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { resetHttpClient } from "@/shared/api/httpClient";
-import { parseChatFormPreparation, parseChatForms, parseFormOutgoing, readFormMetadata, sendFormMessage, recoverFormMessage } from "./forms";
+import { listChatForms, parseChatFormPreparation, parseChatForms, parseFormOutgoing, readFormMetadata, sendFormMessage, recoverFormMessage } from "./forms";
 const contactId = "019abcde-1000-7000-8000-000000000010";
 const definitionId = "019abcde-1000-7000-8000-000000000001";
 const versionId = "019abcde-1000-7000-8000-000000000002";
@@ -60,6 +60,16 @@ describe("Chat forms DTO contract", () => {
   it("accepts an empty selector when recipient eligibility disappeared", () => {
     const unavailable = { ...forms, page: { ...forms.page, items: [], totalCount: 0, totalPages: 0 }, recipientCulture: null, recipientContextRevision: null };
     expect(parseChatForms(unavailable)).toEqual(unavailable);
+  });
+  // «Mandar formulario» chooses in the piece, which reads the server in pages of 20 like the other lists that search there.
+  it("asks for the forms of a chat in pages of 20", async () => {
+    let query: Record<string, string> | undefined;
+    server.use(http.get(`/api/whatsapp/chats/${contactId}/forms`, ({ request }) => {
+      query = Object.fromEntries(new URL(request.url).searchParams);
+      return HttpResponse.json(forms);
+    }));
+    await listChatForms(contactId, 2, "vis");
+    expect(query).toEqual({ page: "2", pageSize: "20", search: "vis" });
   });
   it("accepts the Api recovery path and a recovered receipt with no supplied path", () => {
     expect(parseFormOutgoing(receipt, request, "actor", contactId)).toEqual(receipt);
