@@ -135,15 +135,17 @@ export function DataTable<TRow>({
           const end = column.numeric || column.align === "right";
           return (
             <TableHead key={column.id} scope="col" aria-sort={direction} numeric={column.numeric}
-              className={cn("p-0 hover:bg-[var(--color-surface-header-hover)] has-[:focus-visible]:bg-[var(--color-surface-header-hover)]", column.align === "right" && "text-right")}>
-              {/* El botón ocupa la celda y hereda la tipografía del encabezado; su nombre es el título, sin tooltip. El tono
-                  va en la celda, debajo de la línea entre columnas. Con puntero táctil el encabezado mide 44 px
+              className={cn("relative hover:bg-[var(--color-surface-header-hover)] has-[:focus-visible]:bg-[var(--color-surface-header-hover)]", column.align === "right" && "text-right")}>
+              {/* El título queda con el margen y el alto de cualquier encabezado, y la capa del botón (`after:`) cubre toda la
+                  celda: se toca en cualquier punto y el foco la marca entera. Un botón del alto de la celda la estiraba medio
+                  píxel por la línea de abajo, y su margen corría el borde de las cifras. Su nombre es el título, sin tooltip;
+                  el tono va en la celda, debajo de la línea entre columnas. Con puntero táctil el encabezado mide 44 px
                   (`index.css`, por `data-slot="table-sort"`). */}
               <button
                 type="button"
                 data-slot="table-sort"
                 onClick={() => onSortChange(column.id, column.sortKind)}
-                className={cn(headerText, "group/sort flex h-[var(--height-table-header)] w-full items-center gap-1.5 px-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]", end && "justify-end text-right")}
+                className={cn(headerText, "group/sort inline-flex items-center gap-1.5 align-middle outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[var(--color-brand-600)]")}
               >
                 {end ? <SortMark direction={direction} /> : null}
                 <span>{column.header}</span>

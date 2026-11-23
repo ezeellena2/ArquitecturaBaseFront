@@ -217,7 +217,7 @@ describe("DataTable", () => {
     const [arrow, title] = [...button.children];
     expect(arrow!.innerHTML).toBe(drawing(ArrowDownIcon));
     expect(title).toHaveTextContent(/^Count$/);
-    expect(button).toHaveClass("justify-end");
+    expect(screen.getByRole("columnheader", { name: "Count" })).toHaveClass("text-right");
     await userEvent.click(button);
     expect(onSortChange).toHaveBeenCalledWith("count", "number");
   });

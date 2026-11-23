@@ -176,6 +176,17 @@ test("listing and editor share actual header typography and row sizes", async ({
   }
 });
 
+test("the header of a column that orders changes the order from anywhere in its cell", async ({ page }) => {
+  // OT1-C: the title keeps the padding and height of any header, and the button's layer covers the whole cell.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openScreen(page, "/usuarios");
+  const header = page.locator("th[aria-sort]").first();
+  const before = await header.getAttribute("aria-sort");
+  const box = (await header.boundingBox())!;
+  await page.mouse.click(box.x + box.width - 3, box.y + 3);
+  await expect(header).not.toHaveAttribute("aria-sort", before!);
+});
+
 test("table scrolling stays inside the table on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await openScreen(page, "/roles");
