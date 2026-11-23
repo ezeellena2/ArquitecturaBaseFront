@@ -1035,6 +1035,33 @@ describe("Forms order", () => {
     await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-name"));
   });
 
+  // FU2-A shows «Por aprobar» to whoever decides: it orders like every number, the most waiting first. «Con algo por aprobar»
+  // mixes active and deactivated forms, so «Estado» does not order there, as among the deactivated.
+  const deciding = [...withResponses, "formapprovals.decide"];
+  it("orders «Por aprobar» for whoever decides, the most waiting first", async () => {
+    const requests = sortRequests(deciding);
+    renderRouteWithProviders("/formularios?publicationFilter=Pending");
+    await screen.findByRole("table");
+    await userEvent.click(within(header("Por aprobar")).getByRole("button", { name: "Por aprobar" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-pendingDecisionCount"));
+  });
+
+  it("leaves the order by «Por aprobar» out for whoever does not decide, who does not see it", async () => {
+    const requests = sortRequests();
+    renderRouteWithProviders("/formularios?sort=-pendingDecisionCount");
+    await screen.findByRole("table");
+    expect(within(screen.getByRole("table")).queryByRole("columnheader", { name: "Por aprobar" })).not.toBeInTheDocument();
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+  });
+
+  it("does not order «Estado» in «Con algo por aprobar», which mixes deactivated forms, and leaves that order out", async () => {
+    const requests = sortRequests(deciding);
+    renderRouteWithProviders("/formularios?publicationFilter=Pending&sort=displayState");
+    await screen.findByRole("table");
+    expect(within(header("Estado")).queryByRole("button")).not.toBeInTheDocument();
+    expect(requests.at(-1)?.has("sort")).toBe(false);
+  });
+
   it("changes the order from «Ordenar por», last in the bar, and the actions do not order", async () => {
     const requests = sortRequests();
     const { router } = renderRouteWithProviders("/formularios?sort=lastChangedBy&publicationFilter=Published");

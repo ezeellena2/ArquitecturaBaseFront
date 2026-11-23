@@ -3,7 +3,7 @@ import type { DraftEditorValue, DraftWriteBody, FormDraft, FormPublicationWriteB
 import { formId, readFormDeactivation, readFormDeactivationPreview, readFormPreview, publicationPath, readFormPublicationReceipt, readFormPublicationStatus, readFormPublicationCheck, readFormCommit, readFormDetail, readFormFacets, readFormPage, readFormRecovery, recoveryPath } from "./response";
 
 /// The fields the server orders the list by (OT1-C), each the id of its column.
-export type FormSortField = "name" | "questionCount" | "displayState" | "completedIn" | "activeVersion" | "responseCount" | "lastChangedAtUtc" | "lastChangedBy";
+export type FormSortField = "name" | "questionCount" | "displayState" | "completedIn" | "activeVersion" | "pendingDecisionCount" | "responseCount" | "lastChangedAtUtc" | "lastChangedBy";
 export interface FormListQuery {
   readonly page: number;
   readonly pageSize: number;

@@ -72,11 +72,12 @@ export function FormsPage() {
   const channels = presentation.data?.installedFeatures ? presentation.data.installedFeatures.includes("form-channels") : true;
   // Every column with a datum orders in the server (OT1-C), with the backend's field as its id. Two show nothing to order by and
   // the server keeps the usual order for them: «Respuestas» without «Ver respuestas», where every row says «—», and «Estado»
-  // among the deactivated, where it is the withdrawal from the channel. An order this view does not offer is left out.
+  // among the deactivated and in «Con algo por aprobar», which mixes them, where it shows the withdrawal from the channel. An order
+  // this view does not offer is left out.
   const sortsByResponses = scope.permissions.includes("formrecords.read");
-  const sortsByState = publicationFilter !== "Deactivated";
+  const sortsByState = publicationFilter !== "Deactivated" && publicationFilter !== "Pending";
   const sortFields: FormSortField[] = ["name", "questionCount", ...(sortsByState ? ["displayState" as const] : []), ...(channels ? ["completedIn" as const] : []),
-    "activeVersion", ...(sortsByResponses ? ["responseCount" as const] : []), "lastChangedAtUtc", "lastChangedBy"];
+    "activeVersion", ...(canDecide ? ["pendingDecisionCount" as const] : []), ...(sortsByResponses ? ["responseCount" as const] : []), "lastChangedAtUtc", "lastChangedBy"];
   const sort = sortFields.flatMap(field => [field, `-${field}` as const]).find(value => value === pagination.sort);
   const query: FormListQuery = { page: Number.isSafeInteger(pagination.page) && pagination.page > 0 ? pagination.page : 1,
     pageSize: Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1 && pagination.pageSize <= 100 ? pagination.pageSize : presentation.data?.defaultPageSize ?? 20,
@@ -125,7 +126,7 @@ export function FormsPage() {
     } }] : []),
     { id: "activeVersion", header: t("activeVersionColumn"), sortable: true, sortKind: "number", numeric: true, cell: row => row.activeVersionNumber ?? "—" },
     // FU2-A: what awaits the decision of whoever looks, as the number of the menu; it opens the sheet, which starts on «Por aprobar».
-    ...(canDecide ? [{ sortable: false as const, id: "pendingDecisionCount", header: t("overview.pendingColumn"), numeric: true, cell: (row: Row) => row.pendingDecisionCount
+    ...(canDecide ? [{ id: "pendingDecisionCount", header: t("overview.pendingColumn"), sortable: true as const, sortKind: "number" as const, numeric: true, cell: (row: Row) => row.pendingDecisionCount
       ? <Link to={`/formularios/${row.id}/respuestas`} aria-label={t("overview.pendingFor", { name: administrativeName(row.name, scope.culture), count: row.pendingDecisionCount })} className="font-medium text-[var(--color-brand-700)] underline">{row.pendingDecisionCount}</Link> : "—" }] : []),
     // The number of responses opens the sheet of the form (FU2-A); a form never published has none to open.
     { id: "responseCount", header: t("responseCountColumn"), ...(sortsByResponses ? { sortable: true as const, sortKind: "number" as const } : { sortable: false as const }), numeric: true, cell: row => row.lifecycle.responseCount !== null && row.activeVersionNumber !== null
