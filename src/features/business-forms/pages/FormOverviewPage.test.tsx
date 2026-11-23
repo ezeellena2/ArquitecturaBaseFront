@@ -222,7 +222,7 @@ describe("MF1 form overview", () => {
   // OT1-C (2026-11-22): every column orders in the server, by its header and by «Ordenar por», with the same `sort`.
   it("orders by a header in its useful direction, back on the first page, and sends the order to the server", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
-    const { router } = renderRouteWithProviders("/formularios/respuestas?page=2&pageSize=20&search=visita");
+    const { router } = renderRouteWithProviders("/formularios?page=2&pageSize=20&search=visita");
     const table = await screen.findByRole("table");
     // Without an order chosen, the usual one is composite: no arrow, and the button says «Ordenar por».
     expect(requests.at(-1)?.searchParams.has("sort")).toBe(false);
@@ -248,7 +248,7 @@ describe("MF1 form overview", () => {
     ["Última respuesta", "lastResponseNumber"], ["Recibida", "-lastSubmittedAtUtc"], ["Estado", "lastResponseState"],
   ])("orders «%s» by the server field %s", async (header, sort) => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
-    renderRouteWithProviders("/formularios/respuestas");
+    renderRouteWithProviders("/formularios");
     const table = await screen.findByRole("table");
     await userEvent.click(within(within(table).getByRole("columnheader", { name: header })).getByRole("button", { name: header }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe(sort));
@@ -256,7 +256,7 @@ describe("MF1 form overview", () => {
 
   it("names the order of whoever only loads with their own columns", async () => {
     const { requests } = setup(["formrecords.create"]);
-    renderRouteWithProviders("/formularios/respuestas?sort=-lastSubmittedAtUtc");
+    renderRouteWithProviders("/formularios?sort=-lastSubmittedAtUtc");
     const table = await screen.findByRole("table");
     expect(requests.at(-1)?.searchParams.get("sort")).toBe("-lastSubmittedAtUtc");
     expect(within(table).getByRole("columnheader", { name: "Recibida" })).toHaveAttribute("aria-sort", "descending");
@@ -267,7 +267,7 @@ describe("MF1 form overview", () => {
 
   it("changes the order from «Ordenar por», which moves the arrow of the header", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
-    const { router } = renderRouteWithProviders("/formularios/respuestas?sort=name&pendingOnly=true");
+    const { router } = renderRouteWithProviders("/formularios?sort=name&publicationFilter=Pending");
     await screen.findByRole("table");
     expect(requests.at(-1)?.searchParams.get("sort")).toBe("name");
     const trigger = screen.getByRole("button", { name: "Ordenar por: Formulario, de la A a la Z" });
@@ -276,7 +276,7 @@ describe("MF1 form overview", () => {
     const menu = await screen.findByRole("menu");
     await userEvent.click(within(menu).getByRole("menuitemradio", { name: "Recibida" }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("-lastSubmittedAtUtc"));
-    expect(new URLSearchParams(router.state.location.search).get("pendingOnly")).toBe("true");
+    expect(new URLSearchParams(router.state.location.search).get("publicationFilter")).toBe("Pending");
     // The list stays open: the table behind it is out of the accessibility tree until it closes.
     await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la más antigua a la más reciente" }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("sort")).toBe("lastSubmittedAtUtc"));
@@ -288,7 +288,7 @@ describe("MF1 form overview", () => {
 
   it("leaves out an order the server does not know", async () => {
     const { requests } = setup(["formrecords.read"]);
-    renderRouteWithProviders("/formularios/respuestas?sort=-secret");
+    renderRouteWithProviders("/formularios?sort=-secret");
     await screen.findByRole("table");
     expect(requests.at(-1)?.searchParams.has("sort")).toBe(false);
     expect(screen.getByRole("button", { name: "Ordenar por" })).toBeVisible();
