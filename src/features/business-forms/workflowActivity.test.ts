@@ -148,6 +148,15 @@ describe("the activity, row by row (VF2-A)", () => {
     expect(workflowActivity(responseDetailFixture(), flow({ actions: [notice, message] }), es)[0].rows.map(item => item.what)).not.toContain("Avisar a las personas con un rol");
   });
 
+  it("says the role of a notice in «Detalle» of each person, unless what happened to their send says more", () => {
+    const marcos = recipient("Marcos Gil", { deliveredAtUtc: at("02") });
+    const juan = recipient("Juan Paz", { state: "Failed", reason: "No tiene el WhatsApp vinculado.", canRetry: true });
+    const notice = action({ kind: "NotifyRole", roleName: "Agrónomo", recipients: [marcos, juan] });
+    const rows = workflowActivity(responseDetailFixture(), flow({ actions: [notice] }), es)[0].rows.filter(item => item.key.startsWith("recipient:"));
+
+    expect(rows.map(cells).map(row => row[5])).toEqual(["Rol Agrónomo", "No tiene el WhatsApp vinculado."]);
+  });
+
   it("keeps an unconfirmed notice with Consultar, Resolver envío on its person and the human review as a row of its own", () => {
     const beto = recipient("Beto", { state: "Uncertain", canReview: true });
     const luz = { userId: id(9), displayName: "Luz" };

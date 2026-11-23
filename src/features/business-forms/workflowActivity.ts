@@ -113,7 +113,10 @@ export function workflowActivity(record: ResponseDetail, workflow: ResponseWorkf
       const state = recipient.readAtUtc ? { text: t("workflow.read"), tone: "outline" as const } : recipient.deliveredAtUtc ? { text: t("workflow.delivered"), tone: "outline" as const }
         : { text: t("workflow.recipientStates." + recipient.state), tone: recipientTone(recipient.state) };
       facts.push({ key: "recipient:" + action.id + ":" + recipient.user.userId, atUtc, what: t(action.kind === "NotifyAuthor" ? "detail.authorNotified" : "detail.notified"),
-        who: nameOf(recipient.user), channel: channelOf(recipient.channelId), detail: recipient.reason, state, actions: control ? [{ kind: control, action, recipient }] : [] });
+        // The role of a notice goes in «Detalle» unless what happened to the send says more (VF2-A).
+        who: nameOf(recipient.user), channel: channelOf(recipient.channelId),
+        detail: recipient.reason ?? (action.kind === "NotifyRole" && action.roleName ? t("detail.role", { role: action.roleName }) : null),
+        state, actions: control ? [{ kind: control, action, recipient }] : [] });
       if (recipient.review) facts.push({ key: "review:" + action.id + ":" + recipient.user.userId, atUtc: recipient.review.reviewedAtUtc,
         what: t(recipient.review.wasSent ? "detail.reviewedSent" : "detail.reviewedNotSent"), whatHint: t("workflow.humanReviewHint"), who: nameOf(recipient.review.reviewedBy), channel: app });
     }
