@@ -1178,11 +1178,8 @@
     "confirmSent": "Confirmar que salió",
     "confirmNotSent": "Confirmar que no salió",
     "confirming": "Confirmando…",
-    "reviewSent": "{{name}} indicó que salió.",
-    "reviewNotSent": "{{name}} indicó que no salió.",
     "humanReviewHint": "Revisión humana: no confirma la entrega de WhatsApp.",
     "reviewCheckRequired": "Consultá el estado antes de volver a confirmar la revisión.",
-    "recipient": "Destinatario: {{name}}",
     "recipientLabel": "Destinatario",
     "notSentRoleHint": "El aviso queda para reintentar a esta persona.",
     "delivered": "Entregado",
@@ -1195,11 +1192,6 @@
       "Failed": "No se pudo enviar",
       "Uncertain": "Envío sin confirmar",
       "NotApplicable": "No aplica"
-    },
-    "lastRequest": {
-      "Retry": "{{name}} pidió reintentar.",
-      "RecipientRetry": "{{name}} pidió reintentar el envío a una persona.",
-      "Consult": "{{name}} pidió consultar el estado."
     }
   },
   "approvals": {

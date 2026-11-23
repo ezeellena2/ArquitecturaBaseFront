@@ -1178,11 +1178,8 @@
     "confirmSent": "Confirm it was sent",
     "confirmNotSent": "Confirm it was not sent",
     "confirming": "Confirming…",
-    "reviewSent": "{{name}} marked it as sent.",
-    "reviewNotSent": "{{name}} marked it as not sent.",
     "humanReviewHint": "Human review does not confirm WhatsApp delivery.",
     "reviewCheckRequired": "Check the status before confirming the review again.",
-    "recipient": "Recipient: {{name}}",
     "recipientLabel": "Recipient",
     "notSentRoleHint": "The notice becomes available for a retry to this person.",
     "delivered": "Delivered",
@@ -1195,11 +1192,6 @@
       "Failed": "Could not send",
       "Uncertain": "Send unconfirmed",
       "NotApplicable": "Not applicable"
-    },
-    "lastRequest": {
-      "Retry": "{{name}} asked to retry.",
-      "RecipientRetry": "{{name}} asked to retry the send to one person.",
-      "Consult": "{{name}} asked to check the status."
     }
   },
   "approvals": {
