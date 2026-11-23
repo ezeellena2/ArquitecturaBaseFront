@@ -1,7 +1,7 @@
 import type { CatalogFieldType } from "./catalogFields";
 import type { CatalogValueType } from "./catalogValues";
 import { calendarDateInZone } from "@/shared/lib/dateTime";
-import type { SortKind } from "@/shared/lib/sort";
+import { parseSort, sortValue, type SortKind } from "@/shared/lib/sort";
 import { formatTypedValue, formatYesNo } from "@/shared/lib/typedValue";
 import type { PrivateFormFile } from "@/shared/api/formFiles";
 import { formatCoordinates, toLocationPoint } from "./locationAnswer";
@@ -58,11 +58,20 @@ export interface ResponseColumn {
   /** The questions of a block of rows; only on its column. */
   questions?: readonly ResponseColumn[];
 }
-/** Every question that a condition can name: the columns and the questions of a block, which filter by any item. */
-/// How a question of the sheet orders from its header (OT1-C): a number, a date or a yes/no by its value; the rest as text.
-export function responseSortKind(type: ResponseType): SortKind {
-  return type === "decimal" ? "number" : type === "date" ? "date" : type === "boolean" ? "yesNo" : "text";
+/// How a question of the sheet orders (OT1-C): a number, a date or a yes/no by its value, a photo or a document by how many came
+/// (the server counts them) and the rest as text.
+function responseSortKind(type: ResponseType): SortKind {
+  return type === "decimal" || type === "photo" || type === "document" ? "number" : type === "date" ? "date" : type === "boolean" ? "yesNo" : "text";
 }
+/// Whether a column of the sheet orders and how: a question by its type and a field of the catalog of a question of one option by
+/// its own. A question of several options, a block and a location hold several values (or a point), and so does a field of the
+/// catalog of a question of several options: they do not order (null).
+export function responseColumnSortKind(question: ResponseColumn, catalogField?: ResponseCatalogField): SortKind | null {
+  if (catalogField) return question.type !== "choice" ? null : catalogField.type === "integer" || catalogField.type === "decimal" ? "number"
+    : catalogField.type === "date" ? "date" : catalogField.type === "boolean" ? "yesNo" : "text";
+  return question.type === "multiChoice" || question.type === "group" || question.type === "location" ? null : responseSortKind(question.type);
+}
+/** Every question that a condition can name: the columns and the questions of a block, which filter by any item. */
 export function responseQuestionColumns(columns: readonly ResponseColumn[]): readonly ResponseColumn[] {
   return columns.flatMap(column => [column, ...(column.questions ?? [])]);
 }
@@ -94,7 +103,12 @@ export interface ResponseQuery extends ResponseFilter {
   page: number;
   pageSize: number;
   sort?: string;
+  /** With `field` and `catalogField`: the question. */
   sortFieldId?: string;
+  /** With `catalogField`: the field of the catalog of a question of one option. */
+  sortCatalogFieldId?: string;
+  /** With `result`: the id of a result column, `<source>.<key>`. */
+  sortResultId?: string;
   versionIds?: readonly string[];
   /** F2: only the responses with actions to resolve. It comes from the tab in the address (`view=unresolved`), never from the bar. */
   unresolvedActions?: true;
@@ -131,7 +145,8 @@ export function visibleResponseColumnDescriptors(columns: readonly ResponseColum
   return responseColumnDescriptors(columns).filter(column => selected ? selected.has(column.id) : !column.catalogField || column.catalogField.role === "data");
 }
 // RE1-A: a result column goes in «Columnas» as result:<id>, after the questions, and shows by default.
-export const responseResultColumnId = (id: string) => "result:" + id;
+const resultColumnPrefix = "result:";
+export const responseResultColumnId = (id: string) => resultColumnPrefix + id;
 export function responseColumnSelection(columns: readonly ResponseColumn[], ids: readonly string[], resultColumns: readonly { readonly id: string }[] = []): string | null {
   const selected = new Set(ids);
   const results = resultColumns.map(column => responseResultColumnId(column.id));
@@ -144,6 +159,47 @@ export function visibleResponseResultColumns<T extends { readonly id: string }>(
   if (selection === null) return resultColumns;
   const ids = new Set(selection.split(","));
   return resultColumns.filter(column => ids.has(responseResultColumnId(column.id)));
+}
+/** OT1-C: the order of the sheet as the server takes it. */
+export type ResponseSort = Pick<ResponseQuery, "sort" | "sortFieldId" | "sortCatalogFieldId" | "sortResultId">;
+const sortId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// The id of a result column, <source>.<key>, as the server validates it.
+const resultColumnIdPattern = /^[a-z][a-z0-9]*([.-][a-z0-9]+)*\.[a-z][A-Za-z0-9]{0,39}$/;
+const fixedSortFields = ["number", "corrected", "submittedAtUtc", "actor", "channel", "state", "rules"];
+/// The order of the address, with the ids its field needs and no other: a question (`field`) with `sortFieldId`, a field of its
+/// catalog (`catalogField`) with both and a result (`result`) with `sortResultId`. One the server would refuse goes back to the
+/// usual order, the newest number first.
+export function responseSortFromParams(params: URLSearchParams): ResponseSort {
+  const parsed = parseSort(params.get("sort"));
+  if (!parsed) return { sort: "-number" };
+  const sort = sortValue(parsed.field, parsed.descending);
+  const question = params.get("sortFieldId") ?? "", catalogField = params.get("sortCatalogFieldId") ?? "", result = params.get("sortResultId") ?? "";
+  if (fixedSortFields.includes(parsed.field)) return { sort };
+  if (parsed.field === "field" && sortId.test(question)) return { sort, sortFieldId: question };
+  if (parsed.field === "catalogField" && sortId.test(question) && sortId.test(catalogField)) return { sort, sortFieldId: question, sortCatalogFieldId: catalogField };
+  if (parsed.field === "result" && resultColumnIdPattern.test(result)) return { sort, sortResultId: result };
+  return { sort: "-number" };
+}
+/// The order as the table names it, by the id of its column: a fixed one by its field, a question by its identity, a field of its
+/// catalog as «question:field» and a result as «result:<id>».
+export function responseTableSort(sort: ResponseSort): string | undefined {
+  const parsed = parseSort(sort.sort);
+  if (!parsed) return undefined;
+  const column = parsed.field === "field" ? sort.sortFieldId
+    : parsed.field === "catalogField" ? sort.sortFieldId && sort.sortCatalogFieldId && responseCatalogColumnId(sort.sortFieldId, sort.sortCatalogFieldId)
+      : parsed.field === "result" ? sort.sortResultId && responseResultColumnId(sort.sortResultId) : parsed.field;
+  return column ? sortValue(column, parsed.descending) : undefined;
+}
+/// The other way: the order of a column of the table as the address carries it, without the ids it does not use.
+export function responseSortParams(tableSort: string): { sort: string; sortFieldId: string | undefined; sortCatalogFieldId: string | undefined; sortResultId: string | undefined } {
+  const parsed = parseSort(tableSort);
+  const none = { sortFieldId: undefined, sortCatalogFieldId: undefined, sortResultId: undefined };
+  if (!parsed) return { ...none, sort: "-number" };
+  const sort = (field: string) => sortValue(field, parsed.descending);
+  if (parsed.field.startsWith(resultColumnPrefix)) return { ...none, sort: sort("result"), sortResultId: parsed.field.slice(resultColumnPrefix.length) };
+  const [question, catalogField] = parsed.field.split(":");
+  if (catalogField !== undefined) return { ...none, sort: sort("catalogField"), sortFieldId: question, sortCatalogFieldId: catalogField };
+  return sortId.test(parsed.field) ? { ...none, sort: sort("field"), sortFieldId: parsed.field } : { ...none, sort: tableSort };
 }
 export function responseCatalogFieldText(field: ResponseCapturedCatalogField, culture: string, yes: string, no: string): string {
   if (field.type === "catalog") return field.text?.trim() ? field.text : "—";

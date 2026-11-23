@@ -36,6 +36,12 @@ it("keeps the tab «Por resolver» in the full view and on the way back, and no 
     expect(responseSheetPath(formId, "view=" + view)).toBe(base);
   }
 });
+// OT1-C: the order of a field of a catalog or of a result travels with its ids, to the full view and back to the sheet.
+it("keeps the ids of the order of a field of a catalog and of a result", () => {
+  const catalogOrder = "sort=-catalogField&sortFieldId=" + fieldId + "&sortCatalogFieldId=" + recordId;
+  expect(responseFullPath(formId, recordId, catalogOrder + "&columns=none")).toBe(base + "/" + recordId + "/completa?" + catalogOrder);
+  expect(responseSheetPath(formId, "?sort=result&sortResultId=arca.invoice.total&page=2")).toBe(base + "?page=2&sort=result&sortResultId=arca.invoice.total");
+});
 it("treats the optional question mark consistently without changing the public values", () => {
   const source = "sort=-field&sortFieldId=" + fieldId + "&versionIds=" + recordId + "," + fieldId;
   expect(responseFullPath(formId, recordId, source)).toBe(responseFullPath(formId, recordId, "?" + source));

@@ -1,10 +1,10 @@
 import { useSearchParams } from "react-router";
 import { usePagination } from "@/shared/hooks/usePagination";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
-import { parseSort, sortValue, toggledSort, type SortKind } from "@/shared/lib/sort";
+import { toggledSort, type SortKind } from "@/shared/lib/sort";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { useResponseWorkspace } from "./useResponseWorkspace";
-import { responseColumnSelection } from "../responses";
+import { responseColumnSelection, responseSortFromParams, responseSortParams, responseTableSort } from "../responses";
 import type {
   ResponseColumn,
   ResponseFilter,
@@ -12,8 +12,6 @@ import type {
 } from "../responses";
 const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function responseQueryFromParams(params: URLSearchParams, filter: ResponseFilter, page = 1, pageSize = 20): ResponseQuery {
-  const sort = params.get("sort") ?? "-number";
-  const sortFieldId = params.get("sortFieldId") ?? undefined;
   return {
     ...filter,
     page:
@@ -26,20 +24,8 @@ export function responseQueryFromParams(params: URLSearchParams, filter: Respons
       pageSize <= 100
         ? pageSize
         : 20,
-    sort: [
-      "number",
-      "-number",
-      "submittedAtUtc",
-      "-submittedAtUtc",
-      "actor",
-      "-actor",
-      "field",
-      "-field",
-    ].includes(sort)
-      ? sort
-      : "-number",
-    sortFieldId:
-      sortFieldId && guid.test(sortFieldId) ? sortFieldId : undefined,
+    // OT1-C: every column with one datum; a question, a field of its catalog and a result with their ids.
+    ...responseSortFromParams(params),
     versionIds: (params.get("versionIds") ?? "")
       .split(",")
       .filter((value) => guid.test(value)),
@@ -74,17 +60,12 @@ export function useResponseRouteQuery(formId: string) {
     update({
       columns: responseColumnSelection(columns, ids, resultColumns) ?? undefined,
     });
-  // The same rule as every table (OT1-C): the first touch in the useful direction of the datum, the second inverts it. A
-  // question travels as `field` with its identity in `sortFieldId`.
-  const toggleSort = (field: string, kind: SortKind) => {
-    const dynamic = guid.test(field);
-    const next = parseSort(toggledSort((query.sort ?? "-number").replace("field", query.sortFieldId ?? "field"), field, kind))!;
-    update({
-      sort: sortValue(dynamic ? "field" : field, next.descending),
-      sortFieldId: dynamic ? field : undefined,
-      page: undefined,
-    });
-  };
+  // The same rule as every table (OT1-C): the header toggles, the first touch in the useful direction of the datum, and «Ordenar
+  // por» chooses; both go back to the first page. The table names a column by its id; the address carries the server's field and
+  // the ids of a question, a field of its catalog or a result.
+  const sort = responseTableSort(query);
+  const setSort = (next: string) => update({ ...responseSortParams(next), page: undefined });
+  const toggleSort = (column: string, kind: SortKind) => setSort(toggledSort(sort, column, kind));
   return {
     query,
     pagination,
@@ -93,7 +74,9 @@ export function useResponseRouteQuery(formId: string) {
     names: workspace.names,
     setFilter,
     setColumns,
+    sort,
     toggleSort,
+    setSort,
     params,
   };
 }

@@ -1,5 +1,6 @@
-// `view` travels only as «Por resolver» (F2): that tab changes which responses the full view walks and where it goes back.
-const fullKeys = ["sort", "sortFieldId", "versionIds", "view"] as const;
+// `view` travels only as «Por resolver» (F2): that tab changes which responses the full view walks and where it goes back. The
+// order carries the ids of its column (OT1-C).
+const fullKeys = ["sort", "sortFieldId", "sortCatalogFieldId", "sortResultId", "versionIds", "view"] as const;
 const sheetKeys = ["page", "pageSize", ...fullKeys, "columns", "approvalPage", "approvalPageSize"] as const;
 
 function withPublicSearch(path: string, search: string, keys: readonly string[]): string {

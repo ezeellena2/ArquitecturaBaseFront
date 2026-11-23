@@ -13,6 +13,7 @@ import { readErrorMessage } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useBreadcrumbLeaf } from "@/shared/hooks/useBreadcrumbLeaf";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { parseSort, type SortKind } from "@/shared/lib/sort";
 import { Page } from "@/shared/ui/Page";
 import { Badge } from "@/shared/ui/badge";
 import { approvalStateVariant } from "../approvals";
@@ -20,6 +21,7 @@ import { Surface } from "@/shared/ui/Surface";
 import { CellText } from "@/shared/ui/CellText";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { Pagination } from "@/shared/ui/Pagination";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Button } from "@/shared/ui/button";
 import { PublicWhatsAppIcon } from "@/shared/ui/icons";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -34,7 +36,7 @@ import { formDashboardKeyRoot } from "../hooks/formDashboardKey";
 import { Spinner } from "@/shared/ui/Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/Tabs";
 import { useFormPendingApprovals } from "../hooks/useFormPendingApprovals";
-import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseHasFilters, responseResultColumnId, responseSortKind, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
+import { responseCatalogFieldCellText, responseFiles, responseFilterLabels, responseHasFilters, responseColumnSortKind, responseResultColumnId, visibleResponseColumnDescriptors, visibleResponseColumns, visibleResponseResultColumns } from "../responses";
 import { responseResultColumnLabel, responseResultText } from "../responseResults";
 import { isNumericType } from "../catalogValues";
 import type { ResponseRow } from "../api/responses";
@@ -47,6 +49,8 @@ import { DashboardSkeleton } from "../components/dashboard/DashboardSkeleton";
 import { dashboardFrame } from "../components/dashboard/dashboardLayout";
 import { ResponseExportDialog } from "../components/ResponseExportDialog";
 import { FormEntryPanel } from "../components/FormEntryPanel";
+// A column that orders declares its kind and one that does not, `sortable: false` (OT1-C).
+const sortableAs = (sortKind: SortKind | null) => sortKind ? { sortable: true as const, sortKind } : { sortable: false as const };
 // The dashboard (DOC7-A) loads when its tab opens: the sheet does not pay for its charts. Its bar is not in that chunk: while
 // the charts arrive the page draws it over the skeleton, as the dashboard does, so nothing jumps on the first open.
 const FormDashboard = lazy(async () => ({ default: (await import("../components/dashboard/FormDashboard")).FormDashboard }));
@@ -107,7 +111,7 @@ export function FormResponsesPage() {
   const unresolvedTab = view === "unresolved" || unresolvedCount !== undefined && unresolvedCount > 0;
   // «Respuestas (N)» counts every response with the bar's filters. In «Por resolver» the sheet counts only those: the tab keeps the
   // count last read with the same filters, or goes without a number.
-  const totalKey = JSON.stringify([scope.owner, formId, { ...route.query, page: 0, pageSize: 0, sort: "", sortFieldId: "", unresolvedActions: undefined }]);
+  const totalKey = JSON.stringify([scope.owner, formId, { ...route.query, page: 0, pageSize: 0, sort: "", sortFieldId: "", sortCatalogFieldId: "", sortResultId: "", unresolvedActions: undefined }]);
   const [total, setTotal] = useState<{ key: string; count: number } | null>(null);
   if (query.data && !query.isPlaceholderData && !route.query.unresolvedActions && (total?.key !== totalKey || total.count !== query.data.records.totalCount))
     setTotal({ key: totalKey, count: query.data.records.totalCount });
@@ -163,6 +167,9 @@ export function FormResponsesPage() {
     (query.error instanceof ApiError && query.error.status === 403)
   )
     return <ForbiddenPage />;
+  // OT1-C: every column with one datum orders in the server. One shown only when the page has one keeps its place while it orders
+  // the sheet: ordering «Corregida» with «No» first leaves the corrected ones on another page.
+  const sortedBy = parseSort(route.sort)?.field;
   const recordPath = (id: string) => { const params = new URLSearchParams(route.params); params.delete("approval"); return mobile ? responseFullPath(formId, id, params.toString()) : `/formularios/${formId}/respuestas/${id}?${params}`; };
   const columns: Column<ResponseRow>[] = [
     {
@@ -182,7 +189,7 @@ export function FormResponsesPage() {
       ),
     },
     // A correction says so in its own column, only when the page has one (UD4, instead of next to its number as in CW10-A).
-    ...(data?.records.items.some(row => row.corrected) ? [{ sortable: false as const, id: "corrected", header: t("detail.corrected"), cell: (row: ResponseRow) => row.corrected ? t("responses.yes") : "—" }] : []),
+    ...(data?.records.items.some(row => row.corrected) || sortedBy === "corrected" ? [{ id: "corrected", header: t("detail.corrected"), sortable: true as const, sortKind: "yesNo" as const, cell: (row: ResponseRow) => row.corrected ? t("responses.yes") : "—" }] : []),
     {
       id: "submittedAtUtc",
       header: t("responses.received"),
@@ -203,23 +210,24 @@ export function FormResponsesPage() {
       sortKind: "text" as const,
       cell: (row: ResponseRow) => row.actor.displayName ?? t("responses.unknownPerson"),
     }]),
+    // The app goes first and a response passed from a document, which shows «—», last.
     {
-      sortable: false,
       id: "channel",
       header: t("formEntries:sheet.channel"),
+      sortable: true,
+      sortKind: "state",
       cell: (row) => <span className="inline-flex items-center gap-1.5">{row.channel === "phone" ? <PublicWhatsAppIcon aria-hidden="true" className="size-4 shrink-0" /> : null}
         {row.channel === "app" ? t("formEntries:sheet.channels.app") : row.channel === "phone" ? t("responses.whatsapp") : "—"}</span>,
     },
-    ...(data?.hasApproval || route.query.state === "Voided" ? [{ sortable: false as const, id: "state", header: t("approvals.state"), cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
+    ...(data?.hasApproval || route.query.state === "Voided" ? [{ id: "state", header: t("approvals.state"), sortable: true as const, sortKind: "state" as const, cell: (row: ResponseRow) => <Badge variant={approvalStateVariant(row.state)}>{t("approvals.states." + row.state)}</Badge> }] : []),
     // F2: a response with actions to resolve says so in its own column after «Estado», only when the page has one or in its tab.
-    ...(view === "unresolved" || data?.records.items.some(row => row.hasUnresolvedActions === true) ? [{ sortable: false as const, id: "rules", header: t("responses.rules"), cell: (row: ResponseRow) => row.hasUnresolvedActions === true ? <Badge variant="warning">{t("responses.unresolved")}</Badge> : "—" }] : []),
+    ...(view === "unresolved" || data?.records.items.some(row => row.hasUnresolvedActions === true) || sortedBy === "rules" ? [{ id: "rules", header: t("responses.rules"), sortable: true as const, sortKind: "yesNo" as const, cell: (row: ResponseRow) => row.hasUnresolvedActions === true ? <Badge variant="warning">{t("responses.unresolved")}</Badge> : "—" }] : []),
     ...(data?.records.items.some(row => row.hasPdf) ? [{ sortable: false as const, id: "pdf", header: t("detail.pdf"), cell: (row: ResponseRow) => row.hasPdf ? <IconButton label={t("detail.rowPdf", { number: row.number })} onClick={() => { rememberSheet(row.id, undefined, "pdf"); if (mobile) navigate(responseFullPath(formId, row.id, route.params.toString())); else update({ tab: "pdf" }, { pathname: "/formularios/" + formId + "/respuestas/" + row.id, replace: false }); }}><DocumentIcon className="size-4"/></IconButton> : null }] : []),
     ...displayColumns.map(({ id, question: column, catalogField }) => ({
       id,
       // A header names one thing (UD4): since which version a question is asked is said in «Columnas».
       header: catalogField ? `${column.label} · ${catalogField.label}` : column.label,
-      ...(!catalogField && column.type !== "multiChoice" && column.type !== "group" && column.type !== "location"
-        ? { sortable: true as const, sortKind: responseSortKind(column.type) } : { sortable: false as const }),
+      ...sortableAs(responseColumnSortKind(column, catalogField)),
       numeric: isNumericType(catalogField?.type ?? column.type),
       cell: (row: ResponseRow) => catalogField ? <span className="block max-w-64 whitespace-normal break-words"><CellText text={responseCatalogFieldCellText(row.cells.find(cell => cell.fieldId === column.fieldId)!, catalogField.fieldId, i18n.language, t("responses.yes"), t("responses.no"))} /></span> : <ResponseValue
           cell={row.cells.find(cell => cell.fieldId === column.fieldId)!}
@@ -228,26 +236,26 @@ export function FormResponsesPage() {
           onForbidden={deny} onError={onFileError} detailLink={recordPath(row.id)} onOpenDetail={() => rememberSheet(row.id)}
         />,
     })),
+    // A result orders as a number when it is a number or an amount, otherwise as text.
     ...resultColumns.map(column => ({
-      sortable: false as const,
       id: responseResultColumnId(column.id),
       header: responseResultColumnLabel(column, data?.resultColumns ?? []),
+      sortable: true as const,
+      sortKind: column.kind === "number" || column.kind === "amount" ? "number" as const : "text" as const,
       numeric: column.kind === "number" || column.kind === "amount",
       cell: (row: ResponseRow) => responseResultText(column.kind, row.results?.[column.id], i18n.language) ?? t("responses.resultEmpty"),
     })),
   ];
   const appliedFilters = responseFilterLabels(route.query, data?.columns ?? [], t, i18n.language, scope.user?.timeZoneId, data?.versions, route.names);
-  const sort = route.query.sort?.replace(
-    "field",
-    route.query.sortFieldId ?? "field",
-  );
-  // The filters are the ones «Tablero» shares (ResponseFilterBar); «Columnas» goes at the end. The count is at the foot.
+  // The filters are the ones «Tablero» shares (ResponseFilterBar); «Columnas» and «Ordenar por» go at the end, the order last: it
+  // takes no rows out (OT1-C). The count is at the foot.
   const sheet = <>
     <ResponseFilterBar formId={formId} route={route} columns={data?.columns ?? []} loaded={!!data} versions={data?.versions} hasApproval={!!data?.hasApproval}
-      zone={scope.user?.timeZoneId ?? "UTC"} trailing={<div className="sm:ml-auto">
+      zone={scope.user?.timeZoneId ?? "UTC"} trailing={<div className="flex flex-wrap items-center gap-2 max-sm:w-full sm:ml-auto">
         <ResponseColumnsMenu columns={data?.columns ?? []} visible={visible} visibleCatalogFields={visibleCatalogFields}
           resultColumns={data?.resultColumns} visibleResults={resultColumns}
           onChange={(ids) => route.setColumns(data?.columns ?? [], ids, data?.resultColumns)}/>
+        <SortMenu columns={columns} sort={route.sort} onSortChange={route.setSort}/>
       </div>}/>
     <Surface>
       <DataTable
@@ -263,7 +271,7 @@ export function FormResponsesPage() {
         onRetry={query.error instanceof ApiError && query.error.status === 404 ? undefined : () => {
           void query.refetch();
         }}
-        sort={sort}
+        sort={route.sort}
         onSortChange={route.toggleSort}
         emptyTitle={t(hasFilters ? "responses.noMatches" : view === "unresolved" ? "responses.noUnresolved" : "responses.empty")}
         // An empty sheet does not explain how responses arrive (decision of 2026-10-31): its title and the way out. Adding a

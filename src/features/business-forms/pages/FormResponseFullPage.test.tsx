@@ -92,6 +92,18 @@ it("anchors a shared direct link beyond page one using only public order and ver
   await waitFor(() => expect(router.state.location.pathname).toBe(path + "/" + responseSecondId + "/completa"));
 });
 
+// OT1-C: the arrows walk the order of the sheet, also by a field of a catalog or a result, with the ids of its column.
+it.each([
+  ["a field of a catalog", { sort: "-catalogField", sortFieldId: responseSheetFixture().columns[4]!.fieldId, sortCatalogFieldId: "01990000-0000-7000-8000-000000000084" }],
+  ["a result", { sort: "result", sortResultId: "arca.invoice.total" }],
+])("anchors a shared link in the order of %s", async (_order, order) => {
+  const { reads } = setup();
+  renderRouteWithProviders(path + "/" + responseRecordId + "/completa?" + new URLSearchParams(order));
+  // Alone, the first one pays the lazy page.
+  await screen.findByRole("heading", { name: "TEST-000002", level: 1 }, { timeout: 10_000 });
+  await waitFor(() => expect(reads.anchors[0]).toMatchObject(order));
+});
+
 it.each(["row", "direct"])("opens the full page on mobile through the %s entry", async entry => {
   mobile(); setup();
   const { router } = renderRouteWithProviders(entry === "row" ? path : path + "/" + responseRecordId);

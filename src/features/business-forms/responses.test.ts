@@ -10,6 +10,13 @@ import {
   responseFiles,
   responseRowsSummary,
   visibleResponseColumns,
+  responseCatalogColumnId,
+  responseColumnSortKind,
+  responseResultColumnId,
+  responseSortFromParams,
+  responseSortParams,
+  responseTableSort,
+  type ResponseCatalogField,
   type ResponseColumn,
   type ResponseCell,
 } from "./responses";
@@ -331,5 +338,49 @@ describe("the conditions of a block of rows in a rule", () => {
       { key: "remito", question: "Remito", clauses: [{ words: "rules.conditionWords.contains", values: "0003" }] },
       { key: "notes", question: "Observaciones", clauses: [{ words: "rules.conditionWords.answered", values: "" }] },
     ]);
+  });
+});
+// OT1-C (F8): every column of the sheet with one datum orders in the server. The table names a column by its id; the address and
+// the requests carry the server's field and the ids of a question, a field of its catalog or a result.
+describe("the order of the sheet", () => {
+  const question = "0199a0c0-0000-7000-8000-000000000031", field = "0199a0c0-0000-7000-8000-000000000081";
+  const params = (search: string) => new URLSearchParams(search);
+  it.each([
+    ["sort=submittedAtUtc", { sort: "submittedAtUtc" }],
+    ["sort=-corrected", { sort: "-corrected" }],
+    ["sort=channel&sortFieldId=" + question, { sort: "channel" }],
+    ["sort=-field&sortFieldId=" + question, { sort: "-field", sortFieldId: question }],
+    ["sort=catalogField&sortFieldId=" + question + "&sortCatalogFieldId=" + field, { sort: "catalogField", sortFieldId: question, sortCatalogFieldId: field }],
+    ["sort=-result&sortResultId=arca.invoice.total", { sort: "-result", sortResultId: "arca.invoice.total" }],
+  ])("reads %s with only the ids its field needs", (search, expected) => {
+    expect(responseSortFromParams(params(search))).toEqual(expected);
+  });
+  it.each(["", "sort=secret", "sort=field", "sort=field&sortFieldId=Importe", "sort=catalogField&sortFieldId=" + question,
+    "sort=result&sortResultId=Total", "sort=-result&sortResultId=arca.invoice.total;drop"])("goes back to the newest number first with %s", search => {
+    expect(responseSortFromParams(params(search))).toEqual({ sort: "-number" });
+  });
+  it("names the order by the column of the table and goes back to the address with the same ids", () => {
+    const orders = [
+      [{ sort: "-number" }, "-number"],
+      [{ sort: "rules" }, "rules"],
+      [{ sort: "-field", sortFieldId: question }, "-" + question],
+      [{ sort: "catalogField", sortFieldId: question, sortCatalogFieldId: field }, responseCatalogColumnId(question, field)],
+      [{ sort: "-result", sortResultId: "arca.invoice.total" }, "-" + responseResultColumnId("arca.invoice.total")],
+    ] as const;
+    for (const [query, table] of orders) {
+      expect(responseTableSort(query)).toBe(table);
+      expect(responseSortParams(table)).toEqual({ sortFieldId: undefined, sortCatalogFieldId: undefined, sortResultId: undefined, ...query });
+    }
+    expect(responseTableSort({ sort: "field" })).toBeUndefined();
+  });
+  it("orders a question by its type and a field of the catalog of a question of one option, never one with several values", () => {
+    const column = (type: ResponseColumn["type"]): ResponseColumn => ({ fieldId: question, type, label: "Pregunta", introducedInVersion: 1, options: [] });
+    const kinds = (["shortText", "longText", "choice", "decimal", "date", "boolean", "photo", "document", "multiChoice", "group", "location"] as const)
+      .map(type => responseColumnSortKind(column(type)));
+    expect(kinds).toEqual(["text", "text", "text", "number", "date", "yesNo", "number", "number", null, null, null]);
+    const catalogField = (type: ResponseCatalogField["type"]): ResponseCatalogField => ({ fieldId: field, key: "dato", label: "Dato", type, role: "data" });
+    expect((["text", "integer", "decimal", "date", "boolean", "catalog"] as const).map(type => responseColumnSortKind(column("choice"), catalogField(type))))
+      .toEqual(["text", "number", "number", "date", "yesNo", "text"]);
+    expect(responseColumnSortKind(column("multiChoice"), catalogField("integer"))).toBeNull();
   });
 });
