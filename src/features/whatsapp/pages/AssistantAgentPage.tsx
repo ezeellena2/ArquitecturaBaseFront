@@ -36,7 +36,8 @@ type Tab = "perfil" | "conocimiento" | "casos" | "limites";
 const profileOrder = ["name", "tone", "introduction", "does", "doesNot", "handoffMessage"] as const;
 const limitsOrder = [["limits.blockedTopics", limitsFieldId.topics], ["limits.cannotPromise", limitsFieldId.cannotPromise], ["limits.maxReplyLength", limitsFieldId.maxReplyLength],
   ["limits.dailyReplyLimit", limitsFieldId.dailyReplyLimit], ["limits.dailyOfferLimit", limitsFieldId.dailyOfferLimit],
-  ["limits.allowedActions", limitsFieldId.allowedActions]] as const;
+  ["limits.declinedReofferDays", limitsFieldId.declinedReofferDays], ["limits.allowedActions", limitsFieldId.allowedActions],
+  ["limits.maxSpreadsheetLoads", limitsFieldId.maxSpreadsheetLoads], ["limits.maxDocumentPages", limitsFieldId.maxDocumentPages]] as const;
 const casesAddId = "agent-cases-add";
 
 /** «Asistente» of the WhatsApp panel (AS1-A): the main agent, with «Configurar el asistente». A 403 of its read is «No tenés permiso». */

@@ -33,7 +33,11 @@ export function AssistantConflictReview({ draft, review, forms, culture, working
     "limits.maxReplyLength": { group: "limits", label: t("limits.maxReplyLength"), text: version.limits.maxReplyLength },
     "limits.dailyReplyLimit": { group: "limits", label: t("limits.dailyReplyLimit"), text: version.limits.dailyReplyLimit },
     "limits.dailyOfferLimit": { group: "limits", label: t("limits.dailyOfferLimit"), text: version.limits.dailyOfferLimit },
+    "limits.declinedReofferDays": { group: "limits", label: t("limits.declinedReoffer"), text: version.limits.declinedReofferDays === null ? t("limits.reofferNever")
+      : t("limits.reofferAfterDays", { count: Number(version.limits.declinedReofferDays) }) },
     "limits.allowedActions": { group: "limits", label: t("limits.allowedActions"), text: version.limits.allowedActions.map(kind => t("actions." + kind)).join(", ") },
+    "limits.maxSpreadsheetLoads": { group: "limits", label: t("limits.maxSpreadsheetLoads"), text: version.limits.maxSpreadsheetLoads },
+    "limits.maxDocumentPages": { group: "limits", label: t("limits.maxDocumentPages"), text: version.limits.maxDocumentPages },
   });
   const groups: ComparisonGroup[] = [];
   if (theirs) {

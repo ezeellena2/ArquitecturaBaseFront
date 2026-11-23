@@ -77,6 +77,8 @@ export const administration: NavigationPanel = {
       { labelKey: "navigation.ai", to: "/configuracion/ia", icon: PreferencesIcon, permission: "ai.read" },
       { labelKey: "navigation.businessInformation", to: "/configuracion/negocio", icon: PreferencesIcon, permission: "ai.business.read" },
       { labelKey: "navigation.arca", to: "/configuracion/arca", icon: PreferencesIcon, permission: "arca.read" },
+      // RC3-A: the installation's settings of WhatsApp, for whoever manages the settings, only with the module installed.
+      { labelKey: "navigation.whatsappSettings", to: "/configuracion/whatsapp", icon: PreferencesIcon, permission: "settings.manage", feature: "whatsapp" },
     ] },
   ],
 };

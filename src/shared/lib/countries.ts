@@ -1,6 +1,6 @@
-/// El prefijo telefónico de los países a los que se podría configurar el envío de códigos por WhatsApp
-/// (`WhatsApp:AllowedCountries` del backend). Es una lista chica a propósito: el servidor es el que interpreta
-/// el número, y acá solo hace falta para mostrar "AR +54". Un país que no esté se muestra solo con su código.
+/// El prefijo telefónico de los países a los que se puede mandar códigos por WhatsApp (Configuración › WhatsApp, RC3-A).
+/// Es una lista chica a propósito: el servidor es el que interpreta el número, y acá solo hace falta para mostrar
+/// "AR +54" y para elegir los países. Un país que no esté se muestra solo con su código.
 const callingCodes: Readonly<Partial<Record<string, string>>> = {
   AR: "54",
   BO: "591",
@@ -18,6 +18,16 @@ const callingCodes: Readonly<Partial<Record<string, string>>> = {
   VE: "58",
 };
 
+/// Los países que se ofrecen en Configuración › WhatsApp, por su código ISO.
+export const whatsAppCountries: readonly string[] = Object.keys(callingCodes);
+
+/// El prefijo de un país ("+54"), o null si no se conoce.
+export function countryCallingCode(country: string): string | null {
+  const callingCode = callingCodes[country];
+
+  return callingCode === undefined ? null : `+${callingCode}`;
+}
+
 /// Lo que se ve en el desplegable: "AR +54", o "JP" si no se conoce el prefijo.
 export function countryOptionLabel(country: string): string {
   const callingCode = callingCodes[country];
@@ -34,7 +44,8 @@ export function countryDescription(country: string, language: string): string {
   return callingCode === undefined ? name : `${name}, +${callingCode}`;
 }
 
-function countryName(country: string, language: string): string {
+/// El nombre del país en el idioma de la interfaz ("Uruguay"), o el código si el navegador no lo conoce.
+export function countryName(country: string, language: string): string {
   try {
     return new Intl.DisplayNames([language], { type: "region" }).of(country) ?? country;
   } catch {

@@ -16,6 +16,7 @@ import { createChatFormFixtures } from "./chatFormFixtures";
 import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createArcaVisualFixtures } from "./arcaFixtures";
 import { createAssistantAgentVisualFixtures } from "./assistantAgentFixtures";
+import { createWhatsAppSettingsVisualFixtures } from "./whatsappSettingsFixtures";
 import { createChatAssistantVisualFixtures } from "./chatAssistantFixtures";
 import { createChatDocumentVisualFixtures } from "./chatDocumentFixtures";
 import { createChatSharedContentVisualFixtures } from "./chatSharedContentFixtures";
@@ -91,6 +92,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const arcaFixture = scenario?.startsWith("arca-") ? createArcaVisualFixtures(scenario) : undefined;
   // «Asistente» of the WhatsApp panel (AS1-A to AS5).
   const assistantAgentFixture = scenario?.startsWith("agent-") ? createAssistantAgentVisualFixtures(language, scenario) : undefined;
+  // Configuración › WhatsApp (RC3-A), for whoever manages the settings.
+  const whatsAppSettingsFixture = scenario?.startsWith("whatsapp-settings") ? createWhatsAppSettingsVisualFixtures(scenario) : undefined;
   // Casos del asistente in the chat (AS4): «Necesita una persona», the why of each answer, its lines and the text for the composer.
   const chatAssistantFixture = scenario === "chat-assistant-cases" ? createChatAssistantVisualFixtures(language) : undefined;
   if (chatAssistantFixture) Object.assign(globalThis, { chatAssistantFixture });
@@ -250,6 +253,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (folderResponse) return folderResponse;
     if (arcaFixture) { const result = await arcaFixture.handle(request); if (result) return result; }
     if (assistantAgentFixture) { const result = await assistantAgentFixture.handle(request); if (result) return result; }
+    if (whatsAppSettingsFixture) { const result = await whatsAppSettingsFixture.handle(request); if (result) return result; }
     if (receivedDocumentFixture) { const result = await receivedDocumentFixture.handle(request); if (result) return result; }
     if (documentFormProposalFixture) { const result = await documentFormProposalFixture.handle(request); if (result) return result; }
     if (chatAssistantFixture) { const result = await chatAssistantFixture.handle(request); if (result) return result; }
@@ -383,10 +387,10 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (path === "/api/me") { await (globalThis as { visualProfileHold?: Promise<void> }).visualProfileHold; return json(profile); }
     if (path === "/api/me/whatsapp") return json(scenario === "profile-chat-linked" ? { state: "Linked", noticesUntilUtc: "2026-11-04T00:40:00Z" } : { state: "NotLinked", noticesUntilUtc: null });
     if (path === "/account/login-methods") return json({ registrationOpen: scenario !== "landing", google: true, whatsapp: true, whatsappCountries: ["AR", "UY"], whatsappNumber: "15551632662" });
-    // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A); `forms-publication-without-channels` is
-    // the template without a form channel (SA5).
+    // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A) and Configuración has its WhatsApp
+    // (RC3-A); `forms-publication-without-channels` is the template without a form channel (SA5).
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
-      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels"]] });
+      ...scenario?.endsWith("-folders") ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
     if (path === "/api/settings") return json(settings);
     if (path === "/api/roles/paged") return json(pageOf(roles));
     if (path === "/api/roles") return json(roles);

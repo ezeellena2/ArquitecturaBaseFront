@@ -12,7 +12,8 @@ const agent: AssistantAgent = {
     { id: "0199a0c0-0000-7000-8000-000000000002", when: "Pregunta el horario.", inputType: "Text", isActive: true, action: { ...none, kind: "ExactText", text: { es: "De 8 a 17.", en: null } } },
   ],
   fallback: none,
-  limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"] },
+  limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"],
+    maxSpreadsheetLoads: 3, maxDocumentPages: 10, declinedReofferDays: null },
   forms: [{ definitionId: form, name: "Registrar visita", offerWhen: "Cuando terminó una visita." }, { definitionId: "0199a0c0-0000-7000-8000-0000000000f2", name: "Pedir repuesto", offerWhen: null }],
   knowledge: { availability: "Available", revision: 1, unansweredQuestions: 0, sections: [] },
   assistantAvailability: { state: "available" },
@@ -72,6 +73,23 @@ describe("what Guardar checks", () => {
     expect(issues["limits.maxReplyLength"]).toEqual({ key: "validation.range", values: { min: 100, max: 1000 } });
     expect(issues["limits.dailyOfferLimit"]).toEqual({ key: "validation.range", values: { min: 1, max: 50 } });
     expect(issues["limits.blockedTopics[1]"]).toEqual({ key: "validation.repeatedTopic" });
+  });
+
+  // RC2-B: «Nunca» is null and is not checked; the days, the forms of a spreadsheet and the pages of a PDF, each in its range.
+  it("checks the limits of a declined form, a spreadsheet and a PDF only when they apply, and sends them as numbers", () => {
+    const draft = draftFromAgent(configOf(agent));
+    expect(validateDraft(draft, "es")["limits.declinedReofferDays"]).toBeUndefined();
+    draft.limits.declinedReofferDays = "366";
+    draft.limits.maxSpreadsheetLoads = "11";
+    draft.limits.maxDocumentPages = "0";
+    const issues = validateDraft(draft, "es");
+    expect(issues["limits.declinedReofferDays"]).toEqual({ key: "validation.range", values: { min: 1, max: 365 } });
+    expect(issues["limits.maxSpreadsheetLoads"]).toEqual({ key: "validation.range", values: { min: 1, max: 10 } });
+    expect(issues["limits.maxDocumentPages"]).toEqual({ key: "validation.range", values: { min: 1, max: 10 } });
+    draft.limits.declinedReofferDays = " 30 ";
+    draft.limits.maxSpreadsheetLoads = "6";
+    draft.limits.maxDocumentPages = "5";
+    expect(saveRequest(draft, configOf(agent)).limits).toEqual({ ...agent.limits, maxSpreadsheetLoads: 6, maxDocumentPages: 5, declinedReofferDays: 30 });
   });
 
   it("says that a case uses an action turned off in Límites, and checks each button", () => {

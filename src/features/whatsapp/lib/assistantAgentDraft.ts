@@ -11,8 +11,9 @@ export interface DraftButton { key: string; title: DraftTexts; destination: Agen
 export interface DraftAction { kind: AgentActionKind | null; formDefinitionId: string | null; text: DraftTexts; instructions: string; question: DraftTexts; buttons: DraftButton[]; handoffReason: string }
 export interface DraftCase { id: string; when: string; inputType: AgentInputType; isActive: boolean; action: DraftAction }
 export interface DraftProfile { name: string; introduction: string; tone: string; does: string; doesNot: string; handoffMessage: DraftTexts }
-/** The numbers stay as typed until they are saved. */
-export interface DraftLimits { blockedTopics: string[]; cannotPromise: string; maxReplyLength: string; dailyReplyLimit: string; dailyOfferLimit: string; allowedActions: AgentActionKind[] }
+/** The numbers stay as typed until they are saved; `declinedReofferDays` null is «Nunca» (RC2-B). */
+export interface DraftLimits { blockedTopics: string[]; cannotPromise: string; maxReplyLength: string; dailyReplyLimit: string; dailyOfferLimit: string; allowedActions: AgentActionKind[];
+  maxSpreadsheetLoads: string; maxDocumentPages: string; declinedReofferDays: string | null }
 export interface AgentDraft { profile: DraftProfile; cases: DraftCase[]; fallback: DraftAction; limits: DraftLimits }
 /** What was last read or saved: the draft starts from it and Guardar sends its revision and its original language. */
 export type AgentConfig = Pick<AssistantAgent, "revision" | "originalCulture" | "profile" | "cases" | "fallback" | "limits">;
@@ -23,6 +24,9 @@ export const agentLimits = {
   name: 80, introduction: 500, tone: 200, does: 1000, doesNot: 1000, handoffMessage: 1000, cases: 20, when: 300, text: 1000, instructions: 1000, question: 1024,
   buttons: 3, buttonTitle: 20, handoffReason: 200, blockedTopics: 20, blockedTopic: 80, cannotPromise: 500, minReplyLength: 100, maxReplyLength: 1000,
   minDailyReplies: 1, maxDailyReplies: 50, minDailyOffers: 1, maxDailyOffers: 50, testMessages: 5, testMessage: 1000,
+  minSpreadsheetLoads: 1, maxSpreadsheetLoads: 10, minDocumentPages: 1, maxDocumentPages: 10, minDeclinedReofferDays: 1, maxDeclinedReofferDays: 365,
+  /** What «A los N días» starts with when it is chosen. */
+  defaultDeclinedReofferDays: 7,
 } as const;
 
 export const caseKey = (id: string) => "case:" + id;
@@ -55,7 +59,8 @@ export function draftFromAgent(agent: AgentConfig): AgentDraft {
     cases: agent.cases.map(item => ({ id: item.id, when: item.when, inputType: item.inputType, isActive: item.isActive, action: draftAction(item.action) })),
     fallback: draftAction(agent.fallback),
     limits: { blockedTopics: [...limits.blockedTopics], cannotPromise: limits.cannotPromise, maxReplyLength: String(limits.maxReplyLength), dailyReplyLimit: String(limits.dailyReplyLimit),
-      dailyOfferLimit: String(limits.dailyOfferLimit), allowedActions: [...limits.allowedActions] },
+      dailyOfferLimit: String(limits.dailyOfferLimit), allowedActions: [...limits.allowedActions], maxSpreadsheetLoads: String(limits.maxSpreadsheetLoads),
+      maxDocumentPages: String(limits.maxDocumentPages), declinedReofferDays: limits.declinedReofferDays === null ? null : String(limits.declinedReofferDays) },
   };
 }
 
@@ -89,7 +94,9 @@ export function saveRequest(draft: AgentDraft, baseline: AgentConfig): Assistant
     cases: draft.cases.map(item => ({ id: item.id, when: item.when.trim(), inputType: item.inputType, isActive: item.isActive, action: actionBody(item.action) })),
     fallback: actionBody(draft.fallback),
     limits: { blockedTopics: limits.blockedTopics.map(topic => topic.trim()), cannotPromise: limits.cannotPromise.trim(), maxReplyLength: Number(limits.maxReplyLength.trim()),
-      dailyReplyLimit: Number(limits.dailyReplyLimit.trim()), dailyOfferLimit: Number(limits.dailyOfferLimit.trim()), allowedActions: ordered(limits.allowedActions) },
+      dailyReplyLimit: Number(limits.dailyReplyLimit.trim()), dailyOfferLimit: Number(limits.dailyOfferLimit.trim()), allowedActions: ordered(limits.allowedActions),
+      maxSpreadsheetLoads: Number(limits.maxSpreadsheetLoads.trim()), maxDocumentPages: Number(limits.maxDocumentPages.trim()),
+      declinedReofferDays: limits.declinedReofferDays === null ? null : Number(limits.declinedReofferDays.trim()) },
   };
 }
 
@@ -102,10 +109,12 @@ const parts = (draft: AgentDraft) => ({
   fallback: actionSnapshot(draft.fallback),
   "limits.blockedTopics": draft.limits.blockedTopics.map(topic => topic.trim()), "limits.cannotPromise": draft.limits.cannotPromise.trim(),
   "limits.maxReplyLength": draft.limits.maxReplyLength.trim(), "limits.dailyReplyLimit": draft.limits.dailyReplyLimit.trim(),
-  "limits.dailyOfferLimit": draft.limits.dailyOfferLimit.trim(), "limits.allowedActions": ordered(draft.limits.allowedActions),
+  "limits.dailyOfferLimit": draft.limits.dailyOfferLimit.trim(), "limits.declinedReofferDays": draft.limits.declinedReofferDays?.trim() ?? null,
+  "limits.allowedActions": ordered(draft.limits.allowedActions),
+  "limits.maxSpreadsheetLoads": draft.limits.maxSpreadsheetLoads.trim(), "limits.maxDocumentPages": draft.limits.maxDocumentPages.trim(),
 });
 type Part = keyof ReturnType<typeof parts>;
-const emptyDraft: AgentDraft = { profile: { name: "", introduction: "", tone: "", does: "", doesNot: "", handoffMessage: emptyTexts() }, cases: [], fallback: emptyAction(), limits: { blockedTopics: [], cannotPromise: "", maxReplyLength: "", dailyReplyLimit: "", dailyOfferLimit: "", allowedActions: [] } };
+const emptyDraft: AgentDraft = { profile: { name: "", introduction: "", tone: "", does: "", doesNot: "", handoffMessage: emptyTexts() }, cases: [], fallback: emptyAction(), limits: { blockedTopics: [], cannotPromise: "", maxReplyLength: "", dailyReplyLimit: "", dailyOfferLimit: "", allowedActions: [], maxSpreadsheetLoads: "", maxDocumentPages: "", declinedReofferDays: null } };
 export const draftSnapshot = (draft: AgentDraft) => JSON.stringify(parts(draft));
 export const caseSnapshot = (item: DraftCase) => JSON.stringify(parts({ ...emptyDraft, cases: [item] }).cases);
 export const actionSnapshotText = (action: DraftAction) => JSON.stringify(actionSnapshot(action));
@@ -121,7 +130,9 @@ export function mergeDrafts(mine: AgentDraft, base: AgentDraft, theirs: AgentDra
     cases: from("cases").cases, fallback: from("fallback").fallback,
     limits: { blockedTopics: from("limits.blockedTopics").limits.blockedTopics, cannotPromise: from("limits.cannotPromise").limits.cannotPromise,
       maxReplyLength: from("limits.maxReplyLength").limits.maxReplyLength, dailyReplyLimit: from("limits.dailyReplyLimit").limits.dailyReplyLimit,
-      dailyOfferLimit: from("limits.dailyOfferLimit").limits.dailyOfferLimit, allowedActions: from("limits.allowedActions").limits.allowedActions },
+      dailyOfferLimit: from("limits.dailyOfferLimit").limits.dailyOfferLimit, allowedActions: from("limits.allowedActions").limits.allowedActions,
+      maxSpreadsheetLoads: from("limits.maxSpreadsheetLoads").limits.maxSpreadsheetLoads, maxDocumentPages: from("limits.maxDocumentPages").limits.maxDocumentPages,
+      declinedReofferDays: from("limits.declinedReofferDays").limits.declinedReofferDays },
   };
 }
 /** The parts that differ between two versions, in the order of the screen. */
@@ -230,11 +241,15 @@ export function validateDraft(draft: AgentDraft, original: AgentCulture): AgentI
   integer(issues, "limits.maxReplyLength", limits.maxReplyLength, agentLimits.minReplyLength, agentLimits.maxReplyLength);
   integer(issues, "limits.dailyReplyLimit", limits.dailyReplyLimit, agentLimits.minDailyReplies, agentLimits.maxDailyReplies);
   integer(issues, "limits.dailyOfferLimit", limits.dailyOfferLimit, agentLimits.minDailyOffers, agentLimits.maxDailyOffers);
+  if (limits.declinedReofferDays !== null)
+    integer(issues, "limits.declinedReofferDays", limits.declinedReofferDays, agentLimits.minDeclinedReofferDays, agentLimits.maxDeclinedReofferDays);
+  integer(issues, "limits.maxSpreadsheetLoads", limits.maxSpreadsheetLoads, agentLimits.minSpreadsheetLoads, agentLimits.maxSpreadsheetLoads);
+  integer(issues, "limits.maxDocumentPages", limits.maxDocumentPages, agentLimits.minDocumentPages, agentLimits.maxDocumentPages);
   if (!limits.allowedActions.length) issues["limits.allowedActions"] = { key: "validation.actionsRequired" };
   return issues;
 }
 
-const profileOrLimits = /^(profile\.(name|introduction|tone|does|doesNot|handoffMessage)|limits\.(blockedTopics(\[\d+\])?|cannotPromise|maxReplyLength|dailyReplyLimit|dailyOfferLimit|allowedActions))$/;
+const profileOrLimits = /^(profile\.(name|introduction|tone|does|doesNot|handoffMessage)|limits\.(blockedTopics(\[\d+\])?|cannotPromise|maxReplyLength|dailyReplyLimit|dailyOfferLimit|allowedActions|declinedReofferDays|maxSpreadsheetLoads|maxDocumentPages))$/;
 /**
  * The 400 of a save, at the screen's keys: `cases[2].when` becomes the key of the case that was third when it was sent. What has no
  * place on the screen (a count of cases, the revision) goes apart, to say it once.

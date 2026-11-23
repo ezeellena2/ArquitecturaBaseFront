@@ -339,5 +339,64 @@
       "Skipped": "Continued without the location",
       "Expired": "Expired without the location"
     }
+  },
+  "settings": {
+    "title": "WhatsApp",
+    "unavailable": "Settings unavailable",
+    "discard": "Discard",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "noCountries": "No countries",
+    "sections": {
+      "forms": "Sent forms",
+      "login": "Sign in with WhatsApp",
+      "retention": "Retention"
+    },
+    "fields": {
+      "flowSessionLifetimeHours": "Time to answer a form",
+      "allowedCountries": "Countries that receive codes",
+      "messageRetentionDays": "Keep the content of the messages"
+    },
+    "help": {
+      "flowSessionLifetimeHours": "From the moment it goes out, how long a form sent by the assistant or an operator accepts its answer. After that, the person needs another one.",
+      "allowedCountries": "Sign-in codes go by WhatsApp only to numbers of these countries, and only their numbers are accepted to sign in or link. Each code is paid, at Meta's rate for the country of the number.",
+      "messageRetentionDays": "After how many days the text of the messages, incoming and outgoing, and what the assistant received are deleted: audios, spreadsheets, documents, locations and contacts. The cleanup runs once a day. The privacy policy has to promise this same period."
+    },
+    "units": {
+      "hours": "hours",
+      "days": "days",
+      "hoursValue_one": "{{count}} hour",
+      "hoursValue_other": "{{count}} hours",
+      "daysValue_one": "{{count}} day",
+      "daysValue_other": "{{count}} days"
+    },
+    "countryCost_one": "Codes to numbers of {{countries}} are paid at Meta's rate for that country.",
+    "countryCost_other": "Codes to numbers of {{countries}} are paid at Meta's rate for each country.",
+    "validation": {
+      "range": "Choose a number between {{min}} and {{max}}.",
+      "countriesRequired": "Choose at least one country."
+    },
+    "feedback": {
+      "saved": "The WhatsApp settings were saved.",
+      "uncertain": "We could not confirm the save. Check the current values before saving again.",
+      "conflict": "Another administrator changed the WhatsApp settings. Check the current values.",
+      "failed": "We could not save the WhatsApp settings.",
+      "reviewFailed": "We could not check the current settings.",
+      "lateUncertain": "We could not confirm the save of the WhatsApp settings. Check the current values.",
+      "lateFailed": "We could not save the WhatsApp settings.",
+      "traceId": "Code to report: {{traceId}}"
+    },
+    "review": {
+      "action": "Review current values",
+      "reading": "Checking…",
+      "pending": "First review the current values and choose what to keep.",
+      "title": "Review changes",
+      "setting": "Setting",
+      "current": "Currently saved",
+      "mine": "My draft",
+      "useCurrent": "Use current values",
+      "keepMine": "Keep my changes",
+      "same": "What is saved is the same as your draft."
+    }
   }
 }

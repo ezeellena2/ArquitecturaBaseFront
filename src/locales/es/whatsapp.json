@@ -339,5 +339,64 @@
       "Skipped": "Siguió sin la ubicación",
       "Expired": "Venció sin la ubicación"
     }
+  },
+  "settings": {
+    "title": "WhatsApp",
+    "unavailable": "Configuración no disponible",
+    "discard": "Descartar",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "noCountries": "Sin países",
+    "sections": {
+      "forms": "Formularios enviados",
+      "login": "Ingreso con WhatsApp",
+      "retention": "Retención"
+    },
+    "fields": {
+      "flowSessionLifetimeHours": "Tiempo para contestar un formulario",
+      "allowedCountries": "Países que reciben códigos",
+      "messageRetentionDays": "Conservar el contenido de los mensajes"
+    },
+    "help": {
+      "flowSessionLifetimeHours": "Desde que sale, cuánto tiempo acepta la respuesta un formulario que mandó el asistente o un operador. Después, la persona necesita otro.",
+      "allowedCountries": "Sólo a números de estos países se mandan códigos de ingreso por WhatsApp, y sólo de ellos se aceptan números para ingresar o vincular. Cada código se paga, con la tarifa de Meta para el país del número.",
+      "messageRetentionDays": "A los cuántos días se borra el texto de los mensajes, entrantes y salientes, y lo que recibió el asistente: audios, planillas, documentos, ubicaciones y contactos. La limpieza corre una vez por día. La política de privacidad tiene que prometer este mismo plazo."
+    },
+    "units": {
+      "hours": "horas",
+      "days": "días",
+      "hoursValue_one": "{{count}} hora",
+      "hoursValue_other": "{{count}} horas",
+      "daysValue_one": "{{count}} día",
+      "daysValue_other": "{{count}} días"
+    },
+    "countryCost_one": "Los códigos a números de {{countries}} se pagan con la tarifa de Meta para ese país.",
+    "countryCost_other": "Los códigos a números de {{countries}} se pagan con la tarifa de Meta para cada país.",
+    "validation": {
+      "range": "Elegí un número entre {{min}} y {{max}}.",
+      "countriesRequired": "Elegí al menos un país."
+    },
+    "feedback": {
+      "saved": "Guardamos la configuración de WhatsApp.",
+      "uncertain": "No pudimos confirmar el guardado. Revisá los valores actuales antes de volver a guardar.",
+      "conflict": "Otro administrador cambió la configuración de WhatsApp. Revisá los valores actuales.",
+      "failed": "No pudimos guardar la configuración de WhatsApp.",
+      "reviewFailed": "No pudimos consultar la configuración actual.",
+      "lateUncertain": "No pudimos confirmar el guardado de la configuración de WhatsApp. Revisá los valores actuales.",
+      "lateFailed": "No pudimos guardar la configuración de WhatsApp.",
+      "traceId": "Código para reportar: {{traceId}}"
+    },
+    "review": {
+      "action": "Revisar valores actuales",
+      "reading": "Consultando…",
+      "pending": "Primero revisá los valores actuales y elegí qué conservar.",
+      "title": "Revisar cambios",
+      "setting": "Ajuste",
+      "current": "Guardado actualmente",
+      "mine": "Mi borrador",
+      "useCurrent": "Usar valores actuales",
+      "keepMine": "Conservar mis cambios",
+      "same": "Lo guardado es igual a tu borrador."
+    }
   }
 }

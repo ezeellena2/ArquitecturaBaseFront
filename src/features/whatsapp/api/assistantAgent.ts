@@ -16,8 +16,10 @@ const action = z.strictObject({ kind: actionKind, formDefinitionId: guid.nullabl
   question: texts.nullable(), buttons: z.array(button).nullable(), handoffReason: z.string().nullable() });
 const agentCase = z.strictObject({ id: guid, when: z.string(), inputType, isActive: z.boolean(), action });
 const profile = z.strictObject({ name: z.string(), introduction: z.string(), tone: z.string(), does: z.string(), doesNot: z.string(), handoffMessage: texts });
+// RC2-B: forms per spreadsheet, pages of a PDF and the days to offer a declined form again (null: never).
 const limits = z.strictObject({ blockedTopics: z.array(z.string()), cannotPromise: z.string(), maxReplyLength: z.number().int(),
-  dailyReplyLimit: z.number().int(), dailyOfferLimit: z.number().int(), allowedActions: z.array(actionKind) });
+  dailyReplyLimit: z.number().int(), dailyOfferLimit: z.number().int(), allowedActions: z.array(actionKind), maxSpreadsheetLoads: z.number().int(),
+  maxDocumentPages: z.number().int(), declinedReofferDays: z.number().int().nullable() });
 /** A published form the assistant can send; with `offerWhen`, it is a case of the forms block. */
 const form = z.strictObject({ definitionId: guid, name: z.string(), offerWhen: z.string().nullable() });
 const fact = z.strictObject({ id: z.string(), label: z.string(), text: z.string() });

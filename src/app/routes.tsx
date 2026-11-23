@@ -143,6 +143,11 @@ const branches: RouteObject[] = [
                     path: "/configuracion/apariencia",
                     lazy: async () => ({ Component: (await import("@/features/settings/pages/AppearancePage")).AppearancePage }),
                   },
+                  {
+                    // RC3-A: Configuración › WhatsApp asks for «Configuración», like General; the menu shows it only with the module.
+                    path: "/configuracion/whatsapp",
+                    lazy: async () => ({ Component: (await import("@/features/whatsapp/pages/WhatsAppSettingsPage")).WhatsAppSettingsPage }),
+                  },
                   ...["idioma", "zona-horaria", "listados", "registro"].map(topic => ({
                     path: `/configuracion/${topic}`, element: <Navigate to="/configuracion" replace />,
                   })),

@@ -69,6 +69,12 @@ Elegido el 2026-11-21 en el lienzo [Tope de ofrecimientos del asistente](https:/
 
 Capturas: `src/test/visual/screenshots/assistant-agent-limits-{es,en}-{1440,390,320}.png`.
 
+### Planillas, documentos y rechazos (RC2-B) — 2026-11-22
+
+Confirmado el 2026-11-22 en el lienzo [WhatsApp: reglas en Configuración](https://claude.ai/artifact/DRQbDpxdqUDp9XVQRCN32B) (privado, como los demás tableros), junto con Configuración › WhatsApp. Límites suma, en la columna de la derecha debajo de «Tope de ofrecimientos de formularios», «Volver a ofrecer un formulario rechazado»: el desplegable simple con «Nunca» (por defecto, lo de antes) y «A los N días», que trae al lado el número de días (7 al elegirlo, de 1 a 365, «días»). Debajo de la superficie «Límites» va otra, «Planillas y documentos», con «Formularios por planilla» (3, de 1 a 10, «por planilla») y «Páginas de un PDF» (10, de 1 a 10, «páginas como máximo»), cada uno con su (i). Todo se guarda con el resto de la pantalla (el mismo Guardar, la revisión y el 409) y la revisión del conflicto suma sus renglones. El tablero decía de 1 a 50 páginas; al programar quedó de 1 a 10, lo más que lee la lectura de documentos, y su nota lo dice.
+
+Capturas: `src/test/visual/screenshots/assistant-agent-limits-{es,en}-{1440,390,320}.png`.
+
 ## Lo que se fijó al dibujar
 
 El plan no lo decía; se resolvió con la opción más simple y quedó confirmado al elegir:

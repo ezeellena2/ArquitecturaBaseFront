@@ -608,6 +608,18 @@ código armado con el borrador. Se guarda con los colores, con un solo Guardar.
 - La delegación guiada (2026-11-11, DG1-A y DG2-A): «Cómo se conecta» en «Datos», el certificado de la plataforma y la
   zona «Delegación» con la guía en dos listas, por quien hace cada paso: [arca-delegacion.md](arca-delegacion.md).
 
+### Configuración › WhatsApp (2026-11-22)
+
+- `/configuracion/whatsapp`, con `settings.manage`; el menú la muestra después de ARCA sólo con el módulo instalado
+  (`installedFeatures` trae `whatsapp`). Se arma como Configuración general: tres `Surface` a todo el ancho, «Formularios
+  enviados» (el tiempo para contestar, en horas), «Ingreso con WhatsApp» (los países que reciben códigos, en el desplegable
+  múltiple con el prefijo en gris) y «Retención» (días), con Guardar y Descartar en la banda, la revisión, el 409 y
+  «Revisar cambios» en `ComparisonTable`.
+- Elegir un país que no estaba guardado avisa su costo con una notificación de advertencia; la (i) del campo lo dice siempre.
+- Tablero confirmado: [WhatsApp: reglas en Configuración](https://claude.ai/artifact/DRQbDpxdqUDp9XVQRCN32B) (RC3-A, con Límites de
+  RC2-B en [asistente-casos.md](asistente-casos.md)). Capturas `whatsapp-settings-*.png`; las de Configuración a 1440 suman
+  su renglón en el menú.
+
 ### Chat de WhatsApp
 
 - `/whatsapp/chat`: panel con la geometría de Administración, bandeja y conversación en `Surface`, historial y compositor.

@@ -79,6 +79,23 @@ describe("Sidebar", () => {
     expect(within(panel).getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
   });
 
+  // RC3-A: Configuración › WhatsApp asks for «Configuración» and shows only with the module installed.
+  it.each([[["whatsapp"], true], [[], false]] as const)("shows «WhatsApp» in Configuración only with the module installed (%j)", async (features, shown) => {
+    let served = false;
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["settings.manage"] })),
+      http.get("/api/settings/presentation", () => { served = true; return HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, installedFeatures: features }); }),
+    );
+    renderWithProviders(<MemoryRouter initialEntries={["/configuracion"]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
+    const panel = await screen.findByRole("navigation", { name: "Administración" });
+    await within(panel).findByRole("link", { name: "General" });
+    if (shown) expect(await within(panel).findByRole("link", { name: "WhatsApp" })).toHaveAttribute("href", "/configuracion/whatsapp");
+    else {
+      await waitFor(() => expect(served).toBe(true));
+      expect(within(panel).queryByRole("link", { name: "WhatsApp" })).not.toBeInTheDocument();
+    }
+  });
+
   it.each(["/formularios/form-id", "/catalogos", "/formularios/faltantes"])("does not mark the overview on the separate forms task %s", async path => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
     renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);

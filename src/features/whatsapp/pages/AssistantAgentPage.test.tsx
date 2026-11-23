@@ -45,7 +45,8 @@ function saved(): AssistantAgent {
         buttons: [{ title: { es: "Visita", en: null }, destination: "SendForm", formDefinitionId: visit, text: null }, { title: { es: "Otra cosa", en: null }, destination: "Handoff", formDefinitionId: null, text: null }] } },
     ],
     fallback: { ...none, kind: "DraftedReply", instructions: "Respondé breve con la información del negocio." },
-    limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: [...allowed] },
+    limits: { blockedTopics: ["Precios"], cannotPromise: "", maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2, allowedActions: [...allowed],
+      maxSpreadsheetLoads: 3, maxDocumentPages: 10, declinedReofferDays: null },
     forms: [{ definitionId: visit, name: "Registrar visita", offerWhen: "Cuando avisa que terminó una visita." }, { definitionId: part, name: "Pedir repuesto", offerWhen: null }],
     knowledge: { availability: "Available", revision: 2, unansweredQuestions: 1, sections: [
       { key: "Details", state: "Loaded", facts: [{ id: "details.name", label: "Nombre", text: "Tu negocio" }] },
@@ -152,6 +153,40 @@ describe("the screen «Asistente»", () => {
     await userEvent.click(save());
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0]!.limits).toEqual({ ...saved().limits, dailyOfferLimit: 4 });
+  });
+
+  // RC2-B (2026-11-22): whether a declined form is offered again, under the offers, and «Planillas y documentos» with the forms a
+  // spreadsheet sends and the pages of a PDF it reads; all saved with the rest of the limits.
+  it("edits the reoffer of a declined form and the limits of spreadsheets and documents, and saves them with the rest", async () => {
+    await open("/whatsapp/asistente?pestana=limites");
+    const files = screen.getByRole("region", { name: "Planillas y documentos" });
+    const loads = within(files).getByRole("spinbutton", { name: /Formularios por planilla/ });
+    const pages = within(files).getByRole("spinbutton", { name: /Páginas de un PDF/ });
+    expect(loads).toHaveValue(3);
+    expect(pages).toHaveValue(10);
+    // «Nunca», as before, has no number of days; «A los N días» brings it with 7.
+    const reoffer = screen.getByRole("button", { name: "Volver a ofrecer un formulario rechazado Nunca" });
+    expect(screen.queryByRole("spinbutton", { name: "Días para volver a ofrecerlo" })).not.toBeInTheDocument();
+    await act(async () => { reoffer.focus(); });
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(within(await screen.findByRole("listbox", { name: "Volver a ofrecer un formulario rechazado" })).getByRole("option", { name: "A los N días" }));
+    const reofferDays = screen.getByRole("spinbutton", { name: "Días para volver a ofrecerlo" });
+    expect(reofferDays).toHaveValue(7);
+    // The pages of a PDF stop at 10, the most the reading takes.
+    await userEvent.clear(pages);
+    await userEvent.type(pages, "11");
+    await userEvent.click(save());
+    await waitFor(() => expect(pages).toHaveAccessibleDescription(expect.stringContaining("Elegí un número entre 1 y 10.")));
+    expect(writes).toHaveLength(0);
+    await userEvent.clear(pages);
+    await userEvent.type(pages, "5");
+    await userEvent.clear(loads);
+    await userEvent.type(loads, "6");
+    await userEvent.clear(reofferDays);
+    await userEvent.type(reofferDays, "30");
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0]!.limits).toEqual({ ...saved().limits, maxSpreadsheetLoads: 6, maxDocumentPages: 5, declinedReofferDays: 30 });
   });
 
   it("saves the four tabs with the revision read and only what each action uses", async () => {

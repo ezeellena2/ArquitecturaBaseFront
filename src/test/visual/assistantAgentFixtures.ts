@@ -36,7 +36,7 @@ export function createAssistantAgentVisualFixtures(language: "es" | "en", scenar
     fallback: { ...none, kind: "DraftedReply", instructions: text("Respondé breve con la información del negocio; si no la tenés, decí que lo pasás a una persona y derivá.", "Reply briefly with the business information; if you don't have it, say you're passing it to a person and hand off.") },
     limits: { blockedTopics: text("Precios y presupuestos|Reclamos|Datos de otros clientes", "Prices and quotes|Complaints|Other customers' data").split("|"),
       cannotPromise: text("Plazos de entrega, descuentos ni disponibilidad de stock.", "Delivery times, discounts or stock availability."), maxReplyLength: 400, dailyReplyLimit: 10, dailyOfferLimit: 2,
-      allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"] },
+      allowedActions: ["SendForm", "ExactText", "DraftedReply", "AskButtons", "Handoff", "NoReply"], maxSpreadsheetLoads: 3, maxDocumentPages: 10, declinedReofferDays: null },
     forms: [
       { definitionId: forms.visit, name: text("Registrar visita", "Register visit"), offerWhen: text("Cuando avisa que terminó una visita a un cliente.", "When they say they finished a visit to a customer.") },
       { definitionId: forms.delivery, name: text("Registrar entrega", "Register delivery"), offerWhen: text("Cuando cuenta que entregó materiales a un cliente.", "When they say they delivered materials to a customer.") },
