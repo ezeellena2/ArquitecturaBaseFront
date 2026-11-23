@@ -124,10 +124,10 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.getByRole("button", { name: label("Filtros 1", "Filters 1"), exact: true })).toBeVisible();
     await table.evaluate(node => { node.scrollLeft = 0; });
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
-    const detail = width < 640 ? page.getByRole("region", { name: label("Respuesta", "Response"), exact: true })
+    const detail = width < 640 ? page.getByRole("region", { name: label("Datos", "Data"), exact: true })
       : page.getByRole("region", { name: label("Detalle de la respuesta", "Response details"), exact: true });
-    await expect(detail.getByText(label("Frío", "Cold"), { exact: true })).toBeVisible();
-    await expect(detail.getByText(label("Ruido", "Noise"), { exact: true })).toBeVisible();
+    // VF1-A: the answer reads in its control, with the options chosen by comma.
+    await expect(detail.getByRole("textbox", { name: label("Fallas", "Faults"), exact: true })).toHaveValue(label("Frío, Ruido", "Cold, Noise"));
     await contained(page, width);
     await page.screenshot({ path: info.outputPath("detail.png"), fullPage: true });
     const calls = await page.evaluate(() => (window as typeof window & { formResponseFullFixture: { calls: { method: string; path: string }[] } }).formResponseFullFixture.calls);

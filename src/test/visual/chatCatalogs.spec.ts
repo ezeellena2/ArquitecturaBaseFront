@@ -39,8 +39,11 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){const 
   test(`K7 historical reference reload and permissions ${lang} ${width}px`,async({page})=>{
     await openChat(page,lang,"completed",width);
     await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toBeVisible();
-    await expect(page.getByText("Clientes",{exact:true})).toBeVisible();
-    await expect(page.getByText("Av. Colón 1234",{exact:true})).toBeVisible();
+    // VF3 (R3): the question already names the catalog, which does not repeat under the answer, and the detail of the option
+    // goes in a row of its own, «Cliente · Detalle».
+    await expect(page.getByText("Clientes",{exact:true})).toHaveCount(0);
+    await expect(page.getByRole("term").filter({hasText:(lang==="es"?"Cliente":"Client")+" · "+text.forms.reply.detail})).toBeVisible();
+    await expect(page.getByRole("definition").filter({hasText:"Av. Colón 1234"})).toBeVisible();
     await screenshot(page,`reference-${lang}-${width}`,width);
     await page.reload();await page.getByRole("button",{name:"Juan Gómez",exact:true}).click();await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toBeVisible();
     await openChat(page,lang,"no-values",width);await expect(page.getByRole("definition").filter({hasText:"Pérez Hnos."})).toHaveCount(0);

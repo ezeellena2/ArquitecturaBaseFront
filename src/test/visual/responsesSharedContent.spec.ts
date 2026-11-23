@@ -24,8 +24,9 @@ for (const language of ["es", "en"] as const)
       await expect(location).toBeVisible();
       await expect(contact).toBeVisible();
       await expect(received.getByText(en ? "Form sent again" : "Se volvió a mandar el formulario", { exact: true })).toHaveCount(2);
-      // Who sent the form goes once, under «Se mandó el formulario».
-      await expect(received.getByText("Ana", { exact: true })).toHaveCount(1);
+      // Each row says who in its own column (VF2-A), except the form that came back, which is the same send.
+      for (const again of await received.locator("[data-activity-row]").filter({ hasText: en ? "Form sent again" : "Se volvió a mandar el formulario" }).all())
+        await expect(again.getByText("Ana", { exact: true })).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       for (const row of [location, contact]) await expectNoSideScroll(row);
       await history.scrollIntoViewIfNeeded();

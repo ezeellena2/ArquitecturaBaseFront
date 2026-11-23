@@ -5,7 +5,7 @@ import type { ResponseQuery } from "@/features/business-forms/responses";
 import type { ResponseWorkflow } from "@/features/business-forms/api/workflow";
 import { approvalTaskFixture } from "../approvalFixtures";
 import { responseFormId, responseRecordId, responseSecondId, responseWorkflowFixture } from "../responseFixtures";
-import { createResponseVisualFixtures } from "./responseFixtures";
+import { createResponseVisualFixtures, withResponseEntry } from "./responseFixtures";
 import { samplePdf } from "./pdfFixtures";
 import { createFormAmendmentFixtures } from "./formAmendmentFixtures";
 
@@ -145,7 +145,7 @@ export function createFormResponseFullFixtures(language: "es" | "en", scenario: 
         const detail = await response.json() as ResponseDetail;
         detail.values = detail.values.map(value => value.fieldId === multipleFieldId
           ? { ...value, type: "multiChoice", label: en ? "Faults" : "Fallas", value: capturedChoices(detail.id) } : value);
-        return json(detail);
+        return json(withResponseEntry(detail));
       }
       return base.handle(request);
     },

@@ -52,7 +52,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   });
   test("issued PDF fixed copy " + language + " at " + width, async ({ page }) => {
     const en = language === "en";
-    const copyName = en ? /^Visita-VIS-000024\.pdf · Spanish$/ : /^Visita-VIS-000024\.pdf$/;
+    // VF2-A: the file goes alone in «Detalle»; «Qué pasó» names the language of a copy in the other one (NI1-A).
+    const copyName = /^Visita-VIS-000024\.pdf$/;
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/src/test/visual/index.html?screen=/formularios/" + responseFormId + "/respuestas&scenario=responses-pdf&lang=" + language);
     const marker = page.getByRole("button", { name: en ? "View PDF for TEST-000002" : "Ver PDF de TEST-000002", exact: true });
@@ -80,9 +81,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       const activity = panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
       const collapse = activity.getByRole("button", { name: en ? "Collapse activity" : "Plegar actividad", exact: true });
       await expect(collapse).toHaveAttribute("aria-expanded", "true");
-      documents = activity.getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
-      // Board TL3-A: the copy is a row of the activity, with its file under the action and without a small preview, so
-      // nothing is read until it is opened. The copy is in Spanish: it names it only with the menu in English (NI1-A).
+      documents = activity.locator("[data-activity-row]").filter({ has: page.getByText(en ? "PDF generated in Spanish" : "Se armó el PDF", { exact: true }) });
+      // Board VF2-A: the copy is a row of the activity, a box on the phone, with its file in «Detalle» and without a small
+      // preview, so nothing is read until it is opened. The copy is in Spanish: «Qué pasó» says so only with the menu in English (NI1-A).
       await expect(documents.getByText(copyName)).toBeVisible();
       await expect(documents.locator("iframe")).toHaveCount(0);
       expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual([]);
@@ -134,9 +135,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       await documents.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).click();
       expect((await download).suggestedFilename()).toBe("Visita-VIS-000024.pdf");
       expect(await page.evaluate(() => (window as unknown as { fixedPdfReads: string[] }).fixedPdfReads)).toEqual(["false", "true"]);
-      // In the quick view the copy is also a row of the activity, with «Ver PDF» and «Descargar» as icons (board TL3-A).
+      // In the quick view the copy is also a row of the activity, a box with «Ver PDF» and «Descargar» as icons (board VF2-A).
       await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
-      const row = panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true }).getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
+      const row = panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true }).locator("[data-activity-row]").filter({ has: page.getByText(en ? "PDF generated in Spanish" : "Se armó el PDF", { exact: true }) });
       await expect(row.getByText(copyName)).toBeVisible();
       await expect(row.getByRole("button", { name: en ? "View PDF" : "Ver PDF", exact: true })).toBeVisible();
       await expect(row.getByRole("button", { name: en ? "Download" : "Descargar", exact: true })).toBeVisible();

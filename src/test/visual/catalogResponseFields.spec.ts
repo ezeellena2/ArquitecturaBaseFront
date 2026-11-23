@@ -79,11 +79,12 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect((exported as { columns: string[] }).columns).not.toContain("0199a0c0-0000-7000-8000-000000000034");
     await tableContainer.evaluate(node => { node.scrollLeft = 0; });
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
-    const detail = page.getByRole("region", { name: label(width < 640 ? "Respuesta" : "Detalle de la respuesta", width < 640 ? "Response" : "Response details"), exact: true });
-    await expect(detail.getByText("30-71234567-8", { exact: true })).toBeVisible();
-    await expect(detail.getByText(zone, { exact: true })).toHaveCount(2);
-    await expect(detail.getByText(label("Contado", "Cash"), { exact: true })).toBeVisible();
-    await expect(detail.getByText(label("Plazo anterior", "Previous terms"), { exact: true })).toBeVisible();
+    const detail = page.getByRole("region", { name: label(width < 640 ? "Datos" : "Detalle de la respuesta", width < 640 ? "Data" : "Response details"), exact: true });
+    // VF1-A: each datum of the options chosen is a field of its own, «Pregunta · Dato», by comma in the order of the options, and
+    // the field that filters the list is not repeated.
+    await expect(detail.getByRole("textbox", { name: question + " · CUIT", exact: true })).toHaveValue("30-71234567-8, 30-65432109-7");
+    await expect(detail.getByRole("textbox", { name: question + " · " + zone, exact: true })).toHaveCount(0);
+    await expect(detail.getByRole("textbox", { name: question + " · " + label("Plazo de pago", "Payment terms"), exact: true })).toHaveValue(label("30, Contado", "30, Cash"));
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1);
     await page.screenshot({ path: info.outputPath("ce5-captured-detail.png"), fullPage: true });
   });

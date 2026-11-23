@@ -10,7 +10,7 @@ for (const language of ["es", "en"] as const)
       const panel = width < 640 ? page.getByRole("main") : page.getByRole("region", { name: en ? "Response details" : "Detalle de la respuesta", exact: true });
       if (width < 640) await panel.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
       else await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
-      // In the quick view the tab already says «Actividad»: its columns go straight in the tab panel (board TL3-A).
+      // In the quick view the tab already says «Actividad»: its rows go straight in the tab panel, a box each (board VF2-A).
       const history = width < 640 ? panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true }) : panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true });
       await expect(history.getByText(en ? "Unconfirmed" : "Sin confirmar", { exact: true })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
@@ -33,7 +33,8 @@ for (const language of ["es", "en"] as const)
       await expect(history.getByText(en ? "Failed" : "No se pudo", { exact: true })).toBeVisible();
       await history.getByRole("button", { name: en ? "Retry" : "Reintentar", exact: true }).focus();
       await page.keyboard.press("Enter");
-      await expect(history.getByText(en ? "Done" : "Hecho", { exact: true })).toBeVisible();
+      // Done, the notice is told by the row of the person it reached, and the action needs no row of its own (VF2-A).
+      await expect(history.getByText(en ? "Sent" : "Enviado", { exact: true })).toBeVisible();
       await expect(history.getByRole("button", { name: en ? "Retry" : "Reintentar", exact: true })).toHaveCount(0);
       expect(await page.evaluate(() => (window as unknown as { workflowPosts: string[] }).workflowPosts)).toEqual(["consult", "retry"]);
     });
@@ -48,7 +49,8 @@ for (const language of ["es", "en"] as const)
       if (width < 640) await panel.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
       else await panel.getByRole("tab", { name: en ? "Activity" : "Actividad", exact: true }).click();
       const history = width < 640 ? panel.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true }) : panel.getByRole("tabpanel", { name: en ? "Activity" : "Actividad", exact: true });
-      const person = (name: string) => history.getByRole("listitem", { name: (en ? "Recipient: " : "Destinatario: ") + name, exact: true });
+      // Each person of the notice is a row of their own, a box in the quick view and on the phone (VF2-A).
+      const person = (name: string) => history.locator("[data-activity-row]").filter({ hasText: name });
       await expect(person("Marcos Gil").getByText(en ? "Could not send" : "No se pudo enviar", { exact: true })).toBeVisible();
       await expect(person("Ana Pérez").getByRole("button")).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
@@ -68,7 +70,8 @@ for (const language of ["es", "en"] as const)
       await page.screenshot({ path: "test-results/workflow-role-retry-" + language + "-" + width + ".png", fullPage: true });
       await person("Marcos Gil").getByRole("button", { name: en ? "Retry" : "Reintentar", exact: true }).focus();
       await page.keyboard.press("Enter");
-      await expect(person("Marcos Gil").getByText(en ? "Sent" : "Enviado", { exact: true })).toBeVisible();
+      // Sent again, the receipt of WhatsApp is the state of his row (VF2-A).
+      await expect(person("Marcos Gil").getByText(en ? "Delivered" : "Entregado", { exact: true })).toBeVisible();
       await expect(history.getByRole("button", { name: en ? "Retry" : "Reintentar", exact: true })).toHaveCount(0);
       expect(await page.evaluate(() => (window as unknown as { workflowPosts: string[] }).workflowPosts)).toEqual(["recipients/" + "0199a0c0-0000-7000-8000-000000000096" + "/retry"]);
       await page.screenshot({ path: "test-results/workflow-role-retried-" + language + "-" + width + ".png", fullPage: true });

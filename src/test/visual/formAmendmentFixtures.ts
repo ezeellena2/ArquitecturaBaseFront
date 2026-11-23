@@ -3,6 +3,7 @@ import type { ResponseDetail, ResponseSheet } from "@/features/business-forms/ap
 import type { ResponseWorkflow } from "@/features/business-forms/api/workflow";
 import type { ResponseQuery } from "@/features/business-forms/responses";
 import { responseFormId, responseRecordId, responseSecondId } from "../responseFixtures";
+import { withResponseEntry } from "./responseFixtures";
 
 const id = (n: number) => "0199a0c0-0000-7000-8000-" + String(n).padStart(12, "0");
 export const formAmendmentFixtureIds = { form: responseFormId, pending: responseRecordId, approved: responseSecondId, pendingCorrection: id(311), approvedCorrection: id(312) };
@@ -148,7 +149,7 @@ export function createFormAmendmentFixtures(language: "es" | "en", scenario: str
           ...current.replacedBy ? { replacedBy: { recordId: current.replacedBy, atUtc: correctedAtUtc } } : {},
           ...voidedAs ? { void: { atUtc: voidedAs.atUtc, by: ana, reason: voidedAs.reason } } : {},
           ...canAmend(current) ? { canAmend: true as const } : {} };
-        return json(detail);
+        return json(withResponseEntry(detail));
       }
       return full.handle(request);
     },

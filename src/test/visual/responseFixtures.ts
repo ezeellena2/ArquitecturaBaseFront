@@ -4,6 +4,7 @@ import {
   responseWorkflowFixture,
   responseFormId,
   detailValue,
+  responseEntryFixture,
 } from "../responseFixtures";
 import type {
   ResponseDetail,
@@ -12,6 +13,13 @@ import type {
 import type { ResponseQuery } from "@/features/business-forms/responses";
 const id = (n: number) =>
   `0199a0c0-0000-7000-8000-${String(n).padStart(12, "0")}`;
+/**
+ * The detail with the form of its version (VF1-A) built from the values it serves, so the reading draws the scene's own answers,
+ * labels and language. A scene that changes the values of a detail builds it again before answering.
+ */
+export function withResponseEntry(detail: ResponseDetail): ResponseDetail {
+  return { ...detail, entry: responseEntryFixture(detail.values, detail.versionId, detail.versionNumber) };
+}
 export function createResponseVisualFixtures(
   language: "es" | "en",
   scenario: string,
@@ -426,7 +434,7 @@ export function createResponseVisualFixtures(
             { kind: "Saved", atUtc: detail.submittedAtUtc, actor: null },
           ];
         }
-        return json(detail);
+        return json(withResponseEntry(detail));
       }
       return json({ code: "NotFound" }, 404);
     },

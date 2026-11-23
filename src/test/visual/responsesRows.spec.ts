@@ -23,7 +23,9 @@ for (const language of ["es", "en"] as const)
       await page.keyboard.press("Escape");
 
       await page.goto(`/src/test/visual/index.html?screen=${root}/${responseRecordId}/completa&scenario=responses-rows&lang=${language}`);
-      await expect(page.getByRole("region", { name: en ? "Items" : "Artículos" })).toBeVisible();
+      // VF1-A: the block reads as in the load, its table on a computer and a box per item on the phone, without actions.
+      await expect(width < 640 ? page.getByRole("heading", { name: en ? "Item 3" : "Ítem 3", exact: true })
+        : page.getByRole("region", { name: en ? "Items" : "Artículos", exact: true })).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await expect(page).toHaveScreenshot(`responses-rows-full-${language}-${width}.png`, { fullPage: true });
