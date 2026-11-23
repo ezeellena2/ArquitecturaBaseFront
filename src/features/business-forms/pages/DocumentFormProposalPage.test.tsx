@@ -303,6 +303,53 @@ describe("creating the draft", () => {
   }, 20_000);
 });
 
+// OT1-C (2026-11-22): the documents of the proposal arrive whole, so they order in the browser, by their header and by «Ordenar por» over
+// the table, with the order in the address. The one shown is still the first one attached, whose data the questions show.
+describe("the documents", () => {
+  it("orders the documents by a header and by «Ordenar por», with the order in the address and the first one attached still shown", async () => {
+    const [captured, ticket, delivery] = unclassified;
+    // Attached as ticket, delivery and a capture whose sender has no name, which goes last in both directions.
+    const documents = [ticket!, delivery!, { ...captured!, sender: { ...captured!.sender, displayName: null } }];
+    setup({ read: () => HttpResponse.json(completed({ documents })) });
+    const { router } = renderRouteWithProviders(path);
+    const region = await screen.findByRole("region", { name: "Documentos (3)" }, { timeout: 10_000 });
+    const table = () => within(region).getByRole("table");
+    const names = () => within(table()).getAllByRole("row").slice(1).map(row => within(row).getByRole("button").textContent);
+    const header = (name: string) => within(within(table()).getByRole("columnheader", { name })).getByRole("button", { name });
+    const sort = () => new URLSearchParams(router.state.location.search).get("sort");
+    // Without an order chosen, they keep the one they were attached in: no arrow, and the button over the table says «Ordenar por».
+    expect(names()).toEqual(["ticket.jpg", "remito.docx", "captura.jpg"]);
+    expect(within(table()).getByRole("columnheader", { name: "Recibido" })).toHaveAttribute("aria-sort", "none");
+    const trigger = within(region).getByRole("button", { name: "Ordenar por" });
+    expect(trigger.closest('[data-slot="filter-bar"]')).not.toBeNull();
+
+    await userEvent.click(header("Documento"));
+    await waitFor(() => expect(sort()).toBe("document"));
+    expect(names()).toEqual(["captura.jpg", "remito.docx", "ticket.jpg"]);
+    expect(within(table()).getByRole("columnheader", { name: "Documento" })).toHaveAttribute("aria-sort", "ascending");
+    await userEvent.click(header("Recibido"));
+    await waitFor(() => expect(sort()).toBe("-receivedAtUtc"));
+    expect(names()).toEqual(["captura.jpg", "ticket.jpg", "remito.docx"]);
+
+    const button = within(region).getByRole("button", { name: "Ordenar por: Recibido, más reciente primero" });
+    act(() => button.focus());
+    await userEvent.keyboard("{Enter}");
+    const columns = within(await screen.findByRole("menu")).getByRole("group", { name: "Columna" });
+    expect(within(columns).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Documento", "Mandó", "Recibido"]);
+    await userEvent.click(within(columns).getByRole("menuitemradio", { name: "Mandó" }));
+    await waitFor(() => expect(sort()).toBe("sender"));
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la Z a la A" }));
+    await waitFor(() => expect(sort()).toBe("-sender"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(names()).toEqual(["remito.docx", "ticket.jpg", "captura.jpg"]);
+    expect(within(region).getByRole("button", { name: "Ordenar por: Mandó, de la Z a la A" })).toHaveFocus();
+    // Ordering does not change the one shown: the first one attached, whose data the questions show.
+    expect(within(table()).getByRole("button", { name: "ticket.jpg" })).toHaveAttribute("aria-pressed", "true");
+    expect(router.state.location.pathname).toBe(path);
+  }, 20_000);
+});
+
 describe("the questions", () => {
   it("edits a question in its dialog, adds one with its options and removes one", async () => {
     setup();

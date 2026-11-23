@@ -1,23 +1,42 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router";
+import { useClientSort } from "@/shared/hooks/useClientSort";
+import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateTimeInZone } from "@/shared/lib/dateTime";
+import { toggledSort, type SortValue } from "@/shared/lib/sort";
 import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { DocumentViewer } from "@/shared/ui/DocumentViewer";
+import { FilterBar } from "@/shared/ui/FilterBar";
 import { DocumentIcon, FileIcon, ImageIcon } from "@/shared/ui/icons";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Surface } from "@/shared/ui/Surface";
 import type { ReceivedDocument } from "../../api/receivedDocuments";
 import { receivedDocumentForbidden, useReceivedDocumentFile, useReceivedDocumentReadWait } from "../../hooks/useReceivedDocuments";
 import { receivedDocumentKind } from "../../receivedDocuments";
 
+// The documents arrive whole, so they order in the browser (OT1-C), by the id of each column; a sender without a name goes last in both
+// directions.
+const sortValues: Readonly<Record<string, (document: ReceivedDocument) => SortValue>> = {
+  document: document => document.file.name,
+  sender: document => document.sender.displayName,
+  receivedAtUtc: document => Date.parse(document.receivedAtUtc),
+};
+
 /**
  * «Documentos (N)» of «Armar formulario con la IA» (DOC6): the documents the proposal came from, in the order they were attached (the
  * first is the one whose data the questions show), to compare while it is reviewed. The chosen one is seen on top with the inbox's viewer
  * (a photo is brought closer and turned, a PDF uses the browser's viewer) and its row carries the bar; choosing another shows it. A file the
- * inbox kept no copy of has nothing to see.
+ * inbox kept no copy of has nothing to see. The table orders by its header and by «Ordenar por» over it, with the order in the address
+ * (OT1-C); without a choice, the one shown is still the first one attached.
  */
 export function DocumentFormSources({ documents, zone, onDenied }: { documents: readonly ReceivedDocument[]; zone: string | undefined; onDenied: () => void }) {
   const { t, i18n } = useTranslation("formDocuments");
+  const [params] = useSearchParams();
+  const update = useQueryUpdate();
+  const sort = params.get("sort") ?? undefined;
+  const rows = useClientSort(documents, sortValues);
   const [chosen, setChosen] = useState<string | undefined>(undefined);
   const shown = documents.find(document => document.id === chosen) ?? documents[0];
   const file = useReceivedDocumentFile(shown?.file.stored ? shown.id : undefined);
@@ -25,7 +44,7 @@ export function DocumentFormSources({ documents, zone, onDenied }: { documents: 
   const denied = receivedDocumentForbidden(file.error);
   useEffect(() => { if (denied) onDenied(); }, [denied, onDenied]);
   const columns: Column<ReceivedDocument>[] = [
-    { sortable: false, id: "document", header: t("columns.document"), cell: document => {
+    { id: "document", header: t("columns.document"), sortable: true, sortKind: "text", cell: document => {
       const kind = receivedDocumentKind(document.file.mediaType);
       const Icon = kind === "photo" ? ImageIcon : kind === "file" ? FileIcon : DocumentIcon;
       return <div className="flex min-w-28 max-w-56 items-start gap-2">
@@ -34,15 +53,17 @@ export function DocumentFormSources({ documents, zone, onDenied }: { documents: 
           onClick={() => setChosen(document.id)}>{document.file.name}</Button>
       </div>;
     } },
-    { sortable: false, id: "sender", header: t("columns.sender"), cell: document => document.sender.displayName ?? t("unknownPerson") },
-    { sortable: false, id: "receivedAtUtc", header: t("columns.received"), cell: document => <time dateTime={document.receivedAtUtc}>{formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone)}</time> },
+    { id: "sender", header: t("columns.sender"), sortable: true, sortKind: "text", cell: document => document.sender.displayName ?? t("unknownPerson") },
+    { id: "receivedAtUtc", header: t("columns.received"), sortable: true, sortKind: "date", cell: document => <time dateTime={document.receivedAtUtc}>{formatDateTimeInZone(document.receivedAtUtc, i18n.language, zone)}</time> },
   ];
   return <Surface title={t("formProposal.documents", { count: documents.length })} help={t("formProposal.documentsHelp")}>
     {shown?.file.stored ? <div className="border-b border-[var(--color-border)] p-4">
       <DocumentViewer key={shown.id} name={shown.file.name} mediaType={shown.file.mediaType} blob={file.data} loading={file.isPending} failed={file.isError}
         onRetry={() => void file.refetch()} retryReason={fileWait} />
     </div> : null}
-    <DataTable columns={columns} rows={documents} rowKey={document => document.id} selectedRowKey={shown?.id} onRowClick={document => setChosen(document.id)}
-      emptyTitle={t("formProposal.noDocuments")} />
+    {/* No filters here: only «Ordenar por», over the table (OT1-C). */}
+    <FilterBar><div className="flex flex-wrap items-center gap-3"><SortMenu columns={columns} sort={sort} onSortChange={next => update({ sort: next })} /></div></FilterBar>
+    <DataTable columns={columns} rows={rows} rowKey={document => document.id} selectedRowKey={shown?.id} onRowClick={document => setChosen(document.id)}
+      sort={sort} onSortChange={(field, kind) => update({ sort: toggledSort(sort, field, kind) })} emptyTitle={t("formProposal.noDocuments")} />
   </Surface>;
 }
