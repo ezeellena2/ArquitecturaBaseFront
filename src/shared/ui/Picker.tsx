@@ -243,13 +243,15 @@ export function Picker(props: PickerProps) {
 
   // Closing gives the focus back to the button, unless the choice took it somewhere else (IM3-A): to the field it showed,
   // such as the first cell of «Pegar desde Excel», or to a confirmation it opened. Radix asks once the list has left the
-  // page, so a connected element that is not the button nor the page is outside it.
+  // page, so a connected element that is not the page is outside it. What holds the button is not somewhere else: when the
+  // focused search leaves the page and the dialog around the field changes with the choice, as in «Mandar formulario», the
+  // dialog's trap takes the focus for a moment.
   function focusTaken() {
     const kept = elsewhere.current;
     closing.current = false;
     elsewhere.current = null;
     return [document.activeElement, kept].find((element): element is HTMLElement =>
-      element instanceof HTMLElement && element.isConnected && element !== document.body && element !== triggerRef.current) ?? null;
+      element instanceof HTMLElement && element.isConnected && element !== document.body && !element.contains(triggerRef.current)) ?? null;
   }
 
   function jumpTo(key: string, time: number) {
