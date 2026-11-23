@@ -5,10 +5,12 @@ import { useSearchParams } from "react-router";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
+import { useClientSort } from "@/shared/hooks/useClientSort";
 import { useCountdown } from "@/shared/hooks/useCountdown";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { useWaitText } from "@/shared/hooks/useWaitText";
+import { toggledSort, type SortValue } from "@/shared/lib/sort";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DataList } from "@/shared/ui/DataList";
@@ -20,6 +22,7 @@ import { Picker } from "@/shared/ui/Picker";
 import { LockIcon, PlusIcon } from "@/shared/ui/icons";
 import { RowActions } from "@/shared/ui/RowActions";
 import { SearchInput } from "@/shared/ui/SearchInput";
+import { SortMenu } from "@/shared/ui/SortMenu";
 import { Surface } from "@/shared/ui/Surface";
 import type { FormLibrary as Library, FormStandard } from "../api/library";
 import { FormStandardAddDialog } from "../components/FormStandardAddDialog";
@@ -29,8 +32,8 @@ import { formLibraryKey, useFormLibrary } from "../hooks/useFormLibrary";
 
 // BI1-A: «Biblioteca», the standards the installed modules bring. «Diseñar formularios» reads it and «Administrar formularios» adds a
 // copy: an own draft that opens in the editor. DOC1: what each one reads and validates without AI, and the standards of the next
-// stages as «Próximamente», rows without an action. The search and the state («Todos», «Disponibles», «Próximamente») go in the
-// address: they are not private.
+// stages as «Próximamente», rows without an action. The search, the state («Todos», «Disponibles», «Próximamente») and the order go in
+// the address: they are not private.
 export function FormLibraryPage() {
   const { data: user } = useCurrentUser();
   const { i18n } = useTranslation("forms");
@@ -54,6 +57,15 @@ function libraryRows(library: Library | undefined, search: string, culture: stri
   const upcoming: Row[] = (library?.upcoming ?? []).filter(item => matches(item.name)).map(item => ({ kind: "upcoming", ...item }));
   return { standards, upcoming };
 }
+// The library arrives whole, so it orders in the browser (OT1-C), by the id of each column. An upcoming standard has no version, module or
+// copies: it goes last in both directions. The state goes in the order of the circuit, available first.
+const sortValues: Readonly<Record<string, (row: Row) => SortValue>> = {
+  name: row => row.name,
+  version: row => row.kind === "standard" ? row.standard.version : null,
+  source: row => row.kind === "standard" ? row.standard.source : null,
+  copies: row => row.kind === "standard" ? row.standard.copies : null,
+  availability: row => row.kind === "standard" ? 0 : 1,
+};
 
 function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: string; culture: "es" | "en"; permissions: readonly string[]; canAdd: boolean }) {
   const { t } = useTranslation("forms");
@@ -62,6 +74,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const update = useQueryUpdate();
   const search = params.get("search") ?? "";
   const chosen = params.get("availability");
+  const sort = params.get("sort") ?? undefined;
   const scope = useMemo(() => ({ actorId, culture, permissions }), [actorId, culture, permissions]);
   // A failure goes to the common notice (premise 5.9); the table keeps «Reintentar», which waits what a 429 asks.
   const library = useFormLibrary(scope);
@@ -78,15 +91,15 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const folders = useMemo(() => { const all = tree.data?.folders ?? []; return treeOrder(all).map(entry => ({ id: entry.folder.id, path: folderPath(all, entry.folder.id).join(" / ") })); }, [tree.data]);
   const forbidden = library.error instanceof ApiError && (library.error.status === 403 || library.error.status === 401);
   useEffect(() => { if (forbidden) client.removeQueries({ queryKey: formLibraryKey(scope) }); }, [forbidden, client, scope]);
-  if (forbidden) return <ForbiddenPage />;
-
-  const failure = library.error ? errorFeedback(library.error) : null;
-  const list = new Intl.ListFormat(culture, { type: "conjunction" });
   // Available or coming soon is a choice only when some standard is coming; until the library arrives, it may be.
   const coming = library.data ? (library.data.upcoming?.length ?? 0) > 0 : true;
   const availability: Availability = coming && (chosen === "Available" || chosen === "Upcoming") ? chosen : "All";
   const { standards, upcoming } = libraryRows(library.data, search, culture);
-  const rows = availability === "Available" ? standards : availability === "Upcoming" ? upcoming : [...standards, ...upcoming];
+  const rows = useClientSort(availability === "Available" ? standards : availability === "Upcoming" ? upcoming : [...standards, ...upcoming], sortValues);
+  if (forbidden) return <ForbiddenPage />;
+
+  const failure = library.error ? errorFeedback(library.error) : null;
+  const list = new Intl.ListFormat(culture, { type: "conjunction" });
   const filtered = !!search.trim() || availability !== "All";
   // A column only when a standard of the filter has its datum, whatever is searched: «Próximamente» lists only names and descriptions,
   // and no column goes full of «—». Until the library arrives, all of them.
@@ -103,11 +116,11 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const addButton = (standard: FormStandard) => <Button type="button" className="w-full" onClick={() => setAdding(standard)}
     aria-label={t("library.addTitle", { name: standard.name })}><PlusIcon className="size-4" aria-hidden="true" />{t("library.add")}</Button>;
   // One piece of data per column (UD1): what it reads, what it validates, the version, the module that brings it and how many of
-  // your forms came from it; whether it is available, only where both kinds are listed.
+  // your forms came from it; whether it is available, only where both kinds are listed. Each column with a datum orders (OT1-C) by its
+  // id in `sortValues`; what it reads or validates are several values, and they do not.
   const columns: Column<Row>[] = [
     {
-      sortable: false,
-      id: "standard", header: t("library.standard"),
+      id: "name", header: t("library.standard"), sortable: true, sortKind: "text",
       cell: row => <div className="flex min-w-48 flex-col gap-0.5 whitespace-normal">
         <span className="font-medium">{row.name}</span>
         {row.description ? <span className="text-muted-foreground">{row.description}</span> : null}
@@ -117,10 +130,10 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
       cell: (row: Row) => <div className="min-w-56 whitespace-normal">{row.kind === "standard" ? reads(row.standard) ?? none : none}</div> }] : [],
     ...has(standard => standard.validations) ? [{ sortable: false as const, id: "validations", header: t("library.validations"),
       cell: (row: Row) => <div className="min-w-40 whitespace-normal">{row.kind === "standard" ? validations(row.standard) ?? none : none}</div> }] : [],
-    ...has(standard => standard.version) ? [{ sortable: false as const, id: "version", header: t("library.version"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.version : none }] : [],
-    ...has(standard => standard.source) ? [{ sortable: false as const, id: "source", header: t("library.source"), cell: (row: Row) => row.kind === "standard" ? row.standard.source ?? none : none }] : [],
-    ...has(standard => standard.copies) ? [{ sortable: false as const, id: "forms", header: t("library.forms"), numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.copies : none }] : [],
-    ...availability === "All" && coming ? [{ sortable: false as const, id: "state", header: t("library.state"),
+    ...has(standard => standard.version) ? [{ id: "version", header: t("library.version"), sortable: true as const, sortKind: "number" as const, numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.version : none }] : [],
+    ...has(standard => standard.source) ? [{ id: "source", header: t("library.source"), sortable: true as const, sortKind: "text" as const, cell: (row: Row) => row.kind === "standard" ? row.standard.source ?? none : none }] : [],
+    ...has(standard => standard.copies) ? [{ id: "copies", header: t("library.forms"), sortable: true as const, sortKind: "number" as const, numeric: true, cell: (row: Row) => row.kind === "standard" ? row.standard.copies : none }] : [],
+    ...availability === "All" && coming ? [{ id: "availability", header: t("library.state"), sortable: true as const, sortKind: "state" as const,
       cell: (row: Row) => <Badge variant="outline">{t(row.kind === "standard" ? "library.available" : "library.upcoming")}</Badge> }] : [],
     ...canAdd && has(standard => standard.key) ? [{ sortable: false as const, id: "actions", header: t("actionsColumn"), align: "right" as const,
       cell: (row: Row) => row.kind === "standard" ? <RowActions actions={[{ label: t("library.add"), accessibleName: t("library.addTitle", { name: row.standard.name }),
@@ -136,6 +149,8 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
       options={[{ id: "Available", label: t("library.availableFilter") }, { id: "Upcoming", label: t("library.upcoming") }]}
       value={availability === "All" ? "" : availability}
       onChange={id => { if (id !== (availability === "All" ? "" : availability)) update({ availability: id || undefined }); }} /> : null}
+    {/* Last in the bar, apart from the filters: it takes no rows out (OT1-C). */}
+    <SortMenu columns={columns} sort={sort} onSortChange={next => update({ sort: next })} />
   </div></FilterBar>;
   const dialog = adding ? <FormStandardAddDialog standard={adding} folders={folders} onOpenChange={open => { if (!open) setAdding(null); }} /> : null;
 
@@ -170,6 +185,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
         hasData={library.data !== undefined}
         error={failure && !["cancelled", "session"].includes(failure.kind) ? t("library.loadError") : undefined}
         onRetry={() => { void library.refetch(); }} retryReason={wait.isRunning ? t("common:code.retryIn", { wait: waitText(wait.seconds) }) : null}
+        sort={sort} onSortChange={(field, kind) => update({ sort: toggledSort(sort, field, kind) })}
         emptyTitle={filtered ? t("library.noMatches") : t("library.emptyTitle")}
         emptyAction={filtered ? <Button type="button" variant="outline" onClick={() => update({ search: undefined, availability: undefined })}>{t("clearFilters")}</Button> : undefined} />
     </Surface>

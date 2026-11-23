@@ -219,6 +219,8 @@ describe("the library with the reading of documents (DOC1)", () => {
     const table = screen.getByRole("table");
     expect(cellUnder(table, receipt, "Qué lee")).toHaveTextContent(/^Banco o billetera de origen, Cuenta de origen, .*, Número de operación y Concepto$/);
     expect(cellUnder(table, receipt, "Validaciones fijas")).toHaveTextContent(/^Cuenta de origen, CUIT o CUIL de origen, Cuenta de destino y CUIT o CUIL de destino$/);
+    // What a standard reads or validates are several values: they do not order (OT1-C).
+    for (const name of ["Qué lee", "Validaciones fijas"]) expect(within(within(table).getByRole("columnheader", { name })).queryByRole("button")).not.toBeInTheDocument();
     expect(cellUnder(table, receipt, "En tus formularios")).toHaveTextContent(/^2$/);
     expect(within(receipt).getByRole("button", { name: "Agregar «Comprobante de transferencia»" })).toBeInTheDocument();
     const remito = screen.getByText("Remito").closest("tr")!;
@@ -263,6 +265,78 @@ describe("the library with the reading of documents (DOC1)", () => {
     expect(screen.getAllByRole("row")).toHaveLength(2);
     expect(screen.getByRole("searchbox", { name: "Buscar por nombre" })).toHaveValue("comprobante");
     expect(screen.getByRole("button", { name: "Estado Disponibles" })).toBeInTheDocument();
+  });
+});
+
+// OT1-C (2026-11-22): the library arrives whole, so it orders in the browser, by its header and by «Ordenar por», with the order in the
+// address. The empty ones (an upcoming standard has no version, module or copies) go last in both directions.
+describe("the order", () => {
+  const payslip = { key: "test.payslip", name: "Recibo de sueldo", description: "Un recibo de sueldo." };
+  const library = () => { setup(["formtemplates.read"]); server.use(http.get("/api/forms/library", () => HttpResponse.json({ standards: [invoice, delivery], upcoming: [payslip] }))); };
+  const names = () => within(screen.getByRole("table")).getAllByRole("row").slice(1)
+    .map(row => ["Factura", "Remito", "Recibo de sueldo"].find(name => within(row).queryByText(name, { exact: true })));
+  const header = (name: string) => within(within(screen.getByRole("table")).getByRole("columnheader", { name })).getByRole("button", { name });
+  const sort = (router: { state: { location: { search: string } } }) => new URLSearchParams(router.state.location.search).get("sort");
+
+  it("orders by a header in its useful direction with the empty ones last, keeping the search, and leaves the order in the address", async () => {
+    library();
+    const { router } = renderRouteWithProviders("/formularios/biblioteca?search=r");
+    await screen.findByText("Factura", {}, { timeout: 10_000 });
+    // Without an order chosen, the list keeps the one it arrived in: no arrow, and the button says «Ordenar por».
+    expect(names()).toEqual(["Factura", "Remito", "Recibo de sueldo"]);
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Estándar" })).toHaveAttribute("aria-sort", "none");
+    expect(screen.getByRole("button", { name: "Ordenar por" })).toBeVisible();
+
+    await userEvent.click(header("Estándar"));
+    await waitFor(() => expect(router.state.location.search).toBe("?search=r&sort=name"));
+    expect(names()).toEqual(["Factura", "Recibo de sueldo", "Remito"]);
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Estándar" })).toHaveAttribute("aria-sort", "ascending");
+    await userEvent.click(header("Estándar"));
+    await waitFor(() => expect(sort(router)).toBe("-name"));
+    expect(names()).toEqual(["Remito", "Recibo de sueldo", "Factura"]);
+    await userEvent.click(header("Versión"));
+    await waitFor(() => expect(sort(router)).toBe("-version"));
+    expect(names()).toEqual(["Remito", "Factura", "Recibo de sueldo"]);
+    await userEvent.click(header("En tus formularios"));
+    await waitFor(() => expect(sort(router)).toBe("-copies"));
+    expect(names()).toEqual(["Factura", "Remito", "Recibo de sueldo"]);
+    await userEvent.click(header("En tus formularios"));
+    await waitFor(() => expect(sort(router)).toBe("copies"));
+    expect(names()).toEqual(["Remito", "Factura", "Recibo de sueldo"]);
+    await userEvent.click(header("Origen"));
+    await waitFor(() => expect(sort(router)).toBe("source"));
+    expect(names()).toEqual(["Factura", "Remito", "Recibo de sueldo"]);
+    // The state goes in the order of the circuit: available first, and the second touch turns it around.
+    await userEvent.click(header("Estado"));
+    await waitFor(() => expect(sort(router)).toBe("availability"));
+    expect(names()).toEqual(["Factura", "Remito", "Recibo de sueldo"]);
+    await userEvent.click(header("Estado"));
+    await waitFor(() => expect(sort(router)).toBe("-availability"));
+    expect(names()).toEqual(["Recibo de sueldo", "Factura", "Remito"]);
+    expect(new URLSearchParams(router.state.location.search).get("search")).toBe("r");
+  });
+
+  it("orders from «Ordenar por», last in the bar, and opens with the order of a shared address", async () => {
+    library();
+    const { router } = renderRouteWithProviders("/formularios/biblioteca?sort=-copies");
+    await screen.findByText("Factura", {}, { timeout: 10_000 });
+    expect(names()).toEqual(["Factura", "Remito", "Recibo de sueldo"]);
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "En tus formularios" })).toHaveAttribute("aria-sort", "descending");
+    const trigger = screen.getByRole("button", { name: "Ordenar por: En tus formularios, de mayor a menor" });
+    expect(within(trigger.closest<HTMLElement>('[data-slot="filter-bar"]')!).getAllByRole("button").at(-1)).toBe(trigger);
+    act(() => trigger.focus());
+    await userEvent.keyboard("{Enter}");
+    const columns = within(await screen.findByRole("menu")).getByRole("group", { name: "Columna" });
+    expect(within(columns).getAllByRole("menuitemradio").map(item => item.textContent)).toEqual(["Estándar", "Versión", "Origen", "En tus formularios", "Estado"]);
+    await userEvent.click(within(columns).getByRole("menuitemradio", { name: "Estándar" }));
+    await waitFor(() => expect(sort(router)).toBe("name"));
+    await userEvent.click(within(screen.getByRole("menu")).getByRole("menuitemradio", { name: "De la Z a la A" }));
+    await waitFor(() => expect(sort(router)).toBe("-name"));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
+    expect(names()).toEqual(["Remito", "Recibo de sueldo", "Factura"]);
+    expect(within(screen.getByRole("table")).getByRole("columnheader", { name: "Estándar" })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("button", { name: "Ordenar por: Estándar, de la Z a la A" })).toHaveFocus();
   });
 });
 
