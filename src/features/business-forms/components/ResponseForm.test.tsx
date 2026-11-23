@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { renderWithProviders } from "@/test/utils/renderWithProviders";
 import { responseDetailFixture } from "@/test/responseFixtures";
@@ -9,6 +10,9 @@ import type { ResponseChoice } from "../responses";
 import { ResponseForm } from "./ResponseForm";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"),
   useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
+// The photos never arrive: what is checked is which ones the viewer goes through, not their bytes.
+vi.mock("@/shared/api/formFiles", async () => ({ ...await vi.importActual<typeof import("@/shared/api/formFiles")>("@/shared/api/formFiles"),
+  readFormFile: vi.fn(() => new Promise<Blob>(() => {})) }));
 
 const id = (n: number) => "0199a0c0-0000-7000-8000-" + String(n).padStart(12, "0");
 const question = (n: number, type: FormEntryQuestion["type"], label: string, extra: Partial<FormEntryQuestion> = {}): FormEntryQuestion => ({
@@ -51,7 +55,7 @@ function record(): ResponseDetail {
   ] as never };
 }
 const render = (layout: "page" | "panel") => renderWithProviders(<ResponseForm entry={entry} draft={draft} record={record()} layout={layout} actor={id(1000)}
-  photos={[]} onForbidden={() => {}} onError={() => {}}/>);
+  onForbidden={() => {}} onError={() => {}}/>);
 
 it("reads each question in its control with what was answered, and leaves out what its condition hides", () => {
   render("page");
@@ -61,6 +65,38 @@ it("reads each question in its control with what was answered, and leaves out wh
   expect(screen.queryByText("Período desde")).toBeNull();
   expect(screen.getByRole("textbox", { name: "Tipo de artículo" })).toHaveValue("Agroquímicos");
   expect(screen.getByRole("textbox", { name: "Total" })).toHaveValue("1.502,5");
+});
+
+// What was answered reads in the text colour also in a long text; a datum of the catalog keeps the grey of what cannot be written.
+it("reads a long text that was answered in the text colour, and a datum of the catalog in grey", () => {
+  const notes = { ...entry, questions: [...questions, question(10, "longText", "Observaciones")] } satisfies FormEntry;
+  const answered = { ...record(), values: [...record().values,
+    { fieldId: id(10), key: "notes", type: "longText", label: "Observaciones", value: "Entregar por la tarde" }] } as never as ResponseDetail;
+  renderWithProviders(<ResponseForm entry={notes} draft={draft} record={answered} layout="page" actor={id(1000)}
+    onForbidden={() => {}} onError={() => {}}/>);
+
+  const text = screen.getByRole("textbox", { name: "Observaciones" });
+  expect(text).toHaveValue("Entregar por la tarde");
+  expect(text).not.toHaveClass("read-only:text-[var(--color-content-muted)]");
+  expect(screen.getByRole("textbox", { name: "Artículo · Rubro" })).toHaveClass("read-only:text-[var(--color-content-muted)]");
+});
+
+// The viewer opened from a question goes through its photos, with its name: not through those of another question.
+it("opens the photos of a question with its name, without those of another question", async () => {
+  const photo = (n: number, name: string) => ({ fileId: id(n), name, contentType: "image/jpeg", size: 20, hasThumbnail: true });
+  const files = { minFiles: 0, maxFiles: 10, photoSource: null };
+  const photos = { ...entry, questions: [question(20, "photo", "Fotos de la entrega", { files }), question(21, "photo", "Fotos del remito", { files })] } satisfies FormEntry;
+  const delivery = [photo(70, "entrega.jpg")];
+  const slip = [photo(71, "remito-1.jpg"), photo(72, "remito-2.jpg")];
+  const taken = { ...responseDetailFixture(), values: [
+    { fieldId: id(20), key: "delivery", type: "photo", label: "Fotos de la entrega", value: delivery },
+    { fieldId: id(21), key: "slip", type: "photo", label: "Fotos del remito", value: slip }] } as never as ResponseDetail;
+  renderWithProviders(<ResponseForm entry={photos} draft={{ values: {}, choices: {}, files: {} }} record={taken} layout="page" actor={id(1000)}
+    onForbidden={() => {}} onError={() => {}}/>);
+
+  await userEvent.click(screen.getByRole("button", { name: /entrega\.jpg/ }));
+
+  expect(await screen.findByRole("dialog", { name: "Fotos de la entrega" })).toHaveAccessibleDescription("Foto 1 de 1");
 });
 
 it("puts each datum of the option chosen in a field of its own, never under its value", () => {

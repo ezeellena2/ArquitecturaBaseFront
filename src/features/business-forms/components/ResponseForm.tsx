@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { PrivateFormFile } from "@/shared/api/formFiles";
 import { cn } from "@/shared/lib/utils";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { FormField } from "@/shared/ui/FormField";
@@ -23,7 +22,7 @@ import {
 import { responseFiles, type ResponseItemValues, type ResponseValue } from "../responses";
 
 type Answer = ResponseDetail["values"][number];
-interface Viewer { actor: string; recordId: string; photos: readonly PrivateFormFile[]; onForbidden: () => void; onError: (error: unknown) => void }
+interface Viewer { actor: string; recordId: string; onForbidden: () => void; onError: (error: unknown) => void }
 interface Words { culture: string; yes: string; no: string }
 
 const isFile = (question: FormEntryQuestion) => question.type === "photo" || question.type === "document";
@@ -53,8 +52,8 @@ function useFormula(entry: FormEntry) {
  * in its control with what was answered and nothing to change. What its condition hides is not drawn (CO1-A), each datum of a
  * catalog option is a field of its own («Artículo · Rubro») and the block is the load's table or boxes, without actions.
  */
-export function ResponseForm({ entry, draft, record, layout, actor, photos, onForbidden, onError, aside }: {
-  entry: FormEntry; draft: EntryDraft; record: ResponseDetail; layout: "page" | "panel"; actor: string; photos: readonly PrivateFormFile[];
+export function ResponseForm({ entry, draft, record, layout, actor, onForbidden, onError, aside }: {
+  entry: FormEntry; draft: EntryDraft; record: ResponseDetail; layout: "page" | "panel"; actor: string;
   onForbidden: () => void; onError: (error: unknown) => void;
   /** What goes at the end of a question's label row, such as what the assistant did with its answer: never under the value. */
   aside?: (fieldId: string) => ReactNode;
@@ -64,7 +63,7 @@ export function ResponseForm({ entry, draft, record, layout, actor, photos, onFo
   const { measured, columns } = useEntryColumns(layout);
   const answers = new Map(record.values.map(value => [value.fieldId, value]));
   const block = entryBlock(entry);
-  const viewer: Viewer = { actor, recordId: record.id, photos, onForbidden, onError };
+  const viewer: Viewer = { actor, recordId: record.id, onForbidden, onError };
   const words: Words = { culture: i18n.language, yes: t("sent.yes"), no: t("sent.no") };
   // Number and date stay narrow (CW12), as in the load.
   const narrowClass = layout === "panel" ? "w-full sm:w-37.5" : columns === 1 ? undefined : "w-full max-w-37.5";
@@ -111,11 +110,12 @@ function ReadingQuestion({ entry, question, answer, draft, narrowClass, pairInRo
   const id = entryQuestionId(question.fieldId);
   const value = answer?.value ?? null;
   if (isFile(question)) {
+    // The viewer goes through the photos of this question, which gives it its name.
     const files = answer ? responseFiles(answer) : [];
     return <div className="flex flex-col gap-1.5">
       <Label asChild><span id={id + "-label"}>{question.label}</span></Label>
       {files.length ? <FormRecordFiles actor={viewer.actor} recordId={viewer.recordId} files={files} photo={question.type === "photo"} label={question.label}
-        thumbnailLimit={files.length} viewerFiles={viewer.photos} onForbidden={viewer.onForbidden} onError={viewer.onError}/>
+        thumbnailLimit={files.length} onForbidden={viewer.onForbidden} onError={viewer.onError}/>
         : <p className="text-sm text-[var(--color-content-muted)]">{t("responses.unanswered")}</p>}
     </div>;
   }
@@ -146,7 +146,7 @@ function ReadingQuestion({ entry, question, answer, draft, narrowClass, pairInRo
     </div>;
   }
   const narrow = question.type === "decimal" || question.type === "date";
-  const control = question.type === "longText" ? <Textarea readOnly id={id} value={text}/>
+  const control = question.type === "longText" ? <Textarea readOnly answered={!question.calculation} id={id} value={text}/>
     : <Input readOnly answered={!question.calculation} id={id} value={text} className={cn(question.type === "decimal" && "text-right", narrow && narrowClass)}/>;
   return <FormField label={question.label} htmlFor={id} help={question.calculation ? formula(question) : undefined} action={aside}>{control}</FormField>;
 }
