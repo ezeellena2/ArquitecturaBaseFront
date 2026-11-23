@@ -8,6 +8,7 @@ import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { usePagination } from "@/shared/hooks/usePagination";
+import { toggledSort } from "@/shared/lib/sort";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { formatDateInZone, formatDateTimeInZone } from "@/shared/lib/dateTime";
 import { Banner } from "@/shared/ui/Banner";
@@ -143,7 +144,9 @@ export function FormsPage() {
     <SortMenu columns={columns} sort={sort ?? usualSort} onSortChange={pagination.setSort} /></div></FilterBar>
     {deactivatedPendingCount > 0 ? <div className="mb-4"><Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ publicationFilter: "Deactivated", page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: deactivatedPendingCount })}</Banner></div> : null}
     {/* Searching, filtering, sorting or paging keeps the previous rows in sight: the table says it reads again until they arrive. */}
-    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); }} sort={sort ?? usualSort} onSortChange={pagination.toggleSort}
+    <Surface><DataTable columns={columns} rows={list.data?.items ?? []} hasData={list.data !== undefined} rowKey={row => row.id} isLoading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("loadFailed") : undefined} onRetry={() => { void list.refetch(); }} sort={sort ?? usualSort}
+      // From the order shown: one left out of the request (the state among the deactivated) does not count for the first touch.
+      onSortChange={(field, kind) => pagination.setSort(toggledSort(sort ?? usualSort, field, kind))}
       emptyTitle={folderEmpty?.title ?? t(pendingEmpty ? "overview.noPending" : hasFilters ? "noMatches" : "emptyTitle")} emptyDescription={hasFilters && !folderEmpty && !pendingEmpty ? t("noMatchesDescription") : undefined}
       emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button></div>
         : folderEmpty || pendingEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={clearFilters}>{t("clearFilters")}</Button> : canManage ? <Button asChild><Link to="/formularios/nuevo">{t("new")}</Link></Button> : undefined} />

@@ -1030,6 +1030,9 @@ describe("Forms order", () => {
     expect(within(header("Deprecación")).queryByRole("button")).not.toBeInTheDocument();
     expect(requests.at(-1)?.has("sort")).toBe(false);
     expect(screen.getByRole("button", { name: "Ordenar por: Formulario, de la A a la Z" })).toBeVisible();
+    // The order shown is the usual one, by name: the first touch on «Formulario» inverts it, as without an order chosen.
+    await userEvent.click(within(header("Formulario")).getByRole("button", { name: "Formulario" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-name"));
   });
 
   it("changes the order from «Ordenar por», last in the bar, and the actions do not order", async () => {

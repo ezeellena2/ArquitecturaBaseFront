@@ -256,5 +256,9 @@ describe("Catalog order", () => {
     renderRouteWithProviders("/catalogos?sort=origin");
     await screen.findByRole("table", {}, { timeout: 5000 });
     expect(requests.at(-1)?.has("sort")).toBe(false);
+    // The order shown is the usual one, by name: the first touch on «Catálogo» inverts it, as without an order chosen.
+    expect(header("Catálogo")).toHaveAttribute("aria-sort", "ascending");
+    await userEvent.click(within(header("Catálogo")).getByRole("button", { name: "Catálogo" }));
+    await waitFor(() => expect(requests.at(-1)?.get("sort")).toBe("-name"));
   });
 });

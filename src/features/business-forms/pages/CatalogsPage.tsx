@@ -8,6 +8,7 @@ import { errorFeedback, readErrorMessage } from "@/shared/api/errorFeedback";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { useFilters } from "@/shared/hooks/useFilters";
 import { usePagination } from "@/shared/hooks/usePagination";
+import { toggledSort } from "@/shared/lib/sort";
 import { Button } from "@/shared/ui/button";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -82,7 +83,9 @@ export function CatalogsPage() {
     <SortMenu columns={catalogListColumns(t, rowActions)} sort={query.sort ?? usualSort} onSortChange={pagination.setSort} /></div></FilterBar>
     <CatalogListTable {...rowActions} page={visiblePage} loading={list.isPending} refreshing={list.isPlaceholderData} error={list.error ? t("catalogs.loadFailed") : undefined}
       onRetry={() => { void list.refetch(); }} onPageChange={pagination.setPage} onPageSizeChange={pagination.setPageSize}
-      sort={query.sort ?? usualSort} onSortChange={pagination.toggleSort} hasFilters={hasFilters}
+      sort={query.sort ?? usualSort}
+      // From the order shown: an old order by origin, left out of the request, does not count for the first touch.
+      onSortChange={(field, kind) => pagination.setSort(toggledSort(query.sort ?? usualSort, field, kind))} hasFilters={hasFilters}
       emptyTitle={folderEmpty?.title}
       emptyAction={folderEmpty?.searchAll ? <div className="flex flex-wrap justify-center gap-2"><Button type="button" variant="outline" onClick={folderEmpty.searchAll.run}>{folderEmpty.searchAll.label}</Button><Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button></div>
         : folderEmpty ? undefined : hasFilters ? <Button type="button" variant="outline" onClick={filters.clear}>{t("clearFilters")}</Button> : newAction} />
