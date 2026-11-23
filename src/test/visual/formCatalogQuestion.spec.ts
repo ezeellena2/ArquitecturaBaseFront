@@ -66,7 +66,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     expect(body.draft.fields[0]!.source?.catalog).toBe(filtersId); expect(body.draft.fields[0]!.options == null).toBe(true);
     expect(body.draft.fields[0]!.fieldId).toBeNull(); expect(body.draft.fields[0]!.replacesFieldId).not.toBeNull();
     await page.locator('main a[href="/formularios"]').first().click();
-    await page.getByRole("heading", { name: label("Diseñar formularios", "Design forms"), exact: true }).waitFor();
+    await page.getByRole("heading", { name: label("Formularios", "Forms"), exact: true }).waitFor();
     await page.getByRole("table").getByRole("link", { name: label("Registrar visita", "Register visit"), exact: true }).click();
     await page.getByRole("heading", { name: label("Registrar visita", "Register visit"), exact: true }).waitFor();
     await page.getByRole("button", { name: label("Editar Cliente", "Edit Customer"), exact: true }).click();

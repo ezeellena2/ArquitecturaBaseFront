@@ -199,7 +199,7 @@ describe("Formularios without folders", () => {
       requests.push(new URL(request.url).searchParams);
       return HttpResponse.json({ forms: { ...emptyPage }, filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } });
     }));
-    await act(async () => { renderRouteWithProviders(`/formularios/respuestas?pageSize=20&carpeta=${north}`); });
+    await act(async () => { renderRouteWithProviders(`/formularios?pageSize=20&carpeta=${north}`); });
     await waitFor(() => expect(requests).not.toHaveLength(0));
     expect(requests.every(request => !request.has("folderId") && !request.has("withoutFolder"))).toBe(true);
     expect(await screen.findByRole("searchbox")).toBeInTheDocument();

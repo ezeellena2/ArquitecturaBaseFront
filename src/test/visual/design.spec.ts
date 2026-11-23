@@ -603,7 +603,7 @@ for (const collapsed of [false, true]) {
       Object.assign(window, { visualProfileHold: new Promise<void>(resolve => { release = resolve; }), releaseVisualProfile: () => release() });
       localStorage.setItem("arquitecturabase.sidebar", JSON.stringify(sidebar));
     }, state);
-    await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: "/formularios/respuestas", lang: "es", scenario: "forms-overview" })}`);
+    await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: "/formularios", lang: "es", scenario: "forms-overview" })}`);
     await page.evaluate(() => document.fonts.ready);
     // The scene installs its fixtures when its script runs, which a busy machine can leave for after the fonts.
     await page.waitForFunction(() => (window as typeof window & Partial<HeldLoads>).formOverviewFixture !== undefined);
@@ -612,10 +612,10 @@ for (const collapsed of [false, true]) {
     const panel = page.getByRole("navigation", { name: "Gestión de formularios", exact: true });
     const topbar = page.getByRole("banner");
     const marks = (region: Locator) => region.locator('[data-slot="skeleton"]');
-    // Forms, WhatsApp and Administration in the bar; «Formularios», its three pages and, last, «Documentos recibidos» in the panel; the
-    // avatar above.
+    // Forms, WhatsApp and Administration in the bar; in the panel «Formularios» and «Documentos recibidos» and, a line apart,
+    // «Catálogos» and «Formularios que faltan» (FU1-B); the avatar above.
     await expect(marks(menu)).toHaveCount(3);
-    await expect(marks(panel)).toHaveCount(5);
+    await expect(marks(panel)).toHaveCount(4);
     await expect(marks(topbar)).toHaveCount(1);
     const boxes = (targets: Locator[]) => Promise.all(targets.map(async target => (await target.boundingBox())!));
     const loadingMenu = await boxes(await marks(menu).all());
@@ -626,7 +626,7 @@ for (const collapsed of [false, true]) {
     await page.screenshot({ path: `test-results/shell-profile-loading-${state}-1440.png` });
     await page.evaluate(() => (window as typeof window & HeldLoads).releaseVisualProfile());
     const trigger = menu.getByRole("button", { name: "Gestión de formularios", exact: true });
-    const rows = [panel.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ }), ...["Diseñar formularios", "Catálogos", "Formularios que faltan"].map(name => panel.getByRole("link", { name, exact: true }))];
+    const rows = [panel.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ }), panel.getByRole("link", { name: "Catálogos", exact: true })];
     const avatar = topbar.getByRole("button", { name: "Menú de Ana Pérez", exact: true }).locator("span").first();
     await expect(trigger).toBeVisible();
     await expect(rows[0]).toHaveAttribute("aria-current", "page");
@@ -636,8 +636,12 @@ for (const collapsed of [false, true]) {
     expect(loadingMenu[0]).toEqual(row);
     // Without their permissions WhatsApp and Administration leave; while loading they measured a row as well.
     expect(loadingMenu.map(box => [box.width, box.height])).toEqual(loadingMenu.map(() => [row.width, row.height]));
-    // Without its permission «Documentos recibidos», the last row (DOC5-A), leaves: the rows above it keep their place.
-    expect(await boxes(rows)).toEqual(loadingPanel.slice(0, rows.length));
+    // «Formularios» keeps its place. Without their permissions «Documentos recibidos» and «Formularios que faltan» leave (FU1-B):
+    // «Catálogos» keeps the size of its block and goes up the row that «Documentos recibidos» left.
+    const [overviewRow, catalogsRow] = await boxes(rows);
+    expect(overviewRow).toEqual(loadingPanel[0]);
+    expect([catalogsRow.x, catalogsRow.width, catalogsRow.height]).toEqual([loadingPanel[2].x, loadingPanel[2].width, loadingPanel[2].height]);
+    expect(catalogsRow.y).toBeCloseTo(loadingPanel[2].y - (loadingPanel[1].y - loadingPanel[0].y), 1);
     expect(loadedAvatar).toEqual(loadingAvatar);
     await expect(marks(rows[0])).toHaveCount(1);
     expect.soft(await contrastWithSurface(marks(rows[0]))).toBeGreaterThan(1.08);

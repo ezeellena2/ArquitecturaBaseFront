@@ -6,7 +6,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 // menu; and the states. Evidence without golden in es/en at 1440, 390 and 320, to compare with the boards.
 const texts = {
   es: {
-    forms: "Diseñar formularios", catalogs: "Catálogos", crumbs: "Migas de pan", mainMenu: "Navegación principal", drawer: "Menú de navegación", collapse: "Contraer menú",
+    forms: "Formularios", catalogs: "Catálogos", crumbs: "Migas de pan", mainMenu: "Navegación principal", drawer: "Menú de navegación", collapse: "Contraer menú",
     billing: "Facturación", delivery: "Repartos", north: "Norte", south: "Sur", sowing: "Siembra y cosecha", control: "Control de carga",
     whatsapp: "WhatsApp", administration: "Administración", newFolder: "Nueva carpeta", name: "Nombre", icon: "Ícono", create: "Crear", purchases: "Compras",
     empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", formsField: "Formularios", foldersField: "Carpetas", draft: "Borrador",
@@ -15,7 +15,7 @@ const texts = {
     filter: "Carpeta Todas las carpetas", withoutFolder: "Sin carpeta", rowFolders: /^Carpetas de «/, catalogsLink: "Ver sus 2 catálogos", loadError: "No pudimos cargar tu menú.", retry: "Reintentar",
   },
   en: {
-    forms: "Design forms", catalogs: "Catalogs", crumbs: "Breadcrumb", mainMenu: "Main navigation", drawer: "Navigation menu", collapse: "Collapse menu",
+    forms: "Forms", catalogs: "Catalogs", crumbs: "Breadcrumb", mainMenu: "Main navigation", drawer: "Navigation menu", collapse: "Collapse menu",
     billing: "Billing", delivery: "Deliveries", north: "North", south: "South", sowing: "Sowing and harvest", control: "Load check",
     whatsapp: "WhatsApp", administration: "Administration", newFolder: "New folder", name: "Name", icon: "Icon", create: "Create", purchases: "Purchases",
     empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", formsField: "Forms", foldersField: "Folders", draft: "Draft",
@@ -135,7 +135,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await shot(page, "forms");
   });
 
-  test("CM3 · Diseñar formularios has no panel, with the «Carpeta» filter and «Carpetas…» of two levels", async ({ page }) => {
+  test("CM3 · «Formularios» has no panel, with the «Carpeta» filter and «Carpetas…» of two levels", async ({ page }) => {
     await open(page, "/formularios", "forms-folders", language, current => current.getByRole("heading", { name: text.forms, exact: true }));
     await page.getByRole("button", { name: text.filter, exact: true }).click();
     await expect(page.getByRole("option", { name: text.withoutFolder, exact: true })).toBeVisible();

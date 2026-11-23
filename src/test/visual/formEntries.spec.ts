@@ -110,7 +110,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(list).toHaveCount(0);
     await choose(page, es ? "Cultivo" : "Crop", es ? "Soja 1ª" : "1st soybean");
     await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
-    await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
+    await page.getByLabel(es ? "Densidad" : "Density").fill(es ? "72,5" : "72.5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
     await page.getByLabel(es ? "Fecha de siembra" : "Sowing date").fill("2026-10-29");
 
@@ -194,7 +194,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await choose(page, lot, es ? "Lote 2" : "Lot 2");
     await choose(page, es ? "Cultivo" : "Crop", es ? "Soja 1ª" : "1st soybean");
     await choose(page, es ? "Semilla" : "Seed", "DM 46i20");
-    await page.getByLabel(es ? "Densidad" : "Density").fill("72,5");
+    await page.getByLabel(es ? "Densidad" : "Density").fill(es ? "72,5" : "72.5");
     await page.getByLabel(es ? "Hectáreas sembradas" : "Sown hectares").fill("120");
     await page.getByLabel(es ? "Fecha de siembra" : "Sowing date").fill("2026-10-29");
     // The label covers the checkbox row, as in CheckboxField.
@@ -207,7 +207,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390]) {
     await send.click();
     await expect(page.getByText(es ? "Se guardó SIE-000014" : "SIE-000014 was saved")).toBeVisible();
     await expect(page.getByRole("heading", { name: es ? "Nueva respuesta" : "New response", level: 1 })).toBeVisible();
-    await expect(page.getByLabel(es ? "Densidad" : "Density")).toHaveValue("72,5");
+    await expect(page.getByLabel(es ? "Densidad" : "Density")).toHaveValue(es ? "72,5" : "72.5");
     await expect(catalogField(page, lot)).toBeFocused();
     await expect(keep).toBeChecked();
     expect(sends).toHaveLength(1);
@@ -220,7 +220,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const es = language === "es";
     const sowing = es ? "Siembra" : "Sowing";
     await page.setViewportSize({ width, height: 900 });
-    await open(page, "/formularios/respuestas", profile === "create-only" ? "entries-create-only" : "entries", language);
+    await open(page, "/formularios", profile === "create-only" ? "entries-create-only" : "entries", language);
     await expect(page.getByRole("heading", { name: es ? "Formularios" : "Forms", level: 1, exact: true })).toBeVisible();
     const table = page.getByRole("table");
     // «Cargar» is an icon of the row, with its name in the tooltip and no text in the cell.

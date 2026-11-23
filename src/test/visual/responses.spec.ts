@@ -237,7 +237,7 @@ test("private search stays out of URL and shows no matches", async ({
   ).toBeVisible();
 });
 test("form overview pages server results instead of the retired response navigation", async ({ page }) => {
-  const screen = encodeURIComponent("/formularios/respuestas?pageSize=2");
+  const screen = encodeURIComponent("/formularios?pageSize=2");
   await page.goto("/src/test/visual/index.html?screen=" + screen + "&scenario=forms-overview&lang=en");
   await expect(page.getByRole("heading", { name: "Forms", level: 1, exact: true })).toBeVisible();
   const table = page.getByRole("table");

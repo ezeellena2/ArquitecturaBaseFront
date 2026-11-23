@@ -39,7 +39,7 @@ for(const lang of ["es","en"] as const)for(const width of [1440,390,320]){
  await expect(page.getByRole("button",{name:es?"Repetir el mismo intento":"Repeat the same attempt",exact:true})).toHaveCount(0);
  await page.evaluate(()=>document.fonts.ready);expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
  await page.screenshot({path:`test-results/forms-publication-failed-${lang}-${width}.png`,fullPage:true});
- await page.getByRole("link",{name:es?"Diseñar formularios":"Design forms",exact:true}).last().click();
+ await page.getByRole("link",{name:es?"Formularios":"Forms",exact:true}).last().click();
  await expect(page.getByRole("table").getByText(es?"No se pudo publicar":"Could not publish",{exact:true})).toBeVisible();
  });
  test(`official preview in the menu language and expiry ${lang} at ${width}px`,async({page})=>{

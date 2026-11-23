@@ -52,7 +52,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const docName = en ? "Receipt-TEST-000002.pdf" : "Comprobante-TEST-000002.pdf";
     const mobile = width < 640;
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/src/test/visual/index.html?screen=/formularios/respuestas&scenario=responses-full&lang=" + language);
+    await page.goto("/src/test/visual/index.html?screen=/formularios&scenario=responses-full&lang=" + language);
     await expect(page.getByRole("heading", { name: en ? "Forms" : "Formularios", level: 1, exact: true })).toBeVisible();
     await page.getByRole("link", { name: formName, exact: true }).click();
     await expect(page.getByRole("heading", { name: formName, level: 1, exact: true })).toBeVisible();
@@ -173,7 +173,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     const formName = en ? "Delivery report" : "Informe de entregas";
     const reviewName = (en ? "Review" : "Revisar") + " TEST-000002";
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/src/test/visual/index.html?screen=/formularios/respuestas&scenario=responses-full-read-decide&lang=" + language);
+    await page.goto("/src/test/visual/index.html?screen=/formularios&scenario=responses-full-read-decide&lang=" + language);
     await expect(page.getByRole("heading", { name: en ? "Forms" : "Formularios", level: 1, exact: true })).toBeVisible();
     await page.getByRole("link", { name: formName, exact: true }).click();
     await expect(page.getByRole("heading", { name: formName, level: 1, exact: true })).toBeVisible();
@@ -222,7 +222,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("DC0 decision-only keeps metadata instead of full " + language + " " + width, async ({ page }) => {
     const en = language === "en";
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/src/test/visual/index.html?screen=/formularios/respuestas&scenario=responses-full-decide&lang=" + language);
+    await page.goto("/src/test/visual/index.html?screen=/formularios&scenario=responses-full-decide&lang=" + language);
     await expect(page.getByRole("heading", { name: en ? "Forms" : "Formularios", level: 1, exact: true })).toBeVisible();
     await page.getByRole("link", { name: en ? "Delivery report" : "Informe de entregas", exact: true }).click();
     await page.getByRole("link", { name: (en ? "Review" : "Revisar") + " TEST-000002", exact: true }).click();

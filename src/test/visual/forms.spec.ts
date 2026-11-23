@@ -33,7 +33,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await page.screenshot({ path: `test-results/forms-editor-${language}-${width}.png`, fullPage: true });
     await preview.scrollIntoViewIfNeeded();
     await preview.screenshot({ path: `test-results/forms-preview-${language}-${width}.png` });
-    await page.getByRole("link", { name: es ? "Diseñar formularios" : "Design forms", exact: true }).last().click();
+    await page.getByRole("link", { name: es ? "Formularios" : "Forms", exact: true }).last().click();
     await expect(page.getByRole("table").getByRole("link", { name: formName, exact: true })).toBeVisible();
     expect(external).toEqual([]);
   });
@@ -121,7 +121,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);
     await expect(name).toHaveValue("Visit record");
     await expect(preview.getByRole("option", { name: "Pérez Hnos.", exact: true })).toHaveCount(1);
-    await page.getByRole("link", { name: "Design forms", exact: true }).last().click();
+    await page.getByRole("link", { name: "Forms", exact: true }).last().click();
     await page.getByRole("table").getByRole("link", { name: "Visit record", exact: true }).click();
     await expect(name).toHaveValue("Visit record");
     await expect(preview.getByRole("textbox", { name: "Importe cobrado", exact: true })).toHaveCount(1);

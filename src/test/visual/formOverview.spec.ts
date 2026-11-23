@@ -21,7 +21,7 @@ async function assertContainedTable(page: Page, width: number, mustScroll: boole
 async function assertOverviewGeometry(page: Page, width: number) {
   if (width >= 1024) {
     // The state of the bar, the button of the piece to choose (2026-11-22), not the rows per page under the table.
-    const controls = [page.getByRole("searchbox"), page.getByRole("button", { name: /^(Estado de los formularios|Form status) / }), page.getByRole("checkbox")];
+    const controls = [page.getByRole("searchbox"), page.getByRole("button", { name: /^(Estado de los formularios|Form status) / })];
     const bounds = await Promise.all(controls.map(control => control.boundingBox()));
     const boxes = bounds.map(box => box!);
     expect(Math.min(...boxes.map(box => box.y + box.height))).toBeGreaterThan(Math.max(...boxes.map(box => box.y)));
@@ -32,8 +32,8 @@ async function assertOverviewGeometry(page: Page, width: number) {
 }
 
 // The state is the button of the bar of the piece to choose (2026-11-22): it says the chosen one, without counts, and its list
-// ticks it among the two states.
-async function assertStateControls(page: Page, es: boolean, state: "active" | "deactivated", width: number) {
+// ticks it among its states: for whoever reads and decides, «Con algo por aprobar» goes between the two (FU4, 2026-11-23).
+async function assertStateControls(page: Page, es: boolean, state: "active" | "deactivated", width: number, pending: boolean) {
   const chosen = state === "active" ? (es ? "Activos" : "Active") : (es ? "Dados de baja" : "Deactivated");
   const trigger = page.getByRole("button", { name: (es ? "Estado de los formularios " : "Form status ") + chosen, exact: true });
   await expect(trigger).toBeVisible();
@@ -43,7 +43,9 @@ async function assertStateControls(page: Page, es: boolean, state: "active" | "d
   expect(await trigger.evaluate(node => node.scrollWidth)).toBeLessThanOrEqual(await trigger.evaluate(node => node.clientWidth));
   await trigger.click();
   const list = page.getByRole("listbox", { name: es ? "Estado de los formularios" : "Form status", exact: true });
-  await expect(list.getByRole("option")).toHaveCount(2);
+  await expect(list.getByRole("option")).toHaveText(es
+    ? ["Activos", ...(pending ? ["Con algo por aprobar"] : []), "Dados de baja"]
+    : ["Active", ...(pending ? ["With something to approve"] : []), "Deactivated"]);
   await expect(list.getByRole("option", { name: chosen, exact: true })).toHaveAttribute("aria-selected", "true");
   await page.keyboard.press("Escape");
   await expect(list).toHaveCount(0);
@@ -58,7 +60,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("MF1 overview " + state + " " + language + " " + width, async ({ page }) => {
     const es = language === "es";
     const scenario = state === "active" ? "forms-overview" : "forms-overview-deactivated";
-    const screen = "/formularios/respuestas" + (state === "deactivated" ? "?state=Deactivated" : "");
+    const screen = "/formularios" + (state === "deactivated" ? "?publicationFilter=Deactivated" : "");
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/src/test/visual/index.html?screen=" + encodeURIComponent(screen) + "&scenario=" + scenario + "&lang=" + language);
     await expect(page.getByRole("heading", { name: es ? "Formularios" : "Forms", level: 1, exact: true })).toBeVisible();
@@ -69,8 +71,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       ? ["Formulario", "Por aprobar", "Respuestas", "Última respuesta", "Recibida", "Estado"]
       : ["Form", "To approve", "Responses", "Last response", "Received", "State"]);
     await expect(table.getByRole("row")).toHaveCount(state === "active" ? 7 : 3);
-    await expect(page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true })).not.toBeChecked();
-    await assertStateControls(page, es, state, width);
+    await assertStateControls(page, es, state, width, true);
     const first = table.getByRole("link", { name: state === "active" ? es ? "Registrar visita" : "Register visit" : es ? "Control de vehículo" : "Vehicle inspection", exact: true });
     await expect(first).toHaveAttribute("href", "/formularios/" + (state === "active" ? formOverviewFixtureIds.visit : formOverviewFixtureIds.deactivated) + "/respuestas");
     // The segment and the columns already say what a deactivated form keeps: no banner explains it (2026-10-31).
@@ -86,28 +87,25 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       const menuToggle = page.getByRole("button", { name: es ? "Menú de navegación" : "Navigation menu", exact: true });
       if (width < 640) await menuToggle.click();
       const overviewLink = page.getByRole("link", { name: es ? /^Formularios(?: \(\d+\))?$/ : /^Forms(?: \(\d+\))?$/ });
-      await expect(overviewLink).toHaveAttribute("href", "/formularios/respuestas");
+      await expect(overviewLink).toHaveAttribute("href", "/formularios");
       await expect(overviewLink).toHaveAttribute("aria-current", "page");
-      for (const [name, href] of [
-        [es ? "Diseñar formularios" : "Design forms", "/formularios"],
-        [es ? "Catálogos" : "Catalogs", "/catalogos"],
-        [es ? "Formularios que faltan" : "Missing forms", "/formularios/faltantes"],
-      ]) await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
-      await page.screenshot({ path: "test-results/form-overview-all-permissions-" + language + "-" + width + ".png", fullPage: true });
+      // FU1-B: «Diseñar formularios» left the panel; a line apart, the pages used to build forms that this profile sees.
+      await expect(page.getByRole("link", { name: es ? "Diseñar formularios" : "Design forms", exact: true })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: es ? "Catálogos" : "Catalogs", exact: true })).toHaveAttribute("href", "/catalogos");
+      await page.screenshot({ path: "test-results/form-overview-menu-" + language + "-" + width + ".png", fullPage: true });
       if (width < 640) { await page.keyboard.press("Escape"); await expect(menuToggle).toHaveAttribute("aria-expanded", "false"); }
+      // FU4: «Con algo por aprobar» is one more state of the filter, and mixes active and deactivated forms.
       const pendingLabel = es ? "Con algo por aprobar" : "With something to approve";
-      const pendingCheckbox = page.getByRole("checkbox", { name: pendingLabel, exact: true });
-      const label = page.getByText(pendingLabel, { exact: true });
-      await expect(label).toHaveCount(1);
-      await label.click();
-      await expect(pendingCheckbox).toBeChecked();
+      const states = page.getByRole("listbox", { name: es ? "Estado de los formularios" : "Form status", exact: true });
+      await page.getByRole("button", { name: (es ? "Estado de los formularios Activos" : "Form status Active"), exact: true }).click();
+      await states.getByRole("option", { name: pendingLabel, exact: true }).click();
+      const pendingTrigger = page.getByRole("button", { name: (es ? "Estado de los formularios " : "Form status ") + pendingLabel, exact: true });
+      await expect(pendingTrigger).toBeVisible();
       const inactiveRow = table.getByRole("link", { name: es ? "Control de vehículo" : "Vehicle inspection", exact: true }).locator("xpath=ancestor::tr");
       await expect(inactiveRow.getByText(es ? "Dado de baja" : "Deactivated", { exact: true })).toBeVisible();
       await expect(table.getByRole("row")).toHaveCount(4);
-      // «Con algo por aprobar» mixes both states: the button says «Todos» and its list ticks none.
-      await page.getByRole("button", { name: es ? "Estado de los formularios Todos" : "Form status All", exact: true }).click();
-      for (const option of await page.getByRole("listbox", { name: es ? "Estado de los formularios" : "Form status", exact: true }).getByRole("option").all())
-        await expect(option).toHaveAttribute("aria-selected", "false");
+      await pendingTrigger.click();
+      await expect(states.getByRole("option", { name: pendingLabel, exact: true })).toHaveAttribute("aria-selected", "true");
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: es ? "Ver dados de baja" : "View deactivated forms", exact: true })).toHaveCount(0);
       await assertOverviewGeometry(page, width);
@@ -122,7 +120,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
   test("MF1 overview " + profile + " permission " + language + " " + width, async ({ page }) => {
     const es = language === "es";
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/src/test/visual/index.html?screen=/formularios/respuestas&scenario=forms-overview-" + profile + "&lang=" + language);
+    await page.goto("/src/test/visual/index.html?screen=/formularios&scenario=forms-overview-" + profile + "&lang=" + language);
     await expect(page.getByRole("heading", { name: es ? "Formularios" : "Forms", level: 1, exact: true })).toBeVisible();
     const table = page.getByRole("table");
     await expect(table).toBeVisible();
@@ -130,8 +128,7 @@ for (const language of ["es", "en"] as const) for (const width of [390, 320]) fo
       ? es ? ["Formulario", "Respuestas", "Última respuesta", "Recibida", "Estado"] : ["Form", "Responses", "Last response", "Received", "State"]
       : es ? ["Formulario", "Por aprobar"] : ["Form", "To approve"]);
     await expect(table.getByRole("row")).toHaveCount(profile === "read" ? 7 : 3);
-    await expect(page.getByRole("checkbox", { name: es ? "Con algo por aprobar" : "With something to approve", exact: true })).toHaveCount(0);
-    await assertStateControls(page, es, "active", width);
+    await assertStateControls(page, es, "active", width, false);
     await page.evaluate(() => document.fonts.ready);
     await assertOverviewGeometry(page, width);
     await assertContainedTable(page, width, profile === "read");
@@ -154,7 +151,7 @@ for (const width of [1440, 390]) {
     await page.getByRole("button", { name: "Gestión de formularios", exact: true }).click();
     const overview = page.getByRole("link", { name: /^Formularios(?: \(\d+\))?$/ });
     await expect(overview).toHaveAccessibleName("Formularios");
-    const rows = [overview, ...["Diseñar formularios", "Catálogos", "Formularios que faltan"].map(name => page.getByRole("link", { name, exact: true }))];
+    const rows = [overview, page.getByRole("link", { name: "Catálogos", exact: true })];
     const geometry = () => Promise.all(rows.map(async row => { const box = (await row.boundingBox())!; return { y: box.y, height: box.height }; }));
     const loading = await geometry();
     await page.screenshot({ path: "test-results/form-overview-menu-count-loading-" + width + ".png" });

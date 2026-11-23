@@ -10,7 +10,9 @@ export function createFormOverviewVisualFixtures(language: "es" | "en", scenario
   const canRead = scenario !== "forms-overview-decide";
   const canDecide = scenario !== "forms-overview-read";
   const permissions = [...(canRead ? ["formrecords.read"] : []), ...(canDecide ? ["formapprovals.decide"] : []),
-    ...(canRead && canDecide ? ["formtemplates.read", "formtemplates.manage", "formcatalogs.read"] : [])];
+    // Whoever reads and decides does not design: «Formularios» is this list for them (FU3, 2026-11-23). With the catalogs, the panel
+    // has its two groups (FU1-B).
+    ...(canRead && canDecide ? ["formcatalogs.read"] : [])];
   const names = en
     ? ["Register visit", "Register delivery", "Site survey", "Register maintenance", "Safety checklist", "Invoice delivery", "Vehicle inspection", "Previous inspection"]
     : ["Registrar visita", "Registrar entrega", "Relevamiento de obra", "Registrar mantenimiento", "Checklist de seguridad", "Facturar entrega", "Control de vehículo", "Control anterior"];
