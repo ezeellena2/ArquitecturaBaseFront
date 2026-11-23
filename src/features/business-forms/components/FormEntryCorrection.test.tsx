@@ -24,7 +24,7 @@ const amount: FormEntryQuestion = { fieldId: id(30), type: "decimal", label: "Im
 // Synthetic behavior DTO; the bodies exported by the backend qualify the contract in the entries contract tests. It is the
 // version the response was answered with: nothing to tell about versions.
 const correction: FormEntryCorrection = {
-  entry: { definitionId: responseFormId, versionId: responseDetailFixture().entry.entry.versionId, versionNumber: 2, prefix: "TEST", name: "Formulario publicado", culture: "es",
+  entry: { definitionId: responseFormId, versionId: responseDetailFixture().entry!.entry.versionId, versionNumber: 2, prefix: "TEST", name: "Formulario publicado", culture: "es",
     submitLabel: "Enviar", maxFileSizeMiB: 25, questions: [
       amount,
       { fieldId: id(32), type: "photo", label: "Fotos", help: null, required: false, maxLength: null, options: null, selection: null,

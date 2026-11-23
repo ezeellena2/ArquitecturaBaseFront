@@ -60,7 +60,7 @@ export function FormEntryCorrection({ formId, record, layout, backTo, onClose, o
     onSaved(result.recordId);
   };
   // Decision 6: a response reads with its version and is corrected with the active one; when they differ, the notice says so on top.
-  const notice = correction.correction ? correctionVersionNotice(record.entry.entry, correction.correction, answeredQuestions(record.values)) : null;
+  const notice = correction.correction && record.entry ? correctionVersionNotice(record.entry.entry, correction.correction, answeredQuestions(record.values)) : null;
   const noticeText = !notice ? null : notice.empty.length ? t("correction.versionEmpty", { count: notice.empty.length, version: notice.versionNumber,
     questions: new Intl.ListFormat(i18n.language, { type: "conjunction" }).format(notice.empty.map(question => t("forms:responses.historyQuestion", { question }))) })
     : t("correction.version", { version: notice.versionNumber });

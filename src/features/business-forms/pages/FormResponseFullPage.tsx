@@ -68,7 +68,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const [decisionTarget, setDecisionTarget] = useState<HTMLDivElement | null>(null);
   const [unavailableTask, setUnavailableTask] = useState<string | null>(null);
   const container = useRef<HTMLDivElement | null>(null);
-  const draft = useMemo(() => data ? readingDraft(data, i18n.language) : undefined, [data, i18n.language]);
+  const draft = useMemo(() => data?.entry ? readingDraft({ id: data.id, number: data.number, entry: data.entry }, i18n.language) : undefined, [data, i18n.language]);
   const editing = correcting === recordId && allowed && !unavailable && data?.id === recordId;
   // Back from correcting, the focus comes to the reading again.
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id, editing]);
@@ -136,7 +136,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
           or a void are told the same way to everyone. */}
       {detail.scope.ownOnly || data.correction || data.void ? <ResponseMoments data={data} current={current} own={detail.scope.ownOnly} timeZoneId={detail.scope.user?.timeZoneId}/> : null}
       {/* VF1-A: the answer reads with the shape of its form, in its zones, and what the assistant proposed goes after it. */}
-      {draft ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="page" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
+      {draft && data.entry ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="page" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
         onError={onFileError} aside={fieldId => <ResponseAssistanceBadges record={data} fieldId={fieldId}/>}/> : null}
       <ResponseAssistance key={data.id} record={data} actor={detail.scope.user!.id} busy={loadingTarget} onForbidden={deny} onError={onFileError}/>
       {detail.scope.ownOnly ? null : <CollapsibleSection title={t("detail.activity")} summary={activitySummary} open={activityOpen} onOpenChange={setActivityOpen} expandLabel={t("detail.expandActivity")} collapseLabel={t("detail.collapseActivity")} meta={current?.ruleRevision ? t("workflow.ruleRevision", { revision: current.ruleRevision }) : undefined}>

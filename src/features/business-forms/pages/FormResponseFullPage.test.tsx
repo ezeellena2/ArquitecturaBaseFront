@@ -139,7 +139,8 @@ it("leaves the decision out for a viewer who may approve but lacks the role of t
 it("continues to the pending successor after deciding on a compacted one-row page", async () => {
   const { reads } = setup(["formrecords.read", "formapprovals.decide"], true);
   const { router } = renderRouteWithProviders(path + "?approvalPageSize=1");
-  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }));
+  // Run alone it is the first of the file and pays the lazy route of the sheet (6 to 8 s with the CPU busy).
+  await userEvent.click(await screen.findByRole("link", { name: "Revisar VIS-00001" }, { timeout: 10_000 }));
   const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
   await userEvent.click(await within(quick).findByRole("link", { name: "Abrir en pantalla completa" }));
   await screen.findByRole("heading", { name: "TEST-000002", level: 1 });

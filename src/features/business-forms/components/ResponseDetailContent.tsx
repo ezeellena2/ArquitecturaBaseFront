@@ -27,7 +27,7 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
 }) {
   const { t, i18n } = useTranslation("forms");
   const { detail, workflow, data, current, hasPhotos, photos, downloads, loadingTarget, deny, onFileError } = state;
-  const draft = useMemo(() => data ? readingDraft(data, i18n.language) : undefined, [data, i18n.language]);
+  const draft = useMemo(() => data?.entry ? readingDraft({ id: data.id, number: data.number, entry: data.entry }, i18n.language) : undefined, [data, i18n.language]);
   const [params] = useSearchParams();
   const update = useQueryUpdate();
   const [decisionActions, setDecisionActions] = useState<HTMLDivElement | null>(null);
@@ -53,7 +53,7 @@ export function ResponseDetailContent({ state, formId, recordId, onDecided, onDe
       <TabsList aria-label={t("responses.detail")}><TabsTrigger value="answer">{t("responses.answer")}</TabsTrigger>{hasPhotos ? <TabsTrigger value="photos">{t("detail.photos")} ({photos.length})</TabsTrigger> : null}{own ? null : <TabsTrigger value="activity">{t("detail.activity")}</TabsTrigger>}{current?.documents.length ? <TabsTrigger value="pdf">{t("detail.pdf")}</TabsTrigger> : null}</TabsList>
       {/* VF1-A: the answer reads with the shape of its form, in one column, and what the assistant proposed goes after it. */}
       <TabsContent value="answer" className="space-y-4">
-        {draft ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="panel" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
+        {draft && data.entry ? <ResponseForm entry={data.entry.entry} draft={draft} record={data} layout="panel" actor={detail.scope.user!.id} photos={photos} onForbidden={deny}
           onError={onFileError} aside={fieldId => <ResponseAssistanceBadges record={data} fieldId={fieldId}/>}/> : null}
         <ResponseAssistance key={data.id} record={data} actor={detail.scope.user!.id} busy={loadingTarget} onForbidden={deny} onError={onFileError}/>
       </TabsContent>
