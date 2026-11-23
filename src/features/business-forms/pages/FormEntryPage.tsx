@@ -47,23 +47,26 @@ export function FormEntryPage() {
   // «Mantener las respuestas para la siguiente» lasts while loading: coming back, it starts unchecked (AR2-A).
   const [keep, setKeep] = useState(false);
   const guard = useUnsavedChangesGuard(editor.dirty && !sent);
-  const fromSheet = (location.state as { from?: string } | null)?.from === "sheet";
-  const back = fromSheet ? `/formularios/${formId}/respuestas` : "/formularios/respuestas";
+  const origin = location.state as { from?: string; list?: string } | null;
+  const fromSheet = origin?.from === "sheet";
+  // FU4: back to the list with the filter and the page it had, when it came from there.
+  const list = origin?.list?.startsWith("/formularios") ? origin.list : "/formularios";
+  const back = fromSheet ? `/formularios/${formId}/respuestas` : list;
   useBreadcrumbLeaf(sent ? sent.result.number : t("page.title"), entry?.name);
   if (!scope.canCreate || query.error instanceof ApiError && query.error.status === 403 || editor.conflict === "forbidden") return <ForbiddenPage/>;
 
   if (sent) {
     const exits = <>
       <Button type="button" onClick={() => { setSent(null); editor.restart(); }}>{t("sent.loadAnother")}</Button>
-      <Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>
+      <Button type="button" variant="outline" onClick={() => navigate(list)}>{t("send.backToForms")}</Button>
       {/* Whoever loads it can see it in the sheet: with only «Completar formularios», the sheet of their own (CW6-C). */}
       <Button type="button" variant="outline" onClick={() => navigate(`/formularios/${formId}/respuestas/${sent.result.recordId}`)}>{t("sent.viewInSheet")}</Button>
     </>;
-    return <Page title={sent.result.number} backTo={{ to: "/formularios/respuestas", label: t("forms:overview.title") }}
+    return <Page title={sent.result.number} backTo={{ to: list, label: t("forms:overview.title") }}
       status={<Badge variant={approvalStateVariant(sent.result.state)}>{t("forms:approvals.states." + sent.result.state)}</Badge>}>
       <FormEntrySent entry={sent.entry} draft={sent.draft} result={sent.result} timeZone={scope.user?.timeZoneId} actions={mobile ? undefined : exits}/>
       {mobile ? <div className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-2 border-t border-[var(--color-border)] bg-[var(--color-surface)] p-3">
-        <Button type="button" variant="outline" size="touch" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>
+        <Button type="button" variant="outline" size="touch" onClick={() => navigate(list)}>{t("send.backToForms")}</Button>
         <Button type="button" size="touch" onClick={() => { setSent(null); editor.restart(); }}>{t("sent.loadAnother")}</Button>
       </div> : null}
     </Page>;
@@ -101,12 +104,12 @@ export function FormEntryPage() {
   </>;
   return <Page title={t("page.title")} backTo={{ to: back, label: fromSheet ? entry?.name ?? t("forms:overview.title") : t("forms:overview.title") }} actions={actions}>
     <div className="flex flex-col gap-4">
-      {unavailable ? <Banner tone="danger" action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}>
+      {unavailable ? <Banner tone="danger" action={<Button type="button" variant="outline" onClick={() => navigate(list)}>{t("send.backToForms")}</Button>}>
         {entry ? t("send.deactivated", { name: entry.name }) : t("send.deactivatedUnknown")}</Banner> : null}
       {editor.conflict === "version" && entry ? <Banner tone="warning" action={<Button type="button" variant="outline" pending={query.isFetching} onClick={() => void query.refetch()}>{t(query.isFetching ? "send.updating" : "send.useNewVersion")}</Button>}>
         {t("send.newVersion", { name: entry.name })}</Banner> : null}
       {editor.missing && entry ? <Banner tone="warning">{t("catalog.missingData", { form: entry.name, datum: editor.missing.catalog?.missingData ?? "" })}</Banner> : null}
-      {missingForm ? <EmptyState title={t("forms:responses.unavailableForm")} action={<Button type="button" variant="outline" onClick={() => navigate("/formularios/respuestas")}>{t("send.backToForms")}</Button>}/>
+      {missingForm ? <EmptyState title={t("forms:responses.unavailableForm")} action={<Button type="button" variant="outline" onClick={() => navigate(list)}>{t("send.backToForms")}</Button>}/>
         : entry && editor.draft ? <><FormEntryForm entry={entry} draft={editor.draft} onChange={editor.change} errors={editor.errors} layout="page" disabled={editor.sending || unavailable} reveal={editor.reveal}/>
           <IssueTotals totals={editor.issueTotals} pending={editor.totalsPending} failed={editor.totalsFailed} onRetry={editor.retryTotals}/>
           <IssueConfirmDialog preview={editor.issue} sending={editor.sending} retrying={editor.previewing} retryWait={editor.retryWait} onConfirm={() => void submit(true)}

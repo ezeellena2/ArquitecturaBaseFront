@@ -166,5 +166,5 @@ export function FormPendingApprovals({ formId, onDecided, standalone = false, in
 function PendingFormPage({ title, children }: { title: string; children: ReactNode }) {
   const { t } = useTranslation("forms");
   useBreadcrumbLeaf(title);
-  return <div className="relative h-full min-h-0"><Page title={title} backTo={{ to: "/formularios/respuestas", label: t("overview.title") }}>{children}</Page></div>;
+  return <div className="relative h-full min-h-0"><Page title={title} backTo={{ to: "/formularios", label: t("overview.title") }}>{children}</Page></div>;
 }

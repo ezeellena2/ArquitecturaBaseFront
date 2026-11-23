@@ -1,5 +1,5 @@
 {
-  "title": "Diseñar formularios",
+  "title": "Formularios",
   "library": {
     "title": "Biblioteca",
     "subtitle": "Formularios estándar",
@@ -1567,6 +1567,7 @@
     "state": "Estado de los formularios",
     "pendingColumn": "Por aprobar",
     "responses": "Respuestas",
+    "responsesOf": "Ver las respuestas de {{name}}",
     "lastResponse": "Última respuesta",
     "formState": "Estado del formulario",
     "formStates": {

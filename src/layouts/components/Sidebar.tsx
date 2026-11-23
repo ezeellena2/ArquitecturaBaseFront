@@ -63,11 +63,12 @@ function NavItem({
 }) {
   const Icon = item.icon;
   const pathname = useLocation().pathname;
-  const otherFormsPage = /^\/formularios\/(?:respuestas|faltantes|biblioteca|documentos|[^/]+\/respuestas)(?:\/|$)/.test(pathname);
-  const responseWorkspace = item.to === "/formularios/respuestas" && /^\/formularios\/(?:respuestas(?:\/|$)|[^/]+\/respuestas(?:\/|$))/.test(pathname);
+  // «Formularios» (`/formularios`) is every screen of a form: the list, the editor, its sheet and its load (FU2-A). The other
+  // pages of the panel live under the same address and are theirs.
+  const otherFormsPage = /^\/formularios\/(?:faltantes|biblioteca|documentos)(?:\/|$)/.test(pathname);
 
   const match = useMatch({ path: item.to, end: item.exact || item.to === "/" });
-  const isCurrent = item.current ?? ((!!match || responseWorkspace) && !(item.to === "/formularios" && otherFormsPage));
+  const isCurrent = item.current ?? (!!match && !(item.to === "/formularios" && otherFormsPage));
 
   const link = (
     <Link
@@ -581,10 +582,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const responses = useContext(FormsOverviewNavigationContext);
   const activateResponses = responses?.setActive;
   useEffect(() => { activateResponses?.(openPanel === "forms" && (!isMobile || mobileOpen)); }, [activateResponses, openPanel, isMobile, mobileOpen]);
-  // «Formularios» and «Documentos recibidos» are drawn with their counters (FormsOverviewLink, ReceivedDocumentsLink). The second goes
-  // after the fixed pages: its row appearing or leaving when the permissions arrive moves none of the pages.
+  // «Formularios» and «Documentos recibidos» are drawn with their counters (FormsOverviewLink, ReceivedDocumentsLink), first and
+  // together, with a line before the pages used to build forms (FU1-B, FormsDailyLinks).
   const formsPages = visibleItems(forms.items.filter(item => item.labelKey !== "navigation.formOverview" && item.labelKey !== "navigation.receivedDocuments"), canSee, false);
-  const formsCounted = has(["formrecords.read", "formapprovals.decide", "formrecords.create", "formdocuments.read"]);
+  const formsCounted = has(["formtemplates.read", "formrecords.read", "formapprovals.decide", "formrecords.create", "formdocuments.read"]);
   const ownPanel = folderModel.own.find(panel => panel.labelKey === openPanel);
   const selectedPanel = openPanel === "forms" ? forms : openPanel === "whatsapp" ? whatsapp : ownPanel ?? administration;
   const selectedItems = openPanel === "forms" ? formsPages : openPanel === "whatsapp" ? whatsappItems : ownPanel ? ownPanel.items : openPanel === "admin" ? adminItems : [];
@@ -721,7 +722,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           {formsPages.length > 0 || formsCounted ? (
             <div className={cn("mt-2 border-t border-[var(--color-border)] pt-2", iconsOnly ? "flex justify-center" : "")}>
               {isPending ? <Skeleton aria-hidden="true" className={iconsOnly ? "size-7.5" : "h-7.5"} /> : isMobile ? (
-                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsPages} leading={<FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/>} trailing={<ReceivedDocumentsLink onNavigate={onNavigate}/>} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
+                <ul><li><NavBranch labelKey={forms.labelKey} icon={forms.icon} items={formsPages} leading={<FormsDailyLinks onNavigate={onNavigate} enteredFromMenu={activeEntry !== null} separated={formsPages.length > 0}/>} controls={controls} translate={translate} onNavigate={onNavigate} /></li></ul>
               ) : (
                 <PanelTrigger icon={forms.icon} label={t(forms.labelKey)} open={openPanel === "forms"} collapsed={iconsOnly} panelId={panelId}
                   onToggle={() => setOpenPanel(openPanel === "forms" ? undefined : "forms")} />
@@ -878,11 +879,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
           </IconButton>
 
           <div className="flex-1 overflow-y-auto px-2 pt-2.5 pb-3">
-            {openPanel === "forms" ? <FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={activeEntry !== null}/> : null}
+            {openPanel === "forms" ? <FormsDailyLinks onNavigate={onNavigate} enteredFromMenu={activeEntry !== null} separated={formsPages.length > 0}/> : null}
             <ul className="flex flex-col gap-1">
               {ownPanel ? <FolderContents panel={ownPanel} act={act} controls={controls} translate={translate} onNavigate={onNavigate} />
                 : <NavItems items={openPanel === "forms" ? formsPages : selectedItems} controls={controls} translate={translate} onNavigate={onNavigate} pending={isPending} />}
-              {openPanel === "forms" ? <ReceivedDocumentsLink onNavigate={onNavigate}/> : null}
             </ul>
           </div>
         </nav>
@@ -891,18 +891,30 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   );
 }
 
+/// FU1-B: the group of every day, «Formularios» and «Documentos recibidos», with a line before the pages used to build forms
+/// (`separated`); without any of them, neither the group nor the line.
+function FormsDailyLinks({onNavigate,enteredFromMenu=false,separated}:{onNavigate?:()=>void;enteredFromMenu?:boolean;separated:boolean}) {
+  const { has, isPending } = usePermissions();
+  if (!isPending && !has(["formtemplates.read", "formrecords.read", "formapprovals.decide", "formrecords.create", "formdocuments.read"])) return null;
+  return <>
+    <ul className="flex flex-col gap-1"><FormsOverviewLink onNavigate={onNavigate} enteredFromMenu={enteredFromMenu}/><ReceivedDocumentsLink onNavigate={onNavigate}/></ul>
+    {separated ? <div aria-hidden="true" className="my-2 border-t border-[var(--color-border)]"/> : null}
+  </>;
+}
+
 /// «Formularios», con lo que espera tu decisión. Mientras el número carga, su lugar lo ocupa un bloque de carga en el
 /// mismo renglón: debajo no se agrega nada que desaparezca al llegar el número y suba al resto del panel.
 function FormsOverviewLink({onNavigate,enteredFromMenu=false}:{onNavigate?:()=>void;enteredFromMenu?:boolean}) {
  const overview=useContext(FormsOverviewNavigationContext);const {t}=useTranslation();const {has,isPending}=usePermissions();
- if(isPending)return <div className="mb-2"><Skeleton aria-hidden="true" className="h-7.5"/></div>;
- if(!has(["formrecords.read","formapprovals.decide","formrecords.create"]))return null;
+ if(isPending)return <li><Skeleton aria-hidden="true" className="h-7.5 rounded-[var(--radius-control)]"/></li>;
+ const link=forms.items.find(item=>item.labelKey==="navigation.formOverview") as NavigationLink;
+ if(!has(link.permission!))return null;
  const pending=overview?.pending===true;
  const count=has("formapprovals.decide")&&!pending?overview?.count:undefined;
- return <div className="mb-2"><NavItem item={{labelKey:"navigation.formOverview",icon:FormIcon,to:"/formularios/respuestas",exact:true,permission:["formrecords.read","formapprovals.decide","formrecords.create"],current:enteredFromMenu?false:undefined}} label={t("navigation.formOverview")+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</div>;
+ return <li><NavItem item={{...link,current:enteredFromMenu?false:undefined}} label={t(link.labelKey)+(count===undefined?"":" ("+count+")")} trailing={pending?<Skeleton aria-hidden="true" className="h-3 w-5 shrink-0"/>:undefined} collapsed={false} onNavigate={onNavigate}/>{!pending&&overview?.failed?<Button variant="ghost" size="sm" onClick={overview.retry}>{t("actions.retry")}</Button>:null}</li>;
 }
 
-/// «Documentos recibidos» (DOC5-A), after the pages of the forms and before their folders, with the documents that wait for someone of
+/// «Documentos recibidos» (DOC5-A), right below «Formularios» (FU1-B), with the documents that wait for someone of
 /// the team. It loads like the number of «Formularios»: in the same row, and «Reintentar» below it when the number could not be read.
 function ReceivedDocumentsLink({onNavigate}:{onNavigate?:()=>void}) {
   const documents = useContext(FormsOverviewNavigationContext)?.documents;

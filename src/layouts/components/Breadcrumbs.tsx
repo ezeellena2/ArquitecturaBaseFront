@@ -45,7 +45,7 @@ export function Breadcrumbs() {
   const pdfPath = /^\/formularios\/([^/]+)\/pdf$/.exec(pathname);
   if (pdfPath) return <PdfBreadcrumbs formId={pdfPath[1]} leaf={leaf} parent={parent} />;
   // The full view of a response hangs from its form's sheet (DC1), also while it is corrected there (VF1-A).
-  const responsePath = /^\/formularios\/(?:respuestas$|([^/]+)\/respuestas(?:\/([^/]+)(\/completa)?)?$)/.exec(pathname);
+  const responsePath = /^\/formularios\/([^/]+)\/respuestas(?:\/([^/]+)(\/completa)?)?$/.exec(pathname);
   if (responsePath) return <ResponseBreadcrumbs formId={responsePath[1]} detail={!!responsePath[3]} leaf={leaf} parent={parent} />;
   const entryPath = /^\/formularios\/([^/]+)\/cargar$/.exec(pathname);
   if (entryPath) return <EntryBreadcrumbs formId={entryPath[1]} leaf={leaf} parent={parent} />;
@@ -109,16 +109,16 @@ function EntryBreadcrumbs({ formId, leaf, parent }: { formId: string; leaf?: str
   return <ResponseBreadcrumbs formId={formId} detail leaf={leaf} parent={parent} />;
 }
 
-function ResponseBreadcrumbs({ formId, detail, leaf, parent }: { formId?: string; detail: boolean; leaf?: string; parent?: string }) {
+function ResponseBreadcrumbs({ formId, detail, leaf, parent }: { formId: string; detail: boolean; leaf?: string; parent?: string }) {
   const { t } = useTranslation();
   // Under 40 rem of bar (the phone, or a tablet with a menu panel open) only the form and the leaf; the bar decides, not the screen.
-  const ancestorClassName = detail && formId ? "hidden @min-[40rem]:block" : "";
+  const ancestorClassName = detail ? "hidden @min-[40rem]:block" : "";
   return <nav aria-label={t("layout.breadcrumbs.label")} className="min-w-0"><ol className="flex min-w-0 items-center gap-1.5 truncate text-sm">
     <li className={ancestorClassName}><Link to="/" className={linkClassName}>{t("navigation.dashboard")}</Link></li><Separator className={ancestorClassName}/>
     <li className={"truncate text-[var(--color-content-muted)] " + ancestorClassName}>{t("navigation.forms")}</li><Separator className={ancestorClassName}/>
-    {formId ? <><li className={ancestorClassName}><Link to="/formularios/respuestas" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator className={ancestorClassName}/></> : null}
-    {detail && formId ? <><li className="min-w-0 truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
-    <li aria-current="page" className={"truncate font-medium" + (detail ? " shrink-0" : "")}>{leaf ?? t(formId ? "navigation.responses" : "navigation.formOverview")}</li>
+    <li className={ancestorClassName}><Link to="/formularios" className={linkClassName}>{t("navigation.formOverview")}</Link></li><Separator className={ancestorClassName}/>
+    {detail ? <><li className="min-w-0 truncate"><Link to={"/formularios/" + formId + "/respuestas"} className={linkClassName}>{parent ?? t("navigation.responses")}</Link></li><Separator/></> : null}
+    <li aria-current="page" className={"truncate font-medium" + (detail ? " shrink-0" : "")}>{leaf ?? t("navigation.responses")}</li>
   </ol></nav>;
 }
 

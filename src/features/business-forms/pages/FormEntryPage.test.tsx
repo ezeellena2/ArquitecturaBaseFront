@@ -359,7 +359,7 @@ describe("loading a response from the app", () => {
     expect(router.state.location.pathname).toBe("/formularios/" + formId + "/cargar");
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Salir sin enviar" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/respuestas"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/formularios"));
   });
 
   it("rejects a file of another type or too heavy before sending", async () => {

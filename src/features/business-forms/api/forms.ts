@@ -7,7 +7,7 @@ export interface FormListQuery {
   readonly pageSize: number;
   readonly search?: string;
   readonly sort?: "name" | "-name" | "questionCount" | "-questionCount" | "lastChangedAtUtc" | "-lastChangedAtUtc";
-  readonly publicationFilter: "Active" | "Published" | "Drafts" | "Deactivated";
+  readonly publicationFilter: "Active" | "Published" | "Drafts" | "Pending" | "Deactivated";
   /// CP1-A: a folder with its subfolders, or the forms without one; never both.
   readonly folderId?: string;
   readonly withoutFolder?: true;

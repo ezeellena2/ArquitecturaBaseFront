@@ -44,39 +44,37 @@ describe("Sidebar", () => {
     renderRouteWithProviders("/");
     await userEvent.click(await screen.findByRole("button", {name:/^gestión de formularios$/i}));
     expect(screen.queryByRole("link",{name:"Entrega publicada"})).not.toBeInTheDocument();
-    expect(screen.getByRole("link",{name:"Formularios"})).toHaveAttribute("href","/formularios/respuestas");
-    expect(screen.queryByRole("link",{name:"Diseñar formularios"})).not.toBeInTheDocument();
+    expect(screen.getByRole("link",{name:"Formularios"})).toHaveAttribute("href","/formularios");
   });
+  // FU2-A: «Formularios» is every screen of a form: the list, the editor, the sheet, the full response and the load.
   it.each([
-    "/formularios/respuestas", "/formularios/form-id/respuestas",
-    "/formularios/form-id/respuestas/record-id", "/formularios/form-id/respuestas/record-id/completa",
-  ])("marks the overview as current on the response workspace route %s", async path => {
+    "/formularios", "/formularios/form-id", "/formularios/form-id/respuestas",
+    "/formularios/form-id/respuestas/record-id", "/formularios/form-id/respuestas/record-id/completa", "/formularios/form-id/cargar",
+  ])("marks «Formularios» as current on %s", async path => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formapprovals.decide", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
     renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
     const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
     expect(await within(panel).findByRole("link", { name: "Formularios" })).toHaveAttribute("aria-current", "page");
-    expect(within(panel).getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
     expect(within(panel).getAllByRole("link").map(link => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["Formularios", "/formularios/respuestas"], ["Diseñar formularios", "/formularios"],
-      ["Catálogos", "/catalogos"], ["Formularios que faltan", "/formularios/faltantes"],
+      ["Formularios", "/formularios"], ["Catálogos", "/catalogos"], ["Formularios que faltan", "/formularios/faltantes"],
     ]);
   });
 
-  it.each([[["form-library"], true], [[], false]] as const)("shows «Biblioteca» after «Diseñar formularios» only with the library installed (%j)", async (features, shown) => {
+  it.each([[["form-library"], true], [[], false]] as const)("shows «Biblioteca» only with the library installed (%j)", async (features, shown) => {
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formtemplates.read"] })),
       http.get("/api/settings/presentation", () => HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, installedFeatures: features })),
     );
     renderWithProviders(<MemoryRouter initialEntries={["/formularios/biblioteca"]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
     const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
-    await within(panel).findByRole("link", { name: "Diseñar formularios" });
+    await within(panel).findByRole("link", { name: "Formularios" });
     if (shown) {
       expect(await within(panel).findByRole("link", { name: "Biblioteca" })).toHaveAttribute("aria-current", "page");
-      expect(within(panel).getAllByRole("link").map(link => link.textContent)).toEqual(["Diseñar formularios", "Biblioteca"]);
+      expect(within(panel).getAllByRole("link").map(link => link.textContent)).toEqual(["Formularios", "Biblioteca"]);
     } else {
       expect(within(panel).queryByRole("link", { name: "Biblioteca" })).not.toBeInTheDocument();
     }
-    expect(within(panel).getByRole("link", { name: "Diseñar formularios" })).not.toHaveAttribute("aria-current", "page");
+    expect(within(panel).getByRole("link", { name: "Formularios" })).not.toHaveAttribute("aria-current", "page");
   });
 
   // RC3-A: Configuración › WhatsApp asks for «Configuración» and shows only with the module installed.
@@ -96,7 +94,7 @@ describe("Sidebar", () => {
     }
   });
 
-  it.each(["/formularios/form-id", "/catalogos", "/formularios/faltantes"])("does not mark the overview on the separate forms task %s", async path => {
+  it.each(["/catalogos", "/formularios/faltantes", "/formularios/documentos", "/formularios/biblioteca"])("does not mark «Formularios» on another page of the panel %s", async path => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
     renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
     const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
@@ -425,7 +423,6 @@ it("shows «Formularios» to whoever only completes forms, without the design or
       filterCounts: { active: 0, deactivated: 0, deactivatedPending: null } })));
   renderRouteWithProviders("/");
   await userEvent.click(await screen.findByRole("button", { name: /^gestión de formularios$/i }));
-  expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios/respuestas");
-  expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+  expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios");
   expect(screen.queryByRole("link", { name: "Catálogos" })).not.toBeInTheDocument();
 });

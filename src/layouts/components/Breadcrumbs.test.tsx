@@ -155,7 +155,7 @@ it.each(["/formularios/form-id/respuestas", "/formularios/form-id/respuestas/rec
   renderWithProviders(<MemoryRouter initialEntries={[path]}><Breadcrumbs/><ChildScreen leaf="Registrar visita"/></MemoryRouter>);
   const items = await breadcrumbs();
   expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita"]);
-  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios");
   expect(items[3]).toHaveAttribute("aria-current", "page");
   expect(within(items[3]).queryByRole("link")).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Respuestas" })).not.toBeInTheDocument();
@@ -169,7 +169,7 @@ it("keeps the full response under MF1 without linking a reader to template desig
   const items = await breadcrumbs();
   expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita", "VIS-000024"]);
   expect(within(items[1]).queryByRole("link")).not.toBeInTheDocument();
-  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios");
   expect(within(items[3]).getByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
   expect(items[4]).toHaveAttribute("aria-current", "page");
   expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
@@ -183,7 +183,7 @@ it.each([[["formrecords.read", "formrecords.create"]], [["formrecords.create"]]]
   </MemoryRouter>);
   const items = await breadcrumbs();
   expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", "Formularios", "Registrar visita", "Nueva respuesta"]);
-  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios/respuestas");
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", "/formularios");
   expect(await within(items[3]).findByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
   expect(items[4]).toHaveAttribute("aria-current", "page");
 });
@@ -199,4 +199,13 @@ it("hangs «Corregir» from its form's sheet", async () => {
   expect(await within(items[3]).findByRole("link")).toHaveAttribute("href", "/formularios/form-id/respuestas");
   expect(items[4]).toHaveAttribute("aria-current", "page");
   expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
+});
+
+// FU2-A: the editor hangs from «Formularios», the one list of the forms; an open document, from «Documentos recibidos».
+it.each([["/formularios/form-id", "Formularios", "/formularios"], ["/formularios/documentos/doc-id", "Documentos recibidos", "/formularios/documentos"]] as const)("hangs %s from its page of the panel", async (path, name, href) => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formtemplates.read", "formdocuments.read"] })));
+  renderWithProviders(<MemoryRouter initialEntries={[path]}><Breadcrumbs/><ChildScreen leaf="Registrar visita"/></MemoryRouter>);
+  const items = await breadcrumbs();
+  expect(items.map(item => item.textContent)).toEqual(["Inicio", "Gestión de formularios", name, "Registrar visita"]);
+  expect(within(items[2]).getByRole("link")).toHaveAttribute("href", href);
 });

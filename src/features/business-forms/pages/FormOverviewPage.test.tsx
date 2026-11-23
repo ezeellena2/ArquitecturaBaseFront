@@ -45,7 +45,7 @@ const received = formatDateTimeInZone("2026-10-21T12:30:00Z", "es", currentUser.
 describe("MF1 form overview", () => {
   it("puts the last response in three columns: its number, when it arrived and its state (UD1)", async () => {
     setup(["formrecords.read", "formapprovals.decide"]);
-    renderRouteWithProviders("/formularios/respuestas");
+    renderRouteWithProviders("/formularios");
     const table = await screen.findByRole("table");
     const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
     const number = cellUnder(table, row, "Última respuesta");
@@ -62,25 +62,25 @@ describe("MF1 form overview", () => {
     const payload = overview();
     payload.forms.items[0] = { ...payload.forms.items[0], pendingApprovalCount: 0, responseCount: 0, lastResponse: null };
     setup(["formrecords.read"], payload);
-    renderRouteWithProviders("/formularios/respuestas");
+    renderRouteWithProviders("/formularios");
     const table = await screen.findByRole("table");
     const row = (await within(table).findByRole("link", { name: "Registrar visita" })).closest("tr")!;
     for (const header of ["Última respuesta", "Recibida", "Estado"]) expect(cellUnder(table, row, header)).toHaveTextContent(/^—$/);
     expect(screen.queryByText("Sin respuestas todavía")).not.toBeInTheDocument();
   });
 
-  it("says the state in the bar's button and clears pendingOnly when opening inactive forms", async () => {
+  it("says the state in the bar's button and leaves «Con algo por aprobar» when opening inactive forms", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
-    const { router } = renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
+    const { router } = renderRouteWithProviders("/formularios?publicationFilter=Pending&pageSize=20");
     await screen.findByRole("heading", { name: "Formularios", level: 1 });
     const table = await screen.findByRole("table");
     expect(within(table).getByRole("columnheader", { name: "Por aprobar" })).toBeVisible();
     expect(within(table).getByRole("columnheader", { name: "Respuestas" })).toBeVisible();
     expect(within(table).getByRole("link", { name: "VIS-000024" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
-    expect(screen.getByRole("button", { name: "Estado de los formularios Todos" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Estado de los formularios Con algo por aprobar" })).toBeVisible();
     expect(requests.at(-1)?.searchParams.get("pendingOnly")).toBe("true");
     expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("checkbox", { name: "Con algo por aprobar" }));
+    await userEvent.click(within(await openStates("Con algo por aprobar")).getByRole("option", { name: "Activos" }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false));
     expect(screen.getByRole("button", { name: "Estado de los formularios Activos" })).toBeInTheDocument();
     const viewDeactivated = screen.getByRole("button", { name: "Ver dados de baja" });
@@ -88,8 +88,7 @@ describe("MF1 form overview", () => {
     await userEvent.click(viewDeactivated);
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("state")).toBe("Deactivated"));
     expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false);
-    expect(router.state.location.search).not.toContain("pendingOnly");
-    expect(screen.getByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeChecked();
+    expect(new URLSearchParams(router.state.location.search).get("publicationFilter")).toBe("Deactivated");
     // The segment and the columns already say what a deactivated form keeps: no banner explains it (2026-10-31).
     await waitFor(() => expect(screen.getByRole("button", { name: "Estado de los formularios Dados de baja" })).toBeInTheDocument());
     expect(screen.queryByText("Los formularios dados de baja conservan sus respuestas y lo que espera una decisión.")).not.toBeInTheDocument();
@@ -97,7 +96,7 @@ describe("MF1 form overview", () => {
 
   it("chooses the deactivated forms in the bar's button, back to page 1, and choosing the one it has changes nothing", async () => {
     const { requests } = setup(["formrecords.read", "formapprovals.decide"]);
-    const { router } = renderRouteWithProviders("/formularios/respuestas?state=Deactivated&page=2&pageSize=20");
+    const { router } = renderRouteWithProviders("/formularios?publicationFilter=Deactivated&page=2&pageSize=20");
     await screen.findByRole("table");
     let states = await openStates("Dados de baja");
     expect(within(states).getByRole("option", { name: "Dados de baja" })).toHaveAttribute("aria-selected", "true");
@@ -109,12 +108,12 @@ describe("MF1 form overview", () => {
     await userEvent.click(within(states).getByRole("option", { name: "Activos" }));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("state")).toBe("Active"));
     expect(new URLSearchParams(router.state.location.search).has("page")).toBe(false);
-    expect(new URLSearchParams(router.state.location.search).has("state")).toBe(false);
+    expect(new URLSearchParams(router.state.location.search).has("publicationFilter")).toBe(false);
   });
 
   it("aligns what waits for a decision and how many responses there are to the right, as every column of numbers", async () => {
     setup(["formrecords.read", "formapprovals.decide"]);
-    renderRouteWithProviders("/formularios/respuestas");
+    renderRouteWithProviders("/formularios");
     const table = await screen.findByRole("table");
     for (const name of ["Por aprobar", "Respuestas"]) expect(within(table).getByRole("columnheader", { name })).toHaveClass("text-right");
     expect(within(table).getByRole("cell", { name: "24" })).toHaveClass("text-right");
@@ -131,22 +130,22 @@ describe("MF1 form overview", () => {
       if (new URL(request.url).searchParams.get("pendingOnly") === "true") await gate;
       return HttpResponse.json(overview());
     }));
-    renderRouteWithProviders("/formularios/respuestas");
+    renderRouteWithProviders("/formularios");
     const name = await screen.findByRole("link", { name: "Registrar visita" });
     expect(name.closest("[inert]")).toBeNull();
-    await userEvent.click(screen.getByRole("checkbox", { name: "Con algo por aprobar" }));
+    await userEvent.click(within(await openStates("Activos")).getByRole("option", { name: "Con algo por aprobar" }));
     await waitFor(() => expect(screen.getByRole("link", { name: "Registrar visita" }).closest("[inert]")).not.toBeNull());
     expect(screen.getByRole("table").closest("[aria-busy='true']")).not.toBeNull();
     await act(async () => release());
     await waitFor(() => expect(screen.getByRole("link", { name: "Registrar visita" }).closest("[inert]")).toBeNull());
   });
 
-  it.each(["Active", "Deactivated"])("marks inactive rows and leaves state segments unselected while pendingOnly crosses %s", async state => {
+  it("marks inactive rows while «Con algo por aprobar» crosses both states", async () => {
     const payload = overview();
     payload.forms.items[0].deactivatedAtUtc = "2026-10-20T15:00:00Z";
     payload.forms.items.push({ ...payload.forms.items[0], id: "0199a0c0-0000-7000-8000-000000000227", name: "Control vigente", deactivatedAtUtc: null });
     setup(["formrecords.read", "formapprovals.decide"], payload);
-    renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&state=" + state);
+    renderRouteWithProviders("/formularios?publicationFilter=Pending");
     const row = (await screen.findByRole("link", { name: "Registrar visita" })).closest("tr")!;
     expect(within(row).getByText("Dado de baja", { exact: true })).toBeVisible();
     // This view mixes active and deactivated forms: the state of each one goes in its own column, not next to its name (UD1).
@@ -154,9 +153,9 @@ describe("MF1 form overview", () => {
     expect(cellUnder(table, row, "Formulario")).toHaveTextContent(/^Registrar visita$/);
     expect(cellUnder(table, row, "Estado del formulario")).toHaveTextContent(/^Dado de baja$/);
     expect(cellUnder(table, screen.getByRole("link", { name: "Control vigente" }).closest("tr")!, "Estado del formulario")).toHaveTextContent(/^Activo$/);
-    const states = await openStates("Todos");
-    expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Activos", "Dados de baja"]);
-    for (const option of within(states).getAllByRole("option")) expect(option).toHaveAttribute("aria-selected", "false");
+    const states = await openStates("Con algo por aprobar");
+    expect(within(states).getAllByRole("option").map(option => option.textContent)).toEqual(["Activos", "Con algo por aprobar", "Dados de baja"]);
+    expect(within(states).getByRole("option", { name: "Con algo por aprobar" })).toHaveAttribute("aria-selected", "true");
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     expect(screen.queryByRole("button", { name: "Ver dados de baja" })).not.toBeInTheDocument();
@@ -171,22 +170,22 @@ describe("MF1 form overview", () => {
     if (!read) { payload.forms.items[0].responseCount = null; payload.forms.items[0].lastResponse = null; }
     if (!decide) { payload.forms.items[0].pendingApprovalCount = null; payload.filterCounts.deactivatedPending = null; }
     const { requests } = setup([...permissions], payload);
-    renderRouteWithProviders("/formularios/respuestas?pendingOnly=true&pageSize=20");
+    renderRouteWithProviders("/formularios?publicationFilter=Pending&pageSize=20");
     await screen.findByRole("heading", { name: "Formularios", level: 1 });
     const table = await screen.findByRole("table");
     expect(within(table).queryByRole("columnheader", { name: "Respuestas" }) !== null).toBe(read);
     expect(within(table).queryByRole("columnheader", { name: "Última respuesta" }) !== null).toBe(read);
     expect(within(table).queryByRole("columnheader", { name: "Por aprobar" }) !== null).toBe(decide);
-    expect(screen.queryByRole("checkbox", { name: "Con algo por aprobar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Con algo por aprobar/ })).not.toBeInTheDocument();
     expect(requests.at(-1)?.searchParams.has("pendingOnly")).toBe(false);
     expect(within(table).getByRole("link", { name: "Registrar visita" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
   });
 
   it.each([
     { permissions: ["formapprovals.decide"], query: "", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
-    { permissions: ["formapprovals.decide"], query: "state=Deactivated", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
-    { permissions: ["formrecords.read", "formapprovals.decide"], query: "pendingOnly=true", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
-    { permissions: ["formrecords.read"], query: "state=Deactivated", title: "No hay formularios dados de baja", hint: "Los formularios publicados que se den de baja van a aparecer acá." },
+    { permissions: ["formapprovals.decide"], query: "publicationFilter=Deactivated", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
+    { permissions: ["formrecords.read", "formapprovals.decide"], query: "publicationFilter=Pending", title: "No hay respuestas por aprobar.", hint: "Los formularios con respuestas que podés decidir van a aparecer acá." },
+    { permissions: ["formrecords.read"], query: "publicationFilter=Deactivated", title: "No hay formularios dados de baja", hint: "Los formularios publicados que se den de baja van a aparecer acá." },
     { permissions: ["formrecords.read"], query: "search=visita", title: "Sin coincidencias", hint: "No encontramos formularios con estos filtros." },
     { permissions: ["formrecords.read"], query: "", title: "Todavía no hay formularios publicados", hint: "Los formularios publicados van a aparecer acá." },
   ])("names the empty overview with its title only for $query and $permissions", async ({ permissions, query, title, hint }) => {
@@ -194,22 +193,22 @@ describe("MF1 form overview", () => {
     payload.forms = { ...payload.forms, items: [], totalCount: 0, totalPages: 0 };
     payload.filterCounts = { active: 0, deactivated: 0, deactivatedPending: null };
     setup(permissions, payload);
-    renderRouteWithProviders("/formularios/respuestas?" + query);
+    renderRouteWithProviders("/formularios?" + query);
     expect(await screen.findByRole("heading", { name: title })).toBeVisible();
     // An empty list does not explain how it works (decision of 2026-10-31): its title is enough.
     expect(screen.queryByText(hint, { exact: true })).not.toBeInTheDocument();
   });
 
   it("denies the overview without either permission and never reads its data", async () => {
-    const { requests } = setup(["formtemplates.read"]);
-    renderRouteWithProviders("/formularios/respuestas");
+    const { requests } = setup(["formcatalogs.read"]);
+    renderRouteWithProviders("/formularios");
     await screen.findByRole("heading", { name: /no tenés permiso/i });
     expect(requests).toHaveLength(0);
   });
 
   it("purges observed private rows and counts immediately after a 403 without refetching", async () => {
     setup(["formrecords.read", "formapprovals.decide"]);
-    renderRouteWithProviders("/formularios/respuestas?pageSize=20");
+    renderRouteWithProviders("/formularios?pageSize=20");
     await screen.findByRole("link", { name: "Registrar visita" });
     let reads = 0;
     server.use(http.get("/api/forms/overview", () => { reads++; return HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 }); }));
@@ -224,7 +223,7 @@ describe("MF1 form overview", () => {
     setup(["formrecords.read", "formapprovals.decide"]);
     renderRouteWithProviders("/");
     await userEvent.click(await screen.findByRole("button", { name: /^gestión de formularios$/i }));
-    expect(await screen.findByRole("link", { name: "Formularios (2)" })).toHaveAttribute("href", "/formularios/respuestas");
+    expect(await screen.findByRole("link", { name: "Formularios (2)" })).toHaveAttribute("href", "/formularios");
     expect(screen.queryByRole("link", { name: /^por aprobar/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^ver todos/i })).not.toBeInTheDocument();
   });
@@ -238,7 +237,7 @@ it("loads the global pending badge only after its menu opens on another screen",
   await screen.findByRole("heading", { name: "Mi perfil" });
   expect(counts).toBe(0);
   await userEvent.click(await screen.findByRole("button", { name: "Gestión de formularios" }));
-  expect(await screen.findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios/respuestas");
+  expect(await screen.findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios");
   expect(counts).toBe(1);
 });
 
@@ -257,7 +256,7 @@ it("keeps the loading mark of the pending badge inside its menu row", async () =
   await waitFor(() => expect(marks()).toHaveLength(1));
   expect(overview).toContainElement(marks()[0]);
   await act(async () => release());
-  expect(await within(panel).findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios/respuestas");
+  expect(await within(panel).findByRole("link", { name: "Formularios (3)" })).toHaveAttribute("href", "/formularios");
   expect(marks()).toHaveLength(0);
 });
 
@@ -265,7 +264,7 @@ it("renders the inactive-form action with its visible English label", async () =
   setup(["formrecords.read", "formapprovals.decide"]);
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions: ["formrecords.read", "formapprovals.decide"] })));
   await i18n.changeLanguage("en");
-  const { unmount } = renderRouteWithProviders("/formularios/respuestas?pageSize=20");
+  const { unmount } = renderRouteWithProviders("/formularios?pageSize=20");
   try {
     expect(await screen.findByRole("button", { name: "View deactivated forms" })).toHaveTextContent(/^View$/);
   } finally { unmount(); await i18n.changeLanguage("es"); }
@@ -273,7 +272,7 @@ it("renders the inactive-form action with its visible English label", async () =
 
 it.each([
   { permissions: ["formapprovals.decide"], query: "", title: "No responses to approve.", hint: "Forms with responses you can decide on will appear here." },
-  { permissions: ["formrecords.read"], query: "state=Deactivated", title: "No deactivated forms", hint: "Published forms that are deactivated will appear here." },
+  { permissions: ["formrecords.read"], query: "publicationFilter=Deactivated", title: "No deactivated forms", hint: "Published forms that are deactivated will appear here." },
 ])("keeps the empty overview title accurate in English for $query", async ({ permissions, query, title, hint }) => {
   const payload = overview();
   payload.forms = { ...payload.forms, items: [], totalCount: 0, totalPages: 0 };
@@ -281,7 +280,7 @@ it.each([
   setup(permissions, payload);
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, culture: "en", permissions })));
   await i18n.changeLanguage("en");
-  const { unmount } = renderRouteWithProviders("/formularios/respuestas?" + query);
+  const { unmount } = renderRouteWithProviders("/formularios?" + query);
   try {
     expect(await screen.findByRole("heading", { name: title })).toBeVisible();
     expect(screen.queryByText(hint, { exact: true })).not.toBeInTheDocument();
@@ -296,7 +295,7 @@ it("shows whoever only completes forms their own entries, opens their sheet and 
     pendingApprovalCount: null, responseCount: 0, lastResponse: null });
   payload.filterCounts.deactivatedPending = null;
   setup(["formrecords.create"], payload);
-  const { router } = renderRouteWithProviders("/formularios/respuestas");
+  const { router } = renderRouteWithProviders("/formularios");
   const table = await screen.findByRole("table");
   expect(await within(table).findByRole("link", { name: "Registrar visita" })).toHaveAttribute("href", "/formularios/" + responseFormId + "/respuestas");
   expect(within(table).getByRole("columnheader", { name: "Mis cargas" })).toBeVisible();
@@ -324,4 +323,19 @@ it("shows whoever only completes forms their own entries, opens their sheet and 
   expect(screen.getByRole("columnheader", { name: "Acciones" })).toBeInTheDocument();
   await userEvent.click(load);
   await waitFor(() => expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/cargar"));
+});
+
+// FU4: the old address of «Formularios» leads to the list with the same filter and search.
+it.each([
+  ["pendingOnly=true&search=visita", "publicationFilter=Pending&search=visita"],
+  ["state=Deactivated", "publicationFilter=Deactivated"],
+  ["", ""],
+])("leads the old address ?%s to the list", async (old, next) => {
+  setup(["formrecords.read", "formapprovals.decide"]);
+  const { router } = renderRouteWithProviders("/formularios/respuestas" + (old ? "?" + old : ""));
+  await screen.findByRole("heading", { name: "Formularios", level: 1 });
+  expect(router.state.location.pathname).toBe("/formularios");
+  const expected = new URLSearchParams(next);
+  const reached = new URLSearchParams(router.state.location.search);
+  for (const key of ["publicationFilter", "search", "state", "pendingOnly"]) expect(reached.get(key)).toBe(expected.get(key));
 });

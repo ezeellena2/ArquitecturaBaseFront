@@ -23,7 +23,8 @@ elegido.
   dos grupos de FU1-B), `routes.tsx` (`/formularios` para quien diseña, carga, lee o aprueba; la redirección de
   `/formularios/respuestas`), `FormsPage.tsx` (FU2-A) y la lista de hoy de `FormOverviewPage.tsx` para quien no diseña;
   migas, textos de los dos idiomas y lo que hoy enlaza a «Diseñar formularios» o a `/formularios/respuestas`.
-- **Backend:** el número «por aprobar» de cada fila ya llega en `lifecycle.pendingApprovalCount` de la lista de diseño.
-  Falta el filtro «Con algo por aprobar» en esa lista, con su conteo; sin migraciones ni rutas nuevas.
+- **Backend:** la lista de diseño suma `pendingDecisionCount`, lo que espera la decisión de quien mira (sólo con Decide,
+  como el número del panel; `lifecycle.pendingApprovalCount` cuenta todas las tareas abiertas y no sirve), y el filtro
+  `Pending`, que mezcla activos y dados de baja; sin migraciones ni rutas nuevas.
 - Al programar, abrir los tableros FU1 a FU3 y comparar la pantalla con ellos, no sólo con esta tabla.
-- Estado: elegido el 2026-11-23; sin programar.
+- Estado: elegido y programado el 2026-11-23. Faltan las escenas de `test:visual` (el panel y las listas cambian sus capturas), la prueba a mano y pasar los tableros al lienzo del sistema visual.

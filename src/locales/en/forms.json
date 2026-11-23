@@ -1,5 +1,5 @@
 {
-  "title": "Design forms",
+  "title": "Forms",
   "library": {
     "title": "Library",
     "subtitle": "Standard forms",
@@ -1567,6 +1567,7 @@
     "state": "Form status",
     "pendingColumn": "To approve",
     "responses": "Responses",
+    "responsesOf": "View the responses of {{name}}",
     "lastResponse": "Last response",
     "formState": "Form status",
     "formStates": {

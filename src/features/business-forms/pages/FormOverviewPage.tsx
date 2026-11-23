@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
@@ -9,7 +9,6 @@ import { formatNumber } from "@/shared/lib/numberFormat";
 import { Banner } from "@/shared/ui/Banner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { CheckboxField } from "@/shared/ui/CheckboxField";
 import { DataTable, type Column } from "@/shared/ui/DataTable";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
@@ -28,14 +27,17 @@ import { useResponseFeedback } from "../hooks/useResponseQueries";
 export function FormOverviewPage() {
   const { t, i18n } = useTranslation(["forms", "formEntries"]);
   const [params] = useSearchParams();
+  const location = useLocation();
   const update = useQueryUpdate();
   const presentation = useSystemPresentation();
   const pagination = usePagination(presentation.data?.defaultPageSize, true);
-  const state = params.get("state") === "Deactivated" ? "Deactivated" : "Active";
+  // FU4: the same filter as the list of whoever designs (`publicationFilter`), «Con algo por aprobar» included.
+  const filter = params.get("publicationFilter");
+  const state = filter === "Deactivated" ? "Deactivated" : "Active";
   // The server owns the row set; a shared URL cannot grant decision filters.
   const { has } = usePermissions();
   const both = has("formrecords.read") && has("formapprovals.decide");
-  const pendingOnly = both && params.get("pendingOnly") === "true";
+  const pendingOnly = both && filter === "Pending";
   // CM3: no folders here, neither a panel nor a filter: they are the side menu, and an old `?carpeta=` is ignored.
   const { scope, query, forbidden } = useFormOverview({ page: pagination.page, pageSize: pagination.pageSize,
     search: pagination.search, state, pendingOnly }, pagination.ready);
@@ -78,20 +80,19 @@ export function FormOverviewPage() {
     // A table row carries no text buttons: loading is an icon with its name in the tooltip, and a link, since it goes elsewhere.
     ...(scope.canCreate ? [{ id: "load", header: t("actionsColumn"), align: "right" as const, cell: (row: FormOverviewRow) => <RowActions actions={[{
       hidden: !!row.deactivatedAtUtc, label: t("formEntries:load"), accessibleName: t("formEntries:loadForm", { name: row.name }), icon: PlusIcon,
-      to: "/formularios/" + row.id + "/cargar", state: { from: "overview" } }]}/> }] : []),
+      to: "/formularios/" + row.id + "/cargar", state: { from: "overview", list: "/formularios" + location.search } }]}/> }] : []),
   ];
   return <Page title={t("overview.title")}>
     <FilterBar><div className="flex flex-wrap items-center gap-3"><div className="w-full sm:w-72"><SearchInput maxLength={100} label={t("overview.search")} value={pagination.search ?? ""} onChange={pagination.setSearch}/></div>{scope.canRead || scope.canDecide
       // The state is the only piece to choose with the button of the bar (DS1-A, also the filters since 2026-11-22), without
-      // counts (FO1-A). «Con algo por aprobar» mixes both states: the button says «Todos» and none is ticked.
-      ? <Picker trigger="button" label={t("overview.state")} placeholder={t("all")} value={pendingOnly ? null : state}
-        options={[{ id: "Active", label: t("active") }, { id: "Deactivated", label: t("deactivated") }]}
+      // counts (FO1-A). «Con algo por aprobar» is one more option (FU4): it mixes both states.
+      ? <Picker trigger="button" label={t("overview.state")} value={pendingOnly ? "Pending" : state}
+        options={[{ id: "Active", label: t("active") }, ...(both ? [{ id: "Pending", label: t("overview.pendingOnly") }] : []), { id: "Deactivated", label: t("deactivated") }]}
         // Choosing the one it has changes nothing: it would go back to page 1.
-        onChange={id => { if (pendingOnly || id !== state) update({ state: id === "Deactivated" ? id : undefined, page: undefined }); }}/> : null}
-      {both ? <CheckboxField label={t("overview.pendingOnly")} checked={pendingOnly} onCheckedChange={checked => update({ pendingOnly: checked ? "true" : undefined, page: undefined })}/> : null}
+        onChange={id => { if (id !== (pendingOnly ? "Pending" : state)) update({ publicationFilter: id === "Active" ? undefined : id, page: undefined }); }}/> : null}
     </div></FilterBar>
     <div className="flex flex-col gap-4">
-      {!pendingOnly && state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ state: "Deactivated", pendingOnly: undefined, page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
+      {!pendingOnly && state === "Active" && !!data?.filterCounts.deactivatedPending ? <Banner action={<Button variant="outline" aria-label={t("overview.viewDeactivated")} onClick={() => update({ publicationFilter: "Deactivated", page: undefined })}>{t("common:actions.view")}</Button>}>{t("overview.deactivatedPending", { count: data.filterCounts.deactivatedPending })}</Banner> : null}
       {/* Searching, filtering or paginating keeps the previous rows dimmed under a running line (board LC2-A), as does
           Reintentar after a failed read with rows in sight; without rows it goes back to the first load's spinner. */}
       <Surface><DataTable columns={columns} rows={data?.forms.items ?? []} rowKey={row => row.id}

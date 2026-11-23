@@ -16,17 +16,19 @@ it.each([
   [["formrecords.read"], true],
   [["formapprovals.decide"], true],
   [["formrecords.read", "formapprovals.decide"], true],
-  [["formtemplates.read"], false],
+  [["formtemplates.read"], true],
+  [["formcatalogs.read"], false],
 ] as const)("uses the same alternative permission rule in the menu for %j", async (permissions, allowed) => {
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })));
   renderWithProviders(<MemoryRouter><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()} /></MemoryRouter>);
   const sidebar = await screen.findByRole("complementary");
   await within(sidebar).findByText("ana@example.com");
   await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
-  if (allowed) expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios/respuestas");
+  // FU2-A: one entry for whoever designs, loads, reads or decides.
+  if (allowed) expect(await screen.findByRole("link", { name: "Formularios" })).toHaveAttribute("href", "/formularios");
   else {
+    expect(await screen.findByRole("link", { name: "Catálogos" })).toBeVisible();
     expect(screen.queryByRole("link", { name: "Formularios" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Diseñar formularios" })).toBeVisible();
   }
 });
 
@@ -39,20 +41,32 @@ it("shows «Documentos recibidos» with only its permission", async () => {
   await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
   expect(await screen.findByRole("link", { name: "Documentos recibidos" })).toHaveAttribute("href", "/formularios/documentos");
   expect(screen.queryByRole("link", { name: "Formularios" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("link", { name: "Diseñar formularios" })).not.toBeInTheDocument();
 });
 
-// DOC5-A: «Documentos recibidos» goes after the fixed pages, so its row appearing or leaving when the permissions arrive moves none of them.
-it("puts «Documentos recibidos» after the pages of the panel", async () => {
-  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formdocuments.read"] })));
+// FU1-B: «Formularios» and «Documentos recibidos» together, a line, and the pages used to build forms.
+it("groups the pages of every day above a line and the ones to build forms below it", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formdocuments.read", "formcatalogs.read"] })));
   renderWithProviders(<MemoryRouter><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()} /></MemoryRouter>);
   const sidebar = await screen.findByRole("complementary");
   await within(sidebar).findByText("ana@example.com");
   await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
   const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
-  const links = within(panel).getAllByRole("link");
-  expect(links.at(-1)).toHaveAccessibleName(/^Documentos recibidos/);
-  expect(links.map(link => link.textContent)).toContain("Diseñar formularios");
+  await within(panel).findByRole("link", { name: /^Documentos recibidos/ });
+  const [daily, build] = within(panel).getAllByRole("list");
+  expect(within(daily).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(["/formularios", "/formularios/documentos"]);
+  expect(within(build).getAllByRole("link").map(link => link.textContent)).toEqual(["Catálogos", "Formularios que faltan"]);
+  expect(daily.nextElementSibling).toHaveClass("border-t");
+});
+
+it("draws no line when there is nothing to build forms with", async () => {
+  server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.create"] })));
+  renderWithProviders(<MemoryRouter><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()} /></MemoryRouter>);
+  const sidebar = await screen.findByRole("complementary");
+  await within(sidebar).findByText("ana@example.com");
+  await userEvent.click(within(sidebar).getByRole("button", { name: /^gestión de formularios$/i }));
+  const panel = await screen.findByRole("navigation", { name: "Gestión de formularios" });
+  await within(panel).findByRole("link", { name: "Formularios" });
+  expect(panel.querySelector(".border-t.my-2")).toBeNull();
 });
 
 // DOC5-A: the folders arrive after the profile (FormMenuShell). Each one is a menu of its own (CM1), so «Documentos recibidos»

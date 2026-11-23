@@ -135,7 +135,9 @@ const recovered = z.strictObject({ requestId: guid, kind: z.enum(["Create", "Upd
   .refine(value => value.requestId === value.result.requestId && value.currentRevision >= value.result.definition.revision);
 // `appOnly`: the active version, or a form never published, its draft, is completed only in the app (SA3-A).
 const row = z.strictObject({ id: guid, name: nameText, prefix: z.string(), questionCount: z.number().int().min(0), activeVersionNumber: revision.nullable(),
-  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean(), lifecycle, appOnly: z.literal(true).optional() });
+  displayState, lastChangedAtUtc: utc, lastChangedBy: author.nullable(), canEdit: z.boolean(), lifecycle, appOnly: z.literal(true).optional(),
+  // FU2-A: what awaits the decision of whoever asks, only for whoever decides approvals; without the permission it does not come.
+  pendingDecisionCount: z.number().int().min(0).optional() });
 const checkedRow = row.refine(value => Object.values(value.name).some(name => !!name.trim()));
 const page = z.strictObject({ items: z.array(checkedRow), page: z.number().int().min(1), pageSize: z.number().int().min(1).max(100), totalCount: z.number().int().min(0),
   totalPages: z.number().int().min(0), hasPrevious: z.boolean(), hasNext: z.boolean() });

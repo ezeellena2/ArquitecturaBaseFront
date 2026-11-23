@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { PermissionRequirement } from "@/auth/usePermissions";
-import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PencilIcon, PublicTrackingIcon, DocumentIcon, MonitorIcon, FileIcon } from "@/shared/ui/icons";
+import { HomeIcon, PublicWhatsAppIcon, PaletteIcon, PreferencesIcon, SettingsIcon, ShieldIcon, UsersIcon, FormIcon, PublicTrackingIcon, DocumentIcon, MonitorIcon, FileIcon } from "@/shared/ui/icons";
 
 interface NavigationEntry {
   /// Clave del texto en el namespace common (navigation.*).
@@ -103,13 +103,13 @@ export function isWhatsAppPath(pathname: string): boolean {
 export const forms: NavigationPanel = {
   labelKey: "navigation.forms", icon: FormIcon,
   items: [
-    { labelKey: "navigation.formOverview", to: "/formularios/respuestas", icon: FormIcon, permission: ["formrecords.read", "formapprovals.decide", "formrecords.create"] },
-    // DOC5-A: below «Formularios», with the documents that wait for someone of the team. Before «Diseñar formularios», whose
-    // `/formularios` would otherwise be the parent of an open document in the breadcrumbs.
+    // FU2-A: one entry for the whole list of forms: whoever designs gets the ABM with «Cargar», whoever does not, what they load,
+    // read or decide. Its number is what awaits the decision of whoever looks (FormsOverviewLink).
+    { labelKey: "navigation.formOverview", to: "/formularios", icon: FormIcon, permission: ["formtemplates.read", "formrecords.read", "formapprovals.decide", "formrecords.create"] },
+    // DOC5-A and FU1-B: right below «Formularios», the other page of every day; a line apart, what is used to build forms.
     { labelKey: "navigation.receivedDocuments", to: "/formularios/documentos", icon: FileIcon, permission: "formdocuments.read" },
-    { labelKey: "navigation.designForms", to: "/formularios", icon: PencilIcon, permission: "formtemplates.read" },
-    { labelKey: "navigation.library", to: "/formularios/biblioteca", icon: DocumentIcon, permission: "formtemplates.read", feature: "form-library" },
     { labelKey: "navigation.catalogs", to: "/catalogos", icon: PublicTrackingIcon, permission: "formcatalogs.read" },
+    { labelKey: "navigation.library", to: "/formularios/biblioteca", icon: DocumentIcon, permission: "formtemplates.read", feature: "form-library" },
     { labelKey: "navigation.missingForms", to: "/formularios/faltantes", icon: FormIcon, permission: "formtemplates.manage", exact: true },
   ],
 };
@@ -146,7 +146,9 @@ function leadsTo(pathname: string, link: NavigationLink): boolean {
 export function parentLinkOf(pathname: string): NavigationLink | undefined {
   const path = withoutTrailingSlash(pathname);
 
-  return navigationLinks.find((link) => !link.exact && isChildOf(path, link.to));
+  // The most specific one: an open document (`/formularios/documentos/{id}`) hangs from «Documentos recibidos», not from
+  // «Formularios» (`/formularios`), which is the parent of every other screen of a form.
+  return navigationLinks.filter((link) => !link.exact && isChildOf(path, link.to)).sort((a, b) => b.to.length - a.to.length)[0];
 }
 
 /// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas. Vale
