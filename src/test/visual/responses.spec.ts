@@ -102,12 +102,14 @@ for (const language of ["es", "en"] as const)
         const full = page.getByRole("main");
         await expect(page.getByRole("dialog", { name: en ? "Response details" : "Detalle de la respuesta", exact: true })).toHaveCount(0);
         await expect(table).toHaveCount(0);
-        await expect(full.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true })).toBeVisible();
+        // VF1-A: the response reads in the zones of its form.
+        await expect(full.getByRole("button", { name: en ? "Collapse Data" : "Plegar Datos", exact: true })).toBeVisible();
         await expect(full.getByText("comprobante.pdf", { exact: true })).toBeVisible();
         await page.screenshot({ path: `test-results/responses-t3-${language}-${width}.png`, fullPage: true });
         const thumbnail = full.getByRole("button", { name: /entrega\.jpg/ }).first();
         await thumbnail.click();
-        const viewer = page.getByRole("dialog", { name: en ? "Response photos" : "Fotos de la respuesta", exact: true });
+        // VF1-A: on the phone the photos open from their question in the reading, with its name.
+        const viewer = page.getByRole("dialog", { name: en ? "Delivery photos" : "Fotos de la entrega", exact: true });
         await expect(viewer.getByRole("img", { name: "entrega.jpg", exact: true })).toBeVisible();
         await viewer.press("Escape");
         await expect(thumbnail).toBeFocused();

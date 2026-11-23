@@ -306,10 +306,13 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await assertNoPageScroll(page, width);
     await page.screenshot({ path: "test-results/form-entry-sheet-app-" + language + "-" + width + ".png", fullPage: true });
     await page.getByRole("link", { name: "TEST-000002", exact: true }).click();
-    // On the phone the full response keeps its activity folded.
+    // On the phone the full response keeps its activity folded, and each of its rows says the channel in its own column
+    // (VF2-A); the quick view says it with who loaded it.
     const expand = page.getByRole("button", { name: es ? "Expandir actividad" : "Expand activity", exact: true });
-    if (width < 640) await expand.click();
-    await expect(page.getByText(es ? /^En la app · / : /^In the app · /).first()).toBeVisible();
+    if (width < 640) {
+      await expand.click();
+      await expect(page.locator("[data-activity-row]").getByRole("definition").filter({ hasText: /^App$/ }).first()).toBeVisible();
+    } else await expect(page.getByText(es ? /^En la app · / : /^In the app · /).first()).toBeVisible();
     await page.screenshot({ path: "test-results/form-entry-origin-" + language + "-" + width + ".png", fullPage: true });
   });
 }

@@ -90,40 +90,46 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
       })).toBe(true);
       expect(await leaf.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     }
-    await expect(page.getByRole("table", { includeHidden: true })).toHaveCount(0);
-    const answer = page.getByRole("region", { name: en ? "Response" : "Respuesta", exact: true });
-    const activity = page.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true });
-    await expect(answer.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true })).toHaveAttribute("aria-expanded", "true");
+    // DC1 leaves the sheet behind; on a computer the activity is the only table, a row per thing that happened (VF2-A).
+    await expect(page.getByRole("table", { includeHidden: true })).toHaveCount(mobile ? 0 : 1);
+    // VF1-A: the response reads in the zones of its form, «Datos» and «Fotos y documentos».
+    const data = page.getByRole("region", { name: en ? "Data" : "Datos", exact: true });
+    const files = page.getByRole("region", { name: en ? "Photos and documents" : "Fotos y documentos", exact: true });
+    // The zone «Actividad», not the scroll region of its table, which has the same name.
+    const activity = page.getByRole("region", { name: en ? "Activity" : "Actividad", exact: true }).first();
+    await expect(data.getByRole("button", { name: en ? "Collapse Data" : "Plegar Datos", exact: true })).toHaveAttribute("aria-expanded", "true");
     await expect(activity.getByRole("button", { name: en ? mobile ? "Expand activity" : "Collapse activity" : mobile ? "Expandir actividad" : "Plegar actividad", exact: true })).toHaveAttribute("aria-expanded", String(!mobile));
+    if (!mobile) await expect(activity.getByRole("table")).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     if (mobile) expect((await fixtureCalls(page)).filter(call => call.path.includes("/documents/"))).toEqual([]);
-    const attachmentName = answer.getByText("comprobante.pdf", { exact: true });
+    // The document reads in the place of its question, inside it and with «Descargar» beside or under it, never over it.
+    const attachmentName = files.getByText("comprobante.pdf", { exact: true });
     const fileBounds = (await attachmentName.boundingBox())!;
-    const valueBounds = (await attachmentName.locator("xpath=ancestor::dd").boundingBox())!;
+    const valueBounds = (await attachmentName.locator("xpath=ancestor::div[parent::div[@data-entry-row]]").boundingBox())!;
     const attachmentRow = attachmentName.locator("..").locator("..");
     const downloadBounds = (await attachmentRow.getByRole("button", { name: en ? "Download" : "Descargar", exact: true }).boundingBox())!;
-    expect(fileBounds.width).toBeGreaterThanOrEqual(valueBounds.width * 0.7);
     expect(fileBounds.x).toBeGreaterThanOrEqual(valueBounds.x);
     expect(fileBounds.x + fileBounds.width).toBeLessThanOrEqual(valueBounds.x + valueBounds.width);
     expect(fileBounds.x + fileBounds.width <= downloadBounds.x || fileBounds.y + fileBounds.height <= downloadBounds.y).toBe(true);
     expect(await attachmentRow.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
     await assertContained(page, width);
     await page.screenshot({ path: "test-results/response-full-initial-" + language + "-" + width + ".png", fullPage: true });
-    const fold = answer.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true });
+    const fold = data.getByRole("button", { name: en ? "Collapse Data" : "Plegar Datos", exact: true });
     await fold.focus(); await page.keyboard.press("Enter");
-    const unfold = answer.getByRole("button", { name: en ? "Expand response" : "Expandir respuesta", exact: true });
+    const unfold = data.getByRole("button", { name: en ? "Expand Data" : "Expandir Datos", exact: true });
     await expect(unfold).toBeFocused();
     await expect(unfold).toHaveAttribute("aria-expanded", "false");
     await unfold.click();
     if (mobile) await activity.getByRole("button", { name: en ? "Expand activity" : "Expandir actividad", exact: true }).click();
-    const pdfAction = activity.getByRole("listitem").filter({ has: page.getByText(en ? "Generate PDF" : "Armar el PDF", { exact: true }) }).last();
-    // Board TL3-A: the copy is a row of «Al aprobarla», with its file under the action and «Ver PDF» and «Descargar» in
-    // Acciones, without a small preview: nothing is read until it is opened. It is in the menu language, so it does not
-    // name it (NI1-A).
+    // Board VF2-A: the copy is its own row of «Al aprobarla», a box on the phone, with the file in «Detalle» and «Ver PDF» and
+    // «Descargar» as icons in «Acciones», without a small preview: nothing is read until it is opened. It is in the menu
+    // language, so «Qué pasó» does not name it (NI1-A).
+    const pdfAction = activity.locator("[data-activity-row]").filter({ has: page.getByText(en ? "PDF generated" : "Se armó el PDF", { exact: true }) });
     await expect(pdfAction.getByText(docName, { exact: true })).toBeVisible();
     await expect(pdfAction.locator("iframe")).toHaveCount(0);
     expect((await fixtureCalls(page)).filter(call => call.path.includes("/documents/"))).toEqual([]);
-    await answer.getByRole("button", { name: en ? "Collapse response" : "Plegar respuesta", exact: true }).click();
+    await data.getByRole("button", { name: en ? "Collapse Data" : "Plegar Datos", exact: true }).click();
+    await files.getByRole("button", { name: en ? "Collapse Photos and documents" : "Plegar Fotos y documentos", exact: true }).click();
     await activity.scrollIntoViewIfNeeded();
     await assertContained(page, width);
     await page.screenshot({ path: "test-results/response-full-activity-" + language + "-" + width + ".png", fullPage: true });
