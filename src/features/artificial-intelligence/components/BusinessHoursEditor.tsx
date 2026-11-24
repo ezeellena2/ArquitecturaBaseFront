@@ -66,11 +66,11 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
     <div className="w-full sm:w-96"><FormField label={t("timeZoneLabel")} help={t("timeZoneHint")}><Picker label={t("timeZoneLabel")} options={zones} value={value.timeZoneId} disabled={!editable || locked} onChange={timeZoneId => onChange({ ...value, timeZoneId })} /></FormField></div>
     <div className="flex flex-col gap-2">
       <Surface><Table aria-label={t("weekTable")}>
-        <TableHeader><TableRow><TableHead className="w-28">{t("day")}</TableHead><TableHead>{t("specialPeriods")}</TableHead>{editable ? <TableHead className="w-px"><span className="sr-only">{t("actionsColumn")}</span></TableHead> : null}</TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>{t("day")}</TableHead><TableHead>{t("specialPeriods")}</TableHead>{editable ? <TableHead className="w-px"><span className="sr-only">{t("actionsColumn")}</span></TableHead> : null}</TableRow></TableHeader>
         <TableBody>{value.days.map(day => <TableRow key={day.weekday}>
           <TableCell>{dayName(day.weekday)}</TableCell>
           <TableCell className="whitespace-normal"><Schedule day={day} /></TableCell>
-          {editable ? <TableCell className="text-right"><IconButton size="icon-sm" label={t("editDay", { day: dayInText(day.weekday) })} disabled={locked} onClick={() => setEditing({ weekday: day.weekday })}><PencilIcon className="size-4" /></IconButton></TableCell> : null}
+          {editable ? <TableCell className="px-2 text-right"><IconButton size="icon-sm" label={t("editDay", { day: dayInText(day.weekday) })} disabled={locked} onClick={() => setEditing({ weekday: day.weekday })}><PencilIcon className="size-4" /></IconButton></TableCell> : null}
         </TableRow>)}</TableBody>
       </Table></Surface>
       {error ? <p id="business-hours-error" role="alert" className="text-sm text-[var(--color-danger)]">{error}</p> : null}
@@ -79,11 +79,11 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
     {/* Sin fechas no hay tabla ni un texto que lo diga: queda «Agregar fecha especial», y sin permiso, nada. */}
     {editable || value.exceptions.length ? <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-3"><p id={exceptionsId} className="text-sm font-medium">{t("exceptions")}</p>
       {value.exceptions.length ? <Surface><Table aria-labelledby={exceptionsId}>
-        <TableHeader><TableRow><TableHead className="w-28">{t("specialDate")}</TableHead><TableHead>{t("specialPeriods")}</TableHead>{editable ? <TableHead className="w-px"><span className="sr-only">{t("actionsColumn")}</span></TableHead> : null}</TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>{t("specialDate")}</TableHead><TableHead>{t("specialPeriods")}</TableHead>{editable ? <TableHead className="w-px"><span className="sr-only">{t("actionsColumn")}</span></TableHead> : null}</TableRow></TableHeader>
         <TableBody>{value.exceptions.map(item => <TableRow key={item.date}>
           <TableCell>{shownDate(item.date)}</TableCell>
           <TableCell className="whitespace-normal"><Schedule day={item} /></TableCell>
-          {editable ? <TableCell><div className="flex justify-end gap-1">
+          {editable ? <TableCell className="px-2"><div className="flex justify-end gap-1">
             <IconButton size="icon-sm" label={t("editDate", { date: shownDate(item.date) })} disabled={locked} onClick={() => setEditing({ special: structuredClone(item), isNew: false })}><PencilIcon className="size-4" /></IconButton>
             <IconButton size="icon-sm" label={t("removeDate", { date: shownDate(item.date) })} disabled={locked} onClick={() => onChange({ ...value, exceptions: value.exceptions.filter(previous => previous.date !== item.date) })}><TrashIcon className="size-4" /></IconButton>
           </div></TableCell> : null}
@@ -99,11 +99,12 @@ export function BusinessHoursEditor({ value, onChange, editable, locked, error, 
   </Surface>;
 }
 /// «Horario»: the periods of a day, one per line, with «del día siguiente» when it closes after midnight, or its state when it
-/// does not open; «Sin definir» in grey, as what is missing.
+/// does not open; «Sin definir» in grey, as what is missing. A period breaks only between its two times, so at 320 px the
+/// week still fits its zone.
 function Schedule({ day }: { day: DayDraft }) {
   const { t } = useTranslation("businessInformation");
   if (day.status !== "open") return <span className={day.status === "unknown" ? "text-[var(--color-content-muted)]" : undefined}>{t(day.status)}</span>;
-  return <>{day.periods.map((period, index) => <span key={index} className="block"><span className="whitespace-nowrap">{period.start || "—"} – {period.end || "—"}</span>{period.nextDay ? ` ${t("nextDayShort")}` : null}</span>)}</>;
+  return <>{day.periods.map((period, index) => <span key={index} className="block"><span className="whitespace-nowrap">{period.start || "—"}</span> – <span className="whitespace-nowrap">{period.end || "—"}</span>{period.nextDay ? ` ${t("nextDayShort")}` : null}</span>)}</>;
 }
 /// The four states go in the shared piece for choosing, like any list (DS1-A, 2026-11-22: «un combo desplegable a elegir las
 /// opciones»), named «Atención» under the title of the dialog. Choosing the state it already has changes nothing.

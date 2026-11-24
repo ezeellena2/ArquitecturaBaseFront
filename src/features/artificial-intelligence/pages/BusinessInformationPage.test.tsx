@@ -333,8 +333,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(within(table).getAllByRole("row")).toHaveLength(8);
     // One piece of data per column: the periods of a day, one per line, or its state when it does not open.
     const monday = hoursOf(table, "Lunes");
-    expect(within(monday).getByText("09:00 – 13:00")).toBeInTheDocument();
-    expect(within(monday).getByText("16:00 – 20:00")).toBeInTheDocument();
+    expect([...monday.querySelectorAll(":scope > span")].map(line => line.textContent)).toEqual(["09:00 – 13:00", "16:00 – 20:00"]);
     expect(hoursOf(table, "Martes")).toHaveTextContent("24 horas");
     expect(hoursOf(table, "Miércoles")).toHaveTextContent("Cerrado");
     expect(within(hoursOf(table, "Jueves")).getByText("Sin definir")).toHaveClass("text-[var(--color-content-muted)]");
@@ -342,7 +341,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     // The pencil of a row names its day; nothing in a row is a button with text (2026-11-20).
     expect(within(rowOf(table, "Lunes")).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Editar el horario del lunes"]);
     await userEvent.click(screen.getByRole("button", { name: "Aplicar lunes a viernes" }));
-    expect(within(hoursOf(table, "Viernes")).getByText("16:00 – 20:00")).toBeInTheDocument();
+    expect(hoursOf(table, "Viernes")).toHaveTextContent("16:00 – 20:00");
     expect(hoursOf(table, "Sábado")).toHaveTextContent("Sin definir");
   });
   it("edits a special date with «Listo», Cancel changes nothing and removing the last date takes its table", async () => {
