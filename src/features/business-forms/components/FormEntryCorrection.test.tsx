@@ -58,6 +58,14 @@ function setup({ canAmend = true, open = () => HttpResponse.json(correction), sa
   );
   return { sends, voids, reads };
 }
+/** From now on the response reads as replaced by `corrected`, as after someone else's correction (O52). */
+function replace(reads: { details: number }) {
+  server.use(http.get("/api/forms/records/:id", ({ params }) => {
+    reads.details++;
+    const recordId = String(params.id);
+    return HttpResponse.json(recordId === responseRecordId ? { ...detail(recordId, false), replacedBy: { recordId: corrected, atUtc: "2026-10-16T13:00:00Z" } } : detail(recordId, true));
+  }));
+}
 /** Opens the full page of the response and starts correcting it there. */
 async function correctInFull(user: ReturnType<typeof userEvent.setup>) {
   const result = renderRouteWithProviders(full(responseRecordId));
@@ -137,10 +145,10 @@ describe("correcting a response in the quick view (VF1-A, decision 5)", () => {
     expect(within(panel).getByLabelText(/^Importe/)).toHaveValue("13");
   });
 
-  it("goes back to the quick view when saving finds the response changed meanwhile and says so on top (O52)", { timeout: 20_000 }, async () => {
+  it("goes back to the quick view when saving finds the response changed meanwhile, says so on top and «Ver la actual» opens the version that replaced it (O52)", { timeout: 20_000 }, async () => {
     const { reads } = setup({ save: () => HttpResponse.json({ title: "Conflict", status: 409, code: "Forms.Record.AmendUnavailable" }, { status: 409 }) });
     const user = userEvent.setup({ delay: null });
-    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    const { router } = renderRouteWithProviders(sheet + "/" + responseRecordId);
     await user.click(await within(await screen.findByRole("region", { name: "Detalle de la respuesta" }, { timeout: 10_000 })).findByRole("button", { name: "Corregir" }));
     const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
     await user.type(await within(panel).findByLabelText(/^Motivo de la corrección/), "El importe era 13.");
@@ -149,10 +157,10 @@ describe("correcting a response in the quick view (VF1-A, decision 5)", () => {
     const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
     expect(within(quick).getByText("Esta respuesta ya no se puede corregir.")).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ kind: "error" }));
-    const before = reads.details;
+    replace(reads);
     await user.click(within(quick).getByRole("button", { name: "Ver la actual" }));
-    await waitFor(() => expect(reads.details).toBeGreaterThan(before));
-    expect(within(quick).queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.pathname).toBe(sheet + "/" + corrected));
+    expect(screen.queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
   });
 
   it("offers nothing to whoever may not change the response", async () => {
@@ -225,15 +233,15 @@ describe("correcting a response in the full page (VF1-A, decision 5)", () => {
     expect(screen.getByRole("button", { name: "Cancelar" }).compareDocumentPosition(reason) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("says when the response can no longer be corrected and reads the current one again", async () => {
+  it("says when the response can no longer be corrected and «Ver la actual» opens the version that replaced it (O52)", { timeout: 20_000 }, async () => {
     const { reads } = setup({ open: () => HttpResponse.json({ title: "Conflict", status: 409, code: "Forms.Record.AmendUnavailable" }, { status: 409 }) });
     const user = userEvent.setup({ delay: null });
-    await correctInFull(user);
+    const { router } = await correctInFull(user);
     expect(await screen.findByText("Esta respuesta ya no se puede corregir.")).toBeInTheDocument();
-    const before = reads.details;
+    replace(reads);
     await user.click(screen.getByRole("button", { name: "Ver la actual" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(full(corrected)));
     expect(await screen.findByRole("heading", { name: "TEST-000002", level: 1 })).toBeInTheDocument();
-    await waitFor(() => expect(reads.details).toBeGreaterThan(before));
   });
 
   // Board «VF · A completa»: corrected by someone else, decided or voided while it was corrected, the save comes back with a 409;
@@ -255,6 +263,23 @@ describe("correcting a response in the full page (VF1-A, decision 5)", () => {
     const before = reads.details;
     await user.click(screen.getByRole("button", { name: "Ver la actual" }));
     await waitFor(() => expect(reads.details).toBeGreaterThan(before));
+    expect(screen.queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
+  });
+
+  it("opens the version that replaced it from «Ver la actual», without the notice of the previous version (O52)", { timeout: 20_000 }, async () => {
+    const { reads } = setup({ save: () => HttpResponse.json({ title: "Conflict", status: 409, code: "Forms.Record.AmendUnavailable" }, { status: 409 }) });
+    const user = userEvent.setup({ delay: null });
+    const { router } = await correctInFull(user);
+    await user.type(await screen.findByLabelText(/^Motivo de la corrección/), "El importe era 13.");
+    await user.click(screen.getByRole("button", { name: "Guardar corrección" }));
+    expect(await screen.findByText("Esta respuesta ya no se puede corregir.")).toBeInTheDocument();
+    replace(reads);
+    await user.click(screen.getByRole("button", { name: "Ver la actual" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(full(corrected)));
+    // The current one can be corrected again; the replaced one, read while it loads, could not, and said «Versión anterior».
+    await waitFor(() => expect(screen.getByRole("button", { name: "Corregir" })).toBeInTheDocument(), { timeout: 10_000 });
+    expect(screen.getByRole("heading", { name: "TEST-000002", level: 1 })).toBeInTheDocument();
+    expect(screen.queryByText(/^Versión anterior de/)).not.toBeInTheDocument();
     expect(screen.queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
   });
 

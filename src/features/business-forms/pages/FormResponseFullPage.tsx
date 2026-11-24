@@ -76,6 +76,14 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   useLayoutEffect(() => { container.current?.focus(); }, [data?.id, editing]);
   // A replaced version reads as «Versión anterior» of its number (CW10-A); while it is corrected, «Corregir PED-000010».
   useBreadcrumbLeaf(data && editing ? t("formEntries:correction.title", { number: data.number }) : data?.replacedBy ? t("detail.previousVersion") : data?.number, data?.name);
+  // «Ver la actual» of a response that can no longer be corrected (O52): it reads again and, when another correction replaced it,
+  // the current version opens instead.
+  const viewCurrent = async () => {
+    setCorrecting(null); setChanged(null);
+    void workflow.query.refetch();
+    const replacement = (await detail.query.refetch()).data?.replacedBy;
+    if (replacement) routerNavigate(responseFullPath(formId, replacement.recordId, ""));
+  };
   const refresh = async (task?: ApprovalTask) => {
     if (task && !await workflow.observeApproval(task)) return;
     void workflow.query.refetch(); navigation.refreshPending();
@@ -89,7 +97,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
   // Correcting takes the page: «Cancelar» reads it again and saving reads the new response, at its own full route.
   if (editing) return <FormEntryCorrection layout="page" formId={formId} record={data} backTo={backTo} onClose={() => setCorrecting(null)}
-    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onUnavailable={() => { setCorrecting(null); setChanged(recordId); }}
+    onViewCurrent={() => void viewCurrent()} onUnavailable={() => { setCorrecting(null); setChanged(recordId); }}
     onSaved={id => routerNavigate(responseFullPath(formId, id, ""), { replace: true })}/>;
   const files = data.values.filter(value => value.type === "document").flatMap(responseFiles);
   // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
@@ -130,8 +138,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     </span>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
-      {changed === recordId ? <Banner tone="warning" action={<Button variant="outline" size="sm" onClick={() => { setChanged(null); void detail.query.refetch(); void workflow.query.refetch(); }}>
-        {t("detail.viewCurrent")}</Button>}>{t("formEntries:correction.unavailable")}</Banner> : null}
+      {changed === recordId ? <Banner tone="warning" action={<Button variant="outline" size="sm" onClick={() => void viewCurrent()}>{t("detail.viewCurrent")}</Button>}>
+        {t("formEntries:correction.unavailable")}</Banner> : null}
       {/* A replaced version is read as it was; the notice leads to the correction that stands for it (CW10-A). */}
       {data.replacedBy ? <Banner action={<Button variant="outline" size="sm" asChild><Link to={responseFullPath(formId, data.replacedBy.recordId, "")}>{t("detail.viewCurrent")}</Link></Button>}>
         {t("detail.replacedNotice", { number: data.number, date: formatDateTimeInZone(data.replacedBy.atUtc, i18n.language, detail.scope.user?.timeZoneId) })}</Banner> : null}
