@@ -8,6 +8,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { server } from "@/test/mocks/server";
 import { currentUser } from "@/test/mocks/handlers";
 import { renderRouteWithProviders } from "@/test/utils/renderWithProviders";
+import { cellUnder } from "@/test/utils/tableCells";
 import type { BusinessInformation, BusinessSaveRequest } from "../api/businessInformation";
 import { emptyBusinessDetails } from "../businessDetailsModel";
 import { initialAppearance } from "@/shared/lib/appearance";
@@ -42,6 +43,20 @@ async function pick(field: string, search: string, option: string, container: HT
   await userEvent.click(within(list).getByRole("option", { name: option }));
 }
 const pickTime = (field: string, time: string, container?: HTMLElement) => pick(field, time, time, container);
+// The week and the special dates read as tables (IN1-C, IN2 and IN3, 2026-11-22): a day is edited in its dialog, opened by the
+// pencil of its row, like a special date.
+async function openDay(day: string) {
+  await userEvent.click(screen.getByRole("button", { name: `Editar el horario del ${day}` }));
+  return screen.findByRole("dialog", { name: `Horario del ${day}` });
+}
+async function confirmDialog(dialog: HTMLElement, label = "Listo") {
+  await userEvent.click(within(dialog).getByRole("button", { name: label }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+}
+const week = () => screen.getByRole("table", { name: "Semana" });
+const specialDates = () => screen.getByRole("table", { name: "Feriados y fechas especiales" });
+const rowOf = (table: HTMLElement, first: string) => within(table).getByRole("row", { name: new RegExp(`^${first} `) });
+const hoursOf = (table: HTMLElement, first: string) => cellUnder(table, rowOf(table, first), "Horario");
 // A predefined question is chosen in the Picker, which invites to choose one and adds it; six, without the search.
 const presets = () => screen.getByRole("button", { name: /^Agregar una pregunta predefinida / });
 async function openPresets() {
@@ -97,7 +112,10 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const address = await screen.findByRole("textbox", { name: "Dirección del local" });
     await userEvent.type(address, " Updated");
     expect(screen.getByRole("textbox", { name: "Enlace de la ubicación" })).toHaveValue("");
-    await chooseStatus("Lunes · Atención", "24 horas");
+    const monday = await openDay("lunes");
+    await chooseStatus("Atención", "24 horas", monday);
+    await confirmDialog(monday);
+    expect(hoursOf(week(), "Lunes")).toHaveTextContent("24 horas");
     expect(presets()).toHaveAccessibleName("Agregar una pregunta predefinida Elegí una pregunta");
     await addPreset("¿Hace falta reservar?");
     // The field invites to choose again, and the list no longer offers the question that was added.
@@ -142,46 +160,58 @@ describe("business information editor", { timeout: 15_000 }, () => {
     await waitFor(() => expect(writes).toHaveLength(1));
     expect(writes[0].details?.openingHours.timeZoneId).toBe("America/Montevideo");
   });
-  it("blocks invalid structured hours before making a request", async () => {
+  it("checks on Save what crosses from one day into the next, under the week, before making a request", async () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Abierto");
-    await pickTime("Lunes 1 · Desde", "18:00");
-    await pickTime("Lunes 1 · Hasta", "09:00");
-    await userEvent.click(save());
-    expect(await screen.findByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
-    expect(writes).toHaveLength(0);
-    expect(screen.getByRole("group", { name: "Horario de atención" })).toHaveFocus();
-  });
-  it("marks an incomplete opening day only after trying to save and then updates it live", async () => {
-    current.details = emptyBusinessDetails("UTC");
-    renderRouteWithProviders("/configuracion/negocio");
-    await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Abierto");
+    // Each day passes its own dialog: the Saturday closes at 2 the next day and the Sunday opens at 1.
+    const saturday = await openDay("sábado");
+    await chooseStatus("Atención", "Abierto", saturday);
+    await pickTime("Sábado 1 · Desde", "20:00", saturday);
+    await pickTime("Sábado 1 · Hasta", "02:00", saturday);
+    await userEvent.click(within(saturday).getByRole("checkbox", { name: "Cierra al día siguiente" }));
+    await confirmDialog(saturday);
+    const sunday = await openDay("domingo");
+    await chooseStatus("Atención", "Abierto", sunday);
+    await pickTime("Domingo 1 · Desde", "01:00", sunday);
+    await pickTime("Domingo 1 · Hasta", "08:00", sunday);
+    await confirmDialog(sunday);
+    expect(hoursOf(week(), "Sábado")).toHaveTextContent("20:00 – 02:00 del día siguiente");
     const hours = screen.getByRole("group", { name: "Horario de atención" });
-    // Abrir un día deja su franja por completar: no es un error hasta intentar guardar.
-    expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
     expect(hours).toHaveAttribute("aria-invalid", "false");
     await userEvent.click(save());
-    expect(within(hours).getByRole("alert")).toHaveTextContent("Elegí apertura y cierre para cada franja.");
+    expect(within(hours).getByRole("alert")).toHaveTextContent("Hay franjas superpuestas. Revisá también las que cierran al día siguiente.");
     expect(hours).toHaveFocus();
     expect(writes).toHaveLength(0);
-    // Después del primer intento, el mensaje sigue lo que se corrige sin volver a tocar Guardar.
-    await pickTime("Lunes 1 · Desde", "18:00");
-    await pickTime("Lunes 1 · Hasta", "09:00");
-    expect(within(hours).getByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
-    await pickTime("Lunes 1 · Hasta", "20:00");
-    expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
-    expect(hours).toHaveAttribute("aria-invalid", "false");
+  });
+  it("marks an incomplete period of a day only on «Listo», keeps its dialog open and follows the correction", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    renderRouteWithProviders("/configuracion/negocio");
+    await screen.findByRole("textbox", { name: "Nombre del negocio" });
+    const monday = await openDay("lunes");
+    await chooseStatus("Atención", "Abierto", monday);
+    // Abrir un día deja su franja por completar: no es un problema hasta tocar «Listo».
+    expect(within(monday).queryByRole("alert")).not.toBeInTheDocument();
+    await userEvent.click(within(monday).getByRole("button", { name: "Listo" }));
+    expect(screen.getByRole("dialog")).toBe(monday);
+    expect(within(monday).getByRole("alert")).toHaveTextContent("Elegí apertura y cierre para cada franja.");
+    // Después del primer intento, el mensaje sigue lo que se corrige sin volver a tocar «Listo».
+    await pickTime("Lunes 1 · Desde", "18:00", monday);
+    await pickTime("Lunes 1 · Hasta", "09:00", monday);
+    expect(within(monday).getByRole("alert")).toHaveTextContent("El cierre debe ser posterior");
+    await pickTime("Lunes 1 · Hasta", "20:00", monday);
+    expect(within(monday).queryByRole("alert")).not.toBeInTheDocument();
+    await confirmDialog(monday);
+    expect(hoursOf(week(), "Lunes")).toHaveTextContent("18:00 – 20:00");
     expect(writes).toHaveLength(0);
   });
   it("keeps «Agregar franja» in one place and gives its limit as the reason when there are four periods", async () => {
     current.details = emptyBusinessDetails("UTC");
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Abierto");
-    const add = screen.getByRole("button", { name: "Agregar franja · Lunes" });
+    const monday = await openDay("lunes");
+    await chooseStatus("Atención", "Abierto", monday);
+    const add = within(monday).getByRole("button", { name: "Agregar franja · Lunes" });
     expect(add).toHaveTextContent("Agregar franja");
     expect(screen.queryByRole("button", { name: /^Quitar franja · Lunes/ })).not.toBeInTheDocument();
     // The same button, below the periods, with one, two and three of them: it neither moves nor changes its form.
@@ -223,9 +253,12 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     await userEvent.click(confirm);
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    // The date with numbers only, day first in Spanish (2026-11-10), never as it is stored.
-    expect(screen.getByText("24/10/2026 · Abierto · 09:00–13:00")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Quitar fecha 24/10/2026" })).toBeInTheDocument();
+    // The date with numbers only, day first in Spanish (2026-11-10), never as it is stored, and each piece in its column (IN3).
+    const row = rowOf(specialDates(), "24/10/2026");
+    expect(cellUnder(specialDates(), row, "Fecha")).toHaveTextContent("24/10/2026");
+    expect(cellUnder(specialDates(), row, "Horario")).toHaveTextContent("09:00 – 13:00");
+    expect(within(row).getByRole("button", { name: "Editar fecha 24/10/2026" })).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: "Quitar fecha 24/10/2026" })).toBeInTheDocument();
     expect(writes).toHaveLength(0);
   });
   it("labels the state and the hours of a special date as fields, with the error of the hours in its field", async () => {
@@ -260,10 +293,11 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(hours).not.toHaveAccessibleDescription();
   });
   it("adds a special date over an incomplete weekly day and leaves that day for Save", async () => {
+    // A saved Monday that opens without periods: the dialog of a day no longer lets one through, but saved data may bring it.
     current.details = emptyBusinessDetails("UTC");
+    current.details.openingHours.days[0] = { weekday: 0, status: "open", periods: [] };
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Abierto");
     await userEvent.click(screen.getByRole("button", { name: "Agregar fecha especial" }));
     const dialog = await screen.findByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText("Fecha"), "2026-10-10");
@@ -271,7 +305,7 @@ describe("business information editor", { timeout: 15_000 }, () => {
     // La franja vacía del lunes no es de esta fecha: el diálogo no la marca y la fecha cerrada entra.
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.getByText("10/10/2026 · Cerrado")).toBeInTheDocument();
+    expect(hoursOf(specialDates(), "10/10/2026")).toHaveTextContent("Cerrado");
     const hours = screen.getByRole("group", { name: "Horario de atención" });
     expect(within(hours).queryByRole("alert")).not.toBeInTheDocument();
     // Lo que sí trae una fecha, como repetirla, se sigue marcando en el diálogo aunque el lunes siga incompleto.
@@ -287,6 +321,54 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(within(hours).getByRole("alert")).toHaveTextContent("Elegí apertura y cierre para cada franja.");
     expect(hours).toHaveFocus();
     expect(writes).toHaveLength(0);
+  });
+  it("reads the week in a table, a day per row, with its periods or its state, and copies Monday to the weekdays", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    current.details.openingHours.days = current.details.openingHours.days.map(day => day.weekday === 0 ? { ...day, status: "open" as const, periods: [{ start: "09:00", end: "13:00", nextDay: false }, { start: "16:00", end: "20:00", nextDay: false }] }
+      : day.weekday === 1 ? { ...day, status: "allDay" as const } : day.weekday === 2 ? { ...day, status: "closed" as const }
+      : day.weekday === 6 ? { ...day, status: "open" as const, periods: [{ start: "20:00", end: "02:00", nextDay: true }] } : day);
+    renderRouteWithProviders("/configuracion/negocio");
+    const table = await screen.findByRole("table", { name: "Semana" });
+    expect(within(table).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Día", "Horario", "Acciones"]);
+    expect(within(table).getAllByRole("row")).toHaveLength(8);
+    // One piece of data per column: the periods of a day, one per line, or its state when it does not open.
+    const monday = hoursOf(table, "Lunes");
+    expect(within(monday).getByText("09:00 – 13:00")).toBeInTheDocument();
+    expect(within(monday).getByText("16:00 – 20:00")).toBeInTheDocument();
+    expect(hoursOf(table, "Martes")).toHaveTextContent("24 horas");
+    expect(hoursOf(table, "Miércoles")).toHaveTextContent("Cerrado");
+    expect(within(hoursOf(table, "Jueves")).getByText("Sin definir")).toHaveClass("text-[var(--color-content-muted)]");
+    expect(hoursOf(table, "Domingo")).toHaveTextContent("20:00 – 02:00 del día siguiente");
+    // The pencil of a row names its day; nothing in a row is a button with text (2026-11-20).
+    expect(within(rowOf(table, "Lunes")).getAllByRole("button").map(button => button.getAttribute("aria-label") ?? button.textContent)).toEqual(["Editar el horario del lunes"]);
+    await userEvent.click(screen.getByRole("button", { name: "Aplicar lunes a viernes" }));
+    expect(within(hoursOf(table, "Viernes")).getByText("16:00 – 20:00")).toBeInTheDocument();
+    expect(hoursOf(table, "Sábado")).toHaveTextContent("Sin definir");
+  });
+  it("edits a special date with «Listo», Cancel changes nothing and removing the last date takes its table", async () => {
+    current.details = emptyBusinessDetails("UTC");
+    current.details.openingHours.exceptions = [{ date: "2026-12-25", status: "closed", periods: [] }];
+    renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.click(within(await screen.findByRole("table", { name: "Feriados y fechas especiales" })).getByRole("button", { name: "Editar fecha 25/12/2026" }));
+    const dialog = await screen.findByRole("dialog", { name: "Horario de una fecha especial" });
+    expect(within(dialog).getByLabelText("Fecha")).toHaveValue("2026-12-25");
+    // Editing does not add: the button says «Listo».
+    expect(within(dialog).queryByRole("button", { name: "Agregar fecha" })).not.toBeInTheDocument();
+    await chooseStatus("Atención", "Abierto", dialog);
+    await pickTime("Fecha 1 · Desde", "09:00", dialog);
+    await pickTime("Fecha 1 · Hasta", "13:00", dialog);
+    await confirmDialog(dialog);
+    expect(hoursOf(specialDates(), "25/12/2026")).toHaveTextContent("09:00 – 13:00");
+    const monday = await openDay("lunes");
+    await chooseStatus("Atención", "24 horas", monday);
+    await userEvent.click(within(monday).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(hoursOf(week(), "Lunes")).toHaveTextContent("Sin definir");
+    await userEvent.click(screen.getByRole("button", { name: "Quitar fecha 25/12/2026" }));
+    expect(screen.queryByRole("table", { name: "Feriados y fechas especiales" })).not.toBeInTheDocument();
+    await userEvent.click(save());
+    await waitFor(() => expect(writes).toHaveLength(1));
+    expect(writes[0].details?.openingHours.exceptions).toEqual([]);
   });
   it("keeps the business header without an unsaved status", async () => {
     renderRouteWithProviders("/configuracion/negocio");
@@ -319,10 +401,13 @@ describe("business information editor", { timeout: 15_000 }, () => {
       http.get("/api/ai/business-information/changes/:id", () => HttpResponse.json({ code: "Ai.BusinessInformation.ChangeNotFound" }, { status: 404 })));
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Cerrado");
+    const mondayDialog = await openDay("lunes");
+    await chooseStatus("Atención", "Cerrado", mondayDialog);
+    await confirmDialog(mondayDialog);
     await userEvent.click(save());
     await userEvent.click(await screen.findByRole("button", { name: "Revisar guardado" }));
-    expect(screen.getByRole("button", { name: /^Lunes · Atención / })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Editar el horario del lunes" })).toBeDisabled();
+    expect(hoursOf(week(), "Lunes")).toHaveTextContent("Cerrado");
     await userEvent.click(await screen.findByRole("button", { name: "Reintentar el mismo guardado" }));
     await waitFor(() => expect(writes).toHaveLength(2));
     expect(writes[1]).toEqual(writes[0]);
@@ -403,7 +488,9 @@ describe("business information editor", { timeout: 15_000 }, () => {
     }));
     renderRouteWithProviders("/configuracion/negocio");
     await screen.findByRole("textbox", { name: "Nombre del negocio" });
-    await chooseStatus("Lunes · Atención", "Cerrado");
+    const mondayDialog = await openDay("lunes");
+    await chooseStatus("Atención", "Cerrado", mondayDialog);
+    await confirmDialog(mondayDialog);
     await userEvent.click(save());
     const review = await screen.findByRole("region", { name: "Revisar cambios de otro administrador" });
     await userEvent.click(within(review).getByRole("button", { name: "Revisar cambios" }));
@@ -465,6 +552,11 @@ describe("business information editor", { timeout: 15_000 }, () => {
     const header = screen.getByRole("heading", { level: 1, name: "Información del negocio" }).closest("header") as HTMLElement;
     expect(header.textContent).toBe("Información del negocioSólo lectura");
     expect(screen.queryByText(/Podés consultar esta información/)).not.toBeInTheDocument();
+    // La semana se lee sin la columna del lápiz y sin los botones que cambian el horario (IN3).
+    expect(within(week()).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Día", "Horario"]);
+    expect(screen.queryByRole("button", { name: /^Editar el horario del / })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Aplicar lunes a viernes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Agregar fecha especial" })).not.toBeInTheDocument();
   });
   it("leaves no legend under the fields and puts the four explanations in information icons", async () => {
     current.details = emptyBusinessDetails("UTC");
@@ -480,8 +572,10 @@ describe("business information editor", { timeout: 15_000 }, () => {
       expect(control).not.toHaveAccessibleDescription();
     for (const legend of [/Guardá los datos confirmados/, /Elegí cómo atendés cada día/, /Elegí preguntas habituales/, /Todavía no elegiste un lugar/, /Los feriados se consultan/])
       expect(screen.queryByText(legend)).not.toBeInTheDocument();
-    // Sin fechas especiales queda el vacío corto.
-    expect(screen.getByText("Sin excepciones cargadas.")).toBeInTheDocument();
+    // Sin fechas especiales no hay tabla ni un texto que lo diga: queda «Agregar fecha especial» (IN3).
+    expect(screen.queryByText("Sin excepciones cargadas.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "Feriados y fechas especiales" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Agregar fecha especial" })).toBeInTheDocument();
     // Lo que no es obvio va en la (i): los datos que no se cargan, la zona del horario, los textos anteriores y las preguntas sin respuesta.
     expect(screen.queryByText(/No cargues claves/, { selector: "p" })).toBeNull();
     expect(screen.getByRole("button", { name: "Más información sobre Datos del negocio" })).toHaveAccessibleDescription("Incluí sólo información confirmada. No cargues claves, códigos de acceso ni datos personales de clientes.");

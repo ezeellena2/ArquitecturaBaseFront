@@ -85,13 +85,15 @@ function BusinessEditor({ initial, canManage }: { initial: BusinessInformation; 
       </Surface> : null}
       {/* El único aviso sobre datos sensibles va en la (i) del título de los datos del negocio. */}
       <Surface title={t("basics")} help={t("limitsHint")} padded><div className="grid gap-4 sm:grid-cols-2">{field("name")}{field("description", true)}</div></Surface>
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        <BusinessLocationEditor value={details.location} onChange={location => editor.change({ details: { ...details, location } })} editable={canManage} locked={locked}
-          placeSearch={presentation.data?.installedFeatures?.includes("place-search") === true} error={editor.errors["details.location"]} legacy={legacy("location")} />
-        <BusinessHoursEditor value={details.openingHours} onChange={openingHours => editor.change({ details: { ...details, openingHours } })} editable={canManage} locked={locked} error={editor.errors["details.openingHours"]} legacy={legacy("hours")} />
+      {/* IN1-C (2026-11-22): from xl, Ubicación, Servicios and Preguntas on the left and the hours on the right, all their rows
+          tall; the last row takes what is left so the left column stays together. Narrower, the usual order, one under another. */}
+      <div className="grid items-start gap-5 xl:grid-cols-2 xl:grid-rows-[auto_auto_1fr]">
+        <div className="min-w-0 xl:col-start-1 xl:row-start-1"><BusinessLocationEditor value={details.location} onChange={location => editor.change({ details: { ...details, location } })} editable={canManage} locked={locked}
+          placeSearch={presentation.data?.installedFeatures?.includes("place-search") === true} error={editor.errors["details.location"]} legacy={legacy("location")} /></div>
+        <div className="min-w-0 xl:col-start-2 xl:row-span-3 xl:row-start-1"><BusinessHoursEditor value={details.openingHours} onChange={openingHours => editor.change({ details: { ...details, openingHours } })} editable={canManage} locked={locked} error={editor.errors["details.openingHours"]} legacy={legacy("hours")} /></div>
+        <div className="min-w-0 xl:col-start-1 xl:row-start-2"><Surface title={t("offering")} padded><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">{field("services", true)}{field("policies", true)}</div></Surface></div>
+        <div className="min-w-0 xl:col-start-1 xl:row-start-3"><BusinessFaqEditor value={details.faq} onChange={faq => editor.change({ details: { ...details, faq } })} editable={canManage} locked={locked} error={editor.errors["details.faq"]} legacy={legacy("faq")} /></div>
       </div>
-      <Surface title={t("offering")} padded><div className="grid gap-4 sm:grid-cols-2">{field("services", true)}{field("policies", true)}</div></Surface>
-      <BusinessFaqEditor value={details.faq} onChange={faq => editor.change({ details: { ...details, faq } })} editable={canManage} locked={locked} error={editor.errors["details.faq"]} legacy={legacy("faq")} />
     </div>
     <ConfirmDialog open={discarding} onOpenChange={setDiscarding} title={t("discardTitle")} description={t("discardHint")} confirmLabel={t("discard")} cancelLabel={t("stay")} onConfirm={editor.discard} />
     <ConfirmDialog open={editor.guard.isBlocked} onOpenChange={open => { if (!open) editor.guard.stay(); }} title={t(uncertain ? "uncertainLeaveTitle" : "discardTitle")} description={t(uncertain ? "uncertainLeaveHint" : "discardHint")} confirmLabel={t(uncertain ? "leave" : "discard")} cancelLabel={t("stay")} onConfirm={editor.guard.leave} />
