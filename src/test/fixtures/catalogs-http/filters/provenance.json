@@ -1,14 +1,9 @@
 {
-  "sourceState": [
-    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
-    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
-    "?? ../../../.blob",
-    "?? ../../../.chk",
-    "?? ../../../.head",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  "sources": [
+    {
+      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs"
+    }
   ],
   "captures": [
     {
@@ -19,27 +14,27 @@
     {
       "name": "created.json",
       "length": 636,
-      "sha256": "9d0e48f216ef72d6e2f831616060f98f1669d21824ebc27e8d98e7a42dabda00"
+      "sha256": "141e89773247eae0c4472d01be88318834d32b72e0988b65231669459afe5a2b"
     },
     {
       "name": "detail.json",
       "length": 813,
-      "sha256": "3b585973b624e15d3190cce4157df4fe795d785bdfdd6aefda7ad2ba61b29190"
+      "sha256": "a4d4dc6028d7c8409a23fc41fe46dd04ced9889664d7420ab2fbd3dd368a630a"
     },
     {
       "name": "options.json",
-      "length": 87962,
-      "sha256": "deeafb210c663c322a86d6b7fe88343f79eb1fff1dfd606a059b81ef8e97b2a6"
+      "length": 125686,
+      "sha256": "37fbdfe24ea1470bee02332d933df78c6eec2fb3b2d24bf9909514935dcced52"
     },
     {
       "name": "preview-request.json",
       "length": 328,
-      "sha256": "7ba35a8d92221ccf821a30cfb86210232c02db5282fb8be87ab92e2b1cc346f5"
+      "sha256": "1f2939d872b1211553c2b7ccb2ec80d74615cd79fd631a386da34cfa0521ff8f"
     },
     {
       "name": "preview.json",
       "length": 201,
-      "sha256": "ed80ab4297ba79e86990f68b678b457721ef98b174775f0dfb1e481c6bb0a5de"
+      "sha256": "a1bf982a9eac573b2b4a05122a7d2a81ab3448420577ff87e37ec0e8c489be42"
     },
     {
       "name": "update-request.json",
@@ -49,21 +44,16 @@
     {
       "name": "updated.json",
       "length": 635,
-      "sha256": "4624afefff5152d566bf63bf53b2e7cbf56724f342d04ab9ca0f1552ad4f6955"
+      "sha256": "1dfa341ba3b27aba8dc0e52bdacab96822aa848ad1bf9563a6bec3cbdb9f7108"
     }
   ],
-  "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
-  "artifactSet": "catalog-filters",
-  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormCatalogFiltersEndpointsTests",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormCatalogFiltersEndpointsTests.cs",
-      "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71"
-    }
-  ],
-  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
+  "artifactSet": "catalog-filters",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
+  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
+  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

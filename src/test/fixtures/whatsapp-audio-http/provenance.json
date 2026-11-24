@@ -1,14 +1,37 @@
 {
-  "sourceState": [
-    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
-    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
-    "?? ../../../.blob",
-    "?? ../../../.chk",
-    "?? ../../../.head",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  "sources": [
+    {
+      "sha256": "8b6f15290b2030bf3ca306a360a579b0e47237c061e49600ecc5de3e1926eb79",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs"
+    },
+    {
+      "sha256": "cabe0754aaaddf161dffede88530251ae0cc1a716c3fd78bfd4d77063997360f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Spreadsheet.cs"
+    },
+    {
+      "sha256": "bd4c638f726a902b51ac70c7dda0472d2459046e635272c7585b97e78034fd8e",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Document.cs"
+    },
+    {
+      "sha256": "7ba34590de26e63290a2473ca1d60b52b99674d027d4da9cec82f8cb8282635b",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Contact.cs"
+    },
+    {
+      "sha256": "7d63f2c2af7dbbc3c4157d9408d36a51efdb540ce75150d93cfb79fde4f49bb5",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantDocumentIntegrationTests.cs"
+    },
+    {
+      "sha256": "d2c94123573a5a84bad92fc54fb25e4a8b2e0b8f984e9a2b4c4003152905baa8",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredDocumentChannel.cs"
+    },
+    {
+      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs"
+    },
+    {
+      "sha256": "eff4d42e6002efb2cd0fb63cec45f8b3356e4ad2234ce91347332e50604e934e",
+      "path": "src/ArquitecturaBase.Application/Modules/WhatsApp/Models/WhatsAppReceivedDocumentModels.cs"
+    }
   ],
   "captures": [
     {
@@ -19,79 +42,46 @@
     {
       "name": "audio-thread-completed.json",
       "length": 975,
-      "sha256": "d9727f6cad91906c86192dadd8e516d14a1b77a73ead303ed741ad0e3f2cfd0f"
+      "sha256": "6389493898305c38add5488ce738e60fe0fad789873242a499b37cd3e29e99f5"
     },
     {
       "name": "audio-thread-pending.json",
       "length": 933,
-      "sha256": "21e281f7a4528f5349de6878eeb49e1207ec6ba7f7cc0fafeb3abff2d6c92031"
+      "sha256": "7976c3fbd7c6ccdfe901fa0392a5812448dccc45aab9cd7f0546afdde78529d7"
     },
     {
       "name": "contact-thread.json",
       "length": 2187,
-      "sha256": "05919754852228166cc6046f4cc38862061cb4b2053f6793385626a1607c37f0"
+      "sha256": "45aefa083303302bf827c7d10548d2fba000f624e4cda937bb24cad85493e812"
     },
     {
       "name": "document-thread.json",
       "length": 1424,
-      "sha256": "3df570f1981a3adef8020fa6a36056f2253d34efada973ec14305c419d74c68f"
+      "sha256": "1f52f189cfe5dd5e31e7eba5f068dc44d1a1c5827d9e8ce536c252a1bbee461f"
     },
     {
       "name": "document-why-thread.json",
-      "length": 4053,
-      "sha256": "3d1d0ea876e1a368c4a76084f43bc59a081cb5dac1f5f78539667d6fe33de029"
+      "length": 4063,
+      "sha256": "70f82b859a09810db3d4aef52da42ca081eb0abf94f8303a67a94bbd8efacbe7"
     },
     {
       "name": "spreadsheet-loads-thread.json",
-      "length": 4969,
-      "sha256": "d8b6299f04f76162d04d7bf9712eda724a18017d698b93d0effcc14cc2b12198"
+      "length": 4984,
+      "sha256": "6866ff9af42f501b5d204d8124fc02e183fa2ce9bd095c19349d61fa67b34e6b"
     },
     {
       "name": "spreadsheet-thread.json",
       "length": 988,
-      "sha256": "56333b72b5b7d59a80dfcf9aea36f931ae65ea35cb6a0c45a3308227d10eaf9f"
+      "sha256": "b93a727128fbbe2d0e9c61a1d8794f6dc0f97e3d9b9258ed8b22e70c5a82eb88"
     }
   ],
-  "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
-  "artifactSet": "whatsapp-audio",
-  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "WhatsAppChatTests.Audio and WhatsAppChatTests.Spreadsheet and WhatsAppChatTests.Document and WhatsAppChatTests.Contact and WhatsAppAssistantDocumentIntegrationTests and CapturingStructuredDocumentChannel and WhatsAppAudioContractCapture and WhatsAppReceivedDocumentModels",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Audio.cs",
-      "sha256": "637bea494b142895a3505a692d1c5ad602cf4669572ee412c65357d8d28781d7"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Spreadsheet.cs",
-      "sha256": "cabe0754aaaddf161dffede88530251ae0cc1a716c3fd78bfd4d77063997360f"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Document.cs",
-      "sha256": "bd4c638f726a902b51ac70c7dda0472d2459046e635272c7585b97e78034fd8e"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppChatTests.Contact.cs",
-      "sha256": "7ba34590de26e63290a2473ca1d60b52b99674d027d4da9cec82f8cb8282635b"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantDocumentIntegrationTests.cs",
-      "sha256": "7d63f2c2af7dbbc3c4157d9408d36a51efdb540ce75150d93cfb79fde4f49bb5"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/CapturingStructuredDocumentChannel.cs",
-      "sha256": "d2c94123573a5a84bad92fc54fb25e4a8b2e0b8f984e9a2b4c4003152905baa8"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAudioContractCapture.cs",
-      "sha256": "6b74eb532ed4dcacc757837a51dbf36dbf51fe8c712ec5254da8e1818ad80b33"
-    },
-    {
-      "path": "src/ArquitecturaBase.Application/Modules/WhatsApp/Models/WhatsAppReceivedDocumentModels.cs",
-      "sha256": "eff4d42e6002efb2cd0fb63cec45f8b3356e4ad2234ce91347332e50604e934e"
-    }
-  ],
-  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
+  "artifactSet": "whatsapp-audio",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
+  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
+  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

@@ -1,67 +1,57 @@
 {
-  "sourceState": [
-    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
-    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
-    "?? ../../../.blob",
-    "?? ../../../.chk",
-    "?? ../../../.head",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  "sources": [
+    {
+      "sha256": "b65ba366a0c9a31a73f2fbf27b161c14f29fa20241d1301767f6f305baa6acd0",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs"
+    },
+    {
+      "sha256": "b1cdfc0f715392cc813e554b15e37b26a886d36640376480820c3741529da8ab",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs"
+    },
+    {
+      "sha256": "ac43105aebde8ea4e6a90ca0fd88a8e2fa1b84317e7ba45a3fee631a52169dfe",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs"
+    }
   ],
   "captures": [
     {
       "name": "conflict.json",
       "length": 275,
-      "sha256": "9606b0edc06fc0623074412af7b810ee89c44c86406790d51425ed95ca0858e1"
+      "sha256": "4e22cb0dc7dccfaa899511de67558a04e8c203e08fdf936fb91a99ea791e703a"
     },
     {
       "name": "discarded-en.json",
       "length": 716,
-      "sha256": "bb5efee39d03f9f8e078608528ef53078d6513c8bcda7df9c5e153ce649b8886"
+      "sha256": "1264ff2cb53850e07a3092af15c4744e1c07b9d2e40bbabb272c85da95052a4b"
     },
     {
       "name": "discarded-es.json",
       "length": 722,
-      "sha256": "3e9f6086da1d079f2aa478b30ff5e243cb46bb0de3365ca7a0166836f487d4c8"
+      "sha256": "96c1d213346307c0101f4a78824a33ade351a1528bb02378d80bbc42d5213e3e"
     },
     {
       "name": "forbidden.json",
       "length": 249,
-      "sha256": "30eb08150970ebe154f1f57bc0462768860dafb372d158e0af0bcca546061dbf"
+      "sha256": "658c002e3a7ddb4182b445ec6900c1303a6d8ab8fae808f54c8240c038addedc"
     },
     {
       "name": "pending-en.json",
       "length": 607,
-      "sha256": "d8c3f641c4bae1ad5fba126fe34c7d534f0ac198cf12e09c008526d532bf80e5"
+      "sha256": "0dd36fb1a56dd20c7b7f4c9851d2e1a9a92a98bc83e79506937b19a6be1f5543"
     },
     {
       "name": "pending-es.json",
       "length": 613,
-      "sha256": "a4c716d263177463d95d1553c16efaefa429c783e7b6733717c9fdb8400f313c"
+      "sha256": "400513726462d91169095611a275971d96087bc643676d6e23261e069637446d"
     }
   ],
-  "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
-  "artifactSet": "missing-requests",
-  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormMissingRequestHttpTests.cs",
-      "sha256": "e49117a582bb56de7190bff43599e2d76f03a501f94525de0d61dfdd6e6e4966"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestScenario.cs",
-      "sha256": "b1cdfc0f715392cc813e554b15e37b26a886d36640376480820c3741529da8ab"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormMissingRequestContractCapture.cs",
-      "sha256": "ac43105aebde8ea4e6a90ca0fd88a8e2fa1b84317e7ba45a3fee631a52169dfe"
-    }
-  ],
-  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
+  "artifactSet": "missing-requests",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
+  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
+  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

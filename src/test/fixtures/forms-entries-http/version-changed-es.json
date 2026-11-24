@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Se publicó una versión nueva del formulario.","traceId":"00-329e358e7dbdad84f48a7982ab6f622f-263df110cbb44301-01","code":"Forms.Entry.VersionChanged"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Se publicó una versión nueva del formulario.","traceId":"00-b347565d95c7ded98e6e5a675f30eaa1-0145a06952202313-01","code":"Forms.Entry.VersionChanged"}

@@ -1,88 +1,78 @@
 {
-  "sourceState": [
-    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
-    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
-    "?? ../../../.blob",
-    "?? ../../../.chk",
-    "?? ../../../.head",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  "sources": [
+    {
+      "sha256": "3c440b12cef8fc6b127ebc5bde719bfbd84a9d7b5f61604793f45487082ee54f",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantAgentEndpointsTests.cs"
+    },
+    {
+      "sha256": "c5df6a2a655257ddb51ca6e430d425b4c8dd8e5ded36dcc6df5ede83bb30bd47",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantAgentContractCapture.cs"
+    }
   ],
   "captures": [
     {
       "name": "agent-conflict.json",
       "length": 297,
-      "sha256": "fccf75ffb2ee99fcae219accf5fd6c5a5b89c99ee0dc275786796343033e93bd"
+      "sha256": "4cb6ab0937eea4609a99893be3e61c6e7181c6f48e797b87e83d88f938eed346"
     },
     {
       "name": "agent-defaults.json",
-      "length": 863,
-      "sha256": "943d65f9a35ef0c0514f1b056f995bc8e554d51358567a77f37825af5863cc70"
+      "length": 945,
+      "sha256": "fb648a930f34b5c9ca5b16cba83aa61c56295ad04df20ad18d2d2327e1a03927"
     },
     {
       "name": "agent-invalid.json",
       "length": 370,
-      "sha256": "883c69b6ba28770c5f7c0289b9437c37bd397720258452be3440ea3ea16af870"
+      "sha256": "14cd2004184efac7c33b3b1794b2e75ea16a1a4f7e28f0887eaae30aa117048a"
     },
     {
       "name": "agent-saved.json",
-      "length": 1258,
-      "sha256": "a087fd521e9a73481d1b6f9f9c73618305b74dd799c3a8b3e1f9a9b40b7ad8db"
+      "length": 1336,
+      "sha256": "bbb3ad197309f5bb43c5bf43454e16f28abf1265ba1cea974ef4a2878497e9a5"
     },
     {
       "name": "chats-needs-person.json",
-      "length": 583,
-      "sha256": "585cd82152aae5b56b4989cad252f3400638e2c8c61e501a5690955732e49269"
+      "length": 587,
+      "sha256": "3f6fc88068ad47408380ee9152372f1ddc4429553403e2fecbcc52f4bfc570b9"
     },
     {
       "name": "suggestion-text-ready.json",
       "length": 269,
-      "sha256": "91d099a03ec47bd9d32f81413b53cfd81e1cc3d7b69e7d4e902c78b9827fcaf0"
+      "sha256": "a25e5deeaea4835984ef6e4ce6ec3266ece15104850b2492694517161ec235a5"
     },
     {
       "name": "test-accepted.json",
       "length": 70,
-      "sha256": "56f76b42eddd0803c8646ca2c8642e1d387e0c138b46804d65143f243916748e"
+      "sha256": "c24763ea1379159c29442fd80013415baa2d793fb193d4c4eb1d13376afeb127"
     },
     {
       "name": "test-completed.json",
       "length": 324,
-      "sha256": "eaedc98f9ea2784ac8c6fdbf4215e113761dcf6718ff864c341c0b0726c8ff79"
+      "sha256": "51ca161c69f8e15b2f95ae2eae1059dbc79f787084196acb02ae59e7b293d716"
     },
     {
       "name": "test-pending.json",
       "length": 102,
-      "sha256": "21cdda6bc26f68cbcf9ea6e77ce90dfaa202ce09089b33c42521f6e44f97a8ab"
+      "sha256": "1dba69487c52d91086365066682c6dff1fa92b05dfec8f31480ffac986e38e5b"
     },
     {
       "name": "test-recipients.json",
       "length": 121,
-      "sha256": "4bdd8254861b3bca20708112359ac9e137410e36663dbd0a564c3e0e1295c4fc"
+      "sha256": "3b290a4230fb5b772478055d95ef4f958350ed85cf19e97cab1d9d18d7f8e36b"
     },
     {
       "name": "thread-agent.json",
-      "length": 2827,
-      "sha256": "f28e6e20b35b1dbf12df79d5f678a08180d30aa4871ff437529c6c99f03175a1"
+      "length": 2841,
+      "sha256": "a210e5f096af2286efe6b4d61926f0f9cac35455a295b70d3b92f575599577a2"
     }
   ],
-  "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
-  "artifactSet": "whatsapp-assistant-agent",
-  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "WhatsAppAssistantAgentEndpointsTests and WhatsAppAssistantAgentContractCapture",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/WhatsApp/WhatsAppAssistantAgentEndpointsTests.cs",
-      "sha256": "f3311069f9a23a47f9751d82194f2eff9b1a85b9a26af2409401881c05947372"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/WhatsApp/WhatsAppAssistantAgentContractCapture.cs",
-      "sha256": "c5df6a2a655257ddb51ca6e430d425b4c8dd8e5ded36dcc6df5ede83bb30bd47"
-    }
-  ],
-  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
+  "artifactSet": "whatsapp-assistant-agent",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
+  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
+  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

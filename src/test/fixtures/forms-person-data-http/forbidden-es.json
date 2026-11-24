@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Acceso denegado","status":403,"detail":"No tenés permiso para realizar esta acción.","traceId":"00-a2ac0108846ec99c25703ba8154ca3b8-4c06532f23ee6051-01","code":"Http.Forbidden"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.4","title":"Acceso denegado","status":403,"detail":"No tenés permiso para realizar esta acción.","traceId":"00-9a05b4c542c3ab565f3def2c161a902b-8ee1c155c4bce62b-01","code":"Http.Forbidden"}

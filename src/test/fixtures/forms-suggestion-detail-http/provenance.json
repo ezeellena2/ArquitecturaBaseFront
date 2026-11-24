@@ -1,43 +1,33 @@
 {
-  "sourceState": [
-    " M ../../../docs/plans/2026-10-22-documentos-por-whatsapp.md",
-    " M ../../../src/ArquitecturaBase.Application/Models/StructuredData/StructuredRecordIssueModels.cs",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Channels/AGENTS.md",
-    " M ../../../src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormActionModels.cs",
-    "?? ../../../.blob",
-    "?? ../../../.chk",
-    "?? ../../../.head",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.en.resx.orig",
-    "?? ../../../src/ArquitecturaBase.Application/Resources/Errors.resx.orig"
+  "sources": [
+    {
+      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs"
+    },
+    {
+      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee",
+      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs"
+    }
   ],
   "captures": [
     {
       "name": "detail-en.json",
-      "length": 2077,
-      "sha256": "0bcfc7d03619b5385c2687e4126f8ef613d5ba2ca226102fbc7a8c1eec5f250e"
+      "length": 2685,
+      "sha256": "a0290cfb9e0eea528d3b9ff47976948c179b9d256d7cc4dd85db5545b4550acf"
     },
     {
       "name": "detail-es.json",
-      "length": 2081,
-      "sha256": "2de483e07636687e7563e10280d565be5a0b9ab569612ecbb5cebb818e69d908"
+      "length": 2691,
+      "sha256": "3a57a54b876c84337b11456fb9f326d29bdf237d2994d912da1104434c25d200"
     }
   ],
-  "schemaVersion": 1,
   "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "runId": "20261117-153910-a65bb22dbb5647b4810e4dd07628be3d",
-  "artifactSet": "suggestion-details",
-  "repositoryHead": "02c60e91c3f0de7bb923161d35e6c56b514f58b7",
-  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore",
   "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
-  "sources": [
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormSuggestionCaptureIntegrationTests.cs",
-      "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84"
-    },
-    {
-      "path": "tests/ArquitecturaBase.Api.IntegrationTests/TestFeatures/Modules/BusinessForms/FormSuggestionDetailContractCapture.cs",
-      "sha256": "2324870879f4d3be2da6f58febe5878db246307e235fa3058a5de256ca7558ee"
-    }
-  ],
-  "generatedAtUtc": "2026-11-17T17:35:51.9742001Z"
+  "artifactSet": "suggestion-details",
+  "schemaVersion": 1,
+  "sourceState": [],
+  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
+  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
+  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

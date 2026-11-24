@@ -18,8 +18,9 @@ it("qualifies all multiple-choice capture names and producer sources from the jo
   const pdf = httpCohort("pdf").verify();
   // 70: the four recipient maximums (fixed and per person, es/en) that recipientPreviewHttpContract consumes, the four rows bodies
   // (with the minimum that WhatsApp does not load, RG13-A) and the two of section titles; 93 with the library, the folders, app-only,
-  // document reading and the shared location and contact of the 2026-11-17 export.
-  expect(definitions.captures).toHaveLength(93);
+  // document reading and the shared location and contact of the 2026-11-17 export; 96 with the folder forms and the menu of a
+  // manager (2026-11-24 export).
+  expect(definitions.captures).toHaveLength(96);
   // 68 with the location and shared contact read in WhatsApp, the result of a document and of a sheet, and the sheet with actions to
   // resolve (F2, 2026-11-17 export).
   expect(responses.captures).toHaveLength(68);
