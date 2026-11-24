@@ -1,8 +1,8 @@
 # Información del negocio: el horario en una tabla y las zonas en dos columnas (IN1-C, IN2 e IN3)
 
-Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22, programado y probado a mano el 2026-11-24**, encima de los
-commits de la pieza única («Desplegables»). Sólo cambia el front: ni contratos ni servidor. Faltan la variante sin
-permiso y la corrida completa del cierre; después el plan se retira con la auditoría documental.
+Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22, programado y probado a mano el 2026-11-24**, también sin
+permiso y en sólo lectura, encima de los commits de la pieza única («Desplegables»). Sólo cambia el front: ni contratos
+ni servidor. Falta la corrida completa del cierre; después el plan se retira con la auditoría documental.
 
 ## Por qué
 
@@ -128,5 +128,9 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
   - IN3: con cuatro franjas, «Agregar franja» apagado con «Podés agregar hasta 4 franjas.».
   Canceló todo sin guardar. No se probó la variante sin permiso, que necesita otra cuenta.
 - Sin permiso (2026-11-24, con la Hotmail, rol Agrónomo, sin `ai.business.read`): el menú no ofrece Información del
-  negocio y la ruta lleva a «No tenés permiso». La variante de sólo lectura (con `ai.business.read` y sin
-  `ai.business.manage`) sigue sin probarse a mano: ninguna cuenta de prueba tiene ese par; la cubren los tests.
+  negocio y la ruta lleva a «No tenés permiso».
+- Sólo lectura (2026-11-24): con el permiso del usuario, Agrónomo recibió «Ver información del negocio» sin «Administrar»
+  sólo para la prueba y después volvió a sus tres permisos. Con la Hotmail, en la compu y a 581 px (el mínimo de la
+  ventana de Chrome): «Sólo lectura» junto al título, sin Guardar ni Descartar; la semana con Día y Horario, sin la columna
+  del lápiz; sin «Aplicar lunes a viernes» ni la zona de fechas especiales (no había ninguna); la zona horaria y
+  «Dónde atendés» apagadas; a 581 px, una sola columna en el orden de siempre y sin desplazar de costado.
