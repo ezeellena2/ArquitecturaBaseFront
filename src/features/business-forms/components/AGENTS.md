@@ -79,7 +79,7 @@ Tableros con shared/ui; su dueño posee datos y avisos.
 - `ResponseWorkflowHistory` es la única historia y revisión: directa en la pestaña de D2 (sin una Surface que repita «Actividad») y en la sección de full, montada entre pestañas. La actividad va fila por fila (VF2-A, 2026-11-22, [diseño](../../../../docs/design/respuesta-como-formulario.md)), con un dato por columna, armada por `workflowActivity`:
   - las columnas son Fecha, Hora, Qué pasó, Quién, Canal, Detalle, Estado y Acciones (íconos con su nombre en el tooltip), con «—» donde no aplica;
   - en full desde 640 px (`layout="page"`) es una tabla; en D2 y en el celular, un recuadro por renglón con «Qué pasó» arriba y los datos de a dos;
-  - los momentos («Al recibirla», «Aprobación», «Al aprobarla» o «Al rechazarla», «Al anularla») son renglones que separan;
+  - los momentos («Al recibirla», «Aprobación», «Al aprobarla» o «Al rechazarla», «Al anularla») son renglones que separan, y adentro van en el orden en que pasaron; lo que se hizo al recibirla nunca va antes de la respuesta, aunque su acción tome la hora en que empezó el guardado (O53);
   - cada PDF y cada persona de un aviso es su renglón, con su estado;
   - el motivo de un rechazo, una corrección o una anulación va entero en «Detalle», la única celda de varias líneas.
 

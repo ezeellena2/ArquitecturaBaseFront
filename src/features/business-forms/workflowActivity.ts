@@ -131,14 +131,26 @@ export function workflowActivity(record: ResponseDetail, workflow: ResponseWorkf
     if (!found) bands.push(found = { key, title, groups: [] });
     return found.groups;
   };
+  // What was done on receipt comes from the response: it never goes before it, although its run may take the hour its save began
+  // and the response, the one the save ended (O53).
+  const consequences = new Set<Fact[]>();
+  let receivedAt = Number.NEGATIVE_INFINITY;
+  const receive = (groups: Fact[][]) => {
+    for (const group of groups) receivedAt = Math.max(receivedAt, ...group.map(fact => Date.parse(fact.atUtc)));
+    band("Received", t("detail.events.Received")).push(...groups);
+  };
   // What was done on receipt goes with the response itself, under «Al recibirla»; the correction that made this version is how it
   // was received. How the version it replaced ended belongs to that version: the moments above tell it (CW10-A).
   for (const moment of composeWorkflowMoments(record, data)) {
-    if (moment.kind === "received") band("Received", t("detail.events.Received")).push(...(spreadsheet.length ? [spreadsheet] : []), ...moment.history.map(event => [recordFact(event)]));
-    else if (moment.kind === "corrected") band("Received", t("detail.events.Received")).push([{ key: "correction:" + record.id, atUtc: moment.correction.atUtc,
-      what: t("formEntries:correction.saved", { number: record.number }), who: nameOf(moment.correction.by), channel: app, detail: moment.correction.reason }]);
+    if (moment.kind === "received") receive([...(spreadsheet.length ? [spreadsheet] : []), ...moment.history.map(event => [recordFact(event)])]);
+    else if (moment.kind === "corrected") receive([[{ key: "correction:" + record.id, atUtc: moment.correction.atUtc,
+      what: t("formEntries:correction.saved", { number: record.number }), who: nameOf(moment.correction.by), channel: app, detail: moment.correction.reason }]]);
     else if (moment.kind === "approval") band("approval", t("detail.approvalBand")).push(...approvalFacts(moment.task));
-    else if (moment.kind === "effects") band(moment.event, t("detail.events." + moment.event)).push(...moment.actions.map(actionFacts));
+    else if (moment.kind === "effects") {
+      const groups = moment.actions.map(actionFacts);
+      if (moment.event === "Received") for (const group of groups) consequences.add(group);
+      band(moment.event, t("detail.events." + moment.event)).push(...groups);
+    }
     else if (moment.kind === "voided") band("Voided", t("detail.events.Voided")).push([{ key: "void:" + record.id, atUtc: moment.atUtc, what: t("detail.voided", { number: record.number }),
       who: nameOf(moment.by), channel: app, detail: moment.reason, state: { text: t("approvals.states.Voided"), tone: approvalStateVariant("Voided") } }]);
   }
@@ -148,7 +160,7 @@ export function workflowActivity(record: ResponseDetail, workflow: ResponseWorkf
     state: fact.state?.text ?? activityEmpty, tone: fact.state?.tone ?? null, actions: fact.actions ?? [],
   });
   // Inside a moment, in the order they happened; an action keeps its PDFs, its people and its requests together.
-  const instant = (group: Fact[]) => Date.parse(group[0].atUtc);
+  const instant = (group: Fact[]) => consequences.has(group) ? Math.max(Date.parse(group[0].atUtc), receivedAt) : Date.parse(group[0].atUtc);
   return bands.map(item => ({ key: item.key, title: item.title,
     rows: item.groups.filter(group => group.length > 0).sort((left, right) => instant(left) - instant(right)).flat().map(row) }));
 }

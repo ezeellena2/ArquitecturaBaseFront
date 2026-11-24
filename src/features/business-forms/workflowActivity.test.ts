@@ -186,9 +186,23 @@ describe("the activity, row by row (VF2-A)", () => {
       documents: [{ id: id(12), runId: pdf.id, culture: "es", name: "Visita.pdf", size: 10, createdAtUtc: at("06") }] }), es);
 
     expect(bands.map(item => item.title)).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
-    expect(band(bands, "Al recibirla").rows.map(item => item.what + " " + item.who)).toEqual(["Se avisó Beto", "Se mandó el formulario Ana", "Se respondió el formulario Ana",
-      "Se guardó la respuesta —", "Se le avisó a quien la cargó Ana"]);
+    // What was done on receipt comes after the response even with an earlier hour (O53), and among itself, in the order it happened.
+    expect(band(bands, "Al recibirla").rows.map(item => item.what + " " + item.who)).toEqual(["Se mandó el formulario Ana", "Se respondió el formulario Ana",
+      "Se guardó la respuesta —", "Se avisó Beto", "Se le avisó a quien la cargó Ana"]);
     expect(band(bands, "Al aprobarla").rows.map(item => item.what)).toEqual(["Se armó el PDF"]);
     expect(new Set(bands.flatMap(item => item.rows.map(entry => entry.key))).size).toBe(bands.flatMap(item => item.rows).length);
+  });
+
+  // 24/11, PED-000010: the rule's run took the hour its correction began to be saved and the response, the one the save ended,
+  // 0.3 s later; while the run waited, «Pedir aprobación» went before what caused it.
+  it("puts what was done on receipt after the response it comes from, also when its run took the hour the save began (O53)", () => {
+    const fixture = responseDetailFixture();
+    const saved = "2026-10-16T13:19:15.044Z";
+    const record: ResponseDetail = { ...fixture, history: fixture.history.map(event => event.kind === "Saved" ? { ...event, atUtc: saved } : event),
+      correction: { previousRecordId: id(7), atUtc: saved, by: ana, reason: "La cantidad era 3.", previousState: "Received", previousDecidedAtUtc: null, previousDecidedBy: null, previousPdfAtUtc: null } };
+    const waiting = action({ kind: "RequestApproval", state: "Waiting", completedAtUtc: null, updatedAtUtc: "2026-10-16T13:19:14.740Z" });
+
+    expect(band(workflowActivity(record, flow({ actions: [waiting] }), es), "Al recibirla").rows.map(item => item.what)).toEqual(["Se mandó el formulario",
+      "Se respondió el formulario", "Se guardó la respuesta", "Se corrigió " + fixture.number, "Pedir aprobación a una persona con un rol"]);
   });
 });

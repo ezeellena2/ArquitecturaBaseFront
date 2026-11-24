@@ -1292,8 +1292,9 @@ it("keeps one workflow read notification in the detail without repeating its cau
   it("groups observed workflow moments with UTC ordered record events and one approval request", async () => {
     setup(["formrecords.read"]);
     const detail = responseDetailFixture();
+    // Out of order on purpose; the notice to whoever loaded it, after the save, as it happens (O53).
     detail.history = [
-      { kind: "Saved", atUtc: "2026-10-16T12:02:00Z", actor: null },
+      { kind: "Saved", atUtc: "2026-10-16T12:00:30Z", actor: null },
       { kind: "Sent", atUtc: "2026-10-16T11:59:00Z", actor: detail.actor },
       { kind: "Submitted", atUtc: "2026-10-16T12:00:00Z", actor: detail.actor },
     ];
@@ -1309,8 +1310,8 @@ it("keeps one workflow read notification in the detail without repeating its cau
     const moments = history.getAllByRole("list")[0];
     expect(Array.from(moments.children).map(row => document.getElementById(row.getAttribute("aria-labelledby")!)?.textContent)).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
     const received = within(history.getByRole("listitem", { name: "Al recibirla" }));
-    expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z"]);
-    expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:01:00Z", "2026-10-16T12:02:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
+    expect(received.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:00:30Z", "2026-10-16T12:01:00Z"]);
+    expect(history.getAllByRole("time").map(time => time.getAttribute("datetime"))).toEqual(["2026-10-16T11:59:00Z", "2026-10-16T12:00:00Z", "2026-10-16T12:00:30Z", "2026-10-16T12:01:00Z", "2026-10-16T12:03:00Z", "2026-10-16T12:04:00Z", "2026-10-16T12:05:00Z"]);
     expect(history.getAllByText("Se pidió aprobación")).toHaveLength(1);
     expect(history.getAllByText("Rol Supervisión")).toHaveLength(1);
     expect(history.getAllByText("Armar el PDF")).toHaveLength(1);
