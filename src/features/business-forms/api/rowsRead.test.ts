@@ -1,6 +1,7 @@
 // Synthetic DTOs of the sheet and the detail with a block of rows; the exported HTTP cohort is qualified separately at the final export.
 import { describe, expect, it } from "vitest";
-import { responseDetailSchema, responseSheetSchema } from "./responses";
+import { responseEntryFixture } from "@/test/responseFixtures";
+import { responseDetailSchema, responseSheetSchema, type ResponseDetail } from "./responses";
 
 const id = (n: number) => "01990000-0000-7000-8000-" + String(n).padStart(12, "0");
 const versionId = id(1);
@@ -57,13 +58,16 @@ describe("a block of rows in the sheet", () => {
 
 describe("a block of rows in the detail", () => {
   const value = (fieldId: string, type: string, label: string, answer: unknown) => ({ fieldId, key: "field_" + fieldId.replaceAll("-", ""), type, label, value: answer });
-  const detail = (blockValue: unknown) => ({ id: id(101), definitionId: id(2), versionId, versionNumber: 1, number: "REC-000001", name: "Recepción",
-    submittedAtUtc: "2026-11-07T12:00:00Z", actor: { userId: id(5), displayName: "Persona" }, channel: "app", origin: null, assistance: null, chain: [],
-    values: [value(supplierId, "shortText", "Proveedor", "Proveedor del norte"), blockValue], history: [] });
+  const supplier = value(supplierId, "shortText", "Proveedor", "Proveedor del norte");
   const answers = () => [
     { values: [value(itemId, "choice", "Artículo", seed), value(quantityId, "decimal", "Cantidad", "200.5")] },
     { values: [value(itemId, "choice", "Artículo", seed), value(quantityId, "decimal", "Cantidad", null)] },
   ];
+  // VF1-A: the detail brings the form of its version. Every case carries the same valid one, so each is rejected for its values only.
+  const entry = responseEntryFixture([supplier, value(groupId, "group", "Artículos", answers())] as ResponseDetail["values"], versionId, 1);
+  const detail = (blockValue: unknown) => ({ id: id(101), definitionId: id(2), versionId, versionNumber: 1, number: "REC-000001", name: "Recepción",
+    submittedAtUtc: "2026-11-07T12:00:00Z", actor: { userId: id(5), displayName: "Persona" }, channel: "app", origin: null, assistance: null, chain: [],
+    values: [supplier, blockValue], history: [], entry });
 
   it("reads the items with every question of the block, and a block without items", () => {
     const parsed = responseDetailSchema.parse(detail(value(groupId, "group", "Artículos", answers())));
