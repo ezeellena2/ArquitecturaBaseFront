@@ -10,13 +10,18 @@ export interface SegmentedOption {
 
 /// Un segmentado: pocas opciones fijas, a la vista y de un clic. Desde el 2026-11-22, por decisión del usuario, no lo
 /// usa ningún campo ni filtro de la app: todo lo que se elige va en `Picker` (DS1-A), también los filtros de los
-/// listados, la carga de un formulario y el "Correo | WhatsApp" del ingreso. Queda para la vista previa de un catálogo
-/// (`CatalogPreview`), donde "Una opción | Varias" sólo cambia la ilustración de cómo se ve en WhatsApp, y para el
-/// catálogo de la biblioteca. Para elegir un dato no se usa.
+/// listados y la carga de un formulario. Queda para la vista previa de un catálogo (`CatalogPreview`), donde "Una
+/// opción | Varias" sólo cambia la ilustración de cómo se ve en WhatsApp, para el catálogo de la biblioteca y, con
+/// `appearance="public"`, para «Ingresar con» del acceso. Para elegir un dato no se usa.
 ///
-/// El 2026-11-23 se retiraron las variantes que habían quedado sin consumidores: el subrayado del ingreso
-/// (`appearance="public"`), las opciones que bajan de renglón (`wrap`), el ancho completo (`fullWidth`), apagarlo entero
-/// (`disabled`) y el motivo de una opción apagada (`disabledReason`).
+/// `appearance="public"` es la elección del canal del acceso, con subrayado (`.access-channel` de `index.css`): los
+/// botones van sueltos, con su ícono, y el elegido lleva la línea y el color de la marca. «Ingresar con» pasó a la pieza
+/// el 2026-11-22 y el 2026-11-24 el usuario pidió volverlo a como estaba diseñado: es una excepción de la regla, como
+/// las vistas previas que imitan WhatsApp.
+///
+/// El 2026-11-23 se retiraron las variantes que habían quedado sin consumidores: las opciones que bajan de renglón
+/// (`wrap`), el ancho completo (`fullWidth`), apagarlo entero (`disabled`) y el motivo de una opción apagada
+/// (`disabledReason`).
 ///
 /// Son botones con `aria-pressed` y no un grupo de radios porque cada uno actúa al apretarse, no al enviarse
 /// un formulario. El nombre del grupo es obligatorio: sin él, el lector anuncia botones sueltos ("Todos",
@@ -30,12 +35,14 @@ export interface SegmentedOption {
 /// mismo que el `aria-label`, que es el que nombra al grupo.
 export function SegmentedControl({
   options,
+  appearance = "compact",
   id,
   "aria-label": label,
   "aria-invalid": invalid,
   "aria-describedby": describedBy,
 }: {
   options: readonly SegmentedOption[];
+  appearance?: "compact" | "public";
   id?: string;
   "aria-label": string;
   "aria-invalid"?: boolean;
@@ -49,7 +56,8 @@ export function SegmentedControl({
       aria-invalid={invalid}
       aria-describedby={describedBy}
       // Sin `overflow-hidden`: el contorno de foco va por fuera de la opción y el grupo no tiene que recortarlo.
-      className="inline-flex h-[var(--height-control)] shrink-0 divide-x divide-[var(--color-border)] rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] max-sm:h-11"
+      className={appearance === "public" ? "access-channel"
+        : "inline-flex h-[var(--height-control)] shrink-0 divide-x divide-[var(--color-border)] rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)] max-sm:h-11"}
     >
       {options.map((option) => (
         <button
@@ -58,7 +66,8 @@ export function SegmentedControl({
           type="button"
           aria-pressed={option.pressed}
           onClick={option.onSelect}
-          className={cn(
+          // En el acceso, `.access-channel` dibuja los botones y el subrayado del elegido.
+          className={appearance === "public" ? undefined : cn(
             // El contorno de foco va por fuera y separado: adentro no se vería sobre la opción pintada. Sube sobre las
             // vecinas para que ninguna lo tape. Las esquinas de la primera y la última siguen la curva del borde.
             "whitespace-nowrap px-3 text-sm transition-colors focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-500)] first:rounded-l-[calc(var(--radius-control)-1px)] last:rounded-r-[calc(var(--radius-control)-1px)] max-sm:min-w-11",

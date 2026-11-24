@@ -227,7 +227,7 @@ describe("LoginCodePage", () => {
       await userEvent.click(await screen.findByRole("link", { name: "Usar otro número" }));
 
       expect(await screen.findByRole("textbox", { name: "Número de WhatsApp" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Ingresar con WhatsApp" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "WhatsApp" })).toHaveAttribute("aria-pressed", "true");
     });
 
     it("verifies with the number, not with an email", async () => {

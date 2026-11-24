@@ -45,6 +45,31 @@ describe("SegmentedControl", () => {
     expect(screen.getByText("Filas por página", { selector: "label" })).toHaveAttribute("for", group.id);
   });
 
+  it("underlines the chosen channel of the access, without the compact boxes", async () => {
+    const onWhatsApp = vi.fn();
+    render(
+      <SegmentedControl
+        appearance="public"
+        aria-label="Ingresar con"
+        options={[
+          { key: "email", label: "Correo", pressed: true, onSelect: vi.fn() },
+          { key: "whatsapp", label: "WhatsApp", pressed: false, onSelect: onWhatsApp },
+        ]}
+      />,
+    );
+
+    // «Ingresar con» del acceso (2026-11-24): el subrayado de `.access-channel` marca el elegido; sin el relleno ni el borde
+    // del segmentado compacto.
+    const group = screen.getByRole("group", { name: "Ingresar con" });
+    expect(group).toHaveClass("access-channel");
+    expect(group).not.toHaveClass("inline-flex", "divide-x", "border");
+    const chosen = screen.getByRole("button", { name: "Correo" });
+    expect(chosen).toHaveAttribute("aria-pressed", "true");
+    expect(chosen).not.toHaveClass("bg-[var(--color-brand-600)]");
+    await userEvent.click(screen.getByRole("button", { name: "WhatsApp" }));
+    expect(onWhatsApp).toHaveBeenCalledTimes(1);
+  });
+
   it("selects the option that was clicked", async () => {
     const onAll = vi.fn();
     const onPicked = vi.fn();

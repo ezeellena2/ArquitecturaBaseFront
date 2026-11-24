@@ -18,8 +18,7 @@ import { createSigninReturnUrl } from "@/auth/accessRequests";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { useQueryUpdate } from "@/shared/hooks/useQueryUpdate";
 import { GoogleIcon } from "@/shared/ui/GoogleIcon";
-import { FormField } from "@/shared/ui/FormField";
-import { Picker } from "@/shared/ui/Picker";
+import { SegmentedControl } from "@/shared/ui/SegmentedControl";
 import { Button } from "@/shared/ui/button";
 
 type LoginChannel = "email" | "whatsapp";
@@ -180,16 +179,15 @@ export function LoginPage() {
       ) : null}
 
       <div className="flex flex-col gap-4">
-        {/* El medio se elige con la pieza única, como todo lo que se elige (DS1-A, 2026-11-22): un campo del ancho de la tarjeta,
-            con su ícono. */}
+        {/* «Ingresar con» es la elección del canal con subrayado y no la pieza para elegir: el 2026-11-24 el usuario pidió
+            volverlo a como estaba diseñado (la excepción, en «Elegir de una lista» de visual-baseline). */}
         {whatsappCountries === undefined ? null : (
-          <FormField label={t("login.methodLabel")}>
-            <Picker label={t("login.methodLabel")} value={activeChannel} onChange={(option) => setChannel(option === "whatsapp" ? "whatsapp" : "email")}
-              options={[
-                { id: "email", label: t("login.methods.email"), icon: <Mail size={18} aria-hidden="true" /> },
-                { id: "whatsapp", label: t("login.methods.whatsapp"), icon: <MessageCircle size={18} aria-hidden="true" /> },
-              ]} />
-          </FormField>
+          <SegmentedControl appearance="public" aria-label={t("login.methodLabel")} options={(["email", "whatsapp"] as const).map(option => ({
+            key: option,
+            pressed: activeChannel === option,
+            onSelect: () => setChannel(option),
+            label: <>{option === "email" ? <Mail size={18} aria-hidden="true" /> : <MessageCircle size={18} aria-hidden="true" />}{t(`login.methods.${option}`)}</>,
+          }))} />
         )}
 
         {/* Cambiar de medio arma el otro formulario de cero: lo escrito en uno no sirve en el otro. */}
