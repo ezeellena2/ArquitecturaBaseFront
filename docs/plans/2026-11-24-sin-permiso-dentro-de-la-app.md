@@ -1,8 +1,8 @@
 # Sin permiso dentro de la app: la pantalla con su nombre y el vacío estándar (SP1-B y SP2)
 
-Fecha: **2026-11-24**. Estado: **decidido y programado el 2026-11-24 (SP1-B)**, en una copia fuera del front. Sólo cambia
-el front: ni contratos ni servidor. Faltan la corrida completa del cierre y la prueba a mano; después el plan se retira con
-la auditoría documental.
+Fecha: **2026-11-24**. Estado: **decidido, programado y probado a mano el 2026-11-24 (SP1-B)**, front `a3bcdcda`. Sólo
+cambió el front: ni contratos ni servidor. Falta la corrida completa del cierre; después el plan se retira con la auditoría
+documental.
 
 ## Por qué
 
@@ -145,3 +145,10 @@ Igual a SP1-B, SP2 y SP3, con estas diferencias:
   escenas que ya pasaban por la falta de permiso (Información del negocio, el chat de WhatsApp y la respuesta revocada).
   El test de Configuración que simulaba «permiso revocado» con un 403 sin quitar el permiso pasó a quitarlo de verdad.
   Falta la corrida completa del cierre.
+- **Prueba a mano (2026-11-24).**
+  - En el Chrome del usuario, con la Hotmail, que no tiene «Información del negocio» ni «Catálogos»: `/configuracion/negocio`
+    y `/catalogos` escrito a mano quedan en su dirección, con su nombre en la banda, sus migas y «No tenés permiso» con
+    «Volver al inicio», que lleva a Inicio.
+  - La 404, con la cuenta Admin: adentro de la app, con «Volver al inicio», y a 390 px sin desplazar de costado.
+  - El ancho de celular con la Hotmail no se pudo mirar: la ventana de Chrome no se achicó. Lo cubren las capturas de 390 y
+    320 px de `forbidden.spec.ts`.
