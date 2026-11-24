@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { FormField } from "@/shared/ui/FormField";
 import { InfoTip } from "@/shared/ui/InfoTip";
 import { Input } from "@/shared/ui/input";
@@ -29,7 +30,7 @@ export function AiSettingsPage() {
   const permissions = usePermissions();
   const [initial, setInitial] = useState<AiConnection>();
   if (!initial && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   // Un cambio de permisos desmonta el editor y elimina sus referencias secretas.
   if (initial) return <AiEditor key={permissions.has("ai.manage") ? "manage" : "read"} initial={query.data ?? initial} canManage={permissions.has("ai.manage")} observedRevision={query.data?.revision ?? initial.revision} />;
   return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 4, stacked: true }, { fields: 1 }]} /> :
@@ -38,10 +39,10 @@ export function AiSettingsPage() {
 
 function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnection; canManage: boolean; observedRevision: number }) {
   const { t, i18n } = useTranslation("artificialIntelligence");
-  const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const editor = useAiConnectionEditor(initial);
   const { draft, baseline, guard } = editor;
-  const probe = useAiConnectionTest(draft, editor.draftVersion, baseline, observedRevision, () => { guard.allowNextNavigation(); void navigate("/sin-permiso"); }, editor.requireReview);
+  const probe = useAiConnectionTest(draft, editor.draftVersion, baseline, observedRevision, reread, editor.requireReview);
   const [removing, setRemoving] = useState(false);
   const [nextProvider, setNextProvider] = useState<AiProvider | null>(null);
   const [manualModel, setManualModel] = useState(false);
@@ -51,7 +52,7 @@ function AiEditor({ initial, canManage, observedRevision }: { initial: AiConnect
   const credential = hasCredential(draft, baseline);
   const savedCredential = baseline.hasCredential && draft.provider === baseline.provider && draft.credentialChange !== "Remove";
   const catalog = useAiModels(draft, baseline, observedRevision, canManage && editor.recovery === "none",
-    () => { guard.allowNextNavigation(); void navigate("/sin-permiso"); }, editor.requireReview);
+    reread, editor.requireReview);
   const selectingModel = !manualModel && !!catalog.models?.length;
   const error = (field: string) => editor.errors[field] ?? probe.errors[field] ?? catalog.errors[field];
   // I7: the saved key cannot be read here; its message goes under the key and «Reemplazar clave», which fixes it, is the one highlighted.

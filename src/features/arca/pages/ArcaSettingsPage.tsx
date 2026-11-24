@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState, type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
 import { ActionsMenu } from "@/shared/ui/ActionsMenu";
@@ -10,6 +9,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { Page } from "@/shared/ui/Page";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Surface } from "@/shared/ui/Surface";
@@ -72,7 +72,7 @@ export function ArcaSettingsPage() {
     setConflict(false);
   }
 
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   if (query.isPending) return <Page title={t("title")}><div className="flex flex-col gap-5">
     {[0, 1].map(item => <Surface key={item} padded><Skeleton className="h-4 w-3/5" /><Skeleton className="h-4 w-2/5" /></Surface>)}
   </div></Page>;

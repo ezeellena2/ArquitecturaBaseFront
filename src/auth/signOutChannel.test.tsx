@@ -201,9 +201,9 @@ describe("sign-out across tabs", () => {
     expect(removeUser).toHaveBeenCalledOnce();
   });
 
-  it("closes a tab that is on a screen outside the session screens", async () => {
-    const { router } = renderApp("/sin-permiso");
-    await screen.findByRole("heading", { name: "No tenés permiso" });
+  it("closes a tab that is on the page that does not exist", async () => {
+    const { router } = renderApp("/no-existe");
+    await screen.findByRole("heading", { name: "No encontramos esta página" });
 
     openOtherTab().postMessage("signed-out");
 

@@ -42,7 +42,8 @@ const fieldOrder = ["name", "prefix", "submitLabel", "recognition"] as const;
 export function DocumentFormProposalPage() {
   const scope = useReceivedDocumentScope();
   const { requestId } = useParams();
-  if (!scope.allowed || !scope.buildsForms) return <ForbiddenPage />;
+  const { t } = useTranslation("formDocuments");
+  if (!scope.allowed || !scope.buildsForms) return <ForbiddenPage title={t("formProposal.title")} backTo={{ to: receivedDocumentsPath, label: t("title") }} />;
   if (!isReceivedDocumentId(requestId)) return <Unavailable message={null} />;
   return <DocumentFormProposal key={scope.owner + ":" + requestId} requestId={requestId} />;
 }
@@ -136,7 +137,7 @@ function DocumentFormProposal({ requestId }: { requestId: string }) {
   const library = useFormLibrary(formScope, { enabled: !!suggestion, silent: true });
   const standard = suggestion ? library.data?.standards.find(item => item.key === suggestion.key) : undefined;
 
-  if (denied) return <ForbiddenPage />;
+  if (denied) return <ForbiddenPage title={t("formProposal.title")} backTo={{ to: receivedDocumentsPath, label: t("title") }} />;
   const wait = request.cooldown.isRunning ? t("wait", { count: request.cooldown.seconds }) : null;
   const askError = request.askError;
   if (askError instanceof ApiError && [400, 404, 409].includes(askError.status)) return <Unavailable message={askError.detail ?? null} />;

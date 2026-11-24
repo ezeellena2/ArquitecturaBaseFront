@@ -166,7 +166,7 @@ export function FormResponsesPage() {
     !scope.allowed ||
     (query.error instanceof ApiError && query.error.status === 403)
   )
-    return <ForbiddenPage />;
+    return <ForbiddenPage title={t("title")} />;
   // OT1-C: every column with one datum orders in the server. One shown only when the page has one keeps its place while it orders
   // the sheet: ordering «Corregida» with «No» first leaves the corrected ones on another page.
   const sortedBy = parseSort(route.sort)?.field;

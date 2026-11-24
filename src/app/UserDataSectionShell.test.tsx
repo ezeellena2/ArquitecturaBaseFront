@@ -41,7 +41,9 @@ it("shows the person's loading inside the edit dialog", async () => {
 it("explains a forbidden person inside the edit dialog", async () => {
  await openPerson([http.get(`/api/users/${personId}`, () => HttpResponse.json({ status: 403, title: "Forbidden", traceId: "trace" }, { status: 403 }))]);
  const dialog = within(await screen.findByRole("dialog", { name: "Editar usuario" }));
- expect(await dialog.findByText("No tenés permiso")).toBeInTheDocument();
+ // SP2 (2026-11-24): the dialog answers in its place with the embedded empty state, not a loose line.
+ expect(await dialog.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+ expect(dialog.queryByRole("alert")).not.toBeInTheDocument();
  await userEvent.click(dialog.getAllByRole("button", { name: "Cerrar" })[0]);
  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar usuario" })).not.toBeInTheDocument());
  expect(screen.getByRole("button", { name: "Abrir persona" })).toHaveFocus();

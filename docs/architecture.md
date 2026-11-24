@@ -48,7 +48,9 @@ y [auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md).
   su `AGENTS.md`. `src/locales/<idioma>/<módulo>.json`: un namespace por módulo.
 - Una feature nunca importa otra; lo común sube a `shared`, que no depende de features. `featureDependencies.test.ts`
   (en `lint` y `test`) revisa imports de valores y tipos, reexports e imports dinámicos literales.
-- `ForbiddenPage` (`shared/ui`) sirve a `/sin-permiso` y a los 403; `features/errors`, a la ruta inexistente.
+- `ForbiddenPage` (`shared/ui`) es la falta de permiso de una pantalla, en su dirección y con su nombre (SP1-B): la usan
+  `ProtectedRoute` y las pantallas que reciben un 403; un panel, un filtro o un diálogo contesta con `EmptyState embedded`.
+  `features/errors`, la ruta inexistente, que con sesión se ve adentro del caparazón.
 
 ## Rutas y sesión
 
@@ -72,7 +74,7 @@ y [auditoría](../../ArquitecturaBase/docs/guides/auditar-documentacion.md).
   visita anónima conserva su `returnTo`. Regresión: `session.spec.ts`. Con el cierre confirmado, las demás pestañas del
   mismo navegador reciben un aviso por `BroadcastChannel`, revocan su propia autorización y vuelven a `/login` de la misma
   forma, sin volver a avisar. Escucha la raíz sin path de todas las rutas (`SignOutFromOtherTabs`), así que alcanza a
-  cualquier pantalla, también `/sin-permiso`, la 404 y el error de una rama, y a la sesión que trae una recuperación en
+  cualquier pantalla, también la 404 y el error de una rama, y a la sesión que trae una recuperación en
   curso ([detalle](../src/auth/AGENTS.md)).
 - `RouteErrorPage` es el límite estático traducido de import/render; Recargar abre un documento nuevo sin repetir
   escrituras. `ProtectedRoute` conserva el caparazón si falla una hoja; el de la rama de la sesión cubre la carga

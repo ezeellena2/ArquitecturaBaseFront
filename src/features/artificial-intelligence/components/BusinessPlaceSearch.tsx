@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { Autocomplete } from "@/shared/ui/Autocomplete";
@@ -11,7 +11,7 @@ import { dismissNotification, notify } from "@/shared/ui/notifications";
 import { searchBusinessPlaces, type BusinessPlace } from "../api/businessPlaces";
 interface Props { disabled: boolean; placeId?: string | null; onSelect: (id: string) => void }
 export function BusinessPlaceSearch({ disabled, placeId, onSelect }: Props) {
-  const { t, i18n } = useTranslation("businessInformation"), navigate = useNavigate();
+  const { t, i18n } = useTranslation("businessInformation"), reread = useRereadAfterForbidden();
   const [input, setInput] = useState(""), [result, setResult] = useState<{ input: string; language: string; places: BusinessPlace[] }>();
   const [selected, setSelected] = useState<BusinessPlace>(), [loadingFor, setLoadingFor] = useState<string>(), [failedFor, setFailedFor] = useState<string>();
   const [wait, setWait] = useState(0), [retry, setRetry] = useState(0);
@@ -29,7 +29,7 @@ export function BusinessPlaceSearch({ disabled, placeId, onSelect }: Props) {
         if (controller.signal.aborted) return;
         setResult(undefined); setFailedFor(searchKey);
         const feedback = errorFeedback(error);
-        if (feedback.kind === "forbidden") { void navigate("/sin-permiso"); return; }
+        if (feedback.kind === "forbidden") { reread(); return; }
         if (feedback.kind === "session" || feedback.kind === "cancelled") return;
         if (feedback.kind === "wait") { paused.current = true; setWait(Math.max(1, Math.min(86400, feedback.retryAfterSeconds ?? 60))); }
         const configuration = error instanceof ApiError && (error.code === "Ai.Places.NotConfigured" || error.code === "Ai.Places.ConfigurationInvalid");
@@ -39,7 +39,7 @@ export function BusinessPlaceSearch({ disabled, placeId, onSelect }: Props) {
     }, 400);
     return () => { clearTimeout(timer); controller.abort(); };
     // Expiry never repeats a potentially billable search; retry requires another user action.
-  }, [query, language, searchKey, disabled, retry, navigate, t]);
+  }, [query, language, searchKey, disabled, retry, reread, t]);
   const waiting = wait > 0;
   useEffect(() => {
     if (!waiting) { paused.current = false; return; }

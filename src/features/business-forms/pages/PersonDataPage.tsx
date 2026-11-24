@@ -45,9 +45,9 @@ function peopleSortQuery(tableSort: string): Pick<PersonDataPageQuery, "sort" | 
 }
 
 export function PersonDataPage() {
- const { data: user } = useCurrentUser(), { i18n } = useTranslation();
+ const { data: user } = useCurrentUser(), { t, i18n } = useTranslation("forms");
  if (!user) return <Spinner />;
- if (!user.permissions.includes("formpersondata.manage")) return <ForbiddenPage />;
+ if (!user.permissions.includes("formpersondata.manage")) return <ForbiddenPage title={t("personData.title")} />;
  const scope: PersonDataScope = { actorId: user.id, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user.permissions };
  return <PersonDataWorkspace key={JSON.stringify(personDataScopeKey(scope))} scope={scope} />;
 }
@@ -72,7 +72,7 @@ function PersonDataWorkspace({ scope }: { scope: PersonDataScope }) {
   const key = denied ? privateKey : peopleDenied ? [...privateKey, "page"] : null;
   if (key) { void client.cancelQueries({ queryKey: key }); client.removeQueries({ queryKey: key }); }
  }, [denied, peopleDenied, client, privateKey]);
- if (denied || lostAttributes) return <ForbiddenPage />;
+ if (denied || lostAttributes) return <ForbiddenPage title={t("personData.title")} />;
  const list = attributes.data?.items ?? [], active = list.filter(attribute => attribute.isActive), canReadPeople = scope.permissions.includes("users.read") && !peopleDenied && !lostPeople;
  const title = (attribute: PersonAttribute) => administrativeName(attribute.name, scope.culture);
  // The forms are named only with formtemplates.read; without it each use comes unnamed and only how many is shown.

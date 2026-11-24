@@ -22,7 +22,6 @@ function renderAt(path: string) {
   const router = createMemoryRouter(
     [
       { path: "/login", element: <p>pantalla de ingreso</p> },
-      { path: "/sin-permiso", element: <p>pantalla de sin permiso</p> },
       {
         element: <ProtectedRoute />,
         children: [
@@ -40,11 +39,12 @@ function renderAt(path: string) {
     { initialEntries: [path] },
   );
 
-  return render(
+  render(
     <AppProviders>
       <RouterProvider router={router} />
     </AppProviders>,
   );
+  return router;
 }
 
 describe("ProtectedRoute", () => {
@@ -97,6 +97,8 @@ describe("ProtectedRoute", () => {
 
     expect(await screen.findByRole("button", { name: /reintentar/i })).toBeInTheDocument();
     expect(screen.getByText("Código para reportar: trace-456")).toBeInTheDocument();
+    // SP1-B: the error also goes inside the band with the name of the screen.
+    expect(screen.getByRole("heading", { level: 1, name: "Usuarios" })).toBeInTheDocument();
     // Es un error recuperable, no una falta de permiso: nunca tiene que aparecer ese texto.
     expect(screen.queryByText(/no tenés permiso/i)).not.toBeInTheDocument();
   });
@@ -111,14 +113,17 @@ describe("ProtectedRoute", () => {
     expect(await screen.findByText("usuarios protegidos")).toBeInTheDocument();
   });
 
-  it("sends a signed in user without the permission to /sin-permiso", async () => {
+  it("shows a signed in user without the permission that there is none, in the address and with the name of the screen", async () => {
     authState.isAuthenticated = true;
     authState.user = { access_token: "t" };
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: [] })));
 
-    renderAt("/usuarios");
+    const router = renderAt("/usuarios");
 
-    expect(await screen.findByText("pantalla de sin permiso")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Usuarios" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Volver al inicio" })).toHaveAttribute("href", "/");
+    expect(router.state.location.pathname).toBe("/usuarios");
   });
 
   it("retries the permission check when the retry button is clicked", async () => {
@@ -157,7 +162,8 @@ describe("ProtectedRoute", () => {
     authState.user = { access_token: "t" };
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions })));
     renderAt("/formularios-compartidos");
-    expect(await screen.findByText(allowed ? "formularios compartidos" : "pantalla de sin permiso")).toBeInTheDocument();
+    if (allowed) expect(await screen.findByText("formularios compartidos")).toBeInTheDocument();
+    else expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
   });
 
   it("does not turn an empty permission requirement into public access", async () => {
@@ -165,7 +171,7 @@ describe("ProtectedRoute", () => {
     authState.user = { access_token: "t" };
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })));
     renderAt("/sin-alternativas");
-    expect(await screen.findByText("pantalla de sin permiso")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
   });
 
 });

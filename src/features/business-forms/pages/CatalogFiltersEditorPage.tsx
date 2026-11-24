@@ -105,7 +105,7 @@ export function CatalogFiltersEditorPage({ scope, initial, timeZoneId }: { scope
     setDiscardProposalOpen(false);
     if (discarded) notify({ id: feedbackId, kind: "success", message: t("catalogs.proposal.discarded") });
   };
-  if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
+  if (!draft?.filters || [editor.error, options.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage title={t("catalogs.title")} />;
   const samples = samplePages.list({ ...options, data: options.data?.sampleUsers ?? undefined });
   // Each wait shows on the control that started it (LC1-A), and the preview spins only for what fills it.
   const saving = editor.working === "save", rereading = editor.working === "readCurrent", previewing = saving || editor.working === "preview";

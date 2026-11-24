@@ -122,7 +122,9 @@ palabras en `detail` ni mostrando una excepción cruda.
    ProblemDetails): `readErrorMessage` y `operationalErrorMessage` dicen que el servicio no responde
    (`common:errors.unavailable`, `unavailableWrite` y `unavailableSave`), sin pedir un código que no hay (N9).
 5. Un 401 de una petición autenticada sigue la renovación y el flujo de expiración de sesión;
-   un 403 por falta de permiso sigue la página/estado de acceso. No duplicarlos con un toast.
+   un 403 por falta de permiso sigue la página/estado de acceso: al leer, la pantalla muestra «No tenés permiso» en su
+   lugar; al guardar, vuelve a leer lo que está a la vista y queda en sólo lectura o sin permiso (SP1-B). No duplicarlos
+   con un toast.
    Los códigos de negocio del ingreso público se clasifican en su flujo: no ocultar un código
    incorrecto o una cuenta bloqueada por tratar todo 401/403 como expiración o falta de permiso.
 6. Una cancelación deliberada o una respuesta superada por otra solicitud no es un fallo que

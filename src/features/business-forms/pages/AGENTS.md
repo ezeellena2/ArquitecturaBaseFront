@@ -1,6 +1,6 @@
 # Pages: rutas de formularios y catálogos
 
-Una página por ruta. Cada una arma el alcance (`FormReadScope`, `CatalogReadScope` o el dueño de respuestas), lee con su hook, decide carga, vacío, error y falta de permiso, y coordina URL, guarda de salida, diálogos y foco. Las rutas se registran en `src/app/routes.tsx` con su `ProtectedRoute` y el ítem del menú lo compone `app`; la página vuelve a comprobar el permiso y muestra `ForbiddenPage` ante un 403.
+Una página por ruta. Cada una arma el alcance (`FormReadScope`, `CatalogReadScope` o el dueño de respuestas), lee con su hook, decide carga, vacío, error y falta de permiso, y coordina URL, guarda de salida, diálogos y foco. Las rutas se registran en `src/app/routes.tsx` con su `ProtectedRoute` y el ítem del menú lo compone `app`; la página vuelve a comprobar el permiso y, ante un 403, muestra `ForbiddenPage` con su título (el de su sección si el título es un dato, como un formulario o un catálogo).
 
 | Ruta | Página | Permiso | Tablero |
 |---|---|---|---|

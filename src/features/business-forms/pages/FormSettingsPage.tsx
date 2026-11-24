@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type Ref } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { fetchFormSettings, formSettingFields, formSettingRanges, formSettingsQueryKey, updateFormSettings, type FormSettingField, type FormSettings,
   type FormSettingValues } from "../api/formSettings";
 import { ApiError } from "@/shared/api/ApiError";
@@ -47,7 +49,7 @@ export function FormSettingsPage() {
   const [initial, setInitial] = useState<FormSettings>();
   // As in General: first a current revision; once the editor is open, background reads do not replace its draft or its revision.
   if (initial === undefined && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   if (initial) return <FormSettingsEditor initial={initial} />;
   return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 1 }, { fields: 4 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
@@ -57,6 +59,7 @@ function FormSettingsEditor({ initial }: { initial: FormSettings }) {
   const { t } = useTranslation("formSettings");
   const client = useQueryClient();
   const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => draftFrom(initial));
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -85,7 +88,7 @@ function FormSettingsEditor({ initial }: { initial: FormSettings }) {
     } catch (error) {
       if (!active.current) return;
       const feedback = errorFeedback(error);
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       if (feedback.kind !== "session") notify({ id: noticeId, kind: "error", message: t("feedback.reviewFailed"),
         description: feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : undefined,
         action: { label: t("review.action"), onClick: () => void readCurrent() } });
@@ -108,7 +111,7 @@ function FormSettingsEditor({ initial }: { initial: FormSettings }) {
           action: feedback.kind === "uncertain" ? { label: t("review.action"), onClick: () => void navigate("/configuracion/formularios") } : undefined });
         return;
       }
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field, messages.join(" ")])));
       if (feedback.kind === "fields") return;
       const uncertain = feedback.kind === "uncertain";

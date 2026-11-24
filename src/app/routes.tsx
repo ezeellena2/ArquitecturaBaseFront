@@ -178,6 +178,8 @@ const branches: RouteObject[] = [
               },
             ],
           },
+          // The 404 (SP1-B, 2026-11-24): with a session it shows inside the shell; without one, `HomeLayout` leaves it alone.
+          { path: "*", lazy: async () => ({ Component: (await import("@/features/errors/pages/NotFoundPage")).NotFoundPage }) },
         ],
       },
     ],
@@ -193,18 +195,8 @@ const branches: RouteObject[] = [
       { path: "/auth/callback", Component: CallbackPage },
     ],
   },
-  {
-    path: "/sin-permiso",
-    ErrorBoundary: RouteErrorPage,
-    lazy: async () => ({ Component: (await import("@/shared/ui/ForbiddenPage")).ForbiddenPage }),
-  },
-  {
-    path: "*",
-    ErrorBoundary: RouteErrorPage,
-    lazy: async () => ({ Component: (await import("@/features/errors/pages/NotFoundPage")).NotFoundPage }),
-  },
 ];
 
 // Una raíz sin path envuelve todas las ramas para escuchar en cualquier pantalla el cierre de sesión de otra pestaña,
-// también en `/sin-permiso` y en la 404. No lleva límite de error: el de cada rama se dibuja adentro, sin cerrar el canal.
+// también en la 404. No lleva límite de error: el de cada rama se dibuja adentro, sin cerrar el canal.
 export const routes: RouteObject[] = [{ Component: SignOutFromOtherTabs, children: branches }];

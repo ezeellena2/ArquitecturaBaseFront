@@ -121,9 +121,9 @@ export function UsersPage() {
   );
 
   // La pantalla pide el permiso para no entrar (experiencia de uso), pero quien decide es el backend: un 403
-  // acá lleva a la misma pantalla de "sin permiso" que ProtectedRoute.
+  // acá muestra la misma falta de permiso que ProtectedRoute.
   if (apiError?.status === 403) {
-    return <ForbiddenPage />;
+    return <ForbiddenPage title={t("title")} />;
   }
 
   const isDeletion = confirmation?.kind === "delete";

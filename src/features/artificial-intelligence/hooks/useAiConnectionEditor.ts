@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -21,7 +21,7 @@ const fields = ["provider", "model", "apiKey", "enabled", "conversationRetention
 export function useAiConnectionEditor(initial: AiConnection) {
   const { t, i18n } = useTranslation("artificialIntelligence");
   const client = useQueryClient();
-  const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => draftFrom(initial));
   const [draftVersion, setDraftVersion] = useState(0);
@@ -55,7 +55,7 @@ export function useAiConnectionEditor(initial: AiConnection) {
   function discard() { reset(baseline); }
   function denied(error: unknown) {
     const feedback = errorFeedback(error);
-    if (feedback.kind === "forbidden") { pending.current = null; guard.allowNextNavigation(); void navigate("/sin-permiso"); return true; }
+    if (feedback.kind === "forbidden") { pending.current = null; reread(); return true; }
     return feedback.kind === "session";
   }
   function begin(work: Work) {

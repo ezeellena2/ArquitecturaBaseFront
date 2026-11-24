@@ -1,7 +1,8 @@
 # Sin permiso dentro de la app: la pantalla con su nombre y el vacío estándar (SP1-B y SP2)
 
-Fecha: **2026-11-24**. Estado: **decidido el 2026-11-24 (SP1-B), sin programar**. Sólo cambia el front: ni contratos ni
-servidor. Se programa cuando el usuario termine de probar con la app levantada, o en una copia fuera del front.
+Fecha: **2026-11-24**. Estado: **decidido y programado el 2026-11-24 (SP1-B)**, en una copia fuera del front. Sólo cambia
+el front: ni contratos ni servidor. Faltan la corrida completa del cierre y la prueba a mano; después el plan se retira con
+la auditoría documental.
 
 ## Por qué
 
@@ -117,3 +118,30 @@ elemento por elemento
   ([validar un cambio](../../../ArquitecturaBase/docs/guides/validar-un-cambio.md#verificación-y-cierre)).
 - **La prueba a mano:** en el panel del navegador de Claude, con la Hotmail (Agrónomo; el usuario ingresa una vez):
   `/configuracion/negocio`, una dirección de Catálogos escrita a mano, una 404, y lo mismo a 390 px.
+
+## Cómo quedó (2026-11-24)
+
+Igual a SP1-B, SP2 y SP3, con estas diferencias:
+
+- **Trece archivos navegaban a `/sin-permiso`, no siete.** Se sumaron Configuración general, Apariencia, Configuración ›
+  Formularios y › WhatsApp, y el agente del asistente (la pantalla y su editor).
+- **Un 403 al guardar o probar algo no avisa con un callback: vuelve a leer lo que está a la vista**
+  (`useRereadAfterForbidden`, en `src/auth`).
+  - `useArcaAction` lo usan diez zonas y diálogos de ARCA: pasarles un callback a todos era invasivo.
+  - Así, quien perdió sólo «Administrar» queda en sólo lectura y no pierde la pantalla; sin «Ver», la lectura de la
+    pantalla recibe el 403 y muestra la pieza en su lugar.
+  - En el agente del asistente, «Probar» ya releía los permisos: sin «Configurar el asistente», `ProtectedRoute` muestra
+    la falta de permiso.
+- **`ForbiddenPage` recibe `backTo`** en las pantallas hijas: el rol, la respuesta completa y «Armar formulario con la IA».
+  La respuesta completa ya no envuelve la pieza en otra `Page`.
+- **El nombre de la banda en `ProtectedRoute`** sale de `screenLinkOf` (`layouts/navigation.ts`). También toma una entrada
+  exacta del menú, para las direcciones viejas que redirigen (`/configuracion/idioma` lleva a General).
+- **Con un 403 en la vista rápida, la planilla entera pasa a la falta de permiso**, como ya pasaba; ahora la banda dice
+  «Formularios», el nombre de su sección.
+- **La escena visual** (`forbidden.spec.ts`) cubre la pantalla sin permiso (Información del negocio, escenario
+  `business-denied`) y la 404. El filtro, la vista rápida y el diálogo con 403 quedan en sus tests y en las capturas de SP2.
+- **Pruebas** (en la copia, sobre `05a042e2`): tipos y oxlint; los 42 archivos de tests de lo que cambió (1.091 tests) y los
+  57 de arquitectura, con la regla nueva; las ocho capturas nuevas de `forbidden.spec.ts`, miradas una por una, y las
+  escenas que ya pasaban por la falta de permiso (Información del negocio, el chat de WhatsApp y la respuesta revocada).
+  El test de Configuración que simulaba «permiso revocado» con un 403 sin quitar el permiso pasó a quitarlo de verdad.
+  Falta la corrida completa del cierre.

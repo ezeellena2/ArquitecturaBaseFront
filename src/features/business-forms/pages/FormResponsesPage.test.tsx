@@ -189,6 +189,18 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 describe("response sheet", () => {
+  // SP1-B and SP2 (2026-11-24): a 403 reading a response in the quick view leaves the sheet without permission, with the name of
+  // its section in the band and the standard empty state, never the whole screen drawn inside the panel.
+  it("leaves the sheet without permission after a 403 of the quick view, with the name of its section", async () => {
+    setup();
+    server.use(http.get("/api/forms/records/:id", () => HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 })));
+    const { router } = renderRouteWithProviders("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+    // The first test of the file pays the lazy screen.
+    expect(await screen.findByRole("heading", { level: 1, name: "Formularios" }, { timeout: 15_000 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.queryByText(/esta pantalla/)).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/formularios/" + responseFormId + "/respuestas/" + responseRecordId);
+  });
   it.each([
     ["Received", "Recibida", "outline"],
     ["PendingApproval", "Por aprobar", "warning"],

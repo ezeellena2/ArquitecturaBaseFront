@@ -3,13 +3,17 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "react-oidc-context";
 import { useIsRecoveringSession } from "./sessionRecoveryStatus";
 import { usePermissions, type PermissionRequirement } from "./usePermissions";
+import { screenLinkOf } from "@/layouts/navigation";
 import { ApiError } from "@/shared/api/ApiError";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { Page } from "@/shared/ui/Page";
 import { PageLoading } from "@/shared/ui/PageLoading";
 import { Spinner } from "@/shared/ui/Spinner";
 
-/// Exige sesión y, si se pide, un permiso (sección 7.3). Sin sesión manda a /login guardando a dónde iba.
+/// Exige sesión y, si se pide, un permiso (sección 7.3). Sin sesión manda a /login guardando a dónde iba. Sin el permiso,
+/// la pantalla queda en su dirección con su nombre y «No tenés permiso» (SP1-B, 2026-11-24).
 export function ProtectedRoute({ permission }: { permission?: PermissionRequirement } = {}) {
   const { t } = useTranslation();
   const auth = useAuth();
@@ -41,23 +45,30 @@ export function ProtectedRoute({ permission }: { permission?: PermissionRequirem
     return <PageLoading />;
   }
 
+  // La banda lleva el nombre de la pantalla, el de su entrada del menú o el de la sección de la que cuelga: una ruta
+  // con permiso siempre tiene uno (`routes.test.tsx`).
+  const link = screenLinkOf(location.pathname);
+  const title = link ? t(link.labelKey) : t("errors.forbidden.title");
+
   // Un fallo al consultar el permiso (por ejemplo, un 500 de /api/me) no es lo mismo que no tenerlo: es un
   // error recuperable, con su propio mensaje y un reintento, igual que resuelve DataTable.
   if (isError) {
     const apiError = error instanceof ApiError ? error : undefined;
 
     return (
-      <EmptyState
-        title={apiError?.isNetworkError ? t("errors.network") : (apiError?.detail ?? apiError?.message ?? t("states.error"))}
-        description={apiError?.traceId ? t("errors.traceId", { traceId: apiError.traceId }) : undefined}
-        action={
-          <Button type="button" variant="outline" onClick={() => void refetch()}>
-            {t("actions.retry")}
-          </Button>
-        }
-      />
+      <Page title={title}>
+        <EmptyState
+          title={apiError?.isNetworkError ? t("errors.network") : (apiError?.detail ?? apiError?.message ?? t("states.error"))}
+          description={apiError?.traceId ? t("errors.traceId", { traceId: apiError.traceId }) : undefined}
+          action={
+            <Button type="button" variant="outline" onClick={() => void refetch()}>
+              {t("actions.retry")}
+            </Button>
+          }
+        />
+      </Page>
     );
   }
 
-  return has(permission) ? <Outlet /> : <Navigate to="/sin-permiso" replace />;
+  return has(permission) ? <Outlet /> : <ForbiddenPage title={title} />;
 }

@@ -72,6 +72,14 @@ async function chooseIn(field: string, option: string | RegExp) {
 }
 
 describe("ARCA settings", () => {
+  // SP1-B (2026-11-24): a 403 when reading keeps the address and the name of the screen.
+  it("a 403 when reading shows the lack of permission in place, with the name of the screen", async () => {
+    server.use(http.get("/api/arca/connection", () => HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 })));
+    const { router } = renderRouteWithProviders("/configuracion/arca");
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "ARCA" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion/arca");
+  });
   it("offers to connect to a manager and shows read only to a reader", async () => {
     const { unmount } = renderRouteWithProviders("/configuracion/arca");
     expect(await screen.findByText("Sin conexión con ARCA")).toBeInTheDocument();

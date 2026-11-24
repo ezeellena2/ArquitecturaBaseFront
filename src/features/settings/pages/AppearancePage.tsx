@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { fetchSystemSettings, systemSettingsQueryKey, updateSystemSettings, type SystemBranding, type SystemSettings } from "../api/settings";
 import { brandingChanged, brandingDraftFrom, brandingFields, brandingFrom, brandingIssues, brandingLimits, isLogoUrl, type BrandingDraft, type BrandingField } from "../model";
 import { ApiError } from "@/shared/api/ApiError";
@@ -31,7 +33,7 @@ export function AppearancePage() {
   const query = useQuery({ queryKey: systemSettingsQueryKey, queryFn: fetchSystemSettings, refetchOnMount: "always" });
   const [initial, setInitial] = useState<SystemSettings>();
   if (initial === undefined && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("appearance.title")} />;
   if (initial) return <AppearanceEditor initial={initial} />;
   return <Page title={t("appearance.title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 3 }, { fields: 4 }, { rows: 3 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
@@ -41,6 +43,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   const { t } = useTranslation("settings");
   const client = useQueryClient();
   const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(initial.appearance);
   const [brand, setBrand] = useState(() => brandingDraftFrom(initial.branding));
@@ -66,7 +69,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
     } catch (error) {
       if (!active.current) return;
       const feedback = errorFeedback(error);
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       if (feedback.kind !== "session") notify({ id: noticeId, kind: "error", message: t("feedback.reviewFailed"),
         description: feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : undefined,
         action: { label: t("review.action"), onClick: () => void readCurrent() } });
@@ -88,7 +91,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
     onError: error => {
       const feedback = errorFeedback(error, { writing: true, fields: errorKeys, conflictCodes: ["Settings.System.RevisionConflict"] });
       if (feedback.kind === "session") return;
-      if (active.current && feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (active.current && feedback.kind === "forbidden") { reread(); return; }
       if (active.current) setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field, messages.join(" ")])));
       if (feedback.kind === "fields" && active.current) return;
       const uncertain = feedback.kind === "uncertain", conflict = feedback.kind === "conflict";

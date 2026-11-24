@@ -12,7 +12,6 @@ import { ChatIcon, ExpandIcon } from "@/shared/ui/icons";
 import { Badge } from "@/shared/ui/badge";
 import { Spinner } from "@/shared/ui/Spinner";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { approvalStateVariant } from "../approvals";
 import { useResponseDetailState } from "../hooks/useResponseDetailState";
 import { ResponseDocumentDownloads } from "../components/ResponseDocuments";
@@ -78,7 +77,7 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   const issuance = responseIssuance(current);
   const fiscal = current?.documents.filter(document => issuance.fiscalRunIds.has(document.runId)) ?? [];
   const copies = current?.documents.filter(document => !issuance.fiscalRunIds.has(document.runId)) ?? [];
-  if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><ForbiddenPage/></ResponsePanelFrame></ResponsePanelFilesScope>;
+  if (!allowed) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={null}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}><EmptyState embedded title={t("common:errors.forbidden.title")} /></ResponsePanelFrame></ResponsePanelFilesScope>;
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
   // Correcting takes the panel: «Cancelar» reads the response again and saving hands the correction to the owner.
   if (correcting === recordId && data.id === recordId) return <FormEntryCorrection layout="panel" formId={formId} record={data} onClose={() => setCorrecting(null)}

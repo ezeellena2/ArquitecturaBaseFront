@@ -13,6 +13,7 @@
     "addEmail": "Add email"
   },
   "actions": {
+    "backHome": "Back to home",
     "cancel": "Cancel",
     "moreInfo": "More about {{label}}",
     "moreInfoPlain": "More information",
@@ -43,12 +44,10 @@
     "traceId": "Code to report: {{traceId}}",
     "generic": "Something went wrong. Please try again in a moment.",
     "forbidden": {
-      "title": "You don't have permission",
-      "description": "You don't have the permission needed to view this screen."
+      "title": "You don't have permission"
     },
     "notFound": {
-      "title": "We couldn't find this page",
-      "home": "Back to home"
+      "title": "We couldn't find this page"
     },
     "writeUncertain": "We could not confirm the outcome. Check the current state before repeating the operation. Reference: {{traceId}}",
     "saveRetry": "We could not confirm the save. Save again. Reference: {{traceId}}"

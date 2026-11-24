@@ -84,7 +84,8 @@ describe("AppearancePage", () => {
     const read = vi.fn(() => HttpResponse.json(settings));
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["users.read"] })), http.get("/api/settings", read));
     const { router } = renderRouteWithProviders("/configuracion/apariencia");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion/apariencia");
     expect(read).not.toHaveBeenCalled();
     expect(writes).toEqual([]);
   });

@@ -103,7 +103,7 @@ export function FormsPage() {
     if (["cancelled", "session", "forbidden"].includes(errorFeedback(error).kind)) return;
     notify({ id: feedbackId, kind: "error", message: readErrorMessage(error, t) });
   }, [list.error, list.data, feedbackId, t]);
-  if (!user?.permissions.includes("formtemplates.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage />;
+  if (!user?.permissions.includes("formtemplates.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage title={t("title")} />;
   const clearFilters = () => update({ search: undefined, publicationFilter: undefined, page: undefined });
   const canPublish = scope.permissions.includes("formtemplates.publish");
   const chooseAction = (row: Row, kind: "deactivate" | "delete") => { focusFallback.current = host.current?.querySelector<HTMLInputElement>("input") ?? null; setAction({ row, kind, owner: JSON.stringify(formScopeKey(scope)) }); };

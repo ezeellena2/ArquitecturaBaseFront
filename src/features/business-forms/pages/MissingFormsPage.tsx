@@ -32,8 +32,8 @@ import {fetchMissingRequests,discardMissingTopic,reviewMissingTopic,missingReque
 import {useUnobservedQueryCleanup} from "../hooks/useUnobservedQueryCleanup";
 
 export function MissingFormsPage(){
- const {data:user}=useCurrentUser();const {i18n}=useTranslation("forms");
- if(!user?.permissions.includes("formtemplates.manage"))return <ForbiddenPage/>;
+ const {data:user}=useCurrentUser();const {t,i18n}=useTranslation("forms");
+ if(!user?.permissions.includes("formtemplates.manage"))return <ForbiddenPage title={t("missing.title")} />;
  const culture=i18n.language.startsWith("en")?"en":"es";
  return <MissingForms key={JSON.stringify([user.id,culture,[...user.permissions].sort()])} actorId={user.id} culture={culture} permissionsKey={[...user.permissions].sort().join(",")} timeZoneId={user.timeZoneId} canCreate={user.permissions.includes("formtemplates.read")}/>;
 }
@@ -100,7 +100,7 @@ function MissingForms({actorId,culture,permissionsKey,timeZoneId,canCreate}:{act
    else{if(failure.kind==="wait")cooldown.restart(failure.retryAfterSeconds??30);notify({id:reviewId,kind:"error",message:readErrorMessage(error,t)});}
   }finally{if(active.current&&!pending.signal.aborted){setBusy(false);setReviewing(null);}}
  }
- if(forbidden)return <ForbiddenPage/>;
+ if(forbidden)return <ForbiddenPage title={t("missing.title")} />;
  const date=(value:string)=>formatDateTimeInZone(value,i18n.language,timeZoneId);
  // Each column's id is the server's field to order by (OT1-C).
  const columns:Column<MissingTopic>[]=[

@@ -159,7 +159,8 @@ test("an operator without read permission never requests the chat", async ({ pag
     page.waitForResponse(response => response.request().method() === "GET" && new URL(response.url()).pathname === "/api/me"),
     page.goto("/src/test/visual/session.html?screen=/whatsapp/chat"),
   ]);
-  await expect(page).toHaveURL(/\/sin-permiso$/);
+  await expect(page.getByRole("heading", { level: 3, name: "No tenés permiso" })).toBeVisible();
+  await expect(page).toHaveURL(/\/whatsapp\/chat$/);
   expect(api.reads()).toBe(0);
   expect(api.sends).toHaveLength(0);
 });

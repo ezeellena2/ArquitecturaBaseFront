@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback, operationalErrorMessage } from "@/shared/api/errorFeedback";
 import { notify } from "@/shared/ui/notifications";
@@ -8,10 +8,10 @@ import { notify } from "@/shared/ui/notifications";
 /// Una acción de la pantalla con su espera en el botón que la disparó. Un 409 de revisión, o una conexión que ya no está
 /// (otra persona desconectó: H30), abre «Revisar», que vuelve a leerla; un error de
 /// ARCA dice el texto del servidor, y lo demás sigue el contrato de mensajes. `handle` atiende antes lo que va junto a un
-/// control, como un certificado que no corresponde.
+/// control, como un certificado que no corresponde. Un 403 vuelve a leer lo que está a la vista (SP1-B).
 export function useArcaAction(onConflict: () => void) {
   const { t } = useTranslation("arca");
-  const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [pending, setPending] = useState<string | null>(null);
   async function run<T>(key: string, action: () => Promise<T>, handle?: (error: unknown) => boolean): Promise<T | undefined> {
     if (pending) return undefined;
@@ -21,7 +21,7 @@ export function useArcaAction(onConflict: () => void) {
     } catch (error) {
       if (handle?.(error)) return undefined;
       const feedback = errorFeedback(error, { writing: true, conflictCodes: ["Arca.Connection.RevisionConflict", "Arca.Invoicing.SettingsRevisionConflict", "Arca.Connection.NotConnected"] });
-      if (feedback.kind === "forbidden") void navigate("/sin-permiso");
+      if (feedback.kind === "forbidden") reread();
       else if (feedback.kind === "conflict") onConflict();
       else if (feedback.kind !== "session" && feedback.kind !== "cancelled") {
         const message = error instanceof ApiError && error.code?.startsWith("Arca.") && error.detail ? error.detail : operationalErrorMessage(error, t);

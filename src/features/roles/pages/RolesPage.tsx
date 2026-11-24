@@ -119,7 +119,7 @@ export function RolesPage() {
   }
 
   if (apiError?.status === 403) {
-    return <ForbiddenPage />;
+    return <ForbiddenPage title={t("title")} />;
   }
 
   return (

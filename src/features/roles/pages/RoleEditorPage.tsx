@@ -381,7 +381,7 @@ function RoleEditor({ roleId }: { roleId: string | undefined }): ReactNode {
   const isRoleGone = hasFreshRole && seededRole === undefined && roleQuery.data === null;
 
   if (apiLoadError?.status === 403) {
-    return <ForbiddenPage />;
+    return <ForbiddenPage title={t("title")} backTo={{ to: "/roles", label: t("editor.back") }} />;
   }
 
   /// Relee el rol para comparar (N2): la lectura queda en caché y la comparación, hasta elegir.

@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { useCurrentUser } from "@/auth/useCurrentUser";
 import { usePermissions } from "@/auth/usePermissions";
 import { ApiError } from "@/shared/api/ApiError";
@@ -58,7 +59,7 @@ function AssistantAgentScreen({ actor, timeZone }: { actor: string; timeZone: st
     } });
   const [initial, setInitial] = useState<AssistantAgent>();
   if (!initial && query.isSuccess && !query.isPlaceholderData && query.isFetchedAfterMount && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   // The forms, the knowledge and the availability come from the last read (the previous language while the new one arrives); the
   // editor starts once from the first one and keeps its draft.
   if (initial) return <AgentEditorScreen initial={initial} live={query.data ?? initial} queryKey={queryKey} actor={actor} timeZone={timeZone} />;
@@ -72,7 +73,6 @@ function AgentEditorScreen({ initial, live, queryKey, actor, timeZone }: { initi
   const { t, i18n } = useTranslation("whatsappAssistant");
   const culture: AgentCulture = i18n.resolvedLanguage === "en" ? "en" : "es";
   const { has, refetch } = usePermissions();
-  const navigate = useNavigate();
   const editor = useAssistantAgentEditor(initial, queryKey);
   const phone = useMediaQuery("(width < 640px)");
   const [params] = useSearchParams();
@@ -133,7 +133,8 @@ function AgentEditorScreen({ initial, live, queryKey, actor, timeZone }: { initi
   // the panel closed and Probar off with its reason, as long as it can still configure the assistant.
   const leaveTest = async () => {
     const permissions = (await refetch()).data?.permissions ?? [];
-    if (!permissions.includes("whatsapp.configureassistant")) { editor.guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+    // Without configuring the assistant, the protected route already shows the lack of permission in place (SP1-B).
+    if (!permissions.includes("whatsapp.configureassistant")) return;
     // With both permissions the 403 was about the test (the account stopped being active): the panel stays and says so.
     if (permissions.includes("whatsapp.read")) { notify({ id: "whatsapp:assistant-test", kind: "error", message: t("test.failed") }); return; }
     setTesting(false);

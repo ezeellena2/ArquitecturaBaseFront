@@ -1,6 +1,6 @@
 # Errors: páginas de navegación fallida
 
-Contiene la página de ruta inexistente. El estado de falta de permiso vive en `shared/ui/ForbiddenPage`, porque también lo usan Usuarios y Roles ante un 403. La ruta `/sin-permiso` lo monta desde la composición de la app.
+Contiene la página de ruta inexistente: con sesión se ve adentro del caparazón, con la forma del error de una ruta (SP1-B). La falta de permiso vive en `shared/ui/ForbiddenPage`: la muestran en su lugar `ProtectedRoute` y las pantallas que reciben un 403.
 
 ## Al modificar
 

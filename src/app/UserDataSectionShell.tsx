@@ -17,7 +17,7 @@ const UserDialog = lazy(() => import("@/features/users/components/UserEditDialog
 function PendingUserDialog({ error, onRetry, onClose }: { error: unknown; onRetry?: () => void; onClose: () => void }) {
  const { t } = useTranslation();
  return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent aria-describedby={undefined}><DialogHeader><DialogTitle>{t("users:edit.title")}</DialogTitle></DialogHeader>
-  {!error ? <Spinner /> : errorFeedback(error).kind === "forbidden" ? <p role="alert" className="text-sm">{t("errors.forbidden.title")}</p> : <EmptyState embedded title={t("states.loadFailed")} action={<Button type="button" variant="outline" onClick={onRetry}>{t("actions.retry")}</Button>} />}
+  {!error ? <Spinner /> : errorFeedback(error).kind === "forbidden" ? <EmptyState embedded title={t("errors.forbidden.title")} /> : <EmptyState embedded title={t("states.loadFailed")} action={<Button type="button" variant="outline" onClick={onRetry}>{t("actions.retry")}</Button>} />}
   <DialogFooter><Button type="button" variant="outline" onClick={onClose}>{t("actions.close")}</Button></DialogFooter>
  </DialogContent></Dialog>;
 }

@@ -13,6 +13,7 @@
     "addEmail": "Agregar correo"
   },
   "actions": {
+    "backHome": "Volver al inicio",
     "cancel": "Cancelar",
     "moreInfo": "Más información sobre {{label}}",
     "moreInfoPlain": "Más información",
@@ -43,12 +44,10 @@
     "traceId": "Código para reportar: {{traceId}}",
     "generic": "Ocurrió un error. Probá de nuevo en un momento.",
     "forbidden": {
-      "title": "No tenés permiso",
-      "description": "No tenés el permiso necesario para ver esta pantalla."
+      "title": "No tenés permiso"
     },
     "notFound": {
-      "title": "No encontramos esta página",
-      "home": "Volver al inicio"
+      "title": "No encontramos esta página"
     },
     "writeUncertain": "No pudimos confirmar el resultado. Revisá el estado actual antes de repetir la operación. Referencia: {{traceId}}",
     "saveRetry": "No pudimos confirmar el guardado. Volvé a guardar. Referencia: {{traceId}}"

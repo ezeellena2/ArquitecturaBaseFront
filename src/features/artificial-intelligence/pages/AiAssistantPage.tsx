@@ -478,7 +478,7 @@ export function AiAssistantPage() {
         : undefined,
     );
   }
-  if (forbidden || permissionLost) return <ForbiddenPage />;
+  if (forbidden || permissionLost) return <ForbiddenPage title={t("common:home.title")} />;
   return (
     <Page viewport title={t("common:home.title")}>
       <MessageContext value={context}>

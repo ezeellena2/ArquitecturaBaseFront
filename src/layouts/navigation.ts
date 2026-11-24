@@ -151,6 +151,15 @@ export function parentLinkOf(pathname: string): NavigationLink | undefined {
   return navigationLinks.filter((link) => !link.exact && isChildOf(path, link.to)).sort((a, b) => b.to.length - a.to.length)[0];
 }
 
+/// La entrada del menú que nombra la pantalla de una ruta: la suya o la más cercana de la que cuelga, aunque sea exacta
+/// (`/configuracion/idioma` lleva a General). La usa la falta de permiso para la banda (SP1-B, 2026-11-24).
+export function screenLinkOf(pathname: string): NavigationLink | undefined {
+  const path = withoutTrailingSlash(pathname);
+
+  return navigationLinks.find((link) => link.to === path)
+    ?? navigationLinks.filter((link) => isChildOf(path, link.to)).sort((a, b) => b.to.length - a.to.length)[0];
+}
+
 /// El grupo al que pertenece una ruta, si está adentro de uno. Es el nivel del medio de las migas. Vale
 /// también para las rutas hijas de sus pantallas: así el menú se despliega solo en `/roles/abc`.
 export function branchOf(pathname: string): NavigationBranch | undefined {

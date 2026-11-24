@@ -1,4 +1,5 @@
 import { useLayoutEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useMatch, useParams } from "react-router";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { responseFullPath } from "../responseNavigationPaths";
@@ -10,6 +11,7 @@ import { FormPendingApprovals } from "../components/FormPendingApprovals";
 import { FormResponsesPage } from "./FormResponsesPage";
 export function FormResponseWorkspacePage() {
   const { formId = "" } = useParams();
+  const { t } = useTranslation("forms");
   const { has } = usePermissions();
   const readScope = useResponseScope();
   const mobile = useMediaQuery("(width < 640px)");
@@ -19,7 +21,7 @@ export function FormResponseWorkspacePage() {
   const location = useLocation();
   if (readScope.allowed && mobile && direct?.params.recordId && !adding) return <MobileResponseRedirect formId={formId} recordId={direct.params.recordId} search={location.search}/>;
   if (readScope.allowed) return <FormResponsesPage/>;
-  if (!has("formapprovals.decide")) return <ForbiddenPage/>;
+  if (!has("formapprovals.decide")) return <ForbiddenPage title={t("title")} />;
   return <FormPendingApprovals formId={formId} standalone/>;
 }
 

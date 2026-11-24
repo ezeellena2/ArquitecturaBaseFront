@@ -107,10 +107,10 @@ export function CatalogEditorPage() {
     notify({ id: feedbackId, kind: "error", message: readErrorMessage(detail.error, t) });
   }, [detail.error, feedbackId, t]);
   if (!user) return <Page title={t("catalogs.title")}><Spinner /></Page>;
-  if (!scope.permissions.includes("formcatalogs.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
+  if (!scope.permissions.includes("formcatalogs.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage title={t("catalogs.title")} />;
   if (catalogId && detail.isPending && !initial) return <Page title={t("catalogs.title")}><Spinner /></Page>;
   if (catalogId && !initial) return <Page title={t("catalogs.title")} backTo={{ to: "/catalogos", label: t("catalogs.title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "catalogs.notFound" : "catalogs.detailFailed")} action={<Button variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
-  if (!catalogId && !scope.permissions.includes("formcatalogs.manage")) return <ForbiddenPage />;
+  if (!catalogId && !scope.permissions.includes("formcatalogs.manage")) return <ForbiddenPage title={t("catalogs.title")} />;
   if ((initial?.kind ?? searchParams.get("kind")) === "Filters") return <CatalogFiltersEditorPage key={detailOwner} scope={scope} initial={initial} timeZoneId={user.timeZoneId} />;
   const requestedType = searchParams.get("valueType");
   const valueType = isCatalogValueType(requestedType) ? requestedType : "Text";
@@ -376,7 +376,7 @@ function ManualCatalogEditor({ scope, initial, valueType, timeZoneId }: { scope:
   const showErrorRows = () => { setErrorRows(current => current && { ...current, open: false, showRows: true, totalCount: items.data?.totalCount }); };
   // Removing the chip goes back to the list, also when reading only the rows with errors failed.
   const errorRowsChip = rowFilter ? <FilterChip removeLabel={t("catalogs.items.clearErrorRows")} onRemove={hideErrorRows}>{t("catalogs.items.errorRows", { count: rowFilter.length })}</FilterChip> : null;
-  if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage />;
+  if (!draft || [editor.error, items.error, exported.error].some(error => error instanceof ApiError && error.status === 403)) return <ForbiddenPage title={t("catalogs.title")} />;
   // OR1-A: the pending order names its column as the table's header does and its direction in the words of the column's data.
   const sortNotice = draft.sort ? t("catalogs.actions.sortPending", { column: catalogSortColumnName(draft.sort, draft.fields, culture, { text: t("catalogs.items.text"), code: t("catalogs.items.code") }),
     order: t("common:sort." + catalogSortKind(draft.sort.column, draft.fields) + (draft.sort.descending ? ".descPhrase" : ".ascPhrase")) }) : null;

@@ -55,7 +55,8 @@ describe("Catalog routes and navigation", () => {
     server.use(http.get("/api/forms/catalogs", () => { reads++; return HttpResponse.json(listRaw); }));
     let router!: ReturnType<typeof renderRouteWithProviders>["router"];
     await act(async () => { router = renderRouteWithProviders("/catalogos").router; });
-    await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/catalogos");
     expect(reads).toBe(0);
   });
 });

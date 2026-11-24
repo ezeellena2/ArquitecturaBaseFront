@@ -74,7 +74,7 @@ otras sesiones. Las filas distinguen lo ya implementado del trabajo de adopción
 | Inicio autenticado | Banner por ausencia de correo | Representar condición y acción vigentes; no generar popup en cada visita/render |
 | Guard de permisos / lectura de `/api/me` | Recuperación y QueryCache pueden repetir causa | Estado de acceso/carga más dueño único; mantener renovación y 401/403 |
 | Cambiar idioma / cerrar sesión | Toast directo con fallo propio | Emisor común sin modificar restauración de idioma ni revocación de sesión |
-| `/sin-permiso`, ruta inexistente, bienvenida pública | Son estados de navegación/oferta, no resultados de una mutación | Mantener estados; revisar carga de medios y no agregar avisos repetidos |
+| Falta de permiso, ruta inexistente, bienvenida pública | Son estados de navegación/oferta, no resultados de una mutación | Mantener estados; revisar carga de medios y no agregar avisos repetidos |
 | Arnés `renderWithProviders` | Ya usa `createQueryClient` y conserva callbacks del QueryCache productivo | Mantener aislamiento y verificar los casos transversales que faltan |
 | Tests actuales | Cubren muchos textos y reglas; no hay límite de imports de Sonner ni prueba transversal de todos los canales | Pruebas de arquitectura y recorridos; revisar assertions del criterio anterior |
 

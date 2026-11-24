@@ -682,6 +682,27 @@ describe("business information editor", { timeout: 15_000 }, () => {
     expect(screen.queryByDisplayValue("Shop")).not.toBeInTheDocument();
     expect(writes).toHaveLength(0);
   });
+  // SP1-B (2026-11-24): a 403 when reading keeps the address and the name of the screen.
+  it("a 403 when reading shows the lack of permission in place, with the name of the screen", async () => {
+    server.use(http.get("/api/ai/business-information", () => HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 })));
+    const { router } = renderRouteWithProviders("/configuracion/negocio");
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Información del negocio" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion/negocio");
+  });
+  // SP1-B: a 403 when saving reads again what is in sight; with reading left, the screen stays read only.
+  it("a 403 when saving reads again what is in sight and leaves the screen read only", async () => {
+    server.use(http.put("/api/ai/business-information", () => {
+      server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["ai.business.read"] })));
+      return HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 });
+    }));
+    const { router } = renderRouteWithProviders("/configuracion/negocio");
+    await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");
+    await userEvent.click(save());
+    expect(await screen.findByText("Sólo lectura")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Guardar" })).not.toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion/negocio");
+  });
   it("discarding edits requires a decision and restores the saved facts", async () => {
     renderRouteWithProviders("/configuracion/negocio");
     await userEvent.type(await screen.findByRole("textbox", { name: "Nombre del negocio" }), " Updated");

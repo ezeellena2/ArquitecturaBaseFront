@@ -20,6 +20,14 @@ describe("the application uses the shared design system", () => {
     }).map(file => path.relative(root, file).replaceAll("\\", "/")).sort();
     expect(consumers).toEqual(["shared/ui/notifications.ts", "shared/ui/sonner.tsx"]);
   });
+  // SP1-B and SP2 (2026-11-24): the no-permission screen is for screens; a panel, a filter or a dialog answers in its place with
+  // the embedded empty state.
+  it("leaves the no-permission screen to screens and to the protected route", () => {
+    const consumers = sourceFiles(root).filter(file => /from "@\/shared\/ui\/ForbiddenPage"/.test(readFileSync(file, "utf8")))
+      .map(file => path.relative(root, file).replaceAll("\\", "/"))
+      .filter(file => !/\/pages\/[^/]+\.tsx$/.test(file) && file !== "auth/ProtectedRoute.tsx");
+    expect(consumers, consumers.join("\n")).toEqual([]);
+  });
   // Textos fijos que el usuario aprobó conservar el 2026-11-01 porque no explican cómo funciona algo (archivo y clave).
   const keptLegends = new Set([
     "features/artificial-intelligence/pages/AiAssistantPage.tsx newHelp", // el cuerpo de una decisión dice qué se pierde

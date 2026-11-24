@@ -53,7 +53,7 @@ export function FormEntryPage() {
   const list = origin?.list?.startsWith("/formularios") ? origin.list : "/formularios";
   const back = fromSheet ? `/formularios/${formId}/respuestas` : list;
   useBreadcrumbLeaf(sent ? sent.result.number : t("page.title"), entry?.name);
-  if (!scope.canCreate || query.error instanceof ApiError && query.error.status === 403 || editor.conflict === "forbidden") return <ForbiddenPage/>;
+  if (!scope.canCreate || query.error instanceof ApiError && query.error.status === 403 || editor.conflict === "forbidden") return <ForbiddenPage title={t("page.title")} />;
 
   if (sent) {
     const exits = <>

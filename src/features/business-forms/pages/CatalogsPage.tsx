@@ -66,7 +66,7 @@ export function CatalogsPage() {
     if (["cancelled", "session", "forbidden"].includes(errorFeedback(list.error).kind)) return;
     notify({ id: feedbackId, kind: "error", message: readErrorMessage(list.error, t) });
   }, [list.error, list.data, feedbackId, t]);
-  if (!user?.permissions.includes("formcatalogs.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage />;
+  if (!user?.permissions.includes("formcatalogs.read") || (list.error instanceof ApiError && list.error.status === 403)) return <ForbiddenPage title={t("catalogs.title")} />;
   // «Armar con la IA» goes before «Nuevo catálogo» and opens Home with the request begun (IA4).
   const newAction = canManage ? <>{canAskAssistant(presentation.data?.installedFeatures, user?.permissions) ? <Button asChild variant="outline"><Link to="/" state={assistantDraftState(t("assistantProposals.entries.catalog"))}>{t("assistantProposals.entries.label")}</Link></Button> : null}<Button type="button" onClick={() => setChoosingOrigin(true)}>{t("catalogs.new")}</Button></> : undefined;
   return <Page title={t("catalogs.title")} actions={newAction}>

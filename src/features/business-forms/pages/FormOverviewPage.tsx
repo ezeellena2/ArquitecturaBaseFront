@@ -47,7 +47,7 @@ export function FormOverviewPage() {
   const { scope, query, forbidden } = useFormOverview({ page: pagination.page, pageSize: pagination.pageSize,
     search: pagination.search, sort, state, pendingOnly }, pagination.ready);
   useResponseFeedback(query.error, "forms:overview:" + scope.owner, query.refetch);
-  if (!scope.allowed || forbidden) return <ForbiddenPage/>;
+  if (!scope.allowed || forbidden) return <ForbiddenPage title={t("overview.title")} />;
   const data = query.data;
   // An empty list says what is missing with its title only, without explaining how it works (decision of 2026-10-31).
   const emptyTitle = pagination.search ? "noMatches"

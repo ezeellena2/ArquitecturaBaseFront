@@ -194,6 +194,18 @@ it("offers Sí and No without a search for a yes/no question", async () => {
   expect(apply).toHaveBeenLastCalledWith(expect.objectContaining({ conditions: [{ fieldId: delivered.fieldId, operator: "in", values: ["false"] }] }), [], { false: "No" });
 });
 
+// SP2 (2026-11-24): a filter that gets a 403 answers in its place with the embedded empty state, never the whole screen.
+it("answers a 403 of a filter in its place, without drawing the whole screen inside the panel", async () => {
+  setup();
+  server.use(http.post("/api/forms/definitions/:id/records/filter-counts/search", () => HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 })));
+  menu(selected);
+  const panel = await open();
+  await userEvent.click(panel.getByRole("button", { name: "Cargó" }));
+  expect(await panel.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+  expect(panel.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+  expect(panel.queryByText(/esta pantalla/)).not.toBeInTheDocument();
+});
+
 it("filters by one person and one version with the same combo", async () => {
   setup();
   const apply = vi.fn();

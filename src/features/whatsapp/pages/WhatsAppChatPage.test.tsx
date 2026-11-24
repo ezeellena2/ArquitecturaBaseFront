@@ -434,7 +434,8 @@ describe("WhatsAppChatPage", () => {
     const list = vi.fn(() => HttpResponse.json({}));
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: [] })), http.get("/api/whatsapp/chats", list));
     const { router } = renderRouteWithProviders("/whatsapp/chat");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/whatsapp/chat");
     expect(list).not.toHaveBeenCalled();
   });
   it("keeps the visible inbox when a refresh fails and tells it only in a notification, not next to the title", async () => {

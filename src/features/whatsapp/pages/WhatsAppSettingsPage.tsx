@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -37,7 +39,7 @@ export function WhatsAppSettingsPage() {
   const [initial, setInitial] = useState<WhatsAppSettings>();
   // As General: the editor starts from a revision read now, and a refetch in the background does not replace its draft.
   if (initial === undefined && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("settings.title")} />;
   if (initial) return <WhatsAppSettingsEditor initial={initial} />;
   return <Page title={t("settings.title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 1 }, { fields: 1 }, { fields: 1 }]} />
     : <EmptyState title={t("settings.unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
@@ -47,6 +49,7 @@ function WhatsAppSettingsEditor({ initial }: { initial: WhatsAppSettings }) {
   const { t, i18n } = useTranslation("whatsapp");
   const client = useQueryClient();
   const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => draftFromSettings(initial));
   const [errors, setErrors] = useState<Partial<Record<WhatsAppSettingField, string>>>({});
@@ -77,7 +80,7 @@ function WhatsAppSettingsEditor({ initial }: { initial: WhatsAppSettings }) {
     } catch (error) {
       if (!active.current) return;
       const feedback = errorFeedback(error);
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       if (feedback.kind !== "session") notify({ id: noticeId, kind: "error", message: t("settings.feedback.reviewFailed"),
         description: feedback.traceId ? t("settings.feedback.traceId", { traceId: feedback.traceId }) : undefined,
         action: { label: t("settings.review.action"), onClick: () => void readCurrent() } });
@@ -103,7 +106,7 @@ function WhatsAppSettingsEditor({ initial }: { initial: WhatsAppSettings }) {
           action: feedback.kind === "uncertain" ? { label: t("settings.review.action"), onClick: () => void navigate("/configuracion/whatsapp") } : undefined });
         return;
       }
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       // A 400 names `allowedCountries[1]`: it goes to the field of the countries.
       setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field.replace(/\[\d+\]$/, ""), messages.join(" ")])));
       if (feedback.kind === "fields") return;

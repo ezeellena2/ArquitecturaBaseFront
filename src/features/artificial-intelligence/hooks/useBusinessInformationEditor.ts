@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -17,7 +17,7 @@ const noticeId = "ai:business-save";
 export function useBusinessInformationEditor(initial: BusinessInformation) {
   const { t } = useTranslation("businessInformation");
   const client = useQueryClient();
-  const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => businessDraftFrom(initial));
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
@@ -51,7 +51,7 @@ export function useBusinessInformationEditor(initial: BusinessInformation) {
   }
   function denied(error: unknown) {
     const feedback = errorFeedback(error);
-    if (feedback.kind === "forbidden") { pending.current = null; guard.allowNextNavigation(); void navigate("/sin-permiso"); return true; }
+    if (feedback.kind === "forbidden") { pending.current = null; reread(); return true; }
     return feedback.kind === "session";
   }
   function begin(work: Work) {

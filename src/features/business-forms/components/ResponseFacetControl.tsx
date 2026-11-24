@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useElementVisibility } from "@/shared/hooks/useElementVisibility";
 import { useResponseFacet } from "../hooks/useResponseQueries";
 import type { ResponseQuery } from "../responses";
-import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { Picker } from "@/shared/ui/Picker";
 import { ApiError } from "@/shared/api/ApiError";
 
@@ -44,8 +44,9 @@ export function ResponseFacetControl({ formId, filter, dimension, fieldId, label
   const [many, setMany] = useState(false);
   if (settled === "" && pages.page === 1 && query.data && !query.isPlaceholderData && (query.data.totalCount > SEARCH_FROM) !== many)
     setMany(query.data.totalCount > SEARCH_FROM);
+  // SP2 (2026-11-24): a 403 answers in the place of the filter, with the embedded empty state.
   if (query.error instanceof ApiError && query.error.status === 403)
-    return <ForbiddenPage />;
+    return <EmptyState embedded title={t("common:errors.forbidden.title")} />;
   const text = (option: FacetOption) => dimension === "version" ? t("responses.versionLabel", { version: option.label })
     : option.id === "true" ? t("responses.yes") : option.id === "false" ? t("responses.no")
       : dimension === "actor" && !option.label ? t("responses.unknownPerson") : option.label;

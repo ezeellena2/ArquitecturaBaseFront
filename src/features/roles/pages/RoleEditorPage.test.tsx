@@ -1201,13 +1201,13 @@ describe("RoleEditorPage", () => {
   });
 
   // Las dos rutas del editor: quien solo lee roles no puede crear uno ni abrir uno con "Guardar" a la vista.
-  it.each(["/roles/nuevo", "/roles/r3"])("sends whoever lacks roles.manage from %s to the no-permission screen", async (path) => {
+  it.each(["/roles/nuevo", "/roles/r3"])("shows whoever lacks roles.manage on %s that there is no permission, in place", async (path) => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["roles.read"] })));
 
     const { router } = renderRouteWithProviders(path);
 
-    expect(await screen.findByText("No tenés permiso")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/sin-permiso");
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(path);
   });
 
   it("puts the role in the crumbs, under its section, and opens its group in the administration panel", async () => {

@@ -43,6 +43,14 @@ async function chooseModel(name: string) {
 }
 
 describe("AI settings", () => {
+  // SP1-B (2026-11-24): a 403 when reading keeps the address and the name of the screen.
+  it("a 403 when reading shows the lack of permission in place, with the name of the screen", async () => {
+    server.use(http.get("/api/ai/connection", () => HttpResponse.json({ status: 403, title: "Forbidden" }, { status: 403 })));
+    const { router } = renderRouteWithProviders("/configuracion/ia");
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Inteligencia artificial" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion/ia");
+  });
   it("keeps the whole connection in one zone, in the order it is filled in, with each button beside its value (IA1-A)", async () => {
     server.use(http.post("/api/ai/connection/models", () => HttpResponse.json({ provider: "OpenAI", revision: 1, models: [{ id: "fictional-model", displayName: "Fictional model" }] })));
     renderRouteWithProviders("/configuracion/ia");

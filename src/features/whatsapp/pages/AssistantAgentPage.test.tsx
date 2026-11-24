@@ -491,10 +491,11 @@ describe("loading, waiting and permissions", () => {
     expect(save()).toHaveAccessibleDescription(/Esperá \d+ segundos para volver a guardar\./);
   });
 
-  it("sends a 403 of its read to «No tenés permiso»", async () => {
+  it("shows a 403 of its read as «No tenés permiso» in place", async () => {
     server.use(http.get("/api/whatsapp/assistant-agent", () => HttpResponse.json({ code: "Authorization.Forbidden" }, { status: 403 })));
     const { router } = renderRouteWithProviders("/whatsapp/asistente");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/whatsapp/asistente");
   });
 
   it("denies the route, and does not show its entry, without «Configurar el asistente»", async () => {
@@ -503,7 +504,8 @@ describe("loading, waiting and permissions", () => {
     server.use(http.get("/api/whatsapp/assistant-agent", read),
       http.get("/api/whatsapp/chats", () => HttpResponse.json({ page: { items: [], totalCount: 0, page: 1, pageSize: 20, totalPages: 0 }, allCount: 0, unreadCount: 0 })));
     const { router } = renderRouteWithProviders("/whatsapp/asistente");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+    expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/whatsapp/asistente");
     expect(read).not.toHaveBeenCalled();
     await act(() => router.navigate("/whatsapp/chat"));
     expect(await screen.findByRole("link", { name: "Chat" })).toBeInTheDocument();

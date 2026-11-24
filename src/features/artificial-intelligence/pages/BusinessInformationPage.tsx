@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate } from "react-router";
 import { usePermissions } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { ApiError } from "@/shared/api/ApiError";
@@ -11,6 +10,7 @@ import { ComparisonTable } from "@/shared/ui/ComparisonTable";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { DisabledReason } from "@/shared/ui/DisabledReason";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { FormField } from "@/shared/ui/FormField";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
@@ -31,7 +31,7 @@ export function BusinessInformationPage() {
   const query = useQuery({ queryKey: businessInformationQueryKey, queryFn: ({ signal }) => fetchBusinessInformation(signal), refetchOnMount: "always", retry: false });
   const [initial, setInitial] = useState<BusinessInformation>();
   if (!initial && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) setInitial(query.data);
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   if (initial) return <BusinessEditor key={permissions.has("ai.business.manage") ? "manage" : "read"} initial={query.data ?? initial} canManage={permissions.has("ai.business.manage")} />;
   return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { rows: 2 }, { fields: 2 }, { rows: 2 }]} /> :
     <EmptyState title={t("unavailableTitle")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("retry")}</Button>} />}</Page>;

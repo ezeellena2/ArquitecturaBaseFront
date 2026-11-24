@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
+import { ForbiddenPage } from "@/shared/ui/ForbiddenPage";
 import { fetchSystemSettings, systemSettingsQueryKey, updateSystemSettings, settingErrorKey, settingFields, type SettingsChanges, type SettingsDraft, type SystemSettings } from "../api/settings";
 import { changedFields, changesFrom, draftFrom, retentionIssues } from "../model";
 import { formatNumber } from "@/shared/lib/numberFormat";
@@ -28,7 +30,7 @@ export function SettingsPage() {
   if (initial === undefined && query.isFetchedAfterMount && query.isSuccess && !query.isFetching) {
     setInitial(query.data);
   }
-  if (query.error instanceof ApiError && query.error.status === 403) return <Navigate to="/sin-permiso" replace />;
+  if (query.error instanceof ApiError && query.error.status === 403) return <ForbiddenPage title={t("title")} />;
   if (initial) return <SettingsEditor initial={initial} />;
   return <Page title={t("title")}>{query.isFetching || query.isPending ? <FormSkeleton zones={[{ fields: 2 }, { fields: 1 }, { rows: 2 }, { fields: 3 }]} />
     : <EmptyState title={t("unavailable")} action={<Button variant="outline" onClick={() => void query.refetch()}>{t("common:actions.retry")}</Button>} />}</Page>;
@@ -38,6 +40,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   const { t, i18n } = useTranslation("settings");
   const client = useQueryClient();
   const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState(initial);
   const [draft, setDraft] = useState(() => draftFrom(initial));
   const [errors, setErrors] = useState<SettingsFieldErrors>({});
@@ -65,7 +68,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
     } catch (error) {
       if (!active.current) return;
       const feedback = errorFeedback(error);
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       if (feedback.kind !== "session") notify({ id: noticeId, kind: "error", message: t("feedback.reviewFailed"),
         description: feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : undefined,
         action: { label: t("review.action"), onClick: () => void readCurrent() } });
@@ -91,7 +94,7 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
           action: feedback.kind === "uncertain" ? { label: t("review.action"), onClick: () => void navigate("/configuracion") } : undefined });
         return;
       }
-      if (feedback.kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); return; }
+      if (feedback.kind === "forbidden") { reread(); return; }
       // El servidor nombra los plazos dentro de `retention`; cada mensaje va debajo de su cuadro.
       setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([key, messages]) => [settingFields.find(field => settingErrorKey(field) === key) ?? key, messages.join(" ")])));
       if (feedback.kind === "fields") return;

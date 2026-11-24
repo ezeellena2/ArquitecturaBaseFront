@@ -476,12 +476,18 @@ describe("SettingsPage", () => {
     expectNoEditor();
   });
 
-  it("redirects after permission is revoked without a discard dialog", async () => {
-    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Http.Forbidden" }, { status: 403 })));
-    renderRouteWithProviders("/configuracion/idioma");
+  // SP1-B (2026-11-24): a 403 when saving reads again what is in sight; with the permission gone, the screen shows the lack of
+  // permission in place, without a discard dialog.
+  it("shows the lack of permission in place after it is revoked, without a discard dialog", async () => {
+    server.use(http.patch("/api/settings", () => {
+      server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: [] })));
+      return HttpResponse.json({ code: "Http.Forbidden" }, { status: 403 });
+    }));
+    const { router } = renderRouteWithProviders("/configuracion/idioma");
     await pickLanguage("Inglés");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-    expect(await screen.findByRole("heading", { name: /no tenés permiso/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 3, name: /no tenés permiso/i })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/configuracion");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

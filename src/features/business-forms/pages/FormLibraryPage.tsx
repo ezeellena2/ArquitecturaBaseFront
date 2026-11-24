@@ -36,8 +36,8 @@ import { formLibraryKey, useFormLibrary } from "../hooks/useFormLibrary";
 // the address: they are not private.
 export function FormLibraryPage() {
   const { data: user } = useCurrentUser();
-  const { i18n } = useTranslation("forms");
-  if (!user?.permissions.includes("formtemplates.read")) return <ForbiddenPage />;
+  const { t, i18n } = useTranslation("forms");
+  if (!user?.permissions.includes("formtemplates.read")) return <ForbiddenPage title={t("library.title")} />;
   const culture = i18n.language.startsWith("en") ? "en" : "es";
   const permissionsKey = [...user.permissions].sort().join(",");
   return <FormLibrary key={JSON.stringify([user.id, culture, permissionsKey])} actorId={user.id} culture={culture} permissions={user.permissions}
@@ -96,7 +96,7 @@ function FormLibrary({ actorId, culture, permissions, canAdd }: { actorId: strin
   const availability: Availability = coming && (chosen === "Available" || chosen === "Upcoming") ? chosen : "All";
   const { standards, upcoming } = libraryRows(library.data, search, culture);
   const rows = useClientSort(availability === "Available" ? standards : availability === "Upcoming" ? upcoming : [...standards, ...upcoming], sortValues);
-  if (forbidden) return <ForbiddenPage />;
+  if (forbidden) return <ForbiddenPage title={t("library.title")} />;
 
   const failure = library.error ? errorFeedback(library.error) : null;
   const list = new Intl.ListFormat(culture, { type: "conjunction" });

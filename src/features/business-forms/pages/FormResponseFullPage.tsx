@@ -93,7 +93,7 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const canDecide = detail.scope.user?.permissions.includes("formapprovals.decide") && !navigation.decisionDenied && !(taskKey && taskKey === unavailableTask);
   const pending = current?.task?.state === "Open" && canDecide;
   const backTo = { to: navigation.backTo, label: t("detail.backToResponses") };
-  if (!allowed) return <Page title={t("responses.detail")} backTo={backTo}><ForbiddenPage/></Page>;
+  if (!allowed) return <ForbiddenPage title={t("responses.detail")} backTo={backTo} />;
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
   // Correcting takes the page: «Cancelar» reads it again and saving reads the new response, at its own full route.
   if (editing) return <FormEntryCorrection layout="page" formId={formId} record={data} backTo={backTo} onClose={() => setCorrecting(null)}

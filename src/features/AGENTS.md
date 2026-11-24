@@ -1,6 +1,6 @@
 # Features: áreas del producto
 
-Cada área contiene páginas, componentes, API y errores propios. `auth` muestra acceso; `users`, `roles`, `profile` y `settings`, gestión; `home`, inicio; `errors`, la página de ruta inexistente. El estado de falta de permiso vive en `shared/ui/ForbiddenPage` y se comparte con las áreas que reciben un 403.
+Cada área contiene páginas, componentes, API y errores propios. `auth` muestra acceso; `users`, `roles`, `profile` y `settings`, gestión; `home`, inicio; `errors`, la página de ruta inexistente. La falta de permiso de una pantalla vive en `shared/ui/ForbiddenPage`, con el título de la pantalla; un panel, un filtro o un diálogo contesta con `EmptyState embedded`.
 
 `whatsapp` contiene el chat productivo de atención, con el diseño aprobado del laboratorio. `artificial-intelligence` configura/prueba la conexión compartida, mantiene información del negocio y aporta el asistente de consultas al Inicio compuesto desde app, independiente de settings y WhatsApp. WhatsApp integra modos, origen explícito y revisión manual de sugerencias con prellenados; contactos y plantillas siguen pendientes.
 

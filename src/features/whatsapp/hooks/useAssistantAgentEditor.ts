@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useRereadAfterForbidden } from "@/auth/useRereadAfterForbidden";
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { useCountdown } from "@/shared/hooks/useCountdown";
@@ -25,7 +25,7 @@ export function useAssistantAgentEditor(initial: AssistantAgent, queryKey: reado
   const { t, i18n } = useTranslation("whatsappAssistant");
   const culture: AgentCulture = i18n.resolvedLanguage === "en" ? "en" : "es";
   const client = useQueryClient();
-  const navigate = useNavigate();
+  const reread = useRereadAfterForbidden();
   const [baseline, setBaseline] = useState<AgentConfig>(() => configOf(initial));
   const [draft, setDraft] = useState<AgentDraft>(() => draftFromAgent(configOf(initial)));
   const [attempted, setAttempted] = useState(false);
@@ -64,7 +64,7 @@ export function useAssistantAgentEditor(initial: AssistantAgent, queryKey: reado
   }
   function denied(error: unknown) {
     const kind = errorFeedback(error).kind;
-    if (kind === "forbidden") { guard.allowNextNavigation(); void navigate("/sin-permiso"); }
+    if (kind === "forbidden") reread();
     return kind === "forbidden" || kind === "session" || kind === "cancelled";
   }
   function begin(work: Work) {

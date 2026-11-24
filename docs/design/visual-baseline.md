@@ -781,7 +781,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | Formularios: una sola entrada · FU1-B y FU2-A, en el lienzo aparte «Formularios: una sola entrada» | El panel de «Gestión de formularios», `/formularios` (Formularios y Diseñar formularios en una lista) y `/formularios/respuestas` | [Elegidas y programadas](formularios-una-entrada.md) el 2026-11-23; faltan las escenas de `test:visual`, la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Ordenar las tablas por sus columnas · OT1-A, OT1-B y OT1-C, en el lienzo aparte «Ordenar las tablas por sus columnas» | El encabezado de toda tabla, «Ordenar por» en la barra de filtros, `DataTable`, `SortMenu`, `usePagination` y `useClientSort` | [OT1-C elegida](#ordenar-por-columnas--2026-11-22) el 2026-11-22 y programada en todas las tablas, con sus capturas de `test:visual`; faltan la prueba manual y pasar el tablero al lienzo del sistema visual |
 | Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
-| Sin permiso · SP1-A, SP1-B, SP2 y SP3, en el lienzo aparte «Sin permiso» | `ForbiddenPage`, `ProtectedRoute`, la ruta `/sin-permiso`, la 404, el filtro de opciones de Respuestas, la vista rápida y el diálogo «Editar usuario» abierto desde otra pantalla | SP1-B [elegida](#la-falta-de-permiso--2026-11-24) el 2026-11-24 y sin programar ([plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md)); falta pasar los tableros al lienzo del sistema visual |
+| Sin permiso · SP1-A, SP1-B, SP2 y SP3, en el lienzo aparte «Sin permiso» | `ForbiddenPage`, `ProtectedRoute`, la ruta `/sin-permiso`, la 404, el filtro de opciones de Respuestas, la vista rápida y el diálogo «Editar usuario» abierto desde otra pantalla | SP1-B [elegida](#la-falta-de-permiso--2026-11-24) y programada el 2026-11-24 ([plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md)); faltan la corrida completa, la prueba a mano y pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -1567,12 +1567,13 @@ las piezas de menú de «Columnas»; pasarlo a la [pieza única para elegir](../
 Durante la prueba integral, con una cuenta de rol Agrónomo, la falta de permiso salió fuera del caparazón: dos renglones
 sin estilo y sin un camino para volver. El usuario eligió **SP1-B** en el lienzo aparte
 [Sin permiso](https://claude.ai/artifact/VroT1cg61eWVYYTpGViWth#artboard-SP1-B) (descartó SP1-A, «No tenés permiso» en la
-banda de una ruta propia). Se programa con el [plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md); hasta
-entonces, el código sigue mandando a `/sin-permiso`.
+banda de una ruta propia). Quedó programada el mismo día con el [plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md).
 
 - **Una pantalla que no se puede ver** queda adentro del caparazón y con su dirección. Su `Page` lleva el nombre de la
   pantalla (el de su sección, si ese nombre es un dato que no se puede leer) y, adentro, `EmptyState` con «No tenés
   permiso» y «Volver al inicio» con borde. En Inicio, sin botón. Sin un segundo renglón que repita el título.
+- **Un 403 al guardar o probar algo** vuelve a leer lo que está a la vista, también los permisos: con lectura, la
+  pantalla queda en sólo lectura; sin ella, muestra la falta de permiso en su lugar. No navega ni suma un aviso.
 - **Un panel, un filtro o un diálogo que se abrió** contesta en su lugar con `EmptyState` embebido «No tenés permiso»,
   sin botón, y se cierra como siempre ([SP2](https://claude.ai/artifact/VroT1cg61eWVYYTpGViWth#artboard-SP2)).
 - **Una zona a la vista con su propio permiso** se retira y el resto queda, como en Documentos. **Lo que se ve pero no

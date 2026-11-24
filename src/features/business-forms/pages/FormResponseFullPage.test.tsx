@@ -131,7 +131,8 @@ it("opens the own response of whoever only completes forms in full with where it
 it("keeps decision-only users in the metadata quick view and refuses the full route", async () => {
   const { reads } = setup(["formapprovals.decide"], true);
   const { router } = renderRouteWithProviders(path + "/" + responseRecordId + "/completa");
-  await waitFor(() => expect(router.state.location.pathname).toBe("/sin-permiso"));
+  expect(await screen.findByRole("heading", { level: 3, name: "No tenés permiso" })).toBeInTheDocument();
+  expect(router.state.location.pathname).toBe(path + "/" + responseRecordId + "/completa");
   expect(reads.details).toBe(0); expect(reads.workflow).toBe(0); expect(reads.anchors).toHaveLength(0);
 });
 

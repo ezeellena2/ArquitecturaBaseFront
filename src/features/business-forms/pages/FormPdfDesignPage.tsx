@@ -38,14 +38,14 @@ type PdfEditorProps = {
 export function FormPdfDesignPage() {
     const { formId = "" } = useParams();
     const { data: user } = useCurrentUser();
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation("forms");
     const scope: FormReadScope = { actorId: user?.id ?? null, culture: i18n.language.startsWith("en") ? "en" : "es", permissions: user?.permissions ?? [] };
     const owner = JSON.stringify([...formScopeKey(scope), formId]);
     if (!scope.actorId || !scope.permissions.includes("formrules.manage"))
-        return <ForbiddenPage />;
+        return <ForbiddenPage title={t("pdf.title")} />;
     return <PdfDesignAccess key={owner} definitionId={formId} scope={scope}/>;
 }
-function PdfDesignAccess(props: Omit<PdfEditorProps, "onDenied">) { const [denied, setDenied] = useState(false); const onDenied = useCallback(() => setDenied(true), []); return denied ? <ForbiddenPage /> : <PdfDesignEditor {...props} onDenied={onDenied}/>; }
+function PdfDesignAccess(props: Omit<PdfEditorProps, "onDenied">) { const { t } = useTranslation("forms"); const [denied, setDenied] = useState(false); const onDenied = useCallback(() => setDenied(true), []); return denied ? <ForbiddenPage title={t("pdf.title")} /> : <PdfDesignEditor {...props} onDenied={onDenied}/>; }
 function PdfDesignEditor({ definitionId, scope, onDenied }: PdfEditorProps) {
     const { t } = useTranslation("forms");
     const navigate = useNavigate();

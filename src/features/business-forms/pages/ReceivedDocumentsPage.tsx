@@ -43,7 +43,8 @@ import { receivedDateBoundary } from "../responses";
  */
 export function ReceivedDocumentsPage() {
   const scope = useReceivedDocumentScope();
-  if (!scope.allowed) return <ForbiddenPage />;
+  const { t } = useTranslation("formDocuments");
+  if (!scope.allowed) return <ForbiddenPage title={t("title")} />;
   return <ReceivedDocuments key={scope.owner} />;
 }
 
@@ -135,7 +136,7 @@ function ReceivedDocuments() {
       navigate({ pathname: `${receivedDocumentsPath}/${id}`, search: next.toString() }, { replace: true });
     },
   });
-  if (forbidden) return <ForbiddenPage />;
+  if (forbidden) return <ForbiddenPage title={t("title")} />;
 
   const apply = (next: ReceivedDocumentsFilter) => { setFilter(next); pagination.setPage(1); };
   const date = (value: string) => formatDateTimeInZone(value, i18n.language, zone);

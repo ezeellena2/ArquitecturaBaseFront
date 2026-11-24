@@ -112,7 +112,7 @@ export function FormEditorPage() {
   }, [detail.error, detailFeedbackId, t]);
   useEffect(() => { if (reactivateOnOpen && detail.data && detail.isFetchedAfterMount && !detail.isError) void navigate(location.pathname + location.search, { replace: true, state: null }); }, [reactivateOnOpen, detail.data, detail.isFetchedAfterMount, detail.isError, navigate, location.pathname, location.search]);
   if (!user || formId && (detail.isPending && !loaded || reactivateOnOpen && !detail.isFetchedAfterMount)) return <Page title={t(formId ? "title" : "new")}><Spinner /></Page>;
-  if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage />;
+  if (!scope.permissions.includes("formtemplates.read") || detail.error instanceof ApiError && detail.error.status === 403) return <ForbiddenPage title={t("title")} />;
   if (formId && (!loaded || reactivateOnOpen && detail.isError)) return <Page title={t("title")} backTo={{ to: "/formularios", label: t("title") }}><EmptyState title={t(detail.error instanceof ApiError && detail.error.status === 404 ? "notFound" : "detailFailed")} action={<Button type="button" variant="outline" onClick={() => void detail.refetch()}>{t("common:actions.retry")}</Button>} /></Page>;
   // The menu language is not part of the key: the editor shows the same draft in the new language.
   return <FormEditor key={`${scope.actorId}:${formId}`} scope={scope} reactivateOnOpen={reactivateOnOpen} openQuestionFieldId={openQuestionFieldId} timeZoneId={user.timeZoneId} initial={loaded ?? missingFormInitial(scope, formId, navigationState)} onPublicationChanged={() => { void detail.refetch(); }} />;
@@ -328,7 +328,7 @@ function FormEditor({ scope, initial, timeZoneId, onPublicationChanged, reactiva
     reviewReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     void editor.readCurrent().then(success => { if (success && active.current) setReviewOpen(true); });
   }
-  if (!value || !session) return <ForbiddenPage />;
+  if (!value || !session) return <ForbiddenPage title={t("title")} />;
   // SA1-A and SA5 (2026-11-09): «Dónde se completa» appears only with a form channel installed. Without one, or with «Sólo en
   // la app», the editor has the app's limits and nothing of WhatsApp (SA2-A); the setting rules from the next published version.
   const installedFeatures = presentation.data?.installedFeatures;
