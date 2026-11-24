@@ -349,8 +349,9 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
         return json(outgoing, 202);
       }
       if (request.method === "POST" && path.endsWith("/review")) {
-        const outgoing = chatOutgoing.find(item => path.endsWith(`/${item.requestId}/review`));
-        if (outgoing) outgoing.state = "Reviewed";
+        // H2 (2026-11-13): the review goes by the id of the send and says who reviewed it, like the API.
+        const outgoing = chatOutgoing.find(item => path.endsWith(`/outgoing-messages/${item.id}/review`));
+        if (outgoing) Object.assign(outgoing, { state: "Reviewed", reviewedByUserId: profile.id, reviewedAtUtc: "2026-10-02T12:10:00Z" });
         return new Response(null, { status: 204 });
       }
       if (request.method === "PUT" && path.endsWith("/mode")) {
