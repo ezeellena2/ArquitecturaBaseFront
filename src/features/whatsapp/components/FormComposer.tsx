@@ -126,7 +126,7 @@ export function FormComposer({ contact, actor, canSend, outgoing, draft, updateD
         {/* Required, without a legend under it: what the person reads above «Abrir formulario» goes in the (i). Its count is the
             datum of the field (DL, 2026-11-11), which an error replaces. */}
         <FormField label={t("forms.messageLabel")} required error={state.fieldError} hint={t("forms.messageLength",{length:form?.message.length??0})} help={state.mayReadOptions&&selected&&presentationCulture&&state.presentationReady?t("forms.messageHelp",{cta,submitLabel:selected.submitLabel[presentationCulture]}):undefined}>
-          <Textarea ref={message} aria-required value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,messageEdited:true,touched:true}));state.setFieldError(undefined);}} />
+          <Textarea ref={message} aria-required value={form?.message??""} disabled={frozen||state.sending} rows={3} onChange={event=>{const text=event.target.value;state.updateForm(value=>({...value,message:text,messageEdited:true}));state.setFieldError(undefined);}} />
         </FormField>
         {state.versionChanged ? <p className="text-sm text-[var(--color-content-muted)]">{t("forms.formUnavailable")}</p> : null}
         <DialogFooter>

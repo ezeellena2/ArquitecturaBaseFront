@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import type { ChatFormOption, RecipientCulture } from "../api/forms";
 
 export interface FormMessageRequest { requestId: string; definitionId: string; versionId: string; expectedModeRevision: number; expectedRecipientContextRevision: string; message: string | null }
-export interface FormSendDraft { message: string; selection?: ChatFormOption; recipientCulture: RecipientCulture; recipientContextRevision: string; modeRevision: number; touched?: boolean; messageEdited?: boolean; attempt?: Readonly<FormMessageRequest>; notStored?: boolean; blocked?: "recipientChanged" | "formUnavailable" | "forbidden" }
+export interface FormSendDraft { message: string; selection?: ChatFormOption; recipientCulture: RecipientCulture; recipientContextRevision: string; modeRevision: number; messageEdited?: boolean; attempt?: Readonly<FormMessageRequest>; notStored?: boolean; blocked?: "recipientChanged" | "formUnavailable" | "forbidden" }
 
 export function freezeFormMessage(draft: FormSendDraft, requestId: string): Readonly<FormMessageRequest> {
   if (!draft.selection) throw new Error("A form selection is required before freezing the request.");

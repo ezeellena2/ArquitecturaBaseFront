@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +23,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
   let posts: FormMessageRequest[];
   let textPosts: number;
   let reviews: number;
+  let view: ReturnType<typeof renderRouteWithProviders>;
 
   function configure(name = "thread-before-send", actor = receipt.operatorUserId) {
     threadName = name;
@@ -55,7 +56,7 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     return view;
   }
   async function choose() {
-    await open();
+    view = await open();
     await userEvent.click(screen.getByRole("button",{name:"Enviar formulario"}));
     const dialog = await screen.findByRole("dialog");
     await userEvent.click(await within(dialog).findByRole("button",{name:/^Formulario /}));
@@ -67,6 +68,26 @@ for (const culture of ["es", "en"] as const) describe("WhatsApp pages with actua
     return dialog;
   }
   beforeEach(() => { queryClient.clear(); posts=[]; textPosts=0; reviews=0; });
+  // O54 (2026-11-24): choosing a form writes its opening, but the operator wrote nothing. After «Cancelar» nothing is left
+  // unsent and leaving the chat asks nothing; a message the operator edited still asks before it is lost.
+  it("leaves the chat without asking after choosing a form and cancelling with nothing written", async () => {
+    const dialog = await choose();
+    await userEvent.click(within(dialog).getByRole("button",{name:"Cancelar"}));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByLabelText("Respuesta al cliente")).toHaveValue("");
+    await act(() => view.router.navigate("/otra-pantalla"));
+    expect(view.router.state.location.pathname).toBe("/otra-pantalla");
+    expect(screen.queryByText("¿Salir con respuestas sin enviar?")).not.toBeInTheDocument();
+  });
+  it("asks before leaving the chat when the operator edited the message of the form", async () => {
+    const dialog = await choose();
+    await userEvent.type(within(dialog).getByRole("textbox",{name:/^Mensaje que lo acompaña/}), " Gracias.");
+    await userEvent.click(within(dialog).getByRole("button",{name:"Cancelar"}));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await act(() => view.router.navigate("/otra-pantalla"));
+    expect(await screen.findByText("¿Salir con respuestas sin enviar?")).toBeInTheDocument();
+    expect(view.router.state.location.pathname).toBe("/whatsapp/chat");
+  });
   afterEach(() => { queryClient.clear(); vi.useRealTimers(); vi.restoreAllMocks(); });
 
   it("selects the real sealed version and accepts its exact request without a text POST", async () => {

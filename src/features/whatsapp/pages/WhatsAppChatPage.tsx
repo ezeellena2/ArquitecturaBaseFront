@@ -52,7 +52,9 @@ function Inbox({ actor, timeZone }: { actor: string; timeZone: string }) {
   const updateDraft = useCallback((update: (current: ChatDraft) => ChatDraft) => {
     if (selected) setDrafts(current => ({ ...current, [selected]: update(current[selected] ?? { body: "" }) }));
   }, [selected]);
-  const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.touched) || Boolean(draft.form?.attempt)));
+  // A reply written, an attempt not settled or the message of a form the operator edited. Choosing a form writes its opening,
+  // which the operator did not write: after «Cancelar» nothing is left unsent (O54, 2026-11-24).
+  const guard = useUnsavedChangesGuard(Object.values(drafts).some(draft => Boolean(draft.body.trim()) || Boolean(draft.attempt) || Boolean(draft.form?.messageEdited) || Boolean(draft.form?.attempt)));
   const visible = useVisibleChat();
   const listStamp = JSON.stringify(listRoot);
   const list = useQuery({ queryKey: [...listRoot, page, search, filter], enabled: has("whatsapp.read"), queryFn: async ({ signal }) => {

@@ -26,7 +26,7 @@ describe("Form send intent", () => {
 });
 
 it("freezes no explicit opening for an unedited default even after choosing a form", () => {
- expect(freezeFormMessage({...draft,touched:true}, "request").message).toBeNull();
+ expect(freezeFormMessage(draft, "request").message).toBeNull();
 });
 
 // The opening names the chosen form in the language it goes out in, like the server's default (2026-11-07).

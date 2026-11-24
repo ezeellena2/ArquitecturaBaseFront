@@ -140,7 +140,7 @@ export function useFormComposer(contact: Chat, actor: string, canSend: boolean, 
     // An opening the operator did not edit names the new choice at once, in the account's language; its preparation may
     // still move it to the original.
     const culture = forms.data.recipientCulture;
-    updateForm(value=>({...value,selection:option,recipientCulture:culture,recipientContextRevision:forms.data!.recipientContextRevision!,modeRevision:contact.modeRevision,blocked:undefined,touched:true,
+    updateForm(value=>({...value,selection:option,recipientCulture:culture,recipientContextRevision:forms.data!.recipientContextRevision!,modeRevision:contact.modeRevision,blocked:undefined,
       message:value.messageEdited?value.message:formOpening(t,culture,option)}));
     setSelectionError(undefined);
   }
