@@ -588,7 +588,9 @@ for (const language of ["es", "en"]) {
 
 test("a complete email uses the common tooltip inside the actual user editor", async ({ page }) => {
   await openScreen(page, "/usuarios");
-  await page.getByRole("button", { name: "Editar a ana@example.com", exact: true }).click();
+  // With the keyboard: the tooltip opens with the focus of the keyboard, not with a focus given by code after a click (O2).
+  await page.getByRole("button", { name: "Editar a ana@example.com", exact: true }).focus();
+  await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Editar usuario" });
   await expect(dialog).toBeVisible();
   const email = dialog.locator('span[tabindex="0"]').filter({ hasText: "ana@example.com" });
