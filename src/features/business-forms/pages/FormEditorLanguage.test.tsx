@@ -13,6 +13,8 @@ import type { FormPublicationCheck } from "../api/response";
 import type { FormCulture } from "../model";
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// The whole editor, like CatalogEditorPage.test: alone, keeping the draft across two language changes takes 5.2 s.
+vi.setConfig({ testTimeout: 20_000 });
 
 // There is no content language selector: the form is edited in the menu language, and the other language is the optional translation.
 async function setup(culture: FormCulture, permissions = ["formtemplates.read", "formtemplates.manage"]) {
@@ -31,7 +33,8 @@ it("edits the form in the menu language without a content language selector", as
   const original = store.definitions.get(fixtureFormId)!;
   store.definitions.set(fixtureFormId, { ...original, name: { es: "Registrar visita", en: "" } });
   renderRouteWithProviders("/formularios/" + fixtureFormId);
-  const name = await screen.findByRole("textbox", { name: "Name" });
+  // The first test pays the lazy load of the editor: alone, it went past the 3 s once in three.
+  const name = await screen.findByRole("textbox", { name: "Name" }, { timeout: 10_000 });
   expect(screen.queryAllByRole("button", { name: /^(Español|Inglés|Spanish|English)\b/ })).toHaveLength(0);
   expect(name).toHaveValue("");
   expect(name).toHaveAttribute("placeholder", "Untranslated");
