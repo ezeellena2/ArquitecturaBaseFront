@@ -1292,7 +1292,7 @@ it("keeps one workflow read notification in the detail without repeating its cau
   it("groups observed workflow moments with UTC ordered record events and one approval request", async () => {
     setup(["formrecords.read"]);
     const detail = responseDetailFixture();
-    // Out of order on purpose; the notice to whoever loaded it, after the save, as it happens (O53).
+    // Out of order on purpose; the notice to whoever loaded it, after the save, as it happens (O56).
     detail.history = [
       { kind: "Saved", atUtc: "2026-10-16T12:00:30Z", actor: null },
       { kind: "Sent", atUtc: "2026-10-16T11:59:00Z", actor: detail.actor },

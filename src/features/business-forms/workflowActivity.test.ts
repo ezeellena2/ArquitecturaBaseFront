@@ -186,7 +186,7 @@ describe("the activity, row by row (VF2-A)", () => {
       documents: [{ id: id(12), runId: pdf.id, culture: "es", name: "Visita.pdf", size: 10, createdAtUtc: at("06") }] }), es);
 
     expect(bands.map(item => item.title)).toEqual(["Al recibirla", "Aprobación", "Al aprobarla"]);
-    // What was done on receipt comes after the response even with an earlier hour (O53), and among itself, in the order it happened.
+    // What was done on receipt comes after the response even with an earlier hour (O56), and among itself, in the order it happened.
     expect(band(bands, "Al recibirla").rows.map(item => item.what + " " + item.who)).toEqual(["Se mandó el formulario Ana", "Se respondió el formulario Ana",
       "Se guardó la respuesta —", "Se avisó Beto", "Se le avisó a quien la cargó Ana"]);
     expect(band(bands, "Al aprobarla").rows.map(item => item.what)).toEqual(["Se armó el PDF"]);
@@ -195,7 +195,7 @@ describe("the activity, row by row (VF2-A)", () => {
 
   // 24/11, PED-000010: the rule's run took the hour its correction began to be saved and the response, the one the save ended,
   // 0.3 s later; while the run waited, «Pedir aprobación» went before what caused it.
-  it("puts what was done on receipt after the response it comes from, also when its run took the hour the save began (O53)", () => {
+  it("puts what was done on receipt after the response it comes from, also when its run took the hour the save began (O56)", () => {
     const fixture = responseDetailFixture();
     const saved = "2026-10-16T13:19:15.044Z";
     const record: ResponseDetail = { ...fixture, history: fixture.history.map(event => event.kind === "Saved" ? { ...event, atUtc: saved } : event),

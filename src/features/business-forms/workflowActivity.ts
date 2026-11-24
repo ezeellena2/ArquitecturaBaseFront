@@ -132,7 +132,7 @@ export function workflowActivity(record: ResponseDetail, workflow: ResponseWorkf
     return found.groups;
   };
   // What was done on receipt comes from the response: it never goes before it, although its run may take the hour its save began
-  // and the response, the one the save ended (O53).
+  // and the response, the one the save ended (O56).
   const consequences = new Set<Fact[]>();
   let receivedAt = Number.NEGATIVE_INFINITY;
   const receive = (groups: Fact[][]) => {
