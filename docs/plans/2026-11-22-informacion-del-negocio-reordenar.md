@@ -127,3 +127,6 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
     especial, con «Agregar fecha»;
   - IN3: con cuatro franjas, «Agregar franja» apagado con «Podés agregar hasta 4 franjas.».
   Canceló todo sin guardar. No se probó la variante sin permiso, que necesita otra cuenta.
+- Sin permiso (2026-11-24, con la Hotmail, rol Agrónomo, sin `ai.business.read`): el menú no ofrece Información del
+  negocio y la ruta lleva a «No tenés permiso». La variante de sólo lectura (con `ai.business.read` y sin
+  `ai.business.manage`) sigue sin probarse a mano: ninguna cuenta de prueba tiene ese par; la cubren los tests.
