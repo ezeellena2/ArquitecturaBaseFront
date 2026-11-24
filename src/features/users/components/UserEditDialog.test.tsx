@@ -1,4 +1,4 @@
-import { act, isInaccessible, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, isInaccessible, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { toast } from "sonner";
@@ -22,6 +22,12 @@ const onlyMethodWarning =
   "Es su único medio de ingreso. Si lo desvinculás, no va a poder entrar hasta que le cargues otro.";
 const unverifiedHint = "Lo que carga un admin queda «Sin verificar» hasta que la persona entra con eso.";
 
+/// Llega con el teclado: un tooltip se abre con el foco del teclado, no con uno puesto por código después de un clic (O2).
+async function focusWithKeyboard(element: HTMLElement) {
+  fireEvent.keyDown(document.body, { key: "Tab" });
+  await act(async () => element.focus());
+}
+
 /// «Sin verificar» lleva su explicación como la insignia del listado: en el tooltip, al pasar el mouse o al llegar con el
 /// teclado, y como texto del propio disparador para el lector de pantalla (no un `aria-describedby`, que en modo
 /// exploración no se lee). Ya no hay una nota al pie de la caja.
@@ -29,7 +35,7 @@ async function expectUnverifiedExplained(row: ReturnType<typeof within>, dialog:
   const trigger = row.getByText("Sin verificar").parentElement as HTMLElement;
   expect(trigger).toHaveAttribute("tabindex", "0");
   expect(isInaccessible(within(trigger).getByText(unverifiedHint))).toBe(false);
-  await act(async () => trigger.focus());
+  await focusWithKeyboard(trigger);
   expect(await screen.findByRole("tooltip")).toHaveTextContent(unverifiedHint);
   expect(dialog.queryByText(unverifiedHint, { selector: "p" })).not.toBeInTheDocument();
 }
@@ -131,7 +137,7 @@ describe("UserEditDialog", () => {
     const email = rowOf(dialog, 0).getByText(ana.email!);
     expect(email).not.toHaveAttribute("title");
     expect(email).toHaveAttribute("tabindex", "0");
-    await act(async () => email.focus());
+    await focusWithKeyboard(email);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(ana.email!);
     expect(screen.getByRole("dialog", { name: "Editar usuario" })).toBeInTheDocument();
   });

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ComponentProps, type ReactElement } from "react";
+import { useCallback, useRef, useState, type ComponentProps, type FocusEvent, type ReactElement } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 type Side = ComponentProps<typeof TooltipContent>["side"];
@@ -8,6 +8,9 @@ type Side = ComponentProps<typeof TooltipContent>["side"];
 /// `informative` es lo que sólo informa, el motivo de algo apagado y la (i) (MA1-A, 2026-11-09): además de con el mouse y
 /// con el foco, se abre con un clic, un toque, Enter o Espacio, y queda abierto hasta Escape, salir con el mouse, perder
 /// el foco o tocar afuera. El tooltip de una acción, como el nombre de un botón de ícono, no cambia: tocarlo hace la acción.
+///
+/// Los dos se abren con el foco del teclado, no con el que un diálogo devuelve por código después de un clic (O2,
+/// 2026-11-24): ahí el nombre del lápiz de una fila tapaba el lápiz de la fila de arriba y se llevaba su primer clic.
 export function ActionTooltip({ label, children, side = "top", informative = false }: {
   label: string;
   children: ReactElement;
@@ -17,10 +20,26 @@ export function ActionTooltip({ label, children, side = "top", informative = fal
   if (informative) return <InformativeTooltip label={label} side={side}>{children}</InformativeTooltip>;
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipTrigger asChild onFocus={openWithKeyboardFocus}>{children}</TooltipTrigger>
       <TooltipContent side={side} sideOffset={6} collisionPadding={8}>{label}</TooltipContent>
     </Tooltip>
   );
+}
+
+/// Con qué se interactuó por última vez, el teclado o un puntero (mouse, toque o lápiz), como el `:focus-visible` del
+/// navegador. Lo escucha el documento antes que nadie. No se usa `:focus-visible`: jsdom lo aproxima y no lo marca al pasar
+/// con Tab de un botón a otro.
+let lastInput: "keyboard" | "pointer" = "keyboard";
+if (typeof document !== "undefined") {
+  document.addEventListener("keydown", (event) => { if (!event.altKey && !event.ctrlKey && !event.metaKey) lastInput = "keyboard"; }, true);
+  document.addEventListener("pointerdown", () => { lastInput = "pointer"; }, true);
+}
+
+/// Un foco después de un clic, como el que un diálogo devuelve a su disparador, no lo abre: `preventDefault` saltea la
+/// apertura que Radix compone después del manejador dado. Con el mouse ya se abre al pasar por encima, y el motivo de lo
+/// apagado, con un clic.
+function openWithKeyboardFocus(event: FocusEvent<HTMLElement>) {
+  if (lastInput === "pointer") event.preventDefault();
 }
 
 /// Radix no abre un tooltip con un toque y lo cierra con el `pointerdown` y el clic de su disparador. Acá el estado es
@@ -35,6 +54,7 @@ function InformativeTooltip({ label, children, side }: { label: string; children
       <TooltipTrigger
         asChild
         ref={setTrigger}
+        onFocus={openWithKeyboardFocus}
         onPointerDown={(event) => event.preventDefault()}
         onClick={(event) => {
           event.preventDefault();
