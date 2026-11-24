@@ -12,6 +12,8 @@ import { CatalogEditorPage } from "./CatalogEditorPage";
 
 vi.mock("react-oidc-context", async () => ({ ...await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context"), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "test" } }) }));
 vi.mock("@/shared/ui/notifications", async () => ({ ...await vi.importActual<typeof import("@/shared/ui/notifications")>("@/shared/ui/notifications"), notify: vi.fn() }));
+// The editor of CatalogEditorPage.test: alone, marking, restoring and deleting an option takes 4.3 s, and with the full run it went past the 5 s.
+vi.setConfig({ testTimeout: 20_000 });
 const id = "01990000-0000-7000-8000-000000000020";
 const firstId = "01990000-0000-7000-8000-000000000021";
 const secondId = "01990000-0000-7000-8000-000000000022";
