@@ -617,15 +617,22 @@ código armado con el borrador. Se guarda con los colores, con un solo Guardar.
 ### Información del negocio
 
 - `/configuracion/negocio`, con menú, permisos, editor y persistencia propios; Guardar persiste con revisión y comprobante.
+- **IN1-C, IN2 e IN3** (elegidas el 2026-11-22, lienzo [Información del negocio: reordenar](https://claude.ai/artifact/D3AdbHJK4ocZcHokKTVTrG)):
+  desde `xl`, Ubicación, Servicios y condiciones y Preguntas frecuentes van a la izquierda y el horario a la derecha; más
+  angosto, una zona debajo de la otra, en el orden de siempre. El horario se lee en dos tablas: la semana (Día · Horario ·
+  lápiz) y las fechas especiales (Fecha · Horario · lápiz y tacho; sin ninguna, sólo «Agregar fecha especial»). «Horario»
+  es un dato: las franjas, una por renglón, con «del día siguiente» si cierra pasada la medianoche, o «Cerrado», «24 horas»
+  o «Sin definir» en gris. Un día se edita en el mismo diálogo que una fecha especial («Horario del lunes»), que se
+  confirma con «Listo»; una fecha nueva, con «Agregar fecha».
 - `Page` muestra solo «Sólo lectura» o «Guardado por revisar», sin estado del borrador. Con «Guardado por revisar»,
   «Revisar guardado» y «Reintentar el mismo guardado» van en el encabezado de la pantalla y lo que explicaba la zona es
   el motivo de «Guardar» apagado (EP1-A, 2026-11-06); la revisión de un conflicto conserva su superficie, con la
-  comparación y elegir en su banda. Horarios y demás datos se marcan al intentar guardar y después en
-  vivo; Confirmar de una fecha especial queda habilitado y valida al tocarlo solo lo que trae esa fecha: el horario
-  semanal se marca al guardar, en su campo.
+  comparación y elegir en su banda. Los datos se marcan al intentar guardar y después en vivo. El diálogo de un día o
+  de una fecha especial queda habilitado y, al confirmarlo, valida sólo lo que trae: lo que cruza de un día al otro se
+  marca al guardar, debajo de la semana.
 - «Agregar franja» va siempre debajo de las franjas del día (y de la fecha especial), como botón de texto; con cuatro se
   apaga con «Podés agregar hasta 4 franjas.» como motivo. La papelera aparece en cada franja sólo con más de una.
-- El estado de cada día y de una fecha especial, cada hora y la zona del horario van en la
+- El estado de un día y de una fecha especial (en su diálogo), cada hora y la zona del horario van en la
   [pieza para elegir](#elegir-de-una-lista), con «Elegir» mientras no tiene una (DS1-A, 2026-11-20 y 2026-11-22).
 - Ubicación: `Autocomplete` sobre `Input` (nombre/ciudad → sugerencia → enlace a la ficha), sin modal pequeño de
   coordenadas. Dirección manual antes de buscar; elegir prepara el borrador y Guardar confirma el PlaceId. La espera de un

@@ -1,8 +1,8 @@
 # Información del negocio: el horario en una tabla y las zonas en dos columnas (IN1-C, IN2 e IN3)
 
-Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22; sin programar.** Se programa con el front quieto (la prueba
-integral terminada) y después de aplicar los commits de la pieza única («Desplegables»), que tocan los mismos archivos.
-Sólo cambia el front: ni contratos ni servidor.
+Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22 y programado el 2026-11-24**, encima de los commits de la pieza
+única («Desplegables»). Sólo cambia el front: ni contratos ni servidor. Falta la prueba a mano del usuario; después el
+plan se retira con la auditoría documental.
 
 ## Por qué
 
@@ -103,3 +103,18 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
 - **Al cerrar:** la corrida completa ([validar un cambio](../../../ArquitecturaBase/docs/guides/validar-un-cambio.md#verificación-y-cierre)).
 - **La prueba guiada con el usuario:** editar un día, una fecha que cierra pasada la medianoche, la superposición al
   guardar y el celular.
+
+## Cómo quedó (2026-11-24)
+
+- Igual a IN1-C, IN2 e IN3, con dos diferencias aceptadas:
+  - Las filas de las tablas miden lo que mide toda fila (la regla de diseño no deja que una fila cambie su alto): en el
+    celular no llegan a los 44 px que dibujaba el tablero.
+  - El esqueleto de carga es el de siempre de la pantalla, sin las dos columnas.
+  - En las filas alternas, «Sin definir» toma el color de esa fila, como todo texto gris en una tabla de la app.
+  - A 320 px, una franja baja de renglón entre sus dos horas para que la semana entre en su zona; la tabla de fechas
+    especiales, con dos íconos por fila, se desplaza de costado dentro de su recuadro.
+- `BusinessHoursEditor.tsx` tiene un solo diálogo (`OpeningDayDialog`) para un día y una fecha especial, y la columna
+  «Horario» sale de `Schedule`. `BusinessInformationPage.tsx` arma la grilla de IN1-C con áreas, así el celular conserva el orden.
+- En Preguntas frecuentes, el desplegable conserva un ancho mínimo y «Escribir otra pregunta» baja de renglón en el celular.
+- Pruebas: los 33 tests de la pantalla, los de arquitectura y diseño, y las escenas visuales `business-information`,
+  `business-guided` y `comparisons` (33), con las capturas de la pantalla rehechas y miradas a 1440, 390 y 320 px.
