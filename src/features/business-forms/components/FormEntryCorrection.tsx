@@ -29,18 +29,20 @@ export type CorrectedResponse = Pick<ResponseDetail, "id" | "number" | "name" | 
  * fixed at the foot); in the quick view, the panel where D2 was. Saving replaces the response with the same number and hands
  * the new one to the owner, which reads it.
  */
-export function FormEntryCorrection({ formId, record, layout, backTo, onClose, onViewCurrent, onSaved }: {
+export function FormEntryCorrection({ formId, record, layout, backTo, onClose, onViewCurrent, onUnavailable, onSaved }: {
   formId: string; record: CorrectedResponse; layout: "page" | "panel"; backTo?: { to: string; label: string };
   /** Back to reading, with nothing saved. */
   onClose: () => void;
   /** Back to reading a response that can no longer be corrected (replaced, voided or no longer this person's), read again. */
   onViewCurrent: () => void;
+  /** Saving found that it can no longer be corrected (409): back to reading it as it was, which says so on top with «Ver la actual» (O52). */
+  onUnavailable: () => void;
   onSaved: (recordId: string) => void;
 }) {
   const { t, i18n } = useTranslation(["formEntries", "forms"]);
   const mobile = useMediaQuery("(width < 640px)");
   const recordId = record.id;
-  const correction = useEntryCorrectionEditor(formId, recordId);
+  const correction = useEntryCorrectionEditor(formId, recordId, onUnavailable);
   const { editor, query, scope } = correction;
   const entry = correction.correction?.entry;
   const number = correction.correction?.number ?? record.number;

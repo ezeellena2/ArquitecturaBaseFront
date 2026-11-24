@@ -13,7 +13,8 @@ import {
 } from "../entryForm";
 import { useFormEntrySubmit } from "./useFormEntry";
 
-export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing";
+/** What stops the send. `amendUnavailable`: the response a correction changes can no longer be corrected (O52). */
+export type EntryConflict = "version" | "deactivated" | "forbidden" | "missing" | "amendUnavailable";
 
 /** The answers of a preview are those of the send, without files and without a request of their own. */
 const previewSend = (entry: FormEntry, draft: EntryDraft, culture: string) => toEntrySend(entry, draft, crypto.randomUUID(), culture);
@@ -114,6 +115,8 @@ export function useEntryEditor(formId: string, entry: FormEntry | undefined, own
     const feedback = errorFeedback(error);
     if (error.code === "Forms.Entry.VersionChanged") setConflict("version");
     else if (error.code === "Forms.Entry.Unavailable") setConflict("deactivated");
+    // The owner of the correction tells it, going back to the reading (O52): it is not a failure to send again.
+    else if (error.code === "Forms.Record.AmendUnavailable") setConflict("amendUnavailable");
     else if (feedback.kind === "session") return;
     else if (error.status === 403) setConflict("forbidden");
     else if (error.status === 404) setConflict("missing");

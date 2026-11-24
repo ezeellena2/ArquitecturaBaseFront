@@ -17,8 +17,10 @@ export const correctionReasonId = (recordId: string) => "correction-reason-" + r
 /**
  * The owner of one correction (CW10-A), in the panel or on its page: the response as it was in the active version, what
  * changed («Antes: …»), the required reason and the send. It is dirty only once something differs from the response.
+ * `onUnavailable`: saving found that the response changed meanwhile (corrected by someone else, decided or voided) or is no
+ * longer this person's to change (O52).
  */
-export function useEntryCorrectionEditor(formId: string, recordId: string) {
+export function useEntryCorrectionEditor(formId: string, recordId: string, onUnavailable: () => void) {
   const { t, i18n } = useTranslation("formEntries");
   const { scope, query } = useEntryCorrection(formId, recordId);
   const correction = query.data;
@@ -29,7 +31,13 @@ export function useEntryCorrectionEditor(formId: string, recordId: string) {
   // The send happens in this render's handler: it carries the reason in sight.
   const editor = useEntryEditor(formId, correction?.entry, scope.owner, initial, {
     correcting: true,
-    submission: { submit: (entry, draft) => submission.submit(entry, draft, reason), progress: submission.progress, sending: submission.sending },
+    submission: {
+      submit: (entry, draft) => submission.submit(entry, draft, reason).catch((error: unknown) => {
+        if (correctionUnavailable(error)) onUnavailable();
+        throw error;
+      }),
+      progress: submission.progress, sending: submission.sending,
+    },
   });
   const trimmed = reason.trim();
   const reasonProblem = !trimmed ? t("correction.reasonRequired") : trimmed.length > maxReason ? t("correction.reasonTooLong") : null;

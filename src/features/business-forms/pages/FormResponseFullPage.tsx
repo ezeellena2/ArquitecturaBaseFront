@@ -60,6 +60,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   const [voiding, setVoiding] = useState(false);
   // VF1-A, decision 5: «Corregir» unlocks the same page, without another route; it lives only here, for this response.
   const [correcting, setCorrecting] = useState<string | null>(null);
+  // O52: the response whose correction found it changed meanwhile reads as it was, with the notice on top until «Ver la actual».
+  const [changed, setChanged] = useState<string | null>(null);
   const mobile = useMediaQuery("(width < 640px)");
   const navigation = useFullResponseNavigation(formId, recordId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy || transitioning, navigationError: navigation.error, retryNavigation: navigation.onRetry });
@@ -87,7 +89,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
   if (!data || unavailable) return <Page title={t("responses.detail")} backTo={backTo}>{detail.query.isPending ? <Spinner/> : <EmptyState title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</Page>;
   // Correcting takes the page: «Cancelar» reads it again and saving reads the new response, at its own full route.
   if (editing) return <FormEntryCorrection layout="page" formId={formId} record={data} backTo={backTo} onClose={() => setCorrecting(null)}
-    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onSaved={id => routerNavigate(responseFullPath(formId, id, ""), { replace: true })}/>;
+    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onUnavailable={() => { setCorrecting(null); setChanged(recordId); }}
+    onSaved={id => routerNavigate(responseFullPath(formId, id, ""), { replace: true })}/>;
   const files = data.values.filter(value => value.type === "document").flatMap(responseFiles);
   // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
   const issuance = responseIssuance(current);
@@ -127,6 +130,8 @@ function FullResponse({ formId, recordId, transitioning, openPdf }: { formId: st
     </span>
   </>}>
     <div className={cn("space-y-4", loadingTarget && "opacity-45")} inert={loadingTarget || undefined}>
+      {changed === recordId ? <Banner tone="warning" action={<Button variant="outline" size="sm" onClick={() => { setChanged(null); void detail.query.refetch(); void workflow.query.refetch(); }}>
+        {t("detail.viewCurrent")}</Button>}>{t("formEntries:correction.unavailable")}</Banner> : null}
       {/* A replaced version is read as it was; the notice leads to the correction that stands for it (CW10-A). */}
       {data.replacedBy ? <Banner action={<Button variant="outline" size="sm" asChild><Link to={responseFullPath(formId, data.replacedBy.recordId, "")}>{t("detail.viewCurrent")}</Link></Button>}>
         {t("detail.replacedNotice", { number: data.number, date: formatDateTimeInZone(data.replacedBy.atUtc, i18n.language, detail.scope.user?.timeZoneId) })}</Banner> : null}

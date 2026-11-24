@@ -5,6 +5,7 @@ import { PrivateFormFilesScopeProvider } from "@/shared/hooks/PrivateFormFilesSc
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useResponseWorkspace } from "../hooks/useResponseWorkspace";
 import { responseFullPath } from "../responseNavigationPaths";
+import { Banner } from "@/shared/ui/Banner";
 import { Button } from "@/shared/ui/button";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ChatIcon, ExpandIcon } from "@/shared/ui/icons";
@@ -55,7 +56,7 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   formId: string; recordId: string; navigation: ResponsePanelNavigation; onDecided?: () => void; onDecisionForbidden?: () => void; decisionAllowed?: boolean; retainPreviousForm: boolean;
   onCorrected?: (recordId: string) => void; onVoided?: () => void;
 }) {
-  const { t } = useTranslation("forms");
+  const { t } = useTranslation(["forms", "formEntries"]);
   const location = useLocation();
   const workspace = useResponseWorkspace(formId);
   const state = useResponseDetailState({ formId, recordId, busy: navigation.busy, navigationError: navigation.error, retryNavigation: navigation.onRetry, retainPreviousForm });
@@ -63,6 +64,8 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   const [voiding, setVoiding] = useState<string | null>(null);
   // The response being corrected in this panel (VF1-A, decision 5); another response reads.
   const [correcting, setCorrecting] = useState<string | null>(null);
+  // O52: the response whose correction found it changed meanwhile reads as it was, with the notice on top until «Ver la actual».
+  const [changed, setChanged] = useState<string | null>(null);
   // EM1-A and NC1-A: the issuance says «Anulándose» in the title, offers «PDF fiscal» apart and changes what ⋮ allows.
   const issuance = responseIssuance(current);
   const fiscal = current?.documents.filter(document => issuance.fiscalRunIds.has(document.runId)) ?? [];
@@ -71,7 +74,8 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
   if (!data || unavailable) return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={t("responses.detail")} navigation={navigation}>{detail.query.isPending ? <Spinner/> : <EmptyState embedded title={t(unavailable ? "responses.unavailable" : "responses.loadFailed")} action={unavailable ? undefined : <Button variant="outline" onClick={() => void detail.query.refetch()}>{t("common:actions.retry")}</Button>}/>}</ResponsePanelFrame></ResponsePanelFilesScope>;
   // Correcting takes the panel: «Cancelar» reads the response again and saving hands the correction to the owner.
   if (correcting === recordId && data.id === recordId) return <FormEntryCorrection layout="panel" formId={formId} record={data} onClose={() => setCorrecting(null)}
-    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onSaved={id => { setCorrecting(null); onCorrected?.(id); }}/>;
+    onViewCurrent={() => { setCorrecting(null); void detail.query.refetch(); }} onUnavailable={() => { setCorrecting(null); setChanged(recordId); }}
+    onSaved={id => { setCorrecting(null); onCorrected?.(id); }}/>;
   return <ResponsePanelFilesScope enabled={retainPreviousForm} scope={fileScope}><ResponsePanelFrame title={data.number} loading={loading} navigation={{ ...navigation, busy: navigation.busy || loadingTarget }} status={<>{issuance.voiding ? <Badge variant="warning">{t("issuance.voidingStatus")}</Badge> : current ? <Badge variant={approvalStateVariant(current.recordState)}>{t("approvals.states." + current.recordState)}</Badge> : workflow.query.isPending && !loadingTarget ? <Spinner/> : null}
     {data.correction ? <Badge variant="outline">{t("detail.corrected")}</Badge> : null}{data.replacedBy ? <Badge variant="outline">{t("detail.replaced")}</Badge> : null}</>} subtitle={data.name + " · " + t("responses.versionLabel", { version: data.versionNumber })} actions={<>
     {/* The header actions are icons with their tooltip, in the title row next to ↑ ↓ × (board TL3-A); «Corregir», the pencil, goes
@@ -93,6 +97,8 @@ function QuickResponseDetail({ formId, recordId, navigation, onDecided, onDecisi
     {/* ⋮ with «Anular» after the icons, before ↑ ↓ × (CW11-A), for whoever may change it now: canAmend. */}
     {data.canAmend && onVoided && data.id === recordId ? <ResponseAmendActions disabled={loadingTarget} issuance={issuance} onVoid={() => setVoiding(recordId)}/> : null}
   </>}>
+    {changed === recordId ? <div className="mb-4"><Banner tone="warning" action={<Button variant="outline" size="sm" onClick={() => { setChanged(null); void detail.query.refetch(); void workflow.query.refetch(); }}>
+      {t("detail.viewCurrent")}</Button>}>{t("formEntries:correction.unavailable")}</Banner></div> : null}
     <ResponseDetailContent state={state} formId={formId} recordId={recordId} onDecided={onDecided} onDecisionForbidden={onDecisionForbidden} decisionAllowed={decisionAllowed}/>
     {/* With a live issuance the void waits for its reversal (NC1-A): the panel stays, reads the flow again and says «Anulándose». */}
     {voiding === recordId ? <VoidResponseDialog formId={formId} recordId={recordId} number={data.number} owner={detail.scope.owner} issuance={issuance.issued ? "issued" : issuance.live ? "live" : undefined} onClose={() => setVoiding(null)}

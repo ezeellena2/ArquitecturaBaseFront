@@ -226,7 +226,7 @@ describe("loading the items of a block from the page (RG2-A)", () => {
     const user = userEvent.setup({ delay: null });
     // Read with the same version, so with no notice; the full page and the quick view mount it the same way (VF1-A).
     renderInRouterWithProviders(<Correction layout="page" formId={formId} record={{ id: recordId, number: "INS-000005", name: entry.name, values: [], entry: { entry, answers: [], files: [] } }}
-      onClose={vi.fn()} onViewCurrent={vi.fn()} onSaved={vi.fn()}/>);
+      onClose={vi.fn()} onViewCurrent={vi.fn()} onUnavailable={vi.fn()} onSaved={vi.fn()}/>);
 
     expect(await screen.findByRole("button", { name: "Ítem 1 · Artículo ATRAZINA 50%" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Ítem 2 · Cantidad" })).toHaveValue("200,5");

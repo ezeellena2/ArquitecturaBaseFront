@@ -45,7 +45,8 @@ function setup({ canAmend = true, open = () => HttpResponse.json(correction), sa
   server.use(
     http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formrecords.create"] })),
     http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(responseSheetFixture())),
-    http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId, previousId: null, nextId: null, position: 1, totalCount: 2 })),
+    // The only one, without neighbors: 1 of 2 without a next one breaks the contract and the page would say «Algo salió mal».
+    http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId, previousId: null, nextId: null, position: 1, totalCount: 1 })),
     http.get("/api/forms/records/:id", ({ params }) => { reads.details++; return HttpResponse.json(detail(String(params.id), canAmend)); }),
     http.get("/api/forms/records/:id/workflow", ({ params }) => HttpResponse.json(responseWorkflowFixture(String(params.id)))),
     http.get("/api/forms/entries/:formId/records/:recordId", () => open()),
@@ -136,6 +137,24 @@ describe("correcting a response in the quick view (VF1-A, decision 5)", () => {
     expect(within(panel).getByLabelText(/^Importe/)).toHaveValue("13");
   });
 
+  it("goes back to the quick view when saving finds the response changed meanwhile and says so on top (O52)", { timeout: 20_000 }, async () => {
+    const { reads } = setup({ save: () => HttpResponse.json({ title: "Conflict", status: 409, code: "Forms.Record.AmendUnavailable" }, { status: 409 }) });
+    const user = userEvent.setup({ delay: null });
+    renderRouteWithProviders(sheet + "/" + responseRecordId);
+    await user.click(await within(await screen.findByRole("region", { name: "Detalle de la respuesta" }, { timeout: 10_000 })).findByRole("button", { name: "Corregir" }));
+    const panel = await screen.findByRole("region", { name: "Corregir TEST-000002 de Formulario publicado" });
+    await user.type(await within(panel).findByLabelText(/^Motivo de la corrección/), "El importe era 13.");
+    await user.click(within(panel).getByRole("button", { name: "Guardar corrección" }));
+
+    const quick = await screen.findByRole("region", { name: "Detalle de la respuesta" });
+    expect(within(quick).getByText("Esta respuesta ya no se puede corregir.")).toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ kind: "error" }));
+    const before = reads.details;
+    await user.click(within(quick).getByRole("button", { name: "Ver la actual" }));
+    await waitFor(() => expect(reads.details).toBeGreaterThan(before));
+    expect(within(quick).queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
+  });
+
   it("offers nothing to whoever may not change the response", async () => {
     setup({ canAmend: false });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
@@ -215,6 +234,28 @@ describe("correcting a response in the full page (VF1-A, decision 5)", () => {
     await user.click(screen.getByRole("button", { name: "Ver la actual" }));
     expect(await screen.findByRole("heading", { name: "TEST-000002", level: 1 })).toBeInTheDocument();
     await waitFor(() => expect(reads.details).toBeGreaterThan(before));
+  });
+
+  // Board «VF · A completa»: corrected by someone else, decided or voided while it was corrected, the save comes back with a 409;
+  // a 403 is the same for whoever stopped being able to change it.
+  it.each([
+    { reply: "409", body: { title: "Conflict", status: 409, code: "Forms.Record.AmendUnavailable", detail: "La respuesta cambió y ya no se puede corregir ni anular. Recargá para ver cómo quedó." } },
+    { reply: "403", body: { title: "Forbidden", status: 403 } },
+  ])("goes back to reading when saving answers $reply, says so on top and «Ver la actual» reads it again (O52)", { timeout: 20_000 }, async ({ body }) => {
+    const { reads } = setup({ save: () => HttpResponse.json(body, { status: body.status }) });
+    const user = userEvent.setup({ delay: null });
+    await correctInFull(user);
+    await user.type(await screen.findByLabelText(/^Motivo de la corrección/), "El importe era 13.");
+    await user.click(screen.getByRole("button", { name: "Guardar corrección" }));
+
+    expect(await screen.findByRole("heading", { name: "TEST-000002", level: 1 })).toBeInTheDocument();
+    expect(screen.getByText("Esta respuesta ya no se puede corregir.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Guardar corrección" })).not.toBeInTheDocument();
+    expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ kind: "error" }));
+    const before = reads.details;
+    await user.click(screen.getByRole("button", { name: "Ver la actual" }));
+    await waitFor(() => expect(reads.details).toBeGreaterThan(before));
+    expect(screen.queryByText("Esta respuesta ya no se puede corregir.")).not.toBeInTheDocument();
   });
 
   it("offers «Reintentar» when the correction could not be opened", async () => {
@@ -327,7 +368,7 @@ describe("reading what a correction or a void left (CW10-A, CW11-A)", () => {
     server.use(
       http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read"] })),
       http.post("/api/forms/definitions/:id/records/search", () => HttpResponse.json(responseSheetFixture())),
-      http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId, previousId: null, nextId: null, position: 1, totalCount: 2 })),
+      http.post("/api/forms/definitions/:id/records/:recordId/navigation", ({ params }) => HttpResponse.json({ recordId: params.recordId, previousId: null, nextId: null, position: 1, totalCount: 1 })),
       http.get("/api/forms/records/:id", ({ params }) => HttpResponse.json({ ...responseDetailFixture(String(params.id)), ...changes })),
       http.get("/api/forms/records/:id/workflow", ({ params }) => HttpResponse.json({ ...responseWorkflowFixture(String(params.id)), ...workflow })),
     );

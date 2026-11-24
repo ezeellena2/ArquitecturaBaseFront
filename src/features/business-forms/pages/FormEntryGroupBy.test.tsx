@@ -68,7 +68,7 @@ describe("choosing first by a field while loading (LD1-A)", () => {
     setup(loose, { entry: loose, recordId, number: "PED-000003", files: [], answers: [
       { fieldId: fields.article, value: herbicides[1].id, choiceIds: null, options: [herbicides[1]], group: { id: "Herbicidas", text: "Herbicidas" } }] });
     renderInRouterWithProviders(<Correction layout="page" formId={formId} record={{ id: recordId, number: "PED-000003", name: loose.name, values: [], entry: { entry: loose, answers: [], files: [] } }}
-      onClose={vi.fn()} onViewCurrent={vi.fn()} onSaved={vi.fn()}/>);
+      onClose={vi.fn()} onViewCurrent={vi.fn()} onUnavailable={vi.fn()} onSaved={vi.fn()}/>);
     expect(await screen.findByRole("button", { name: "Rubro Herbicidas" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Artículo Glifosato 66,2 %" })).toBeEnabled();
   });
