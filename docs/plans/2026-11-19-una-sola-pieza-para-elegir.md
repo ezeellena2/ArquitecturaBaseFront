@@ -11,9 +11,10 @@ Decidido el 2026-11-19. Sólo cambia el front: ni contratos ni servidor. La regl
     asistente, los servicios de ARCA y las preguntas de un PDF.
   - También las opciones fijas de dos a cuatro y la carga de un formulario.
   - También los filtros de los listados, sin cantidades.
-  - También «Qué hacer» de un caso del asistente, el formulario de «Mandar formulario» e «Ingresar con» del acceso.
-  - Quedan afuera las vistas previas que imitan WhatsApp, las pestañas y los menús de acciones. Una casilla suelta de sí
-    o no sigue siendo casilla.
+  - También «Qué hacer» de un caso del asistente y el formulario de «Mandar formulario». «Ingresar con» del acceso pasó
+    el 2026-11-22 y volvió a su segmentado con subrayado el 2026-11-24, a pedido del usuario.
+  - Quedan afuera las vistas previas que imitan WhatsApp, las pestañas, los menús de acciones e «Ingresar con» del
+    acceso. Una casilla suelta de sí o no sigue siendo casilla.
 - **Entró al front en cortes**, hasta 5f459c50, con sus guías, las capturas rehechas y un arreglo: el foco queda donde
   lo llevó la elección, como en la grilla de «Pegar desde Excel» (IM3-A).
 
@@ -83,7 +84,7 @@ en el lienzo aparte [Desplegables: una sola pieza](https://claude.ai/artifact/87
     elige va en la pieza, en toda la app:
     - «Filas por página», un Sí o No y la carga de un formulario;
     - los filtros de los listados, sin cantidades;
-    - «Ingresar con» del acceso;
+    - «Ingresar con» del acceso, hasta el 2026-11-24, cuando volvió a su segmentado con subrayado;
     - elegir varios, en modo múltiple, nunca con casillas ni en un modal que sólo sirve para elegir;
   - la zona horaria: la ciudad y, en gris, la hora de su país y el desfase («Montevideo · hora de Uruguay · GMT−3»), en
     una sola lista para Mi perfil, Configuración y el horario del negocio.

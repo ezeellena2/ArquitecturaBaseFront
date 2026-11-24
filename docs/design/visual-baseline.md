@@ -71,9 +71,10 @@ compara la pantalla con ese tablero. Por qué hizo falta: [diálogos con la list
    ([una cosa, una zona](#una-cosa-una-zona--2026-11-08), [estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla))
 3. **El control según el dato:** ¿una colección va en una tabla; todo lo que se elige, en la pieza para elegir: una o
    varias opciones de una lista, aunque sean dos a cuatro fijas (también el idioma, «Filas por página» y un Sí o No), un
-   filtro de un listado, la carga de un formulario y el acceso, nunca en radios, un segmentado, una lista de casillas ni
-   un modal que sólo sirve para elegir; una casilla, sólo para un sí o no suelto? ¿Un filtro de opciones va sin
-   cantidades? ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
+   filtro de un listado y la carga de un formulario, nunca en radios, un segmentado, una lista de casillas ni un modal
+   que sólo sirve para elegir; una casilla, sólo para un sí o no suelto? ¿Un filtro de opciones va sin cantidades?
+   «Ingresar con» del acceso es la excepción y conserva su segmentado con subrayado ([la excepción](#ingresar-con-con-su-subrayado--2026-11-24)).
+   ([estructura](../guides/premisas-de-desarrollo.md#estructura-de-una-pantalla),
    [elegir de una lista](#elegir-de-una-lista), [filtros](#listados-y-filtros))
 4. **Lo que se lee, en su lugar:** ¿cada dato va en un lugar fijo: los datos de algo en `DataList`, lo que pasa en orden
    en `StepList` y dos versiones en `ComparisonTable`, sin rótulos sueltos ni «Rótulo: valor» corrido? ¿Nada va debajo de
@@ -389,9 +390,10 @@ Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (c
 [plan](../plans/2026-11-19-una-sola-pieza-para-elegir.md) tiene las etapas y dónde se usaba cada pieza.
 
 **Todo lo que se elige va en la pieza** (2026-11-22, por decisión del usuario): una o varias opciones, de dos a cuatro
-fijas, un Sí o No, los filtros de los listados (con el botón de la barra y sin cantidades, [FO1-A](#listados-y-filtros)),
-la carga de un formulario y «Correo | WhatsApp» del acceso. Para elegir ya no se usan `RadioGroupField`,
-`SegmentedControl` ni listas de casillas; una casilla suelta de sí o no sigue siendo casilla.
+fijas, un Sí o No, los filtros de los listados (con el botón de la barra y sin cantidades, [FO1-A](#listados-y-filtros))
+y la carga de un formulario. Para elegir ya no se usan `RadioGroupField`, `SegmentedControl` ni listas de casillas; una
+casilla suelta de sí o no sigue siendo casilla. La excepción es «Ingresar con» del acceso, que conserva su segmentado con
+subrayado ([abajo](#ingresar-con-con-su-subrayado--2026-11-24)).
 
 - **Cerrada, un campo con su flecha fina** que dice lo elegido, igual para una y para varias; sin nada elegido, lo dice
   en gris («Sin zona», «Elegí una opción»). En la barra de un listado el filtro conserva su botón («Cualquier rol»,
@@ -424,8 +426,10 @@ la carga de un formulario y «Correo | WhatsApp» del acceso. Para elegir ya no 
   - Los segmentados con cantidades de los listados (filtros, [FO1-A](#listados-y-filtros)) y el «Correo · WhatsApp» del
     ingreso público quedaban como estaban. Ese mismo día también pasaron a la pieza: los filtros («los filtros también,
     todo en desplegable»), con el botón de la barra y sin cantidades, e «Ingresar con» del acceso, del ancho de la
-    tarjeta y con los íconos de correo y WhatsApp.
-  - Quedan afuera sólo las vistas previas que imitan WhatsApp, las pestañas y los menús de acciones (abajo).
+    tarjeta y con los íconos de correo y WhatsApp. El 2026-11-24 «Ingresar con» volvió a su segmentado con subrayado, a
+    pedido del usuario ([abajo](#ingresar-con-con-su-subrayado--2026-11-24)).
+  - Quedan afuera sólo las vistas previas que imitan WhatsApp, las pestañas, los menús de acciones e «Ingresar con» del
+    acceso (abajo).
   - La carga de un formulario también entra («Sí, también», decisión del usuario del 2026-11-22): el Sí o No, elegir una
     con cualquier cantidad de opciones y elegir varias van en la pieza, en lugar del segmentado, las opciones en fila y las
     casillas de AR1-A.
@@ -439,11 +443,28 @@ la carga de un formulario y «Correo | WhatsApp» del acceso. Para elegir ya no 
 Quedan fuera las vistas previas que imitan WhatsApp: la de un formulario (`FormPreview`), con su select y sus radios, y
 la de un catálogo (`CatalogPreview`), con su segmentado «Una opción | Varias» y sus radios. También las pestañas y el
 idioma del menú de la cuenta y «Contar» de una tarjeta del tablero, que son menús de acciones. El buscador de lugares de
-Información del negocio (`Autocomplete`) es un buscador con sugerencias, no una lista conocida.
+Información del negocio (`Autocomplete`) es un buscador con sugerencias, no una lista conocida. Y queda fuera «Ingresar
+con» del acceso, con su segmentado con subrayado ([abajo](#ingresar-con-con-su-subrayado--2026-11-24)).
 
 En el código: `Picker` y la lista única de zonas (`timeZoneOptions`, en `shared/lib/timeZones`). La escena
 `?scenario=pickers` del catálogo muestra los estados de los tableros (`pickers.spec.ts`, en es/en a 1440, 390 y 320 px).
 Falta pasar los tableros al lienzo del sistema visual.
+
+### «Ingresar con», con su subrayado — 2026-11-24
+
+«Ingresar con», en Iniciar sesión y en Crear cuenta, es la excepción de esta regla y no se pasa a la pieza. Los dos
+canales van a la vista, cada uno con su ícono, y el elegido va subrayado y en negrita con el tono de los enlaces
+(`SegmentedControl appearance="public"`, con `.access-channel` de `index.css`). Son botones con `aria-pressed`: se
+recorren con Tab y se eligen con Enter o la barra espaciadora. Elegir uno cambia el formulario de abajo, el del correo o
+el del número de WhatsApp.
+
+El 2026-11-22 había pasado a la pieza, del ancho de la tarjeta, junto con los filtros. En la prueba a mano, viendo un
+desplegable que decía «Correo» sobre «Correo electrónico» y «Enviar código», el usuario pidió volver al diseño de antes:
+
+> ESTO LO DEBEMOS HABER CAMBIADO EN UNO DE LOS DISEÑOS Y ESTABA BIEN COMO ESTABA ANTES DISEÑADO, AHORA ASI NO TIENE
+> SENTIDO. el desplegable de ingresar con me refiero. volvamos a como estaba antes
+
+La captura `login-390` de `design.spec.ts` lo muestra.
 
 ## Lecturas
 
@@ -1020,7 +1041,8 @@ botones sueltos que se rellenan para hacer de segmentado.
 | La conversación abierta en el chat de WhatsApp | El tinte de la marca y una barra de 3 px al inicio | `WhatsAppChatPage` |
 
 Desde el 2026-11-22, por decisión del usuario, los botones agrupados y las tarjetas de esta tabla son la pieza
-(`Picker`), con su tilde: `SegmentedControl` queda sólo en la vista previa de un catálogo. Las tarjetas
+(`Picker`), con su tilde: `SegmentedControl` queda sólo en la vista previa de un catálogo y, con su subrayado, en
+«Ingresar con» del acceso, que volvió el 2026-11-24 ([la excepción](#ingresar-con-con-su-subrayado--2026-11-24)). Las tarjetas
 (`RadioGroupField variant="cards"`), que habían quedado sólo en el catálogo de la biblioteca, se retiraron el 2026-11-23.
 
 Ya cumplían y no cambian de forma: los radios (el punto, ahora en el tono de los enlaces), las casillas (la tilde), las

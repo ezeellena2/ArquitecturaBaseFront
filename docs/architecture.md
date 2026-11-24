@@ -90,7 +90,8 @@ Contrato: [WhatsApp](../../ArquitecturaBase/docs/features/whatsapp.md) (módulo 
 
 - **El servidor dice qué medios ofrecer:** `getLoginMethods` trae `google`, `whatsapp`, `whatsappCountries` y
   `whatsappNumber`. Con WhatsApp apagado no hay selector ni vinculación en el perfil.
-- `/login`: selector Correo | WhatsApp debajo de Google, en Correo. `EmailCodeForm` y `WhatsAppCodeForm` navegan a
+- `/login`: selector Correo | WhatsApp debajo de Google, en Correo: el segmentado con subrayado, no la pieza para elegir
+  (2026-11-24, a pedido del usuario). `EmailCodeForm` y `WhatsAppCodeForm` navegan a
   `/login/codigo` con `{ channel, email }` o `{ channel, phone, maskedPhone }` más `resendAfterSeconds`; sin ese estado,
   vuelve a `/login`.
 - `PhoneField` arranca en el primero de `whatsappCountries` (nombres de `shared/lib/countries`) y manda
@@ -128,8 +129,8 @@ usan ingreso, perfil y usuarios. Textos en `common.json`.
 
 Su aspecto cambia también en la biblioteca del Artifact. `RadioGroupField` (como `FormField`; desde el 2026-11-22, sólo
 en las vistas previas que imitan WhatsApp: para elegir está `Picker`); `VerificationBadge` (igual en perfil y usuarios);
-`SegmentedControl` (táctil desde 44 px; desde el 2026-11-22, sólo en la vista previa de un catálogo, y con una sola
-forma desde el 2026-11-23); `Banner`, auditado por significado; tokens `--color-success-50/700` y
+`SegmentedControl` (táctil desde 44 px; desde el 2026-11-22, compacto sólo en la vista previa de un catálogo, y
+subrayado, con `appearance="public"`, en «Ingresar con» del acceso desde el 2026-11-24); `Banner`, auditado por significado; tokens `--color-success-50/700` y
 `--color-warning-50/700`. Todo color nuevo es un token.
 
 ## Listados

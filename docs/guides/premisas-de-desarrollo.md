@@ -180,9 +180,10 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   combo que se escribe, un menú propio, una lista de casillas ni un modal que sólo sirve para elegir: elegir varios es la
   pieza en modo múltiple, también adentro de un diálogo que guarda (2026-11-22). Todo lo que se elige va en la
   pieza (decisión del usuario, 2026-11-22, en toda la app): dos a cuatro opciones fijas, un Sí o No, los filtros de los
-  listados, sin cantidades, la carga de un formulario y «Correo | WhatsApp» del acceso, nunca radios ni un segmentado;
-  una casilla es sólo un sí o no suelto. Quedan afuera las vistas previas que imitan WhatsApp, las pestañas y los menús
-  de acciones ([elegir de una lista](../design/visual-baseline.md#elegir-de-una-lista)).
+  listados, sin cantidades, y la carga de un formulario, nunca radios ni un segmentado; una casilla es sólo un sí o no
+  suelto. Quedan afuera las vistas previas que imitan WhatsApp, las pestañas, los menús de acciones e «Ingresar con» del
+  acceso, que conserva su segmentado con subrayado a pedido del usuario (2026-11-24,
+  [la excepción](../design/visual-baseline.md#ingresar-con-con-su-subrayado--2026-11-24)).
 - Un texto nombra su idioma sólo cuando no es el del menú (decisión del usuario, 2026-11-03; tablero NI1-A): «Original
   (Español): …», «En inglés: …», «· Inglés», la fila «Idioma» con «Inglés» al mandar un formulario. Lo que está en el idioma del menú (un error, un
   problema al publicar, un cambio, un PDF, la vista previa) no lo dice, y un formulario en un solo idioma, el del menú,
@@ -197,7 +198,8 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
   ser explícito: sección, resultados filtrados o página. No cambiar otras secciones ni seleccionar
   datos que la persona no puede administrar.
 - Usar `Picker` para una opción entre pocas o muchas y `Picker` con `multiple` para varias (2026-11-22). Desde el
-  mismo día, tampoco los filtros ni el ingreso usan un segmentado. `Switch` corresponde a un
+  mismo día, tampoco los filtros usan un segmentado. «Ingresar con» del acceso conserva el suyo, con subrayado, a pedido
+  del usuario (2026-11-24). `Switch` corresponde a un
   ajuste que se aplica de inmediato y debe recuperar el valor ante un fallo. Configuración usa guardado explícito:
   Registro, Idioma, Listados y Zona horaria, `Picker`.
   No convertir esos borradores en guardados automáticos.
