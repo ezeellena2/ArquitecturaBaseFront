@@ -1,8 +1,8 @@
 # Información del negocio: el horario en una tabla y las zonas en dos columnas (IN1-C, IN2 e IN3)
 
-Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22 y programado el 2026-11-24**, encima de los commits de la pieza
-única («Desplegables»). Sólo cambia el front: ni contratos ni servidor. Falta la prueba a mano del usuario; después el
-plan se retira con la auditoría documental.
+Fecha: **2026-11-22**. Estado: **decidido el 2026-11-22, programado y probado a mano el 2026-11-24**, encima de los
+commits de la pieza única («Desplegables»). Sólo cambia el front: ni contratos ni servidor. Faltan la variante sin
+permiso y la corrida completa del cierre; después el plan se retira con la auditoría documental.
 
 ## Por qué
 
@@ -118,3 +118,12 @@ Igual a los tableros IN1-C (figuras 1 y 2), IN2 (figuras 1 a 6, con la atención
 - En Preguntas frecuentes, el desplegable conserva un ancho mínimo y «Escribir otra pregunta» baja de renglón en el celular.
 - Pruebas: los 33 tests de la pantalla, los de arquitectura y diseño, y las escenas visuales `business-information`,
   `business-guided` y `comparisons` (33), con las capturas de la pantalla rehechas y miradas a 1440, 390 y 320 px.
+- Prueba a mano (2026-11-24): la hizo en la app viva la sesión «Análisis arquitectónico de desarrollos», que hoy prueba
+  el front a pedido del usuario, y todo coincidió con lo decidido:
+  - IN1-C en la compu, y a 684 px una sola columna en el orden Datos, Ubicación, Horario, Servicios y Preguntas;
+  - el horario: la zona arriba, la semana en su tabla, «Domingo · Cerrado», «Aplicar lunes a viernes» debajo y, sin
+    fechas especiales, sólo «Agregar fecha especial»;
+  - IN2: «Horario del lunes» con la atención y las horas en la pieza, «Agregar franja», «Cancelar» y «Listo»; la fecha
+    especial, con «Agregar fecha»;
+  - IN3: con cuatro franjas, «Agregar franja» apagado con «Podés agregar hasta 4 franjas.».
+  Canceló todo sin guardar. No se probó la variante sin permiso, que necesita otra cuenta.
