@@ -8,19 +8,14 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await page.setViewportSize({ width,height:900 });
     await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-guided&lang=${language}`);
     await expect(page.getByRole("heading",{name:es?"Información del negocio":"Business information",exact:true})).toBeVisible();
-    // A time is chosen in the Picker, with its search inside (on the phone, the list takes the screen); the status of a
-    // day, too, since 2026-11-22 (DS1-A).
-    const endLabel=es?"Lunes 1 · Hasta":"Monday 1 · Until";
-    const end=page.getByRole("button",{name:new RegExp(`^${endLabel} `)});
-    const pickEnd=async(time:string)=>{
-      await end.click();
-      await page.getByRole("combobox",{name:`${es?"Buscar en":"Search in"} ${endLabel}`,exact:true}).fill(time);
-      await page.getByRole("option",{name:time,exact:true}).click();
-    };
-    await expect(end).toHaveAccessibleName(`${endLabel} 18:00`);
+    // IN2 (2026-11-22): the week reads in a table, a day per row, and a day is edited in its dialog, opened by the pencil of
+    // its row. A time is chosen in the Picker, with its search inside (on the phone, the list takes the screen); the status
+    // of a day, too (DS1-A, 2026-11-22).
     const hours=page.getByRole("region",{name:es?"Horario de atención":"Opening hours",exact:true});
-    await end.scrollIntoViewIfNeeded();
-    const box=await end.boundingBox(),bounds=await hours.boundingBox();
+    const week=hours.getByRole("table",{name:es?"Semana":"Week",exact:true});
+    await expect(week.getByRole("row",{name:new RegExp(`^${es?"Lunes":"Monday"} `)})).toContainText("18:00");
+    await week.scrollIntoViewIfNeeded();
+    const box=await week.boundingBox(),bounds=await hours.boundingBox();
     expect(box!.x+box!.width).toBeLessThanOrEqual(bounds!.x+bounds!.width);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     const search = page.getByRole("combobox", { name: es ? "Buscar un lugar" : "Search for a place", exact: true });
@@ -36,16 +31,34 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("textbox",{name:es?"Enlace de la ubicación":"Location link",exact:true})).toHaveValue(/query_place_id=ChIJ_fictionalClinic$/);
     await expect(page.getByRole("link", { name: es ? "Ver ubicación" : "View location", exact: true })).toHaveAttribute("href", /query_place_id=ChIJ_fictionalClinic$/);
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
-    // El horario se marca al intentar guardar, no mientras se elige; después sigue en vivo.
-    await pickEnd("08:00");await expect(page.getByRole("alert")).toHaveCount(0);
-    await page.getByRole("button",{name:es?"Guardar":"Save",exact:true}).click();
-    await expect(page.getByRole("alert")).toContainText(es?"El cierre debe ser posterior":"Closing must be after");
+    // Un día se revisa al tocar «Listo», no mientras se elige; después sigue en vivo y el diálogo espera abierto.
+    const done=es?"Listo":"Done";
+    await hours.getByRole("button",{name:es?"Editar el horario del lunes":"Edit Monday opening hours",exact:true}).click();
+    const monday=page.getByRole("dialog",{name:es?"Horario del lunes":"Monday opening hours",exact:true});
+    const endLabel=es?"Lunes 1 · Hasta":"Monday 1 · Until";
+    const end=monday.getByRole("button",{name:new RegExp(`^${endLabel} `)});
+    const pickEnd=async(time:string)=>{
+      await end.click();
+      await page.getByRole("combobox",{name:`${es?"Buscar en":"Search in"} ${endLabel}`,exact:true}).fill(time);
+      await page.getByRole("option",{name:time,exact:true}).click();
+    };
+    await expect(end).toHaveAccessibleName(`${endLabel} 18:00`);
+    await pickEnd("08:00");await expect(monday.getByRole("alert")).toHaveCount(0);
+    await monday.getByRole("button",{name:done,exact:true}).click();
+    await expect(monday.getByRole("alert")).toContainText(es?"El cierre debe ser posterior":"Closing must be after");
+    await pickEnd("18:00");await expect(monday.getByRole("alert")).toHaveCount(0);
+    await monday.getByRole("button",{name:done,exact:true}).click();
+    await expect(monday).toHaveCount(0);
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(0);
-    await pickEnd("18:00");await expect(page.getByRole("alert")).toHaveCount(0);
-    // The status of a day goes in the shared piece (DS1-A, 2026-11-22).
-    const sundayLabel=es?"Domingo · Atención":"Sunday · Opening",allDayLabel=es?"24 horas":"24 hours";
-    const sunday=page.getByRole("button",{name:new RegExp(`^${sundayLabel} `)});
-    await sunday.click();await page.getByRole("option",{name:allDayLabel,exact:true}).click();
+    // The status of a day goes in the shared piece (DS1-A, 2026-11-22), in the dialog of that day.
+    const allDayLabel=es?"24 horas":"24 hours";
+    await hours.getByRole("button",{name:es?"Editar el horario del domingo":"Edit Sunday opening hours",exact:true}).click();
+    const sundayDialog=page.getByRole("dialog",{name:es?"Horario del domingo":"Sunday opening hours",exact:true});
+    await sundayDialog.getByRole("button",{name:new RegExp(`^${es?"Atención":"Opening"} `)}).click();
+    await page.getByRole("option",{name:allDayLabel,exact:true}).click();
+    await sundayDialog.getByRole("button",{name:done,exact:true}).click();
+    const sunday=week.getByRole("row",{name:new RegExp(`^${es?"Domingo":"Sunday"} `)});
+    await expect(sunday).toContainText(allDayLabel);
     await page.getByRole("button",{name:es?"Agregar fecha especial":"Add special date",exact:true}).click();
     await page.getByRole("dialog").getByLabel(es?"Fecha":"Date",{exact:true}).fill("2026-10-10");
     await page.getByRole("dialog").getByRole("button",{name:es?"Agregar fecha":"Add date",exact:true}).click();
@@ -59,7 +72,7 @@ for (const language of ["es","en"] as const) for (const width of [1440,390,320])
     await expect(page.getByRole("button",{name:es?"Guardar":"Save",exact:true})).toBeDisabled();
     await expect(page.locator('[data-sonner-toast][data-type="success"]')).toHaveCount(1);
     await expect(answer).toHaveValue(es?"Consultar antes de confirmar el pedido.":"Ask before confirming the order.");
-    await expect(sunday).toHaveAccessibleName(`${sundayLabel} ${allDayLabel}`);
+    await expect(sunday).toContainText(allDayLabel);
     expect(external).toEqual([]);
     await page.screenshot({path:`test-results/business-guided-${language}-${width}.png`,fullPage:true});
   });

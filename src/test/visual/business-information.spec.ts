@@ -24,28 +24,32 @@ for (const language of ["es", "en"] as const) {
       await expect(name).toHaveValue(language === "es" ? "Negocio actualizado" : "Updated business");
       await expect(faq).toHaveValue("Confirmed answer");
     });
-    test(`business opening hours show the whole text of each control at ${width}px in ${language}`, async ({ page }) => {
+    test(`business opening hours read in a table and the dialog of a day shows the whole text of each control at ${width}px in ${language}`, async ({ page }) => {
       const es = language === "es";
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`/src/test/visual/index.html?screen=/configuracion/negocio&scenario=business-normal&lang=${language}`);
       const hours = page.getByRole("group", { name: es ? "Horario de atención" : "Opening hours", exact: true });
       await expect(hours).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      // The status of each day and the times go in the shared piece (DS1-A, 2026-11-22). An open day adds its times: neither
-      // they nor the status of each day cut their text, and none goes past the hours.
-      await hours.getByRole("button", { name: new RegExp("^" + (es ? "Lunes · Atención" : "Monday · Opening") + " ") }).click();
+      // IN2 (2026-11-22): the week reads in a table, a day per row, without going past the hours.
+      const week = hours.getByRole("table", { name: es ? "Semana" : "Week", exact: true });
+      await expect(week.getByRole("row")).toHaveCount(8);
+      const bounds = (await hours.boundingBox())!, weekBox = (await week.boundingBox())!;
+      expect(weekBox.x + weekBox.width).toBeLessThanOrEqual(bounds.x + bounds.width + 0.5);
+      // A day is edited in its dialog, opened by the pencil of its row: the status and the times go in the shared piece
+      // (DS1-A, 2026-11-22), and none cuts its text or goes past the dialog.
+      await hours.getByRole("button", { name: es ? "Editar el horario del lunes" : "Edit Monday opening hours", exact: true }).click();
+      const dialog = page.getByRole("dialog", { name: es ? "Horario del lunes" : "Monday opening hours", exact: true });
+      await dialog.getByRole("button", { name: new RegExp("^" + (es ? "Atención" : "Opening") + " ") }).click();
       await page.getByRole("option", { name: es ? "Abierto" : "Open", exact: true }).click();
-      const states = hours.getByRole("button", { name: es ? /^[^ ]+ · Atención / : /^[^ ]+ · Opening / });
-      await expect(states).toHaveCount(7);
-      const times = hours.getByRole("button", { name: es ? /^Lunes 1 · (Desde|Hasta) / : /^Monday 1 · (From|Until) / });
-      await expect(times).toHaveCount(2);
-      const bounds = (await hours.boundingBox())!;
-      const cut = (controls: Locator) => controls.evaluateAll((found, right) => found.filter(control => {
+      const controls = dialog.getByRole("button", { name: es ? /^(Atención|Lunes 1 · (Desde|Hasta)) / : /^(Opening|Monday 1 · (From|Until)) / });
+      await expect(controls).toHaveCount(3);
+      const box = (await dialog.boundingBox())!;
+      const cut = (found: Locator) => found.evaluateAll((elements, right) => elements.filter(control => {
         const texts = [...control.querySelectorAll<HTMLElement>("button, span.truncate")];
         return control.getBoundingClientRect().right > right + 0.5 || texts.some(text => text.scrollWidth > text.clientWidth + 0.5);
-      }).map(control => control.getAttribute("aria-label") ?? control.textContent), bounds.x + bounds.width);
-      expect(await cut(states)).toEqual([]);
-      expect(await cut(times)).toEqual([]);
+      }).map(control => control.getAttribute("aria-label") ?? control.textContent), box.x + box.width);
+      expect(await cut(controls)).toEqual([]);
     });
   }
   // RO3-D: the business permissions are IA's second pair, so Admin reads them as rows of that area, with their names and a
@@ -90,7 +94,8 @@ test("business conflicts preserve edited fields and incorporate current facts on
   await name.fill("Mi negocio");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await page.getByRole("button", { name: "Revisar cambios", exact: true }).click();
-  await expect(page.getByRole("table")).toBeVisible();
+  // The week reads in its own table too (IN2): the comparison is the one of the review.
+  await expect(page.getByRole("region", { name: "Revisar cambios de otro administrador" }).getByRole("table")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await page.getByRole("button", { name: "Conservar mis cambios" }).click();
   await expect(name).toHaveValue("Mi negocio");
