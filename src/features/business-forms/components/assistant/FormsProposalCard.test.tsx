@@ -57,15 +57,23 @@ async function mount(card: AssistantProposalCardProps, permissions = ["formtempl
   await act(async () => { render(<AppProviders><RouterProvider router={router} /></AppProviders>); });
   return router;
 }
+// The value of a datum of the card's `DataList`, and the texts of a row of its table, header or body.
+const datum = (scope: HTMLElement, label: string) => within(scope).getByText(label, { selector: "dt" }).nextElementSibling?.textContent;
+const cells = (row: HTMLElement) => Array.from(row.querySelectorAll("th, td"), cell => cell.textContent);
 beforeEach(async () => { queryClient.clear(); vi.mocked(notify).mockReset(); created = null; posted = []; failure = null; await i18n.changeLanguage("es"); });
 afterEach(() => { cleanup(); queryClient.clear(); });
 
-it("shows a form proposal with its questions and creates its draft once, then opens it", async () => {
+// TC3-A (2026-11-25): the data of the form in two columns and its questions in a table, one per row; «Opciones» because one of
+// them takes them from a catalog, which opens from its name.
+it("shows a form proposal with its questions in a table and creates its draft once, then opens it", async () => {
   const router = await mount(props(proposalCapabilities.form, form));
   const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
-  expect(within(card).getByText("CCC · 2 preguntas")).toBeInTheDocument();
-  expect(within(card).getByText("Texto corto · Obligatoria")).toBeInTheDocument();
-  expect(within(card).getByText("Elegir de un catálogo · Campos, ya existe")).toBeInTheDocument();
+  expect(datum(card, "Prefijo")).toBe("CCC");
+  const rows = within(within(card).getByRole("region", { name: "Preguntas" })).getAllByRole("row");
+  expect(rows.map(cells)).toEqual([["N.º", "Pregunta", "Tipo", "Opciones", "Obligatoria"],
+    ["1", "Patente", "Texto corto", "—", "Sí"], ["2", "Campo", "Elegir de un catálogo", "Campos", "No"]]);
+  expect(within(rows[2]).getByRole("link", { name: "Campos" })).toHaveAttribute("href", "/catalogos/01990000-0000-7000-8000-000000000031");
+  expect(within(card).queryByText(/2 preguntas/)).not.toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Crear borrador" }));
   expect(await screen.findByText("Editor")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/formularios/" + createdId);
@@ -102,7 +110,9 @@ it("shows how it looks before creating, and marks the questions that changed", a
   const previous = { id: "01990000-0000-7000-8000-000000000054", capability: proposalCapabilities.form, version: 1, content: { ...form, questions: [form.questions[0]] } };
   await mount(props(proposalCapabilities.form, form, { previous }));
   const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
-  expect(within(card).getAllByText("Nueva")).toHaveLength(1);
+  const rows = within(card).getAllByRole("row");
+  expect(cells(rows[0]).at(-1)).toBe("Cambio");
+  expect(rows.slice(1).map(row => cells(row).at(-1))).toEqual(["", "Nueva"]);
   await userEvent.click(within(card).getByRole("button", { name: "Ver cómo queda" }));
   const dialog = await screen.findByRole("dialog", { name: "Cómo queda · Control de carga" });
   expect(within(dialog).getByText("Patente")).toBeInTheDocument();
@@ -114,9 +124,9 @@ it("shows how it looks before creating, and marks the questions that changed", a
 it("creates a Manual catalog and opens it; without managing catalogs there is nothing to create", async () => {
   const router = await mount(props(proposalCapabilities.catalog, catalog));
   const card = await screen.findByRole("region", { name: "Catálogo: Transportistas" });
-  expect(within(card).getByText("Texto · 1 campo")).toBeInTheDocument();
-  expect(within(card).getByText("Código · CUIT")).toBeInTheDocument();
-  expect(within(card).getByText("Teléfono · Texto")).toBeInTheDocument();
+  expect(["Descripción", "Tipo de valor", "Código", "Opción", "Teléfono"].map(label => datum(card, label)))
+    .toEqual(["Empresas que traen la carga", "Texto", "CUIT", "Razón social", "Texto"]);
+  expect(within(card).queryByRole("table")).not.toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + createdId);
@@ -126,18 +136,19 @@ it("creates a Manual catalog and opens it; without managing catalogs there is no
   expect(within(readOnly).queryByRole("button", { name: "Crear catálogo" })).not.toBeInTheDocument();
 });
 
-it("shows a catalog with its spreadsheet: each column, three sample rows and how many more, and opens it ready to import", async () => {
+// TC1-B and TC2-B (2026-11-25): the sample says what fills each column, the datum of the catalog on top and the column of the
+// spreadsheet under it, and its foot, how many rows it shows of how many.
+it("shows a catalog with its spreadsheet: its data, a sample that names each column and how many rows, and opens it ready to import", async () => {
   const router = await mount(props(proposalCapabilities.catalog, mapped, {}, 2));
   const card = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
-  expect(within(card).getByText("Texto · 1 campo · 86 filas")).toBeInTheDocument();
-  expect(within(card).getByText("Código · CUIT · columna A")).toBeInTheDocument();
-  expect(within(card).getByText("Opción · Razón social · columna B")).toBeInTheDocument();
-  expect(within(card).getByText("Rubro · Texto · columna C")).toBeInTheDocument();
-  const table = within(card).getByRole("table");
-  expect(within(table).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["CUIT", "Razón social", "Rubro"]);
-  expect(within(table).getAllByRole("row")).toHaveLength(4);
-  expect(within(table).getByText("Logística Pampa")).toBeInTheDocument();
-  expect(within(card).getByText("y 83 filas más")).toBeInTheDocument();
+  expect(datum(card, "Descripción")).toBe("Empresas que traen la carga");
+  expect(datum(card, "Tipo de valor")).toBe("Texto");
+  expect(within(card).queryByText("Código", { selector: "dt" })).not.toBeInTheDocument();
+  const rows = within(within(card).getByRole("table")).getAllByRole("row");
+  expect(rows.slice(0, 2).map(cells)).toEqual([["Código", "Opción", "Rubro"], ["A · CUIT", "B · Razón social", "C · Rubro"]]);
+  expect(cells(rows[3])).toEqual(["20-22222222-2", "Logística Pampa", "Hacienda"]);
+  expect(rows).toHaveLength(5);
+  expect(within(card).getByText("Primeras 3 de 86 filas")).toHaveClass("assistant-proposal-foot");
   await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + createdId);
@@ -148,7 +159,7 @@ it("shows a catalog with its spreadsheet: each column, three sample rows and how
 it("opens a catalog without a spreadsheet without an import, and shows a simple list's column once", async () => {
   const router = await mount(props(proposalCapabilities.catalog, { ...mapped, spreadsheet: null }, {}, 2));
   const card = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
-  expect(within(card).getByText("Texto · 1 campo")).toBeInTheDocument();
+  expect(datum(card, "Rubro")).toBe("Texto");
   expect(within(card).queryByRole("table")).not.toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Crear catálogo" }));
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
@@ -157,20 +168,20 @@ it("opens a catalog without a spreadsheet without an import, and shows a simple 
   const list = { ...sheet, rowCount: 2, hasHeaders: false, columns: [{ ...code, header: null }, { ...option, letter: "A", header: null }], sample: [["Norte", "Norte"], ["Sur", "Sur"]] };
   await mount(props(proposalCapabilities.catalog, { ...mapped, fields: [], spreadsheet: list }, {}, 2));
   const simple = await screen.findByRole("region", { name: "Catálogo: Contratistas" });
-  expect(within(simple).getByText("Opción · Razón social · columna A")).toBeInTheDocument();
-  expect(within(within(simple).getByRole("table")).getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Columna A"]);
-  expect(within(simple).queryByText(/filas? más/)).not.toBeInTheDocument();
+  const rows = within(within(simple).getByRole("table")).getAllByRole("row");
+  expect(rows.slice(0, 2).map(cells)).toEqual([["Código y opción"], ["Columna A"]]);
+  expect(rows).toHaveLength(4);
+  expect(within(simple).getByText("Las 2 filas")).toBeInTheDocument();
 });
 
-it("shows an import with its catalog, mapping, rows and sample, and reviews it in that catalog with the request in the navigation state", async () => {
+it("shows an import with its catalog and a sample that names each column, and reviews it in that catalog with the request in the navigation state", async () => {
   const router = await mount(props(proposalCapabilities.catalogImport, importing));
   const card = await screen.findByRole("region", { name: "Importación: Contratistas" });
-  expect(within(card).getByText("Texto · 86 filas")).toBeInTheDocument();
-  expect(within(card).getByText("Código · columna A")).toBeInTheDocument();
-  expect(within(card).getByText("Opción · columna B")).toBeInTheDocument();
-  expect(within(card).getByText("Rubro · columna C")).toBeInTheDocument();
-  expect(within(within(card).getByRole("table")).getAllByRole("row")).toHaveLength(4);
-  expect(within(card).getByText("y 83 filas más")).toBeInTheDocument();
+  expect(within(card).queryByRole("term")).not.toBeInTheDocument();
+  const rows = within(within(card).getByRole("table")).getAllByRole("row");
+  expect(rows.slice(0, 2).map(cells)).toEqual([["Código", "Opción", "Rubro"], ["A · CUIT", "B · Razón social", "C · Rubro"]]);
+  expect(rows).toHaveLength(5);
+  expect(within(card).getByText("Primeras 3 de 86 filas")).toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Revisar la importación" }));
   expect(await screen.findByText("Página del catálogo")).toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/catalogos/" + catalogTarget);
@@ -198,7 +209,7 @@ it("folds a replaced import, and marks nothing new against a previous proposal o
   expect(within(await screen.findByRole("region", { name: "Importación: Contratistas" })).queryByText("Nueva")).not.toBeInTheDocument();
 });
 
-// Etapa 3 de la IA: propose-form@2, the form of version 1 with the turn's document. Its summary says it reads documents when the
+// Etapa 3 de la IA: propose-form@2, the form of version 1 with the turn's document. Its data say it reads documents when the
 // proposal turns the reading on; what each question read and a similar standard are for DOC6, not for this card.
 const reading = { recognition: "Comprobantes de transferencia: muestran el monto, la fecha y las cuentas de origen y de destino." };
 const documentForm = { ...form, questions: form.questions.map((question, index) => ({ ...question, sample: index === 0 ? "AB 123 CD" : null })),
@@ -207,8 +218,8 @@ const documentForm = { ...form, questions: form.questions.map((question, index) 
 it("says that a form proposed with a document reads documents, and creates its draft like version 1", async () => {
   const router = await mount(props(proposalCapabilities.form, documentForm, {}, 2));
   const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
-  expect(within(card).getByText("CCC · 2 preguntas · Lee documentos")).toBeInTheDocument();
-  expect(within(card).getByText("Texto corto · Obligatoria")).toBeInTheDocument();
+  expect(datum(card, "Lee documentos")).toBe("Sí");
+  expect(cells(within(card).getAllByRole("row")[1])).toEqual(["1", "Patente", "Texto corto", "—", "Sí"]);
   expect(within(card).queryByText("AB 123 CD")).not.toBeInTheDocument();
   expect(within(card).queryByText(reading.recognition)).not.toBeInTheDocument();
   await userEvent.click(within(card).getByRole("button", { name: "Crear borrador" }));
@@ -221,7 +232,7 @@ it("does not say it reads documents when version 2 leaves the reading off, and m
   const previous = { id: "01990000-0000-7000-8000-000000000054", capability: proposalCapabilities.form, version: 1, content: form };
   await mount(props(proposalCapabilities.form, { ...documentForm, documentReading: null }, { previous }, 2));
   const card = await screen.findByRole("region", { name: "Formulario: Control de carga" });
-  expect(within(card).getByText("CCC · 2 preguntas")).toBeInTheDocument();
+  expect(datum(card, "Prefijo")).toBe("CCC");
   expect(within(card).queryByText(/Lee documentos/)).not.toBeInTheDocument();
   expect(within(card).queryByText("Nueva")).not.toBeInTheDocument();
 });
@@ -230,5 +241,7 @@ it("says it in English too", async () => {
   await i18n.changeLanguage("en");
   await mount(props(proposalCapabilities.form, { ...documentForm, culture: "en", name: "Load control" }, {}, 2));
   const card = await screen.findByRole("region", { name: "Form: Load control" });
-  expect(within(card).getByText("CCC · 2 questions · Reads documents")).toBeInTheDocument();
+  expect(datum(card, "Prefix")).toBe("CCC");
+  expect(datum(card, "Reads documents")).toBe("Yes");
+  expect(cells(within(card).getAllByRole("row")[0])).toEqual(["No.", "Question", "Type", "Options", "Required"]);
 });

@@ -10,10 +10,15 @@ it("reads each datum with its value as a term and its definition, in order", () 
   expect(screen.getByText("Fertilizante").tagName).toBe("STRONG");
 });
 
-it("keeps each datum next to its value in the same row, with a line between rows", () => {
+// TC5-A (2026-11-25): the list is the box and each row, the datum next to its value; `index.css` draws the box, the tinted
+// column of the datum and the lines, and makes it run from edge to edge inside a card, a zone or a table cell.
+it("keeps each datum next to its value in the same row of its box", () => {
   const { container } = render(<DataList items={[{ label: "Zona", value: "Norte" }, { label: "Rubro", value: "—" }]} />);
+  expect(container.querySelector("dl")).toHaveAttribute("data-slot", "data-list");
   const rows = container.querySelectorAll("dl > div");
   expect(rows).toHaveLength(2);
-  for (const row of rows) expect(Array.from(row.children, child => child.tagName)).toEqual(["DT", "DD"]);
-  expect(container.querySelector("dl")?.className).toContain("divide-y");
+  for (const row of rows) {
+    expect(row).toHaveAttribute("data-slot", "data-list-row");
+    expect(Array.from(row.children, child => child.tagName)).toEqual(["DT", "DD"]);
+  }
 });

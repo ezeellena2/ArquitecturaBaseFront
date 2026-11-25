@@ -11,6 +11,8 @@ import { Picker } from "@/shared/ui/Picker";
 import { FilterBar } from "@/shared/ui/FilterBar";
 import { FilterChip } from "@/shared/ui/FilterChip";
 import { DataTable } from "@/shared/ui/DataTable";
+import { DataList } from "@/shared/ui/DataList";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { notify } from "@/shared/ui/notifications";
 import { Textarea } from "@/shared/ui/textarea";
@@ -119,12 +121,22 @@ export function Catalog() {
                 reviewed: t("whatsapp:status.Reviewed"), unknown: t("whatsapp:status.Unknown") })[state] }} />)}
         </MessageHistory>
       </Surface>
-      {/* IA1-A (2026-11-04): the proposal card, open and folded as replaced or created; the module brings its content. */}
+      {/* IA1-A (2026-11-04): the proposal card, open and folded as replaced or created; the module brings its content. Its data
+          in two columns and its table from edge to edge, closed by its foot (TC1-B, TC2-B and TC3-A, 2026-11-25). */}
       <Surface title={english ? "Assistant proposal" : "Propuesta del asistente"} padded>
         <AssistantProposalCard kind={english ? "Form" : "Formulario"} title={english ? "Truck load control" : "Control de carga de camiones"}
-          summary={english ? "CCC · 2 questions" : "CCC · 2 preguntas"}
+          footer={english ? "First 2 of 12 rows" : "Primeras 2 de 12 filas"}
           actions={<><Button size="sm" variant="outline">{english ? "See how it looks" : "Ver cómo queda"}</Button><Button size="sm">{english ? "Create draft" : "Crear borrador"}</Button></>}>
-          <ol className="flex flex-col gap-2"><li>1. {english ? "License plate" : "Patente"}</li><li>2. {english ? "Net kilos" : "Kilos netos"}</li></ol>
+          <DataList items={[{ key: "prefix", label: english ? "Prefix" : "Prefijo", value: "CCC" }]} />
+          <div className="assistant-proposal-table">
+            <Table scrollLabel={english ? "Questions" : "Preguntas"}>
+              <TableHeader><TableRow><TableHead numeric>{english ? "No." : "N.º"}</TableHead><TableHead>{english ? "Question" : "Pregunta"}</TableHead></TableRow></TableHeader>
+              <TableBody>
+                <TableRow><TableCell numeric>1</TableCell><TableCell>{english ? "License plate" : "Patente"}</TableCell></TableRow>
+                <TableRow><TableCell numeric>2</TableCell><TableCell>{english ? "Net kilos" : "Kilos netos"}</TableCell></TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </AssistantProposalCard>
         <AssistantProposalCard kind={english ? "Form" : "Formulario"} title={english ? "Truck load control" : "Control de carga de camiones"}
           folded={{ state: english ? "Replaced" : "Reemplazada" }} />

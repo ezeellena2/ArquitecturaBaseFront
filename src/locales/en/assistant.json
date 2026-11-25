@@ -15,7 +15,7 @@
   "you": "You",
   "assistant": "Assistant",
   "copy": "Copy",
-  "sources": "Verified sources",
+  "verifiedSource": "Verified source",
   "openSource": "Open source",
   "observedAt": "Observed {{date}}",
   "partial": "Partial result",

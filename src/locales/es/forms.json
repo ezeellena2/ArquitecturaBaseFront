@@ -1638,40 +1638,39 @@
     "entries": { "label": "Armar con la IA", "form": "Armame un formulario para ", "catalog": "Armame un catálogo de ", "missing": "Armame un formulario para registrar {{topic}}", "labelFor": "Armar con la IA un formulario para {{name}}" },
     "form": {
       "kind": "Formulario",
-      "summary_one": "{{prefix}} · {{count}} pregunta",
-      "summary_other": "{{prefix}} · {{count}} preguntas",
       "preview": "Ver cómo queda",
       "previewTitle": "Cómo queda · {{name}}",
       "create": "Crear borrador",
       "creating": "Creando…",
       "created": "Borrador creado",
       "open": "Abrir el borrador",
-      "catalogExists": "{{name}}, ya existe",
       "required": "Obligatoria",
       "new": "Nueva",
-      "readsDocuments": "Lee documentos"
+      "readsDocuments": "Lee documentos",
+      "questions": "Preguntas",
+      "columns": { "number": "N.º", "question": "Pregunta", "type": "Tipo", "options": "Opciones", "change": "Cambio" }
     },
     "catalog": {
       "kind": "Catálogo",
-      "summary_one": "{{type}} · {{count}} campo",
-      "summary_other": "{{type}} · {{count}} campos",
       "create": "Crear catálogo",
       "creating": "Creando…",
       "created": "Catálogo creado",
       "open": "Abrir el catálogo",
       "code": "Código",
       "option": "Opción",
-      "people": "Personas"
+      "people": "Personas",
+      "origin": "Origen"
     },
     "import": { "kind": "Importación", "review": "Revisar la importación" },
     "spreadsheet": {
-      "rows_one": "{{count}} fila",
-      "rows_other": "{{count}} filas",
-      "column": "columna {{letter}}",
       "header": "Columna {{letter}}",
+      "source": "{{letter}} · {{header}}",
+      "codeAndOption": "Código y opción",
       "sample": "Filas de muestra",
-      "more_one": "y {{count}} fila más",
-      "more_other": "y {{count}} filas más"
+      "first_one": "La primera de {{total}} filas",
+      "first_other": "Primeras {{count}} de {{total}} filas",
+      "all_one": "La única fila",
+      "all_other": "Las {{count}} filas"
     }
   },
   "calculation": {

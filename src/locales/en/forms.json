@@ -1638,40 +1638,39 @@
     "entries": { "label": "Build with AI", "form": "Build me a form for ", "catalog": "Build me a catalog of ", "missing": "Build me a form to record {{topic}}", "labelFor": "Build with AI a form for {{name}}" },
     "form": {
       "kind": "Form",
-      "summary_one": "{{prefix}} · {{count}} question",
-      "summary_other": "{{prefix}} · {{count}} questions",
       "preview": "See how it looks",
       "previewTitle": "How it looks · {{name}}",
       "create": "Create draft",
       "creating": "Creating…",
       "created": "Draft created",
       "open": "Open the draft",
-      "catalogExists": "{{name}}, already exists",
       "required": "Required",
       "new": "New",
-      "readsDocuments": "Reads documents"
+      "readsDocuments": "Reads documents",
+      "questions": "Questions",
+      "columns": { "number": "No.", "question": "Question", "type": "Type", "options": "Options", "change": "Change" }
     },
     "catalog": {
       "kind": "Catalog",
-      "summary_one": "{{type}} · {{count}} field",
-      "summary_other": "{{type}} · {{count}} fields",
       "create": "Create catalog",
       "creating": "Creating…",
       "created": "Catalog created",
       "open": "Open the catalog",
       "code": "Code",
       "option": "Option",
-      "people": "People"
+      "people": "People",
+      "origin": "Source"
     },
     "import": { "kind": "Import", "review": "Review the import" },
     "spreadsheet": {
-      "rows_one": "{{count}} row",
-      "rows_other": "{{count}} rows",
-      "column": "column {{letter}}",
       "header": "Column {{letter}}",
+      "source": "{{letter}} · {{header}}",
+      "codeAndOption": "Code and option",
       "sample": "Sample rows",
-      "more_one": "and {{count}} more row",
-      "more_other": "and {{count}} more rows"
+      "first_one": "The first of {{total}} rows",
+      "first_other": "First {{count}} of {{total}} rows",
+      "all_one": "The only row",
+      "all_other": "All {{count}} rows"
     }
   },
   "calculation": {

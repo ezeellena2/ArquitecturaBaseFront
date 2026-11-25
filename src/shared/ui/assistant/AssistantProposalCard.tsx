@@ -4,14 +4,16 @@ import { Badge } from "../badge";
 /**
  * A proposal under the answer that brought it (IA1-A): the band names its kind and holds its actions, and the module brings
  * the content. Replaced or already created, it folds to one line with its state and, when there is one, the way to what it
- * created.
+ * created. The data of the content go in `DataList` and a collection in a table (`assistant-proposal-table`), both from edge
+ * to edge of the card; `footer` closes it in the tone of the band (TC1-B, TC2-B, 2026-11-25). The verified sources of an
+ * answer use it too (TC4-A).
  */
-export function AssistantProposalCard({ kind, title, summary, actions, folded, children }: {
+export function AssistantProposalCard({ kind, title, actions, folded, footer, children }: {
   kind: string;
   title: string;
-  summary?: string;
   actions?: ReactNode;
   folded?: { readonly state: string; readonly action?: ReactNode } | null;
+  footer?: ReactNode;
   children?: ReactNode;
 }) {
   if (folded)
@@ -30,12 +32,10 @@ export function AssistantProposalCard({ kind, title, summary, actions, folded, c
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>
       <div className="assistant-proposal-body">
-        <div className="min-w-0">
-          <p className="break-words font-semibold [overflow-wrap:anywhere]">{title}</p>
-          {summary ? <p className="text-sm text-[var(--color-content-muted)]">{summary}</p> : null}
-        </div>
+        <p className="min-w-0 break-words font-semibold [overflow-wrap:anywhere]">{title}</p>
         {children}
       </div>
+      {footer ? <p className="assistant-proposal-foot">{footer}</p> : null}
     </section>
   );
 }

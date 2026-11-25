@@ -102,7 +102,7 @@ for (const lang of ["es", "en"] as const)
           await page.keyboard.press("Control+Enter");
           await expect(
             page.getByRole("heading", {
-              name: lang === "es" ? "Fuentes verificadas" : "Verified sources",
+              name: lang === "es" ? "Fuente verificada" : "Verified source",
               exact: true,
             }),
           ).toBeVisible();
@@ -163,7 +163,7 @@ for (const lang of ["es", "en"] as const)
       .click();
     await expect(
       page.getByRole("heading", {
-        name: lang === "es" ? "Fuentes verificadas" : "Verified sources",
+        name: lang === "es" ? "Fuente verificada" : "Verified source",
         exact: true,
       }),
     ).toBeVisible();

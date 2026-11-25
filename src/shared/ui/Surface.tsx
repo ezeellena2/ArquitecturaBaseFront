@@ -29,7 +29,7 @@ export function Surface({ title, titleRef, headingLevel = 2, padded = false, act
           {actions ? <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
         </div>
       ) : null}
-      {padded ? <div className="flex flex-col gap-4 p-4">{children}</div> : children}
+      {padded ? <div data-slot="surface-body" className="flex flex-col gap-4 p-4">{children}</div> : children}
     </section>
   );
 }

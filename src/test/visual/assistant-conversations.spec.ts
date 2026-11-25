@@ -35,7 +35,7 @@ for (const lang of ["es", "en"] as const) for (const width of [1440, 390, 320]) 
     await field.fill("");
     if (width < 1024) await show.click();
     await row.click();
-    await expect(page.getByRole("heading", { name: lang === "es" ? "Fuentes verificadas" : "Verified sources", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: lang === "es" ? "Fuente verificada" : "Verified source", exact: true })).toBeVisible();
     if (width < 1024) { await expect(panel).not.toBeVisible(); await show.click(); }
     const more = panel.getByRole("button", { name: lang === "es" ? /^Acciones de ¿Cuántos/ : /^Actions for How many/ });
     if (width < 1024) expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(44);

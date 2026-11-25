@@ -192,7 +192,7 @@ it("shows captured reasons and proposed display values without querying current 
   expect(screen.getByText("Pérez Hnos.")).toBeInTheDocument();
   // Board LR1: the proposed data read in two columns, without «Cliente:» glued to its value.
   expect(screen.getByText("Pérez Hnos.").closest("dd")?.previousElementSibling).toHaveTextContent(/^Cliente$/);
-  expect(screen.getByText("Pérez Hnos.").closest("dl")).toHaveClass("divide-y");
+  expect(screen.getByText("Pérez Hnos.").closest("dl")).toHaveAttribute("data-slot", "data-list");
   expect(screen.getByText("Asistente ·")).toBeInTheDocument();
 });
 
