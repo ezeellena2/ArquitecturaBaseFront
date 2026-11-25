@@ -78,8 +78,9 @@ it("opens a normal new form seeded by the actor-owned original topic name withou
  expect(screen.getByRole("link",{name:"Formularios"})).not.toHaveAttribute("aria-current","page");
  expect(screen.getByRole("link",{name:"Formularios que faltan"})).toHaveAttribute("aria-current","page");
  await userEvent.click(screen.getByRole("link",{name:"Crear formulario Reclamos de clientes"}));
- expect(await screen.findByLabelText("Nombre")).toHaveValue(topic.name);expect(router.state.location.pathname).toBe("/formularios/nuevo");expect(router.state.location.search).toBe("");expect(posts).toBe(0);
-});
+ // The first test that opens the editor pays its lazy load: alone, the name showed up past the 3 s three times in three.
+ expect(await screen.findByLabelText("Nombre",{},{timeout:10_000})).toHaveValue(topic.name);expect(router.state.location.pathname).toBe("/formularios/nuevo");expect(router.state.location.search).toBe("");expect(posts).toBe(0);
+},20_000);
 it("uses the discarded history, without claiming that no one has ever asked for a form",async()=>{
  setup();const queries:URLSearchParams[]=[];
  server.use(http.get("/api/forms/missing-requests",({request})=>{const q=new URL(request.url).searchParams;queries.push(q);return HttpResponse.json(q.get("state")==="Discarded"?page([{...topic,state:"Discarded",discardedBy:{userId:id,displayName:"Ana"},discardedAtUtc:"2026-10-17T13:00:00Z"}],{stateCounts:{pending:0,discarded:1}}):page([],{stateCounts:{pending:0,discarded:1}}));}));
