@@ -6,6 +6,7 @@ type AssistantTestWindow = Window & {
 const scenes = [
   "empty",
   "answer",
+  "answer-roles",
   "running",
   "cancel-requested",
   "paused",
@@ -24,6 +25,7 @@ for (const lang of ["es", "en"] as const)
         await page.clock.install({ time: new Date("2026-10-04T15:00:00Z") });
         const existing = [
           "answer",
+          "answer-roles",
           "running",
           "cancel-requested",
           "uncertain",
@@ -56,6 +58,13 @@ for (const lang of ["es", "en"] as const)
         else
           await expect(
             page.getByRole("textbox", { name: label, exact: true }),
+          ).toBeVisible();
+        // TC4-A: the rows of a source with the same data go in a table inside its card.
+        if (scene === "answer-roles")
+          await expect(
+            page
+              .getByRole("region", { name: lang === "es" ? "Fuente verificada: Roles" : "Verified source: Roles" })
+              .getByRole("table"),
           ).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         expect(

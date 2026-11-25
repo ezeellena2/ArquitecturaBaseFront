@@ -17,7 +17,7 @@ const words = {
 } as const;
 // Tall enough for the whole conversation: the history does not scroll and the capture shows it entire.
 const heights: Record<string, Record<number, number>> = {
-  "chat-ana": { 1440: 1300, 390: 1960, 320: 2220 }, "chat-juan": { 1440: 1400, 390: 2080, 320: 2260 },
+  "chat-ana": { 1440: 1300, 390: 2000, 320: 2260 }, "chat-juan": { 1440: 1400, 390: 2080, 320: 2340 },
   "chat-marta": { 1440: 900, 390: 1100, 320: 1200 }, inbox: { 390: 900, 320: 900 },
 };
 

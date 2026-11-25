@@ -171,6 +171,19 @@ export function createAssistantVisualFixtures(
       answer: { kind: "clarification", evidenceIds: [], text: en
         ? "What do you want me to do with this spreadsheet? I can make a new catalog with it or import it into one that already exists."
         : "¿Qué querés que haga con esta planilla? Puedo armar un catálogo nuevo con ella o importarla en uno que ya existe." } };
+  // TC4-A (2026-11-25): a source of several rows with the same data goes in a table inside its card, the number to the right.
+  if (scenario === "assistant-answer-roles") {
+    const role = (index: number, name: string, description: string, accounts: string) => ({ id: fixtureId(6, index), values: [
+      { label: en ? "Role" : "Rol", value: name }, { label: en ? "Description" : "Descripción", value: description },
+      { label: en ? "Assigned accounts" : "Cuentas asignadas", value: accounts }] });
+    turn = { ...turn, question: en ? "What roles are there?" : "¿Qué roles hay?",
+      answer: { kind: "answer", evidenceIds: [evidenceId], text: en ? "There are 3 roles: Administrator, Support and Operator."
+        : "Hay 3 roles: Administrador, Soporte y Operador." },
+      evidences: [{ ...turn.evidences[0], sourceId: "roles.list", destination: "roles", requiredPermissions: ["roles.read"], rows: [
+        role(1, en ? "Administrator" : "Administrador", en ? "Manages the whole account" : "Administra la cuenta entera", "1"),
+        role(2, en ? "Support" : "Soporte", en ? "Answers questions" : "Atiende consultas", "2"),
+        role(3, en ? "Operator" : "Operador", en ? "Fills in the forms" : "Carga los formularios", en ? "1,250" : "1.250")] }] };
+  }
   const conversation = (): AssistantConversation => ({
     conversationId: assistantFixtureConversationId,
     title: turn.contentAccess === "allowed" ? bootstrap.suggestions[0].question : en ? "Private conversation" : "Conversación privada",

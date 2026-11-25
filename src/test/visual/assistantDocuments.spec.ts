@@ -22,7 +22,7 @@ for (const lang of ["es", "en"] as const)
       await page.goto(`/src/test/visual/index.html?${new URLSearchParams({ screen: `/?conversacion=${assistantFixtureConversationId}`, lang,
         scenario: "assistant-proposal-document" })}`);
       const card = page.getByRole("region", { name: es ? "Formulario: Pagos de clientes" : "Form: Customer payments" });
-      await expect(card.getByText(es ? "PAG · 6 preguntas · Lee documentos" : "PAG · 6 questions · Reads documents", { exact: true })).toBeVisible();
+      await expect(card.getByText(es ? "Lee documentos" : "Reads documents", { exact: true })).toBeVisible();
       await expect(card.getByRole("button", { name: es ? "Crear borrador" : "Create draft", exact: true })).toBeVisible();
       await expect(page.getByText(es ? "PDF · 2 páginas · 412 KB" : "PDF · 2 pages · 412 KB", { exact: true })).toBeVisible();
       const clip = page.getByRole("button", { name: es ? "Adjuntar un archivo" : "Attach a file", exact: true });
