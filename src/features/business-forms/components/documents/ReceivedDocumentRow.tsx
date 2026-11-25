@@ -29,6 +29,6 @@ export function ReceivedDocumentRow({ documentId, name, cells, loading = false, 
         </Button>
       </DisabledReason>
     </div>
-    <div className="px-3 py-1"><DataList items={cells.map((cell, index) => ({ key: String(index), label: cell.header, value: cell.value }))} /></div>
+    <DataList flush items={cells.map((cell, index) => ({ key: String(index), label: cell.header, value: cell.value }))} />
   </section>;
 }

@@ -123,7 +123,7 @@ function TestAction({ action, time }: { action: AgentTestAction; time: { timesta
   const hidden = !usePermissions().has("formrecords.read");
   const label = action.kind === "SendForm" && action.form ? t("cases.sendNamed", { form: action.form.name }) : t("actions." + action.kind);
   const attachment = action.form ? <MessageCard icon={<FormIcon className="size-4" />} title={action.form.name} description={t("test.openForm")}>
-    {action.form.fields.length ? <div className="border-t border-[var(--color-border)] px-3"><DataList items={action.form.fields.map((field, index) => ({ key: String(index), label: field.label, value: field.value ?? "—" }))} /></div>
+    {action.form.fields.length ? <div className="border-t border-[var(--color-border)]"><DataList flush items={action.form.fields.map((field, index) => ({ key: String(index), label: field.label, value: field.value ?? "—" }))} /></div>
       : hidden ? <p className="border-t border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-content-muted)]">{t("test.recordsHidden")}</p> : null}
   </MessageCard> : action.buttons?.length ? <ul aria-label={t("test.quickReplies")} className="mt-2 divide-y divide-[var(--color-border)] overflow-hidden rounded-[var(--radius-control)] border border-[var(--color-border)] bg-[var(--color-surface)]">
     {action.buttons.map((title, index) => <li key={index} className="px-3 py-2 text-center text-sm text-[var(--color-primary)]">{title}</li>)}

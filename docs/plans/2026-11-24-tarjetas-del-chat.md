@@ -6,8 +6,11 @@ programado** (front `b3d3826c`; la regla en
 Las escenas se rehicieron y se miraron una por una contra el lienzo el 2026-11-25. La revisión corrigió dos cosas: el
 ancho de `DataList` (adentro de un mensaje se encogía y a 320 px partía «Descripción» a mitad de palabra) y la tabla de
 preguntas en el celular (cada celda en un renglón, como en TC3 · 390). También se sumaron la fuente «Roles» en tabla y
-el catálogo de una sola columna. Faltan la corrida completa, que va con la del cierre de la prueba integral, y la
-prueba a mano, que hace la coordinadora en Chrome dentro de esa prueba. Sólo cambia el front: ni contratos ni servidor.
+el catálogo de una sola columna. Después, las listas que son el cuerpo de un marco propio (`flush`: «La fila» de un
+documento recibido, la «Revisión» de la importación y el formulario de una tarjeta en «Probar el asistente») dejaron el
+recuadro adentro del marco y van de borde a borde. Faltan la corrida completa, que va con la del cierre de la prueba
+integral, y la prueba a mano, que hace la coordinadora en Chrome dentro de esa prueba. Sólo cambia el front: ni contratos
+ni servidor.
 
 ## Por qué
 

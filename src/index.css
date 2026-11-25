@@ -273,8 +273,8 @@
 
   /* Los datos de un registro (`DataList`, TC5-A, 2026-11-25): en su recuadro, como una tabla de dos columnas. El dato va en una
      columna teñida, en gris y del tamaño del valor; una línea entre renglones y otra entre las dos columnas, del tono de las de
-     las tablas. Adentro de una tarjeta del chat, de una zona con banda (`Surface`) o de una celda va de borde a borde, como una
-     tabla: el borde lo pone lo que la rodea. */
+     las tablas. Adentro de una tarjeta del chat, de una zona con banda (`Surface`), de una celda o de un marco propio (`flush`)
+     va de borde a borde, como una tabla: el borde lo pone lo que la rodea. */
   [data-slot="data-list"] {
     display: grid;
     /* La columna del dato mide un tercio y nunca menos que su palabra más larga, así un dato no se parte a mitad de palabra;
@@ -335,6 +335,17 @@
     border: 0;
     border-radius: 0;
     background-color: transparent;
+  }
+  /* Una lista que es el cuerpo de un marco propio (`flush`: la fila de una planilla, la revisión de una importación, el
+     formulario de una tarjeta en un mensaje) también va de borde a borde: el borde lo pone el marco, y la línea de arriba, la
+     banda o lo que va antes. Si la lista cierra el marco, tampoco lleva la de abajo. */
+  [data-slot="data-list"][data-flush] {
+    border-inline: 0;
+    border-top: 0;
+    border-radius: 0;
+  }
+  [data-slot="data-list"][data-flush]:last-child {
+    border-bottom: 0;
   }
 
   .message-history {

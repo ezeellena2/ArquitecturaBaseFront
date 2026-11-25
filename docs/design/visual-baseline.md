@@ -482,8 +482,8 @@ filtros, a quién o a qué archivo van en `DataList`, como los datos de un regis
 - **Los datos de un registro, en su recuadro** (`DataList`,
   [TC5-A](#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25)). Como una tabla de dos columnas: el dato
   en gris y del mismo tamaño que el valor, en una columna teñida; el valor en el color del texto; una línea entre
-  renglones y otra entre las dos columnas. Adentro de una tarjeta, de una zona con banda o de una celda va de borde a
-  borde, como una tabla. La columna del dato mide un tercio, igual en todos los renglones, y nunca menos que su palabra más
+  renglones y otra entre las dos columnas. Adentro de una tarjeta, de una zona con banda, de una celda o de un marco propio
+  (la fila de una planilla, la revisión de una importación) va de borde a borde, como una tabla. La columna del dato mide un tercio, igual en todos los renglones, y nunca menos que su palabra más
   larga: un dato no se parte a mitad de palabra. Adentro de algo que se ajusta a su contenido (un mensaje) la lista pide el
   ancho que necesitan sus datos. En el celular, donde los recuadros son angostos, el dato ocupa dos quintos y el margen de
   cada celda se achica. Los datos que dependen de un valor (los de la
@@ -1597,8 +1597,9 @@ formulario» del chat de WhatsApp («No puede ser que haya modales que se sigan 
 
 - **TC5-A · Los datos de etiqueta y valor, en su recuadro**, en toda la app: `DataList` es una tabla de dos columnas, con
   borde y esquinas, el dato en gris en una columna teñida (`table-section`) y una línea entre renglones y otra entre las
-  dos columnas. Adentro de una tarjeta del chat, de una zona con banda (`Surface padded`) o de una celda va de borde a
-  borde: el borde lo pone lo que la rodea. Descartó los campos para leer (TC5-B) y afinar las dos columnas sin recuadro
+  dos columnas. Adentro de una tarjeta del chat, de una zona con banda (`Surface padded`), de una celda o de un marco
+  propio (`flush`: la fila de una planilla, la revisión de una importación, el formulario de una tarjeta en un mensaje) va
+  de borde a borde: el borde lo pone lo que la rodea. Descartó los campos para leer (TC5-B) y afinar las dos columnas sin recuadro
   (TC5-C).
 - **TC1-B · Lo de arriba de una tarjeta, en `DataList`**, nunca en renglones sueltos ni en un resumen gris que junta datos
   («Texto · 2 campos · 86 filas»). La muestra de una planilla nombra cada columna: arriba el dato del catálogo que llena y,

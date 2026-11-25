@@ -190,7 +190,7 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
     ...(counts?.reactivated ? [{ key: "reactivated", label: t("catalogs.import.reactivated"), value: count(counts.reactivated) }] : []),
   ];
   const readList = (sheet: ReactNode, rowsRead: ReactNode, counts?: { unchanged: number; reactivated: number }) =>
-    <div className="px-4 py-1"><DataList items={readItems(sheet, rowsRead, counts)} /></div>;
+    <DataList flush items={readItems(sheet, rowsRead, counts)} />;
 
   // The chat spreadsheet is a third origin while it can be imported, named with its file and rows when they are known.
   const chatOffered = !!assistant && !state.chatGone;

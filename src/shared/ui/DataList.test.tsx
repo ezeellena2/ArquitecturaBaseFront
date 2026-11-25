@@ -22,3 +22,13 @@ it("keeps each datum next to its value in the same row of its box", () => {
     expect(Array.from(row.children, child => child.tagName)).toEqual(["DT", "DD"]);
   }
 });
+
+// A list that is the body of a frame of its own (the row of a spreadsheet, the review of an import, the form of a card in a
+// message) says so with `flush`: `index.css` takes its box away and the frame draws the border.
+it("marks a flush list so that its frame draws the border", () => {
+  const items = [{ label: "Hoja", value: "Hoja1" }];
+  const { container, rerender } = render(<DataList items={items} />);
+  expect(container.querySelector("dl")).not.toHaveAttribute("data-flush");
+  rerender(<DataList flush items={items} />);
+  expect(container.querySelector("dl")).toHaveAttribute("data-flush");
+});
