@@ -150,3 +150,11 @@ Al programar cada etapa se reescribió lo que decía lo contrario (queda como re
 
 Las tres piezas nuevas (adjuntar, grabar y la tarjeta) se suman al catálogo local del
 [estándar visual](../guides/estandar-visual.md#catálogo-y-revisión-con-navegador) con sus variantes.
+
+## La tarjeta, ordenada (TC1-B a TC4-A) — 2026-11-25
+
+Desde el 2026-11-25 la tarjeta lee sus datos en `DataList`, sin el resumen gris, y una colección en una tabla de borde a
+borde con su pie: la muestra de una planilla nombra cada columna con el dato del catálogo y la columna de donde sale, y las
+preguntas de un formulario van una por fila. Las fuentes de una respuesta usan la misma tarjeta. Lo eligió el usuario en el
+lienzo [Tarjetas del chat](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S); la regla está en
+[visual-baseline](visual-baseline.md#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25).

@@ -180,3 +180,10 @@ Igual a los tableros, con estas diferencias, que siguen reglas que ya existían:
 - **Exportar:** una pregunta «Ubicación» cuenta como tres columnas (latitud, longitud y precisión), como sale en el Excel.
   Cada dato del resultado de una acción (RE1-A) cuenta como una columna en las dos opciones, y «Solo las visibles» manda
   los que se ven (2026-11-11): con sólo uno oculto en «Columnas», ya se puede elegir.
+
+## Los datos en dos columnas, en su recuadro (TC5-A) — 2026-11-25
+
+El 24/11 el usuario mandó «Enviar un formulario» de WhatsApp, rehecho en esta tanda, porque los datos en dos columnas se
+veían sueltos. Se cambió la pieza, `DataList`, que ahora va en su recuadro, como una tabla de dos columnas
+([TC5-A](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-TC5)): los diálogos de esta tanda que la usan (publicar, dar de baja, exportar respuestas,
+importar opciones, cambiar el tipo de un campo, enviar un formulario) la toman sin cambiar su código.

@@ -1,6 +1,9 @@
 # Tarjetas del chat y datos de etiqueta y valor: un solo criterio (TC1 a TC5)
 
-Fecha: **2026-11-24**. Estado: **propuesto, esperando que el usuario elija**. Sin programar. Sólo cambia el front: ni
+Fecha: **2026-11-24**. Estado: **elegido el 2026-11-25 («Sí, las recomendadas»: TC1-B, TC2-B, TC3-A, TC4-A y TC5-A) y
+programado** (front `b3d3826c`; la regla en
+[visual-baseline](../design/visual-baseline.md#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25)).
+Faltan las escenas visuales rehechas, la corrida completa del cierre y la prueba a mano. Sólo cambia el front: ni
 contratos ni servidor.
 
 ## Por qué
@@ -55,7 +58,7 @@ TC1-B con TC2-B y TC3-A se miraron también adentro de la app, en el catálogo v
 y `assistant-proposal`), con el marcado inyectado: en la compu la tabla de preguntas entra sin desplazarse y a 390 px la
 muestra se desplaza adentro de la tarjeta, sin mover la página.
 
-## Lo que decide el usuario
+## Lo que eligió el usuario (2026-11-25): las recomendadas
 
 | Decisión | Opciones | Recomendada |
 | --- | --- | --- |

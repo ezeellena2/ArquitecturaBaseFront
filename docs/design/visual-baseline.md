@@ -479,8 +479,11 @@ filtros, a quién o a qué archivo van en `DataList`, como los datos de un regis
   por parte, con su ícono en una columna fija y una línea que lo une al siguiente. Las palabras que unen («Si», «y»,
   «es», «desde») van en gris y los datos (la pregunta, el valor), en negrita; un dato aparte de una acción (el rol, «con
   el PDF») va en una etiqueta y un texto escrito por el autor (el mensaje), entero en su recuadro.
-- **Los datos de un registro, en dos columnas** (`DataList`). El dato en gris y del mismo tamaño que el valor, en su
-  columna; el valor en el color del texto; una línea entre renglones. Los datos que dependen de un valor (los de la
+- **Los datos de un registro, en su recuadro** (`DataList`,
+  [TC5-A](#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25)). Como una tabla de dos columnas: el dato
+  en gris y del mismo tamaño que el valor, en una columna teñida; el valor en el color del texto; una línea entre
+  renglones y otra entre las dos columnas. Adentro de una tarjeta, de una zona con banda o de una celda va de borde a
+  borde, como una tabla. Los datos que dependen de un valor (los de la
   opción elegida) van en su propio renglón, «Pregunta · Dato», nunca debajo de él
   ([nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22)).
 - **Una respuesta, con la forma de su formulario** (VF1-A, 2026-11-22). La vista rápida y la pantalla completa la leen con
@@ -1580,3 +1583,30 @@ banda de una ruta propia). Quedó programada el mismo día con el [plan](../plan
   se cambia** se lee sin íconos ni botones, como Información del negocio en sólo lectura (IN3).
 - **La 404**, con sesión, también va adentro del caparazón, con la forma del error de una ruta: «No encontramos esta
   página» en la banda y «Volver al inicio» centrado.
+
+## Tarjetas con datos del chat y datos de etiqueta y valor — 2026-11-25
+
+En la prueba integral del 24/11 el usuario mandó las tarjetas del asistente de Inicio («está bien la tabla, le falta un poco
+de borde y diseño de contorno, pero después los datos arriba no me convencen así sin formato») y el diálogo «Enviar un
+formulario» del chat de WhatsApp («No puede ser que haya modales que se sigan viendo tan mal así»). En el lienzo aparte
+[Tarjetas del chat](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S) eligió las cinco recomendadas el 2026-11-25
+([plan](../plans/2026-11-24-tarjetas-del-chat.md)):
+
+- **TC5-A · Los datos de etiqueta y valor, en su recuadro**, en toda la app: `DataList` es una tabla de dos columnas, con
+  borde y esquinas, el dato en gris en una columna teñida (`table-section`) y una línea entre renglones y otra entre las
+  dos columnas. Adentro de una tarjeta del chat, de una zona con banda (`Surface padded`) o de una celda va de borde a
+  borde: el borde lo pone lo que la rodea. Descartó los campos para leer (TC5-B) y afinar las dos columnas sin recuadro
+  (TC5-C).
+- **TC1-B · Lo de arriba de una tarjeta, en `DataList`**, nunca en renglones sueltos ni en un resumen gris que junta datos
+  («Texto · 2 campos · 86 filas»). La muestra de una planilla nombra cada columna: arriba el dato del catálogo que llena y,
+  en un renglón gris del encabezado, la columna de la planilla de donde sale («A · CUIT»). Descartó una tabla «Columnas»
+  aparte (TC1-A).
+- **TC2-B · La tabla de una tarjeta, de borde a borde**, cerrada por un pie del tono de la banda que dice cuántas filas
+  muestra («Primeras 3 de 86 filas»), como el paginado. Descartó el recuadro propio (TC2-A) y la banda verde (TC2-C).
+- **TC3-A · Una colección, en una tabla**: las preguntas de un formulario propuesto, una por fila (N.º, Pregunta, Tipo,
+  Opciones, Obligatoria y Cambio, las dos últimas sólo cuando hacen falta).
+- **TC4-A · Las fuentes de una respuesta, en la misma tarjeta**: «Fuente verificada» y «Abrir fuente» en la banda, los datos
+  en `DataList` o, varias filas con los mismos datos, en una tabla, y «Consultado …» en el pie.
+
+Una tarjeta nueva del chat con datos sigue la misma forma (`AssistantProposalCard` con `footer`, `DataList` y
+`assistant-proposal-table`), y un dato con su valor en cualquier pantalla usa `DataList`.
