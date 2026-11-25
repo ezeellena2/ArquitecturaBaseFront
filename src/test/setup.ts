@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { toBeEnabled } from "@testing-library/jest-dom/matchers";
 import { configure } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll, expect } from "vitest";
+import { afterAll, afterEach, beforeAll, expect, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { server } from "./mocks/server";
 
@@ -82,14 +82,17 @@ if (!Element.prototype.setPointerCapture) {
 }
 
 // Todas las rutas del router son `lazy`: la pantalla no pinta nada hasta que su import dinámico resuelve.
-// Con la suite entera corriendo en paralelo, ese import puede tardar más que el segundo que espera `findBy*`
-// por defecto, y el primer test de cada archivo de pantalla (el único que lo paga; después el módulo ya está
-// cargado) falla sin que haya nada roto. Se espera más, no se saca el `lazy`.
+// Con la suite entera corriendo, ese import puede tardar varios segundos, y el primer test de cada archivo de
+// pantalla (el único que lo paga; después el módulo ya está cargado) falla sin que haya nada roto. Se espera
+// más, no se saca el `lazy`. Medido cada archivo solo, el 2026-11-25, ocho primeros tests pasaban los 3 s de
+// espera y 43 tests la mitad de los 5 s por test.
 //
-// Tiene que quedar por debajo del `testTimeout` de Vitest (5 s): si lo alcanza, el que corta es Vitest, con
-// un "Test timed out" que no dice qué se estaba buscando, en vez del "Unable to find role=..." de
-// Testing Library, que es el que sirve para arreglarlo.
-configure({ asyncUtilTimeout: 3000 });
+// La espera tiene que quedar por debajo del plazo de cada test y de cada gancho: si lo alcanza, el que corta
+// es Vitest, con un "Test timed out" que no dice qué se estaba buscando, en vez del "Unable to find role=..."
+// de Testing Library, que es el que sirve para arreglarlo. Los plazos van acá y no en vite.config.ts para que
+// cambiarlos no reinicie el Vite de la app ni el de las escenas visuales.
+configure({ asyncUtilTimeout: 10_000 });
+vi.setConfig({ testTimeout: 20_000, hookTimeout: 20_000 });
 // assistant-ui uses Element.scrollTo to anchor its viewport; real scroll geometry is verified in Playwright.
 if (!Element.prototype.scrollTo) {
   Element.prototype.scrollTo = function (options?: ScrollToOptions | number, top?: number) {
