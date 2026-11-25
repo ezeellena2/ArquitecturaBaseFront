@@ -1,4 +1,4 @@
-# Tarjetas del chat: los datos de las propuestas y de las fuentes, ordenados (TC1 a TC4)
+# Tarjetas del chat y datos de etiqueta y valor: un solo criterio (TC1 a TC5)
 
 Fecha: **2026-11-24**. Estado: **propuesto, esperando que el usuario elija**. Sin programar. Sólo cambia el front: ni
 contratos ni servidor.
@@ -46,6 +46,10 @@ marcado reales del front (la escala de escritorio al 75 % en los tableros de com
   [TC4 · 390](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-TC4-390): las fuentes de una respuesta.
 - [Inglés](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-EN) y
   [Inglés · 390](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-EN-390): las recomendadas en inglés.
+- [TC5](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-TC5) y
+  [TC5 · 390](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S#artboard-TC5-390): los datos de etiqueta y valor en
+  diálogos y tarjetas (enviar un formulario, importar opciones, la ficha de una tarjeta del chat y «Por qué respondió
+  esto»), con «Hoy» al lado; «TC · Hoy» suma la captura del diálogo de enviar un formulario.
 
 TC1-B con TC2-B y TC3-A se miraron también adentro de la app, en el catálogo visual (`?scenario=assistant-proposal-sheet`
 y `assistant-proposal`), con el marcado inyectado: en la compu la tabla de preguntas entra sin desplazarse y a 390 px la
@@ -59,6 +63,35 @@ muestra se desplaza adentro de la tarjeta, sin mover la página.
 | TC2 · El contorno de la muestra | **A**: en su propio recuadro, adentro del margen. **B**: de borde a borde de la tarjeta, con un pie del tono de la banda, «Primeras 3 de 86 filas». **C**: B más la tarjeta entera como zona (`Surface`: banda verde, el tipo en versalitas, el borde de las zonas). | **B** |
 | TC3 · Las preguntas del formulario | **A**: una tabla (N.º · Pregunta · Tipo · Opciones · Obligatoria · Cambio); «Opciones» sólo si alguna pregunta las tiene y «Cambio» sólo cuando la propuesta ajusta otra. **B**: un renglón por pregunta con las mismas columnas, sin encabezado. | **A** |
 | TC4 · Las fuentes | **A**: cada fuente en la tarjeta de las propuestas: «Fuente verificada» y «Abrir fuente» en la banda, el nombre de la fuente, los datos en `DataList` (una fila) o en una tabla (varias) y «Consultado …» en el pie. **B**: sin tarjeta, debajo de una línea como hoy, con «Abrir fuente» junto al nombre y «Consultado» como un dato. | **A** |
+| TC5 · Los datos de etiqueta y valor, en toda la app | **A**: `DataList` en su recuadro, como una tabla de dos columnas: borde y esquinas, el dato en una columna teñida (`table-section`) y una línea entre las dos; dentro de una tarjeta o una zona con borde, de borde a borde. **B**: campos para leer, el nombre arriba y el valor en un recuadro gris, de a dos por renglón si entran. **C**: las dos columnas de hoy afinadas: el dato con ancho fijo, líneas finas que también cierran arriba y abajo y el valor en medio peso. | **A**. B se puede confundir con un campo que se edita. |
+
+## TC5: los datos de etiqueta y valor (pedido del 24/11)
+
+El mismo día, con una captura del diálogo «Enviar un formulario a …» del chat de WhatsApp (abierto desde «El asistente
+sugiere mandarle…» › «Revisar y enviar»), el usuario escribió:
+
+> Tenemos que en otro chat mejorar el diseño del envío de formularios. ¿Todas estas cosas no las mejoramos ya? No puede
+> ser que haya modales que se sigan viendo tan mal así.
+
+Ese diálogo ya se había rehecho en la tanda DL del 11/11 ([diálogos con la lista de chequeo](../design/dialogos-con-la-lista-de-chequeo.md)):
+Formulario, Versión, Idioma (si es el otro) y «Se puede mandar hasta» en dos columnas. Lo que no convence es la pieza
+de dos columnas misma, `DataList` (LR1, 2026-11-03), que es la de los datos de arriba de las tarjetas. Por eso va un
+solo criterio para tarjetas y diálogos, y el cambio se hace en la pieza: alcanza a los 28 lugares que la usan.
+
+- **WhatsApp**: enviar un formulario (`FormComposer`), «Por qué respondió esto» (`ChatAssistantReply`), la línea de
+  tiempo y el compositor del chat (`ChatTimeline`, `ChatComposer`), el asistente que prueba y su conocimiento
+  (`AssistantTestPanel`, `AssistantKnowledgeTab`).
+- **Formularios**: publicar (`PublicationCheckDialog`), dar de baja (`FormDeactivationDialog`), exportar respuestas
+  (`ResponseExportDialog`), importar opciones (`CatalogImportDialog`), revisar un catálogo (`CatalogReviewDialog`),
+  cambiar el tipo de un campo (`CatalogFieldConversionDialog`), dónde se usa un campo (`CatalogFieldUses`), la pregunta
+  de catálogo (`CatalogQuestionSettings`), el dato de una persona (`PersonAttributeDialog`), la biblioteca
+  (`FormLibraryPage`), la lectura de documentos y sus datos (`FormDocumentReadingZone`, `documents/*`) y el historial de
+  una respuesta (`ResponseWorkflowHistory`).
+- **ARCA**: la empresa, los servicios, las secciones activas, el punto de venta y los datos del comprobante.
+- **Inicio**: las fuentes del asistente (TC4) y la ficha de las tarjetas (TC1).
+
+La barra de la sugerencia del asistente («El asistente sugiere mandarle…», «No, gracias», «Revisar y enviar») no cambia
+con ninguna opción. Las demás piezas de lectura (`StepList`, `ComparisonTable`, `AccountRows`) tampoco.
 
 ## Qué tiene que quedar (cuando elija)
 
@@ -82,6 +115,10 @@ Con las recomendadas, cada tarjeta queda así, de arriba abajo:
 - **Fuente**: banda «Fuente verificada» con «Abrir fuente» (si hay destino y permiso); el nombre de la fuente; una fila,
   en `DataList`; varias filas con los mismos datos, en una tabla con los números a la derecha; el pie «Consultado
   04/10/2026 9:00». Un resultado parcial lleva la etiqueta «Resultado parcial» en la banda.
+
+- **Los datos de etiqueta y valor (TC5-A)**, en cualquier pantalla: `DataList` en su recuadro, el dato en la columna
+  teñida y el valor al lado, con una línea entre renglones y otra entre las dos columnas. En un diálogo, el recuadro va
+  entre el título y los botones; en una tarjeta o una zona que ya tiene borde, de borde a borde.
 
 No cambian: la tarjeta plegada (reemplazada o creada), los botones y sus permisos, el aviso de un problema al crear, el
 recorrido de crear o revisar la importación, el rayado de las filas y las tarjetas del chat de WhatsApp.
@@ -108,9 +145,14 @@ recorrido de crear o revisar la importación, el rayado de las filas y las tarje
    `assistant-proposal-import`, `assistant-proposal-preview` y `assistant-answer`, y sumar una fuente de varias filas y
    un catálogo de una sola columna, en español y en inglés, a 1440, 390 y 320 px. Como se toca una pieza de
    `shared/ui`, también corre `design.spec.ts`.
-6. **La regla general**: una sección «Tarjetas con datos del chat» en `visual-baseline.md` (los datos de la tarjeta en
+6. **`DataList` (TC5)** (`src/shared/ui/DataList.tsx`). Primero el test. El aspecto elegido en la pieza, sin tocar a
+   quienes la usan; de borde a borde cuando está adentro de una tarjeta o de una zona con borde, como las tablas. Se miran
+   las escenas de los 28 lugares (las que existan) y `design.spec.ts`; las que cambian se rehacen y se miran una por una.
+7. **La regla general**: una sección «Tarjetas con datos del chat» en `visual-baseline.md` (los datos de la tarjeta en
    `DataList`, una colección en una tabla de borde a borde con su pie, la columna de origen en el encabezado, las fuentes
-   en la misma tarjeta) y el punto de la lista de chequeo que corresponda; `shared/ui/assistant/AGENTS.md`,
-   `features/business-forms/components/AGENTS.md` y `docs/design/ia-arma-formularios.md` (IA1-A).
-7. **Cierre**: build, lint, los tests del área y las escenas por el carril; la corrida completa va con la del cierre de
+   en la misma tarjeta), la forma nueva de `DataList` en [Lecturas](../design/visual-baseline.md#lecturas) y el punto 4 de
+   la lista de chequeo; `shared/ui/AGENTS.md`, `shared/ui/assistant/AGENTS.md`,
+   `features/business-forms/components/AGENTS.md`, `docs/design/ia-arma-formularios.md` (IA1-A) y
+   `docs/design/dialogos-con-la-lista-de-chequeo.md` (DL).
+8. **Cierre**: build, lint, los tests del área y las escenas por el carril; la corrida completa va con la del cierre de
    la prueba integral. Después, la prueba a mano en el chat de Inicio y el retiro del plan con la auditoría documental.
