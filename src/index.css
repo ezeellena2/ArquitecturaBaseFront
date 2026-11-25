@@ -276,6 +276,12 @@
      las tablas. Adentro de una tarjeta del chat, de una zona con banda (`Surface`) o de una celda va de borde a borde, como una
      tabla: el borde lo pone lo que la rodea. */
   [data-slot="data-list"] {
+    display: grid;
+    /* La columna del dato mide un tercio y nunca menos que su palabra más larga, así un dato no se parte a mitad de palabra;
+       los renglones comparten las columnas (`subgrid`) y la línea entre las dos queda derecha. En fracciones, una lista adentro
+       de algo que se ajusta a su contenido (un mensaje, «Por qué respondió esto») pide el ancho que necesitan el dato en su
+       tercio y el valor en sus dos tercios, en vez de encogerse. */
+    grid-template-columns: minmax(min-content, 34fr) minmax(0, 66fr);
     margin: 0;
     overflow: hidden;
     border: 1px solid var(--color-border);
@@ -284,7 +290,8 @@
   }
   [data-slot="data-list-row"] {
     display: grid;
-    grid-template-columns: minmax(7rem, 34%) minmax(0, 1fr);
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
   }
   [data-slot="data-list-row"] + [data-slot="data-list-row"] {
     border-top: 1px solid color-mix(in oklab, var(--color-border) 50%, transparent);
@@ -299,6 +306,17 @@
     margin: 0;
     padding: 0.375rem 0.75rem;
     color: var(--color-content);
+  }
+  /* En el celular los recuadros son angostos: el dato ocupa dos quintos, así uno largo («Constancia de inscripción») no se
+     parte en tres renglones, y el margen de cada celda se achica. Va por el ancho de la pantalla: una consulta de contenedor
+     le quita a la lista su ancho propio y, adentro de algo que se ajusta al contenido, la encoge. */
+  @media (width < 40rem) {
+    [data-slot="data-list"] {
+      grid-template-columns: minmax(min-content, 2fr) minmax(0, 3fr);
+    }
+    [data-slot="data-list-row"] > :is(dt, dd) {
+      padding-inline: 0.5rem;
+    }
   }
   [data-slot="surface-body"] > [data-slot="data-list"] {
     margin-inline: -1rem;
@@ -615,7 +633,9 @@ table {
 .assistant-proposal-table { border-top: 1px solid var(--color-surface-header-border); }
 .assistant-proposal-table [data-slot=table] > * > tr > :first-child { padding-left: 0.75rem; }
 .assistant-proposal-table [data-slot=table] > * > tr > :last-child { padding-right: 0.75rem; }
-.assistant-proposal-table td.assistant-proposal-wrap { white-space: normal; padding-block: 0.375rem; }
+/* TC3-A: en la compu, una pregunta o un tipo largos cortan el renglón para que la tabla entre en la tarjeta; en el celular cada
+   celda va en un renglón y lo que no entra se desplaza adentro de la tarjeta (tablero TC3 · 390). */
+@media (width >= 40rem) { .assistant-proposal-table td.assistant-proposal-wrap { white-space: normal; padding-block: 0.375rem; } }
 /* TC1-B: el segundo renglón del encabezado dice de qué columna de la planilla sale cada dato. */
 .assistant-proposal-table thead > tr:not(:last-child) { border-bottom-color: color-mix(in oklab, var(--color-surface-header-border) 40%, transparent); }
 .assistant-proposal-table thead > tr.assistant-proposal-source, .assistant-proposal-table thead > tr.assistant-proposal-source > th { height: auto; background: var(--color-surface); }

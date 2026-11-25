@@ -3,8 +3,11 @@
 Fecha: **2026-11-24**. Estado: **elegido el 2026-11-25 («Sí, las recomendadas»: TC1-B, TC2-B, TC3-A, TC4-A y TC5-A) y
 programado** (front `b3d3826c`; la regla en
 [visual-baseline](../design/visual-baseline.md#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25)).
-Faltan las escenas visuales rehechas, la corrida completa del cierre y la prueba a mano. Sólo cambia el front: ni
-contratos ni servidor.
+Las escenas se rehicieron y se miraron una por una contra el lienzo el 2026-11-25. La revisión corrigió dos cosas: el
+ancho de `DataList` (adentro de un mensaje se encogía y a 320 px partía «Descripción» a mitad de palabra) y la tabla de
+preguntas en el celular (cada celda en un renglón, como en TC3 · 390). También se sumaron la fuente «Roles» en tabla y
+el catálogo de una sola columna. Faltan la corrida completa, que va con la del cierre de la prueba integral, y la
+prueba a mano, que hace la coordinadora en Chrome dentro de esa prueba. Sólo cambia el front: ni contratos ni servidor.
 
 ## Por qué
 

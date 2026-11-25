@@ -483,7 +483,10 @@ filtros, a quién o a qué archivo van en `DataList`, como los datos de un regis
   [TC5-A](#tarjetas-con-datos-del-chat-y-datos-de-etiqueta-y-valor--2026-11-25)). Como una tabla de dos columnas: el dato
   en gris y del mismo tamaño que el valor, en una columna teñida; el valor en el color del texto; una línea entre
   renglones y otra entre las dos columnas. Adentro de una tarjeta, de una zona con banda o de una celda va de borde a
-  borde, como una tabla. Los datos que dependen de un valor (los de la
+  borde, como una tabla. La columna del dato mide un tercio, igual en todos los renglones, y nunca menos que su palabra más
+  larga: un dato no se parte a mitad de palabra. Adentro de algo que se ajusta a su contenido (un mensaje) la lista pide el
+  ancho que necesitan sus datos. En el celular, donde los recuadros son angostos, el dato ocupa dos quintos y el margen de
+  cada celda se achica. Los datos que dependen de un valor (los de la
   opción elegida) van en su propio renglón, «Pregunta · Dato», nunca debajo de él
   ([nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22)).
 - **Una respuesta, con la forma de su formulario** (VF1-A, 2026-11-22). La vista rápida y la pantalla completa la leen con
@@ -1604,7 +1607,9 @@ formulario» del chat de WhatsApp («No puede ser que haya modales que se sigan 
 - **TC2-B · La tabla de una tarjeta, de borde a borde**, cerrada por un pie del tono de la banda que dice cuántas filas
   muestra («Primeras 3 de 86 filas»), como el paginado. Descartó el recuadro propio (TC2-A) y la banda verde (TC2-C).
 - **TC3-A · Una colección, en una tabla**: las preguntas de un formulario propuesto, una por fila (N.º, Pregunta, Tipo,
-  Opciones, Obligatoria y Cambio, las dos últimas sólo cuando hacen falta).
+  Opciones, Obligatoria y Cambio, las dos últimas sólo cuando hacen falta). En la compu una pregunta larga corta el
+  renglón para que la tabla entre en la tarjeta; en el celular cada celda va en un renglón y lo que no entra se desplaza
+  adentro de la tarjeta, como la muestra de una planilla.
 - **TC4-A · Las fuentes de una respuesta, en la misma tarjeta**: «Fuente verificada» y «Abrir fuente» en la banda, los datos
   en `DataList` o, varias filas con los mismos datos, en una tabla, y «Consultado …» en el pie.
 
