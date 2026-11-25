@@ -156,10 +156,17 @@ export function CatalogImportDialog({ scope, catalog, timeZoneId, focusFallback,
   };
   const close = () => { if (applying) return; operation.current?.abort(); operation.current = null; setState(fresh(owner, state.revision, state.source, state.chatGone)); onClose(); };
   const changeSource = (source: Source) => { if (!busy) setState(fresh(owner, state.revision, source, state.chatGone)); };
-  // IA2: the chat spreadsheet opens already reviewed. In StrictMode the second run sends again what the first one's cleanup
-  // aborted.
+  // IA2: the chat spreadsheet opens already reviewed. The review leaves in a microtask, once the effects settled: StrictMode's
+  // second run (or a remount in the same task) cleans up the first one before it is sent, so the server, which reviews one at a
+  // time per person and refuses another while it still serves an aborted one (F11), gets a single request (O60). Closing or
+  // unmounting aborts the one on its way.
   const reviewOnOpen = useEffectEvent(() => { if (assistant && owned && state.source === "chat" && !operation.current) void send(chatReview(assistant), false); });
-  useEffect(() => { if (assistant) reviewOnOpen(); }, [assistant]);
+  useEffect(() => {
+    if (!assistant) return;
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) reviewOnOpen(); });
+    return () => { cancelled = true; };
+  }, [assistant]);
   const chooseFile = (file: File) => { if (!busy) setState(value => ({ ...value, ...unreviewed, file })); };
   const paste = (text: string) => {
     if (busy) return;

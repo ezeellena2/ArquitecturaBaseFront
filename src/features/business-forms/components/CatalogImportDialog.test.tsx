@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
@@ -664,4 +665,35 @@ it("names only «La planilla del chat» without its file, and reviews it again w
   await user.click(screen.getByRole("button", { name: "Revisar" }));
   await screen.findByText("Repetido: también está en otra fila.");
   expect(check).toHaveBeenCalledTimes(2);
+});
+
+// O60: the server reviews one import at a time per person, without a queue, and still serves the one the cleanup aborted, so a
+// second review would get a 429. StrictMode mounts, cleans up and mounts again, as a quick remount would. The dialog opens in a
+// later render, as on its page: StrictMode does not repeat the effects of what mounts in the first render of the providers.
+async function mountStrict(onClose = vi.fn()) {
+  let view!: ReturnType<typeof renderWithProviders>;
+  await act(async () => { view = renderWithProviders(<StrictMode>{null}</StrictMode>); });
+  await act(async () => { view.rerender(<StrictMode><CatalogImportDialog scope={scope} catalog={catalog} assistant={chat} onClose={onClose} onApplied={vi.fn()} onObserved={vi.fn()} onTemplate={vi.fn()} /></StrictMode>); });
+  return view;
+}
+
+it("reviews the chat spreadsheet with a single request when it opens under StrictMode", async () => {
+  const check = vi.spyOn(imports, "previewAssistantCatalogImport").mockResolvedValue(catalogImportPreviewFixture());
+  await mountStrict();
+  await within(screen.getByRole("dialog", { name: "Importar opciones a «Lista»" })).findByText("Repetido: también está en otra fila.");
+  expect(check).toHaveBeenCalledExactlyOnceWith(catalog.id, { requestId: chat.requestId, proposalId: chat.proposalId, expectedRevision: 7 }, expect.any(AbortSignal));
+});
+
+it("aborts the chat review on its way when the dialog closes or unmounts under StrictMode", async () => {
+  for (const leave of ["close", "unmount"] as const) {
+    const check = vi.spyOn(imports, "previewAssistantCatalogImport").mockImplementation(() => new Promise(() => {}));
+    const onClose = vi.fn();
+    const view = await mountStrict(onClose);
+    await waitFor(() => expect(check).toHaveBeenCalled());
+    expect(check.mock.lastCall![2]!.aborted).toBe(false);
+    if (leave === "close") { await userEvent.click(screen.getByRole("button", { name: "Cancelar" })); expect(onClose).toHaveBeenCalledOnce(); }
+    else view.unmount();
+    expect(check.mock.calls.every(call => call[2]!.aborted)).toBe(true);
+    cleanup(); vi.restoreAllMocks();
+  }
 });
