@@ -53,13 +53,14 @@ describe("Catálogos with the «Carpeta» filter", () => {
     // The listing goes the whole width: no panel of folders beside it.
     expect(screen.queryByRole("region", { name: "Carpetas" })).not.toBeInTheDocument();
     const list = await openFolderFilter("Carpeta Todas las carpetas");
-    expect(await within(list).findByRole("option", { name: "Norte" })).toBeInTheDocument();
+    // O57: the reader hears a subfolder with the folder it goes in; the screen shows it indented.
+    expect(await within(list).findByRole("option", { name: "Norte, en Repartos" })).toBeInTheDocument();
     expect(within(list).getAllByRole("option").map(item => item.textContent)).toEqual(["Todas las carpetas", "Sin carpeta", "Facturación", "Repartos", "Norte"]);
     expect(within(list).getByRole("option", { name: "Todas las carpetas" })).toHaveAttribute("aria-selected", "true");
     // «Todas las carpetas» goes apart, behind the only line, and the subfolder goes indented under its folder.
     expect(list.querySelectorAll("li[role=presentation]")).toHaveLength(1);
-    expect(within(list).getByRole("option", { name: "Norte" }).style.paddingLeft).not.toBe("");
-    await userEvent.click(within(list).getByRole("option", { name: "Norte" }));
+    expect(within(list).getByRole("option", { name: "Norte, en Repartos" }).style.paddingLeft).not.toBe("");
+    await userEvent.click(within(list).getByRole("option", { name: "Norte, en Repartos" }));
     await waitFor(() => expect(search(router).get("carpeta")).toBe(north));
     expect(search(router).get("page")).toBeNull();
     expect(search(router).get("search")).toBe("urea");
@@ -67,7 +68,7 @@ describe("Catálogos with the «Carpeta» filter", () => {
     await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
     expect(await screen.findByRole("button", { name: "Carpeta Norte" })).toBeInTheDocument();
     const again = await openFolderFilter("Carpeta Norte");
-    expect(within(again).getByRole("option", { name: "Norte" })).toHaveAttribute("aria-selected", "true");
+    expect(within(again).getByRole("option", { name: "Norte, en Repartos" })).toHaveAttribute("aria-selected", "true");
     await userEvent.click(within(again).getByRole("option", { name: "Sin carpeta" }));
     await waitFor(() => expect(search(router).get("carpeta")).toBe("sin-carpeta"));
     await waitFor(() => expect(requests.at(-1)?.get("withoutFolder")).toBe("true"));
@@ -121,7 +122,7 @@ describe("Catálogos with the «Carpeta» filter", () => {
     fail = false;
     await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
     // The folder of the address is back once the tree is read, with the list still open.
-    expect(await within(list).findByRole("option", { name: "Norte" })).toHaveAttribute("aria-selected", "true");
+    expect(await within(list).findByRole("option", { name: "Norte, en Repartos" })).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(requests.at(-1)?.get("folderId")).toBe(north));
   });
 

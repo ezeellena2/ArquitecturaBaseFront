@@ -9,6 +9,7 @@
   "selector": "Carpeta: {{name}}",
   "filter": "Carpeta",
   "allFolders": "Todas las carpetas",
+  "filterInside": "en {{path}}",
   "reread": "Volver a leer",
   "retrying": "Reintentando…",
   "name": {

@@ -9,6 +9,7 @@
   "selector": "Folder: {{name}}",
   "filter": "Folder",
   "allFolders": "All folders",
+  "filterInside": "in {{path}}",
   "reread": "Read again",
   "retrying": "Retrying…",
   "name": {

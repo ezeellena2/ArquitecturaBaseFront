@@ -7,7 +7,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const texts = {
   es: {
     forms: "Formularios", catalogs: "Catálogos", crumbs: "Migas de pan", mainMenu: "Navegación principal", drawer: "Menú de navegación", collapse: "Contraer menú",
-    billing: "Facturación", delivery: "Repartos", north: "Norte", south: "Sur", sowing: "Siembra y cosecha", control: "Control de carga",
+    billing: "Facturación", delivery: "Repartos", north: "Norte", south: "Sur", northIn: "Norte, en Repartos", southIn: "Sur, en Repartos", sowing: "Siembra y cosecha", control: "Control de carga",
     whatsapp: "WhatsApp", administration: "Administración", newFolder: "Nueva carpeta", name: "Nombre", icon: "Ícono", create: "Crear", purchases: "Compras",
     empty: "Todavía no hay formularios en «Compras»", addForms: "Agregar formularios", formsOf: "Formularios de «Compras»", formsField: "Formularios", foldersField: "Carpetas", draft: "Borrador",
     actions: (name: string) => `Acciones de «${name}»`, move: /^Mover a…/, moveReason: "Tiene subcarpetas: no puede ir adentro de otra.", addFormsItem: "Agregar formularios…",
@@ -16,7 +16,7 @@ const texts = {
   },
   en: {
     forms: "Forms", catalogs: "Catalogs", crumbs: "Breadcrumb", mainMenu: "Main navigation", drawer: "Navigation menu", collapse: "Collapse menu",
-    billing: "Billing", delivery: "Deliveries", north: "North", south: "South", sowing: "Sowing and harvest", control: "Load check",
+    billing: "Billing", delivery: "Deliveries", north: "North", south: "South", northIn: "North, in Deliveries", southIn: "South, in Deliveries", sowing: "Sowing and harvest", control: "Load check",
     whatsapp: "WhatsApp", administration: "Administration", newFolder: "New folder", name: "Name", icon: "Icon", create: "Create", purchases: "Purchases",
     empty: "There are no forms in “Purchases” yet", addForms: "Add forms", formsOf: "Forms of “Purchases”", formsField: "Forms", foldersField: "Folders", draft: "Draft",
     actions: (name: string) => `Actions of “${name}”`, move: /^Move to…/, moveReason: "It has subfolders: it can't go inside another one.", addFormsItem: "Add forms…",
@@ -139,7 +139,8 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await open(page, "/formularios", "forms-folders", language, current => current.getByRole("heading", { name: text.forms, exact: true }));
     await page.getByRole("button", { name: text.filter, exact: true }).click();
     await expect(page.getByRole("option", { name: text.withoutFolder, exact: true })).toBeVisible();
-    await expect(page.getByRole("option", { name: text.north, exact: true })).toBeVisible();
+    // O57: the reader hears the subfolder with its folder.
+    await expect(page.getByRole("option", { name: text.northIn, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "forms-filter");
     await page.keyboard.press("Escape");
@@ -156,7 +157,7 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
   test("CM3 · Catálogos has no panel, with the «Carpeta» filter", async ({ page }) => {
     await open(page, "/catalogos", "catalogs-folders", language, current => current.getByRole("heading", { name: text.catalogs, exact: true }));
     await page.getByRole("button", { name: text.filter, exact: true }).click();
-    await expect(page.getByRole("option", { name: text.south, exact: true })).toBeVisible();
+    await expect(page.getByRole("option", { name: text.southIn, exact: true })).toBeVisible();
     await noSideScroll(page, width);
     await shot(page, "catalogs-filter");
   });

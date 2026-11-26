@@ -30,6 +30,9 @@ export interface PickerOption {
   short?: string;
   /** How far it goes under the option it belongs to, such as a subfolder under its folder: it is indented that many steps. */
   depth?: number;
+  /** For the reader only, what it goes under, said after its name («Norte, en Repartos»): a subfolder's folder. The screen shows
+   * the indent (O57). */
+  ownerLabel?: string;
 }
 
 interface PickerBase {
@@ -446,17 +449,18 @@ export function Picker(props: PickerProps) {
 }
 
 /** An option: the tick or the box on the left, the name, its reason if it is off and the grey line under it. The option is
- * named only by its name; the line and the reason are its description. */
+ * named by its name, and for the reader by what it goes under after it; the line and the reason are its description. */
 function OptionRow({ row, id, active, multiple, touch, position, onHover, onChoose }: {
   row: Row; id: string; active: boolean; multiple: boolean; touch: boolean; position?: { index: number; size: number };
   onHover: () => void; onChoose: () => void;
 }) {
-  const { label, description, disabledReason, icon, depth } = row.option;
+  const { label, description, disabledReason, icon, depth, ownerLabel } = row.option;
   const describedBy = [description ? `${id}-description` : null, disabledReason ? `${id}-reason` : null].filter(Boolean).join(" ");
   const markSize = touch ? "size-6" : "mt-0.5 size-4";
   // Each step under its owner moves it the width of the tick and its gap, so its tick goes under the name of its owner.
   const indent = depth ? { paddingLeft: `${(touch ? 1 : 0.5) + depth * 1.5}rem` } : undefined;
-  return <li role="option" id={id} aria-labelledby={`${id}-label`} aria-describedby={describedBy || undefined} aria-selected={row.selected} style={indent}
+  return <li role="option" id={id} aria-labelledby={ownerLabel ? undefined : `${id}-label`} aria-label={ownerLabel ? `${label}, ${ownerLabel}` : undefined}
+    aria-describedby={describedBy || undefined} aria-selected={row.selected} style={indent}
     aria-disabled={row.disabled || undefined} aria-posinset={position?.index} aria-setsize={position?.size} data-active={active || undefined}
     // The focus stays in the search or the list: a click only chooses.
     onMouseDown={event => event.preventDefault()} onMouseMove={onHover} onClick={onChoose}
