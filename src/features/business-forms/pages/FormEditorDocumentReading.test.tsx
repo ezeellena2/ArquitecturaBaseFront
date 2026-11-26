@@ -123,6 +123,8 @@ it("names a new question by its local identity, and once saved by the field iden
   await userEvent.type(within(added).getByRole("textbox", { name: "Pregunta" }), "Referencia");
   await zone();
   await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
+  // The new lookup takes the focus in the next frame: before that, it would move it away from the list the test opens.
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído / })).toHaveFocus());
   await pick(/^Cruce 2 · Dato leído /, /^Referencia \(pregunta \d+\)$/);
   await pick(/^Cruce 2 · Completa /, /^Banco o billetera de origen/);
   await pick(/^Cruce 2 · Se busca por /, "Código");
@@ -178,6 +180,7 @@ it("does not show where WhatsApp does not complete the form: what was saved stay
   renderRouteWithProviders("/formularios/" + fixtureFormId);
   await zone();
   await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído / })).toHaveFocus());
   await pick("Dónde se completa En la app y por WhatsApp", "Sólo en la app");
   expect(screen.queryByRole("region", { name: "Lectura de documentos" })).not.toBeInTheDocument();
   await save();

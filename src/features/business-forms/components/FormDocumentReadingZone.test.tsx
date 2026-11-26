@@ -373,6 +373,8 @@ describe("the lookups", () => {
     expect(saved).toHaveAccessibleName("Cruce 1 · Se busca por Campo no disponible");
     expect(saved).toHaveAccessibleDescription("Necesitás permiso para leer catálogos y ver sus campos.");
     await userEvent.click(screen.getByRole("button", { name: "Agregar cruce" }));
+    // The new lookup takes the focus in the next frame: before that, it would move it away from the list the test opens.
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Cruce 2 · Dato leído / })).toHaveFocus());
     await pick(/^Cruce 2 · Completa /, "Banco o billetera de origen (pregunta 2)");
     // A text compares with the option's code or text; a number, only with a field it cannot list.
     await pick(/^Cruce 2 · Dato leído /, /^Número de operación \(pregunta \d+\)$/);
