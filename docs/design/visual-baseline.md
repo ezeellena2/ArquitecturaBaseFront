@@ -537,7 +537,8 @@ crecen todos a 44 px en móvil.
   y pie. Roles `public-*` derivados del encabezado de la paleta global; textos en `auth.json`.
 - Ingreso, registro y código: título de 30 px (28 en móvil), formulario de 400 px máximo, controles de 44/46 px. Una
   superficie sin tarjeta; cabecera solo con los accesos (`topbar-surface`), pie con idioma, selector correo/WhatsApp
-  subrayado con íconos Lucide.
+  subrayado con íconos Lucide. El idioma del pie se elige con la [pieza para elegir](#elegir-de-una-lista), en su botón de barra
+  («Idioma Español»), y no con dos botones con `aria-pressed` (O50, 2026-11-25); «Ingresar con» sigue siendo la excepción.
 - El registro pide nombre solo para una cuenta por código. Los estados siguen al backend; la existencia de una cuenta
   se informa después de verificar identidad. Sin enlaces de Privacidad/Ayuda hasta tener contenido real.
 

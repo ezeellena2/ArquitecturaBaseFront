@@ -5,6 +5,7 @@ import { Link, Outlet, useLocation, useSearchParams } from "react-router";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
 import { changePublicLanguage, supportedLanguages } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
+import { Picker } from "@/shared/ui/Picker";
 import { PublicPresentationDefaults } from "@/shared/i18n/PublicPresentationDefaults";
 
 export function AuthLayout({ children }: { children?: ReactNode }) {
@@ -36,11 +37,12 @@ export function AuthLayout({ children }: { children?: ReactNode }) {
         <div className="access-footer-inner">
           {/* The year goes as text: every number of a text takes the region's thousands separator («© 2.026»). */}
           {home ? <small className="access-copyright">{t("landing.copyright", { year: String(new Date().getFullYear()) })}</small> : null}
-          <div role="group" className="access-languages" aria-label={t("common:language.label")}>
-            {supportedLanguages.map((language) => (
-              <button key={language} type="button" aria-pressed={i18n.language === language}
-                onClick={() => void changePublicLanguage(language)}>{t(`common:language.${language}`)}</button>
-            ))}
+          {/* O50: the language is chosen with the piece to choose, like everything that is chosen (DS1-A); the access pages keep it
+              for the next visit. */}
+          <div className="access-languages">
+            <Picker trigger="button" label={t("common:language.label")} value={i18n.language}
+              options={supportedLanguages.map((language) => ({ id: language, label: t(`common:language.${language}`) }))}
+              onChange={(language) => void changePublicLanguage(language as (typeof supportedLanguages)[number])} />
           </div>
         </div>
       </footer>

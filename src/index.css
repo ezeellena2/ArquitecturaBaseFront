@@ -528,7 +528,6 @@ table {
 .access-footer-inner { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; width: 100%; }
 .access-languages { display: flex; gap: 1rem; }
 .access-footer button { min-height: 2.75rem; }
-.access-footer button[aria-pressed="true"] { color: var(--color-brand-600); text-decoration: underline; text-underline-offset: 0.25rem; }
 .access-shell a:focus-visible, .access-shell button:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 0.1875rem; }
 .access-cta { display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap; }
 .access-cta [data-slot="button"] { min-width: 9.875rem; min-height: 2.875rem; }
@@ -539,7 +538,6 @@ table {
 .access-home .access-brand { font-size: 1rem; font-weight: 600; color: var(--color-topbar-foreground); }
 .access-home .access-brand > span { width: 1.875rem; height: 1.875rem; background: var(--color-public-meadow); color: var(--color-surface-header-foreground); }
 .access-home .access-footer { background: var(--color-public-footer); border-color: var(--color-public-border); color: var(--color-public-content); padding: 0.625rem 2.5rem; }
-.access-home .access-footer button[aria-pressed="true"] { color: var(--color-public-content); }
 .access-copyright { font-size: 0.6875rem; }
 .public-landing { color: var(--color-public-content); }
 .public-landing-hero { position: relative; isolation: isolate; overflow: hidden; padding: 4.75rem 1.5rem 4.375rem; text-align: center; background: var(--color-canvas); }

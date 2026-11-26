@@ -95,7 +95,7 @@ describe("SessionRecovery", () => {
     // La falta de cookie termina en la portada, sin una redirección interactiva.
     expect(await screen.findByRole("link", { name: "Crear una cuenta" })).toBeInTheDocument();
     expect(signinRedirect).not.toHaveBeenCalled();
-    expect(await screen.findByRole("button", { name: "Español" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Idioma Español" })).toBeInTheDocument();
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
     expect(signinSilent).toHaveBeenCalledTimes(1);
   });

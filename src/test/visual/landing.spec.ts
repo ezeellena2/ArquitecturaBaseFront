@@ -28,7 +28,9 @@ for (const language of ["es", "en"] as const) for (const width of [1440, 390, 32
     await expect(page).toHaveScreenshot(`landing-${language}-${width}.png`, { fullPage: true });
     await access.last().focus();
     await expect(access.last()).toBeFocused();
-    await page.getByRole("button", { name: language === "es" ? "Inglés" : "Spanish", exact: true }).click();
+    // O50: the language is chosen with the piece to choose.
+    await page.getByRole("button", { name: language === "es" ? "Idioma Español" : "Language English", exact: true }).click();
+    await page.getByRole("option", { name: language === "es" ? "Inglés" : "Spanish", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: language === "es" ? "Your workspace, all in one place." : "Tu espacio de trabajo, en un solo lugar." })).toBeVisible();
     await page.getByRole("link", { name: language === "es" ? "Sign in" : "Iniciar sesión", exact: true }).last().click();
     await expect(page.getByRole("heading", { level: 1, name: language === "es" ? "Sign in" : "Iniciar sesión", exact: true })).toBeVisible();
