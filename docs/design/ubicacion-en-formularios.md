@@ -3,7 +3,7 @@
 Fecha: **2026-11-11**. Estado: **elegidos y programados** (Etapa 1, en la app; 2026-11-11, para la prueba integral final). El usuario eligió UB1-A a UB4-A el
 2026-11-11. La Etapa 2, por WhatsApp, eligió W1-A el mismo día y su [tablero entero](#etapa-2-por-whatsapp-w1-a)
 quedó programado el mismo día, también por el asistente. El alcance, las reglas por defecto y las tareas están en el
-[plan del backend](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación);
+[plan del backend](../../../ArquitecturaBase/docs/features/formularios.md#la-pregunta-ubicación--ub1-a-a-ub4-a-2026-11-11);
 las pantallas, los textos y los estados salen de acá.
 
 Origen: el 2026-11-10 el usuario preguntó si un formulario puede pedir la ubicación. Hoy no: ningún tipo de pregunta guarda
@@ -153,7 +153,7 @@ UB1-A a UB4-A y las reglas por defecto del plan no las fijaban; se tomó la opci
 
 El 2026-11-11 el usuario eligió **W1-A, pedirla antes del Flow**, y descartó W2 (pedirla después del Flow) y W3 (sólo por el
 asistente). Cómo anda, según el
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#la-pregunta-ubicación), en «Etapa 2»:
+[plan](../../../ArquitecturaBase/docs/features/formularios.md#la-pregunta-ubicación--ub1-a-a-ub4-a-2026-11-11), en «Etapa 2»:
 antes del Flow sale un `location_request_message`; la ubicación que vuelve (latitud y longitud, sin precisión) se guarda en
 el envío que la pidió y recién ahí sale el Flow de siempre, sin la pregunta; al llegar el Flow, el servidor suma la
 ubicación y guarda una sola respuesta completa. Si la ubicación no llega, el envío vence como cualquier otro, y la

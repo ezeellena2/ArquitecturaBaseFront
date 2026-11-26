@@ -12,7 +12,7 @@ desde un Excel ([abajo](#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-d
 Origen: la sección «Documentos por WhatsApp · biblioteca, lectura con IA, bandeja y tablero» de la página «Formularios por
 WhatsApp» del Artifact [Sistema visual — ArquitecturaBase](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ). Como el
 Artifact es privado y puede cambiar fuera de Git, este documento y sus capturas congelan lo elegido. El alcance y las
-decisiones están en el [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md), y las reglas de
+decisiones están en el [plan](../../../ArquitecturaBase/docs/decisions/0022-lectura-de-documentos-con-ia.md), y las reglas de
 lectura, en el [ADR 0022](../../../ArquitecturaBase/docs/decisions/0022-lectura-de-documentos-con-ia.md); las pantallas, los
 textos y los estados salen de acá. Para recorrerlo tocando, la [maqueta viva](https://claude.ai/artifact/CM56W2Yc4VVzwMmxCKFpdP)
 lo muestra dentro de las pantallas reales y tiene el circuito DOC en «Recorridos».
@@ -68,7 +68,7 @@ lienzo) y la maqueta ya lo muestran, y las capturas de arriba son las corregidas
 ## Ubicación y contacto por WhatsApp (W3) y varias cargas desde un Excel
 
 Fecha: **2026-11-11**. **Elegidos UC1-A y VC1-A**, los recomendados, y programados el 2026-11-12 y el 2026-11-13: son las tareas 19 a 30 del
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel),
+[plan](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26),
 después de las tareas 1 a 16 y antes del cierre. Es lo que la implementación de DOC1 a DOC7 dejaba afuera, aunque DOC2 lo había
 dibujado: la ubicación y el contacto que la persona comparte por su cuenta mientras tiene un formulario abierto (W3 de la
 [pregunta «Ubicación»](ubicacion-en-formularios.md#etapa-2-por-whatsapp-w1-a)) y varias cargas desde un Excel. Las reglas, el
@@ -308,7 +308,7 @@ filas y el reenvío del operador en Atención manual se resolvieron por lo más 
 Lo programado se compara con su tablero, y cada diferencia lleva su motivo. Los tableros son del 2026-10-22, anteriores a la
 [lista de chequeo de diseño](visual-baseline.md#lista-de-chequeo-de-diseño) (2026-11-09): al programarlos se contesta la lista y se
 aplica lo que piden ella y las reglas más nuevas, sin volver a preguntar lo que decidió el
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#implementación-lectura-carga-bandeja-etapa-3-de-la-ia-y-tableros).
+[plan](../../../ArquitecturaBase/docs/decisions/0022-lectura-de-documentos-con-ia.md).
 
 Cada sección cuenta cómo se programó. Donde dice «cuerpos sintéticos hasta que se exporte», la cohorte ya se exportó el
 2026-11-17 (front 9aa157ae y 844a5c13); las capturas de `forms-dashboard-http`, `forms-documents-http` y la lectura de
@@ -316,7 +316,7 @@ documentos todavía no tienen lector.
 
 ### DOC7-A · Tarjetas armadas solas (2026-11-11)
 
-Tarea 16 del plan (decisiones 22 a 24 y sus [diferencias](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#diferencias-con-los-tableros)),
+Tarea 16 del plan (decisiones 22 a 24 y sus [diferencias](../../../ArquitecturaBase/docs/features/formularios.md#tablero-por-formulario--doc7-a)),
 contra el contrato del backend (a1c8c8ea) y con cuerpos sintéticos hasta que se exporte la cohorte `forms-dashboard-http`:
 `FormDashboard` es la pestaña «Tablero» de `FormResponsesPage`, con las piezas nuevas de `shared/ui/charts` (`StatCard`,
 `BarChart`, `BarList` y `ChartRefreshing`). Las escenas `formDashboard.spec.ts` y `charts.spec.ts` (catálogo,
@@ -548,12 +548,12 @@ conversación con cuenta vinculada, también con el historial arriba, y la de un
 - «Por qué lo propuso» y «Por qué preguntó» debajo del documento: la tarea 9 los manda en `why` y el guard los lee, pero el chat todavía no los dibuja (pendiente).
 - **El aviso de «no se le puede mandar» no dice el monto.** DOC4 dibuja «Gracias, recibí tu comprobante de $412.000…»; el
   código nombra el formulario («Gracias, recibí tu documento para «{formulario}»…»), porque el puerto del canal no trae el monto
-  (tarea 9). Sumarlo queda como propuesta en el [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md).
+  (tarea 9). Sumarlo queda como propuesta en el [plan](../../../ArquitecturaBase/docs/decisions/0022-lectura-de-documentos-con-ia.md).
 
 ### UC1-A · Ubicación y contacto en el editor (2026-11-12)
 
 Tarea 19 en su primera parte (el guard de `receives`; los del hilo y de la actividad quedan para la segunda) y tarea 21 del
-[plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+[plan](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26)
 (decisión técnica 1), contra el contrato fijo de la tarea 20 y con dobles sintéticos, porque el backend se programa después:
 `receives` en cada pregunta de texto del borrador y del detalle, que el editor devuelve como llegó al guardar, chequear y
 publicar, y `FormLocationContactZone` después de «Lectura de documentos». La escena `formLocationContact.spec.ts` deja las
@@ -614,7 +614,7 @@ capturas es/en a 1440, 390 y 320 en `test-results/visual` (sin golden).
 
 ### UC2 a UC6 · El chat y la actividad (2026-11-12)
 
-Tarea 25 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+Tarea 25 del [plan](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26)
 (decisiones técnicas 3, 6, 7 y 8), sobre los guards de la tarea 19b y con cuerpos sintéticos de esas formas hasta que las tareas 22
 a 24 escriban los del backend y se exporten (`whatsapp-audio-http`, `whatsapp-forms-http` y `forms-responses-http`): `ChatContact`
 en el chat del operador, «Prellenado con» en la tarjeta del reenvío, el motivo de la segunda respuesta en `FormReplyCard` y los
@@ -675,7 +675,7 @@ dibuja nada. La escena `whatsapp-shared-content.spec.ts` deja el chat con golden
 
 ### DOC5-A · La planilla con panel (2026-11-12)
 
-Tarea 10 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#parte-b--la-bandeja-documentos-recibidos-doc5-a-y-doc6)
+Tarea 10 del [plan](../../../ArquitecturaBase/docs/features/formularios.md#la-bandeja-documentos-recibidos--doc5-a-2026-11-12)
 (decisiones 14 a 16), sólo el front, contra el contrato del backend de la tarea 7 y su corrección «7b» (la búsqueda va en el
 cuerpo de `POST api/forms/documents/search`, con los formularios y las personas de los filtros) y con cuerpos sintéticos hasta que se
 exporte la cohorte `forms-documents-http`: `ReceivedDocumentsPage` en `/formularios/documentos`, su panel (`components/documents`)
@@ -793,7 +793,7 @@ y el aviso de los parecidos con «Armar formulario con la IA» (tarea 14, [DOC6]
 
 ### DOC6 · Armar formulario con la IA (2026-11-12)
 
-Tarea 14 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#parte-b--la-bandeja-documentos-recibidos-doc5-a-y-doc6)
+Tarea 14 del [plan](../../../ArquitecturaBase/docs/features/formularios.md#la-bandeja-documentos-recibidos--doc5-a-2026-11-12)
 (decisión 17), sólo el front, contra el contrato del backend de la misma tarea (`FormDocumentProposalsController`) y con cuerpos
 sintéticos hasta que se exporte la cohorte `forms-documents-http`: el aviso de los parecidos arriba de la planilla (los `groups` de
 la página), «Armar formulario con la IA» en el panel de un sin clasificar y la página `/formularios/documentos/armar/{pedido}`
@@ -879,7 +879,7 @@ la página), «Armar formulario con la IA» en el panel de un sin clasificar y l
 
 ### VC1-A · Una entrada por fila (2026-11-13)
 
-Tarea 30 del [plan](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#ubicación-y-contacto-por-whatsapp-w3-y-varias-cargas-desde-un-excel)
+Tarea 30 del [plan](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26)
 (reglas B6 y B9 y decisiones técnicas 12 y 13), sólo el front, sobre los guards de la tarea 26 (front 9f2d7c5d) y el backend de la
 bandeja con filas (tarea 28), con cuerpos sintéticos hasta que se exporten `forms-documents-http`, `whatsapp-audio-http` y
 `forms-responses-http`: en la bandeja, «Fila 5» debajo de la planilla, «La fila» con «Descargar la planilla» en el panel, los motivos

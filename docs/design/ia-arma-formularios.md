@@ -2,8 +2,8 @@
 
 Fecha: **2026-11-04**, con los tableros dibujados el 2026-11-03. Estado: **Etapas 1 y 2 programadas** (texto y audio el
 2026-11-05, planillas el 2026-11-11) y **la 3** (el clip con documentos y la tarjeta que lee documentos en Inicio, 2026-11-12;
-DOC6 y WhatsApp, el 12 y el 13/11, según el [plan de documentos](../../../ArquitecturaBase/docs/plans/2026-10-22-documentos-por-whatsapp.md#implementación-lectura-carga-bandeja-etapa-3-de-la-ia-y-tableros)). El alcance y las decisiones
-están en el [plan](../../../ArquitecturaBase/docs/plans/2026-11-04-ia-arma-formularios-y-catalogos.md) y las reglas, en el
+DOC6 y WhatsApp, el 12 y el 13/11, según el [plan de documentos](../../../ArquitecturaBase/docs/decisions/0022-lectura-de-documentos-con-ia.md)). El alcance y las decisiones
+están en el [plan](../../../ArquitecturaBase/docs/features/formularios.md#la-ia-arma-formularios-y-catálogos--etapa-1-2026-11-04) y las reglas, en el
 [ADR 0024](../../../ArquitecturaBase/docs/decisions/0024-ia-arma-formularios-y-catalogos.md). Las pantallas, los textos y los
 estados salen de acá.
 

@@ -9,7 +9,7 @@ Origen: el lienzo [Carpetas en el menú lateral](https://claude.ai/artifact/Ae5j
 lo reemplazado, el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas
 «Carpetas» (CP1 a CP4) y CP5 a su derecha. El Sistema visual es de otra cuenta, así que, como en renglones, la IA y el motor
 para documentos, este documento congela lo elegido. Alcance, permisos y contratos:
-[plan de carpetas](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md) y
+[plan de carpetas](../../../ArquitecturaBase/docs/features/formularios.md#carpetas--cp1-a-a-cp5-a-2026-11-09) y
 [regla funcional](../../../ArquitecturaBase/docs/features/formularios.md#carpetas--cp1-a-a-cp5-a-2026-11-09).
 
 ## CM1 a CM6: las carpetas son menús (aprobado y programado el 2026-11-20)
@@ -17,7 +17,7 @@ para documentos, este documento congela lo elegido. Alcance, permisos y contrato
 El usuario lo pidió y aprobó los tableros el 2026-11-20, y se programó ese mismo día. Reemplazó al panel de los listados
 (CP1-A), a su administración en ese panel (CP3-A), al lugar en el menú que elegía cada carpeta (CP5-A) y al límite de cinco
 niveles. Los tableros fueron revisados contra las capturas reales y la lista de chequeo. Alcance, contratos y pruebas: el
-[plan](../../../ArquitecturaBase/docs/plans/2026-11-03-carpetas-de-formularios-y-catalogos.md#las-carpetas-son-menús-cm1-a-cm6-2026-11-20).
+[plan](../../../ArquitecturaBase/docs/features/formularios.md#carpetas--cp1-a-a-cp5-a-2026-11-09).
 
 | Tablero | Qué define |
 | --- | --- |

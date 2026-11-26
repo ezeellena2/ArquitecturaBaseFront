@@ -236,8 +236,8 @@ shared/ui/assistant y sus tokens; los demás campos conservan las reglas siguien
 - Un control con texto deshabilitado por un motivo que no es obvio se envuelve en `DisabledReason`.
   No se usa mientras la acción trabaja ni en ítems de menú, que muestran su motivo adentro.
 - En un encabezado, a la vista va la tarea de la pantalla y lo que lleva a otro lado; lo demás que se hace con el objeto
-  (corregir, anular, dar de baja, eliminar, ordenar) va en ⋮ con `ActionsMenu`, con lo destructivo al final, en rojo
-  ([AC1-A](../design/visual-baseline.md#íconos-y-acciones)).
+  (anular, dar de baja, eliminar, ordenar) va en ⋮ con `ActionsMenu`, con lo destructivo al final, en rojo
+  ([AC1-A](../design/visual-baseline.md#íconos-y-acciones)). «Corregir» una respuesta va a la vista: se corrige en el lugar (VF1-A).
 - Los permisos se piden en la ruta y se reflejan en las acciones y el menú. La seguridad la decide
   el backend; la interfaz no inventa permisos ni usa roles como sustituto de ellos.
 

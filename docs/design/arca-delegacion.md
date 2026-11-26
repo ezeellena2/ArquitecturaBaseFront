@@ -2,7 +2,7 @@
 
 Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Es la etapa 5 de ARCA, la delegación guiada: la
 empresa delega sus web services en la CUIT de la plataforma, que firma con su certificado. El alcance, las decisiones y las
-fuentes oficiales de ARCA están en el [plan de la etapa](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-5-delegacion-guiada.md);
+fuentes oficiales de ARCA están en el [plan de la etapa](../../../ArquitecturaBase/docs/features/arca.md#delegación-guiada-etapa-5);
 la regla, en [ARCA](../../../ArquitecturaBase/docs/features/arca.md#delegación-guiada-etapa-5), y el
 [ADR 0027](../../../ArquitecturaBase/docs/decisions/0027-delegacion-guiada-arca.md). Amplía la pantalla de
 [la conexión con ARCA](arca-conexion.md): lo que no se dice acá sigue como allá.

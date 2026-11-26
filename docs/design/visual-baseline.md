@@ -308,7 +308,7 @@ diálogo o panel) y **grupo** (rotula una lista sin caja, como una sección del 
   guardar y descartar en un editor, publicar, crear o agregar en un listado, exportar la planilla, aprobar o rechazar lo
   que espera una decisión; la principal, última. Ir a otro lado y bajar (pantalla completa, la conversación, el PDF): íconos
   con su nombre en un panel y texto en la banda de una pantalla (TL3-A). En ⋮ (`ActionsMenu`), lo demás que se hace con el
-  objeto: corregir, anular, dar de baja, reactivar, eliminar, descargar la plantilla, ordenar; lo destructivo al final, en
+  objeto: anular, dar de baja, reactivar, eliminar, descargar la plantilla, ordenar; lo destructivo al final, en
   rojo y después de una línea, y un ítem apagado con su motivo adentro. Quedan fuera el pie de un diálogo y las filas de una
   tabla. El diseño y la tabla de las pantallas que cambiaron están en [acciones del encabezado](acciones-del-encabezado.md).
 
@@ -386,8 +386,8 @@ una lista, cada una puesta cuando apareció su caso. En el lienzo aparte
 [Desplegables: una sola pieza](https://claude.ai/artifact/87Bkvms9FrDK76HWdFskKE) (el Sistema visual no se abre desde
 Claude Code; «DS · Hoy» tiene las capturas de antes) el usuario eligió la **DS1-A**, un botón que abre la lista, con el
 buscador adentro cuando son muchas; descartó DS1-B (el campo que se escribe, con chips) y DS1-C (elegir en un diálogo).
-Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (chips debajo del campo) y DS2-C («3 de 8»). El
-[plan](../plans/2026-11-19-una-sola-pieza-para-elegir.md) tiene las etapas y dónde se usaba cada pieza.
+Para varias eligió la **DS2-A**, los nombres y «y N más»; descartó DS2-B (chips debajo del campo) y DS2-C («3 de 8»). Las etapas y dónde se usaba cada pieza se recuperan desde la
+[procedencia](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26).
 
 **Todo lo que se elige va en la pieza** (2026-11-22, por decisión del usuario): una o varias opciones, de dos a cuatro
 fijas, un Sí o No, los filtros de los listados (con el botón de la barra y sin cantidades, [FO1-A](#listados-y-filtros))
@@ -631,6 +631,10 @@ código armado con el borrador. Se guarda con los colores, con un solo Guardar.
   es un dato: las franjas, una por renglón, con «del día siguiente» si cierra pasada la medianoche, o «Cerrado», «24 horas»
   o «Sin definir» en gris. Un día se edita en el mismo diálogo que una fecha especial («Horario del lunes»), que se
   confirma con «Listo»; una fecha nueva, con «Agregar fecha».
+- **Sólo lectura y topes (IN3):** sin «Administrar», las tablas del horario van sin la columna de los íconos, sin «Aplicar
+  lunes a viernes» ni «Agregar fecha especial» (y sin la zona de fechas especiales si no hay ninguna), y la zona horaria y
+  «Dónde atendés» quedan apagadas. Con 32 fechas especiales, «Agregar fecha especial» se apaga con su motivo. La zona
+  horaria va arriba de la semana y «Aplicar lunes a viernes», debajo.
 - `Page` muestra solo «Sólo lectura» o «Guardado por revisar», sin estado del borrador. Con «Guardado por revisar»,
   «Revisar guardado» y «Reintentar el mismo guardado» van en el encabezado de la pantalla y lo que explicaba la zona es
   el motivo de «Guardar» apagado (EP1-A, 2026-11-06); la revisión de un conflicto conserva su superficie, con la
@@ -777,18 +781,18 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | Conexión de IA en una zona · IA1-A, en el lienzo aparte «Conexión de IA en una zona» | `/configuracion/ia` | [Implementado](#una-cosa-una-zona--2026-11-08); falta pasarlo al lienzo del sistema visual |
 | Un dato por columna · UD a UD6, en el lienzo aparte «Un dato por columna» | Formularios, Diseñar formularios, Catálogos, la planilla, Usuarios, Roles, Datos de las personas y Formularios que faltan | [Implementado](#un-dato-por-columna--2026-11-09), con las excepciones A, C y F; falta la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Diálogos con la lista de chequeo · EX0 a EX3 y DL, en el lienzo aparte «Diálogos con la lista de chequeo» | «Exportar respuestas a Excel», los chips de la planilla y 19 diálogos más | [EX1-A, EX2-A y DL implementados](dialogos-con-la-lista-de-chequeo.md) el 2026-11-11, con el `test:visual` revisado el mismo día (0977a90f); faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
-| El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas, y «Filas» llegó al diálogo el 2026-11-11 con EX1-A |
+| El Excel en una sola hoja · XL0 a XL2, en el mismo lienzo | El archivo de «Exportar a Excel», que arma el backend | [XL1-A elegida](../../../ArquitecturaBase/docs/features/formularios.md#el-bloque-de-renglones-en-la-lectura--rg4-a-2026-11-07) el 2026-11-09, una fila por ítem; el backend quedó programado el mismo día, con un tope de 100.000 filas, y «Filas» llegó al diálogo el 2026-11-11 con EX1-A |
 | Las acciones de un encabezado · AC0 a AC2, en el mismo lienzo | La vista rápida y la pantalla completa de una respuesta, los editores de catálogo y la regla para toda la app | [AC1-A implementada](acciones-del-encabezado.md) el 2026-11-11, con la regla en [íconos y acciones](#íconos-y-acciones); falta la prueba manual |
 | Formularios sólo en la app · SA0 a SA5, en el lienzo aparte «Formularios sólo en la app» | El editor de formularios, el diálogo de publicar, «Diseñar formularios» y los diálogos de baja y eliminación | [Implementados](formularios-solo-en-la-app.md) el 2026-11-11, con la escena `formAppOnly`; faltan el lector del contrato `app-only`, la prueba manual y pasar los tableros al lienzo del sistema visual |
 | La pregunta «Ubicación» · UB, UB3-A, UB4-A y W1-A, en el lienzo aparte «Pregunta «Ubicación» en los formularios» | «Usar mi ubicación» en la carga, la pregunta en el editor, el chequeo de publicación, la planilla, el detalle, «Enviada», el PDF, los mensajes y el Excel; por WhatsApp, el pedido de la ubicación antes del Flow y su tarjeta en el chat de la app | [Etapa 1 y Etapa 2 (W1-A) elegidas y programadas, también con el asistente](ubicacion-en-formularios.md); faltan sus escenas de `test:visual`, los lectores del contrato y la prueba manual |
 | Catálogos · ordenar las opciones por una columna · OR1-A y OR1-B, en el lienzo provisorio «Formularios desde la app» | «Ordenar por…» en el ⋮ de «Opciones» del editor de catálogos Manual | [OR1-A implementada](catalogos-mejoras.md#ordenar-por-una-columna-2026-11-11) el 2026-11-11; faltan la prueba manual, `test:visual` y pasar el tablero al lienzo del sistema visual |
 | Acciones por resolver · B, en el lienzo aparte «Acciones por resolver» | La planilla de respuestas: la pestaña «Por resolver (N)» y la columna «Reglas» | [Implementado](formularios-whatsapp.md#acciones-por-resolver-la-pestaña-por-resolver-f2--2026-11-17) el 2026-11-17; faltan la escena de `test:visual` de la pestaña, la prueba manual y pasar el tablero al lienzo del sistema visual |
-| La respuesta como el formulario · VF1-A y VF2-A, en el lienzo aparte «Respuesta como formulario» | La vista rápida y la pantalla completa de una respuesta, corregir en el lugar y la actividad | [En programación](respuesta-como-formulario.md) desde el 2026-11-22, con la regla [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22) |
+| La respuesta como el formulario · VF1-A y VF2-A, en el lienzo aparte «Respuesta como formulario» | La vista rápida y la pantalla completa de una respuesta, corregir en el lugar y la actividad | [Programadas](respuesta-como-formulario.md) del 2026-11-22 al 2026-11-24, con la regla [nada debajo de otro dato](#nada-debajo-de-otro-dato--2026-11-22) |
 | Reglas en Configuración · RC6-B y RC1-A, en el lienzo aparte «Núcleo e IA: reglas en Configuración» | `/configuracion/apariencia`, `/configuracion` y `/configuracion/ia` | Elegidas con P1-A y programadas el 2026-11-22; faltan la prueba manual y pasar los tableros al lienzo del sistema visual |
 | Formularios: una sola entrada · FU1-B y FU2-A, en el lienzo aparte «Formularios: una sola entrada» | El panel de «Gestión de formularios», `/formularios` (Formularios y Diseñar formularios en una lista) y `/formularios/respuestas` | [Elegidas y programadas](formularios-una-entrada.md) el 2026-11-23; faltan las escenas de `test:visual`, la prueba manual y pasar los tableros al lienzo del sistema visual |
-| Ordenar las tablas por sus columnas · OT1-A, OT1-B y OT1-C, en el lienzo aparte «Ordenar las tablas por sus columnas» | El encabezado de toda tabla, «Ordenar por» en la barra de filtros, `DataTable`, `SortMenu`, `usePagination` y `useClientSort` | [OT1-C elegida](#ordenar-por-columnas--2026-11-22) el 2026-11-22 y programada en todas las tablas, con sus capturas de `test:visual`; faltan la prueba manual y pasar el tablero al lienzo del sistema visual |
-| Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [elegidas](../plans/2026-11-19-una-sola-pieza-para-elegir.md) el 2026-11-19 y [en programación](#elegir-de-una-lista) desde el 2026-11-20; faltan retirar las piezas viejas, la corrida completa, la prueba guiada y pasar los tableros al lienzo del sistema visual |
-| Sin permiso · SP1-A, SP1-B, SP2 y SP3, en el lienzo aparte «Sin permiso» | `ForbiddenPage`, `ProtectedRoute`, la ruta `/sin-permiso`, la 404, el filtro de opciones de Respuestas, la vista rápida y el diálogo «Editar usuario» abierto desde otra pantalla | SP1-B [elegida](#la-falta-de-permiso--2026-11-24) y programada el 2026-11-24 ([plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md)); faltan la corrida completa, la prueba a mano y pasar los tableros al lienzo del sistema visual |
+| Ordenar las tablas por sus columnas · OT1-A, OT1-B y OT1-C, en el lienzo aparte «Ordenar las tablas por sus columnas» | El encabezado de toda tabla, «Ordenar por» en la barra de filtros, `DataTable`, `SortMenu`, `usePagination` y `useClientSort` | [OT1-C elegida](#ordenar-por-columnas--2026-11-22) el 2026-11-22 y programada en todas las tablas, con sus capturas de `test:visual`; probada a mano el 2026-11-24; falta pasar el tablero al lienzo del sistema visual |
+| Una sola pieza para elegir · DS1 y DS2, en el lienzo aparte «Desplegables: una sola pieza» | Todo lo que elige de una lista: los selects, los combos, Roles, el país del teléfono, los filtros de la barra, «Columnas» y la pregunta de catálogo en el celular | DS1-A y DS2-A [implementadas](#elegir-de-una-lista) en toda la app entre el 2026-11-20 y el 2026-11-23, con «Ingresar con» del acceso como excepción desde el 2026-11-24; falta pasar los tableros al lienzo del sistema visual |
+| Sin permiso · SP1-A, SP1-B, SP2 y SP3, en el lienzo aparte «Sin permiso» | `ForbiddenPage`, `ProtectedRoute`, la 404 (la ruta `/sin-permiso` se retiró), el filtro de opciones de Respuestas, la vista rápida y el diálogo «Editar usuario» abierto desde otra pantalla | SP1-B [elegida](#la-falta-de-permiso--2026-11-24), programada y probada a mano el 2026-11-24; falta pasar los tableros al lienzo del sistema visual |
 
 Pendiente: comprobar el Artifact y sincronizarlo con el estándar local. La nota «Propuesta para aprobar» junto a
 «Ingreso con WhatsApp» quedó vieja: sus seis tableros están implementados.
@@ -801,7 +805,7 @@ Sin ampliar contratos:
    angostas y objetivos táctiles. Cada superficie nueva se dibuja antes de implementarse.
 2. Selección y acciones masivas cuando el backend tenga contrato. El tablero usa `<span>`: es referencia visual, no
    implementación aceptable.
-3. Inicio autenticado completo, estados 403/404 y marca real.
+3. Inicio autenticado completo y marca real.
 4. Auditar que ningún campo se dibuje fuera de `FormField` y terminar los avisos.
 
 Dispositivos, sesiones y pantallas sin contrato son de una fase posterior: este fundamento no autoriza inventar endpoints
@@ -1396,7 +1400,7 @@ Lo que encontró el relevamiento y arregla la regla:
 4. Con Tab, el foco llega a un envoltorio sin rol ni nombre.
 
 En el código, las features siguen usando `DisabledReason`, `disabledReason` de `CheckboxField` y `disabledLabel` de
-`IconButton`, y el cambio quedó en `shared/ui` el 2026-11-09, con el [plan](../plans/2026-11-09-motivo-de-lo-apagado.md):
+`IconButton`, y el cambio quedó en `shared/ui` el 2026-11-09:
 
 - `ActionTooltip informative` es lo que sólo informa, el motivo y la (i): además de con el mouse y el foco, se abre con un
   clic, un toque, Enter o Espacio, y queda abierto hasta Escape, salir con el mouse, perder el foco o tocar afuera. El
@@ -1412,9 +1416,8 @@ En el código, las features siguen usando `DisabledReason`, `disabledReason` de 
   renglón entero la elige, con el punto encima para que un clic en él le llegue a él.
 
 La escena `disabledReasons` del catálogo (`?scenario=disabled-reasons`) lo recorre con el mouse, el teclado y el toque,
-en es/en a 1440 y 390. Falta la prueba manual guiada: en el celular, tocar «Permitir elegir varias» en una pregunta del
-bloque y una (i); en la compu, llegar con Tab a un botón apagado y escucharlo con el lector. También falta pasar el
-tablero al lienzo del sistema visual.
+en es/en a 1440 y 390. La prueba a mano que falta, en el celular real y con el lector, está en
+[verificación y producción](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#pruebas-a-mano-del-front-el-criterio).
 
 ## Un dato por columna — 2026-11-09
 
@@ -1461,12 +1464,14 @@ Configuración y de Apariencia y el bloque de renglones al cargar. En Catálogos
 estado no aparece nunca: el servidor manda el estado sin motivo.
 
 La regla y sus excepciones están elegidas, y el usuario aprobó el mismo día los tableros UD1 a UD5 y el plan, que quedó
-programado el 2026-11-09 ([plan](../plans/2026-11-09-un-dato-por-columna.md)). Dos ajustes respecto de los tableros: quien
+programado el 2026-11-09. Dos ajustes respecto de los tableros: quien
 sólo carga también ve «Estado del formulario» cuando su lista tiene un formulario dado de baja, porque no tiene
 segmentado, y el tipo de un dato de las personas conserva su texto de la app, «Elegir de un catálogo». Los tests buscan
 cada celda por su encabezado (`cellUnder`). No se sumó un control automático: los casos encontrados eran composiciones
 (una etiqueta junto al dato, un renglón gris con un estado) que una regla de sintaxis no distingue de la excepción A, y
-quedan a cargo de la revisión de cada cambio. Faltan la prueba manual y pasar los tableros al lienzo del sistema visual.
+quedan a cargo de la revisión de cada cambio. Después, FU1-B (2026-11-23) juntó Formularios y Diseñar formularios en una
+lista, y RO3-D (2026-11-19) sacó «2 de 5» de las áreas de un rol: UD1, UD2 y la banda de E quedan como historia. La prueba
+a mano está en [verificación y producción](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#pruebas-a-mano-del-front-el-criterio).
 
 ## Números con la región de cada idioma — 2026-11-12
 
@@ -1543,12 +1548,12 @@ Reemplazan la lectura en dos columnas del detalle (TL1-A), con los datos de la o
 Durante la prueba integral, mirando «Formularios», el usuario pidió que todas las tablas se ordenen por sus columnas, desde
 el encabezado y desde un botón «Ordenar por», en la base o en el navegador según la tabla. Eligió **OT1-C**, los dos a la
 vez, en el lienzo aparte [Ordenar las tablas por sus columnas](https://claude.ai/artifact/HumQW2KEkQxzvw8pbcRcvs#artboard-OT1-C)
-(descartó OT1-A, sólo el encabezado, y OT1-B, sólo el botón). El relevamiento y los cortes están en el
-[plan](../../../ArquitecturaBase/docs/plans/2026-11-22-ordenar-tablas-por-columnas.md). La regla quedó en
+(descartó OT1-A, sólo el encabezado, y OT1-B, sólo el botón). El relevamiento y los cortes se recuperan desde la
+[procedencia](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26). La regla quedó en
 [Listados y filtros](#listados-y-filtros) y en el punto 5 de la [lista de chequeo](#lista-de-chequeo-de-diseño).
 
 - **Qué ordena.** Toda columna con un dato. No ordenan Acciones, las de un ícono (el PDF) ni las de varios valores (los roles
-  de una persona, las preguntas de varias opciones, de grupo y de ubicación).
+  de una persona, lo que lee o valida un estándar, las preguntas de varias opciones, de grupo y de ubicación).
 - **El encabezado.** La columna que ordena es un botón con su título y la letra del encabezado; la que ordena muestra ↑ o ↓
   del color de la marca después del título, o antes en una columna de números o alineada a la derecha, para que el título
   siga alineado con las cifras. Las demás que ordenan muestran ↕ y un tono más oscuro del encabezado al pasar el mouse o con
@@ -1557,8 +1562,8 @@ vez, en el lienzo aparte [Ordenar las tablas por sus columnas](https://claude.ai
 - **«Ordenar por».** Va último en la barra, separado de los filtros porque no saca filas. Dice el orden con palabras
   («Recibida, más reciente primero») y abre una lista con «Columna» (las visibles que ordenan, con la tilde en la elegida) y
   «Orden» (los dos sentidos, nombrados según el dato). Cada elección se aplica enseguida y la lista queda abierta hasta
-  tocar afuera o Escape. Sin orden elegido y con un orden de siempre compuesto (Formularios), no hay flecha y dice
-  «Ordenar por». En el celular ocupa el ancho y su lista se abre a pantalla completa, con renglones de 44 px y la ×.
+  tocar afuera o Escape. Sin orden elegido, cada lista abre con su orden de siempre: si es una columna, su flecha se
+  ve y el botón lo dice; si es compuesto (Formularios), no hay flecha y dice «Ordenar por». En el celular ocupa el ancho y su lista se abre a pantalla completa, con renglones de 44 px y la ×.
 - **El primer toque** va en el sentido útil del dato: el texto de la A a la Z, los números de mayor a menor, las fechas de la
   más reciente a la más antigua, un sí o no con «Sí» primero y un estado en el orden del circuito. El segundo lo invierte;
   elegir otra columna en «Ordenar por» la ordena en su sentido útil.
@@ -1566,20 +1571,26 @@ vez, en el lienzo aparte [Ordenar las tablas por sus columnas](https://claude.ai
   vuelve a la página 1 y no toca la búsqueda, las solapas ni los filtros; «Limpiar todo» lo conserva. Una tabla paginada
   ordena en la base; una entera, en el navegador (`useClientSort`), y se ve igual.
 - **Lo vacío va al final** («—»), en los dos sentidos. Un estado sigue el orden del circuito, igual en español y en inglés.
-- **No cambian** las tablas cuyo orden es un dato (las opciones de un catálogo, los atributos de Datos de personas, los
-  renglones de una respuesta) ni «Por aprobar», que es una cola.
+- **No cambian** las tablas cuyo orden es un dato: las opciones de un catálogo (su «Ordenar por…» guarda el orden, OR1-A),
+  los atributos de Datos de personas (su posición es el orden de sus columnas), los renglones de una respuesta, las
+  preguntas de una propuesta, la lectura de documentos del editor, las vistas previas de una importación, las
+  comparaciones y las secciones del conocimiento del asistente. Tampoco «Por aprobar», que es una cola: va de la más vieja
+  a la más nueva y ↑/↓ la recorren en ese orden. Las listas que no son tablas (los chats, las conversaciones y los casos
+  del asistente, las filas de ARCA) quedan afuera.
 
 Lo programado: `Column.sortable` obligatorio y `sortKind` (`text`, `number`, `date`, `yesNo`, `state`) en `DataTable`,
 `SortMenu`, `usePagination.toggleSort` y `setSort`, `useClientSort` y los sentidos en `common:sort`. «Ordenar por» todavía usa
-las piezas de menú de «Columnas»; pasarlo a la [pieza única para elegir](../plans/2026-11-19-una-sola-pieza-para-elegir.md)
-(`Picker`) queda pendiente. Formularios es la primera tabla que ordena por todas sus columnas; las demás siguen en los próximos cortes.
+las piezas de menú de «Columnas»; pasarlo a la [pieza única para elegir](#elegir-de-una-lista)
+(`Picker`) queda [pendiente](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#adopción-visual-y-mensajes). Ordenan todas las tablas del relevamiento: Formularios, Diseñar formularios, la Biblioteca,
+Catálogos, Formularios que faltan, Documentos recibidos, la planilla, Datos de personas, Usuarios, Roles y los documentos
+de una propuesta.
 
 ## La falta de permiso — 2026-11-24
 
 Durante la prueba integral, con una cuenta de rol Agrónomo, la falta de permiso salió fuera del caparazón: dos renglones
 sin estilo y sin un camino para volver. El usuario eligió **SP1-B** en el lienzo aparte
 [Sin permiso](https://claude.ai/artifact/VroT1cg61eWVYYTpGViWth#artboard-SP1-B) (descartó SP1-A, «No tenés permiso» en la
-banda de una ruta propia). Quedó programada el mismo día con el [plan](../plans/2026-11-24-sin-permiso-dentro-de-la-app.md).
+banda de una ruta propia). Quedó programada el mismo día (front `a3bcdcda`).
 
 - **Una pantalla que no se puede ver** queda adentro del caparazón y con su dirección. Su `Page` lleva el nombre de la
   pantalla (el de su sección, si ese nombre es un dato que no se puede leer) y, adentro, `EmptyState` con «No tenés
@@ -1598,8 +1609,7 @@ banda de una ruta propia). Quedó programada el mismo día con el [plan](../plan
 En la prueba integral del 24/11 el usuario mandó las tarjetas del asistente de Inicio («está bien la tabla, le falta un poco
 de borde y diseño de contorno, pero después los datos arriba no me convencen así sin formato») y el diálogo «Enviar un
 formulario» del chat de WhatsApp («No puede ser que haya modales que se sigan viendo tan mal así»). En el lienzo aparte
-[Tarjetas del chat](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S) eligió las cinco recomendadas el 2026-11-25
-([plan](../plans/2026-11-24-tarjetas-del-chat.md)):
+[Tarjetas del chat](https://claude.ai/artifact/4GsKuYkAbyZwQyam3yiU5S) eligió las cinco recomendadas el 2026-11-25:
 
 - **TC5-A · Los datos de etiqueta y valor, en su recuadro**, en toda la app: `DataList` es una tabla de dos columnas, con
   borde y esquinas, el dato en gris en una columna teñida (`table-section`) y una línea entre renglones y otra entre las
@@ -1618,7 +1628,8 @@ formulario» del chat de WhatsApp («No puede ser que haya modales que se sigan 
   renglón para que la tabla entre en la tarjeta; en el celular cada celda va en un renglón y lo que no entra se desplaza
   adentro de la tarjeta, como la muestra de una planilla.
 - **TC4-A · Las fuentes de una respuesta, en la misma tarjeta**: «Fuente verificada» y «Abrir fuente» en la banda, los datos
-  en `DataList` o, varias filas con los mismos datos, en una tabla, y «Consultado …» en el pie.
+  en `DataList` o, varias filas con los mismos datos, en una tabla, y «Consultado …» en el pie. Un resultado parcial lo
+  dice en la banda («Resultado parcial»).
 
 Una tarjeta nueva del chat con datos sigue la misma forma (`AssistantProposalCard` con `footer`, `DataList` y
 `assistant-proposal-table`), y un dato con su valor en cualquier pantalla usa `DataList`.

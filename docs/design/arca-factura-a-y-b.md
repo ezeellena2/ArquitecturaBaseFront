@@ -2,7 +2,7 @@
 
 Fecha: **2026-11-11**, con los tableros dibujados y elegidos el 2026-11-09. Estado: **programado el 2026-11-11** (etapa 4
 de ARCA, tarea 7); falta la prueba a mano. El alcance, las normas y las decisiones están en el
-[plan de la etapa 4](../../../ArquitecturaBase/docs/plans/2026-11-09-arca-etapa-4-factura-a-y-b.md); la regla vigente, en
+[plan de la etapa 4](../../../ArquitecturaBase/docs/features/arca.md#emisión-de-comprobantes-etapas-3-y-4); la regla vigente, en
 [ARCA](../../../ArquitecturaBase/docs/features/arca.md). Las pantallas, los textos y los estados de la A y la B salen de acá.
 
 Origen: el lienzo provisorio [Formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), filas «ARCA ·
@@ -60,4 +60,4 @@ revisó con dos muestras dibujadas por el renderer real. La regla está en [ARCA
 
 ## Pendiente
 
-- La prueba a mano, en la prueba integral.
+- La prueba a mano, en [verificación y producción](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#arca-homologación-y-cuentas-reales).

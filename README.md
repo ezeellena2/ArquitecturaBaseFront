@@ -79,7 +79,7 @@ Usuarios, roles y configuración, cada área detrás de su permiso:
 
 Las cuatro URLs anteriores `/configuracion/{idioma,zona-horaria,listados,registro}` redirigen a General.
 
-Sin el permiso, el menú no muestra la entrada y entrar a mano a la ruta lleva a `/sin-permiso`. Quien decide, igual, es el backend: el front solo acomoda la interfaz.
+Sin el permiso, el menú no muestra la entrada y entrar a mano a la ruta muestra «No tenés permiso» en esa misma dirección, con el nombre de la pantalla ([SP1-B](docs/design/visual-baseline.md#la-falta-de-permiso--2026-11-24)). Quien decide, igual, es el backend: el front solo acomoda la interfaz.
 
 Aparte de esas tres, cualquiera con sesión tiene **`/perfil`**: medios de ingreso (correo y WhatsApp),
 nombre, idioma, zona horaria y último ingreso, desde "Mi perfil" en el menú del usuario. La oferta de

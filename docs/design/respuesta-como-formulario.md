@@ -1,10 +1,11 @@
 # La respuesta como el formulario (VF1-A) y la actividad fila por fila (VF2-A)
 
-Elegidas por el usuario el 2026-11-22. Las decisiones, las tareas y los riesgos están en el
-[plan del backend](../../../ArquitecturaBase/docs/plans/2026-11-22-respuesta-como-formulario.md), que es la ley. Este
-documento ancla cada parte a su tablero y dice con qué piezas se arma.
+Elegidas por el usuario el 2026-11-22. Este documento es la fuente de sus decisiones: las ancla a su tablero y dice con
+qué piezas se arma. La regla funcional y el contrato están en
+[formularios](../../../ArquitecturaBase/docs/features/formularios.md#la-respuesta-como-el-formulario--vf1-a-y-vf2-a-2026-11-22);
+la regla para toda la app, en [nada debajo de otro dato](visual-baseline.md#nada-debajo-de-otro-dato--2026-11-22).
 
-**Tableros:** lienzo aparte [Respuesta como formulario](https://claude.ai/artifact/2vnLgSq6xxdoz9LjAdNmaN), versión 13.
+**Tableros:** lienzo aparte [Respuesta como formulario](https://claude.ai/artifact/2vnLgSq6xxdoz9LjAdNmaN), versión 15.
 Es privado y puede cambiar fuera de Git.
 
 | Tablero | Qué dibuja |
@@ -14,6 +15,35 @@ Es privado y puede cambiar fuera de Git.
 | VF · A completa | Quién ve «Corregir» y «Anular» (decisión 8), fotos y documentos, una respuesta de otra versión, la carga, el error, el 409, el 429 y salir con cambios |
 | VF2-A | La actividad en tabla en la pantalla completa y en recuadros a 390 px, con los ejemplos de PED-000010 y RVI-000003 |
 | VF1-B, VF1-C | Descartadas |
+
+## Las decisiones
+
+1. **Se lee con la forma de la carga**, en D2 y DC1: las mismas zonas, el orden, hasta tres por renglón y el ancho de cada
+   tipo (AR1-A). Cada pregunta es su control, sin poder tocarlo: el recuadro gris claro y el valor en negro; la opción
+   elegida, rellena (OE1-A), y las demás a la vista, en gris; un cálculo, en gris con su fórmula en la (i).
+2. **Nada debajo de otro dato:** en la grilla, cada dato de la opción va en el mismo renglón que su pregunta, «Pregunta ·
+   Dato», en gris; en el bloque, es una columna más.
+3. **Lo que su condición oculta no aparece**, como al cargar.
+4. **«Corregir» a la vista:** un botón con texto en la banda de DC1 y el lápiz, primero entre los íconos del título, en
+   D2. «Anular» sigue en ⋮, en rojo (CW11-A). Los decide el servidor (`canAmend`); sin permiso no se dibujan, ni apagados.
+5. **Corregir en el lugar:** el título pasa a «Corregir PED-000010», la banda queda con «Cancelar» y «Guardar corrección» y
+   se van ⋮, ↑ ↓ y la actividad. «Antes: …» va debajo de lo que cambió, salvo adentro del bloque (RG2-A), y el motivo,
+   obligatorio, al final. D2 corrige en su mismo panel, con el mismo componente.
+6. **La versión:** «Versión N» en la banda; se corrige con la activa y, si cambia algo, un aviso arriba lo dice al empezar
+   («Se corrige con la versión 2 del formulario, la activa: «Receta agronómica» arranca vacía.»).
+7. **La actividad, fila por fila (VF2-A):** Fecha, Hora, Qué pasó, Quién, Canal, Detalle, Estado y Acciones, con «—» donde
+   no aplica. Las bandas de cada momento separan. Cada PDF y cada persona de un aviso es su renglón, y los acuses de
+   WhatsApp son el estado de ese renglón. El motivo va entero en «Detalle», la única celda de varias líneas. En Acciones,
+   sólo íconos con su nombre en el tooltip (Ver PDF, Descargar, Reintentar, Consultar y Resolver envío). A 390 px y en D2,
+   cada renglón es un recuadro con «Qué pasó» arriba y los demás datos de a dos. Lo que se hizo al recibir la respuesta va
+   después de ella, aunque su acción tome la hora del comienzo del guardado (O56).
+8. **Lo demás no cambia:** los momentos (TL1-A) y «Actividad» debajo del formulario en DC1; el PDF y «Abrir conversación»;
+   «Comprobante» primero y «Cómo empezó» después del formulario; en el celular, un recuadro por ítem y «Rechazar»/«Aprobar»
+   o «Guardar corrección» fijos abajo.
+
+Estados (VF · A completa): por aprobar, corregida, anulada y sin permiso; la carga (ES3); el error con «Reintentar»; el
+409, que vuelve a la lectura con «Esta respuesta ya no se puede corregir.» y «Ver la actual», que abre la versión que la
+reemplazó (O52); la espera de un 429 como motivo de «Guardar corrección», y salir con cambios («¿Descartar la corrección?»).
 
 ## Lo que reemplaza
 
@@ -44,4 +74,5 @@ Es privado y puede cambiar fuera de Git.
 
 Programado entre el 2026-11-22 y el 2026-11-23: la lectura (`ResponseForm`), corregir en el lugar (`FormEntryCorrection`,
 con `/corregir` que lleva a la pantalla completa), la actividad fila por fila (`workflowActivity`) y el barrido de la regla
-en toda la app (VF3 con R2-A). Falta la prueba a mano.
+en toda la app (VF3 con R2-A), con O52 y O56 de la prueba integral, hasta el 2026-11-24. Falta la prueba a mano, en
+[verificación y producción](../../../ArquitecturaBase/docs/plans/verificacion-y-produccion.md#pruebas-a-mano-de-formularios-el-criterio).

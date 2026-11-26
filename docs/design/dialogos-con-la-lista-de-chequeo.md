@@ -9,7 +9,7 @@ marcó que el diálogo «Exportar respuestas a Excel» es una lista suelta y pre
 premisas no se aplican solas. De ahí salieron tres cosas: la [lista de chequeo de diseño](visual-baseline.md#lista-de-chequeo-de-diseño),
 vigente, que todo tablero y toda pantalla nueva pasan antes de programarse; este diseño, con el diálogo de exportar
 rehecho con esa lista y los demás diálogos que tienen el mismo problema; y el
-[plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md) para programarlo con el front quieto.
+plan para programarlo con el front quieto (se recupera desde la [procedencia](../../../ArquitecturaBase/docs/history/README.md#cierre-del-2026-11-26)).
 
 Los tableros están en el lienzo aparte [Diálogos con la lista de chequeo](https://claude.ai/artifact/NUTGFtcXh7QPq8wnpJ6K6c)
 (el Sistema visual no se abre desde Claude Code). Falta pasarlos al lienzo del sistema visual.
@@ -114,7 +114,7 @@ No cambia el contrato con el backend: el diálogo no inventa cuántas anuladas h
 llegan (si el bloque entra en lo que se exporta).
 
 El mismo día el usuario pidió el Excel en una sola hoja y eligió XL1-A, una fila por ítem: está en el
-[plan del Excel](../../../ArquitecturaBase/docs/plans/2026-11-09-excel-de-respuestas-en-una-hoja.md), con los tableros
+[plan del Excel](../../../ArquitecturaBase/docs/features/formularios.md#el-bloque-de-renglones-en-la-lectura--rg4-a-2026-11-07), con los tableros
 XL0 a XL2 del mismo lienzo. Por eso EX1-A, EX1-C y EX3 dicen «Filas» en lugar de «Hojas»: «Una por ítem de Artículo»,
 o «Una por respuesta» sin bloque o con el bloque fuera de «Solo las visibles». El backend quedó programado el mismo
 día, con un tope de 100.000 filas que el usuario eligió al ver la medición; la (i) de «Filas» lo dice.
@@ -156,7 +156,7 @@ asistente tiene el mismo problema («Texto · opción 1, opción 2 · Obligatori
 
 ## Qué falta
 
-- **Control automático (tarea 8 del [plan](../plans/2026-11-09-dialogos-con-la-lista-de-chequeo.md)): no se agregó.** La
+- **Control automático (tarea 8 del plan): no se agregó.** La
   sintaxis no distingue una viñeta con datos de una lista de cosas: hay diez archivos con listas legítimas dentro de un
   diálogo (opciones, campos, el historial, las revisiones, los problemas de publicar). Lo cubren la lista de chequeo y la
   revisión.

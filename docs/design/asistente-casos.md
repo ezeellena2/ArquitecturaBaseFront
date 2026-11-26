@@ -44,6 +44,7 @@ Y al programar, con los componentes que ya existen:
 10. En el celular, Descartar y Guardar quedan abajo con `sticky`, como en la carga web de un formulario.
 11. Límites suma «Agregar» junto al cuadro del tema.
 12. Lo que el tablero no dibuja: la pestaña con un problema lleva un ícono, el 409 se revisa en una zona con `ComparisonTable` y, mientras se guarda o hay un conflicto, la lista queda inerte.
+13. **Un formulario va solo.** AS3 responde una ráfaga con un texto y dos formularios, y lo fijado al dibujar admite hasta tres acciones. El servidor deja ir solo un formulario, o la pregunta de cuál; mezclado con otra acción no sale nada y deriva (`replyNotAllowed`). Por eso el «Por qué lo mandó» de un formulario no tiene lugar ni caso. Falta que el usuario acepte la diferencia o pida la mezcla ([regla](../../../ArquitecturaBase/docs/features/whatsapp.md#casos-del-asistente--2026-11-11)).
 
 Capturas: `src/test/visual/screenshots/assistant-agent-{cases,case-editor,profile-empty,limits,knowledge,test}-{es,en}-{1440,390,320}.png`.
 

@@ -3,7 +3,7 @@
 Fecha: **2026-10-29**, con las reglas de cómo se arma un formulario (CW12, CW13-A y CW16) agregadas el **2026-10-30**.
 Estado al **2026-11-18**: las cinco etapas están programadas en el backend y el front (la 1 el 2026-10-30 y las demás hasta el 2026-11-05, con su fecha en cada sección), también AR1-A, AR2-A y LD1-A a LD3-A. Las reglas vigentes están en
 [formularios](../../../ArquitecturaBase/docs/features/formularios.md#carga-desde-la-app--etapa-1-2026-10-30) y el alcance y las
-decisiones, en el [plan](../../../ArquitecturaBase/docs/plans/2026-10-29-cargar-formularios-desde-la-app.md).
+decisiones, en el [plan](../../../ArquitecturaBase/docs/features/formularios.md#carga-desde-la-app--etapa-1-2026-10-30).
 
 Origen: el lienzo provisorio [Cargar formularios desde la app](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M). Se armó
 aparte porque el [Sistema visual](https://claude.ai/artifact/HPbmDPLnr8JZ9TxevtTqJJ) no se abre desde la cuenta de Claude Code;
@@ -26,7 +26,7 @@ de Git, este documento congela lo elegido. Las pantallas, la navegación y los t
 | **CW2-A · En su propia página** (elegida) | «Nueva respuesta» en `/formularios/{id}/cargar`, con el formulario en las migas. «Volver» lleva a «Formularios» o a la planilla, según de dónde vino. Cancelar y Enviar en la banda; en el celular, Enviar fijo al pie. Se valida al enviar: cada error en su pregunta y el foco en la primera; después, en vivo. Salir con algo cargado pide confirmar. Mientras sube, el botón dice «Enviando… 64%». Desde el 2026-11-02 tiene también «Mantener las respuestas para la siguiente» ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW2-B · En un panel junto a la planilla** (elegida) | «Agregar respuesta» en el encabezado de la planilla abre el panel al costado, como D2, sólo en escritorio; en el celular abre la página. Una columna; al enviar, el aviso dice el número y la planilla se relee con la respuesta marcada. «Mantener las respuestas para la siguiente» conserva todo menos los archivos. «Pantalla completa» pasa lo cargado a la página. |
 | **CW3 · Las listas** | Una pregunta de catálogo es siempre una lista con búsqueda en el servidor, de 50 en 50, con los filtros fijos y por persona de quien carga. Muestra el total, la descripción de cada opción y «Mostrar 50 más». La única opción que dejan los filtros viene elegida. En el celular, la lista ocupa la pantalla, con la búsqueda arriba y «Listo» al pie al elegir varias. Sin el dato de la persona, la página lo dice y Enviar queda apagado con el motivo. |
-| **CW4 · Fotos y documentos** | Miniaturas o archivos con «Agregar» y el contador; viajan con el envío, así que quitar no pide confirmación. Tipo, tamaño y cantidad se revisan antes de enviar. En el celular, «Tomar foto» primero y «Quitar» en rojo. |
+| **CW4 · Fotos y documentos** | Miniaturas o archivos con «Agregar» y el contador; viajan con el envío, así que quitar no pide confirmación. Tipo, tamaño y cantidad se revisan antes de enviar. En el celular, «Tomar foto» primero y «Quitar» en rojo. Una foto «solo cámara» ofrece sólo «Tomar foto», sin la galería; en la compu se elige el archivo. Las fotos se piden en JPG o PNG (`accept`), así el iPhone convierte las suyas al elegirlas. |
 | **CW5 · Después de enviar** | La página muestra «Enviada» con lo que se mandó, el número y el estado, con «Cargar otra», «Volver a Formularios» y «Ver en la planilla» (desde la Etapa 2, también para quien sólo completa, que ve la de lo suyo). Una versión nueva se ofrece con «Pasar a la versión nueva», conservando lo cargado; un formulario dado de baja ya no se carga. Con «Mantener las respuestas para la siguiente» marcada no se muestra: el formulario queda listo para la siguiente ([AR2-A](#mantener-lo-cargado-en-la-página-ar2-a--2026-11-02)). |
 | **CW6-A · La planilla de siempre** (elegida) | La respuesta cargada es una fila más: «Cargó» es quien la cargó y «Canal» dice App o WhatsApp, con su filtro rápido, el chip y «Limpiar todo». El detalle dice «Recibida · … · en la app, la cargó Ana Pérez» en el lugar del origen de WhatsApp. El Excel no cambia: el canal ya salía siempre. |
 
@@ -269,8 +269,9 @@ cualquiera con «Corregir y anular respuestas». La regla está en
 [formularios](../../../ArquitecturaBase/docs/features/formularios.md#corregir-y-anular--etapa-3-2026-11-05).
 
 - **Las acciones.** «⋯ Más acciones» va en la fila del título de la vista rápida (D2) y de la pantalla completa (DC1),
-  junto a los demás íconos (TL3-A), también en la planilla de lo propio, con «Corregir» (con el lápiz) y, después de una
-  línea, «Anular» en rojo. Hasta AC1-A (2026-11-11), «Corregir» iba a la vista, con texto (CW10-A).
+  junto a los demás íconos (TL3-A), también en la planilla de lo propio, con «Anular» en rojo. Desde VF1-A (2026-11-22),
+  «Corregir» va a la vista: un botón con texto en la banda de DC1 y el lápiz, primero entre los íconos del título, en D2.
+  Entre AC1-A (2026-11-11) y VF1-A iba en ⋮, arriba de «Anular».
 - **Corregir, en la computadora,** abre el panel «Corregir TEST-000002» donde estaba D2, del ancho del panel de carga, con la
   respuesta como estaba llevada a la versión activa: las mismas zonas y anchos de la carga (AR1-A), y debajo de cada pregunta
   que cambió, en gris, «Antes: 1250,5» («Antes: sin respuesta» si no tenía). El bloque de renglones vuelve con sus ítems en
@@ -357,7 +358,7 @@ con ese valor, como dibujan
 dependientes con renglones, **LD3-A** («Cada renglón, con su respuesta»). Están al final del
 [lienzo provisorio](https://claude.ai/artifact/Kvbr5KFJrGT951JLiu8i4M), en las filas «Formularios · un combo que filtra el
 siguiente · 1» a «· 3» (versiones 93 y 94). El alcance, los cortes y lo que dio la prueba con Meta están en el
-[plan](../../../ArquitecturaBase/docs/plans/2026-11-07-elegir-primero-por-un-campo.md).
+[plan](../../../ArquitecturaBase/docs/features/formularios.md#elegir-primero-por-un-campo--ld1-a-2026-11-07).
 
 - **En el editor,** debajo de «Permitir elegir varias», la casilla «Elegir primero por un campo» (`CheckboxField` con su
   `InfoTip`) y, marcada, «Campo»: un combo con los campos activos del catálogo de texto u opción de un catálogo, de cualquier
