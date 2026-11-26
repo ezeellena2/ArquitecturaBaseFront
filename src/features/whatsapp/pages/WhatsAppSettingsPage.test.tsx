@@ -122,6 +122,16 @@ describe("WhatsAppSettingsPage", () => {
     expect(error).not.toHaveBeenCalled();
   });
 
+  it("says a conflict with what to do and without a code to report, which is for an unexpected error (O53)", async () => {
+    const error = vi.spyOn(toast, "error");
+    server.use(http.put("/api/whatsapp/settings", () => HttpResponse.json({ code: "WhatsApp.Settings.RevisionConflict", traceId: "conflict-trace" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion/whatsapp");
+    await type(await hours(), "48");
+    await userEvent.click(within(header()).getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Otro administrador cambió la configuración de WhatsApp. Revisá los valores actuales.",
+      expect.objectContaining({ description: undefined })));
+  });
+
   it("compares a conflict and saves what was edited over the other person's values, with the new revision", async () => {
     server.use(http.put("/api/whatsapp/settings", async ({ request }) => {
       const body = await request.json() as Record<string, unknown>;

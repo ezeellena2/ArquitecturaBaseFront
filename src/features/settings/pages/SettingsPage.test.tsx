@@ -200,6 +200,16 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled());
   });
 
+  it("says a conflict with what to do and without a code to report, which is for an unexpected error (O53)", async () => {
+    const error = vi.spyOn(toast, "error");
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict", traceId: "conflict-trace" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion");
+    await pickSize("50");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Otro administrador cambió la configuración. Revisá los valores actuales.",
+      expect.objectContaining({ description: undefined })));
+  });
+
   it("says it is reading the current values while they arrive", async () => {
     server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
     renderRouteWithProviders("/configuracion");

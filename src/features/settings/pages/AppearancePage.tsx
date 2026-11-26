@@ -97,7 +97,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
       const uncertain = feedback.kind === "uncertain", conflict = feedback.kind === "conflict";
       if (active.current && (uncertain || conflict)) setNeedsReview(true);
       notify({ id: noticeId, kind: "error", message: t(uncertain ? "feedback.uncertain" : conflict ? "feedback.conflict" : "appearance.failed"),
-        description: feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : feedback.detail,
+        description: conflict ? undefined : feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : feedback.detail,
         action: uncertain || conflict ? { label: t("review.action"), onClick: () => { if (active.current) void readCurrent(); else void navigate("/configuracion/apariencia"); } } : undefined });
     },
   });

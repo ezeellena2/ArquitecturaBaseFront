@@ -118,7 +118,7 @@ function FormSettingsEditor({ initial }: { initial: FormSettings }) {
       const conflict = feedback.kind === "conflict";
       if (uncertain || conflict) setNeedsReview(true);
       notify({ id: noticeId, kind: "error", message: t(uncertain ? "feedback.uncertain" : conflict ? "feedback.conflict" : "feedback.failed"),
-        description: feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : feedback.detail,
+        description: conflict ? undefined : feedback.traceId ? t("errorTraceId", { traceId: feedback.traceId }) : feedback.detail,
         action: uncertain || conflict ? { label: t("review.action"), onClick: () => void readCurrent() } : undefined });
     },
   });

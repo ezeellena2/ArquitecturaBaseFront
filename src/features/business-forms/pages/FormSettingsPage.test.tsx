@@ -96,6 +96,18 @@ describe("FormSettingsPage", () => {
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
   });
 
+  it("says a conflict with what to do and without a code to report, which is for an unexpected error (O53)", async () => {
+    const error = vi.spyOn(toast, "error");
+    renderRouteWithProviders("/configuracion/formularios");
+    await userEvent.clear(await screen.findByRole("spinbutton", { name: /Relecturas por persona y día/ }));
+    await userEvent.type(field("Relecturas por persona y día"), "8");
+    server.use(http.put("/api/forms/settings", () => HttpResponse.json({ status: 409, code: "Forms.Settings.RevisionConflict", title: "Conflict",
+      detail: "La configuración de Formularios cambió. Revisá los valores actuales antes de guardar.", traceId: "conflict-trace" }, { status: 409 })));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Otra persona cambió la configuración de Formularios. Revisá los valores actuales.",
+      expect.objectContaining({ description: undefined })));
+  });
+
   it("takes a field error from the server under its number", async () => {
     server.use(http.put("/api/forms/settings", () => HttpResponse.json({ status: 400, code: "Validation.Failed", title: "Invalid",
       errors: { maxFileSizeMiB: ["Elegí un número entre 1 y 25."] } }, { status: 400 })));

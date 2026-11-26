@@ -53,6 +53,14 @@ describe("AppearancePage", () => {
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
     expect(writes).toHaveLength(1);
   });
+  it("says a conflict with what to do and without a code to report, which is for an unexpected error (O53)", async () => {
+    const error = vi.spyOn(toast, "error");
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict", traceId: "conflict-trace" }, { status: 409 })));
+    renderRouteWithProviders("/configuracion/apariencia"); await edit();
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Otro administrador cambió la configuración. Revisá los valores actuales.",
+      expect.objectContaining({ description: undefined })));
+  });
   it("gives the pending review as the reason of the disabled Guardar and Descartar", async () => {
     server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Settings.System.RevisionConflict" }, { status: 409 })));
     renderRouteWithProviders("/configuracion/apariencia"); await edit();
