@@ -4,8 +4,9 @@ import { api } from "@/shared/api/httpClient";
 /// agregar el correo y desvincular el número. Agregar cualquiera de los dos pide primero un código, que prueba que el
 /// número o el correo es de quien lo agrega.
 ///
-/// Pedir el código responde lo mismo sea el número o el correo libre o de otra cuenta: decirlo antes le contaría a
-/// cualquiera qué números y correos están registrados. El 409 llega recién al confirmar, con el código correcto.
+/// Pedir el código para un número responde lo mismo esté libre o sea de otra cuenta: decirlo antes le contaría a
+/// cualquiera qué números están registrados, y el 409 llega recién al confirmar, con el código correcto. Un correo de
+/// otra cuenta, en cambio, se dice al pedir su código (O28, decisión del 2026-11-25).
 
 export interface RequestEmailCodeResponse {
   readonly resendAfterSeconds: number;
@@ -67,6 +68,7 @@ export function unlinkPhone(code?: string): Promise<void> {
 }
 
 /// 202, o 409 `Users.User.EmailAlreadySet` si la cuenta ya tiene un correo verificado, que desde el perfil no se cambia.
+/// 409 `Users.User.AlreadyExists`, con `errors.email`, si el correo es de otra cuenta: no se manda ningún código (O28).
 export function requestEmailCode(email: string): Promise<RequestEmailCodeResponse> {
   return api.post<RequestEmailCodeResponse>("/api/me/email/code", { email });
 }
@@ -75,8 +77,8 @@ export function requestEmailCode(email: string): Promise<RequestEmailCodeRespons
 /// `phoneCode` es el código que confirma el cambio (N11, pedido con `requestPhoneConfirmationCode`): sin él, 400
 /// `Users.User.ConfirmationCodeRequired` en `errors.phoneCode`; equivocado, `Auth.LoginCode.*` en `errors.phoneCode`, con
 /// `attemptsLeft`. Antes de mirar los códigos, 409 `Users.User.PhoneCodeUnavailable` (WhatsApp no manda códigos),
-/// `Users.User.EmailAlreadySet` o `Users.User.InitialAdmin`; después, `Users.User.AlreadyExists` si el correo es de otra
-/// cuenta.
+/// `Users.User.EmailAlreadySet` o `Users.User.InitialAdmin`; después, `Users.User.AlreadyExists` si otra cuenta tomó el
+/// correo después de pedir el código.
 export function confirmEmail(input: { email: string; code: string; phoneCode?: string }): Promise<void> {
   return api.put<void>("/api/me/email", input);
 }

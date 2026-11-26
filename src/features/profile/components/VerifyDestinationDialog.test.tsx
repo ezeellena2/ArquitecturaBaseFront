@@ -695,7 +695,32 @@ describe("adding an email", () => {
     expect(await within(dialog).findByRole("button", { name: "Reenviar en 45 s" })).toBeDisabled();
   });
 
-  it("says the email belongs to another account, only after a correct code", async () => {
+  it("says the email belongs to another account under the field, before sending any code (O28)", async () => {
+    const calls = addEmailServer();
+    server.use(
+      http.post("/api/me/email/code", async ({ request }) => {
+        calls.codeRequests.push(await request.json());
+
+        return problem(409, {
+          code: "Users.User.AlreadyExists",
+          detail: "Ya existe una cuenta con ese correo.",
+          errors: { email: ["Ya existe una cuenta con ese correo."] },
+        });
+      }),
+    );
+
+    const dialog = await openAndSendEmail();
+
+    await waitFor(() =>
+      expect(within(dialog).getByRole("textbox", { name: "Correo electrónico" })).toHaveAccessibleDescription(
+        "Este correo ya está en otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
+      ),
+    );
+    expect(within(dialog).queryByRole("group", { name: "Código" })).not.toBeInTheDocument();
+    expect(calls.codeRequests).toEqual([{ email: "ana@example.com" }]);
+  });
+
+  it("still says it after a correct code, if another account took the email in between", async () => {
     addEmailServer();
     server.use(
       http.put("/api/me/email", () =>
@@ -817,6 +842,33 @@ describe("adding an email with a verified number (N11)", () => {
     expect(calls.emailCodes).toEqual([{ email: "ana@example.com" }]);
     expect(calls.phoneCodes).toBe(1);
     expect(calls.confirmations).toEqual([{ email: "ana@example.com", code: "482915", phoneCode: "135790" }]);
+  });
+
+  it("does not send the number's code when the email belongs to another account (O28)", async () => {
+    const calls = addEmailWithPhoneServer();
+    server.use(
+      http.post("/api/me/email/code", async ({ request }) => {
+        calls.emailCodes.push(await request.json());
+
+        return problem(409, {
+          code: "Users.User.AlreadyExists",
+          detail: "Ya existe una cuenta con ese correo.",
+          errors: { email: ["Ya existe una cuenta con ese correo."] },
+        });
+      }),
+    );
+
+    const dialog = await openDialog("Agregar correo", "Agregar correo");
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Correo electrónico" }), "ana@example.com");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Enviar código" }));
+
+    await waitFor(() =>
+      expect(within(dialog).getByRole("textbox", { name: "Correo electrónico" })).toHaveAccessibleDescription(
+        "Este correo ya está en otra cuenta. Si es tuyo, pedile a un administrador que lo libere.",
+      ),
+    );
+    expect(calls.emailCodes).toEqual([{ email: "ana@example.com" }]);
+    expect(calls.phoneCodes).toBe(0);
   });
 
   it("says a wrong code of the number under its own field, and leaves the email code alone", async () => {

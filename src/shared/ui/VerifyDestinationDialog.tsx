@@ -120,11 +120,13 @@ interface VerifyFailure {
 /// ahí, como en el ingreso (tablero "WhatsApp · Ingreso en la web", paso 3). Con el código correcto se guarda, el
 /// diálogo se cierra y el perfil se vuelve a pedir, así las filas y el menú muestran lo nuevo.
 ///
-/// Que el destino ya sea de otra cuenta se dice recién con el código correcto, nunca antes (el punto 5 del tablero).
+/// Que un número ya sea de otra cuenta se dice recién con el código correcto (el punto 5 del tablero). Un correo de otra
+/// cuenta, en cambio, se dice al pedir el código, debajo del campo (O28, decisión del 2026-11-25), y otra vez con el
+/// código correcto si otra cuenta lo tomó en el medio.
 ///
 /// Si la cuenta ya tiene otro medio verificado, el cambio se confirma también con un código a ese medio (N11,
-/// `confirmationMediumOf`): se pide junto con el del destino y va en un segundo campo, con su texto, su error y su propio
-/// reenvío. Cada código se pide y se reenvía por separado: que falle uno no vuelve atrás ni gasta el otro.
+/// `confirmationMediumOf`): se pide cuando el servidor aceptó el del destino y va en un segundo campo, con su texto, su
+/// error y su propio reenvío. Cada código se reenvía por separado: que falle uno no vuelve atrás ni gasta el otro.
 ///
 /// La pantalla lo monta solo mientras está abierto, así arranca vacío cada vez.
 export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
@@ -183,55 +185,8 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
   /// El servidor dijo algo que el perfil a la vista no sabía (un medio que se verificó o se quitó desde otro lado).
   const refreshProfile = () => queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
 
-  const send = useMutation({
-    mutationFn: async (): Promise<{ destination: SentTo; resendAfterSeconds: number }> => {
-      if (channel === "whatsapp") {
-        const response = await requestPhoneLinkCode({ country, number: value.trim() });
-
-        return {
-          destination: { channel, phone: response.phone, maskedPhone: response.maskedPhone },
-          resendAfterSeconds: response.resendAfterSeconds,
-        };
-      }
-
-      const email = value.trim();
-      const response = await requestEmailCode(email);
-
-      return { destination: { channel, email }, resendAfterSeconds: response.resendAfterSeconds };
-    },
-    onSuccess: ({ destination, resendAfterSeconds }) => startCodeStep(destination, resendAfterSeconds),
-    onError: (error) => {
-      if (notifyOperationalError(error, `destination:${channel}:request`, t)) return;
-      if (!(error instanceof ApiError)) {
-        setRequestError(t("common:states.error"));
-
-        return;
-      }
-
-      // Lo que el servidor le reprocha al número o al correo va debajo del campo; el resto, arriba de los botones.
-      const fieldError = channel === "whatsapp" ? phoneFieldError(error, t) : error.errors?.email?.[0];
-
-      if (fieldError !== undefined) {
-        setValueError(fieldError);
-
-        return;
-      }
-
-      setRequestError(codeRequestErrorMessage(error, t));
-
-      if (error.retryAfterSeconds !== undefined) {
-        restartRetry(error.retryAfterSeconds);
-      }
-
-      // La cuenta no es la que se ve: ya tiene un correo verificado, que desde el perfil no se cambia.
-      if (error.status === 409) {
-        void refreshProfile();
-      }
-    },
-  });
-
-  /// El código que confirma el cambio, al medio que la cuenta ya tiene. Se pide a la par del del destino, pero por
-  /// separado: si falla, el diálogo pasa igual al paso del código y el error queda debajo de su campo, con su botón.
+  /// El código que confirma el cambio, al medio que la cuenta ya tiene. Se pide apenas el servidor aceptó el del destino,
+  /// pero por separado: si falla, el diálogo sigue en el paso del código y el error queda debajo de su campo, con su botón.
   const requestConfirmation = useMutation({
     mutationFn: async (medium: ConfirmWith) =>
       medium.channel === "whatsapp"
@@ -256,6 +211,69 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
 
       // Sin el medio verificado que se veía, o con el que se quería agregar ya verificado: el perfil está viejo.
       if (error instanceof ApiError && error.status === 409) {
+        void refreshProfile();
+      }
+    },
+  });
+
+  const send = useMutation({
+    mutationFn: async (): Promise<{ destination: SentTo; resendAfterSeconds: number }> => {
+      if (channel === "whatsapp") {
+        const response = await requestPhoneLinkCode({ country, number: value.trim() });
+
+        return {
+          destination: { channel, phone: response.phone, maskedPhone: response.maskedPhone },
+          resendAfterSeconds: response.resendAfterSeconds,
+        };
+      }
+
+      const email = value.trim();
+      const response = await requestEmailCode(email);
+
+      return { destination: { channel, email }, resendAfterSeconds: response.resendAfterSeconds };
+    },
+    onSuccess: ({ destination, resendAfterSeconds }) => {
+      startCodeStep(destination, resendAfterSeconds);
+
+      // El código que confirma el cambio sale cuando el servidor aceptó el destino (un correo de otra cuenta no manda
+      // ninguno, O28), si todavía no hay uno: volver para usar otro destino no lo gasta.
+      if (confirmWith !== undefined && !confirmationSent && !isConfirmationWaiting && !requestConfirmation.isPending) {
+        requestConfirmation.mutate(confirmWith);
+      }
+    },
+    onError: (error) => {
+      if (notifyOperationalError(error, `destination:${channel}:request`, t)) return;
+      if (!(error instanceof ApiError)) {
+        setRequestError(t("common:states.error"));
+
+        return;
+      }
+
+      // Un correo de otra cuenta se dice al pedir el código, debajo del campo y con la salida (O28); un número, recién
+      // con el código correcto.
+      if (channel === "email" && isTakenError(error)) {
+        setValueError(copy.taken);
+
+        return;
+      }
+
+      // Lo que el servidor le reprocha al número o al correo va debajo del campo; el resto, arriba de los botones.
+      const fieldError = channel === "whatsapp" ? phoneFieldError(error, t) : error.errors?.email?.[0];
+
+      if (fieldError !== undefined) {
+        setValueError(fieldError);
+
+        return;
+      }
+
+      setRequestError(codeRequestErrorMessage(error, t));
+
+      if (error.retryAfterSeconds !== undefined) {
+        restartRetry(error.retryAfterSeconds);
+      }
+
+      // La cuenta no es la que se ve: ya tiene un correo verificado, que desde el perfil no se cambia.
+      if (error.status === 409) {
         void refreshProfile();
       }
     },
@@ -379,11 +397,6 @@ export function VerifyDestinationDialog(props: VerifyDestinationDialogProps) {
     }
 
     send.mutate();
-
-    // El código que confirma el cambio sale a la par, si todavía no hay uno: volver para usar otro destino no lo gasta.
-    if (confirmWith !== undefined && !confirmationSent && !isConfirmationWaiting && !requestConfirmation.isPending) {
-      requestConfirmation.mutate(confirmWith);
-    }
   }
 
   function changeValue(next: string) {

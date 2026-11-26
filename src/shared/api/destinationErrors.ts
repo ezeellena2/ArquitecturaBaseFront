@@ -1,7 +1,8 @@
 import { ApiError } from "./ApiError";
 
-/// El número o el correo ya es de otra cuenta. Llega recién con el código correcto, que queda gastado: decirlo antes
-/// le contaría a cualquiera qué números y correos están registrados.
+/// El número o el correo ya es de otra cuenta. El del número llega recién con el código correcto, que queda gastado:
+/// decirlo antes le contaría a cualquiera qué números están registrados. El del correo llega ya al pedir el código, en
+/// `errors.email` (O28, decisión del 2026-11-25), y otra vez con el código correcto si otra cuenta lo tomó en el medio.
 export function isTakenError(error: ApiError): boolean {
   return error.code === "Users.Phone.AlreadyExists" || error.code === "Users.User.AlreadyExists";
 }
