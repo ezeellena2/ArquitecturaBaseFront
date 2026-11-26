@@ -157,7 +157,8 @@ cabecera clara. No acumular opciones y explicaciones de temas independientes en 
 - Las fechas usan `formatDateInZone` o `formatDateTimeInZone`, según necesiten hora, con el idioma
   y la zona de la cuenta, y un día sin hora usa `formatDateOnly`. No crear formateadores locales por pantalla.
   Se escriben sólo con números, `dd/MM/yyyy` (`03/11/2026`) en español y `MM/dd/yyyy` en inglés, nunca con el
-  mes en letras ([fechas](../design/visual-baseline.md#fechas-sólo-con-números--2026-11-10)).
+  mes en letras ([fechas](../design/visual-baseline.md#fechas-sólo-con-números--2026-11-10)). La excepción es el selector de
+  fecha de un formulario de WhatsApp, que dibuja Meta («22 Nov. 2026», O48).
 - Los números usan `formatNumber` o `numberFormat` de `shared/lib/numberFormat`, con el estándar CLDR de la región de
   cada idioma: es-AR (`1.210`, `1.234,5`) y en-US (`1,210`, `1,234.5`). No crear un `Intl.NumberFormat` ni un
   `toLocaleString` por pantalla: con el idioma de la interfaz, el español no agrupa «1210». Los números de un texto se

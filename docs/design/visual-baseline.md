@@ -1507,6 +1507,11 @@ Esta regla no estaba escrita: el formateador común usaba `dateStyle: "medium"` 
 nada más. Cambió el formateador común, así que cambiaron todas las pantallas a la vez, y los tests y las escenas
 visuales que escribían el formato viejo a mano pasaron al nuevo.
 
+**Una excepción, fuera de la app (O48, decisión del usuario del 2026-11-25):** la pregunta de fecha de un formulario de
+WhatsApp queda como la dibuja el selector de fecha de WhatsApp («22 Nov. 2026» en el formulario, «Nov 22 2026» en su
+resumen). El formato lo pone Meta y no se elige; no se cambia por un texto con números ni se deja el calendario. Lo que la
+app muestra de esa fecha sigue con números.
+
 ## Nada debajo de otro dato — 2026-11-22
 
 Cada dato va en su lugar: su campo, su columna o su renglón. Los datos de una opción, como el rubro de un artículo o el
