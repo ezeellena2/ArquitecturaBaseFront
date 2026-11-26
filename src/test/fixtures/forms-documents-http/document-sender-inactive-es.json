@@ -1,1 +1,1 @@
-{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Quien mandó el documento ya no está activo.","traceId":"00-08a181bb7b1064bc1bc104faa1f4fe3f-258a8b5dee2c7492-01","code":"Forms.ReceivedDocument.SenderInactive"}
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.10","title":"Conflicto","status":409,"detail":"Quien mandó el documento ya no está activo.","traceId":"00-b94564ae64b8aa72ee89528df360bb27-2388068380d13fff-01","code":"Forms.ReceivedDocument.SenderInactive"}

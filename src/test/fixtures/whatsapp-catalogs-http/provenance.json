@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "4a27c603639efb6d83e2c7a19b4ca7892372f2e4b82a3d6ebf7d81889798688a",
@@ -35,153 +36,152 @@
   ],
   "captures": [
     {
-      "name": "en/choices.json",
       "length": 527,
-      "sha256": "46126394ea764d0a2740a6a9c21260a890af0cab18b099496346e1606bc0f2c3"
+      "sha256": "2d84532da9cc5ff1be4abe5c4457b8cb4f27fea2d63363979edc13badc508023",
+      "name": "en/choices.json"
     },
     {
-      "name": "en/preparation-recipient-data-missing.json",
       "length": 349,
-      "sha256": "de84c996db5a73b8702be2a16a77d8dc5beecd9f672621aea21b2637fb4468d4"
+      "sha256": "045fd1f342e5674a01060a83a2ec65f81e985b4595b26b200a1aa68d9cd82885",
+      "name": "en/preparation-recipient-data-missing.json"
     },
     {
-      "name": "en/preparation.json",
       "length": 245,
-      "sha256": "de0e0742e9a08c9230458e9c4f4cf4a6d72d5fd1a34f2ee2164168bb787266cd"
+      "sha256": "85c05963f30a35aa98bd21d7bdbd2f2a171d640ff89b916f4e1c924b5320beec",
+      "name": "en/preparation.json"
     },
     {
-      "name": "en/reply-all-states.json",
-      "length": 5881,
-      "sha256": "ee08b418c92dbde8861e55e4c9695bcaae414f77ef58ed426d1b7ce138f5d03e"
+      "length": 5885,
+      "sha256": "401444465d8012f1b04c913553e83b816c16f96a8be2fc0fc718697189bd6527",
+      "name": "en/reply-all-states.json"
     },
     {
-      "name": "en/reply-completed.json",
-      "length": 3080,
-      "sha256": "fb48de6cfa028fdf0ff43e1a3f44e665970402274ce47284c8dd3e0d72ba7d1a"
+      "length": 3084,
+      "sha256": "bba942ba17477a7ea1f361ba9e343260996df7574e2ab2d53cbc6f0344a9d2cf",
+      "name": "en/reply-completed.json"
     },
     {
-      "name": "en/reply-inbox-read.json",
-      "length": 31253,
-      "sha256": "333e46445faa14ce45f570b514ea55e770edcb71ac7fc8b46a4ceb6f5d001678"
+      "length": 14254,
+      "sha256": "294c853338ebb0e919b05820ea9c8e92cb7e0e8552366ed8e5dc07f66b6c26c3",
+      "name": "en/reply-inbox-read.json"
     },
     {
-      "name": "en/reply-inbox-without-read.json",
-      "length": 31253,
-      "sha256": "333e46445faa14ce45f570b514ea55e770edcb71ac7fc8b46a4ceb6f5d001678"
+      "length": 14254,
+      "sha256": "294c853338ebb0e919b05820ea9c8e92cb7e0e8552366ed8e5dc07f66b6c26c3",
+      "name": "en/reply-inbox-without-read.json"
     },
     {
-      "name": "en/reply-latest-page.json",
-      "length": 1914,
-      "sha256": "55e2c1c4469cd740d0535eea888605725c80e648ea7cb230ca23d987df91b9ce"
+      "length": 1918,
+      "sha256": "e56449f4a9c8a46974887b915edfefffb6f43f2dc503252f191a6d887af51c75",
+      "name": "en/reply-latest-page.json"
     },
     {
-      "name": "en/reply-older-page.json",
-      "length": 1965,
-      "sha256": "2105ec8a0110e46402cc57f30a46bdf43c1964e26039a1d7e1b9061fedf00255"
+      "length": 1969,
+      "sha256": "5e44f61be9ad0d74244d6540c1504bd18f4338f1d66b5d5e75a932c6de65f955",
+      "name": "en/reply-older-page.json"
     },
     {
-      "name": "en/reply-pending.json",
-      "length": 1862,
-      "sha256": "66f64fce419e5fd00cac7def61bc4e903a7494a4839802ddadf58e98776c71e3"
+      "length": 1866,
+      "sha256": "1388a1bd078ec54399cefb32d7670a0b1143de81d1062a2901b1f48be4f32462",
+      "name": "en/reply-pending.json"
     },
     {
-      "name": "en/reply-rejected.json",
-      "length": 4310,
-      "sha256": "a9958b0f718e8948f9b011dc1f0d6dd2dd9c6f3999364a54d6c14fc99b046dbc"
+      "length": 4314,
+      "sha256": "b1cdb4d9ab7130661795186ef83528981be477ad1c1e04dc3848f13e33b056a7",
+      "name": "en/reply-rejected.json"
     },
     {
-      "name": "en/reply-reloaded.json",
-      "length": 3080,
-      "sha256": "fb48de6cfa028fdf0ff43e1a3f44e665970402274ce47284c8dd3e0d72ba7d1a"
+      "length": 3084,
+      "sha256": "bba942ba17477a7ea1f361ba9e343260996df7574e2ab2d53cbc6f0344a9d2cf",
+      "name": "en/reply-reloaded.json"
     },
     {
-      "name": "en/reply-unrecognized.json",
-      "length": 4802,
-      "sha256": "7a2a361586a953c26beaa84ee5eea2e4777aab4b84e9c7bf850bb01e31034e4c"
+      "length": 4806,
+      "sha256": "28f32a042704e860f96415bfafdced18154deafc298cde53ec75916e4504a26f",
+      "name": "en/reply-unrecognized.json"
     },
     {
-      "name": "en/reply-without-read.json",
-      "length": 1733,
-      "sha256": "f5dd7e67d997189a80d401b4eff90a10338b9cb0f5b85c6fa343da8737f4372f"
+      "length": 1737,
+      "sha256": "d77da31f580f1b70ce5a74597f46fb514bc470d64c83c9be7dd1ac65691dd651",
+      "name": "en/reply-without-read.json"
     },
     {
-      "name": "es/choices.json",
       "length": 527,
-      "sha256": "38fff18d2d4d8422f2bdd75f33cf89e8dadb5bf7c40f86235afcf7ce64ed45ca"
+      "sha256": "2b414e1781dcae419d8d5eca4db267357fd354a7de738437aac3857478d93ba9",
+      "name": "es/choices.json"
     },
     {
-      "name": "es/preparation-recipient-data-missing.json",
       "length": 350,
-      "sha256": "34e57ff2549239bb90b7a8c8eed8fabdcba47d51849b4ec47d71d847e6c46aaa"
+      "sha256": "44efe85a6772f7535589d4628be3ab82df9752a48da91bbbc508aa3540ddefb4",
+      "name": "es/preparation-recipient-data-missing.json"
     },
     {
-      "name": "es/preparation.json",
       "length": 245,
-      "sha256": "ba2f9d12afd705462b4edb329fbe34bc6b6d8bf37965464df0d63a72ec6fe807"
+      "sha256": "4dfd8950677f836c555c26b05b3920b35eb4a45be33042c55e4aa9542bf2992c",
+      "name": "es/preparation.json"
     },
     {
-      "name": "es/reply-all-states.json",
-      "length": 5911,
-      "sha256": "02d1291033c682caf644d6c5efd37a169354667b355963fbf8668f41e10cff5d"
+      "length": 5915,
+      "sha256": "aea4811ad0659723551bbb053324beea1d70ec2e78a8a2a36da1fdf28d1eea9d",
+      "name": "es/reply-all-states.json"
     },
     {
-      "name": "es/reply-completed.json",
-      "length": 3104,
-      "sha256": "e4577e5885aa3831c13185adba3acff47ab95ee5bd5c4483575fe94191bc7324"
+      "length": 3108,
+      "sha256": "5c6ff5311823f915a0785ea7cae2f2c67f548061d3d79fec44511129eafb2f8e",
+      "name": "es/reply-completed.json"
     },
     {
-      "name": "es/reply-inbox-read.json",
-      "length": 31251,
-      "sha256": "63601e97eeaf95ea8c751bd3bfb6bb0aac080e7601868f011fd884f448a8494d"
+      "length": 13967,
+      "sha256": "e576b6102a0684af92dfefc21c122c8529c1081296522f169885b1ce97caba05",
+      "name": "es/reply-inbox-read.json"
     },
     {
-      "name": "es/reply-inbox-without-read.json",
-      "length": 31251,
-      "sha256": "63601e97eeaf95ea8c751bd3bfb6bb0aac080e7601868f011fd884f448a8494d"
+      "length": 13967,
+      "sha256": "e576b6102a0684af92dfefc21c122c8529c1081296522f169885b1ce97caba05",
+      "name": "es/reply-inbox-without-read.json"
     },
     {
-      "name": "es/reply-latest-page.json",
-      "length": 1925,
-      "sha256": "24ce21443fc8b6b3b2f7bf1850931f4113c818c2968cf6669c629769da8900a9"
+      "length": 1929,
+      "sha256": "43e45b7c03cdb8b39b7914d5e35feb30e0c1731b81eaf80d17fc03300505edb6",
+      "name": "es/reply-latest-page.json"
     },
     {
-      "name": "es/reply-older-page.json",
-      "length": 1982,
-      "sha256": "5b2614e5750cc1e34b0735a7e441a6e5d730f3ef5b1c542feae9d088e3bc3d1c"
+      "length": 1986,
+      "sha256": "2b057902e9d232af73b8800cb4499605942a6f300c8577e8c7db809f0a707941",
+      "name": "es/reply-older-page.json"
     },
     {
-      "name": "es/reply-pending.json",
-      "length": 1873,
-      "sha256": "bf1d45766dc784947b6be5f57205282fc94660c6add97518c82c54ea205446e7"
+      "length": 1877,
+      "sha256": "e4d7171d67c24a807121ed3a91a471129620ec7427b63d69d8d0f7ca7a6067b2",
+      "name": "es/reply-pending.json"
     },
     {
-      "name": "es/reply-rejected.json",
-      "length": 4340,
-      "sha256": "3ccbe79d6dec4e0ab7a8d5bc7a279b8f0396b42364caa5075dad099f55057266"
+      "length": 4344,
+      "sha256": "d2d833ed5534379fd617b75defed85e83a10d3992a42c21b21dc8a69a245f47c",
+      "name": "es/reply-rejected.json"
     },
     {
-      "name": "es/reply-reloaded.json",
-      "length": 3104,
-      "sha256": "e4577e5885aa3831c13185adba3acff47ab95ee5bd5c4483575fe94191bc7324"
+      "length": 3108,
+      "sha256": "5c6ff5311823f915a0785ea7cae2f2c67f548061d3d79fec44511129eafb2f8e",
+      "name": "es/reply-reloaded.json"
     },
     {
-      "name": "es/reply-unrecognized.json",
-      "length": 4832,
-      "sha256": "b6ac1f7f557af677758966038493bd8b38811b7c53bf0c2d6c6337d04d5eb6e8"
+      "length": 4836,
+      "sha256": "7ed45242694458455219011b2de9ddeaffc54a513ea5b28efc34067ce727b75e",
+      "name": "es/reply-unrecognized.json"
     },
     {
-      "name": "es/reply-without-read.json",
-      "length": 1750,
-      "sha256": "09ce5cc2ca1aa0a1d69592b3a96a2e65c9c4c23c931003a74ed0a50f199d5421"
+      "length": 1754,
+      "sha256": "60cb3059c0f0ad44294b545cc614904d66bc2f6bf9939859c34b7e028a858258",
+      "name": "es/reply-without-read.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "whatsapp-catalogs",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "WhatsAppFormReplyAppPreviewTests and WhatsAppCatalogRecipientSendingTests and WhatsAppFormSendingTests and WhatsAppFormHttpContractTests and CapturingFlowProvider and CapturingWhatsAppCloudClient and IStructuredFormPublicationDriver and StructuredFormPublicationDriver",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

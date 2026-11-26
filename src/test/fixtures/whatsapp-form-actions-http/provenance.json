@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "3eb0378b106875cd9df2041030dd343cea65cfa0821738081e3f0c479205d296",
@@ -15,28 +16,27 @@
   ],
   "captures": [
     {
-      "name": "chats-form-actions.json",
       "length": 513,
-      "sha256": "5e1c46bfebe514990808adbeb8432a71612949ba2171ab08d451f3c981f7052e"
+      "sha256": "504b1aaf7de77f5016a2a95c3922ac4fa91fb23fc2916b59a6202bbfabd35267",
+      "name": "chats-form-actions.json"
     },
     {
-      "name": "thread-form-actions-restricted.json",
-      "length": 1602,
-      "sha256": "ec464d8a11939c24aa1d51e1766c41f27a6f7f9b5a84557a0bcba80629dfe4bf"
+      "length": 1599,
+      "sha256": "f872dfe8d97553e38b008917f6b473844aef43921b4cf50550f06a44de9d3f65",
+      "name": "thread-form-actions-restricted.json"
     },
     {
-      "name": "thread-form-actions.json",
-      "length": 1760,
-      "sha256": "ee717b738cb35f0cd4566a8d3ac8560c3181f32fb5a0839a3d31df9b1f007b02"
+      "length": 1757,
+      "sha256": "002c15b0b2fb0ca516a60fd22bddd9d3603c8c39930fc522b6f3247bd291103a",
+      "name": "thread-form-actions.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "whatsapp-actions",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "WhatsAppFormActionHttpTests and WhatsAppFormActionContractCapture and WhatsAppFormActionScenario",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

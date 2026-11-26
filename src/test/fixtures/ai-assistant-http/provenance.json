@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "35972a67643976aaa5a36988bfb7091d17c9dde5610cbd04659ed502aa60df07",
@@ -39,68 +40,67 @@
   ],
   "captures": [
     {
-      "name": "bootstrap.json",
       "length": 624,
-      "sha256": "e8014987a67fea5f4cc51409306b397a81b83a166a797a50b3f0028ace6f9de1"
+      "sha256": "e8014987a67fea5f4cc51409306b397a81b83a166a797a50b3f0028ace6f9de1",
+      "name": "bootstrap.json"
     },
     {
-      "name": "canceled.json",
-      "length": 737,
-      "sha256": "a02097dda6fd9f31ee671f9052919cccb77eadfb78878334bd2e849c59c3ca81"
+      "length": 728,
+      "sha256": "574a5f81af3991cc649df23fef8967a363fdb93f3a7feda15f5b3479d1f83614",
+      "name": "canceled.json"
     },
     {
-      "name": "document-status.json",
       "length": 222,
-      "sha256": "9e8ec4f450e882f0668f017a8e714a9d5ee4d65ef23100bf1fc5ee093fed3979"
+      "sha256": "4d3615d7c1031c288354d0f1cd5768293d6a1de0bc05ee0023f4c460e28b80db",
+      "name": "document-status.json"
     },
     {
-      "name": "file-submitted.json",
-      "length": 294,
-      "sha256": "9991f129128f6602e569e148e9913b86dfdfe6d51684febb2ae69f5a32ba8b14"
+      "length": 288,
+      "sha256": "d98c3f4aee8836c5fd0ac8be7a8bfa4ec99416b25bacb1b6e28712c7f42713a3",
+      "name": "file-submitted.json"
     },
     {
-      "name": "submitted.json",
-      "length": 294,
-      "sha256": "02254b90bfb1b9a5c2c3f6a8d9c7884c02117c7c22218cc17a0c0ba8dd3e911e"
+      "length": 288,
+      "sha256": "aeaad223463e31daa931c1b0b1dc3adcf047d53d06dbcf3cdd832a9385f17fd3",
+      "name": "submitted.json"
     },
     {
-      "name": "turn-attachment.json",
-      "length": 1112,
-      "sha256": "5edf24a7b38128a1736717d4a5cdf3e9d7fd446e65b7f95c366bbfa40df6dbcf"
+      "length": 1103,
+      "sha256": "d2793f68d099f33d0398f2caa4705e77c48c0b0d7ad671884bf209dae4d47927",
+      "name": "turn-attachment.json"
     },
     {
-      "name": "turn-completed.json",
-      "length": 1006,
-      "sha256": "ba8be28888aa5d79c83e12e018fbacdc3e554ef246bd05e8befa6c730344fd5a"
+      "length": 997,
+      "sha256": "acf0ba46529867d7bbeaf0ecd0fcda5a90badf4d12ce8d21830b9f67ff8afc12",
+      "name": "turn-completed.json"
     },
     {
-      "name": "turn-document.json",
-      "length": 1116,
-      "sha256": "c612c46bd55f1668275e40f1342f2c3249a2b3f054768d750baf6b688fe69a88"
-    },
-    {
-      "name": "turn-pending.json",
-      "length": 530,
-      "sha256": "09a2976976ec6878ce6facbbe306e7d2198325bc9cda31b881b8a9a49248db7a"
-    },
-    {
-      "name": "turn-word.json",
-      "length": 1094,
-      "sha256": "8d6ada085a93ad8fbf9781754fdcd1277fa9abccfafc91695c88e6f483455898"
-    },
-    {
-      "name": "turns.json",
       "length": 1107,
-      "sha256": "e19cd04d19d0a6794fe6f47ef7d4f325572c196791cd80bff7a5acc67204d99a"
+      "sha256": "c6718dcc128a98d5b1daef57b078fb527ee691e870cfc4d3f276abb22b07cc74",
+      "name": "turn-document.json"
+    },
+    {
+      "length": 524,
+      "sha256": "547e5f431cf0fa251f7d224aa131cf01708d4474a2c1796f3aaa053d5a35aa14",
+      "name": "turn-pending.json"
+    },
+    {
+      "length": 1085,
+      "sha256": "82f25e4d5838ff56751b0595c3676f9885d636294e7fb394fd565de92ce2e670",
+      "name": "turn-word.json"
+    },
+    {
+      "length": 1098,
+      "sha256": "d7c77543d5bced12d47bdbd0bb1e60cdf61c33f49baefbbb796f709c33162bde",
+      "name": "turns.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and HomeAudioFiles and HomeAttachmentReader and DocumentReadingProviderFixture and AiAssistantResponses and AiAssistantDocumentModels",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "ai-assistant",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "AiAssistantHttpContractTests and AiAssistantContractCapture and AiAssistantExecutionScenario and AiAssistantExecutionProviderHandler and HomeAudioFiles and HomeAttachmentReader and DocumentReadingProviderFixture and AiAssistantResponses and AiAssistantDocumentModels",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

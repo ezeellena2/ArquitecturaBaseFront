@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "6e4726f0401a8f1e99d0a379fc2e20a47c35367a0c2be0fdc6fcc1a91081ade7",
@@ -7,68 +8,67 @@
   ],
   "captures": [
     {
-      "name": "active-catalog-created.json",
       "length": 790,
-      "sha256": "a0064c97210363528d6ec9ba1d0546e24867b8ff19bfc0effb7b123a333817f7"
+      "sha256": "119615293eece7655a94d39e17a3aedf8404f4d6dcaac151275ef897f452cf14",
+      "name": "active-catalog-created.json"
     },
     {
-      "name": "active-catalog-list-usage.json",
       "length": 631,
-      "sha256": "5cae2840392bd474e1206f617f96ded4e3a3dfa157ea3b942c5083c9127a6020"
+      "sha256": "1dbcd7cb9c32b2706f7f390044d175af483666f8774812abf72b84f359403c43",
+      "name": "active-catalog-list-usage.json"
     },
     {
-      "name": "catalog-choice-check-invalid.json",
       "length": 841,
-      "sha256": "a0b20b6d28e9e19ebb5e4328c7624e75764ad68e500fdd41dd4a170155de7e3e"
+      "sha256": "366928f8bf19b7e7eb1ea52d0a893854f98d92b91c1af3dd74fa6b645e4c5769",
+      "name": "catalog-choice-check-invalid.json"
     },
     {
-      "name": "catalog-choice-check-valid.json",
       "length": 757,
-      "sha256": "7719b9785f8ce79420fc1c5cc506c85d9320a595372b3ef6fdd69a4b08ee85aa"
+      "sha256": "69af40440f8ec59f296a62648cc0fadf79f13c72676083a2fb0e5176839d89b0",
+      "name": "catalog-choice-check-valid.json"
     },
     {
-      "name": "catalog-choice-create-receipt.json",
-      "length": 1541,
-      "sha256": "db48a89f5592b52e419180d07c3129cb28bfc893cc85bb7c32309bdb5a803ac0"
+      "length": 1535,
+      "sha256": "3ff06518bd7111a231d440541c8e6225a945c4b813ff0ce2213b1f7795621e6e",
+      "name": "catalog-choice-create-receipt.json"
     },
     {
-      "name": "catalog-choice-created.json",
-      "length": 1379,
-      "sha256": "fa09c6d6a199d0d2d77abd0755272e680c921d8335f44b2f1dbfa040b9e1c44c"
+      "length": 1376,
+      "sha256": "f76a74205393d26addda022f7b408c32574b47f4f63be431d5b1057cee1e9278",
+      "name": "catalog-choice-created.json"
     },
     {
-      "name": "catalog-choice-detail.json",
-      "length": 1589,
-      "sha256": "500003e5d9e065a78b28e2d7f507f69a9ce7112d2f6c1fddbc5729075f8f1739"
+      "length": 1583,
+      "sha256": "e9c7458a4342c98dafff4fa8536303aff53caefb637d18ba7141fb8c9b757287",
+      "name": "catalog-choice-detail.json"
     },
     {
-      "name": "catalog-choice-invalid-created.json",
-      "length": 927,
-      "sha256": "8d6644a7817e7daa8070329170f36e22f4e1e32d983fe92be64717e3ff0b5f3c"
+      "length": 924,
+      "sha256": "7f01cb49fc267c85e5eef8807c7caa43372e9ff3f43e08335a71c98a085dfdca",
+      "name": "catalog-choice-invalid-created.json"
     },
     {
-      "name": "catalog-choice-reloaded.json",
-      "length": 1622,
-      "sha256": "45453789b6758859964729afe5584481bd2454f81ff08145cf0324d0602458f3"
+      "length": 1613,
+      "sha256": "a4549d923fd80d2ce56b869fe1fd5e65474245916a7c74381017da9b5669c6b0",
+      "name": "catalog-choice-reloaded.json"
     },
     {
-      "name": "catalog-choice-update-receipt.json",
-      "length": 1524,
-      "sha256": "0fae96c58cceb1dc73857c9e171233834216844d2582acc26004c4c6e8d6b05d"
+      "length": 1518,
+      "sha256": "032a8e2e706651b84a9e331c321f4b69e7e0528395d935112d85ecc2242044cf",
+      "name": "catalog-choice-update-receipt.json"
     },
     {
-      "name": "catalog-choice-updated.json",
-      "length": 1362,
-      "sha256": "df6b7d57b8a701b4ab51de263d256dbbb2c619a01145fefc2f8a86831d75da4a"
+      "length": 1359,
+      "sha256": "f3de9d0dcb9e5c5ae9fdd5495643a10c7d94a3707c2775648c5a2954376d7c34",
+      "name": "catalog-choice-updated.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormPublicationCheckTests",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "catalog-source",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormPublicationCheckTests",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

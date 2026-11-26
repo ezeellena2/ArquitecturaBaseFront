@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "98841d6853ad2e6c063e98db37b200027e368af49356da564f13999137893735",
@@ -19,63 +20,62 @@
   ],
   "captures": [
     {
-      "name": "dashboard-catalog-en.json",
-      "length": 3110,
-      "sha256": "6b4873e3ef97a707f3ab2fcb48f083f9827b051f107cd77d92d2555f7e1b1540"
+      "length": 2690,
+      "sha256": "62e1bb51d101133657352d4b58cc9e5dbc935d8893874caf8923be824ab0257e",
+      "name": "dashboard-catalog-en.json"
     },
     {
-      "name": "dashboard-day-es.json",
       "length": 11763,
-      "sha256": "14fd56a0de36bb9d2dde382c995c2ea7aa4fdfd654f53f639c799011e402308e"
+      "sha256": "78fcf4c9fb8432cfc19962010c963062988c144ce78ea1e5417c778b7973701b",
+      "name": "dashboard-day-es.json"
     },
     {
-      "name": "dashboard-empty-es.json",
       "length": 1230,
-      "sha256": "750284f4d8d924d9c47d989b02e1483569185be8f8f063d6f11ef379b6236124"
+      "sha256": "4d10d1914ea86f7091a9444d3c46b3750b74455133a9d76d71ff652c74a12ca2",
+      "name": "dashboard-empty-es.json"
     },
     {
-      "name": "dashboard-filtered-es.json",
       "length": 6912,
-      "sha256": "0bd4348ea803b3857da5052188efdca807dd1fa9306be8d3c66f204fb66cb67f"
+      "sha256": "09b203988a073d7ea64260fc0fa902b75270fccc0ec9a202065d9ce1fed34a8b",
+      "name": "dashboard-filtered-es.json"
     },
     {
-      "name": "dashboard-invalid-period-es.json",
       "length": 281,
-      "sha256": "5a5a612eb4a34b831b7768aa37e10a5f1c8fd451d192441514cb83f86d70ae93"
+      "sha256": "df82e8594d66281ee1f1f2549e7a3129569b231e89d425a075b1663cd76cc2ba",
+      "name": "dashboard-invalid-period-es.json"
     },
     {
-      "name": "dashboard-month-es.json",
-      "length": 3851,
-      "sha256": "fb71745876939acb5da0df5608a33ef59fec19fc1d5113271579286c64d9aafb"
+      "length": 3431,
+      "sha256": "fa974ddd0d4d1a8baf1b57c2896371e58743856f5e7b6de783b7e635ab733ee2",
+      "name": "dashboard-month-es.json"
     },
     {
-      "name": "dashboard-overflow-es.json",
       "length": 8943,
-      "sha256": "c42e588fd530fd603c9f0af1acbf4f1fbece27db6189593c8dcae7eb27461690"
+      "sha256": "ccfe901d90fd46cd0f1205ac1ce8bb317471e9fe3b4c8b18436defbff9089264",
+      "name": "dashboard-overflow-es.json"
     },
     {
-      "name": "dashboard-own-es.json",
       "length": 6912,
-      "sha256": "f37f78884ae55889b60d8b0a4510223d4f70170f2e7bee3d56f2209f783dcb7c"
+      "sha256": "94aa03a4cb835dc8e922a18dc4c51e8faf7fb1767eb3920cdc758f3a509c9c88",
+      "name": "dashboard-own-es.json"
     },
     {
-      "name": "dashboard-people-es.json",
       "length": 3315,
-      "sha256": "b07b4e03b57e271123676f831b4eb5bbfb4a59dd03fa9b3d3f3ddbdd2ac353bc"
+      "sha256": "16ea7c15c52d1235f769077139dcc6dc8dfa1683c9128b38e92136e200b25ad4",
+      "name": "dashboard-people-es.json"
     },
     {
-      "name": "dashboard-week-en.json",
       "length": 4015,
-      "sha256": "782f539fdd8f39cfa83d16830a4f6ffeaa05284f4b339c6584ec3d9799015f71"
+      "sha256": "9e05515c292c17b6a205527b4dad3787fee62959e1b8f784c00085798beacfc4",
+      "name": "dashboard-week-en.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormDashboardHttpTests and FormDashboardScenario and FormDashboardContractCapture and FormDashboardModels",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "dashboard",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormDashboardHttpTests and FormDashboardScenario and FormDashboardContractCapture and FormDashboardModels",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

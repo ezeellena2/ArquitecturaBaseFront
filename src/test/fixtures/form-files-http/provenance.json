@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "815a1ccb77b48f8ebee572b4d5c908f9c8b1ca335a5ef41af2c81736099a7b64",
@@ -7,38 +8,37 @@
   ],
   "captures": [
     {
-      "name": "draft-created.json",
-      "length": 1826,
-      "sha256": "29ad33202525cc6e959fc7dacfbc774e2d9f1533a1665cd9e54cecee994f4da8"
-    },
-    {
-      "name": "reply-completed.json",
-      "length": 2766,
-      "sha256": "1b0f2c3635f4f95f9726a68a39a60e3160a5361ced79906553c9a29788cf520f"
-    },
-    {
-      "name": "reply-downloading.json",
-      "length": 1931,
-      "sha256": "9274123e99c2a9eeac82aa9acd2033874694b7e1ed9e8f686be45c0a3f437a77"
-    },
-    {
-      "name": "reply-reloaded.json",
-      "length": 2766,
-      "sha256": "1b0f2c3635f4f95f9726a68a39a60e3160a5361ced79906553c9a29788cf520f"
-    },
-    {
-      "name": "reply-without-read.json",
       "length": 1824,
-      "sha256": "f381fbab847d3f175469e4ef7c76972bccf728728424d81c2cd5f4de4093cd40"
+      "sha256": "3e16e27fc96ed64579822f641302b84018c4a615c4e447a6d2d39adb4b7028bd",
+      "name": "draft-created.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "359a619434d9f0e54bafebe1a1d83e82219169a3915e3671ad91c52deaf84bd2",
+      "name": "reply-completed.json"
+    },
+    {
+      "length": 1935,
+      "sha256": "6c8732d7a1bb2fd79ce21f56858c2058681051d2107106a825cee7deb351283b",
+      "name": "reply-downloading.json"
+    },
+    {
+      "length": 2770,
+      "sha256": "359a619434d9f0e54bafebe1a1d83e82219169a3915e3671ad91c52deaf84bd2",
+      "name": "reply-reloaded.json"
+    },
+    {
+      "length": 1828,
+      "sha256": "23e46e8a60bdc50407529a5f569a7ee8ae5474a5c188029f2ce5a424e4b8eeb2",
+      "name": "reply-without-read.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppFormFilesIntegrationTests",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "form-files",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "WhatsAppFormFilesIntegrationTests",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

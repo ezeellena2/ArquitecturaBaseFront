@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "3c440b12cef8fc6b127ebc5bde719bfbd84a9d7b5f61604793f45487082ee54f",
@@ -11,68 +12,67 @@
   ],
   "captures": [
     {
-      "name": "agent-conflict.json",
       "length": 297,
-      "sha256": "4cb6ab0937eea4609a99893be3e61c6e7181c6f48e797b87e83d88f938eed346"
+      "sha256": "8c1c56fa1e0b0818d6a3bb8f1496162795133001acb791200304147c993e107f",
+      "name": "agent-conflict.json"
     },
     {
-      "name": "agent-defaults.json",
       "length": 945,
-      "sha256": "fb648a930f34b5c9ca5b16cba83aa61c56295ad04df20ad18d2d2327e1a03927"
+      "sha256": "fb648a930f34b5c9ca5b16cba83aa61c56295ad04df20ad18d2d2327e1a03927",
+      "name": "agent-defaults.json"
     },
     {
-      "name": "agent-invalid.json",
       "length": 370,
-      "sha256": "14cd2004184efac7c33b3b1794b2e75ea16a1a4f7e28f0887eaae30aa117048a"
+      "sha256": "6fb4362d228915ee6546b1f9adf669482523ae6413a844258ed4dbb96603adcb",
+      "name": "agent-invalid.json"
     },
     {
-      "name": "agent-saved.json",
       "length": 1336,
-      "sha256": "bbb3ad197309f5bb43c5bf43454e16f28abf1265ba1cea974ef4a2878497e9a5"
+      "sha256": "bbb3ad197309f5bb43c5bf43454e16f28abf1265ba1cea974ef4a2878497e9a5",
+      "name": "agent-saved.json"
     },
     {
-      "name": "chats-needs-person.json",
-      "length": 587,
-      "sha256": "3f6fc88068ad47408380ee9152372f1ddc4429553403e2fecbcc52f4bfc570b9"
+      "length": 583,
+      "sha256": "50bc66efd1a1cda256fbb9ac5c2bc500e2ff756b5ba7c4849876a7b9b8608d91",
+      "name": "chats-needs-person.json"
     },
     {
-      "name": "suggestion-text-ready.json",
       "length": 269,
-      "sha256": "a25e5deeaea4835984ef6e4ce6ec3266ece15104850b2492694517161ec235a5"
+      "sha256": "e18518cf94b1b8480763ba4f8012ea6719bb59b7476d4a6d2de0848547de31ce",
+      "name": "suggestion-text-ready.json"
     },
     {
-      "name": "test-accepted.json",
       "length": 70,
-      "sha256": "c24763ea1379159c29442fd80013415baa2d793fb193d4c4eb1d13376afeb127"
+      "sha256": "5dfc44e5cc9dc22c90796d9551960480db089c3cb58a7bf3b1153d3f35967d60",
+      "name": "test-accepted.json"
     },
     {
-      "name": "test-completed.json",
       "length": 324,
-      "sha256": "51ca161c69f8e15b2f95ae2eae1059dbc79f787084196acb02ae59e7b293d716"
+      "sha256": "fc8f5e7bfcdabfb785a6e132bebf5aec16dbef0502d428da4b8c8a9c4c929046",
+      "name": "test-completed.json"
     },
     {
-      "name": "test-pending.json",
       "length": 102,
-      "sha256": "1dba69487c52d91086365066682c6dff1fa92b05dfec8f31480ffac986e38e5b"
+      "sha256": "e2eeb44214f7587ef697deea4dd050987817bffdefa538c45bbdaa557d271a10",
+      "name": "test-pending.json"
     },
     {
-      "name": "test-recipients.json",
       "length": 121,
-      "sha256": "3b290a4230fb5b772478055d95ef4f958350ed85cf19e97cab1d9d18d7f8e36b"
+      "sha256": "cc7e0def3029cfa469869fb4797ad68af4c05f9f9f1bcb823bf9d7af4a31ee71",
+      "name": "test-recipients.json"
     },
     {
-      "name": "thread-agent.json",
-      "length": 2841,
-      "sha256": "a210e5f096af2286efe6b4d61926f0f9cac35455a295b70d3b92f575599577a2"
+      "length": 2827,
+      "sha256": "105e98f141f35b94e70072eac8a3c831626f002e51850da83fee1071877a0b28",
+      "name": "thread-agent.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppAssistantAgentEndpointsTests and WhatsAppAssistantAgentContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "whatsapp-assistant-agent",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "WhatsAppAssistantAgentEndpointsTests and WhatsAppAssistantAgentContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

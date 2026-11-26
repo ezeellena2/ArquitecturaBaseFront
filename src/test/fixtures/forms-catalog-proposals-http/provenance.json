@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "17bb661be182b52f01ed3c2e177840927991efa38178db15afdbada37e8a9679",
@@ -15,43 +16,42 @@
   ],
   "captures": [
     {
-      "name": "approved-en.json",
-      "length": 1694,
-      "sha256": "048f8e58a61531d8725fd51baef443d74b11c8747e02ada363d616660f8ce4fb"
+      "length": 1685,
+      "sha256": "fd9c7efb00f2d0f0a476edade008197185df27a7ac9d6a7abc02f89fab6bf30a",
+      "name": "approved-en.json"
     },
     {
-      "name": "conflict.json",
       "length": 267,
-      "sha256": "5daece75469afa3c5ed65a8bb3649db0d18d5d27fc0548b54fb312c1d7cdf705"
+      "sha256": "198d37a74d66a80d0ae4448a3e9e728bfe15241fa6b89135a1b0ef1ffc08af40",
+      "name": "conflict.json"
     },
     {
-      "name": "detail-pending-en.json",
+      "length": 1648,
+      "sha256": "4536168410eb1ff9c7ea9d7b434e86cdd5d79708e6c61eaab76a3d70f4c7e860",
+      "name": "detail-pending-en.json"
+    },
+    {
       "length": 1654,
-      "sha256": "6e7d2eaccc5b682cd8747468a453072acd3fa74112b4e252db3c496abd8dde09"
+      "sha256": "73a0a22f55bdd3e66f8b3860ab9c1d86d8f360e038a968a7b48e2a4b0366dc75",
+      "name": "detail-pending-es.json"
     },
     {
-      "name": "detail-pending-es.json",
-      "length": 1660,
-      "sha256": "71481f5f0914f7fa893562d6dd0d30196d63cba63509a8680711f4723c7cfeac"
+      "length": 1634,
+      "sha256": "3f93f63b0f4692c2afff6941bc2ff441801813453432cbf2da6f8e76c7c683ac",
+      "name": "discarded-es.json"
     },
     {
-      "name": "discarded-es.json",
-      "length": 1643,
-      "sha256": "69fd19ca4186130bd12a4826934a97f3a085898d01faa912a5e99e463eae66ad"
-    },
-    {
-      "name": "list-original-en-in-es.json",
       "length": 402,
-      "sha256": "8b05831dab9d2a10f109809fb8cf2d605c2ad29f61a6f775625e0ca8e41ac4ec"
+      "sha256": "d6c15def63b142bf99290bfe4dd8ba52107d0cf1af4e0ba20bf4a08ca9d36f31",
+      "name": "list-original-en-in-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "catalog-proposals",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormCatalogProposalHttpTests and FormCatalogProposalScenario and FormCatalogProposalContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

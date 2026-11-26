@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "c4c66116c0f344513804b507eeafb058187b91fe350ac56d1467dce9e53c4b84",
@@ -11,23 +12,22 @@
   ],
   "captures": [
     {
-      "name": "detail-en.json",
-      "length": 2685,
-      "sha256": "a0290cfb9e0eea528d3b9ff47976948c179b9d256d7cc4dd85db5545b4550acf"
+      "length": 2682,
+      "sha256": "ca35366f41fc4dbb5635a52d1e1760f326f2b6696ffbfecf285ce44e4d1a0fa8",
+      "name": "detail-en.json"
     },
     {
-      "name": "detail-es.json",
-      "length": 2691,
-      "sha256": "3a57a54b876c84337b11456fb9f326d29bdf237d2994d912da1104434c25d200"
+      "length": 2688,
+      "sha256": "73b7fa4f7bfdc68bd87be5b5a82044d9b7820d8e832e5522f2c08f63ca3dd28d",
+      "name": "detail-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "suggestion-details",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormSuggestionCaptureIntegrationTests and FormSuggestionDetailContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

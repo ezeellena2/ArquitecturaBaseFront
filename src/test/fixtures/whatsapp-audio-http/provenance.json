@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "8b6f15290b2030bf3ca306a360a579b0e47237c061e49600ecc5de3e1926eb79",
@@ -35,53 +36,52 @@
   ],
   "captures": [
     {
-      "name": "audio-request.json",
       "length": 53,
-      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed"
+      "sha256": "dda6a60cedb037a566ea574fb19ab7857adff6ab3894178df62ac7f67b6bf0ed",
+      "name": "audio-request.json"
     },
     {
-      "name": "audio-thread-completed.json",
-      "length": 975,
-      "sha256": "6389493898305c38add5488ce738e60fe0fad789873242a499b37cd3e29e99f5"
+      "length": 979,
+      "sha256": "a6b5031b04c56fe5c521443a511d1bdd70a30805d237d82a9bf64cf2bd3f8b5f",
+      "name": "audio-thread-completed.json"
     },
     {
-      "name": "audio-thread-pending.json",
-      "length": 933,
-      "sha256": "7976c3fbd7c6ccdfe901fa0392a5812448dccc45aab9cd7f0546afdde78529d7"
+      "length": 937,
+      "sha256": "0697b75b47e2bcccd241044ff7da0b91758b87ab5c4dad41ac7831d73e95c1d8",
+      "name": "audio-thread-pending.json"
     },
     {
-      "name": "contact-thread.json",
-      "length": 2187,
-      "sha256": "45aefa083303302bf827c7d10548d2fba000f624e4cda937bb24cad85493e812"
+      "length": 2191,
+      "sha256": "5825f9ad76fa7b5944117fc265e642dc5b2ae99e40da8ad16b86db0350a7bcf1",
+      "name": "contact-thread.json"
     },
     {
-      "name": "document-thread.json",
-      "length": 1424,
-      "sha256": "1f52f189cfe5dd5e31e7eba5f068dc44d1a1c5827d9e8ce536c252a1bbee461f"
+      "length": 1428,
+      "sha256": "6ed0fe0b6de34a81791d4d2c2653add450e8cb5fc4dd6b7a3b864fd9cc8d6fb6",
+      "name": "document-thread.json"
     },
     {
-      "name": "document-why-thread.json",
-      "length": 4063,
-      "sha256": "70f82b859a09810db3d4aef52da42ca081eb0abf94f8303a67a94bbd8efacbe7"
+      "length": 4053,
+      "sha256": "19d4679d90308ed66e5923853d6a53a593ac635415c7163929744f56d9e0ed30",
+      "name": "document-why-thread.json"
     },
     {
-      "name": "spreadsheet-loads-thread.json",
-      "length": 4984,
-      "sha256": "6866ff9af42f501b5d204d8124fc02e183fa2ce9bd095c19349d61fa67b34e6b"
+      "length": 4969,
+      "sha256": "091ab6648816f2a8349e66f24fa4ddcc7ba6d2e642b2b2747949757e0e8244fa",
+      "name": "spreadsheet-loads-thread.json"
     },
     {
-      "name": "spreadsheet-thread.json",
-      "length": 988,
-      "sha256": "b93a727128fbbe2d0e9c61a1d8794f6dc0f97e3d9b9258ed8b22e70c5a82eb88"
+      "length": 992,
+      "sha256": "48532158c036993c876a64e6d09c11f58670423c77f762449efbcd1708ba9c91",
+      "name": "spreadsheet-thread.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "WhatsAppChatTests.Audio and WhatsAppChatTests.Spreadsheet and WhatsAppChatTests.Document and WhatsAppChatTests.Contact and WhatsAppAssistantDocumentIntegrationTests and CapturingStructuredDocumentChannel and WhatsAppAudioContractCapture and WhatsAppReceivedDocumentModels",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "whatsapp-audio",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "WhatsAppChatTests.Audio and WhatsAppChatTests.Spreadsheet and WhatsAppChatTests.Document and WhatsAppChatTests.Contact and WhatsAppAssistantDocumentIntegrationTests and CapturingStructuredDocumentChannel and WhatsAppAudioContractCapture and WhatsAppReceivedDocumentModels",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

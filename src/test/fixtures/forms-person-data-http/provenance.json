@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "4175429ecc15d8e8bbde47925de0308f5bdf38d57048d62f744af111aeae556d",
@@ -11,163 +12,162 @@
   ],
   "captures": [
     {
-      "name": "attribute-conflict-en.json",
       "length": 264,
-      "sha256": "94caf477c52319591e54dfaf8fadf0163e19fe250b32df16b453950d206811ee"
+      "sha256": "bed6996f03887ab5e80ed97a6134db0ec84dfcb33d616b02d215ab213ecd6d87",
+      "name": "attribute-conflict-en.json"
     },
     {
-      "name": "attribute-conflict-es.json",
       "length": 271,
-      "sha256": "183afe235d4ee6f7bcaf591b6b007a2cd3efa7430d737ae38e1da5e3b93c4208"
+      "sha256": "10539ca6eddf0b2ab96e40800358dd7411f77ad732882d1841a9a5674d281043",
+      "name": "attribute-conflict-es.json"
     },
     {
-      "name": "attribute-created-en.json",
       "length": 288,
-      "sha256": "9ba594fc88c707b2a1e75a715d7b091187c596eac9bda9a3a5ec5fa090c28396"
+      "sha256": "0a6e2302d6166d15c15160ddc7622f8c31155a0dfe01eca78c0d8181bb244749",
+      "name": "attribute-created-en.json"
     },
     {
-      "name": "attribute-created-english-original-en.json",
       "length": 231,
-      "sha256": "b8dab549a3d0c476a88f4581808038ee24cc7f8ee338a56238c04cbe3ad03285"
+      "sha256": "cd8a9004ff5c475afe4dac054bc6070b7e74b99290025400b9d6999cda4f90f5",
+      "name": "attribute-created-english-original-en.json"
     },
     {
-      "name": "attribute-created-es.json",
       "length": 288,
-      "sha256": "71aba553fb4b2e450845f96cd39581c4311b4f95136ac5dcda104453b936f8b3"
+      "sha256": "d50b7251373f3341dd92ce486cada32fab86caf5885647268945fd48aa6a78ce",
+      "name": "attribute-created-es.json"
     },
     {
-      "name": "attribute-updated-en.json",
       "length": 313,
-      "sha256": "b9791c9c1286b2c7d3a835b0c3ccf296cbd5e5e4d1ee5aa18fb5e00376473031"
+      "sha256": "4a65dacb74e1be7d43746bc95a6da44633ddc1e997501a79b8837f33ac861c05",
+      "name": "attribute-updated-en.json"
     },
     {
-      "name": "attribute-updated-es.json",
       "length": 313,
-      "sha256": "8087bc51d2b2574ae848e0ebb8ce99a62d2ab3a4b23dcf1550cee3ccbfddd042"
+      "sha256": "8d89314b5460c919d814768818dda29c4a737edb653dcedefaf3b96562eb1654",
+      "name": "attribute-updated-es.json"
     },
     {
-      "name": "attribute-value-removal-confirmation-en.json",
       "length": 430,
-      "sha256": "688a761562ed17f1e5096bd5ce3aff619fdd380dc8738cba2398a7d1db91b9a6"
+      "sha256": "17b215c8edc3d5a45c9e40e647de352b29beff789a3bc7a19fbc703938eef3e4",
+      "name": "attribute-value-removal-confirmation-en.json"
     },
     {
-      "name": "attribute-value-removal-confirmation-es.json",
       "length": 454,
-      "sha256": "2430fb2c102f30c73b82bbc2948782d80d636b6d4475e6ee572c484119d379bc"
+      "sha256": "ee7891b0bbe4d988141189615a7438050bf5b669b5d2182ee1cbac812d0eace9",
+      "name": "attribute-value-removal-confirmation-es.json"
     },
     {
-      "name": "attributes-en.json",
-      "length": 325,
-      "sha256": "3c69254e4e2de3fc9bb651c64f882edad2ac63f4a38e6dcc2f0ebb6da812058c"
+      "length": 2415,
+      "sha256": "22784f3ae00980f7ea27ae7e31aa0d776089a7f8f036c8e5c85601805368199f",
+      "name": "attributes-en.json"
     },
     {
-      "name": "attributes-english-original-es.json",
-      "length": 1284,
-      "sha256": "04ebba8ec4b6e67878e0a5bfcb2617963ccd82bd33cccb8151e0cdd81d8faaae"
+      "length": 754,
+      "sha256": "00205a0aedc7acea11b429c0f12c543168e2512e71ea442ee5e03c7f06570ee3",
+      "name": "attributes-english-original-es.json"
     },
     {
-      "name": "attributes-es.json",
-      "length": 590,
-      "sha256": "0e5082401877b601fdf15197adf877b9bbe20041c334f280787ed87215ffdd41"
+      "length": 2150,
+      "sha256": "dfc647505bff1cf1a41778df608faae2ddee2b20eeea3b647b1e0601851544cd",
+      "name": "attributes-es.json"
     },
     {
-      "name": "conflict-en.json",
       "length": 259,
-      "sha256": "4297f82d58c0165ac41e589e6847019940b6c60310497c9842eb9759f5e59d01"
+      "sha256": "c3c70e486495093714ccb699959dc2cf52baa919525cf2b1f6628632c49ece77",
+      "name": "conflict-en.json"
     },
     {
-      "name": "conflict-es.json",
       "length": 271,
-      "sha256": "5a5bcec940389b73577ead2e6e6efb8cb66a90fceb062ef8a811c0ca17acf017"
+      "sha256": "be6192dc899bfb304e193f9f03596594adab8c5c777a2bc77141cf0bfc927bc6",
+      "name": "conflict-es.json"
     },
     {
-      "name": "forbidden-en.json",
       "length": 247,
-      "sha256": "788996a7f258ede21d604ef4f77bf5dabf9992c0e76324f66d4cef2e2d0df3d1"
+      "sha256": "0189b358a49b0b452fd49c3153baef476ca0713a137ab1fb861575c88f6322a5",
+      "name": "forbidden-en.json"
     },
     {
-      "name": "forbidden-es.json",
       "length": 249,
-      "sha256": "163ddc0ec149f55f11377709c800e04949bfdadfa92af3a040da125ca5e730ae"
+      "sha256": "c7102da8160207831ee0d25a1d033fe7ae80ae4c80ce81619f7323503130dd6b",
+      "name": "forbidden-es.json"
     },
     {
-      "name": "invalid-value-en.json",
       "length": 356,
-      "sha256": "801a396e80219b4fb0aaa45387cfc672ec5bdf6ef54f9ce03bd2a56277c59444"
+      "sha256": "c616d05561e40465ae727cedbbeb084f5e0afb8ce28e49e9db6f582f94d4c5d8",
+      "name": "invalid-value-en.json"
     },
     {
-      "name": "invalid-value-es.json",
       "length": 346,
-      "sha256": "32356305a01210ab79525c831e3c8ae78ca5519416db06117490ce2009193014"
+      "sha256": "a6f5c121f6c6ae05b6533cd499c2e52ed5448ac38389c124c11f33aa458ac423",
+      "name": "invalid-value-es.json"
     },
     {
-      "name": "people-en.json",
-      "length": 379,
-      "sha256": "42bc35ef1f353ddf70dae861c45333745e978baf8932dd1920aaefa904b873c1"
+      "length": 834,
+      "sha256": "d9b920281433d99b1a3bdbe41a3e5daadeae87357c6651bd86afcece79b9a491",
+      "name": "people-en.json"
     },
     {
-      "name": "people-es.json",
-      "length": 443,
-      "sha256": "913ae418af43775ee5e82fe99fdda1ae675f4bee14a1e1c866bd2f209a699533"
+      "length": 768,
+      "sha256": "40d4be2afbf6fed093b2e3f38b2513175bfa8fdc35ab46026e4051d122591d20",
+      "name": "people-es.json"
     },
     {
-      "name": "person-data-empty-en.json",
       "length": 77,
-      "sha256": "6a9ad5a81e5f79398fbc1b74d93771e0bd112a3a297b4979831135cb116d9faf"
+      "sha256": "8f0cdfcd2855f1274a8b3673b0ad2dd04ed8e9aff49b33b90328bef28f925b21",
+      "name": "person-data-empty-en.json"
     },
     {
-      "name": "person-data-empty-es.json",
       "length": 77,
-      "sha256": "d8fa1cfc5a469ae6437f42e886003c54be6ca54ff4fe7e5204aca7ebd1aa26c4"
+      "sha256": "0d7a81a985a7f642b0e11619626d1662e4d7d660eb636febff0329aa09622160",
+      "name": "person-data-empty-es.json"
     },
     {
-      "name": "person-data-en.json",
       "length": 178,
-      "sha256": "ab9a2611da68474e9ed8d4e2aa136dd76ce4f112865ed70fd3b79bdf46f32925"
+      "sha256": "d8d88ac6ad7838918adef55ff9637bffc69e5a26e7ab01282b644344ad138f74",
+      "name": "person-data-en.json"
     },
     {
-      "name": "person-data-es.json",
       "length": 177,
-      "sha256": "db965c0342ddb4140833950658bb9110bcf7069e9e4234ae0e515b2cc4e80a6c"
+      "sha256": "997a538f596405577a2b5e31c0307614f1e823253b4908d2e2bf6b476572459b",
+      "name": "person-data-es.json"
     },
     {
-      "name": "person-data-saved-en.json",
       "length": 178,
-      "sha256": "ab9a2611da68474e9ed8d4e2aa136dd76ce4f112865ed70fd3b79bdf46f32925"
+      "sha256": "d8d88ac6ad7838918adef55ff9637bffc69e5a26e7ab01282b644344ad138f74",
+      "name": "person-data-saved-en.json"
     },
     {
-      "name": "person-data-saved-es.json",
       "length": 177,
-      "sha256": "db965c0342ddb4140833950658bb9110bcf7069e9e4234ae0e515b2cc4e80a6c"
+      "sha256": "997a538f596405577a2b5e31c0307614f1e823253b4908d2e2bf6b476572459b",
+      "name": "person-data-saved-es.json"
     },
     {
-      "name": "person-options-en.json",
       "length": 224,
-      "sha256": "f360c6501b344c9433e72d16e95a49c9ced5ed399aca74dbc7b19727381886d7"
+      "sha256": "1df599abdb0d33ddba40783b43d1e2e0712f09eb807c18468d1a8e75a75b23a0",
+      "name": "person-options-en.json"
     },
     {
-      "name": "person-options-es.json",
       "length": 221,
-      "sha256": "bc74154a412b1db570955f5452af1361311a17d4d435cb2801c5ac07a9b51b7c"
+      "sha256": "c60649eae892b9eeef060992a048d2a85fde0bc2c89a0e21ef9db11ff162b57e",
+      "name": "person-options-es.json"
     },
     {
-      "name": "source-in-use-en.json",
       "length": 292,
-      "sha256": "c99c59c75ea0f3a6ee58ce9635ad997767629a63bd2dc4fcdab746c6bd981824"
+      "sha256": "05c62f24f3d6d68f248119fe2787592c65a3201d2a862b85c8616049a538cf31",
+      "name": "source-in-use-en.json"
     },
     {
-      "name": "source-in-use-es.json",
       "length": 305,
-      "sha256": "6b14c41c59cf57862a0786f86b9d9ffbf6d631469cea5b7f8601e810ee3a5a8f"
+      "sha256": "02221af9367877cdb7df91a556484fdd6773a90061325a99f0f65b76c68a721b",
+      "name": "source-in-use-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "person-data",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormPersonDataHttpTests and FormPersonDataContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

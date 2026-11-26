@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "d209a0e072175e5cb70f549af06d33233d68bfffb0920003de7396eba769ab71",
@@ -7,53 +8,52 @@
   ],
   "captures": [
     {
-      "name": "create-request.json",
       "length": 273,
-      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82"
+      "sha256": "79699e3cbe2587c53bff41a588489a8579ddc3289659a899af1f2dd995027d82",
+      "name": "create-request.json"
     },
     {
-      "name": "created.json",
       "length": 636,
-      "sha256": "141e89773247eae0c4472d01be88318834d32b72e0988b65231669459afe5a2b"
+      "sha256": "67fdca0bcacb48851a9bed1ed73cbfe2f6efae0f3a55ef60663865c63aa0f13e",
+      "name": "created.json"
     },
     {
-      "name": "detail.json",
       "length": 813,
-      "sha256": "a4d4dc6028d7c8409a23fc41fe46dd04ced9889664d7420ab2fbd3dd368a630a"
+      "sha256": "8e6dea21c13c5f93fe4056cd589900d6818a6a359a62e7ba13c6cacfc292cef8",
+      "name": "detail.json"
     },
     {
-      "name": "options.json",
-      "length": 125686,
-      "sha256": "37fbdfe24ea1470bee02332d933df78c6eec2fb3b2d24bf9909514935dcced52"
+      "length": 1403,
+      "sha256": "96cf50ec6e76f4cb17e8ae266d98afcdf13d1aafcbc0741c5d3eea327a7f82e4",
+      "name": "options.json"
     },
     {
-      "name": "preview-request.json",
       "length": 328,
-      "sha256": "1f2939d872b1211553c2b7ccb2ec80d74615cd79fd631a386da34cfa0521ff8f"
+      "sha256": "f5415283de57d076dd1b32d7ba14e72e039241352557547a44b9ac3130ea8a6b",
+      "name": "preview-request.json"
     },
     {
-      "name": "preview.json",
       "length": 201,
-      "sha256": "a1bf982a9eac573b2b4a05122a7d2a81ab3448420577ff87e37ec0e8c489be42"
+      "sha256": "ffde2b4d397ef1b16f651c9f872b3f49b2aa7f873f44bca9a208e17fe1125641",
+      "name": "preview.json"
     },
     {
-      "name": "update-request.json",
       "length": 289,
-      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c"
+      "sha256": "526242315fd8f56609838d05470391b8924d45cdd46d63d0c60a9bcaf7cc9c0c",
+      "name": "update-request.json"
     },
     {
-      "name": "updated.json",
       "length": 635,
-      "sha256": "1dfa341ba3b27aba8dc0e52bdacab96822aa848ad1bf9563a6bec3cbdb9f7108"
+      "sha256": "81f05eba1f867c308a7ac9adde498d61b27a9af815e115413e07e31b6bded924",
+      "name": "updated.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormCatalogFiltersEndpointsTests",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "catalog-filters",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormCatalogFiltersEndpointsTests",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

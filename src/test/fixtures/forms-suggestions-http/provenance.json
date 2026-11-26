@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "b007eb804d9742074b96411b362d63222ff3c8dff67cdbb7304f9d53133d8e71",
@@ -11,53 +12,52 @@
   ],
   "captures": [
     {
-      "name": "conflict-es.json",
       "length": 276,
-      "sha256": "ec084e01fcce1394df455f246919eec73ad7d011bae4c36fa212a0cfc8bb3dd3"
+      "sha256": "c60eadef760ae8713c15e40cddef3924272f4da5e12a223373253de137c2bdf1",
+      "name": "conflict-es.json"
     },
     {
-      "name": "empty-es.json",
       "length": 152,
-      "sha256": "9effbbd91ea921b2a256fb96c02c50ac0c3e17e3258c03c61f80e3cc13103624"
+      "sha256": "37159451c2c40823d9dcb040685ac0ca011ee986ad923b2d2574992dc01d5616",
+      "name": "empty-es.json"
     },
     {
-      "name": "history-es.json",
-      "length": 376,
-      "sha256": "919bdf3a3d800c31ada9135c7a1a4517f0e33b0b749e6fe208f1231d2f5ab9d6"
+      "length": 373,
+      "sha256": "ab0c6c36cb5e8ad4ab967a0a77a0de6b5bf30457383e84c7bf771fcb5116118d",
+      "name": "history-es.json"
     },
     {
-      "name": "options-en.json",
-      "length": 96817,
-      "sha256": "063290d1e86f253abbbb75f04821f1e4c200b4006d64261ef0a118c2eda76667"
+      "length": 208306,
+      "sha256": "e3263fb4f8ea47f7a8ced6ccde270a4f293c7e382072d9e129921fd39a243899",
+      "name": "options-en.json"
     },
     {
-      "name": "options-es.json",
-      "length": 96817,
-      "sha256": "063290d1e86f253abbbb75f04821f1e4c200b4006d64261ef0a118c2eda76667"
+      "length": 208306,
+      "sha256": "e3263fb4f8ea47f7a8ced6ccde270a4f293c7e382072d9e129921fd39a243899",
+      "name": "options-es.json"
     },
     {
-      "name": "revision-es.json",
-      "length": 683,
-      "sha256": "31a08392243614df9afba8dffe9c8885d1680c1832c101a7157ecb231435d4f8"
+      "length": 680,
+      "sha256": "c2fa64c5225a87d0dfc407d155049190dcc3747cb1dba569510babfe18a9c949",
+      "name": "revision-es.json"
     },
     {
-      "name": "saved-es.json",
-      "length": 683,
-      "sha256": "31a08392243614df9afba8dffe9c8885d1680c1832c101a7157ecb231435d4f8"
+      "length": 680,
+      "sha256": "c2fa64c5225a87d0dfc407d155049190dcc3747cb1dba569510babfe18a9c949",
+      "name": "saved-es.json"
     },
     {
-      "name": "source-unpublished-es.json",
       "length": 285,
-      "sha256": "98671090a9ce181bfaf9a5488e55f817eab674aa08142d3fb527acdb1171e1a0"
+      "sha256": "b63bb6d297a285722616cb4e280ea765533ec2da09e35ee9f49def2c15e1f5db",
+      "name": "source-unpublished-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "suggestions",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormSuggestionHttpTests and FormSuggestionContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "28af18f29bc9dbf4fba3b890e3d18a3bc85594928dc0d17f1e5efe99d4580395",
@@ -19,93 +20,92 @@
   ],
   "captures": [
     {
-      "name": "catalog-approved.json",
-      "length": 1932,
-      "sha256": "8a88dd016109bc8b08d778b619f286ed6874cbe58fadd09ba8def715604add5f"
+      "length": 1923,
+      "sha256": "717269ed064788078f2dfc4992f74f654b334280b9d1f50aa5568dbc95884ce1",
+      "name": "catalog-approved.json"
     },
     {
-      "name": "catalog-created.json",
       "length": 104,
-      "sha256": "360dbcba0b17cc69f15728157d0f7a725f5f7b04923292a2fc598a74354aac1a"
+      "sha256": "115b048233a43d1373ada03ededddccfe4059230c166df837383b2b5e75b886f",
+      "name": "catalog-created.json"
     },
     {
-      "name": "catalog-detail-pending.json",
-      "length": 1779,
-      "sha256": "a15e4613070e09c2f4f2c0c9232d780ec615d380572c0afc32e457c468718705"
+      "length": 1773,
+      "sha256": "ac2ed1a78bdee7e1e82cd8477c2369c9d99a994d6ed14d2bdf0208a80109c79c",
+      "name": "catalog-detail-pending.json"
     },
     {
-      "name": "catalog-mapped-created.json",
       "length": 104,
-      "sha256": "35f9f9746485af7958aa5783fc67a237f019d753af4e503a60358373dfed2903"
+      "sha256": "3b6ec1b1d396b2cbb2c820658b7f68954a75c332ac0a8b8a84df8de6532911a0",
+      "name": "catalog-mapped-created.json"
     },
     {
-      "name": "catalog-mapped-detail-pending.json",
-      "length": 1767,
-      "sha256": "d258c7a5932cd3412b108f98820ab14db1447c8f056cda411437037028b63296"
+      "length": 1761,
+      "sha256": "582f7a76af74e6b6df6d6071772062a7967b5c4c53a8dc17bd7b8ce14dec6443",
+      "name": "catalog-mapped-detail-pending.json"
     },
     {
-      "name": "catalog-name-taken.json",
       "length": 307,
-      "sha256": "00bc6bb816a6583107e604ddd4e76b43c6ec084da16ca2784fdd155c12147f72"
+      "sha256": "01fc2b12da92d8a045b75757c174dad59d8776c836061956293cf968e8fe109b",
+      "name": "catalog-name-taken.json"
     },
     {
-      "name": "catalog-replaced.json",
       "length": 257,
-      "sha256": "c76e1714e593b99e34eb67c5f4b7e34d28d1f0152a7554eccdc924abf6cf79e5"
+      "sha256": "bb60aac1d7477ad7bfcb42b6c921a0f3e4a93984e41c2fe5fefbb9721c8800f6",
+      "name": "catalog-replaced.json"
     },
     {
-      "name": "catalog-status-created.json",
       "length": 104,
-      "sha256": "360dbcba0b17cc69f15728157d0f7a725f5f7b04923292a2fc598a74354aac1a"
+      "sha256": "115b048233a43d1373ada03ededddccfe4059230c166df837383b2b5e75b886f",
+      "name": "catalog-status-created.json"
     },
     {
-      "name": "draft-created.json",
       "length": 107,
-      "sha256": "4404c60f9d659a621a0b095ecdc552ad5067a50247aaa44239158a966f0c942b"
+      "sha256": "ed0fc34bccc56912b22e8dad1724315fe71f16f1f1f953861ab2d8caccfa13b5",
+      "name": "draft-created.json"
     },
     {
-      "name": "draft-invalid.json",
       "length": 360,
-      "sha256": "4ec080c188cd8ab86c42212fd134f08400521d5e9c64b61859b741b8751c84f6"
+      "sha256": "4affc7d88a857767dac1071d8a2f003937af23341e5ce0d71df8b6063e95cc7a",
+      "name": "draft-invalid.json"
     },
     {
-      "name": "draft-name-taken.json",
       "length": 312,
-      "sha256": "4a9fd13c71b80e0f79988c1196e7bedfe7471953c750f615497637995be7bf77"
+      "sha256": "aec2628c5df1bd13ea1e42e1a9ffc474697cf378f18f0f2da65b7a901d234230",
+      "name": "draft-name-taken.json"
     },
     {
-      "name": "draft-prefix-taken.json",
       "length": 300,
-      "sha256": "9863e6cdacb8b129e4d254c16742d80468fb4d825ed832b01bb2919551108972"
+      "sha256": "38f32a72bb8fc34fe1ef78ef380d2728d15537751d7d2ef9c794c38a8755c4d2",
+      "name": "draft-prefix-taken.json"
     },
     {
-      "name": "draft-replaced.json",
       "length": 260,
-      "sha256": "8897d2269a04405f90aafb72877e8aa67b949a8fee11f1efa734bcb73c97dcf3"
+      "sha256": "7ed3d10dd07e1b3a9590bdd1bed37e62d1233d587ab91101e931b134d64e2d72",
+      "name": "draft-replaced.json"
     },
     {
-      "name": "draft-status-created.json",
       "length": 107,
-      "sha256": "4404c60f9d659a621a0b095ecdc552ad5067a50247aaa44239158a966f0c942b"
+      "sha256": "ed0fc34bccc56912b22e8dad1724315fe71f16f1f1f953861ab2d8caccfa13b5",
+      "name": "draft-status-created.json"
     },
     {
-      "name": "draft-status-not-created.json",
       "length": 73,
-      "sha256": "88ba89fb2d4b441880302fa0b93e6ecc9e416861e501fd96069ff3914b0e24ff"
+      "sha256": "cff31e4dbb8a05a8d4d3f318cc5f4b3e4f7248bdedaee13a82efbac3b6e8c6bf",
+      "name": "draft-status-not-created.json"
     },
     {
-      "name": "draft-unavailable.json",
       "length": 290,
-      "sha256": "006a27a6234ed9e1fdd116b23f80929d7b9095f78aa7ebce13e45733a4a6c9f4"
+      "sha256": "fecec05cac62381b0420b4a981a34cd25b75848357295c2f043a66582a6ed4a4",
+      "name": "draft-unavailable.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormAssistantProposalHttpTests and FormAssistantProposalScenario and ScriptedAssistantProposalLookup and FormAssistantProposalContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "assistant-proposals",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormAssistantProposalHttpTests and FormAssistantProposalScenario and ScriptedAssistantProposalLookup and FormAssistantProposalContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

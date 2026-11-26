@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "b65ba366a0c9a31a73f2fbf27b161c14f29fa20241d1301767f6f305baa6acd0",
@@ -15,43 +16,42 @@
   ],
   "captures": [
     {
-      "name": "conflict.json",
       "length": 275,
-      "sha256": "4e22cb0dc7dccfaa899511de67558a04e8c203e08fdf936fb91a99ea791e703a"
+      "sha256": "41739610c563c750e55bb66c626c8ced5712ef0c1f2afe246b9aa2575678147e",
+      "name": "conflict.json"
     },
     {
-      "name": "discarded-en.json",
-      "length": 716,
-      "sha256": "1264ff2cb53850e07a3092af15c4744e1c07b9d2e40bbabb272c85da95052a4b"
+      "length": 712,
+      "sha256": "29793abfe410217d09384bc0614a1cc733be8fe7b2c44ef7442f0ddea69d1467",
+      "name": "discarded-en.json"
     },
     {
-      "name": "discarded-es.json",
-      "length": 722,
-      "sha256": "96c1d213346307c0101f4a78824a33ade351a1528bb02378d80bbc42d5213e3e"
+      "length": 718,
+      "sha256": "80f39e50285190ea1f75181ac465c6a76687a897734be569c99fa02042dbf40b",
+      "name": "discarded-es.json"
     },
     {
-      "name": "forbidden.json",
       "length": 249,
-      "sha256": "658c002e3a7ddb4182b445ec6900c1303a6d8ab8fae808f54c8240c038addedc"
+      "sha256": "56c98795020e0b4a9797aa7c1ce8071242706e9142b15754ef92a261e5dc63fb",
+      "name": "forbidden.json"
     },
     {
-      "name": "pending-en.json",
-      "length": 607,
-      "sha256": "0dd36fb1a56dd20c7b7f4c9851d2e1a9a92a98bc83e79506937b19a6be1f5543"
+      "length": 605,
+      "sha256": "8dc48a746874020e28c9fd0a713b67a0a453d64f7a54c31c170df1f4c671296f",
+      "name": "pending-en.json"
     },
     {
-      "name": "pending-es.json",
-      "length": 613,
-      "sha256": "400513726462d91169095611a275971d96087bc643676d6e23261e069637446d"
+      "length": 611,
+      "sha256": "956df3f4a72ac804815abb26cc790d152f5a28b6509ec86381acddb5edf718e2",
+      "name": "pending-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "missing-requests",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormMissingRequestHttpTests and FormMissingRequestScenario and FormMissingRequestContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

@@ -1,4 +1,5 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
       "sha256": "c9193bd1a01d183fa7c2a1ce4b0472db7c07e39e3c90ac2b67d0d6489ca9f194",
@@ -31,78 +32,77 @@
   ],
   "captures": [
     {
-      "name": "conflict-es.json",
       "length": 281,
-      "sha256": "e8720f8ad119bccd1b5d233ed3fd4b4cf6d5e5353c5d43774f71d2909346c762"
+      "sha256": "5a9ca8a0b9769a8ae2a130ce1e6e9d3c15a95d305c6fee1cd83002317d2bbb85",
+      "name": "conflict-es.json"
     },
     {
-      "name": "current-reference-es.json",
-      "length": 538,
-      "sha256": "66012c0c8dbc315cb4c54b6006233d71e533ae370fe1e58a56da1d3b8e1c1e72"
+      "length": 535,
+      "sha256": "3ff0c493678dc77d3691c165937e1b3e0878b631be6a846101fc64e89d33497c",
+      "name": "current-reference-es.json"
     },
     {
-      "name": "empty-es.json",
       "length": 146,
-      "sha256": "f94c318582d32d74716d32fe311c3360b791bca6cc68aa5497bf073072acf28a"
+      "sha256": "ee24b9d50ace08f5d134a0fde7db80e18d8709f7e34fc41a1a8f9b38f3fdff20",
+      "name": "empty-es.json"
     },
     {
-      "name": "history-es.json",
-      "length": 378,
-      "sha256": "e556f185aaca70d7cf18a7c0324dcfaaf4a738ef4ed5548f1ce48e257853338f"
+      "length": 375,
+      "sha256": "26f004ad195a88265db9fd28d4f1a5cf7920ab5f3fc466648d3d4a01d41f11f6",
+      "name": "history-es.json"
     },
     {
-      "name": "options-en.json",
-      "length": 47395,
-      "sha256": "21e068ada7b4f4f5aa0d0d5aa9907fcd25fa1dc65d04709e8b76aa7301f8b6ac"
+      "length": 13917,
+      "sha256": "279a0d00369c3ebd3cf020d4c3fdc543b6259df86af1d3f6b036da8c08270c12",
+      "name": "options-en.json"
     },
     {
-      "name": "options-es.json",
-      "length": 47395,
-      "sha256": "21e068ada7b4f4f5aa0d0d5aa9907fcd25fa1dc65d04709e8b76aa7301f8b6ac"
+      "length": 13917,
+      "sha256": "279a0d00369c3ebd3cf020d4c3fdc543b6259df86af1d3f6b036da8c08270c12",
+      "name": "options-es.json"
     },
     {
-      "name": "revision-es.json",
-      "length": 538,
-      "sha256": "7c26a605253f0d4f2a806e146d5fc80914961ceea46daef00898de1708b0edf1"
+      "length": 535,
+      "sha256": "7978b33c98e432cb63a0c4b062fdf76fd227f88dbb3d0b42263b6bcd061b25b4",
+      "name": "revision-es.json"
     },
     {
-      "name": "role-unavailable-es.json",
       "length": 338,
-      "sha256": "5175705c19ec90967b72b77df9ab500e03072bcc12c39c6b7c475a9b9f434439"
+      "sha256": "8e9702fa989cc71f3aab4e5f1043e0ae27bbc870134764ef7b0386008b415b47",
+      "name": "role-unavailable-es.json"
     },
     {
-      "name": "rows-options-en.json",
-      "length": 34521,
-      "sha256": "7ffaece9e8bf6a1f7208ed05def6bc6c7e3c8c0ec506854a101373e412516a7e"
+      "length": 19194,
+      "sha256": "92662155b37fdbe7c1ab93ee31e996daa28ea2b43f2f4413566a5c85f2538724",
+      "name": "rows-options-en.json"
     },
     {
-      "name": "rows-options-es.json",
-      "length": 34432,
-      "sha256": "6c617393f5b5664d255362457ac0307d8850b92f43971a599e92f198d17b1dc5"
+      "length": 19293,
+      "sha256": "093dd00d5d7c7300a37a94cdabfa0bb523b8b946e8987a2f339e71301afa8a57",
+      "name": "rows-options-es.json"
     },
     {
-      "name": "rows-saved-es.json",
-      "length": 722,
-      "sha256": "cc7e7528d88e61b8fb5e7d846bff4f5388f54e7b38c02fa836442c55fa8db463"
+      "length": 719,
+      "sha256": "5388a1e2eca85e839a63e96c4394a63593506243f4a2f03a412c760a56c24c3d",
+      "name": "rows-saved-es.json"
     },
     {
-      "name": "saved-es.json",
-      "length": 534,
-      "sha256": "9d515cdb124ce083cbce608c33feb1c29290493cf13c942defeeee335aa80b80"
+      "length": 531,
+      "sha256": "3036dad1b8e5a99708492402f88aefbab94f4078b3d51efa18b6b764dd8ed599",
+      "name": "saved-es.json"
     },
     {
-      "name": "saved-reference-es.json",
-      "length": 534,
-      "sha256": "692446a4469b5fa229cba1ccd02bfdb415fc3814ff3ec87b0479d05eaf01b46b"
+      "length": 531,
+      "sha256": "6e992a28d16d22e70645b84a67f44adc035b52a98f75d7d5ac4452574defde43",
+      "name": "saved-reference-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormRuleHttpTests and FormRowsRuleHttpTests and FormRowsReadHttpTests and FormRowsCaptureIntegrationTests and FormRecordCaptureIntegrationTests and FormPublishedVersionFixture and FormRuleContractCapture",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "rules",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormRuleHttpTests and FormRowsRuleHttpTests and FormRowsReadHttpTests and FormRowsCaptureIntegrationTests and FormRecordCaptureIntegrationTests and FormPublishedVersionFixture and FormRuleContractCapture",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }

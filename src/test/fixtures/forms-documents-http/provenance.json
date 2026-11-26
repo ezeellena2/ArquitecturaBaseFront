@@ -1,7 +1,8 @@
 {
+  "generatedAtUtc": "2026-11-26T11:15:42.3846992Z",
   "sources": [
     {
-      "sha256": "2f6bed8fe278b0b0b29cd0571e1954b5e6166fb5e7448182db1d961026b3ac5e",
+      "sha256": "79ef11b7f922d06ed5723ac5539b7845501d8aa75909c6726d92ca060f78d1ec",
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormReceivedDocumentHttpTests.cs"
     },
     {
@@ -29,7 +30,7 @@
       "path": "tests/ArquitecturaBase.Api.IntegrationTests/Modules/BusinessForms/FormDocumentProposalHttpTests.cs"
     },
     {
-      "sha256": "36dd4b065678a3a10d52789d5e270ec7af5d425775c3391911373668c53f1ce4",
+      "sha256": "e4d0d8f077855cfa8442319779b527b3a86ce0fb51b0ef5d5b04bffdb9b27d4c",
       "path": "src/ArquitecturaBase.Application/Modules/BusinessForms/Models/FormReceivedDocumentModels.cs"
     },
     {
@@ -43,178 +44,177 @@
   ],
   "captures": [
     {
-      "name": "document-awaiting-sender-es.json",
       "length": 312,
-      "sha256": "0a98fdad1c9bcfa06ebd336d215bdb76ef8eede5755287d0e84271f419127f5f"
+      "sha256": "e9b4add326e4cf5e777803b698b8922e2a9c6b424080a6882652fed79da83fb1",
+      "name": "document-awaiting-sender-es.json"
     },
     {
-      "name": "document-detail-choices-es.json",
-      "length": 5044,
-      "sha256": "050d84bc48fc1795b7643863b801a061f4450b1996af2fb6aa8eeeb2f4c62f0e"
+      "length": 4239,
+      "sha256": "7866bbe5cc3a00070fd9d43133895543a326eceacb15d0bce0456b7958e90c3c",
+      "name": "document-detail-choices-es.json"
     },
     {
-      "name": "document-detail-en.json",
-      "length": 5418,
-      "sha256": "c647ac31b5110ddc4285d9d507754d82d64edfa3bacb9ddf41363f55b85dc503"
+      "length": 1891,
+      "sha256": "35b31fd69a92c387df962cb80e016bc0bcf4372920410632ef1fbb21fd9b95ab",
+      "name": "document-detail-en.json"
     },
     {
-      "name": "document-detail-es.json",
-      "length": 5311,
-      "sha256": "3f19ee727cf2c57d91ac1858d75207d1e3b07ee8f4cc84c524fc2f1ab52bcc29"
+      "length": 1879,
+      "sha256": "71c76a38fdd2b25cb214b0c059c619cc594c5fef73ebe7c88536ab09380a6326",
+      "name": "document-detail-es.json"
     },
     {
-      "name": "document-discarded-es.json",
-      "length": 6147,
-      "sha256": "5d9a87feb3c77d7db488f29a900c2f9bea37c7a347ddfd6a571c5c8208e39fbf"
+      "length": 4428,
+      "sha256": "0023271be7e9ef5ccd4a8921126dfe94a9894127e2221d1af8db5ef1d05d91fb",
+      "name": "document-discarded-es.json"
     },
     {
-      "name": "document-extraction-accepted-es.json",
       "length": 89,
-      "sha256": "7a94f4400cc3c135781c8514ecd160ebfb6ad2ae2799230d6b650075ea7b8886"
+      "sha256": "83dd4e5f9ad91da7a0440589dd639c62fffcff087952e9b578900d150bc10aab",
+      "name": "document-extraction-accepted-es.json"
     },
     {
-      "name": "document-extraction-completed-es.json",
       "length": 91,
-      "sha256": "9bc4b1c30903d8a673213ec75729485b065ab807c3c23e60f2beeced4204fdfb"
+      "sha256": "338dfb3bba7d156e06e979cba13aea513d8db7a67e0abd13c6d8b3a9a98bf693",
+      "name": "document-extraction-completed-es.json"
     },
     {
-      "name": "document-extraction-failed-es.json",
       "length": 121,
-      "sha256": "24d3e7369451f597f47eee4feb59f9bb94a89317bc62186643dbf8ab5566cf42"
+      "sha256": "a5dea0171eaaf0ecb72e8f577b5047ab33fe83aef7bf522aaf5e68ca3c269215",
+      "name": "document-extraction-failed-es.json"
     },
     {
-      "name": "document-extraction-pending-es.json",
       "length": 89,
-      "sha256": "7a94f4400cc3c135781c8514ecd160ebfb6ad2ae2799230d6b650075ea7b8886"
+      "sha256": "83dd4e5f9ad91da7a0440589dd639c62fffcff087952e9b578900d150bc10aab",
+      "name": "document-extraction-pending-es.json"
     },
     {
-      "name": "document-extraction-unavailable-es.json",
       "length": 315,
-      "sha256": "5bf05c4a55c5c36a2a18e1db035144323ed86e317c50c4db5e40f937e779f00e"
+      "sha256": "2fbbd55fd2e7162c0bcccd05a2ec227c5628c177c64cd872a326d5e2368c2483",
+      "name": "document-extraction-unavailable-es.json"
     },
     {
-      "name": "document-options-es.json",
       "length": 4128,
-      "sha256": "f9454666601b13b11de3a700cd6443a980a56e1a57a3bf27258cfb2de2b3ad1d"
+      "sha256": "789f2533f60f28c421179916b80ac5e6a4ec639c81fd84c24b98fcfb8fee079f",
+      "name": "document-options-es.json"
     },
     {
-      "name": "document-record-detail-es.json",
       "length": 3586,
-      "sha256": "e916c6fa5b053b20366354504a776b8a11d6bf91fc154547d3f151b63ec9c14c"
+      "sha256": "03353da12adff4bc787f2793d93632f7c74a902769611ca144fcb0ac9fcca010",
+      "name": "document-record-detail-es.json"
     },
     {
-      "name": "document-record-es.json",
       "length": 150,
-      "sha256": "aada90a1ab9ccb0dff062f17efeb687f2d6a424a8f55da6df840b639b70157b1"
+      "sha256": "06f855fa28ec53993378fad5b216550e75efdc6c856399576992eb5896bb1657",
+      "name": "document-record-es.json"
     },
     {
-      "name": "document-revision-conflict-es.json",
       "length": 274,
-      "sha256": "b369e71665d6a949d0ec18deaca39d2d1b158a8149e2badec8180462c356314a"
+      "sha256": "cf1eecd8c232fb7d88877c5f21a2dee76656c94912c939dceba0628ded4dec85",
+      "name": "document-revision-conflict-es.json"
     },
     {
-      "name": "document-row-awaiting-sender-es.json",
       "length": 312,
-      "sha256": "0882daff271fe3484e3ddb129cbff07f14b6adbd82dca416890cd2f8482e457e"
+      "sha256": "a18af49b3a2ab1ffea14d83689957b997880de014db916537543f46431ce0694",
+      "name": "document-row-awaiting-sender-es.json"
     },
     {
-      "name": "document-row-detail-es.json",
-      "length": 2750,
-      "sha256": "1837bfe8ec75cb9fe13791db519829d6e47e5bc421c73c8b95474bbade9c7d7d"
+      "length": 2165,
+      "sha256": "a07decd2af288c7a42d8d6afe25e2339d239e2dbcef4ce00eee665707d7418be",
+      "name": "document-row-detail-es.json"
     },
     {
-      "name": "document-row-record-detail-es.json",
-      "length": 3332,
-      "sha256": "7f818f72c32783ec8bf82d5bb2d8639377bc86ccff9997ce0f427f3579b42272"
+      "length": 3314,
+      "sha256": "a63100b8e97cc0351a5cfd552e8b2c80f4f2061076210fb4f5dadae4e0fb5467",
+      "name": "document-row-record-detail-es.json"
     },
     {
-      "name": "document-row-repeated-es.json",
-      "length": 2756,
-      "sha256": "594cde2a97d459d88327da54d209f88a5f1516350288890470ef1e042b1323b8"
+      "length": 2168,
+      "sha256": "2f025ab568dc91739f3f3abff84aa0c6ee94d7a42cd9d974ea336854d2a21c1c",
+      "name": "document-row-repeated-es.json"
     },
     {
-      "name": "document-row-repeated-record-es.json",
-      "length": 2991,
-      "sha256": "db26c01fdc03ebcb6d7c03e46978637d1bb27dc4dd7d17938fa3ae1656d8584a"
+      "length": 3060,
+      "sha256": "56c5238684b7bee67cb1e8737aa49b0220f3a0c52d7fdef2af549425b5eb016e",
+      "name": "document-row-repeated-record-es.json"
     },
     {
-      "name": "document-sender-inactive-es.json",
       "length": 267,
-      "sha256": "c494c9c364f66335cb1cc8d56d72f095ce42ba3be315c5b60ab9f10b694b6c81"
+      "sha256": "b001b42693f1208727c82c5e63eabe0975da084809bf7e8b4508ee180d8afbc6",
+      "name": "document-sender-inactive-es.json"
     },
     {
-      "name": "documents-counts-es.json",
       "length": 47,
-      "sha256": "6bc00bb5e5d0282fa30e79d6f155efc72d8ae7531879f8487d594ee6f7cead76"
+      "sha256": "5322afc76bdd03545437ca579dfdfb77751387a36e3a7ce2d3595b54c908f9af",
+      "name": "documents-counts-es.json"
     },
     {
-      "name": "documents-groups-es.json",
-      "length": 7604,
-      "sha256": "b19dd57ce3e5d5fa1473ca59b768dcee5009feb14d2a2b818d6345ad1a12277a"
+      "length": 6615,
+      "sha256": "7dd4ae9286f7ca7a14505fa49b8a2f9c3a3d404f5766757240a066713717c25e",
+      "name": "documents-groups-es.json"
     },
     {
-      "name": "documents-invalid-search-es.json",
       "length": 339,
-      "sha256": "398ab70037b0e61334682654c17be321649b602ddf4d063ead000ef9d4061b94"
+      "sha256": "49c25d79ec2443050aab65ee260785e0dfec0cffe2146ce97b693d57a47a7ed4",
+      "name": "documents-invalid-search-es.json"
     },
     {
-      "name": "documents-list-es.json",
       "length": 3509,
-      "sha256": "79663a96c443600232e77e12671679c20a609a9cd56882b1322a3ad8d4d5cd9e"
+      "sha256": "114faf3f7f94a64b437df2c561a3e4983589e23f907764cf8f7e051ff6d4593f",
+      "name": "documents-list-es.json"
     },
     {
-      "name": "documents-rows-es.json",
-      "length": 11816,
-      "sha256": "88c927f2389844b80038d11d01ebe756461f51b3f1cb3e42ad61ff4b6d461014"
+      "length": 16612,
+      "sha256": "671471f72afd84555c62b8345e665e8131465222235ede8d795d84ff1d723c79",
+      "name": "documents-rows-es.json"
     },
     {
-      "name": "form-proposal-accepted-es.json",
       "length": 825,
-      "sha256": "68dd3a4dc3be96b62bbe4bd64a0c7ba95a57d485fe4b5625864d39e0d881d19b"
+      "sha256": "f20642b6ef102eb62bb0d01867093cdbe79ba7f4215d47df471f1e2737666c9b",
+      "name": "form-proposal-accepted-es.json"
     },
     {
-      "name": "form-proposal-completed-es.json",
       "length": 1424,
-      "sha256": "9283c8de577396969833b9c71048e1ac09a45559b8d6af118c0b47394f14220d"
+      "sha256": "946396cc04007c09a786703b62f8e52b387d26d68400d3cb81efbc3319a3b480",
+      "name": "form-proposal-completed-es.json"
     },
     {
-      "name": "form-proposal-draft-created-es.json",
       "length": 107,
-      "sha256": "2edee8cd87ada483474d304f1f3ed384b538b0494fc9e70c9c3a6f9b8de30294"
+      "sha256": "89b7124c9b68f9e85b21060eaa54507a01690e093dd5782ca4bead7abc2c543e",
+      "name": "form-proposal-draft-created-es.json"
     },
     {
-      "name": "form-proposal-draft-invalid-es.json",
       "length": 361,
-      "sha256": "c2261899dbbcbd784d4007712886b0536825fc529e7574f5649cacfcfd01d72b"
+      "sha256": "9590a663b0c8b5b2c5fb8f05d9e2dffe637156881776dafc3ff1022791c17afb",
+      "name": "form-proposal-draft-invalid-es.json"
     },
     {
-      "name": "form-proposal-drafted-es.json",
-      "length": 2871,
-      "sha256": "73b19a56d8f05f7492c8c3853b2a43a16b524c0a36cba68d5a74eaea9c42c787"
+      "length": 2855,
+      "sha256": "443739c641a24101d70665200a0313e50c217a850973af1db161416fdd091911",
+      "name": "form-proposal-drafted-es.json"
     },
     {
-      "name": "form-proposal-failed-es.json",
       "length": 854,
-      "sha256": "0d72a3c4b834a8478e1742a3bf43552af2329af0f64080316f96ed30282b9f3d"
+      "sha256": "fe81c737782bf83b01cae3678e05c50c1d790ab80b334c2622c0dd24d6e6ba37",
+      "name": "form-proposal-failed-es.json"
     },
     {
-      "name": "form-proposal-pending-es.json",
       "length": 825,
-      "sha256": "68dd3a4dc3be96b62bbe4bd64a0c7ba95a57d485fe4b5625864d39e0d881d19b"
+      "sha256": "f20642b6ef102eb62bb0d01867093cdbe79ba7f4215d47df471f1e2737666c9b",
+      "name": "form-proposal-pending-es.json"
     },
     {
-      "name": "form-proposal-unavailable-es.json",
       "length": 333,
-      "sha256": "1f9d4dc597a8659462f20f636e9e267102eba4167be09a5621a6aa58c330064f"
+      "sha256": "69967687ca12c5159f6deb5f3595a23b5efa96bdc02e08e4bc72ccf4e34272a9",
+      "name": "form-proposal-unavailable-es.json"
     }
   ],
-  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
-  "producer": "FormReceivedDocumentHttpTests and FormReceivedDocumentScenario and FormReceivedDocumentRowHttpTests and FormReceivedDocumentRowScenario and FormReceivedDocumentContractCapture and ScriptedDocumentOperations and FormDocumentProposalHttpTests and FormReceivedDocumentModels and StructuredRecordOrigin and FormDocumentProposalModels",
+  "repositoryHead": "17375423ff26f16635d5d75c164ccb33e37ebb97",
   "artifactSet": "documents",
-  "schemaVersion": 1,
+  "transport": "Actual HTTP; PostgreSQL/Redis Testcontainers; synthetic records and private files",
+  "runId": "20261126-104903-84190a61e4454ef3aae56cb4762dc867",
+  "producer": "FormReceivedDocumentHttpTests and FormReceivedDocumentScenario and FormReceivedDocumentRowHttpTests and FormReceivedDocumentRowScenario and FormReceivedDocumentContractCapture and ScriptedDocumentOperations and FormDocumentProposalHttpTests and FormReceivedDocumentModels and StructuredRecordOrigin and FormDocumentProposalModels",
   "sourceState": [],
-  "runId": "20261124-121343-c274799506a14189885e7f9d376b5c77",
-  "repositoryHead": "2366fccc1b4e0a3021a1ee69524e09d9c1fc754c",
-  "generatedAtUtc": "2026-11-24T14:25:10.0298814Z",
+  "schemaVersion": 1,
   "command": "dotnet build ArquitecturaBase.slnx --no-restore; dotnet test --no-build --no-restore"
 }
