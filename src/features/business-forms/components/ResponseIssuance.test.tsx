@@ -237,7 +237,7 @@ describe("«Esperando que lo confirmes» (EM2-A)", () => {
     const user = userEvent.setup({ delay: null });
     renderRouteWithProviders(sheet + "/" + responseRecordId);
     await user.click(within(await zone()).getByRole("button", { name: "No emitir" }));
-    const dialog = await screen.findByRole("alertdialog", { name: "¿No emitir TEST-000002?" }).catch(() => screen.findByRole("dialog", { name: "¿No emitir TEST-000002?" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿No emitir TEST-000002?" });
     expect(within(dialog).getByText("TEST-000002 queda anulada, sin comprobante.")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "No emitir" }));
     await waitFor(() => expect(posts).toEqual([{ path: "confirmation:" + issueRun, body: { issue: false } }]));

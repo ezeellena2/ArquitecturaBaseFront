@@ -40,8 +40,11 @@ export default defineConfig({
     },
   },
   test: {
-    // La full con workers por CPU excede el plazo del caso lazy con 80 diagnósticos; serial conserva los 5s.
-    maxWorkers: 1,
+    // La mitad de los hilos de la máquina: 8 en la PC de desarrollo, 1 o 2 en el CI. Con los plazos de src/test/setup.ts
+    // (20 s por test y por gancho, 10 s de findBy), la suite entera pasó con 2, 4 y 8 workers. Tardó 18 min con 8,
+    // 28 con 4 y unos 100 en serie. Ningún test pasó el 55 % de su plazo (medición del 2026-11-25). Sin este tope,
+    // vitest usa un worker por hilo menos uno (15 en esa PC), que no se midió.
+    maxWorkers: "50%",
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/test/setup.ts",
