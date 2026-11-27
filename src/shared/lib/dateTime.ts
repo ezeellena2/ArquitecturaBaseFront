@@ -41,6 +41,13 @@ export function formatDateOnly(value: string, language: string): string | null {
   return dateTimeFormat(language, { ...dayOptions, timeZone: "UTC" }).format(day);
 }
 
+/// A month without a day (`2026-11`), such as the month of Consumo: «11/2026», with numbers and the same two digits for the
+/// month in both languages. Null for a value that is not a month.
+export function formatMonth(value: string, language: string): string | null {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value) || value.startsWith("0000")) return null;
+  return dateTimeFormat(language, { month: "2-digit", year: "numeric", timeZone: "UTC" }).format(new Date(value + "-01T00:00:00.000Z"));
+}
+
 export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {
   const seconds = Math.min(0, Math.round((Date.parse(valueUtc) - now) / 1000));
   const [unit, scale]: [Intl.RelativeTimeFormatUnit, number] = Math.abs(seconds) >= 86400 ? ["day",86400] : Math.abs(seconds) >= 3600 ? ["hour",3600] : Math.abs(seconds) >= 60 ? ["minute",60] : ["second",1];

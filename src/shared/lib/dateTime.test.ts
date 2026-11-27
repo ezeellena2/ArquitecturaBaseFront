@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatDateTimeInZone, formatDateInZone, formatTimeInZone, calendarDateInZone, formatDateOnly, formatRelativeTime } from "./dateTime";
+import { formatDateTimeInZone, formatDateInZone, formatTimeInZone, calendarDateInZone, formatDateOnly, formatMonth, formatRelativeTime } from "./dateTime";
 
 describe("formatDateTimeInZone", () => {
   it("shows a UTC instant in the profile's time zone", () => {
@@ -94,5 +94,19 @@ describe("formatter reuse", () => {
     expect(formatTimeInZone(instant, "es", "Europe/Madrid")).toBe("1:30");
     expect(calendarDateInZone(instant, "America/Argentina/Buenos_Aires")).toBe("2026-10-02");
     expect(calendarDateInZone(instant, "Europe/Madrid")).toBe("2026-10-03");
+  });
+});
+
+// Consumo (CO1-B, 2026-11-27): a month of the business, «11/2026», with numbers in both languages like every date.
+describe("formatMonth", () => {
+  it("writes the month with two digits and the year", () => {
+    expect(formatMonth("2026-11", "es")).toBe("11/2026");
+    expect(formatMonth("2026-03", "en")).toBe("03/2026");
+  });
+
+  it("does not take a value that is not a month", () => {
+    expect(formatMonth("2026-13", "es")).toBeNull();
+    expect(formatMonth("2026-11-01", "es")).toBeNull();
+    expect(formatMonth("", "es")).toBeNull();
   });
 });
