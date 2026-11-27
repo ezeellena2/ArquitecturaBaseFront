@@ -42,10 +42,12 @@ export function formatDateOnly(value: string, language: string): string | null {
 }
 
 /// A month without a day (`2026-11`), such as the month of Consumo: «11/2026», with numbers and the same two digits for the
-/// month in both languages. Null for a value that is not a month.
+/// month in both languages. Null for a value that is not a month. The order and the sign come from the language, but ICU writes
+/// «9/2026» in Spanish even when it is asked for two digits: the month keeps them, like the day and the month of a date.
 export function formatMonth(value: string, language: string): string | null {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value) || value.startsWith("0000")) return null;
-  return dateTimeFormat(language, { month: "2-digit", year: "numeric", timeZone: "UTC" }).format(new Date(value + "-01T00:00:00.000Z"));
+  return dateTimeFormat(language, { month: "2-digit", year: "numeric", timeZone: "UTC" }).formatToParts(new Date(value + "-01T00:00:00.000Z"))
+    .map(part => part.type === "month" ? part.value.padStart(2, "0") : part.value).join("");
 }
 
 export function formatRelativeTime(valueUtc: string, language: string, now = Date.now()): string {

@@ -102,6 +102,8 @@ describe("formatMonth", () => {
   it("writes the month with two digits and the year", () => {
     expect(formatMonth("2026-11", "es")).toBe("11/2026");
     expect(formatMonth("2026-03", "en")).toBe("03/2026");
+    // ICU writes «9/2026» in Spanish even when it is asked for two digits.
+    expect(formatMonth("2026-09", "es")).toBe("09/2026");
   });
 
   it("does not take a value that is not a month", () => {
