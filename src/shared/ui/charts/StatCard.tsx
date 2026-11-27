@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/shared/lib/utils";
 import { Skeleton } from "../skeleton";
 
 export interface StatCardProps {
@@ -10,6 +11,9 @@ export interface StatCardProps {
   detail?: string;
   /** While it arrives, it keeps the place and the size of what comes. */
   loading?: boolean;
+  /** One cell of a frame of its own that draws the border and the lines between its numbers, such as the summary of Consumo
+   * (CO1-B): without its own border or corners. */
+  flush?: boolean;
 }
 
 /**
@@ -17,9 +21,10 @@ export interface StatCardProps {
  * figures of the font, and its detail in grey. It does not format nor compare: its owner says the number, the sign and against
  * which period it compares («+18% que 01/09/2026 – 30/09/2026»).
  */
-export function StatCard({ label, value, detail, loading = false }: StatCardProps): ReactNode {
+export function StatCard({ label, value, detail, loading = false, flush = false }: StatCardProps): ReactNode {
   return (
-    <div data-slot="stat-card" className="flex min-w-0 flex-col gap-1 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+    <div data-slot="stat-card" data-flush={flush || undefined} className={cn("flex min-w-0 flex-col gap-1 bg-[var(--color-surface)] px-4 py-3",
+      !flush && "rounded-[var(--radius-card)] border border-[var(--color-border)]")}>
       {loading ? (
         <>
           <Skeleton aria-hidden="true" className="h-4 w-2/3" />

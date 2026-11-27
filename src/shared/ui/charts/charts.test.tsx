@@ -30,6 +30,14 @@ describe("StatCard", () => {
     expect(container).not.toHaveTextContent("Respuestas");
     expect(container.querySelectorAll("[data-slot=skeleton]")).toHaveLength(3);
   });
+
+  // Consumo (CO1-B, 2026-11-27): the cells of a summary are numbers of one frame, which draws the border and the lines between them.
+  it("leaves its border to the frame it goes in when it is flush", () => {
+    const { container, rerender } = renderWithProviders(<StatCard label="WhatsApp" value="USD 12,90" />);
+    expect(container.querySelector("[data-slot=stat-card]")).not.toHaveAttribute("data-flush");
+    rerender(<StatCard flush label="WhatsApp" value="USD 12,90" />);
+    expect(container.querySelector("[data-slot=stat-card]")).toHaveAttribute("data-flush");
+  });
 });
 
 describe("BarChart", () => {
