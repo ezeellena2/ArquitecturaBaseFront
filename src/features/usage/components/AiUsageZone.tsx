@@ -62,7 +62,7 @@ export function AiUsageZone({ query, month, monthLabel, canManagePrices }: {
     ].join(" ");
     body = <>
       <Surface>
-        <Table aria-label={t("ai.table", { month: monthLabel })}>
+        <Table aria-label={t("ai.table", { month: monthLabel })} scrollLabel={t("ai.table", { month: monthLabel })}>
           <TableHeader>
             <TableRow>
               {columns.map(column => <TableHead key={column.key} scope="col" numeric={column.numeric}>{column.header}</TableHead>)}

@@ -53,7 +53,7 @@ export function WhatsAppUsageZone({ query, monthLabel }: { query: UseQueryResult
   else body = <>
     <DataList items={[{ key: "number", label: t("whatsapp.number"), value: usage.displayPhoneNumber ?? "—" }]} />
     <Surface>
-      <Table aria-label={t("whatsapp.table", { month: monthLabel })}>
+      <Table aria-label={t("whatsapp.table", { month: monthLabel })} scrollLabel={t("whatsapp.table", { month: monthLabel })}>
         <TableHeader>
           <TableRow>{columns.map(column => <TableHead key={column.key} scope="col" numeric={column.numeric}>{column.header}</TableHead>)}</TableRow>
         </TableHeader>
