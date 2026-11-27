@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { toBeEnabled } from "@testing-library/jest-dom/matchers";
-import { configure } from "@testing-library/react";
+import { cleanup, configure, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterAll, afterEach, beforeAll, expect, vi } from "vitest";
 import i18n from "@/shared/i18n";
 import { server } from "./mocks/server";
@@ -21,6 +22,22 @@ expect.extend({
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
+
+// Sonner guarda los avisos en un estado del módulo que sobrevive al Toaster de cada test, y saca de pantalla un aviso que
+// se va con un temporizador de Node que desmontar no cancela. Si un archivo termina con un aviso yéndose, ese temporizador
+// dispara con jsdom ya cerrado: "window is not defined" en sonner con todos los tests en verde (ChatAudio, 2026-11-27).
+// Un aviso que queda abierto, en cambio, reaparece en el Toaster del test siguiente, y el componente que lo retira al
+// desmontarse le manda una baja que borra el aviso del mismo id que muestre el test siguiente.
+// Este gancho corre antes que el desmontaje automático de Testing Library: espera a que terminen de irse los avisos que
+// se estaban yendo, retira los demás con el Toaster montado (así nadie agenda otra baja al desmontar) y desmonta.
+const leavingNotice = "[data-sonner-toast][data-removed='true']";
+afterEach(async () => {
+  if (!vi.isFakeTimers() && document.querySelector(leavingNotice)) {
+    await waitFor(() => expect(document.querySelector(leavingNotice)).toBeNull());
+  }
+  toast.dismiss();
+  cleanup();
+});
 
 // Cada namespace se carga con un import dinámico (sección de i18n): en la app real hay tiempo de sobra antes
 // de que alguien interactúe, pero un test que consulta sin esperar (getBy, no findBy) puede toparse con el

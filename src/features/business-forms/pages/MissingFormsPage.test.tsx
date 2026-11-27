@@ -227,13 +227,14 @@ it("keeps the discard confirmation open with «Descartando…» until the list i
 });
 
 // The wait of a 429 is the reason of the controls it turns off, not a text above the table (2026-10-31).
+// Reintentar is searched again on each try: the error shows it first, the wait starts in the next render, and DisabledReason
+// then draws another button with the reason. A button kept from the first render never gets it (shard 1/6, 2026-11-26).
 it("gives the wait of a 429 as the reason of the disabled controls",async()=>{
  setup();let calls=0;
  server.use(http.get("/api/forms/missing-requests",()=>{calls++;return calls===2?HttpResponse.json({detail:"Esperá para consultar.",retryAfter:30},{status:429}):HttpResponse.json(page());}));
  renderRouteWithProviders("/formularios/faltantes");await screen.findByText(topic.name);
  await act(async()=>{await queryClient.invalidateQueries({queryKey:["form-missing-requests"]});});
- const retry=await screen.findByRole("button",{name:"Reintentar"});
- await waitFor(()=>expect(retry).toHaveAccessibleDescription(/^Esperá \d+ segundos para volver a intentar\.$/));
+ await waitFor(()=>expect(screen.getByRole("button",{name:"Reintentar"})).toHaveAccessibleDescription(/^Esperá \d+ segundos para volver a intentar\.$/));
  expect(screen.getAllByText(/^Esperá \d+ segundos para volver a intentar\.$/).every(node=>node.closest("[hidden]"))).toBe(true);
  expect(screen.getByRole("searchbox",{name:"Buscar por tema"})).toBeDisabled();
  await userEvent.hover(screen.getByRole("table"));
