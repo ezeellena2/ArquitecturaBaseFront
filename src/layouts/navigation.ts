@@ -15,6 +15,9 @@ export interface NavigationLink extends NavigationEntry {
   permission?: PermissionRequirement;
   /// Sólo con ese módulo instalado (`installedFeatures`), además del permiso: «Biblioteca» con `form-library`.
   feature?: string;
+  /// En lugar de `permission` y `feature`: se ve con cualquiera de estos pares de permiso y módulo. «Consumo» (CO1-B) se ve con
+  /// la zona de la IA (`ai.read` y el módulo de IA) o con la de WhatsApp (`settings.manage` y el módulo de WhatsApp).
+  access?: readonly { permission: PermissionRequirement; feature: string }[];
   /// Un enlace que se arma al leer el menú (una carpeta, CM1) dice él mismo si es el abierto, y avisa al elegirlo: el
   /// mismo formulario puede estar en dos carpetas y sólo se marca aquel por el que se entró.
   current?: boolean;
@@ -81,6 +84,9 @@ export const administration: NavigationPanel = {
       { labelKey: "navigation.whatsappSettings", to: "/configuracion/whatsapp", icon: PreferencesIcon, permission: "settings.manage", feature: "whatsapp" },
       // RC4-A: the numbers of the forms module, for whoever manages the settings, only with the module installed.
       { labelKey: "navigation.formSettings", to: "/configuracion/formularios", icon: PreferencesIcon, permission: "settings.manage", feature: "forms" },
+      // CO1-B: what the AI and WhatsApp spent in a month, with either of the two zones; the page shows the ones each person can read.
+      { labelKey: "navigation.usage", to: "/configuracion/consumo", icon: PreferencesIcon,
+        access: [{ permission: "ai.read", feature: "assistant" }, { permission: "settings.manage", feature: "whatsapp" }] },
     ] },
   ],
 };

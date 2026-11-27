@@ -1,0 +1,9 @@
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "Revisá los campos marcados.",
+  "code": "Validation.Failed",
+  "traceId": "00-usage-price-invalid-00",
+  "errors": { "outputUsdPerMillion": ["El precio va de 0 a 1.000, con hasta 6 decimales."] }
+}

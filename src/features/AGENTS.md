@@ -6,6 +6,8 @@ Cada área contiene páginas, componentes, API y errores propios. `auth` muestra
 
 `arca` configura la conexión con ARCA (alta, prueba, certificado y punto de venta), con una carpeta por familia de servicios.
 
+`usage` muestra el consumo de IA y WhatsApp de un mes (Configuración › Consumo, CO1-B), con una zona por módulo y los precios de los modelos.
+
 `business-forms` diseña, publica y gestiona los formularios por WhatsApp: editor e idiomas, catálogos, planilla y Excel, detalle y aprobaciones, reglas y PDF, sugerencias, formularios que faltan y ciclo de vida (baja, reactivación y eliminación). Su [guía](business-forms/AGENTS.md) es el índice de `api`, `hooks`, `components` y `pages`; el estado de cada tablero está en el [diseño elegido](../../docs/design/formularios-whatsapp.md).
 
 ## Al modificar

@@ -1,0 +1,30 @@
+{
+  "month": "2026-11",
+  "models": [
+    {
+      "provider": "OpenAI",
+      "model": "gpt-6.1-sol",
+      "requests": 1284,
+      "inputTokens": 2315400,
+      "outputTokens": 186250,
+      "audioSeconds": null,
+      "unknownUsageRequests": 3,
+      "price": { "inputUsdPerMillion": 1.25, "outputUsdPerMillion": 10.0, "audioUsdPerMinute": null, "revision": 2 },
+      "estimatedCostUsd": 4.76
+    },
+    {
+      "provider": "OpenAI",
+      "model": "gpt-transcribe",
+      "requests": 118,
+      "inputTokens": null,
+      "outputTokens": null,
+      "audioSeconds": 5790.0,
+      "unknownUsageRequests": 0,
+      "price": null,
+      "estimatedCostUsd": null
+    }
+  ],
+  "totalEstimatedCostUsd": 4.76,
+  "unpricedModels": 1,
+  "unknownUsageRequests": 3
+}

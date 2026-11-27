@@ -1,0 +1,8 @@
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Otra persona cambió los precios. Revisá los valores actuales.",
+  "code": "Ai.ModelPrice.RevisionConflict",
+  "traceId": "00-usage-price-conflict-00"
+}

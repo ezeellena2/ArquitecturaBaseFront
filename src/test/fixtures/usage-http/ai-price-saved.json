@@ -1,0 +1,1 @@
+{ "provider": "OpenAI", "model": "gpt-transcribe", "inputUsdPerMillion": null, "outputUsdPerMillion": null, "audioUsdPerMinute": 0.006, "revision": 1 }

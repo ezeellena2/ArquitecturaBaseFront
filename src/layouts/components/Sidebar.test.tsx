@@ -94,6 +94,31 @@ describe("Sidebar", () => {
     }
   });
 
+  // CO1-B: «Consumo» shows with either of its zones, each a permission with its module, and last in Configuración.
+  it.each([
+    [["ai.read"], ["assistant"], true], [["settings.manage"], ["whatsapp"], true],
+    [["ai.read"], ["whatsapp"], false], [["settings.manage"], ["assistant"], false],
+  ] as const)("shows «Consumo» with %j and the modules %j: %s", async (granted, features, shown) => {
+    let served = false;
+    server.use(
+      http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: granted })),
+      http.get("/api/settings/presentation", () => { served = true; return HttpResponse.json({ appearance: initialAppearance, defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, installedFeatures: features }); }),
+    );
+    renderWithProviders(<MemoryRouter initialEntries={["/configuracion/consumo"]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);
+    const panel = await screen.findByRole("navigation", { name: "Administración" });
+    // The other page of Configuración that the same permission opens.
+    await within(panel).findByRole("link", { name: granted[0] === "ai.read" ? "Inteligencia artificial" : "General" });
+    await waitFor(() => expect(served).toBe(true));
+    if (shown) {
+      const link = await within(panel).findByRole("link", { name: "Consumo" });
+      expect(link).toHaveAttribute("href", "/configuracion/consumo");
+      expect(link).toHaveAttribute("aria-current", "page");
+      expect(within(panel).getAllByRole("link").at(-1)).toBe(link);
+    } else {
+      await waitFor(() => expect(within(panel).queryByRole("link", { name: "Consumo" })).not.toBeInTheDocument());
+    }
+  });
+
   it.each(["/catalogos", "/formularios/faltantes", "/formularios/documentos", "/formularios/biblioteca"])("does not mark «Formularios» on another page of the panel %s", async path => {
     server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["formrecords.read", "formtemplates.read", "formtemplates.manage", "formcatalogs.read"] })));
     renderWithProviders(<MemoryRouter initialEntries={[path]}><Sidebar collapsed={false} onToggleCollapsed={vi.fn()} isMobile={false} mobileOpen={false} onCloseMobile={vi.fn()}/></MemoryRouter>);

@@ -1,0 +1,8 @@
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+  "title": "Internal Server Error",
+  "status": 500,
+  "detail": "Meta no respondió. Probá de nuevo en unos minutos.",
+  "code": "WhatsApp.Usage.Unavailable",
+  "traceId": "00-usage-whatsapp-unavailable-00"
+}

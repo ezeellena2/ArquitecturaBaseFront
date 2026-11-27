@@ -1,0 +1,14 @@
+{
+  "month": "2026-11",
+  "configured": true,
+  "displayPhoneNumber": "+54 9 3406 40-1234",
+  "currency": "USD",
+  "categories": [
+    { "category": "MARKETING", "delivered": 120, "cost": 7.42 },
+    { "category": "UTILITY", "delivered": 310, "cost": 4.96 },
+    { "category": "AUTHENTICATION", "delivered": 18, "cost": 0.52 },
+    { "category": "SERVICE", "delivered": 2480, "cost": 0.0 }
+  ],
+  "totalDelivered": 2928,
+  "totalCost": 12.9
+}

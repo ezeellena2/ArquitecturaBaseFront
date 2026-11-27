@@ -22,7 +22,7 @@ import { FolderIcon, FormIcon, PlusIcon, PublicTrackingIcon } from "@/shared/ui/
 import { menuIcons } from "@/shared/ui/menuIcons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
-import { usePermissions } from "@/auth/usePermissions";
+import { usePermissions, type PermissionRequirement } from "@/auth/usePermissions";
 import { useSystemPresentation } from "@/shared/api/presentation";
 import { formatNumber } from "@/shared/lib/numberFormat";
 import { cn } from "@/shared/lib/utils";
@@ -303,8 +303,8 @@ function visibleItems(items: NavigationItem[], canSee: (link: NavigationLink) =>
 /// Un grupo lo reserva solo si todos sus hijos dependen de un permiso: si alguno no, el grupo se ve seguro.
 function dependsOnPermissions(item: NavigationItem): boolean {
   return isBranch(item)
-    ? item.children.every((child) => Boolean(child.permission))
-    : Boolean(item.permission);
+    ? item.children.every((child) => Boolean(child.permission ?? child.access))
+    : Boolean(item.permission ?? item.access);
 }
 
 const folderPanelPrefix = "folder-menu:";
@@ -569,7 +569,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
   const onNavigate = isMobile ? onCloseMobile : undefined;
   // A link of an optional module («Biblioteca») shows only once the presentation says it is installed.
   const installedFeatures = useSystemPresentation().data?.installedFeatures;
-  const canSee = (link: NavigationLink) => (isPending || !link.permission || has(link.permission)) && (!link.feature || installedFeatures?.includes(link.feature) === true);
+  const allows = (permission?: PermissionRequirement, feature?: string) => (isPending || !permission || has(permission)) && (!feature || installedFeatures?.includes(feature) === true);
+  // «Consumo» (CO1-B) shows with any of its pairs of permission and module.
+  const canSee = (link: NavigationLink) => link.access ? link.access.some(pair => allows(pair.permission, pair.feature)) : allows(link.permission, link.feature);
   // Sin nombre no hay renglón de abajo: el del nombre ya muestra el correo o el número.
   const accountDetail = user ? accountDetailOf(user) : undefined;
 

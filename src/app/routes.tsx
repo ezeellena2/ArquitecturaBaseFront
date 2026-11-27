@@ -169,6 +169,12 @@ const branches: RouteObject[] = [
                 children: [{ path: "/configuracion/ia", lazy: async () => ({ Component: (await import("@/features/artificial-intelligence/pages/AiSettingsPage")).AiSettingsPage }) }],
               },
               {
+                // Consumo (CO1-B): the zone of the AI asks for «ai.read» and the one of WhatsApp for «settings.manage», each with its module;
+                // the page shows the zones each person can read and «No tenés permiso» without any.
+                element: <ProtectedRoute permission={["ai.read", "settings.manage"]} />,
+                children: [{ path: "/configuracion/consumo", lazy: async () => ({ Component: (await import("@/features/usage/pages/UsagePage")).UsagePage }) }],
+              },
+              {
                 element: <ProtectedRoute permission="ai.business.read" />,
                 children: [{ path: "/configuracion/negocio", lazy: async () => ({ Component: (await import("@/features/artificial-intelligence/pages/BusinessInformationPage")).BusinessInformationPage }) }],
               },

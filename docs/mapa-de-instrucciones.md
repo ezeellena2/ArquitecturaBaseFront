@@ -1,6 +1,6 @@
 # Mapa de instrucciones del front
 
-Relevamiento del 2026-10-02, reorganizado el 2026-10-21 y recontado el 2026-11-18. Hay **46 ámbitos** con `AGENTS.md` y su `CLAUDE.md`, incluidos el laboratorio de chat y el workflow de despliegue conjunto. Cada enlace abre la guía del ámbito; el archivo de Claude importa esa misma fuente con `@AGENTS.md`.
+Relevamiento del 2026-10-02, reorganizado el 2026-10-21 y recontado el 2026-11-18. Hay **47 ámbitos** con `AGENTS.md` y su `CLAUDE.md`, incluidos el laboratorio de chat y el workflow de despliegue conjunto. Cada enlace abre la guía del ámbito; el archivo de Claude importa esa misma fuente con `@AGENTS.md`.
 
 Codex combina las guías desde la raíz hasta la carpeta en la que trabaja con un límite de 32 KiB y corta lo que sobra. Por eso cada cadena se mantiene por debajo de 30 KB: una guía de área es un índice corto y el detalle vive en la guía de la subcarpeta donde está el código ([receta](../../ArquitecturaBase/docs/guides/instrucciones-por-carpeta.md#tamaño-de-las-guías)).
 
@@ -41,6 +41,7 @@ vigente de la migración: el emisor y sus controles están hechos y sigue la rev
 | [`src/features/profile/`](../src/features/profile/AGENTS.md) | Muestra medios de ingreso y datos del perfil. |
 | [`src/features/roles/`](../src/features/roles/AGENTS.md) | Contiene catálogo/listado, alta y edición en ruta propia y los permisos de un rol: áreas plegables con un permiso por fila, iguales en escritorio y en el celular, y lo incluido marcado y apagado con su motivo (RO3-D); Admin se lee con tildes. |
 | [`src/features/settings/`](../src/features/settings/AGENTS.md) | Muestra y modifica los ajustes funcionales publicados por el backend. |
+| [`src/features/usage/`](../src/features/usage/AGENTS.md) | Consumo de IA y WhatsApp por mes (CO1-B): una zona por módulo con su permiso, el mes del negocio en la dirección, totales y el diálogo de precios con revisión y 409. |
 | [`src/features/users/`](../src/features/users/AGENTS.md) | Muestra listado, filtros y conteos, alta, roles, medios e invitaciones; aloja una sección opcional de datos por contrato neutral y coordina su guardado separado. |
 | [`src/features/whatsapp/`](../src/features/whatsapp/AGENTS.md) | Índice del chat: permisos, modo, frontera, página (bandeja, `?conversacion=`, borradores por conversación) y entrada a las guías de `api`, `lib`, `hooks` y `components`. |
 | [`src/features/whatsapp/api/`](../src/features/whatsapp/api/AGENTS.md) | Contratos HTTP cerrados del hilo, modo, texto, formularios, preparación, respuestas, sugerencias y audio; consumidores de cohortes exportadas. |

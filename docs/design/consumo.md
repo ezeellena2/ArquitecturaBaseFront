@@ -72,7 +72,7 @@ comparación «Revisar cambios» en el diálogo, «Usar valores actuales» o «C
 | --- | --- |
 | Cargando | Cada zona por su cuenta: la tabla con su encabezado y dos renglones de carga; en el resumen, el importe de esa zona |
 | Un mes sin pedidos a la IA | En la zona, «En 10/2026 no hubo pedidos a la IA» |
-| Meta no respondió (503 `WhatsApp.Usage.Unavailable`) | En la zona, «No pudimos leer el consumo de Meta» con «Reintentar»; el aviso de abajo dice la causa. La zona de la IA sigue andando |
+| Meta no respondió (500 con `code` `WhatsApp.Usage.Unavailable`; se decide por el `code`, no por el status) | En la zona, «No pudimos leer el consumo de Meta» con «Reintentar»; el aviso de abajo dice la causa. La zona de la IA sigue andando |
 | Sin número de WhatsApp | En la zona, «Esta instalación todavía no tiene un número de WhatsApp» |
 | Un mes sin mensajes informados | En la zona, «En 10/2026 Meta no informa mensajes entregados» |
 | Sin un permiso | La zona de la IA pide `ai.read` y el módulo de IA (`assistant`); la de WhatsApp, `settings.manage` y el módulo de WhatsApp. Con uno solo se ve sólo esa zona (y su celda del resumen); el lápiz pide `ai.manage`. Sin ninguno, «Consumo» no está en el menú y la dirección muestra «No tenés permiso» (SP1-B). Un 403 de una zona la retira y vuelve a leer los permisos |
