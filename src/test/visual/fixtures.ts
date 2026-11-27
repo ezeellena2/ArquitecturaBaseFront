@@ -17,6 +17,7 @@ import { createAssistantVisualFixtures } from "./assistantFixtures";
 import { createArcaVisualFixtures } from "./arcaFixtures";
 import { createAssistantAgentVisualFixtures } from "./assistantAgentFixtures";
 import { createWhatsAppSettingsVisualFixtures } from "./whatsappSettingsFixtures";
+import { createUsageVisualFixtures } from "./usageFixtures";
 import { createChatAssistantVisualFixtures } from "./chatAssistantFixtures";
 import { createChatDocumentVisualFixtures } from "./chatDocumentFixtures";
 import { createChatSharedContentVisualFixtures } from "./chatSharedContentFixtures";
@@ -94,6 +95,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const assistantAgentFixture = scenario?.startsWith("agent-") ? createAssistantAgentVisualFixtures(language, scenario) : undefined;
   // Configuración › WhatsApp (RC3-A), for whoever manages the settings.
   const whatsAppSettingsFixture = scenario?.startsWith("whatsapp-settings") ? createWhatsAppSettingsVisualFixtures(scenario) : undefined;
+  // Configuración › Consumo (CO1-B): both zones, with the prices of the AI.
+  const usageFixture = scenario === "usage" || scenario?.startsWith("usage-") ? createUsageVisualFixtures(language, scenario) : undefined;
   // Casos del asistente in the chat (AS4): «Necesita una persona», the why of each answer, its lines and the text for the composer.
   const chatAssistantFixture = scenario === "chat-assistant-cases" ? createChatAssistantVisualFixtures(language) : undefined;
   if (chatAssistantFixture) Object.assign(globalThis, { chatAssistantFixture });
@@ -115,6 +118,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     permissions: scenario === "responses-own" || scenario === "loads-folders" ? ["formrecords.create"] : scenario === "responses-catalog-fields" ? ["formrecords.read", "formrecords.export"] : scenario === "forms-chat-multiple" ? ["whatsapp.read", "formrecords.read"] : catalogQuestionFixture?.permissions ?? catalogExtraFieldsFixture?.permissions ?? personDataFixture?.permissions ?? formResponseFullFixture?.permissions ?? formOverviewFixture?.permissions ?? formEntryFixture?.permissions ?? receivedDocumentFixture?.permissions ?? documentFormProposalFixture?.permissions ?? [...(missingRequestFixture ? ["formcatalogs.read"] : []), ...(scenario?.startsWith("forms-lifecycle") ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-library-reading") ? ["formcatalogs.read", "formrecords.read"] : []), ...(scenario === "forms-lifecycle-suggestions" ? ["formsuggestions.manage"] : []), ...(scenario === "forms-pdf" ? ["formrules.manage"] : []), ...(approvalsScenario ? ["formapprovals.decide"] : []), ...(responsesScenario && scenario !== "responses-denied" ? ["formrecords.read", "whatsapp.read", ...(scenario?.startsWith("responses-app") ? ["formrecords.create"] : []), ...(scenario === "responses-workflow" || scenario === "responses-role-retry" ? ["formrules.manage"] : []), ...(scenario === "responses-read" ? [] : ["formrecords.export"])] : []), ...(catalogsScenario && scenario !== "catalogs-denied" && scenario !== "forms-catalog-no-read" ? (catalogQuestionsScenario || scenario === "catalogs-read" || scenario === "catalogs-filters-read") ? ["formcatalogs.read"] : ["formcatalogs.read", "formcatalogs.manage"] : []), ...(formsScenario && scenario !== "forms-denied" ? (scenario === "forms-read" || scenario === "forms-catalog-read") ? ["formtemplates.read"] : ["formtemplates.read", "formtemplates.manage", ...(scenario?.startsWith("forms-rules") ? ["formrules.manage"] : []), ...((scenario?.startsWith("forms-publication") || scenario?.startsWith("forms-languages-") || scenario?.startsWith("forms-lifecycle")) ? ["formtemplates.publish"] : [])] : []), ...(assistantScenario && scenario !== "assistant-denied" ? ["ai.assistant.use", "ai.read", "ai.business.read"] : []), ...(scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" ? ["formtemplates.read", "formtemplates.manage", "formcatalogs.read", "formcatalogs.manage"] : []), ...(assistantEntryScenario ? ["ai.assistant.use"] : []), ...(catalogsScenario ? [] : ["users.read", "users.manage", "roles.read", "roles.manage", "settings.manage"]), ...(chatScenario ? (scenario === "forms-chat-read" || scenario === "forms-chat-catalog-inactive-read") ? ["whatsapp.read"] : ["whatsapp.read", "whatsapp.send", "whatsapp.configureassistant"] : []), ...(scenario?.startsWith("forms-chat-actions") && scenario !== "forms-chat-actions-no-values" ? ["formrecords.read"] : []), ...(scenario?.startsWith("forms-chat-catalog") && scenario !== "forms-chat-catalog-no-values" ? ["formrecords.read"] : []), ...(aiScenario ? scenario === "ai-read" ? ["ai.read"] : ["ai.read", "ai.manage"] : []), ...(arcaFixture?.permissions ?? []),
       ...(businessScenario && scenario !== "business-denied" ? scenario === "business-read" ? ["ai.business.read"] : ["ai.business.read", "ai.business.manage"] : []),
       ...(assistantAgentFixture?.permissions ?? []),
+      ...(usageFixture?.permissions ?? []),
       ...(chatAssistantFixture?.permissions ?? []),
       ...(chatDocumentFixture?.permissions ?? []),
       ...(chatSharedContentFixture?.permissions ?? []),
@@ -254,6 +258,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (arcaFixture) { const result = await arcaFixture.handle(request); if (result) return result; }
     if (assistantAgentFixture) { const result = await assistantAgentFixture.handle(request); if (result) return result; }
     if (whatsAppSettingsFixture) { const result = await whatsAppSettingsFixture.handle(request); if (result) return result; }
+    if (usageFixture) { const result = await usageFixture.handle(request); if (result) return result; }
     if (receivedDocumentFixture) { const result = await receivedDocumentFixture.handle(request); if (result) return result; }
     if (documentFormProposalFixture) { const result = await documentFormProposalFixture.handle(request); if (result) return result; }
     if (chatAssistantFixture) { const result = await chatAssistantFixture.handle(request); if (result) return result; }
@@ -391,7 +396,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A) and Configuración has its WhatsApp
     // (RC3-A); `forms-publication-without-channels` is the template without a form channel (SA5).
     if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
-      ...scenario?.endsWith("-folders") || scenario === "form-settings" ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
+      ...scenario?.endsWith("-folders") || scenario === "form-settings" ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...usageFixture ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
     if (path === "/api/settings") return json(settings);
     // RC4-A: Configuración › Formularios with today's values, as nobody saved them yet.
     if (path === "/api/forms/settings") return json({ maxFileSizeMiB: 25, dailyRereadsPerAsker: 5, similarDocumentsToSuggest: 3, proposedExpiryDays: 90, discardedRetentionDays: 90, revision: 0 });
