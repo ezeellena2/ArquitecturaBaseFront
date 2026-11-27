@@ -30,6 +30,19 @@ const server = await preview({
   mode: "development", build: { outDir },
   preview: { host: "127.0.0.1", port: 5178, strictPort: true, proxy: {} },
   plugins: [{ name: "visual-readiness", configurePreviewServer(viteServer) {
+    // ME2: the scenes with a brand («brand-…») show a generic logo and icon, drawn here: the product never carries a client's.
+    viteServer.middlewares.use((request, response, next) => {
+      const pathname = new URL(request.url ?? "/", origin).pathname;
+      if (pathname !== "/api/settings/brand/logo" && pathname !== "/api/settings/brand/icon") return next();
+      const logo = pathname.endsWith("/logo");
+      response.setHeader("Content-Type", "image/svg+xml");
+      response.end(logo
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="56" viewBox="0 0 200 56"><rect width="56" height="56" rx="8" fill="#E8A33D"/>'
+          + '<path d="M14 40 28 16l14 24Z" fill="#fff"/><rect x="56" width="144" height="56" fill="#1F3A4D"/>'
+          + '<text x="70" y="36" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#fff">Agro Demo</text></svg>'
+        : '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#E8A33D"/>'
+          + '<path d="M16 46 32 18l16 28Z" fill="#fff"/></svg>');
+    });
     viteServer.middlewares.use((request, response, next) => {
       if (new URL(request.url ?? "/", origin).pathname !== "/__visual_ready") return next();
       response.statusCode = ready ? 200 : 503;

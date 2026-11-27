@@ -80,42 +80,89 @@
   },
   "appearance": {
     "title": "Appearance",
-    "brand": "Name and emails",
-    "brandHint": "How the application presents itself in emails, in the WhatsApp invitation and in the response PDFs.",
+    "brand": "Brand",
+    "brandHint": "The logo goes at the top of the menu, on the sign-in pages, in the emails and in the PDFs; the icon, in the browser tab and in the collapsed menu. Both are saved when uploaded; the name and the sender, with Save.",
     "brandFields": {
       "appName": "Application name",
-      "emailSenderName": "Sender name",
-      "emailLogoUrl": "Email logo"
+      "emailSenderName": "Sender name"
     },
     "senderHint": "The name people see when they receive an email. The mailbox that sends them is set in the installation.",
-    "logoHint": "The https address of a public image, shown 32 px tall. Without a logo, the email shows the application name.",
+    "logoHint": "PNG or JPG up to 1 MB, at least as wide as it is tall. It is saved when uploaded.",
     "emailPreview": "How it arrives",
     "emailFrom": "From",
     "emailSubject": "Subject",
     "emailSubjectSample": "{{code}} is your {{app}} access code",
-    "noLogo": "No logo",
     "savedAll": "We saved the appearance changes.",
     "issues": {
       "required": "This field is required.",
       "tooLong": "Use up to {{max}} characters.",
       "singleLine": "Write it on a single line, without control characters.",
-      "logoUrl": "Enter an address that starts with https://."
+      "accentContrast": "Choose an accent that reads on the menu color."
     },
-    "colors": "System colors",
+    "colors": "Colors and font",
     "hint": "These colors apply to everyone and to sign-in screens.",
-    "reset": "Restore initial colors",
+    "reset": "Restore the initial ones",
     "preview": "Preview",
     "name": "Name",
     "role": "Role",
     "search": "Search users",
     "newUser": "New user",
-    "saved": "System colors saved.",
-    "failed": "Could not save the colors.",
+    "saved": "We saved the colors and the font.",
+    "failed": "Could not save the appearance.",
     "fields": {
       "primaryColor": "Buttons and links",
       "menuColor": "Side menu",
       "headerColor": "Section and table headings",
-      "alternateRowColor": "Alternating rows"
-    }
+      "alternateRowColor": "Alternating rows",
+      "menuAccentColor": "Menu accent"
+    },
+    "logo": "Logo",
+    "icon": "Icon",
+    "iconHint": "Square PNG, from 64 to 1024 pixels and up to 1 MB. It is saved when uploaded.",
+    "upload": {
+      "logo": "Upload logo",
+      "icon": "Upload icon"
+    },
+    "uploadOther": "Upload another",
+    "uploading": "Uploading…",
+    "current": {
+      "logo": "Current logo of {{name}}",
+      "icon": "Current icon of {{name}}"
+    },
+    "remove": {
+      "logo": "Remove the logo",
+      "icon": "Remove the icon"
+    },
+    "removeTitle": {
+      "logo": "Remove the logo?",
+      "icon": "Remove the icon?"
+    },
+    "removeDescription": {
+      "logo": "The menu, the sign-in pages, the emails and the PDFs show the application name again.",
+      "icon": "The browser tab goes back to the usual icon and the collapsed menu has no icon."
+    },
+    "removeConfirm": {
+      "logo": "Remove logo",
+      "icon": "Remove icon"
+    },
+    "imageSaved": {
+      "logo": "Logo saved.",
+      "icon": "Icon saved."
+    },
+    "imageRemoved": {
+      "logo": "We removed the logo.",
+      "icon": "We removed the icon."
+    },
+    "imageFailed": {
+      "logo": "Could not save the logo.",
+      "icon": "Could not save the icon."
+    },
+    "fileIssue": {
+      "logo": "“{{name}}” does not work: it must be a PNG or JPG up to 1 MB.",
+      "icon": "“{{name}}” does not work: it must be a PNG up to 1 MB."
+    },
+    "accentHint": "It marks the current item of the menu. It must read on the menu color.",
+    "font": "Font",
+    "fontHint": "The same font in the whole application. Emails and PDFs keep their own."
   }
 }

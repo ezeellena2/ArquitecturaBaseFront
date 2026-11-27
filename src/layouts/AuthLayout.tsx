@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation, useSearchParams } from "react-router";
 import { getLoginMethods, loginMethodsQueryKey } from "@/shared/api/loginMethods";
+import { brandImageUrl, useSystemPresentation } from "@/shared/api/presentation";
 import { changePublicLanguage, supportedLanguages } from "@/shared/i18n";
 import { Button } from "@/shared/ui/button";
 import { Picker } from "@/shared/ui/Picker";
@@ -15,6 +16,7 @@ export function AuthLayout({ children }: { children?: ReactNode }) {
   const registration = pathname.startsWith("/registro");
   const home = pathname === "/";
   const { data: methods } = useQuery({ queryKey: loginMethodsQueryKey, queryFn: getLoginMethods, meta: { silent: true } });
+  const brand = useSystemPresentation().data?.brand;
   const returnUrl = params.get("returnUrl");
   const query = returnUrl ? `?${new URLSearchParams({ returnUrl })}` : "";
 
@@ -23,7 +25,12 @@ export function AuthLayout({ children }: { children?: ReactNode }) {
       <PublicPresentationDefaults />
       <header className="access-header topbar-surface">
         <div className="access-header-inner">
-          {home ? <Link to="/" className="access-brand"><span aria-hidden="true">{t("landing.brand").charAt(0)}</span>{t("landing.brand")}</Link> : null}
+          {/* ME1-A: the installation's logo, or its name, on every access page; while the presentation arrives, the landing keeps its words. */}
+          {brand ? <Link to="/" className="access-brand" aria-label={brand.logoVersion ? t("common:layout.brandHome", { name: brand.appName }) : undefined}>
+            {brand.logoVersion
+              ? <img src={brandImageUrl("logo", brand.logoVersion)} alt="" className="access-logo" />
+              : <><span aria-hidden="true">{brand.appName.charAt(0)}</span>{brand.appName}</>}
+          </Link> : home ? <Link to="/" className="access-brand"><span aria-hidden="true">{t("landing.brand").charAt(0)}</span>{t("landing.brand")}</Link> : <span />}
           <nav aria-label={t("access.navigation")}>
             {home || registration ? <Button asChild variant="ghost"><Link to={`/login${query}`}>{t("access.signIn")}</Link></Button> : null}
             {methods?.registrationOpen && !registration ? <Button asChild variant="outline"><Link to={`/registro${query}`}>{t("access.register")}</Link></Button> : null}

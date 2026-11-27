@@ -230,10 +230,14 @@ Escala compacta para administración; el acceso público usa controles de 44/46 
   mínimo (los nombres largos pueden ocupar varias líneas). Controles, filas y cabeceras: ver el estándar.
 - **Esquinas:** 5 px en controles (`--radius-control`) y 6 px en tarjetas (`--radius-card`).
 - **Sin sombras**, salvo los popovers: profundidad por escalón de luz y línea de 1 px.
-- **Quitados:** cuadrado de logo (la marca es el nombre), ícono de sección en `Page` (la prop `icon` no existe),
+- **Marca de la instalación** ([ME1-A, 2026-11-27](marca-por-empresa.md)): el logo que sube cada empresa va en la banda de arriba
+  del menú y, sin logo, su nombre en texto; contraído, su ícono o nada. Nunca un cuadrado de color en su lugar.
+- **Quitados:** cuadrado de logo, ícono de sección en `Page` (la prop `icon` no existe),
   versalitas espaciadas en rótulos, pastillas redondas de estado y avatares circulares.
-- **Ítem activo del menú:** barra de 2 px de la marca y peso tipográfico, no una pastilla.
-- **Public Sans** (`@fontsource-variable/public-sans`); tablas con figuras tabulares por CSS.
+- **Ítem activo del menú:** barra de 2 px y peso tipográfico, no una pastilla. En el menú principal, la barra y el texto
+  son del acento del menú que elige cada instalación (ME3-B); con la paleta inicial, el texto sigue blanco.
+- **Public Sans** (`@fontsource-variable/public-sans`) por defecto; cada instalación puede elegir otra de una lista cerrada
+  (ME4), con la misma escala y los mismos pesos. Tablas con figuras tabulares por CSS.
 
 ## Encabezados
 

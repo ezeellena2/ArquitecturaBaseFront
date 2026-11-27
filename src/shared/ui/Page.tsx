@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { setDocumentScreenTitle } from "@/shared/lib/documentTitle";
 import { Link } from "react-router";
 import { ChevronLeftIcon } from "./icons";
 import { ActionTooltip } from "./ActionTooltip";
@@ -49,6 +50,8 @@ export function Page({
   viewport?: boolean;
 }): ReactNode {
   const { t } = useTranslation();
+  // ME5: the tab says the screen and the installation («Usuarios · La Clementina»).
+  useEffect(() => setDocumentScreenTitle(title), [title]);
   const content = (
     <>
       {/* `main` lleva `scroll-pt-14` para que un control enfocado no quede tapado por esta banda, y el navegador también

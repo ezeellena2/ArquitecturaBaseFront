@@ -1,19 +1,62 @@
+/// ME4: the font of the whole application, from the closed list the server accepts. Each one ships with its package and only the
+/// chosen one is downloaded (`loadFont`).
+export const appearanceFonts = ["public-sans", "inter", "ibm-plex-sans", "source-sans-3", "hanken-grotesk", "nunito-sans"] as const;
+export type AppearanceFont = (typeof appearanceFonts)[number];
+
+export const fontFamilies: Record<AppearanceFont, string> = {
+  "public-sans": "Public Sans", inter: "Inter", "ibm-plex-sans": "IBM Plex Sans", "source-sans-3": "Source Sans 3",
+  "hanken-grotesk": "Hanken Grotesk", "nunito-sans": "Nunito Sans",
+};
+
+const fontLoaders: Record<AppearanceFont, () => Promise<unknown>> = {
+  "public-sans": () => Promise.resolve(),
+  inter: () => import("@fontsource-variable/inter"),
+  "ibm-plex-sans": () => import("@fontsource-variable/ibm-plex-sans"),
+  "source-sans-3": () => import("@fontsource-variable/source-sans-3"),
+  "hanken-grotesk": () => import("@fontsource-variable/hanken-grotesk"),
+  "nunito-sans": () => import("@fontsource-variable/nunito-sans"),
+};
+
+/// Public Sans comes with the bundle; another font downloads its stylesheet the first time it is used.
+export const loadFont = (font: AppearanceFont) => fontLoaders[font]();
+
+/// The stack of a font: its variable family first, then its name and the system ones.
+export const fontStack = (font: AppearanceFont) =>
+  `"${fontFamilies[font]} Variable", "${fontFamilies[font]}", ui-sans-serif, system-ui, sans-serif`;
+
+export const isAppearanceFont = (value: unknown): value is AppearanceFont =>
+  typeof value === "string" && (appearanceFonts as readonly string[]).includes(value);
+
 export interface SystemAppearance {
   readonly primaryColor: string;
   readonly menuColor: string;
   readonly headerColor: string;
   readonly alternateRowColor: string;
+  /// ME3-B: the current item of the main menu (bar, text, focus and avatar); it reads as text on the menu (4.5:1).
+  readonly menuAccentColor: string;
+  readonly font: AppearanceFont;
 }
 
+export type AppearanceColor = Exclude<keyof SystemAppearance, "font">;
+export const appearanceColors: readonly AppearanceColor[] = ["primaryColor", "menuColor", "headerColor", "alternateRowColor", "menuAccentColor"];
+
 export const initialAppearance: SystemAppearance = {
-  primaryColor: "#285A3D", menuColor: "#24352B", headerColor: "#DFE8D9", alternateRowColor: "#F4F6F0",
+  primaryColor: "#285A3D", menuColor: "#24352B", headerColor: "#DFE8D9", alternateRowColor: "#F4F6F0", menuAccentColor: "#D3D7D5",
+  font: "public-sans",
 };
+
+/// The minimum the server asks of the accent against the menu: it paints the name of the current item.
+export const minimumMenuAccentContrast = 4.5;
 
 export function isAppearance(value: unknown): value is SystemAppearance {
   if (!value || typeof value !== "object") return false;
-  return Object.keys(initialAppearance).every(key => typeof (value as Record<string, unknown>)[key] === "string"
-    && /^#[\da-f]{6}$/i.test((value as Record<string, string>)[key]));
+  return appearanceColors.every(key => typeof (value as Record<string, unknown>)[key] === "string"
+    && /^#[\da-f]{6}$/i.test((value as Record<string, string>)[key])) && isAppearanceFont((value as Record<string, unknown>).font);
 }
+
+/// Same colors and font, without telling upper from lower case.
+export const sameAppearance = (first: SystemAppearance, second: SystemAppearance) =>
+  appearanceColors.every(key => first[key].toUpperCase() === second[key].toUpperCase()) && first.font === second.font;
 
 function channels(hex: string) {
   return [1, 3, 5].map(offset => Number.parseInt(hex.slice(offset, offset + 2), 16));
@@ -47,15 +90,17 @@ function readable(color: string, background: string, minimum: number) {
   return target;
 }
 
-// The default palette leaves the approved CSS untouched. Custom palettes override only color roles.
+// The default palette leaves the approved CSS untouched (with it, the current item's text stays the menu's ink). Custom palettes
+// override only color roles; a font other than the initial one, only the family.
 export function appearanceVariables(appearance: SystemAppearance | undefined): Record<string, string> {
-  if (!isAppearance(appearance) || Object.entries(initialAppearance).every(([key, value]) => appearance[key as keyof SystemAppearance].toUpperCase() === value)) return {};
-  const { primaryColor: primary, menuColor: menu, headerColor: heading, alternateRowColor: alternate } = appearance;
+  if (!isAppearance(appearance)) return {};
+  const font: Record<string, string> = appearance.font === initialAppearance.font ? {} : { "--font-sans": fontStack(appearance.font) };
+  if (appearanceColors.every(key => appearance[key].toUpperCase() === initialAppearance[key])) return font;
+  const { primaryColor: primary, menuColor: menu, headerColor: heading, alternateRowColor: alternate, menuAccentColor: accent } = appearance;
   const page = mix(heading, "#FFFFFF", .92);
   const control = mix(primary, "#FFFFFF", .97);
   const navInk = ink(menu);
   const hover = mix(menu, navInk === "#FFFFFF" ? "#000000" : "#FFFFFF", .07);
-  const accent = readable(mix(menu, ink(menu), .8), menu, 3);
   const topbar = mix(heading, "#FFFFFF", .4);
   const link = readable(primary, "#FFFFFF", 4.5);
   const section = mix(heading, "#FFFFFF", .5);
@@ -67,7 +112,7 @@ export function appearanceVariables(appearance: SystemAppearance | undefined): R
     "--color-brand-500": readable(primary, control, 3), "--color-brand-ink": ink(link),
     "--color-nav-surface": menu, "--color-nav-foreground": navInk, "--color-nav-muted": navInk,
     "--color-nav-hover": hover, "--color-nav-border": readable(menu, hover, 3),
-    "--color-nav-accent": accent, "--color-nav-ink": ink(accent),
+    "--color-nav-accent": accent, "--color-nav-ink": ink(accent), "--color-nav-current": accent,
     "--color-subnav-surface": mix(menu, "#FFFFFF", .94), "--color-subnav-hover": mix(menu, "#FFFFFF", .86),
     "--color-topbar-surface": topbar, "--color-topbar-foreground": ink(topbar),
     "--color-topbar-muted": ink(topbar), "--color-topbar-border": mix(menu, "#FFFFFF", .7),
@@ -79,6 +124,7 @@ export function appearanceVariables(appearance: SystemAppearance | undefined): R
     "--color-table-section": section, "--color-table-section-foreground": ink(section),
     "--color-surface-muted": mix(primary, "#FFFFFF", .94),
     "--color-tooltip-foreground": "#FFFFFF",
+    ...font,
   };
 }
 
@@ -101,6 +147,7 @@ export const initialAppearanceVariables: Record<string, string> = {
   "--color-nav-border": "#6e7a73",
   "--color-nav-accent": "#d3d7d5",
   "--color-nav-ink": "#000000",
+  "--color-nav-current": "#ffffff",
   "--color-subnav-surface": "#f2f3f2",
   "--color-subnav-hover": "#e0e3e1",
   "--color-topbar-surface": "#ecf1e8",

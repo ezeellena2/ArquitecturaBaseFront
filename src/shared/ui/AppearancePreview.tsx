@@ -12,10 +12,19 @@ export interface AppearancePreviewLabels {
   title: string; home: string; administration: string; name: string; role: string; search: string; newUser: string;
 }
 
-export function AppearancePreview({ appearance, labels }: { appearance: SystemAppearance; labels: AppearancePreviewLabels }) {
-  return <div style={{ ...initialAppearanceVariables, ...appearanceVariables(appearance) } as CSSProperties}>
+/// ME1-A and ME3-B: the menu strip carries the logo (or the name) and marks its current item with the accent; ME4: all in the chosen font.
+export function AppearancePreview({ appearance, brand, labels }: {
+  appearance: SystemAppearance; brand?: { appName: string; logoUrl: string | null }; labels: AppearancePreviewLabels;
+}) {
+  return <div style={{ ...initialAppearanceVariables, ...appearanceVariables(appearance), fontFamily: "var(--font-sans)" } as CSSProperties}>
     <Surface title={labels.title} padded>
-      <div className="navigation-surface flex flex-wrap items-center gap-6 rounded-[var(--radius-control)] bg-[var(--color-nav-surface)] px-4 py-3"><span>{labels.home}</span><span>{labels.administration}</span></div>
+      <div className="navigation-surface flex flex-wrap items-center gap-6 rounded-[var(--radius-control)] bg-[var(--color-nav-surface)] px-4 py-3">
+        {brand ? brand.logoUrl
+          ? <img src={brand.logoUrl} alt={brand.appName} className="block h-7 w-auto max-w-40 object-contain object-left" />
+          : <span className="font-semibold">{brand.appName}</span> : null}
+        <span>{labels.home}</span>
+        <span className="border-l-2 border-[var(--color-nav-accent)] pl-2 font-medium text-[var(--color-nav-current)]">{labels.administration}</span>
+      </div>
       <div className="max-w-sm"><FormField label={labels.name}><Input value="Ana Pérez" readOnly /></FormField></div>
       <div><Button>{labels.newUser}</Button></div>
       <FilterBar><SearchInput value="" onChange={() => {}} label={labels.search} /></FilterBar>

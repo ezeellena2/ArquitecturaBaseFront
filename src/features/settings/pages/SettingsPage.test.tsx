@@ -11,7 +11,7 @@ import { systemSettingsQueryKey } from "../api/settings";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
 const defaults = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, revision: 1,
-  branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
+  branding: { appName: "Acceso", emailSenderName: "Acceso", logoVersion: null, iconVersion: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
 let settings = { ...defaults };
 let writes: unknown[];
 beforeEach(() => {

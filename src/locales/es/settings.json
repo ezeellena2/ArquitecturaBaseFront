@@ -80,42 +80,89 @@
   },
   "appearance": {
     "title": "Apariencia",
-    "brand": "Nombre y correos",
-    "brandHint": "Cómo se presenta la aplicación en los correos, en la invitación por WhatsApp y en los PDF de las respuestas.",
+    "brand": "Marca",
+    "brandHint": "El logo va arriba del menú, en el ingreso, en los correos y en los PDF; el ícono, en la pestaña del navegador y en el menú contraído. Los dos se guardan al subirlos; el nombre y el remitente, con Guardar.",
     "brandFields": {
       "appName": "Nombre de la aplicación",
-      "emailSenderName": "Nombre del remitente",
-      "emailLogoUrl": "Logo de los correos"
+      "emailSenderName": "Nombre del remitente"
     },
     "senderHint": "El nombre que ve quien recibe un correo. La casilla que los envía se configura en la instalación.",
-    "logoHint": "La dirección https de una imagen pública; se muestra de 32 px de alto. Sin logo, el correo muestra el nombre de la aplicación.",
+    "logoHint": "PNG o JPG de hasta 1 MB, igual de ancho o más ancho que alto. Se guarda al subirlo.",
     "emailPreview": "Así llega",
     "emailFrom": "De",
     "emailSubject": "Asunto",
     "emailSubjectSample": "{{code}} es tu código de acceso a {{app}}",
-    "noLogo": "Sin logo",
     "savedAll": "Guardamos los cambios de apariencia.",
     "issues": {
       "required": "Este campo es obligatorio.",
       "tooLong": "Usá hasta {{max}} caracteres.",
       "singleLine": "Escribilo en una sola línea, sin caracteres de control.",
-      "logoUrl": "Escribí una dirección que empiece con https://."
+      "accentContrast": "Elegí un acento que se lea sobre el color del menú."
     },
-    "colors": "Colores del sistema",
+    "colors": "Colores y letra",
     "hint": "Estos colores se aplican a todas las personas y a las pantallas de ingreso.",
-    "reset": "Restaurar colores iniciales",
+    "reset": "Restaurar los iniciales",
     "preview": "Vista previa",
     "name": "Nombre",
     "role": "Rol",
     "search": "Buscar usuarios",
     "newUser": "Nuevo usuario",
-    "saved": "Guardamos los colores del sistema.",
-    "failed": "No pudimos guardar los colores.",
+    "saved": "Guardamos los colores y la letra.",
+    "failed": "No pudimos guardar la apariencia.",
     "fields": {
       "primaryColor": "Botones y enlaces",
       "menuColor": "Menú lateral",
       "headerColor": "Encabezados de secciones y tablas",
-      "alternateRowColor": "Filas alternadas"
-    }
+      "alternateRowColor": "Filas alternadas",
+      "menuAccentColor": "Acento del menú"
+    },
+    "logo": "Logo",
+    "icon": "Ícono",
+    "iconHint": "PNG cuadrado, de 64 a 1024 píxeles y hasta 1 MB. Se guarda al subirlo.",
+    "upload": {
+      "logo": "Subir logo",
+      "icon": "Subir ícono"
+    },
+    "uploadOther": "Subir otro",
+    "uploading": "Subiendo…",
+    "current": {
+      "logo": "Logo actual de {{name}}",
+      "icon": "Ícono actual de {{name}}"
+    },
+    "remove": {
+      "logo": "Quitar el logo",
+      "icon": "Quitar el ícono"
+    },
+    "removeTitle": {
+      "logo": "¿Quitar el logo?",
+      "icon": "¿Quitar el ícono?"
+    },
+    "removeDescription": {
+      "logo": "En el menú, el ingreso, los correos y los PDF vuelve a verse el nombre de la aplicación.",
+      "icon": "La pestaña del navegador vuelve al ícono de siempre y el menú contraído queda sin ícono."
+    },
+    "removeConfirm": {
+      "logo": "Quitar logo",
+      "icon": "Quitar ícono"
+    },
+    "imageSaved": {
+      "logo": "Logo guardado.",
+      "icon": "Ícono guardado."
+    },
+    "imageRemoved": {
+      "logo": "Quitamos el logo.",
+      "icon": "Quitamos el ícono."
+    },
+    "imageFailed": {
+      "logo": "No pudimos guardar el logo.",
+      "icon": "No pudimos guardar el ícono."
+    },
+    "fileIssue": {
+      "logo": "«{{name}}» no sirve: tiene que ser PNG o JPG de hasta 1 MB.",
+      "icon": "«{{name}}» no sirve: tiene que ser PNG de hasta 1 MB."
+    },
+    "accentHint": "Marca el ítem activo del menú. Tiene que leerse sobre el color del menú.",
+    "font": "Letra",
+    "fontHint": "La misma letra en toda la aplicación. Los correos y los PDF siguen con la suya."
   }
 }

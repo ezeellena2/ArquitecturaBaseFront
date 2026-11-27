@@ -179,7 +179,8 @@
       "signOut": "Cerrar sesión"
     },
     "signingOut": "Cerrando sesión…",
-    "signOutError": "No pudimos cerrar la sesión. Probá de nuevo."
+    "signOutError": "No pudimos cerrar la sesión. Probá de nuevo.",
+    "brandHome": "{{name}}, ir al inicio"
   },
   "files": {
     "download": "Descargar",

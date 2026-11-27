@@ -150,8 +150,11 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     ] },
   ];
   const counts: UserFilterCounts = { status: { all: 4, active: 3, inactive: 1 }, roles: [{ name: "Admin", count: 1 }, { name: "User", count: 3 }], createdWithin: [{ days: 7, count: 0 }, { days: 30, count: 4 }] };
-  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1,
-    branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
+  // ME2: the scenes of a brand show the shell with a generic logo, accent and font (the others keep the band empty, as before).
+  const brandScenario = scenario?.startsWith("brand") ?? false;
+  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000", menuAccentColor: "#000000", font: "public-sans" }
+    : brandScenario ? { primaryColor: "#1F3A4D", menuColor: "#1A3140", headerColor: "#F4EFE4", alternateRowColor: "#FAF7F0", menuAccentColor: "#E8A33D", font: "hanken-grotesk" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1,
+    branding: { appName: brandScenario ? "Agro Demo" : "Acceso", emailSenderName: "Acceso", logoVersion: scenario === "brand-logo" ? "v1" : null, iconVersion: scenario === "brand-logo" ? "v1" : null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
   const nativeFetch = globalThis.fetch;
   const folderFixture = createFolderVisualFixtures(language, scenario, profile.permissions);
   let ai: AiConnection = { provider: "OpenAI", model: scenario === "ai-empty" ? "" : "fictional-model", hasCredential: scenario !== "ai-empty", enabled: scenario !== "ai-empty", revision: 1, providers: ["OpenAI", "Anthropic"], conversationRetentionDays: 30, conversationRetentionCeilingDays: 30 };
@@ -395,7 +398,7 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
     if (path === "/account/login-methods") return json({ registrationOpen: scenario !== "landing", google: true, whatsapp: true, whatsappCountries: ["AR", "UY"], whatsappNumber: "15551632662" });
     // WhatsApp is installed in every scene, as in the template, so «Dónde se completa» shows (SA1-A) and Configuración has its WhatsApp
     // (RC3-A); `forms-publication-without-channels` is the template without a form channel (SA5).
-    if (path === "/api/settings/presentation") return json({ ...settings, installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
+    if (path === "/api/settings/presentation") return json({ ...settings, ...(brandScenario ? { brand: { appName: settings.branding.appName, logoVersion: settings.branding.logoVersion, iconVersion: settings.branding.iconVersion } } : {}), installedFeatures: [...personDataFixture || catalogQuestionFixture || catalogExtraFieldsFixture || scenario === "responses-catalog-fields" ? ["forms"] : scenario === "forms-files" ? ["forms","form-files"] : scenario?.startsWith("assistant-proposal") || scenario === "assistant-entries" || assistantEntryScenario ? ["assistant", "forms"] : assistantScenario ? ["assistant"] : [],
       ...scenario?.endsWith("-folders") || scenario === "form-settings" ? ["forms"] : [], ...businessScenario ? ["place-search"] : [], ...scenario?.startsWith("forms-library-reading") ? ["assistant"] : [], ...usageFixture ? ["assistant"] : [], ...scenario === "forms-publication-without-channels" ? [] : ["form-channels", "whatsapp"]] });
     if (path === "/api/settings") return json(settings);
     // RC4-A: Configuración › Formularios with today's values, as nobody saved them yet.

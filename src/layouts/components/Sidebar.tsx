@@ -32,6 +32,7 @@ import { IconButton } from "@/shared/ui/IconButton";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { ActionTooltip } from "@/shared/ui/ActionTooltip";
 import { ActionsMenu } from "@/shared/ui/ActionsMenu";
+import { BrandMark } from "./BrandMark";
 
 const sidebarEdgeToggleClassName =
   "absolute top-15.5 -right-2.5 z-20 size-5 rounded-[var(--radius-control)] border border-[var(--color-control-border)] bg-[var(--color-canvas)] text-[var(--color-nav-surface)] hover:bg-[var(--color-subnav-surface)] hover:text-[var(--color-nav-surface)]";
@@ -78,7 +79,7 @@ function NavItem({
       className={cn(
           "relative flex min-h-7.5 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1 text-sm transition-colors",
           isCurrent
-            ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
+            ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-current-item,var(--color-content))] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
             : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
           collapsed ? "size-7.5 justify-center px-0" : "",
         )}
@@ -248,7 +249,7 @@ function PanelTrigger({
       className={cn(
         "relative flex h-7.5 w-full items-center gap-2 rounded-[var(--radius-control)] px-2 text-sm transition-colors",
         open
-          ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-content)] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
+          ? "bg-[var(--color-surface-muted)] font-medium text-[var(--color-current-item,var(--color-content))] before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[2px] before:-translate-y-1/2 before:bg-[var(--color-brand-600)]"
           : "text-[var(--color-content-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-content)]",
         collapsed ? "size-7.5 justify-center px-0" : "",
       )}
@@ -630,7 +631,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
             iconsOnly ? "justify-center" : "",
           )}
         >
-
+          <BrandMark collapsed={iconsOnly} />
         </div>
 
         {/* La flecha va montada sobre el borde derecho, como un círculo mitad adentro y mitad afuera. Su eje

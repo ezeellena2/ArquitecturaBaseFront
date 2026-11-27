@@ -8,20 +8,28 @@ import { currentUser } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 import { queryClient } from "@/shared/api/queryClient";
 import { initialAppearance } from "@/shared/lib/appearance";
+import { captureUploads } from "@/test/mocks/xhrUpload";
 
 vi.mock("react-oidc-context", async () => ({ ...(await vi.importActual<typeof import("react-oidc-context")>("react-oidc-context")), useAuth: () => ({ isAuthenticated: true, isLoading: false, user: { access_token: "t" } }) }));
 let settings = { registrationMode: "InviteOnly", defaultCulture: "es", defaultTimeZoneId: "UTC", defaultPageSize: 20, revision: 7, appearance: { ...initialAppearance },
-  branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
+  branding: { appName: "Acceso", emailSenderName: "Acceso", logoVersion: null as string | null, iconVersion: null as string | null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
 let writes: Record<string, unknown>[];
 beforeEach(() => {
   queryClient.clear(); writes = [];
-  settings = { ...settings, revision: 7, appearance: { ...initialAppearance }, branding: { appName: "Acceso", emailSenderName: "Acceso", emailLogoUrl: null } };
+  settings = { ...settings, revision: 7, appearance: { ...initialAppearance }, branding: { appName: "Acceso", emailSenderName: "Acceso", logoVersion: null, iconVersion: null } };
   server.use(http.get("/api/me", () => HttpResponse.json({ ...currentUser, permissions: ["settings.manage"] })),
     http.get("/api/settings", () => HttpResponse.json(settings)),
     http.get("/api/settings/presentation", () => HttpResponse.json(settings)),
-    http.patch("/api/settings", async ({ request }) => { const body = await request.json() as Record<string, unknown>; writes.push(body); settings = { ...settings, ...body, revision: settings.revision + 1 }; return new HttpResponse(null, { status: 204 }); }));
+    http.patch("/api/settings", async ({ request }) => { const body = await request.json() as Record<string, unknown>; writes.push(body); settings = { ...settings, ...body, revision: settings.revision + 1 }; return new HttpResponse(null, { status: 204 }); }),
+    http.delete("/api/settings/brand/:kind", ({ request, params }) => {
+      writes.push({ method: "DELETE", kind: params.kind, expectedRevision: new URL(request.url).searchParams.get("expectedRevision") });
+      settings = { ...settings, revision: settings.revision + 1 };
+      return HttpResponse.json({ revision: settings.revision, version: null });
+    }));
 });
-afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); });
+afterEach(() => { queryClient.clear(); toast.dismiss(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+const png = (name = "logo.png", type = "image/png") => new File([new Uint8Array([137, 80, 78, 71])], name, { type });
+const fileInputs = () => [...document.querySelectorAll<HTMLInputElement>('input[type="file"]')];
 const edit = async (color = "#335f85") => { const input = await screen.findByLabelText("Botones y enlaces"); fireEvent.change(input, { target: { value: color } }); };
 
 describe("AppearancePage", () => {
@@ -120,21 +128,21 @@ describe("AppearancePage", () => {
   it("offers restoring the initial colors from the colors header", async () => {
     settings.appearance = { ...initialAppearance, primaryColor: "#335F85" };
     renderRouteWithProviders("/configuracion/apariencia");
-    const colors = await screen.findByRole("region", { name: "Colores del sistema" });
+    const colors = await screen.findByRole("region", { name: "Colores y letra" });
     // Restaurar actúa sobre los cuatro colores: va al borde derecho de su banda, no al pie de la superficie. En la banda
     // también está la (i) del título.
-    const band = within(colors).getByRole("heading", { level: 2, name: "Colores del sistema" }).closest("div") as HTMLElement;
-    expect(within(colors).getAllByRole("button", { name: "Restaurar colores iniciales" })).toEqual([within(band).getByRole("button", { name: "Restaurar colores iniciales" })]);
-    await userEvent.click(within(band).getByRole("button", { name: "Restaurar colores iniciales" }));
+    const band = within(colors).getByRole("heading", { level: 2, name: "Colores y letra" }).closest("div") as HTMLElement;
+    expect(within(colors).getAllByRole("button", { name: "Restaurar los iniciales" })).toEqual([within(band).getByRole("button", { name: "Restaurar los iniciales" })]);
+    await userEvent.click(within(band).getByRole("button", { name: "Restaurar los iniciales" }));
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
     expect(writes).toEqual([]);
   });
 
   it("explains the colors in the information icon of their title, with no lines in the surface", async () => {
     renderRouteWithProviders("/configuracion/apariencia");
-    const colors = await screen.findByRole("region", { name: "Colores del sistema" });
+    const colors = await screen.findByRole("region", { name: "Colores y letra" });
     // Sólo la primera oración: que la vista previa muestra el borrador ya se ve, y el contraste no se explica.
-    expect(within(colors).getByRole("button", { name: "Más información sobre Colores del sistema" })).toHaveAccessibleDescription(
+    expect(within(colors).getByRole("button", { name: "Más información sobre Colores y letra" })).toHaveAccessibleDescription(
       "Estos colores se aplican a todas las personas y a las pantallas de ingreso.",
     );
     expect(within(colors).queryByText(/La vista previa muestra tu borrador/)).not.toBeInTheDocument();
@@ -197,7 +205,7 @@ describe("AppearancePage", () => {
     settings.appearance = { ...initialAppearance, primaryColor: "#335F85" };
     const { router } = renderRouteWithProviders("/configuracion/apariencia");
     await screen.findByLabelText("Botones y enlaces");
-    await userEvent.click(screen.getByRole("button", { name: "Restaurar colores iniciales" }));
+    await userEvent.click(screen.getByRole("button", { name: "Restaurar los iniciales" }));
     expect(writes).toEqual([]);
     await act(() => router.navigate("/"));
     expect(await screen.findByRole("dialog", { name: "¿Descartar los cambios?" })).toBeInTheDocument();
@@ -206,8 +214,8 @@ describe("AppearancePage", () => {
     await waitFor(() => expect(writes[0]?.appearance).toEqual(initialAppearance));
   });
 
-  // RC6-B: the name, the sender and the logo are saved like the colors, in the same request and revision; «Así llega» follows the draft.
-  it("saves the name, the sender and the logo, and the email preview follows the draft", async () => {
+  // RC6-B: the name and the sender are saved like the colors, in the same request and revision; «Así llega» follows the draft.
+  it("saves the name and the sender, and the email preview follows the draft", async () => {
     renderRouteWithProviders("/configuracion/apariencia");
     const name = await screen.findByRole("textbox", { name: "Nombre de la aplicación" });
     await userEvent.clear(name); await userEvent.type(name, "Campo");
@@ -216,20 +224,80 @@ describe("AppearancePage", () => {
     const preview = screen.getByText("Así llega").parentElement!;
     expect(within(preview).getByText("123456 es tu código de acceso a Campo")).toBeInTheDocument();
     expect(within(preview).getByText("Campo Avisos")).toBeInTheDocument();
-    await userEvent.type(screen.getByRole("textbox", { name: /Logo de los correos/ }), "https://cdn.example.com/campo.png");
-    expect(within(preview).getByRole("img", { name: "Campo" })).toHaveAttribute("src", "https://cdn.example.com/campo.png");
+    expect(screen.queryByRole("textbox", { name: /Logo de los correos/ })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
-    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7,
-      branding: { appName: "Campo", emailSenderName: "Campo Avisos", emailLogoUrl: "https://cdn.example.com/campo.png" } }]));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7, branding: { appName: "Campo", emailSenderName: "Campo Avisos" } }]));
   });
 
-  it("marks an empty name and a logo without https in their boxes without sending", async () => {
+  it("marks an empty name in its box without sending", async () => {
     renderRouteWithProviders("/configuracion/apariencia");
     await userEvent.clear(await screen.findByRole("textbox", { name: "Nombre de la aplicación" }));
-    await userEvent.type(screen.getByRole("textbox", { name: /Logo de los correos/ }), "http://cdn.example.com/campo.png");
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     expect(await screen.findByText("Este campo es obligatorio.")).toBeInTheDocument();
-    expect(screen.getByText("Escribí una dirección que empiece con https://.")).toBeInTheDocument();
     expect(writes).toEqual([]);
+  });
+
+  // ME2b: the logo is saved when uploaded, with the revision read; the rest of the draft stays as it was.
+  it("uploads the logo with the revision read, shows it and keeps the draft of the colors", async () => {
+    const sends = captureUploads([{ status: 200, body: { revision: 8, version: "0193a4c27d1e7c3a9f001a2b3c4d5e6f" } }]);
+    renderRouteWithProviders("/configuracion/apariencia");
+    await edit();
+    const brand = screen.getByRole("region", { name: "Marca" });
+    expect(within(brand).getByRole("group", { name: "Logo" })).toHaveTextContent("Acceso");
+    fireEvent.change(fileInputs()[0], { target: { files: [png()] } });
+    await waitFor(() => expect(sends).toHaveLength(1));
+    expect(sends[0].url).toBe("/api/settings/brand/logo");
+    expect(sends[0].body.get("expectedRevision")).toBe("7");
+    expect((sends[0].body.get("file") as File).name).toBe("logo.png");
+    expect(await within(brand).findByRole("img", { name: "Logo actual de Acceso" })).toHaveAttribute("src", "/api/settings/brand/logo?v=0193a4c27d1e7c3a9f001a2b3c4d5e6f");
+    expect(within(screen.getByText("Así llega").parentElement!).getByRole("img", { name: "Acceso" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Botones y enlaces")).toHaveValue("#335f85");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes[0]?.expectedRevision).toBe(8));
+  });
+
+  it("says in the box when a file cannot be a logo, without sending it", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    await screen.findByRole("region", { name: "Marca" });
+    fireEvent.change(fileInputs()[0], { target: { files: [png("logo.svg", "image/svg+xml")] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("«logo.svg» no sirve: tiene que ser PNG o JPG de hasta 1 MB.");
+    expect(writes).toEqual([]);
+  });
+
+  it("shows under the icon what the server says of its shape", async () => {
+    captureUploads([{ status: 400, body: { code: "Settings.System.IconInvalid",
+      errors: { file: ["El ícono tiene que ser PNG cuadrado, de 64 a 1024 píxeles y hasta 1 MB."] } } }]);
+    renderRouteWithProviders("/configuracion/apariencia");
+    await screen.findByRole("region", { name: "Marca" });
+    fireEvent.change(fileInputs()[1], { target: { files: [png("icon.png")] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("El ícono tiene que ser PNG cuadrado, de 64 a 1024 píxeles y hasta 1 MB.");
+  });
+
+  it("removes the logo after confirming, with the revision read", async () => {
+    settings.branding = { ...settings.branding, logoVersion: "0193a4c27d1e7c3a9f001a2b3c4d5e6f" };
+    renderRouteWithProviders("/configuracion/apariencia");
+    await userEvent.click(await screen.findByRole("button", { name: "Quitar el logo" }));
+    const dialog = await screen.findByRole("dialog", { name: "¿Quitar el logo?" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Quitar logo" }));
+    await waitFor(() => expect(writes).toEqual([{ method: "DELETE", kind: "logo", expectedRevision: "7" }]));
+    expect(await screen.findByRole("button", { name: "Subir logo" })).toBeInTheDocument();
+  });
+
+  // ME3-B: the accent paints the name of the current item, so it has to read on the menu.
+  it("does not send an accent that cannot be read on the menu", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    fireEvent.change(await screen.findByLabelText("Acento del menú"), { target: { value: "#2b3d33" } });
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Elegí un acento que se lea sobre el color del menú.")).toBeInTheDocument();
+    expect(writes).toEqual([]);
+  });
+
+  // ME4: the font is saved with the colors.
+  it("saves the chosen font with the colors", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    await userEvent.click(await screen.findByRole("button", { name: /^Letra / }));
+    await userEvent.click(await screen.findByRole("option", { name: "Hanken Grotesk" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7, appearance: { ...initialAppearance, font: "hanken-grotesk" } }]));
   });
 });

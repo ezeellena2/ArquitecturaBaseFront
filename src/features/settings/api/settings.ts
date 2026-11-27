@@ -1,16 +1,21 @@
 import { api } from "@/shared/api/httpClient";
-import type { SystemPresentation } from "@/shared/api/presentation";
+import type { BrandImageKind, SystemPresentation } from "@/shared/api/presentation";
 import type { SystemAppearance } from "@/shared/lib/appearance";
 
 /// Quién puede crear una cuenta (sección 4 del spec de la Fase 4). Viaja por su nombre, no por su número.
 export type RegistrationMode = "InviteOnly" | "Open";
 
-/// RC6-B: cómo se presenta la instalación en los correos, en la invitación por WhatsApp y en los PDF. Sin logo, null.
+/// RC6-B: cómo se presenta la instalación en los correos, en la invitación por WhatsApp y en los PDF. ME2: el logo y el ícono van
+/// como la versión de su archivo, o null sin ellos; se suben aparte y se guardan al subirlos.
 export interface SystemBranding {
   readonly appName: string;
   readonly emailSenderName: string;
-  readonly emailLogoUrl: string | null;
+  readonly logoVersion: string | null;
+  readonly iconVersion: string | null;
 }
+
+/// Lo que guarda el PATCH: el nombre y el remitente.
+export type SystemBrandingChanges = Pick<SystemBranding, "appName" | "emailSenderName">;
 
 /// RC1-A: cuánto se guardan los datos del ingreso. La retención los lee de la base en cada corrida.
 export interface IdentityRetention {
@@ -46,7 +51,7 @@ export const settingFields: SettingField[] = ["defaultCulture", "defaultTimeZone
 export type SettingsDraft = Pick<SystemSettings, ScalarField> & Record<RetentionField, string>;
 export type SettingsChanges = Partial<Pick<SystemSettings, ScalarField>> & {
   appearance?: SystemAppearance;
-  branding?: SystemBranding;
+  branding?: SystemBrandingChanges;
   retention?: IdentityRetention;
 };
 /// Cómo nombra el servidor el error de cada ajuste: los plazos viajan juntos, dentro de `retention`.
@@ -54,4 +59,21 @@ export const settingErrorKey = (field: SettingField) => retentionFields.includes
 
 export function updateSystemSettings(changes: SettingsChanges, expectedRevision: number): Promise<void> {
   return api.patch<void>("/api/settings", { expectedRevision, ...changes });
+}
+
+/// ME2b: la revisión después del cambio y la versión de la imagen nueva (null al quitarla).
+export interface BrandImageResult {
+  readonly revision: number;
+  readonly version: string | null;
+}
+
+export function uploadBrandImage(kind: BrandImageKind, file: File, expectedRevision: number): Promise<BrandImageResult> {
+  const body = new FormData();
+  body.append("expectedRevision", String(expectedRevision));
+  body.append("file", file);
+  return api.upload<BrandImageResult>(`/api/settings/brand/${kind}`, body, () => {});
+}
+
+export function removeBrandImage(kind: BrandImageKind, expectedRevision: number): Promise<BrandImageResult> {
+  return api.delete<BrandImageResult>(`/api/settings/brand/${kind}?${new URLSearchParams({ expectedRevision: String(expectedRevision) })}`);
 }

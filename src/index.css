@@ -42,6 +42,8 @@
   --color-nav-hover: #213128;
   --color-nav-border: #6e7a73;
   --color-nav-accent: #d3d7d5;
+  /* ME3-B: the text of the current item of the main menu; a custom palette paints it with the menu accent. */
+  --color-nav-current: #ffffff;
   --color-nav-ink: #000000;
   --color-subnav-surface: #f2f3f2;
   --color-subnav-hover: #e0e3e1;
@@ -405,6 +407,7 @@
     --primary: var(--color-nav-accent);
     --primary-foreground: var(--color-nav-ink);
     --ring: var(--color-nav-accent);
+    --color-current-item: var(--color-nav-current);
     color: var(--color-nav-foreground);
   }
 
@@ -504,8 +507,9 @@ table {
 
 .access-shell { min-height: 100svh; display: flex; flex-direction: column; background: var(--color-surface); color: var(--color-content); font-size: 0.875rem; line-height: 1.55; letter-spacing: 0; }
 .access-header { min-height: 5rem; padding: 1rem 2.625rem; background: var(--color-surface); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
-.access-header-inner { display: flex; align-items: center; justify-content: flex-end; gap: 1.25rem; width: 100%; }
+.access-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; width: 100%; }
 .access-brand { display: flex; align-items: center; gap: 0.6875rem; font-size: 1rem; font-weight: 650; }
+.access-logo { display: block; height: 1.75rem; width: auto; max-width: 12rem; object-fit: contain; object-position: left; }
 .access-brand > span { display: grid; place-items: center; width: 1.9375rem; height: 2.125rem; border-radius: var(--radius-control); background: var(--color-brand-600); color: var(--color-brand-ink); }
 .access-header nav { display: flex; align-items: center; gap: 0.875rem; flex-wrap: wrap; justify-content: flex-end; }
 .access-header-hint { color: var(--color-content-muted); font-size: 0.8125rem; }

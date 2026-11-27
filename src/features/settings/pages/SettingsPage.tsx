@@ -78,7 +78,9 @@ function SettingsEditor({ initial }: { initial: SystemSettings }) {
   const mutation = useMutation({
     mutationFn: ({ changes, baseline }: { changes: SettingsChanges; baseline: SystemSettings }) => updateSystemSettings(changes, baseline.revision),
     onSuccess: (_, variables) => {
-      const saved = { ...variables.baseline, ...variables.changes, revision: variables.baseline.revision + 1 };
+      const { branding, ...changes } = variables.changes;
+      const saved = { ...variables.baseline, ...changes, branding: branding ? { ...variables.baseline.branding, ...branding } : variables.baseline.branding,
+        revision: variables.baseline.revision + 1 };
       if (active.current) { setBaseline(saved); setDraft(draftFrom(saved)); setNeedsReview(false); setReview(undefined); }
       client.setQueryData(systemSettingsQueryKey, saved);
       void client.invalidateQueries({ queryKey: systemSettingsQueryKey });

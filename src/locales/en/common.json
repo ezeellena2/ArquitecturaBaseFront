@@ -179,7 +179,8 @@
       "signOut": "Log out"
     },
     "signingOut": "Signing you out…",
-    "signOutError": "We could not sign you out. Try again."
+    "signOutError": "We could not sign you out. Try again.",
+    "brandHome": "{{name}}, go to home"
   },
   "files": {
     "download": "Download",

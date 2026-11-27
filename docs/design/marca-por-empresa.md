@@ -37,8 +37,7 @@ la letra en un solo pedido, como hoy. Debajo:
     (o el nombre, si no hay logo). El campo «Logo de los correos» desaparece.
 - **Colores y letra**, con «Restaurar los iniciales» en el título. Los cuatro colores de hoy, **Acento del menú** (con su
   (i): marca el ítem activo del menú y tiene que leerse sobre el color del menú) y **Letra**, un desplegable simple con
-  Public Sans (la inicial), Inter, IBM Plex Sans, Source Sans 3, Hanken Grotesk y Nunito Sans, cada una escrita con su
-  letra. Debajo, en gris, la lista de letras.
+  Public Sans (la inicial), Inter, IBM Plex Sans, Source Sans 3, Hanken Grotesk y Nunito Sans.
 - **Vista previa**: la de hoy, con el logo en la banda del menú, el acento en el ítem activo y la letra elegida.
 
 ### Estados
@@ -65,3 +64,5 @@ la letra en un solo pedido, como hoy. Debajo:
 - **Pestaña:** el título es «pantalla · nombre de la aplicación» y el ícono, el que se subió; sin ícono, el de siempre.
 - **Correos y PDF:** el logo donde hoy va el nombre (los arma el servidor).
 - **Letra:** toda la app, con la escala y los pesos de hoy. Se carga sólo la elegida.
+- **Paleta inicial:** sin colores propios, la app conserva el CSS aprobado: el texto del ítem activo sigue blanco y el acento
+  `#D3D7D5` pinta la barra, el foco y el avatar, como antes.

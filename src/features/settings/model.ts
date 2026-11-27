@@ -1,4 +1,5 @@
-import { retentionFields, retentionRanges, settingFields, type RetentionField, type SettingField, type SettingsChanges, type SettingsDraft, type SystemBranding, type SystemSettings } from "./api/settings";
+import type { BrandImageKind } from "@/shared/api/presentation";
+import { retentionFields, retentionRanges, settingFields, type RetentionField, type SettingField, type SettingsChanges, type SettingsDraft, type SystemBranding, type SystemBrandingChanges, type SystemSettings } from "./api/settings";
 
 export function draftFrom(settings: SystemSettings): SettingsDraft {
   return {
@@ -44,23 +45,23 @@ export function changesFrom(draft: SettingsDraft, baseline: SystemSettings): Set
   };
 }
 
-/// RC6-B: el nombre, el remitente y el logo como se editan: el logo vacío es «sin logo».
-export interface BrandingDraft { appName: string; emailSenderName: string; emailLogoUrl: string }
+/// RC6-B: el nombre y el remitente como se editan. El logo y el ícono no son borrador: se guardan al subirlos (ME2b).
+export interface BrandingDraft { appName: string; emailSenderName: string }
 export type BrandingField = keyof BrandingDraft;
-export const brandingFields: BrandingField[] = ["appName", "emailSenderName", "emailLogoUrl"];
+export const brandingFields: BrandingField[] = ["appName", "emailSenderName"];
 /// Los mismos topes que valida el servidor: el nombre viaja como parámetro de la plantilla de WhatsApp.
-export const brandingLimits = { name: 60, logoUrl: 2048 } as const;
+export const brandingLimits = { name: 60 } as const;
 
 export const brandingDraftFrom = (branding: SystemBranding): BrandingDraft =>
-  ({ appName: branding.appName, emailSenderName: branding.emailSenderName, emailLogoUrl: branding.emailLogoUrl ?? "" });
+  ({ appName: branding.appName, emailSenderName: branding.emailSenderName });
 
-/// Lo que se guarda: los nombres sin espacios en los bordes y el logo vacío como ninguno.
-export const brandingFrom = (draft: BrandingDraft): SystemBranding =>
-  ({ appName: draft.appName.trim(), emailSenderName: draft.emailSenderName.trim(), emailLogoUrl: draft.emailLogoUrl.trim() || null });
+/// Lo que se guarda: los nombres sin espacios en los bordes.
+export const brandingFrom = (draft: BrandingDraft): SystemBrandingChanges =>
+  ({ appName: draft.appName.trim(), emailSenderName: draft.emailSenderName.trim() });
 
 export function brandingChanged(draft: BrandingDraft, saved: SystemBranding): boolean {
   const next = brandingFrom(draft);
-  return next.appName !== saved.appName || next.emailSenderName !== saved.emailSenderName || next.emailLogoUrl !== saved.emailLogoUrl;
+  return next.appName !== saved.appName || next.emailSenderName !== saved.emailSenderName;
 }
 
 // Un nombre va en una línea: sin saltos ni otros caracteres de control (los mismos que rechaza char.IsControl del servidor).
@@ -69,21 +70,20 @@ const hasControlCharacters = (text: string) => [...text].some(character => {
   return code < 0x20 || (code >= 0x7f && code <= 0x9f);
 });
 
-/// Un logo vacío es ninguno; si no, una dirección https completa, sin espacios, como la pide el servidor.
-export function isLogoUrl(text: string): boolean {
-  const url = text.trim();
-  if (!url) return true;
-  if (url.length > brandingLimits.logoUrl || /\s/.test(url) || hasControlCharacters(url)) return false;
-  try { const parsed = new URL(url); return parsed.protocol === "https:" && parsed.hostname.length > 0; } catch { return false; }
-}
-
-export type BrandingIssue = "required" | "tooLong" | "singleLine" | "logoUrl";
+export type BrandingIssue = "required" | "tooLong" | "singleLine";
 
 export function brandingIssues(draft: BrandingDraft): Partial<Record<BrandingField, BrandingIssue>> {
   const name = (text: string): BrandingIssue | null => !text.trim() ? "required" : text.trim().length > brandingLimits.name ? "tooLong"
     : hasControlCharacters(text) ? "singleLine" : null;
   return Object.fromEntries([
     ["appName", name(draft.appName)], ["emailSenderName", name(draft.emailSenderName)],
-    ["emailLogoUrl", isLogoUrl(draft.emailLogoUrl) ? null : "logoUrl"],
   ].filter(([, issue]) => issue !== null));
 }
+
+/// ME2: el tope del archivo que pide el servidor. La forma (apaisado o cuadrado) la revisa él, con los bytes.
+export const brandImageMaxBytes = 1024 * 1024;
+export const brandImageTypes: Record<BrandImageKind, readonly string[]> = { logo: ["image/png", "image/jpeg"], icon: ["image/png"] };
+
+/// Lo que el navegador puede decir antes de mandar: un tipo que no es el de esa imagen o un archivo de más de 1 MB.
+export const brandImageFileIssue = (kind: BrandImageKind, file: File) =>
+  !brandImageTypes[kind].includes(file.type) || file.size === 0 || file.size > brandImageMaxBytes;

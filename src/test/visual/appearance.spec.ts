@@ -14,7 +14,7 @@ for (const language of ["es", "en"]) {
       expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("--primary"))).toBe("");
       await page.getByRole("button", { name: language === "es" ? "Guardar cambios" : "Save changes", exact: true }).click();
       await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--primary"))).toBe("#335f85");
-      await page.getByRole("button", { name: language === "es" ? "Restaurar colores iniciales" : "Restore initial colors" }).click();
+      await page.getByRole("button", { name: language === "es" ? "Restaurar los iniciales" : "Restore the initial ones" }).click();
       await expect(input).toHaveValue("#285a3d");
       const preview = page.getByRole("region", { name: language === "es" ? "Vista previa" : "Preview" });
       await expect(preview.getByRole("button", { name: language === "es" ? "Nuevo usuario" : "New user" })).toHaveCSS("background-color", "rgb(40, 90, 61)");
@@ -41,3 +41,22 @@ test("custom colors keep dark row identities and light action groups readable", 
   expect(await page.getByRole("dialog").evaluate(element => getComputedStyle(element).backgroundColor)).toBe("rgb(255, 255, 255)");
   await expect(page).toHaveScreenshot("appearance-dark-table.png", { fullPage: true });
 });
+
+// ME1-A, ME3-B and ME4: the shell of an installation with its logo, its accent on the current item and its font; the sign-in with
+// the logo. A generic brand: the product never carries a client's.
+for (const width of [1440, 390]) {
+  test(`a brand puts its logo, its accent and its font on the shell at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/src/test/visual/index.html?screen=/usuarios&scenario=brand-logo&lang=es");
+    await expect(page.getByRole("heading", { level: 1, name: "Usuarios" })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    if (width >= 1024) await expect(page.getByRole("link", { name: "Agro Demo, ir al inicio" })).toBeVisible();
+    await expect.poll(() => page.title()).toBe("Usuarios · Agro Demo");
+    if (width >= 1024) {
+      const current = page.getByRole("button", { name: "Administración", exact: true });
+      await expect(current).toHaveCSS("color", "rgb(232, 163, 61)");
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await expect(page).toHaveScreenshot(`brand-users-${width}.png`, { fullPage: true });
+  });
+}

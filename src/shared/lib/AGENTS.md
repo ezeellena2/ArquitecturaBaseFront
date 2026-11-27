@@ -30,3 +30,5 @@ Contiene formato de fechas por zona, de números y de valores tipados, nombres d
 - `appearance` define la paleta inicial Campo, valida colores y deriva contraste de texto, foco y hover.
   No cambia success/warning/danger. Los valores explícitos iniciales permiten que la vista previa
   del borrador quede independiente de la paleta guardada.
+
+- `appearance.ts` trae también el acento del menú (ME3-B) y la letra (ME4): `appearanceVariables` cambia `--font-sans` sólo si la letra no es la inicial, y `loadFont` baja el paquete de la elegida. `documentTitle.ts` arma el título de la pestaña («pantalla · nombre», ME5) con lo que ponen `Page` y `SystemTheme`, y cambia el ícono por el subido.
