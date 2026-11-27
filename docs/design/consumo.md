@@ -24,7 +24,7 @@ puede cambiar fuera de Git: este documento congela lo elegido.
 - **Resumen de 11/2026:** una celda por zona visible, con el nombre, el importe y su detalle en gris: «Inteligencia
   artificial» (lo estimado, «Estimado con tus precios»), «WhatsApp» (lo que informa Meta, «Según Meta») y «Total del mes»
   («Sólo si las dos van en dólares»), que aparece sólo cuando se ven y llegaron las dos zonas, WhatsApp está en USD y la IA
-  tiene algún costo estimado.
+  tiene un costo estimado (no todos sus modelos del mes están sin precio; un mes sin pedidos cuenta cero).
 - **Inteligencia artificial** (con la (i) del título: los tokens los informa el proveedor; el costo es una estimación con
   los precios cargados): la tabla de los modelos del mes, la fila «Total» y la nota en gris.
 - **WhatsApp** (con la (i): mensajes entregados y costo según Meta, que los da como aproximados): «Número» con el número de

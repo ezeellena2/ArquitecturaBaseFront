@@ -248,6 +248,8 @@ subrayado, con `appearance="public"`, en «Ingresar con» del acceso desde el 20
 - **IA** ([guía](../src/features/artificial-intelligence/AGENTS.md)): `/configuracion/ia` (`ai.read`, `ai.manage`) y
   `/configuracion/negocio` (`ai.business.read`/`manage`), sin depender de settings ni WhatsApp. Plegar o paginar el panel
   de Inicio no llama al modelo.
+- **Consumo** ([guía](../src/features/usage/AGENTS.md), [diseño](design/consumo.md)): `/configuracion/consumo` con `ai.read` o
+  `settings.manage`, cada zona con su módulo (el menú usa `access`); el mes del negocio en `mes`.
 - **ARCA** ([guía](../src/features/arca/AGENTS.md), [diseño](design/arca-conexion.md)): `/configuracion/arca` (`arca.read`),
   una sola pantalla por zonas (AC1-A, AC2-A), con la delegación guiada (DG1-A, DG2-A) y el robot (RB1-A a RB5-A). Cada
   familia (conexión, padrón, facturación) tiene su carpeta y no importa a otra.

@@ -27,6 +27,8 @@
 - [Render con providers](utils/renderWithProviders.tsx).
 - [Contrato y cierre de mensajes](../../docs/guides/mensajes-y-estados.md#cuándo-se-puede-dar-por-unificada-una-pantalla).
 
+`fixtures/usage-http` (Consumo, CO1-B) tiene cuerpos escritos a mano con las formas del plan del backend, sin manifiesto ni hashes, hasta que su exportador los reemplace; no son capturas del productor.
+
 `fixtures/catalogs-http/manual` conserva15 cuerpos HTTP históricos de FormCatalogEndpointsTests y el manifiesto emitido por su runner, sin cambios en bytes ni hashes escritos a mano. `catalogHttpContract.test` verifica tamaños/SHA256 históricos; los campos nuevos ausentes se rechazan. La full Vitest excluye .test-artifacts (probes temporales de QA) y usa la mitad de los hilos (`maxWorkers: "50%"` en `vite.config.ts`, 8 en la PC de desarrollo): con los plazos de `setup.ts` pasó entera con 2, 4 y 8 workers, y tardó 18 min con 8, 28 con 4 y unos 100 en serie (2026-11-25). No editar configuración/build durante un Vite visual activo. Una corrida completa que falla se corrige y se repite según la regla de cierre del backend: vale la última en verde.
 
 Las familias activas `catalogs-http/filters` (8 cuerpos) y `manual-current` (49) conservan los requests, receipts, preview y detalle exportados por los productores HTTP. `.gitattributes` evita que `core.autocrlf` normalice sus bytes. Los consumidores verifican todos sus tamaños/SHA256 mediante `httpCohort`; cada variable de entrada apunta directamente al directorio de la cohorte declarado allí. El export conjunto reemplaza íntegramente cuerpos y manifiesto, sin atribuir los exports K4 anteriores a otra corrida.

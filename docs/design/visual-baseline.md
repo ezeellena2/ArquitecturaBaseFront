@@ -673,6 +673,12 @@ código armado con el borrador. Se guarda con los colores, con un solo Guardar.
   RC2-B en [asistente-casos.md](asistente-casos.md)). Capturas `whatsapp-settings-*.png`; las de Configuración a 1440 suman
   su renglón en el menú.
 
+### Configuración › Consumo (2026-11-27)
+
+- `/configuracion/consumo?mes=yyyy-MM`, último de Configuración: el resumen del mes arriba (`StatCard flush`), la zona de la IA
+  con la tabla por modelo y el diálogo de precios, y la de WhatsApp por tipo de mensaje, cada una con su permiso y su módulo.
+  Tablero CO1-B, lo que se fijó al registrar y piezas: [consumo.md](consumo.md). Capturas `usage-*.png`.
+
 ### Chat de WhatsApp
 
 - `/whatsapp/chat`: panel con la geometría de Administración, bandeja y conversación en `Surface`, historial y compositor.
@@ -762,6 +768,7 @@ Información del negocio, y el [diseño](ubicacion-por-lugar.md) queda como ante
 | Tablero | Destino | Estado |
 | --- | --- | --- |
 | Gestión de usuarios, Filtros, Reglas de filtrado | `/usuarios`, `/roles`, `UsersFilterBar` | Implementado |
+| Consumo (CO1-B, lienzo aparte) | `/configuracion/consumo`, `features/usage` | Implementado; falta pasarlo al lienzo |
 | Formularios | `FormField`, diálogos | Falta auditar campos fuera de `FormField` |
 | Avisos | Toaster y estados comunes | Adopción parcial; el tipo de cada aviso, [AV1-A implementado](#avisos-según-el-tipo--2026-11-08) |
 | Anatomía; Encabezados, íconos y color; Las mismas piezas | `index.css`, `shared/ui`, 17 íconos | Implementado; biblioteca pendiente |

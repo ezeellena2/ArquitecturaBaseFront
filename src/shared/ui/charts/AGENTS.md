@@ -5,7 +5,8 @@ Las piezas de un tablero (DOC7-A, [diseño](../../../../docs/design/documentos.m
 cada fecha (`shared/lib/dateTime`, `typedValue`) y nombra cada pieza.
 
 - `StatCard`: el número con su nombre en gris, al nivel de un título de pantalla, y su detalle en gris (la variación contra el
-  período anterior con su signo, o por qué dice «—»); `loading` ocupa su lugar.
+  período anterior con su signo, o por qué dice «—»); `loading` ocupa su lugar. Con `flush` es una celda de un marco que dibuja el
+  borde y las líneas entre sus números (el resumen de Consumo, CO1-B), sin borde ni esquinas propios.
 - `BarChart`: barras por período desde una sola línea de base, una serie y sin leyenda (la nombra el título de su tarjeta). Un
   balde en cero es una barrita en el tono suave; uno negativo, sin barra y con su cifra sobre la línea de base; uno sin valor
   (null), sin barra y «—». La cifra va sobre la barra sólo si entra en su lugar (cada balde es un contenedor) y el eje nombra
