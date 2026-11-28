@@ -18,7 +18,7 @@ import {
 } from "../navigation";
 import { FormsOverviewNavigationContext } from "../formsOverviewNavigation";
 import { FolderMenuNavigationContext, isEntryPath, type FolderMenuAction, type FolderMenuContent, type FolderMenuEntry, type FolderMenuGroup, type FolderMenuLink, type FolderMenuSection } from "../folderMenuNavigation";
-import { FolderIcon, FormIcon, PlusIcon, PublicTrackingIcon } from "@/shared/ui/icons";
+import { FolderIcon, FormIcon, PlusIcon, PublicTrackingIcon, TripleChevronLeftIcon, TripleChevronRightIcon } from "@/shared/ui/icons";
 import { menuIcons } from "@/shared/ui/menuIcons";
 import { accountDetailOf, accountNameOf, initialOf } from "@/auth/accountName";
 import { useCurrentUser } from "@/auth/useCurrentUser";
@@ -567,6 +567,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
   // Contraída a solo íconos únicamente en escritorio: el cajón de móvil siempre se ve expandido.
   const iconsOnly = collapsed && !isMobile;
+  // MC3-D: three chevrons in the Home row, against the right edge of the menu; collapsed, under the Home icon.
+  const menuToggle = (
+    <IconButton size="icon-sm" label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")} onClick={onToggleCollapsed}>
+      {iconsOnly ? <TripleChevronRightIcon className="size-3.5" /> : <TripleChevronLeftIcon className="size-3.5" />}
+    </IconButton>
+  );
   const onNavigate = isMobile ? onCloseMobile : undefined;
   // A link of an optional module («Biblioteca») shows only once the presentation says it is installed.
   const installedFeatures = useSystemPresentation().data?.installedFeatures;
@@ -643,15 +649,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
 
             Con el panel abierto no se dibuja: la flecha de cerrarlo ocupa ese mismo lugar sobre el borde de
             al lado, y dos círculos a la misma altura se leen como uno partido. */}
-        {isMobile || panelVisible ? null : (
-          <IconButton
-            label={iconsOnly ? t("layout.sidebar.expand") : t("layout.sidebar.collapse")}
-            onClick={onToggleCollapsed}
-            className={sidebarEdgeToggleClassName}
-          >
-            <ChevronLeftIcon className={cn("size-3 transition-transform", iconsOnly ? "rotate-180" : "")} />
-          </IconButton>
-        )}
+        {/* MC3-D: the menu collapses and expands from the arrows in the Home row, also with a panel open; the panel keeps its
+            own arrow on its edge, which only closes the panel. */}
 
         {/* El `pt` centra el primer ítem en el eje 92: expandido el ítem mide 36 (74 + 18), contraído mide 40
             (72 + 20). Son dos valores porque es el centro lo que tiene que coincidir, no el borde de arriba. */}
@@ -691,7 +690,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                 ) : null}
                 <ul className={cn("flex flex-col gap-1", iconsOnly ? "items-center" : "")}>
                   {items.map((item) => (
-                    <li key={isBranch(item) ? item.labelKey : item.to}>
+                    <li key={isBranch(item) ? item.labelKey : item.to} className={!isBranch(item) && item.to === "/" ? "relative" : undefined}>
                       {isPending && dependsOnPermissions(item) ? (
                         <Skeleton
                           aria-hidden="true"
@@ -715,8 +714,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, isMobile, mobileOpen, on
                           onNavigate={onNavigate}
                         />
                       )}
+                      {!isMobile && !iconsOnly && !isBranch(item) && item.to === "/" ? (
+                        <span className="absolute top-1/2 right-0.5 -translate-y-1/2">{menuToggle}</span>
+                      ) : null}
                     </li>
-                  ))}
+                  )).flatMap((row, position) => iconsOnly && !isMobile && position === 0 && index === 0
+                    ? [row, <li key="menu-toggle">{menuToggle}</li>] : [row])}
                 </ul>
               </div>
             );

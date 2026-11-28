@@ -61,7 +61,7 @@ describe("the folders are menus of the side menu (CM1 to CM6)", () => {
     renderShell({ state: { content: manages, act: vi.fn() } });
     const nav = await mainMenu();
     await within(nav).findByRole("button", { name: "Administración" });
-    expect([...nav.querySelectorAll("a, button")].map(element => element.textContent))
+    expect([...nav.querySelectorAll("a, button")].map(element => element.textContent).filter(Boolean))
       .toEqual(["Inicio", "Gestión de formularios", "WhatsApp", "Compras", "Repartos", "Siembra", "Nueva carpeta", "Administración"]);
     // The line of always separates them from WhatsApp and from Administración.
     const section = within(nav).getByRole("button", { name: "Compras" }).closest(".border-t");

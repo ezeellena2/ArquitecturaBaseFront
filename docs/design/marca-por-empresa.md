@@ -66,3 +66,10 @@ la letra en un solo pedido, como hoy. Debajo:
 - **Letra:** toda la app, con la escala y los pesos de hoy. Se carga sólo la elegida.
 - **Paleta inicial:** sin colores propios, la app conserva el CSS aprobado: el texto del ítem activo sigue blanco y el acento
   `#D3D7D5` pinta la barra, el foco y el avatar, como antes.
+
+## Contraer el menú (MC3-D, 2026-11-28)
+
+Elegida por el titular en el tablero «MC3-D · Las flechas al lado de Inicio». Tres chevrones en el renglón de Inicio,
+contra el borde derecho del menú («Contraer el menú»); contraído, debajo del ícono de Inicio («Expandir el menú»). Se ven
+con o sin panel abierto y reemplazan a la flecha redonda del borde del menú; la del panel sigue cerrando sólo el panel. En
+el teléfono no cambia nada.

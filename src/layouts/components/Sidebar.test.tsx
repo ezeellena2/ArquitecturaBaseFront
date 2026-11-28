@@ -276,18 +276,18 @@ describe("Sidebar", () => {
       await waitFor(() => expect(screen.queryByRole("navigation", { name: /^administración$/i })).toBeNull());
     });
 
-    it("hides the collapse arrow while the panel is open", async () => {
+    // MC3-D: the arrows of the menu live in the Home row, so they stay with the panel open; the panel keeps its own.
+    it("keeps the menu arrows in the Home row while the panel is open", async () => {
       withBothPermissions();
 
       renderRouteWithProviders("/");
 
-      expect(await screen.findByRole("button", { name: /contraer menú/i })).toBeInTheDocument();
+      const home = (await screen.findByRole("link", { name: "Inicio" })).closest("li") as HTMLElement;
+      expect(within(home).getByRole("button", { name: /contraer menú/i })).toBeInTheDocument();
 
       await openAdministration();
 
-      // Las dos flechas redondas viven sobre el mismo borde y a la misma altura: con el panel abierto se
-      // pisarían. Manda la de cerrar el panel, que es la que corresponde a lo que está pasando.
-      expect(screen.queryByRole("button", { name: /contraer menú/i })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /contraer menú/i })).toBeInTheDocument();
     });
 
     it("stays a button with the bar collapsed, instead of flattening into loose icons", async () => {

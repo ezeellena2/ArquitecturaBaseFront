@@ -360,6 +360,9 @@ export function LockIcon(props: IconProps) {
 export function ArrowDownIcon(props: IconProps) { return <Icon {...props}><path d="M12 5v14m-6-6 6 6 6-6"/></Icon>; }
 // Ordenar por columnas (OT1-C, 2026-11-22): ↕ en el encabezado de una columna que ordena y no es la elegida, y el ícono
 // de «Ordenar por».
+/// MC3-D: three chevrons, to collapse or expand the main menu.
+export function TripleChevronLeftIcon(props: IconProps) { return <Icon {...props}><path d="m8 6-6 6 6 6M15 6l-6 6 6 6M22 6l-6 6 6 6"/></Icon>; }
+export function TripleChevronRightIcon(props: IconProps) { return <Icon {...props}><path d="m2 6 6 6-6 6M9 6l6 6-6 6M16 6l6 6-6 6"/></Icon>; }
 export function ChevronsUpDownIcon(props: IconProps) { return <Icon {...props}><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></Icon>; }
 export function SortIcon(props: IconProps) { return <Icon {...props}><path d="m3 16 4 4 4-4M7 20V4M11 4h10M11 8h7M11 12h4"/></Icon>; }
 export function CloseIcon(props: IconProps) { return <Icon {...props}><path d="m6 6 12 12M18 6 6 18"/></Icon>; }
