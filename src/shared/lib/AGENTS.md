@@ -31,4 +31,8 @@ Contiene formato de fechas por zona, de números y de valores tipados, nombres d
   No cambia success/warning/danger. Los valores explícitos iniciales permiten que la vista previa
   del borrador quede independiente de la paleta guardada.
 
+- Colores por pieza (ME10): `appearanceRoleVariables` (en `appearance.ts`) es la lista cerrada del servidor (`AppearanceRole`) con las
+  variables CSS de cada pieza, y `appearanceVariables` pinta cada propia sobre lo derivado. `appearanceRoles.ts` tiene los grupos, los pares
+  de contraste, el color automático de cada pieza (derivado, fijo de `index.css` o el de otra) y `unreadableRoles`. Una pieza nueva va en
+  los dos lados y, si es fija, con su valor de `index.css` (lo compara un test).
 - `appearance.ts` trae también el acento del menú (ME3-B) y la letra (ME4): `appearanceVariables` cambia `--font-sans` sólo si la letra no es la inicial, y `loadFont` baja el paquete de la elegida. `documentTitle.ts` arma el título de la pestaña («pantalla · nombre», ME5) con lo que ponen `Page` y `SystemTheme`, y cambia el ícono por el subido.

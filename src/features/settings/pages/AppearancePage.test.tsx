@@ -300,4 +300,60 @@ describe("AppearancePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
     await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7, appearance: { ...initialAppearance, font: "hanken-grotesk" } }]));
   });
+
+  // ME10: each piece follows the basic colors until it gets its own; the groups without own pieces stay folded.
+  it("saves a piece changed by hand as own and counts it in its group", async () => {
+    renderRouteWithProviders("/configuracion/apariencia");
+    const menu = await screen.findByRole("button", { name: "Mostrar Menú y panel" });
+    expect(menu).toHaveAttribute("aria-expanded", "false");
+    expect(menu).toHaveTextContent("8, automáticos");
+    await userEvent.click(menu);
+    fireEvent.change(screen.getByLabelText("Color: Fondo del panel"), { target: { value: "#fbf9f4" } });
+    expect(screen.getByRole("button", { name: "Ocultar Menú y panel" })).toHaveTextContent("1 propio de 8");
+    expect(screen.getByRole("row", { name: /Fondo del panel/ })).toHaveTextContent("Propio");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7, appearance: { ...initialAppearance, overrides: { panelSurface: "#FBF9F4" } } }]));
+  });
+
+  it("returns a piece to automatic with its arrow and all of them at once", async () => {
+    settings = { ...settings, appearance: { ...initialAppearance, overrides: { panelSurface: "#FBF9F4", secondarySurface: "#F6F2E9" } } };
+    renderRouteWithProviders("/configuracion/apariencia");
+    expect(await screen.findByRole("button", { name: "Ocultar Menú y panel" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Ocultar Botones y enlaces" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mostrar Campos y filtros" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Volver a automático: Fondo del panel" }));
+    expect(screen.getByRole("row", { name: /Fondo del panel/ })).toHaveTextContent("Automático");
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toEqual([{ expectedRevision: 7, appearance: { ...initialAppearance, overrides: { secondarySurface: "#F6F2E9" } } }]));
+    await userEvent.click(screen.getByRole("button", { name: "Todos en automático" }));
+    expect(screen.getByRole("button", { name: "Todos en automático" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    await waitFor(() => expect(writes).toHaveLength(2));
+    expect(writes[1]).toEqual({ expectedRevision: 8, appearance: { ...initialAppearance, overrides: {} } });
+  });
+
+  it("does not send a piece that cannot be read and opens its group", async () => {
+    settings = { ...settings, appearance: { ...initialAppearance, overrides: { panelSurface: "#FBF9F4" } } };
+    renderRouteWithProviders("/configuracion/apariencia");
+    await userEvent.click(await screen.findByRole("button", { name: "Mostrar Botones y enlaces" }));
+    fireEvent.change(screen.getByLabelText("Color: Botón principal: texto"), { target: { value: "#285a3d" } });
+    await userEvent.click(screen.getByRole("button", { name: "Ocultar Botones y enlaces" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Elegí un color con más contraste: así no se lee.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ocultar Botones y enlaces" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Color: Botón principal: texto")).toHaveAttribute("aria-invalid", "true");
+    expect(writes).toEqual([]);
+  });
+
+  it("shows under its row what the server says of a piece", async () => {
+    server.use(http.patch("/api/settings", () => HttpResponse.json({ code: "Validation.Failed",
+      errors: { "appearance.overrides.links": ["Elegí un color con más contraste: así no se lee."] } }, { status: 400 })));
+    renderRouteWithProviders("/configuracion/apariencia");
+    await userEvent.click(await screen.findByRole("button", { name: "Mostrar Botones y enlaces" }));
+    fireEvent.change(screen.getByLabelText("Color: Enlaces"), { target: { value: "#1e4a33" } });
+    await userEvent.click(screen.getByRole("button", { name: "Ocultar Botones y enlaces" }));
+    await userEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+    expect(await screen.findByText("Elegí un color con más contraste: así no se lee.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Color: Enlaces")).toHaveAttribute("aria-invalid", "true");
+  });
 });

@@ -5,7 +5,7 @@ for (const language of ["es", "en"]) {
     test(`appearance fits and saves at ${width}px in ${language}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/src/test/visual/index.html?screen=/configuracion/apariencia&lang=${language}`);
-      const input = page.getByLabel(language === "es" ? "Botones y enlaces" : "Buttons and links");
+      const input = page.getByLabel(language === "es" ? "Botones y enlaces" : "Buttons and links", { exact: true });
       await expect(input).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
@@ -60,3 +60,18 @@ for (const width of [1440, 390]) {
     await expect(page).toHaveScreenshot(`brand-users-${width}.png`, { fullPage: true });
   });
 }
+
+// ME10: the own pieces of a brand open their groups, say «Propio» and paint the panel and the secondary button of the shell.
+test("own pieces open their groups and paint the shell", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/src/test/visual/index.html?screen=/configuracion/apariencia&scenario=brand-logo&lang=es");
+  await expect(page.getByRole("button", { name: "Ocultar Menú y panel" })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("button", { name: "Mostrar Campos y filtros" })).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("row", { name: /Fondo del panel/ })).toContainText("Propio");
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("--color-subnav-surface"))).toBe("#FBF9F4");
+  const preview = page.getByRole("region", { name: "Vista previa" });
+  await expect(preview.getByRole("button", { name: "Exportar" })).toHaveCSS("background-color", "rgb(246, 242, 233)");
+  await expect(page.getByRole("region", { name: "Colores por pieza" })).toHaveScreenshot("appearance-pieces.png");
+  await expect(preview).toHaveScreenshot("appearance-pieces-preview.png");
+});

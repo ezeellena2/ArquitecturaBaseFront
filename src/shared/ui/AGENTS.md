@@ -71,7 +71,7 @@ no al recibir el foco: un foco del código (el primer error al guardar) la deja 
 - [Contrato de mensajes y estados](../../../docs/guides/mensajes-y-estados.md).
 - [Estándar aplicado y catálogo](../../../docs/guides/estandar-visual.md).
 
-- `AppearancePreview` aplica el borrador en su propio contexto, sin cambiar la raíz.
+- `AppearancePreview` aplica el borrador en su propio contexto, sin cambiar la raíz; muestra menú, panel, barra, los tres botones, campo, filtros, tabla y avisos (ME10). `PieceColors` lista las piezas de una paleta en grupos plegables, con su color, su origen y ↺ en `RowActions`; el error de un color va debajo de su campo.
   Encabezados usan surface-header-foreground; filas oscuras adaptan contenido y conservan
   contraste en grupos de acciones, hover y selección. Portales consumen el tema global.
 

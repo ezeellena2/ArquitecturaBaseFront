@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { appearanceVariables, contrastRatio, initialAppearance, isAppearance, type SystemAppearance } from "./appearance";
+import { appearanceVariables, contrastRatio, initialAppearance, isAppearance, sameAppearance, type SystemAppearance } from "./appearance";
 
 const palette = (color: string): SystemAppearance => ({ primaryColor: color, menuColor: color, headerColor: color, alternateRowColor: color,
-  menuAccentColor: contrastRatio("#FFFFFF", color) >= contrastRatio("#000000", color) ? "#FFFFFF" : "#000000", font: "public-sans" });
+  menuAccentColor: contrastRatio("#FFFFFF", color) >= contrastRatio("#000000", color) ? "#FFFFFF" : "#000000", font: "public-sans", overrides: {} });
 
 describe("Global appearance", () => {
   it("preserves the approved Campo tokens without overrides", () => {
@@ -46,6 +46,23 @@ describe("Global appearance", () => {
     expect(variables["--color-nav-accent"]).toBe("#FFC10E");
     expect(variables["--color-nav-current"]).toBe("#FFC10E");
     expect(variables["--color-nav-ink"]).toBe("#000000");
+  });
+
+  // ME10: an own piece replaces its variables; with the initial colors, over the explicit defaults so nothing else moves.
+  it("paints the own pieces over the derived colors and ignores unknown keys", () => {
+    const initial = appearanceVariables({ ...initialAppearance, overrides: { menuText: "#eeeeee", unknownPiece: "#ABCDEF" } });
+    expect([initial["--color-nav-foreground"], initial["--color-nav-muted"], initial["--primary"]]).toEqual(["#EEEEEE", "#EEEEEE", "#285a3d"]);
+    expect(Object.values(initial)).not.toContain("#ABCDEF");
+    const custom = appearanceVariables({ ...initialAppearance, menuColor: "#223340", overrides: { panelSurface: "#FBF9F4" } });
+    expect(custom["--color-subnav-surface"]).toBe("#FBF9F4");
+    expect(custom["--color-nav-surface"]).toBe("#223340");
+  });
+
+  it("asks for the own pieces as an object of colors and compares them", () => {
+    expect(isAppearance({ ...initialAppearance, overrides: undefined })).toBe(false);
+    expect(isAppearance({ ...initialAppearance, overrides: { panelSurface: "red" } })).toBe(false);
+    expect(sameAppearance({ ...initialAppearance, overrides: { panelSurface: "#fbf9f4" } }, { ...initialAppearance, overrides: { panelSurface: "#FBF9F4" } })).toBe(true);
+    expect(sameAppearance(initialAppearance, { ...initialAppearance, overrides: { panelSurface: "#FBF9F4" } })).toBe(false);
   });
 
   // ME4: another font changes only the family; with the initial colors the approved CSS stays as it is.

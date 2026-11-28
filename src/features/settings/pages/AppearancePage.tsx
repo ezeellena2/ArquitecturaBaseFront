@@ -9,7 +9,8 @@ import { brandImageFileIssue, brandImageTypes, brandingChanged, brandingDraftFro
 import { ApiError } from "@/shared/api/ApiError";
 import { errorFeedback } from "@/shared/api/errorFeedback";
 import { brandImageUrl, presentationQueryKey, type BrandImageKind, type SystemPresentation } from "@/shared/api/presentation";
-import { appearanceColors, appearanceFonts, contrastRatio, fontFamilies, initialAppearance, loadFont, minimumMenuAccentContrast, sameAppearance, type AppearanceFont, type SystemAppearance } from "@/shared/lib/appearance";
+import { appearanceColors, appearanceFonts, appearanceRoles, contrastRatio, fontFamilies, initialAppearance, isAppearanceRole, loadFont, minimumMenuAccentContrast, sameAppearance, type AppearanceFont, type AppearanceRole, type SystemAppearance } from "@/shared/lib/appearance";
+import { appearanceColorsOf, appearanceRoleGroups, unreadableRoles, type AppearanceRoleGroup } from "@/shared/lib/appearanceRoles";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { AppearancePreview } from "@/shared/ui/AppearancePreview";
 import { Button } from "@/shared/ui/button";
@@ -19,6 +20,7 @@ import { DataTable } from "@/shared/ui/DataTable";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { FormField } from "@/shared/ui/FormField";
 import { BrandImageField } from "@/shared/ui/BrandImageField";
+import { PieceColors } from "@/shared/ui/PieceColors";
 import { Input } from "@/shared/ui/input";
 import { Page } from "@/shared/ui/Page";
 import { Picker } from "@/shared/ui/Picker";
@@ -26,7 +28,13 @@ import { FormSkeleton } from "@/shared/ui/FormSkeleton";
 import { Surface } from "@/shared/ui/Surface";
 import { dismissNotification, notify } from "@/shared/ui/notifications";
 
-const errorKeys = [...appearanceColors.map(field => `appearance.${field}`), "appearance.font", ...brandingFields.map(field => `branding.${field}`)];
+const errorKeys = [...appearanceColors.map(field => `appearance.${field}`), "appearance.font", ...appearanceRoles.map(role => `appearance.overrides.${role}`),
+  ...brandingFields.map(field => `branding.${field}`)];
+const groupIds = Object.keys(appearanceRoleGroups) as AppearanceRoleGroup[];
+const pieceErrorPrefix = "appearance.overrides.";
+/// ME10: the groups with an own piece, or with a piece whose color has a problem, open; the rest stay folded.
+const groupsOf = (keys: Iterable<string>) => new Set(groupIds.filter(group => [...keys].some(key =>
+  (appearanceRoleGroups[group] as readonly string[]).includes(key.startsWith(pieceErrorPrefix) ? key.slice(pieceErrorPrefix.length) : key))));
 
 export function AppearancePage() {
   const { t } = useTranslation("settings");
@@ -51,6 +59,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   const [imageErrors, setImageErrors] = useState<Partial<Record<BrandImageKind, string>>>({});
   const [removing, setRemoving] = useState<BrandImageKind | null>(null);
   const [needsReview, setNeedsReview] = useState(false);
+  const [openGroups, setOpenGroups] = useState(() => groupsOf(Object.keys(initial.appearance.overrides)));
   const [review, setReview] = useState<SystemSettings>();
   const [reading, setReading] = useState(false);
   const active = useRef(true);
@@ -110,7 +119,10 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
       const feedback = errorFeedback(error, { writing: true, fields: errorKeys, conflictCodes: ["Settings.System.RevisionConflict"] });
       if (feedback.kind === "session") return;
       if (active.current && feedback.kind === "forbidden") { reread(); return; }
-      if (active.current) setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field, messages.join(" ")])));
+      if (active.current) {
+        setErrors(Object.fromEntries(Object.entries(feedback.fields).map(([field, messages]) => [field, messages.join(" ")])));
+        openGroupsOf(Object.keys(feedback.fields));
+      }
       if (feedback.kind === "fields" && active.current) return;
       reportWriteFailure(feedback, t("appearance.failed"));
     },
@@ -146,6 +158,20 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
     setDraft(previous => ({ ...previous, ...next }));
     setErrors(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !Object.keys(next).some(field => key === `appearance.${field}`))));
   }
+  function openGroupsOf(keys: Iterable<string>) {
+    const groups = groupsOf(keys);
+    if (groups.size > 0) setOpenGroups(previous => new Set([...previous, ...groups]));
+  }
+  // ME10: a piece changed by hand is own; ↺ returns it to automatic.
+  function changePiece(role: string, color: string) {
+    if (!isAppearanceRole(role)) return;
+    setDraft(previous => ({ ...previous, overrides: { ...previous.overrides, [role]: color.toUpperCase() } }));
+    setErrors(previous => ({ ...previous, [`${pieceErrorPrefix}${role}`]: "" }));
+  }
+  function resetPieces(roles: readonly string[]) {
+    setDraft(previous => ({ ...previous, overrides: Object.fromEntries(Object.entries(previous.overrides).filter(([key]) => !roles.includes(key))) }));
+    setErrors(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !roles.some(role => key === `${pieceErrorPrefix}${role}`))));
+  }
   function upload(kind: BrandImageKind, file: File | undefined) {
     if (!file) return;
     if (brandImageFileIssue(kind, file)) { setImageErrors(previous => ({ ...previous, [kind]: t(`appearance.fileIssue.${kind}`, { name: file.name }) })); return; }
@@ -158,7 +184,10 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
       [`branding.${field}`, t(`appearance.issues.${issue}`, { max: brandingLimits.name })]);
     if (colorsChanged && contrastRatio(draft.menuAccentColor, draft.menuColor) < minimumMenuAccentContrast)
       issues.push(["appearance.menuAccentColor", t("appearance.issues.accentContrast")]);
+    if (colorsChanged) for (const role of Object.keys(unreadableRoles(draft)))
+      issues.push([`${pieceErrorPrefix}${role}`, t("appearance.issues.pieceContrast")]);
     setErrors(Object.fromEntries(issues));
+    openGroupsOf(issues.map(([key]) => key));
     if (issues.length > 0) return;
     mutation.mutate({ appearance: colorsChanged ? draft : undefined, branding: brandChanged ? brand : undefined, revision: baseline.revision });
   }
@@ -171,10 +200,22 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
   // toda la pantalla y aparece en la banda mientras un conflicto o un guardado incierto lo piden.
   // Mientras tanto, Descartar y Guardar se apagan con la revisión pendiente como motivo, aunque se cierre el aviso.
   const reviewReason = needsReview && !disabled ? t("review.pending") : null;
+  // ME10: the own pieces of a palette, by name and code, for the review of a conflict.
+  const ownPieces = (appearance: SystemAppearance) => Object.entries(appearance.overrides).filter(([role]) => isAppearanceRole(role))
+    .map(([role, color]) => `${t(`appearance.pieces.roles.${role as AppearanceRole}`)} ${color.toUpperCase()}`).join(", ") || t("appearance.pieces.none");
   const reviewRows = [...brandingFields.map(field => ({ key: field, label: t(`appearance.brandFields.${field}`),
     current: review ? brandingDraftFrom(review.branding)[field].trim() : "", mine: brand[field].trim() })),
     ...appearanceColors.map(field => ({ key: field, label: t(`appearance.fields.${field}`), current: review?.appearance[field].toUpperCase() ?? "", mine: draft[field].toUpperCase() })),
-    { key: "font", label: t("appearance.font"), current: review ? fontFamilies[review.appearance.font] : "", mine: fontFamilies[draft.font] }];
+    { key: "font", label: t("appearance.font"), current: review ? fontFamilies[review.appearance.font] : "", mine: fontFamilies[draft.font] },
+    { key: "overrides", label: t("appearance.pieces.title"), current: review ? ownPieces(review.appearance) : "", mine: ownPieces(draft) }];
+  const { color: pieceColor } = appearanceColorsOf(draft);
+  const pieceGroups = groupIds.map(group => {
+    const rows = appearanceRoleGroups[group].map(role => ({ key: role, label: t(`appearance.pieces.roles.${role}`), color: pieceColor(role),
+      own: Object.hasOwn(draft.overrides, role), error: errors[`${pieceErrorPrefix}${role}`] || undefined }));
+    const own = rows.filter(row => row.own).length;
+    return { id: group, title: t(`appearance.pieces.groups.${group}`), rows,
+      summary: own > 0 ? t("appearance.pieces.summaryOwn", { count: own, total: rows.length }) : t("appearance.pieces.summaryNone", { count: rows.length }) };
+  });
   const appName = brand.appName.trim() || baseline.branding.appName;
   const logoUrl = baseline.branding.logoVersion ? brandImageUrl("logo", baseline.branding.logoVersion) : null;
   const iconUrl = baseline.branding.iconVersion ? brandImageUrl("icon", baseline.branding.iconVersion) : null;
@@ -204,7 +245,7 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
         <EmailPreview brand={brand} logoUrl={logoUrl} />
       </Surface>
       {/* A quiénes se aplican, en la (i) del título; que la vista previa es el borrador se ve, y el contraste no se explica. */}
-      <Surface title={t("appearance.colors")} help={t("appearance.hint")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(initialAppearance); setErrors(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith("appearance.")))); }}>{t("appearance.reset")}</Button>}>
+      <Surface title={t("appearance.colors")} help={t("appearance.hint")} padded actions={<Button variant="outline" disabled={disabled} onClick={() => { setDraft(previous => ({ ...initialAppearance, overrides: previous.overrides })); setErrors(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith("appearance.")))); }}>{t("appearance.reset")}</Button>}>
         <div className="grid max-w-3xl gap-5 sm:grid-cols-2">
           {appearanceColors.map(field => <FormField key={field} label={t(`appearance.fields.${field}`)} help={field === "menuAccentColor" ? t("appearance.accentHint") : undefined}
             hint={draft[field].toUpperCase()} error={errors[`appearance.${field}`] || undefined}>
@@ -217,7 +258,20 @@ function AppearanceEditor({ initial }: { initial: SystemSettings }) {
           </FormField>
         </div>
       </Surface>
-      <AppearancePreview appearance={draft} brand={{ appName, logoUrl }} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser") }} />
+      {/* ME10: cada pieza sale de los colores básicos hasta que se le pone uno propio; los grupos con propios quedan abiertos. */}
+      <Surface title={t("appearance.pieces.title")} help={t("appearance.pieces.hint")}
+        actions={<Button variant="outline" disabled={disabled || Object.keys(draft.overrides).length === 0} onClick={() => resetPieces(Object.keys(draft.overrides))}>{t("appearance.pieces.allAutomatic")}</Button>}>
+        <PieceColors groups={pieceGroups} open={openGroups} disabled={disabled}
+          onOpenChange={(group, open) => setOpenGroups(previous => { const next = new Set(previous); if (open) next.add(group as AppearanceRoleGroup); else next.delete(group as AppearanceRoleGroup); return next; })}
+          onChange={changePiece} onReset={role => resetPieces([role])}
+          labels={{ piece: t("appearance.pieces.piece"), color: t("appearance.pieces.color"), origin: t("appearance.pieces.origin"), actions: t("appearance.pieces.actions"),
+            automatic: t("appearance.pieces.automatic"), own: t("appearance.pieces.own"), reset: t("appearance.pieces.reset"),
+            resetPiece: piece => t("appearance.pieces.resetPiece", { piece }), colorOf: piece => t("appearance.pieces.colorOf", { piece }),
+            expand: group => t("appearance.pieces.expand", { group }), collapse: group => t("appearance.pieces.collapse", { group }) }} />
+      </Surface>
+      <AppearancePreview appearance={draft} brand={{ appName, logoUrl }} labels={{ title: t("appearance.preview"), home: t("common:navigation.dashboard"), administration: t("common:navigation.administration"), name: t("appearance.name"), role: t("appearance.role"), search: t("appearance.search"), newUser: t("appearance.newUser"),
+        users: t("appearance.sample.users"), roles: t("appearance.sample.roles"), export: t("appearance.sample.export"), filters: t("appearance.sample.filters"),
+        success: t("appearance.sample.success"), warning: t("appearance.sample.warning"), danger: t("appearance.sample.danger") }} />
       {review ? <Surface title={t("review.title")} titleRef={reviewTitle} padded actions={<><Button variant="outline" disabled={disabled} onClick={() => acceptReview(false)}>{t("review.useCurrent")}</Button><Button disabled={disabled} onClick={() => acceptReview(true)}>{t("review.keepMine")}</Button></>}>
         <DataTable columns={[{ sortable: false, id: "setting", header: t("review.setting"), cell: row => row.label },
           { sortable: false, id: "current", header: t("review.current"), cell: row => row.current },

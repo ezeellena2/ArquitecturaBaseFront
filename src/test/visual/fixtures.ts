@@ -152,8 +152,8 @@ export function installVisualFixtures(language: "es" | "en", scenario: string | 
   const counts: UserFilterCounts = { status: { all: 4, active: 3, inactive: 1 }, roles: [{ name: "Admin", count: 1 }, { name: "User", count: 3 }], createdWithin: [{ days: 7, count: 0 }, { days: 30, count: 4 }] };
   // ME2: the scenes of a brand show the shell with a generic logo, accent and font (the others keep the band empty, as before).
   const brandScenario = scenario?.startsWith("brand") ?? false;
-  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000", menuAccentColor: "#000000", font: "public-sans" }
-    : brandScenario ? { primaryColor: "#1F3A4D", menuColor: "#1A3140", headerColor: "#F4EFE4", alternateRowColor: "#FAF7F0", menuAccentColor: "#E8A33D", font: "hanken-grotesk" } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1,
+  let settings: SystemSettings = { appearance: scenario === "dark-palette" ? { primaryColor: "#FFFF00", menuColor: "#FFFFFF", headerColor: "#000000", alternateRowColor: "#000000", menuAccentColor: "#000000", font: "public-sans", overrides: {} }
+    : brandScenario ? { primaryColor: "#1F3A4D", menuColor: "#1A3140", headerColor: "#F4EFE4", alternateRowColor: "#FAF7F0", menuAccentColor: "#E8A33D", font: "hanken-grotesk", overrides: { panelSurface: "#FBF9F4", panelSelected: "#ECE8E0", secondarySurface: "#F6F2E9" } } : initialAppearance, defaultCulture: language, defaultTimeZoneId: "America/Argentina/Buenos_Aires", defaultPageSize: 20, registrationMode: "InviteOnly", revision: 1,
     branding: { appName: brandScenario ? "Agro Demo" : "Acceso", emailSenderName: "Acceso", logoVersion: scenario === "brand-logo" ? "v1" : null, iconVersion: scenario === "brand-logo" ? "v1" : null }, retention: { loginAuditMonths: 12, loginCodeDays: 30, invitationDays: 30 } };
   const nativeFetch = globalThis.fetch;
   const folderFixture = createFolderVisualFixtures(language, scenario, profile.permissions);

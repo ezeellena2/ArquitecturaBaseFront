@@ -1,4 +1,4 @@
-# Marca por empresa: los tableros elegidos (ME1-A y ME3-B)
+# Marca por empresa: los tableros elegidos (ME1-A, ME3-B, ME10 y MC3-D)
 
 Fecha: **2026-11-27**. Cada empresa que contrata el producto tiene su instalación, y su administrador le pone la marca en
 Configuración › Apariencia: logo, ícono, nombre, colores y letra. No hay código ni ramas por empresa. El titular eligió
@@ -66,6 +66,23 @@ la letra en un solo pedido, como hoy. Debajo:
 - **Letra:** toda la app, con la escala y los pesos de hoy. Se carga sólo la elegida.
 - **Paleta inicial:** sin colores propios, la app conserva el CSS aprobado: el texto del ítem activo sigue blanco y el acento
   `#D3D7D5` pinta la barra, el foco y el avatar, como antes.
+
+## Colores por pieza (ME10, 2026-11-28)
+
+Elegida por el titular en el tablero «ME10 · Colores por pieza: automáticos o propios». Debajo de «Colores y letra», la zona
+«Colores por pieza» lista 60 piezas en nueve grupos plegables (menú y panel, botones y enlaces, campos y filtros, tablas,
+textos y superficies, avisos, gráficos, chat de WhatsApp y página pública). Cada fila dice la pieza, su color con el código y
+su origen: «Automático» (sale de los cinco colores, de `index.css` o de otra pieza) o «Propio» (puesto a mano, en negrita y
+con ↺ para volverlo a automático). El título de cada grupo cuenta sus propias; los grupos sin propias quedan plegados y uno
+con un error se abre. «Todos en automático» vacía la lista y «Restaurar los iniciales» vuelve sólo los cinco colores y la letra.
+
+Cada pieza propia revisa su contraste antes de mandar, con los colores que pinta la app: 4,5:1 para texto sobre su fondo y
+3:1 para el borde de los campos, el foco y los gráficos. Si el fondo propio tapa su texto automático, el error va en el
+fondo; con los dos propios, en el texto. El mensaje va debajo del color de esa fila y el servidor repite lo que puede
+revisar sin derivar. La vista previa suma el panel con su renglón elegido, la barra superior, los botones principal,
+secundario y de contorno, y los avisos de éxito, atención y peligro. Escenas: `appearance-pieces.png` y
+`appearance-pieces-preview.png`; el caparazón de la marca de ejemplo (`brand-users-1440.png`) lleva tres propias, como
+alcanzaría para La Clementina: el panel, su renglón y el botón secundario.
 
 ## Contraer el menú (MC3-D, 2026-11-28)
 

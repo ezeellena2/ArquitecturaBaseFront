@@ -35,28 +35,72 @@ export interface SystemAppearance {
   /// ME3-B: the current item of the main menu (bar, text, focus and avatar); it reads as text on the menu (4.5:1).
   readonly menuAccentColor: string;
   readonly font: AppearanceFont;
+  /// ME10: the own color of each piece set by hand, by its key (`appearanceRoleVariables`); the rest is automatic.
+  readonly overrides: Readonly<Record<string, string>>;
 }
 
-export type AppearanceColor = Exclude<keyof SystemAppearance, "font">;
+export type AppearanceColor = Exclude<keyof SystemAppearance, "font" | "overrides">;
 export const appearanceColors: readonly AppearanceColor[] = ["primaryColor", "menuColor", "headerColor", "alternateRowColor", "menuAccentColor"];
 
 export const initialAppearance: SystemAppearance = {
   primaryColor: "#285A3D", menuColor: "#24352B", headerColor: "#DFE8D9", alternateRowColor: "#F4F6F0", menuAccentColor: "#D3D7D5",
-  font: "public-sans",
+  font: "public-sans", overrides: {},
 };
+
+/// ME10: the CSS variables each piece paints. The closed list is the server's (`AppearanceRole`); a new piece goes in both.
+export const appearanceRoleVariables = {
+  menuText: ["--color-nav-foreground", "--color-nav-muted"], menuHover: ["--color-nav-hover"], menuLines: ["--color-nav-border"],
+  panelSurface: ["--color-subnav-surface"], panelSelected: ["--color-subnav-hover"], topbarSurface: ["--color-topbar-surface"],
+  topbarText: ["--color-topbar-foreground", "--color-topbar-muted"], topbarLines: ["--color-topbar-border"],
+  primaryText: ["--primary-foreground"], primaryHover: ["--color-primary-hover"], secondarySurface: ["--secondary"],
+  links: ["--color-brand-600"], linksHover: ["--color-brand-700"], focus: ["--color-brand-500"],
+  fieldSurface: ["--color-control-surface"], fieldBorder: ["--color-control-border"], filterSurface: ["--color-filter-surface"],
+  tag: ["--color-brand-100"],
+  headerText: ["--color-surface-header-foreground"], alternateText: ["--color-table-row-alternate-foreground"],
+  rowHover: ["--color-table-row-hover"], sectionRow: ["--color-table-section"], sectionText: ["--color-table-section-foreground"],
+  selected: ["--color-brand-50"],
+  text: ["--color-content"], textMuted: ["--color-content-muted"], headings: ["--color-content-heading"], lines: ["--color-border"],
+  pageHeader: ["--color-page-header"], mutedSurface: ["--color-surface-muted"],
+  success: ["--color-success"], successSoft: ["--color-success-50"], successStrong: ["--color-success-700"],
+  warning: ["--color-warning"], warningSoft: ["--color-warning-50"], warningStrong: ["--color-warning-700"],
+  danger: ["--color-danger"], dangerStrong: ["--color-danger-700"],
+  chart1: ["--chart-1"], chart2: ["--chart-2"], chart3: ["--chart-3"], chart4: ["--chart-4"], chart5: ["--chart-5"],
+  chatBackground: ["--color-message-background"], chatIncoming: ["--color-message-incoming"], chatOutgoing: ["--color-message-outgoing"],
+  chatText: ["--color-message-content"], chatMuted: ["--color-message-muted"], chatRead: ["--color-message-read"],
+  chatIncomingBorder: ["--color-message-incoming-border"], chatOutgoingBorder: ["--color-message-outgoing-border"],
+  chatDate: ["--color-message-date"],
+  publicText: ["--color-public-content"], publicMuted: ["--color-public-muted"], publicLines: ["--color-public-border"],
+  publicHeader: ["--color-public-header"], publicMeadow: ["--color-public-meadow"], publicField: ["--color-public-field"],
+  publicFooter: ["--color-public-footer"], publicIcon: ["--color-public-icon"],
+} as const satisfies Record<string, readonly string[]>;
+export type AppearanceRole = keyof typeof appearanceRoleVariables;
+export const appearanceRoles = Object.keys(appearanceRoleVariables) as AppearanceRole[];
+export const isAppearanceRole = (key: string): key is AppearanceRole => Object.hasOwn(appearanceRoleVariables, key);
+
+const isColor = (value: unknown): value is string => typeof value === "string" && /^#[\da-f]{6}$/i.test(value);
 
 /// The minimum the server asks of the accent against the menu: it paints the name of the current item.
 export const minimumMenuAccentContrast = 4.5;
 
 export function isAppearance(value: unknown): value is SystemAppearance {
   if (!value || typeof value !== "object") return false;
-  return appearanceColors.every(key => typeof (value as Record<string, unknown>)[key] === "string"
-    && /^#[\da-f]{6}$/i.test((value as Record<string, string>)[key])) && isAppearanceFont((value as Record<string, unknown>).font);
+  const { font, overrides } = value as Record<string, unknown>;
+  return appearanceColors.every(key => isColor((value as Record<string, unknown>)[key])) && isAppearanceFont(font)
+    && !!overrides && typeof overrides === "object" && Object.values(overrides).every(isColor);
 }
 
-/// Same colors and font, without telling upper from lower case.
+const sameOverrides = (first: Readonly<Record<string, string>>, second: Readonly<Record<string, string>>) =>
+  Object.keys(first).length === Object.keys(second).length
+  && Object.entries(first).every(([key, color]) => second[key]?.toUpperCase() === color.toUpperCase());
+
+/// Same colors, font and own pieces, without telling upper from lower case.
 export const sameAppearance = (first: SystemAppearance, second: SystemAppearance) =>
-  appearanceColors.every(key => first[key].toUpperCase() === second[key].toUpperCase()) && first.font === second.font;
+  appearanceColors.every(key => first[key].toUpperCase() === second[key].toUpperCase()) && first.font === second.font
+  && sameOverrides(first.overrides, second.overrides);
+
+/// The palette has the five initial colors.
+export const hasInitialColors = (appearance: SystemAppearance) =>
+  appearanceColors.every(key => appearance[key].toUpperCase() === initialAppearance[key]);
 
 function channels(hex: string) {
   return [1, 3, 5].map(offset => Number.parseInt(hex.slice(offset, offset + 2), 16));
@@ -76,7 +120,7 @@ function ink(background: string) {
   return contrastRatio("#FFFFFF", background) >= contrastRatio("#000000", background) ? "#FFFFFF" : "#000000";
 }
 
-function mix(color: string, target: string, amount: number) {
+export function mix(color: string, target: string, amount: number) {
   const destination = channels(target);
   return "#" + channels(color).map((channel, index) => Math.round(channel + (destination[index] - channel) * amount).toString(16).padStart(2, "0")).join("").toUpperCase();
 }
@@ -90,12 +134,20 @@ function readable(color: string, background: string, minimum: number) {
   return target;
 }
 
-// The default palette leaves the approved CSS untouched (with it, the current item's text stays the menu's ink). Custom palettes
-// override only color roles; a font other than the initial one, only the family.
+// The default palette without own pieces leaves the approved CSS untouched (with it, the current item's text stays the menu's
+// ink). Custom palettes override only color roles; a font other than the initial one, only the family. ME10: an own piece
+// replaces its variables over the derived ones (over the explicit defaults with the initial colors).
 export function appearanceVariables(appearance: SystemAppearance | undefined): Record<string, string> {
   if (!isAppearance(appearance)) return {};
   const font: Record<string, string> = appearance.font === initialAppearance.font ? {} : { "--font-sans": fontStack(appearance.font) };
-  if (appearanceColors.every(key => appearance[key].toUpperCase() === initialAppearance[key])) return font;
+  const own = Object.entries(appearance.overrides).filter(([key]) => isAppearanceRole(key)) as [AppearanceRole, string][];
+  if (hasInitialColors(appearance) && own.length === 0) return font;
+  const pieces = Object.fromEntries(own.flatMap(([key, color]) => appearanceRoleVariables[key].map(variable => [variable, color.toUpperCase()])));
+  return { ...(hasInitialColors(appearance) ? initialAppearanceVariables : paletteVariables(appearance)), ...pieces, ...font };
+}
+
+/// The variables the five colors derive, without the font or the own pieces.
+export function paletteVariables(appearance: SystemAppearance): Record<string, string> {
   const { primaryColor: primary, menuColor: menu, headerColor: heading, alternateRowColor: alternate, menuAccentColor: accent } = appearance;
   const page = mix(heading, "#FFFFFF", .92);
   const control = mix(primary, "#FFFFFF", .97);
@@ -124,7 +176,6 @@ export function appearanceVariables(appearance: SystemAppearance | undefined): R
     "--color-table-section": section, "--color-table-section-foreground": ink(section),
     "--color-surface-muted": mix(primary, "#FFFFFF", .94),
     "--color-tooltip-foreground": "#FFFFFF",
-    ...font,
   };
 }
 
